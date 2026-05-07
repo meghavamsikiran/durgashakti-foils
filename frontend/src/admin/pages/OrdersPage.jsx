@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import adminApi from '../services/adminApi';
+import TablePagination from '../../components/ui/TablePagination';
 import { 
   ShoppingBag, Clock, CheckCircle2, Truck, AlertCircle, 
   Search, Filter, ChevronRight, XCircle, RefreshCcw, 
@@ -38,6 +39,8 @@ const statusConfigs = {
   REFUNDED: { color: 'text-slate-600', bg: 'bg-slate-50', icon: IndianRupee },
 };
 
+const PAGE_SIZE = 15;
+
 const OrdersPage = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,24 +48,34 @@ const OrdersPage = () => {
   const [search, setSearch] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [messageModal, setMessageModal] = useState(null);
   const [adminMessage, setAdminMessage] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (p = 1) => {
     try {
-      setLoading(false); // Immediate visual feedback
-      const response = await adminApi.getOrders({ page: 1, limit: 100 });
+      setLoading(true);
+      const response = await adminApi.getOrders({ page: p, limit: PAGE_SIZE, search });
       setRows(response.data.items || []);
       setTotal(response.data.total || 0);
+      setPage(p);
     } catch (err) {
       toast.error(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const timer = setTimeout(() => load(1), 300);
+    return () => clearTimeout(timer);
+  }, [search, load]);
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    setExpandedOrderId(null);
+  };
 
   const updateStatus = async (orderId, newStatus, message = '') => {
     try {
@@ -79,16 +92,13 @@ const OrdersPage = () => {
     }
   };
 
-  const filtered = rows.filter(r => {
-    const status = (r.status || r.order_status || '').toUpperCase();
-    if (filter !== 'ALL' && status !== filter) return false;
-    if (search && !r.order_number?.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  const filtered = rows;
+  const totalFilteredPages = Math.ceil(total / PAGE_SIZE);
+  const paginatedOrders = filtered;
 
   const getStats = () => ({
-    total: rows.length,
-    pending: rows.filter(r => (r.status || '').toUpperCase() === 'PENDING').length,
+    total: total,
+    pending: rows.filter(r => ['PENDING', 'PROCESSING', 'PLACED'].includes((r.status || '').toUpperCase())).length,
     confirmed: rows.filter(r => (r.status || '').toUpperCase() === 'CONFIRMED').length,
     returns: rows.filter(r => (r.status || '').toUpperCase().startsWith('RETURN')).length,
     delivered: rows.filter(r => (r.status || '').toUpperCase() === 'DELIVERED').length,
@@ -339,6 +349,13 @@ const OrdersPage = () => {
             </tbody>
           </table>
         </div>
+        <TablePagination
+          currentPage={page}
+          totalPages={Math.ceil(total / PAGE_SIZE)}
+          onPageChange={handlePageChange}
+          totalItems={total}
+          pageSize={PAGE_SIZE}
+        />
       </div>
     </div>
   );

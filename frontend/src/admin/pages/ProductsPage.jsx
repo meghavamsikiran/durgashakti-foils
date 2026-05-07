@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import adminApi from '../services/adminApi';
 import { useAuth } from '../../contexts/AuthContext';
@@ -6,9 +6,10 @@ import {
   Package, Plus, Search, Tag, Box, 
   IndianRupee, TrendingUp, Filter, Trash2, 
   Upload, CheckCircle2, AlertCircle, X, ChevronRight,
-  Boxes
+  Boxes, Edit, Trash
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import TablePagination from '../../components/ui/TablePagination';
 
 const ProductsPage = () => {
   const { isSuperAdmin } = useAuth();
@@ -19,62 +20,140 @@ const ProductsPage = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+  const [isEdit, setIsEdit] = useState(false);
+  const [currentId, setCurrentId] = useState(null);
   const [form, setForm] = useState({
     name: '',
     description: '',
     category: 'Aluminum Foil',
-    thickness: '11 Micron',
-    width: '295mm',
+    thickness: '',
+    width: '',
     image_url: '',
     features: '',
-    variants: '250ml|SKU-250|120|0|100\n500ml|SKU-500|220|0|80',
+    price: 0,
+    discount_price: 0,
+    stock_quantity: 0,
+    batch_no: '',
+    size: '',
+    variants: '',
   });
+  const [metrics, setMetrics] = useState(null);
 
-  const fetchRows = async () => {
+  const resetForm = () => {
+    setForm({
+      name: '',
+      description: '',
+      category: '',
+      thickness: '',
+      width: '',
+      image_url: '',
+      features: '',
+      price: 0,
+      discount_price: 0,
+      stock_quantity: 0,
+      batch_no: '',
+      size: '',
+      variants: '',
+    });
+    setImageFile(null);
+  };
+
+  const [total, setTotal] = useState(0);
+
+  const fetchRows = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await adminApi.getProducts({ page: 1, page_size: 100 });
+      const response = await adminApi.getProducts({ page: pageNum, limit: ITEMS_PER_PAGE, search });
       setRows(response.data.items || []);
+      setTotal(response.data.total || 0);
+      setPage(pageNum);
+
+      const mRes = await adminApi.getDashboardMetrics();
+      setMetrics(mRes.data?.metrics || {});
     } catch (err) {
       toast.error('Failed to load products');
     } finally {
       setLoading(false);
     }
+  }, [search]);
+
+  const handleEdit = (product) => {
+    setIsEdit(true);
+    setCurrentId(product.id);
+    setForm({
+      name: product.name || '',
+      description: product.description || '',
+      category: product.category || 'Aluminum Foil',
+      thickness: product.thickness || '11 Micron',
+      width: product.width || '295mm',
+      image_url: product.image_url || '',
+      features: Array.isArray(product.features) ? product.features.join(', ') : (product.features || ''),
+      price: product.price || 0,
+      discount_price: product.discount_price || 0,
+      stock_quantity: product.stock_quantity || 0,
+      batch_no: product.batch_no || '',
+      size: product.size || '',
+      variants: '', // Not used in edit mode
+    });
+    setShowForm(true);
   };
 
-  useEffect(() => { fetchRows(); }, []);
+  const handleDelete = async (productId) => {
+    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    try {
+      await adminApi.deleteProduct(productId);
+      toast.success('Product removed');
+      fetchRows();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
 
-  const createProduct = async () => {
+  const saveProduct = async () => {
     if (!form.name.trim() || !form.description.trim()) {
       toast.error('Name and description are required'); return;
     }
-    if (!form.image_url.trim()) {
-      toast.error('Please upload a product image'); return;
-    }
-    const variants = form.variants.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
-      const [size, sku, price, discountPrice, stock] = line.split('|').map(cell => (cell || '').trim());
-      return {
-        size, sku,
-        price: Number(price),
-        discount_price: discountPrice ? Number(discountPrice) : null,
-        stock_quantity: Number(stock || 0),
-        in_stock: Number(stock || 0) > 0,
-      };
-    });
-    if (!variants.length || variants.some(v => !v.size || !v.sku || !v.price)) {
-      toast.error('Variants format invalid. Use size|sku|price|discount|stock'); return;
-    }
+    
     try {
       setSaving(true);
-      await adminApi.createProduct({
-        ...form,
-        name: form.name.trim(),
-        description: form.description.trim(),
-        features: form.features.split(',').map(f => f.trim()).filter(Boolean),
-        variants,
-      });
-      toast.success('Catalog updated successfully');
+      if (isEdit) {
+        await adminApi.updateProduct(currentId, {
+          ...form,
+          features: typeof form.features === 'string' ? form.features.split(',').map(f => f.trim()).filter(Boolean) : form.features
+        });
+        toast.success('Product updated');
+      } else {
+        const variants = form.variants.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
+          const parts = line.split('|').map(cell => (cell || '').trim());
+          const [size, sku, price, discountPrice, stock] = parts;
+          
+          if (parts.length < 3) return null;
+          
+          return {
+            size, 
+            sku,
+            price: Number(price),
+            discount_price: discountPrice ? Number(discountPrice) : null,
+            stock_quantity: Number(stock || 0),
+            in_stock: Number(stock || 0) > 0,
+          };
+        });
+
+        if (!variants.length || variants.some(v => !v || !v.size || !v.sku || isNaN(v.price) || v.price < 0)) {
+          toast.error('Invalid Variants. Format: Size | SKU | Price | Discount | Stock'); 
+          setSaving(false); return;
+        }
+        await adminApi.createProduct({
+          ...form,
+          features: form.features.split(',').map(f => f.trim()).filter(Boolean),
+          variants,
+        });
+        toast.success('Catalog updated');
+      }
       setShowForm(false);
+      setIsEdit(false);
       fetchRows();
     } catch (error) {
       toast.error(error.message);
@@ -83,16 +162,18 @@ const ProductsPage = () => {
     }
   };
 
-  const filtered = rows.filter(r => 
-    !search || 
-    r.name?.toLowerCase().includes(search.toLowerCase()) || 
-    r.batch_no?.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    const timer = setTimeout(() => fetchRows(1), 300);
+    return () => clearTimeout(timer);
+  }, [search, fetchRows]);
+
+  const totalFilteredPages = Math.ceil(total / ITEMS_PER_PAGE);
+  const paginatedProducts = rows;
 
   const stats = {
-    skus: rows.length,
-    volume: rows.reduce((acc, curr) => acc + (curr.units_sold || 0), 0),
-    value: rows.reduce((acc, curr) => acc + (curr.stock_quantity * curr.price), 0),
+    skus: metrics?.total_products || total,
+    volume: rows.reduce((acc, curr) => acc + (curr.units_sold || 0), 0), // Global volume not in summary yet
+    value: 0, // Calculated on page for now as global inventory value needs heavy aggregation
     lowStock: rows.filter(r => r.stock_quantity <= 10).length
   };
 
@@ -118,10 +199,10 @@ const ProductsPage = () => {
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
-          {isSuperAdmin && (
-            <Button onClick={() => setShowForm(!showForm)} className="rounded-xl flex items-center gap-2 px-6">
-              {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-              {showForm ? 'Cancel' : 'Add Item'}
+          {isSuperAdmin && !showForm && (
+            <Button onClick={() => { resetForm(); setShowForm(true); }} className="rounded-xl flex items-center gap-2 px-6">
+              <Plus className="w-4 h-4" />
+              Add Item
             </Button>
           )}
         </div>
@@ -173,8 +254,8 @@ const ProductsPage = () => {
           </div>
           
           <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-8 flex items-center gap-2">
-            <Plus className="w-5 h-5 text-indigo-600" />
-            Product Details
+            {isEdit ? <Edit className="w-5 h-5 text-indigo-600" /> : <Plus className="w-5 h-5 text-indigo-600" />}
+            {isEdit ? 'Edit Product' : 'Product Details'}
           </h2>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -190,14 +271,16 @@ const ProductsPage = () => {
                   placeholder="Technical details..." value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Thickness</label>
-                   <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm" value={form.thickness} onChange={e => setForm({...form, thickness: e.target.value})} />
-                </div>
-                <div className="space-y-1">
-                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Width</label>
-                   <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm" value={form.width} onChange={e => setForm({...form, width: e.target.value})} />
-                </div>
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Thickness</label>
+                    <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" 
+                      placeholder="e.g., 11 Micron" value={form.thickness} onChange={e => setForm({...form, thickness: e.target.value})} />
+                 </div>
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Width</label>
+                    <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" 
+                      placeholder="e.g., 295mm" value={form.width} onChange={e => setForm({...form, width: e.target.value})} />
+                 </div>
               </div>
             </div>
 
@@ -208,15 +291,17 @@ const ProductsPage = () => {
                   <div className={`flex-1 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-4 transition-all ${form.image_url ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 hover:border-indigo-300'}`}>
                     {form.image_url ? (
                       <div className="flex flex-col items-center gap-2">
-                        <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Image Ready</span>
+                        <img src={form.image_url} alt="Preview" className="w-16 h-16 object-cover rounded-lg shadow-sm" />
+                        <button onClick={() => setForm({...form, image_url: ''})} className="text-[9px] font-black text-rose-500 uppercase tracking-widest hover:underline">Change Image</button>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-2">
+                      <label htmlFor="img-up" className="flex flex-col items-center gap-2 cursor-pointer w-full h-full justify-center">
                         <Upload className="w-8 h-8 text-slate-300" />
                         <input type="file" className="hidden" id="img-up" onChange={e => setImageFile(e.target.files?.[0])} />
-                        <label htmlFor="img-up" className="cursor-pointer text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-600 transition-colors">Choose File</label>
-                      </div>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-600 transition-colors">
+                          {imageFile ? imageFile.name : 'Choose File'}
+                        </span>
+                      </label>
                     )}
                   </div>
                   {imageFile && !form.image_url && (
@@ -225,6 +310,7 @@ const ProductsPage = () => {
                       try {
                         const res = await adminApi.uploadProductImage(imageFile);
                         setForm({...form, image_url: `${process.env.REACT_APP_BACKEND_URL}${res.data.url}`});
+                        setImageFile(null);
                         toast.success('Asset synced');
                       } catch (err) { toast.error(err.message); }
                       finally { setImageUploading(false); }
@@ -235,18 +321,39 @@ const ProductsPage = () => {
                 </div>
               </div>
               
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Variant Inventory Strategy (Size | SKU | Price | Discount | Stock)</label>
-                <textarea rows={5} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-mono focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                  value={form.variants} onChange={e => setForm({...form, variants: e.target.value})} />
-              </div>
+              {isEdit ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Price (₹)</label>
+                    <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Stock</label>
+                    <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" value={form.stock_quantity} onChange={e => setForm({...form, stock_quantity: Number(e.target.value)})} />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Variant Inventory Strategy</label>
+                    <span className="text-[9px] font-bold text-indigo-400">Size | SKU | Price | Discount | Stock</span>
+                  </div>
+                  <textarea rows={5} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-mono focus:ring-2 focus:ring-indigo-500/20 outline-none bg-slate-50/50"
+                    placeholder="Enter one per line:&#10;18 Micron | DSF-18-72 | 199 | 0 | 500&#10;11 Micron | DSF-11-25 | 129 | 0 | 1000"
+                    value={form.variants} onChange={e => setForm({...form, variants: e.target.value})} />
+                  <div className="flex justify-between items-center px-1">
+                    <p className="text-[9px] text-slate-400 font-medium italic">Use the | character to separate fields.</p>
+                    <button onClick={() => setForm({...form, variants: 'Small | SKU-S | 99 | 0 | 100\nLarge | SKU-L | 199 | 0 | 50'})} className="text-[9px] font-black text-indigo-500 uppercase tracking-widest hover:underline">Load Template</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           
           <div className="mt-8 pt-8 border-t border-slate-100 flex justify-end gap-4">
-             <Button variant="ghost" onClick={() => setShowForm(false)} className="rounded-xl font-bold">Discard</Button>
-             <Button disabled={saving} onClick={createProduct} className="rounded-xl px-12 font-black uppercase tracking-widest shadow-lg shadow-indigo-200">
-               {saving ? 'Processing...' : 'Add Product'}
+             <Button variant="ghost" onClick={() => { setShowForm(false); setIsEdit(false); }} className="rounded-xl font-bold">Discard</Button>
+             <Button disabled={saving} onClick={saveProduct} className="rounded-xl px-12 font-black uppercase tracking-widest shadow-lg shadow-indigo-200">
+               {saving ? 'Processing...' : (isEdit ? 'Update Product' : 'Add Product')}
              </Button>
           </div>
         </div>
@@ -263,10 +370,11 @@ const ProductsPage = () => {
                 <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Stock Level</th>
                 <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Sales</th>
                 <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Status</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filtered.map((row, idx) => (
+              {paginatedProducts.map((row, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-6">
                     <div className="flex items-center gap-3">
@@ -307,16 +415,33 @@ const ProductsPage = () => {
                       {row.stock_quantity > 0 ? 'In Stock' : 'Out Stock'}
                     </span>
                   </td>
+                  <td className="px-8 py-6 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(row)} className="h-8 w-8 p-0 rounded-lg hover:bg-indigo-50 hover:text-indigo-600">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(row.id)} className="h-8 w-8 p-0 rounded-lg hover:bg-rose-50 hover:text-rose-600 text-rose-500">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {filtered.length === 0 && (
+          {rows.length === 0 && (
             <div className="p-12 text-center text-slate-400 font-medium italic">
               Catalog search returned zero results.
             </div>
           )}
         </div>
+        <TablePagination
+          currentPage={page}
+          totalPages={totalFilteredPages}
+          onPageChange={fetchRows}
+          totalItems={total}
+          pageSize={ITEMS_PER_PAGE}
+        />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 
@@ -19,21 +19,8 @@ export const CartProvider = ({ children }) => {
 
   const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
-  useEffect(() => {
-    if (token && user) {
-      fetchCart();
-    }
-    
-    const handleStorage = (e) => {
-      if (e.key === 'cart_sync' && token && user) {
-        fetchCart();
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [token, user]);
-
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
+    if (!token) return;
     try {
       const response = await axios.get(`${API_URL}/cart`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -42,9 +29,57 @@ export const CartProvider = ({ children }) => {
     } catch (error) {
       console.error('Error fetching cart:', error);
     }
-  };
+  }, [token, API_URL]);
+
+  const syncGuestCart = useCallback(async () => {
+    const guestCart = JSON.parse(localStorage.getItem('ds_guest_cart') || '{"items":[]}');
+    if (guestCart.items.length > 0 && token) {
+      try {
+        await axios.post(
+          `${API_URL}/cart/bulk-sync`,
+          guestCart.items,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        localStorage.removeItem('ds_guest_cart');
+        await fetchCart();
+      } catch (e) {
+        console.error("Failed to sync guest cart", e);
+      }
+    }
+  }, [token, API_URL, fetchCart]);
+
+  useEffect(() => {
+    if (token && user) {
+      fetchCart();
+      syncGuestCart();
+    } else {
+      const saved = localStorage.getItem('ds_guest_cart');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setCart(parsed);
+        } catch (e) {
+          setCart({ items: [] });
+        }
+      }
+    }
+  }, [token, user, fetchCart, syncGuestCart]);
 
   const addToCart = async (productId, quantity = 1) => {
+    if (!token) {
+      const newItems = [...cart.items];
+      const existing = newItems.find(i => i.product_id === productId);
+      if (existing) {
+        existing.quantity += quantity;
+      } else {
+        newItems.push({ product_id: productId, quantity });
+      }
+      const newCart = { items: newItems };
+      setCart(newCart);
+      localStorage.setItem('ds_guest_cart', JSON.stringify(newCart));
+      return;
+    }
+
     setLoading(true);
     try {
       await axios.post(
@@ -52,7 +87,6 @@ export const CartProvider = ({ children }) => {
         { product_id: productId, quantity },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      localStorage.setItem('cart_sync', Date.now().toString());
       await fetchCart();
     } catch (error) {
       throw error;
@@ -62,6 +96,14 @@ export const CartProvider = ({ children }) => {
   };
 
   const updateCartItem = async (productId, quantity) => {
+    if (!token) {
+      const newItems = cart.items.map(i => i.product_id === productId ? {...i, quantity} : i);
+      const newCart = { items: newItems };
+      setCart(newCart);
+      localStorage.setItem('ds_guest_cart', JSON.stringify(newCart));
+      return;
+    }
+
     setLoading(true);
     try {
       await axios.put(
@@ -69,7 +111,6 @@ export const CartProvider = ({ children }) => {
         { product_id: productId, quantity },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      localStorage.setItem('cart_sync', Date.now().toString());
       await fetchCart();
     } catch (error) {
       throw error;
@@ -79,12 +120,19 @@ export const CartProvider = ({ children }) => {
   };
 
   const removeFromCart = async (productId) => {
+    if (!token) {
+      const newItems = cart.items.filter(i => i.product_id !== productId);
+      const newCart = { items: newItems };
+      setCart(newCart);
+      localStorage.setItem('ds_guest_cart', JSON.stringify(newCart));
+      return;
+    }
+
     setLoading(true);
     try {
       await axios.delete(`${API_URL}/cart/remove/${productId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      localStorage.setItem('cart_sync', Date.now().toString());
       await fetchCart();
     } catch (error) {
       throw error;
@@ -94,12 +142,17 @@ export const CartProvider = ({ children }) => {
   };
 
   const clearCart = async () => {
+    if (!token) {
+      setCart({ items: [] });
+      localStorage.removeItem('ds_guest_cart');
+      return;
+    }
+
     setLoading(true);
     try {
       await axios.delete(`${API_URL}/cart/clear`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      localStorage.setItem('cart_sync', Date.now().toString());
       setCart({ items: [] });
     } catch (error) {
       throw error;

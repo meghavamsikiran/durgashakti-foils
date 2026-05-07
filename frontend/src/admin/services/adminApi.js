@@ -30,6 +30,8 @@ const adminApi = {
     return response;
   },
   createProduct: (payload) => client.post('/admin/products/bulk', payload, { headers: authHeaders() }),
+  updateProduct: (productId, payload) => client.put(`/admin/products/${productId}`, payload, { headers: authHeaders() }),
+  deleteProduct: (productId) => client.delete(`/admin/products/${productId}`, { headers: authHeaders() }),
   uploadProductImage: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -37,8 +39,13 @@ const adminApi = {
       headers: { ...authHeaders(), 'Content-Type': 'multipart/form-data' },
     });
   },
-  getInventory: async () => {
-    const response = await client.get('/products', { params: { page_size: 1000 }, headers: authHeaders() });
+  getInventory: async (params = {}) => {
+    // Ensure limit doesn't exceed backend max of 100
+    const limit = Math.min(params.limit || 20, 100);
+    const response = await client.get('/products', { 
+      params: { ...params, limit }, 
+      headers: authHeaders() 
+    });
     const rawItems = response.data.items || [];
     const items = rawItems.map((product) => ({
       id: product.id,
@@ -50,8 +57,10 @@ const adminApi = {
       low_stock_threshold: Number(product.low_stock_threshold || 20),
       in_stock: product.in_stock,
       price: product.price,
+      image_url: product.image_url,
+      category: product.category,
     }));
-    return { data: { items, total: response.data.total || items.length, page: 1, page_size: 1000 } };
+    return { data: { ...response.data, items } };
   },
   adjustInventory: async (productId, payload) =>
     client.post(`/admin/products/${productId}/inventory`, { delta: payload.delta_quantity }, { headers: authHeaders() }),
@@ -76,7 +85,7 @@ const adminApi = {
       headers: { ...authHeaders(), 'Content-Type': 'multipart/form-data' },
     }),
   getGSTImports: async () => client.get('/admin/gst/imports', { headers: authHeaders() }),
-  getGSTRecords: async () => client.get('/admin/gst/reports', { headers: authHeaders() }),
+  getGSTRecords: async (params) => client.get('/admin/gst/reports', { params, headers: authHeaders() }),
   getAuditLogs: async (params) => client.get('/admin/audit-logs', { params, headers: authHeaders() }),
   seedSampleGST: async () => client.post('/admin/gst/seed-sample', {}, { headers: authHeaders() }),
   // Settings — now backed by real API

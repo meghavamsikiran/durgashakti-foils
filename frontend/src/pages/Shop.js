@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
+import TablePagination from '../components/ui/TablePagination';
 import api from '../utils/api';
 import { SlidersHorizontal } from 'lucide-react';
 
@@ -10,6 +11,8 @@ const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [priceFilter, setPriceFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 9;
 
   useEffect(() => {
     fetchProducts();
@@ -54,6 +57,7 @@ const Shop = () => {
     }
 
     setFilteredProducts(filtered);
+    setPage(1); // Reset to first page when filters change
   };
 
   return (
@@ -138,7 +142,7 @@ const Shop = () => {
                   Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {filteredProducts.map((product, index) => (
+                  {filteredProducts.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map((product, index) => (
                     <motion.div
                       key={product.id}
                       initial={{ opacity: 0, y: 20 }}
@@ -148,6 +152,15 @@ const Shop = () => {
                       <ProductCard product={product} />
                     </motion.div>
                   ))}
+                </div>
+                <div className="mt-8">
+                  <TablePagination
+                    currentPage={page}
+                    totalPages={Math.ceil(filteredProducts.length / ITEMS_PER_PAGE)}
+                    onPageChange={setPage}
+                    totalItems={filteredProducts.length}
+                    pageSize={ITEMS_PER_PAGE}
+                  />
                 </div>
               </>
             )}

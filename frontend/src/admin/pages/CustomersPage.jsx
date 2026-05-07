@@ -1,28 +1,36 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import adminApi from '../services/adminApi';
 import { 
   Users, UserCheck, Star, IndianRupee, 
   Search, Mail, Phone, Calendar
 } from 'lucide-react';
+import TablePagination from '../../components/ui/TablePagination';
 
 const CustomersPage = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [metrics, setMetrics] = useState(null);
+  const ITEMS_PER_PAGE = 15;
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const response = await adminApi.getCustomers({ page: 1, page_size: 200 });
-        setRows(response.data.items || []);
-      } catch {
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const [total, setTotal] = useState(0);
+
+  const load = useCallback(async (pageNum = 1) => {
+    try {
+      setLoading(true);
+      const response = await adminApi.getCustomers({ page: pageNum, limit: ITEMS_PER_PAGE, search });
+      setRows(response.data.items || []);
+      setTotal(response.data.total || 0);
+      setPage(pageNum);
+
+      const mRes = await adminApi.getDashboardMetrics();
+      setMetrics(mRes.data?.metrics || {});
+    } catch {
+    } finally {
+      setLoading(false);
+    }
+  }, [search]);
 
   const formatDate = (d) => {
     if (!d) return '—';
@@ -30,18 +38,19 @@ const CustomersPage = () => {
     catch { return d; }
   };
 
-  const filtered = rows.filter(r =>
-    !search || 
-    r.full_name?.toLowerCase().includes(search.toLowerCase()) || 
-    r.email?.toLowerCase().includes(search.toLowerCase()) || 
-    r.phone?.includes(search)
-  );
+  useEffect(() => {
+    const timer = setTimeout(() => load(1), 300);
+    return () => clearTimeout(timer);
+  }, [search, load]);
+
+  const totalFilteredPages = Math.ceil(total / ITEMS_PER_PAGE);
+  const paginatedCustomers = rows;
 
   const stats = {
-    total: rows.length,
-    loyal: rows.filter(r => (r.orders_count || 0) > 1).length,
-    revenue: rows.reduce((acc, curr) => acc + (curr.total_spent || 0), 0),
-    avg: rows.length > 0 ? (rows.reduce((acc, curr) => acc + (curr.total_spent || 0), 0) / rows.length) : 0
+    total: metrics?.total_customers || total,
+    loyal: rows.filter(r => (r.orders_count || 0) > 1).length, // Filtered on page
+    revenue: metrics?.total_revenue || 0,
+    avg: (metrics?.total_revenue && metrics?.total_customers) ? (metrics.total_revenue / metrics.total_customers) : 0
   };
 
   return (
@@ -119,7 +128,7 @@ const CustomersPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filtered.map((row) => (
+              {paginatedCustomers.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-6">
                     <div className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
@@ -158,12 +167,19 @@ const CustomersPage = () => {
               ))}
             </tbody>
           </table>
-          {filtered.length === 0 && (
+          {rows.length === 0 && (
             <div className="p-12 text-center text-slate-400 font-medium italic">
               No matching customer data found.
             </div>
           )}
         </div>
+        <TablePagination
+          currentPage={page}
+          totalPages={totalFilteredPages}
+          onPageChange={load}
+          totalItems={total}
+          pageSize={ITEMS_PER_PAGE}
+        />
       </div>
     </div>
   );

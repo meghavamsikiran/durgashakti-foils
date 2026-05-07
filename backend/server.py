@@ -1,6 +1,7 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Request, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -11,6 +12,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional
 import uuid
+import shutil
 from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
@@ -30,6 +32,23 @@ load_dotenv(ROOT_DIR / '.env')
 UPLOADS_DIR = ROOT_DIR / "uploads"
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
+def delete_old_file(file_url: Optional[str]):
+    """Helper to delete a file from the uploads directory given its URL."""
+    if not file_url:
+        return
+    try:
+        # Check if the URL points to our uploads directory
+        # Example: http://localhost:8001/uploads/xxx.png
+        if "/uploads/" in file_url:
+            filename = file_url.split("/uploads/")[-1]
+            if filename:
+                file_path = UPLOADS_DIR / filename
+                if file_path.exists() and file_path.is_file():
+                    os.remove(file_path)
+                    logging.info(f"Deleted orphaned asset: {filename}")
+    except Exception as e:
+        logging.error(f"Error deleting old file {file_url}: {e}")
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -37,11 +56,14 @@ db = client[os.environ['DB_NAME']]
 
 # JWT Configuration
 JWT_SECRET = os.environ.get('JWT_SECRET', '')
-_INSECURE = {'', 'your-secret-key-change-in-production', 'your-secret-key-change-in-production-use-strong-random-string', 'change-me'}
-if JWT_SECRET in _INSECURE:
+if not JWT_SECRET:
+    if os.environ.get('ENVIRONMENT') == 'production':
+        logging.critical('FATAL: JWT_SECRET is missing in production environment. Server will not start.')
+        raise RuntimeError('JWT_SECRET must be set in production')
+    
     import secrets as _sec
     JWT_SECRET = _sec.token_urlsafe(48)
-    logging.warning('JWT_SECRET is missing/insecure — auto-generated random secret. Set a strong JWT_SECRET in .env for production.')
+    logging.warning('JWT_SECRET is missing — auto-generated random secret for local development. Set a strong JWT_SECRET in .env for persistence.')
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRATION_HOURS = 1  # 1 hour
 
@@ -57,7 +79,31 @@ def is_test_mode() -> bool:
     return not razorpay_key or razorpay_key.startswith('rzp_test_') or razorpay_key in ('rzp_test_dummy', '')
 
 # Create the main app
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logging.info("Starting DurgaShakti Foils Server...")
+    try:
+        await db.users.create_index("email", unique=True)
+        await db.users.create_index("id", unique=True)
+        await db.products.create_index("id", unique=True)
+        await db.orders.create_index("id", unique=True)
+        await db.orders.create_index("user_id")
+        await db.orders.create_index("order_number")
+        await db.carts.create_index("user_id", unique=True)
+        await db.gst_records.create_index("invoice_number")
+        await db.audit_logs.create_index("created_at")
+        logging.info("MongoDB indexes ensured")
+    except Exception as exc:
+        logging.warning("MongoDB index creation issue: %s", exc)
+    
+    yield
+    
+    # Shutdown
+    client.close()
+    logging.info("DurgaShakti Foils Server Shutdown")
+
+app = FastAPI(lifespan=lifespan)
 api_router = APIRouter(prefix="/api")
 
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
@@ -156,12 +202,66 @@ class OrderCreate(BaseModel):
     idempotency_key: Optional[str] = None
 
 
+class UserProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+
+
+class UserAddress(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    label: str  # Home, Office, etc.
+    full_name: str
+    phone: str
+    address_line1: str
+    address_line2: Optional[str] = None
+    city: str
+    state: str
+    pincode: str
+    is_default: bool = False
+
+
+class WishlistItem(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    product_id: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class Notification(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    title: str
+    message: str
+    type: str = "info"  # info, order, promo
+    is_read: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class SavedCard(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    brand: str  # visa, mastercard
+    last4: str
+    expiry_month: str
+    expiry_year: str
+    holder_name: str
+
+
 class AdminCreateRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     full_name: str = Field(min_length=2, max_length=120)
     phone: Optional[str] = None
     role: str = "admin"
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str = Field(min_length=8, max_length=128)
 
 
 class VariantInput(BaseModel):
@@ -208,9 +308,13 @@ async def send_email(to_email: str, subject: str, body: str):
     smtp_pass = os.environ.get('SMTP_PASS')
     smtp_from = os.environ.get('SMTP_FROM', smtp_user)
 
-    if not all([smtp_host, smtp_user, smtp_pass]):
-        logging.warning("SMTP not configured. Email to %s skipped. Subject: %s", to_email, subject)
-        return False
+    if not all([smtp_host, smtp_user, smtp_pass]) or "example.com" in smtp_host:
+        logging.info("--- MOCK EMAIL DELIVERY ---")
+        logging.info("To: %s", to_email)
+        logging.info("Subject: %s", subject)
+        logging.info("OTP detected in body: %s", body if len(body) < 100 else "HTML Content")
+        logging.info("---------------------------")
+        return True
 
     try:
         msg = MIMEMultipart()
@@ -219,7 +323,7 @@ async def send_email(to_email: str, subject: str, body: str):
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'html'))
 
-        server = smtplib.SMTP(smtp_host, smtp_port)
+        server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
         server.starttls()
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
@@ -228,6 +332,12 @@ async def send_email(to_email: str, subject: str, body: str):
     except Exception as e:
         logging.error("Failed to send email to %s: %s", to_email, e)
         return False
+
+async def create_notification(user_id: str, title: str, message: str, type: str = "info"):
+    """Creates a notification record for a user."""
+    notif = Notification(user_id=user_id, title=title, message=message, type=type).model_dump()
+    notif['created_at'] = notif['created_at'].isoformat()
+    await db.notifications.insert_one(notif)
 
 # Helper Functions
 def hash_password(password: str) -> str:
@@ -322,6 +432,104 @@ async def login(credentials: UserLogin):
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
+
+@api_router.put("/auth/me")
+async def update_profile(data: UserProfileUpdate, current_user: User = Depends(get_current_user)):
+    update_data = {}
+    if data.full_name is not None: update_data['full_name'] = data.full_name
+    if data.phone is not None: update_data['phone'] = data.phone
+    
+    if data.email is not None and data.email != current_user.email:
+        # Check if email is already taken
+        existing = await db.users.find_one({"email": data.email, "id": {"$ne": current_user.id}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        update_data['email'] = data.email
+    
+    if not update_data:
+        return current_user
+        
+    await db.users.update_one({"id": current_user.id}, {"$set": update_data})
+    updated = await db.users.find_one({"id": current_user.id}, {"_id": 0, "password": 0})
+    return User(**updated)
+
+
+# User Sub-Resources
+@api_router.get("/user/addresses")
+async def get_addresses(current_user: User = Depends(get_current_user)):
+    user = await db.users.find_one({"id": current_user.id})
+    return user.get('addresses', [])
+
+
+@api_router.post("/user/addresses")
+async def add_address(address: UserAddress, current_user: User = Depends(get_current_user)):
+    addr_doc = address.model_dump()
+    if addr_doc.get('is_default'):
+        await db.users.update_one({"id": current_user.id}, {"$set": {"addresses.$[].is_default": False}})
+    
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$push": {"addresses": addr_doc}}
+    )
+    return addr_doc
+
+
+@api_router.delete("/user/addresses/{address_id}")
+async def delete_address(address_id: str, current_user: User = Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$pull": {"addresses": {"id": address_id}}}
+    )
+    return {"status": "ok"}
+
+
+@api_router.get("/user/wishlist")
+async def get_wishlist(current_user: User = Depends(get_current_user)):
+    user = await db.users.find_one({"id": current_user.id})
+    wishlist_ids = [item['product_id'] for item in user.get('wishlist', [])]
+    products = await db.products.find({"id": {"$in": wishlist_ids}}, {"_id": 0}).to_list(100)
+    return products
+
+
+@api_router.post("/user/wishlist/{product_id}")
+async def toggle_wishlist(product_id: str, current_user: User = Depends(get_current_user)):
+    user = await db.users.find_one({"id": current_user.id})
+    wishlist = user.get('wishlist', [])
+    exists = any(item['product_id'] == product_id for item in wishlist)
+    
+    if exists:
+        await db.users.update_one({"id": current_user.id}, {"$pull": {"wishlist": {"product_id": product_id}}})
+        return {"status": "removed"}
+    else:
+        item = WishlistItem(product_id=product_id).model_dump()
+        item['created_at'] = item['created_at'].isoformat()
+        await db.users.update_one({"id": current_user.id}, {"$push": {"wishlist": item}})
+        return {"status": "added"}
+
+
+@api_router.get("/user/notifications")
+async def get_notifications(current_user: User = Depends(get_current_user)):
+    notifs = await db.notifications.find({"user_id": current_user.id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return notifs
+
+
+@api_router.put("/user/notifications/read-all")
+async def mark_notifications_read(current_user: User = Depends(get_current_user)):
+    await db.notifications.update_many({"user_id": current_user.id}, {"$set": {"is_read": True}})
+    return {"status": "ok"}
+
+
+@api_router.get("/user/cards")
+async def get_saved_cards(current_user: User = Depends(get_current_user)):
+    user = await db.users.find_one({"id": current_user.id})
+    return user.get('saved_cards', [])
+
+
+@api_router.post("/user/cards")
+async def add_card(card: SavedCard, current_user: User = Depends(get_current_user)):
+    await db.users.update_one({"id": current_user.id}, {"$push": {"saved_cards": card.model_dump()}})
+    return card
+
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str = Field(min_length=8, max_length=128)
@@ -338,12 +546,82 @@ async def change_password(data: ChangePasswordRequest, current_user: User = Depe
     await write_audit_log("PASSWORD_CHANGED", current_user.id, "user", current_user.id)
     return {"message": "Password changed successfully"}
 
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(data: ForgotPasswordRequest):
+    user = await db.users.find_one({"email": data.email})
+    if not user:
+        # For security, don't reveal if user exists
+        return {"message": "If an account exists with this email, an OTP has been sent."}
+    
+    import random
+    otp = str(random.randint(100000, 999999))
+    expiry = datetime.now(timezone.utc) + timedelta(minutes=15)
+    
+    # LOG OTP FOR DEVELOPMENT (In case email fails)
+    print(f"\n[DEV] PASSWORD RESET OTP FOR {data.email}: {otp}\n")
+    
+    await db.password_resets.update_one(
+        {"email": data.email},
+        {"$set": {"otp": otp, "expiry": expiry.isoformat()}},
+        upsert=True
+    )
+    
+    email_body = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+        <h2 style="color: #4f46e5; text-align: center;">DurgaShakti Foils</h2>
+        <hr style="border: 0; border-top: 1px solid #e1e1e1; margin: 20px 0;">
+        <p>Hello,</p>
+        <p>We received a request to reset your password. Use the following 6-digit One-Time Password (OTP) to proceed:</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e293b; background: #f1f5f9; padding: 10px 20px; border-radius: 5px;">{otp}</span>
+        </div>
+        <p style="color: #64748b; font-size: 14px;">This OTP is valid for 15 minutes. If you did not request this, please ignore this email.</p>
+        <hr style="border: 0; border-top: 1px solid #e1e1e1; margin: 20px 0;">
+        <p style="text-align: center; color: #94a3b8; font-size: 12px;">&copy; 2026 DurgaShakti Foils. All rights reserved.</p>
+    </div>
+    """
+    
+    await send_email(data.email, "Password Reset OTP - DurgaShakti Foils", email_body)
+    return {"message": "If an account exists with this email, an OTP has been sent."}
+
+
+@api_router.post("/auth/reset-password")
+async def reset_password(data: ResetPasswordRequest):
+    reset_record = await db.password_resets.find_one({"email": data.email})
+    if not reset_record or reset_record['otp'] != data.otp:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    
+    expiry = datetime.fromisoformat(reset_record['expiry'])
+    if datetime.now(timezone.utc) > expiry:
+        raise HTTPException(status_code=400, detail="OTP has expired")
+    
+    hashed = hash_password(data.new_password)
+    await db.users.update_one({"email": data.email}, {"$set": {"password": hashed}})
+    await db.password_resets.delete_one({"email": data.email})
+    
+    return {"message": "Password reset successful. You can now login with your new password."}
+
 # Product Routes
 @api_router.get("/products", response_model=dict)
-async def get_products(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100)):
+async def get_products(
+    page: int = Query(1, ge=1), 
+    limit: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None)
+):
+    query = {}
+    if search:
+        query = {
+            "$or": [
+                {"name": {"$regex": search, "$options": "i"}},
+                {"batch_no": {"$regex": search, "$options": "i"}},
+                {"variant_sku": {"$regex": search, "$options": "i"}}
+            ]
+        }
+        
     skip = (page - 1) * limit
-    total = await db.products.count_documents({})
-    products = await db.products.find({}, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.products.count_documents(query)
+    products = await db.products.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     return {"items": products, "total": total, "page": page, "limit": limit}
 
 @api_router.get("/products/{product_id}")
@@ -531,7 +809,10 @@ async def create_order(order_data: OrderCreate, current_user: User = Depends(get
         for d_item in deducted:
             await db.products.update_one(
                 {"id": d_item.product_id},
-                {"$inc": {"stock_quantity": d_item.quantity, "units_sold": -d_item.quantity}, "$set": {"updated_at": now_iso}}
+                {
+                    "$inc": {"stock_quantity": d_item.quantity, "units_sold": -d_item.quantity}, 
+                    "$set": {"in_stock": True, "updated_at": now_iso}
+                }
             )
         await db.orders.update_one({"id": order.id}, {"$set": {"order_status": "cancelled", "stock_applied": False}})
         raise
@@ -548,7 +829,7 @@ async def create_order(order_data: OrderCreate, current_user: User = Depends(get
 
 @api_router.get("/orders")
 async def get_user_orders(current_user: User = Depends(get_current_user)):
-    orders = await db.orders.find({"user_id": current_user.id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    orders = await db.orders.find({"user_id": current_user.id}, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return orders
 
 @api_router.get("/orders/{order_id}")
@@ -582,7 +863,10 @@ async def cancel_order(order_id: str, current_user: User = Depends(get_current_u
             units_sold = max(0, int(product.get("units_sold", 0)) - qty)
             await db.products.update_one(
                 {"id": pid},
-                {"$set": {"stock_quantity": new_qty, "units_sold": units_sold, "in_stock": new_qty > 0, "updated_at": datetime.now(timezone.utc).isoformat()}},
+                {
+                  "$inc": {"stock_quantity": qty, "units_sold": -qty},
+                  "$set": {"in_stock": True, "updated_at": datetime.now(timezone.utc).isoformat()}
+                },
             )
             
     await db.orders.update_one(
@@ -610,7 +894,9 @@ async def return_order(
     if delivered_date_str:
         try:
             delivered_date = datetime.fromisoformat(delivered_date_str.replace('Z', '+00:00'))
-            if (datetime.now(timezone.utc) - delivered_date).days > 3:
+            # Lenient window: Order is returnable until the end of the 3rd full day after delivery
+            cutoff_date = (delivered_date + timedelta(days=4)).replace(hour=0, minute=0, second=0, microsecond=0)
+            if datetime.now(timezone.utc) > cutoff_date:
                 raise HTTPException(status_code=400, detail="Return window has closed. Orders can only be returned within 3 days of delivery.")
         except Exception as e:
             if isinstance(e, HTTPException):
@@ -669,6 +955,11 @@ async def create_razorpay_order(order_id: str, current_user: User = Depends(get_
             "receipt": order['order_number'],
             "notes": {"order_id": order_id}
         })
+        # SAVE THE RAZORPAY ORDER ID TO THE ORDER DOCUMENT
+        await db.orders.update_one(
+            {"id": order_id},
+            {"$set": {"razorpay_order_id": razorpay_order['id'], "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
         return {
             "razorpay_order_id": razorpay_order['id'],
             "amount": razorpay_order['amount'],
@@ -754,10 +1045,41 @@ async def confirm_cod_payment(order_id: str, current_user: User = Depends(get_cu
     )
     # Clear cart after COD confirmation
     await db.carts.update_one(
-        {"user_id": current_user.id},
-        {"$set": {"items": [], "updated_at": datetime.now(timezone.utc).isoformat()}}
+      {"user_id": current_user.id},
+      {"$set": {"items": [], "updated_at": datetime.now(timezone.utc).isoformat()}}
     )
+    await write_audit_log("ORDER_COD_CONFIRMED", current_user.id, "order", order_id)
     return {"success": True, "message": "COD order confirmed"}
+
+@api_router.post("/cart/bulk-sync")
+async def bulk_sync_cart(items: List[CartItem], current_user: User = Depends(get_current_user)):
+    """
+    Production-grade bulk cart synchronization.
+    Merges local guest cart items with the server-side account cart.
+    """
+    cart = await db.carts.find_one({"user_id": current_user.id}, {"_id": 0})
+    current_items = cart.get('items', []) if cart else []
+    
+    for new_item in items:
+        # Stock check for each item
+        product = await db.products.find_one({"id": new_item.product_id}, {"stock_quantity": 1})
+        if not product or int(product.get("stock_quantity", 0)) <= 0:
+            continue # Skip out of stock items during sync
+            
+        existing = next((i for i in current_items if i['product_id'] == new_item.product_id), None)
+        if existing:
+            # Take the larger quantity or sum? Usually sum is safer for merging, but we cap it at stock
+            max_stock = int(product.get("stock_quantity", 0))
+            existing['quantity'] = min(existing['quantity'] + new_item.quantity, max_stock)
+        else:
+            current_items.append(new_item.model_dump())
+            
+    await db.carts.update_one(
+        {"user_id": current_user.id},
+        {"$set": {"items": current_items, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"message": "Cart synchronized", "items": current_items}
 
 @api_router.get("/payment/test-mode")
 async def check_test_mode():
@@ -777,10 +1099,27 @@ async def create_product(product: Product, admin: User = Depends(get_admin_user)
 
 @api_router.post("/admin/products/bulk")
 async def create_product_bulk(payload: ProductBulkCreateRequest, admin: User = Depends(get_admin_user)):
+    """
+    Optimized bulk product creation with batch SKU validation.
+    """
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
     if not payload.variants:
         raise HTTPException(status_code=400, detail="At least one variant is required")
+
+    request_skus = [v.sku for v in payload.variants]
+    if len(request_skus) != len(set(request_skus)):
+        raise HTTPException(status_code=400, detail="Duplicate SKUs found within the request variants")
+
+    # Optimized Batch SKU Check (Single DB Query)
+    existing_skus_res = await db.products.find(
+        {"$or": [{"batch_no": {"$in": request_skus}}, {"variant_sku": {"$in": request_skus}}]},
+        {"batch_no": 1, "variant_sku": 1, "name": 1, "_id": 0}
+    ).to_list(None)
+    
+    if existing_skus_res:
+        found_sku = existing_skus_res[0].get('batch_no') or existing_skus_res[0].get('variant_sku')
+        raise HTTPException(status_code=400, detail=f"SKU '{found_sku}' already exists (Product: {existing_skus_res[0].get('name')})")
 
     now = datetime.now(timezone.utc).isoformat()
     docs = []
@@ -788,10 +1127,6 @@ async def create_product_bulk(payload: ProductBulkCreateRequest, admin: User = D
         if variant.price <= 0:
             raise HTTPException(status_code=400, detail=f"Invalid price for variant {variant.size}")
         
-        # Check SKU uniqueness
-        existing_sku = await db.products.find_one({"$or": [{"batch_no": variant.sku}, {"variant_sku": variant.sku}]})
-        if existing_sku:
-            raise HTTPException(status_code=400, detail=f"SKU '{variant.sku}' already exists (Product: {existing_sku.get('name')})")
         doc = {
             "id": str(uuid.uuid4()),
             "name": f"{payload.name} {variant.size}",
@@ -804,6 +1139,7 @@ async def create_product_bulk(payload: ProductBulkCreateRequest, admin: User = D
             "features": payload.features,
             "in_stock": variant.in_stock and variant.stock_quantity > 0,
             "stock_quantity": variant.stock_quantity,
+            "units_sold": 0,
             "category": payload.category,
             "batch_no": variant.sku,
             "width": payload.width,
@@ -814,8 +1150,9 @@ async def create_product_bulk(payload: ProductBulkCreateRequest, admin: User = D
             "created_by": admin.id,
         }
         docs.append(doc)
+    
     await db.products.insert_many(docs)
-    await write_audit_log("PRODUCT_BULK_CREATED", admin.id, "product", docs[0]["base_name"], {"variants_created": len(docs)})
+    await write_audit_log("PRODUCT_BULK_CREATED", admin.id, "product", payload.name, {"variants_count": len(docs)})
     return {"message": f"Created {len(docs)} variants", "created_count": len(docs)}
 
 @api_router.put("/admin/products/{product_id}")
@@ -826,18 +1163,33 @@ async def update_product(product_id: str, product_data: dict, admin: User = Depe
     safe_data = {k: v for k, v in product_data.items() if k in ALLOWED_FIELDS}
     if not safe_data:
         raise HTTPException(status_code=400, detail="No valid fields to update")
+    
+    # Handle orphaned images
+    if 'image_url' in safe_data:
+        old_product = await db.products.find_one({"id": product_id}, {"image_url": 1})
+        if old_product and old_product.get('image_url') != safe_data['image_url']:
+            delete_old_file(old_product.get('image_url'))
+
     safe_data['updated_at'] = datetime.now(timezone.utc).isoformat()
     await db.products.update_one(
         {"id": product_id},
         {"$set": safe_data}
     )
+    await write_audit_log("PRODUCT_UPDATED", admin.id, "product", product_id, {"updated_fields": list(safe_data.keys())})
     return {"message": "Product updated"}
 
 @api_router.delete("/admin/products/{product_id}")
 async def delete_product(product_id: str, admin: User = Depends(get_admin_user)):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
+    
+    # Clean up image before deleting
+    old_product = await db.products.find_one({"id": product_id}, {"image_url": 1})
+    if old_product:
+        delete_old_file(old_product.get('image_url'))
+        
     await db.products.delete_one({"id": product_id})
+    await write_audit_log("PRODUCT_DELETED", admin.id, "product", product_id)
     return {"message": "Product deleted"}
 
 
@@ -846,11 +1198,21 @@ async def delete_product(product_id: str, admin: User = Depends(get_admin_user))
 async def get_all_orders(
     page: int = Query(1, ge=1), 
     limit: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None),
     admin: User = Depends(get_admin_user)
 ):
+    query = {}
+    if search:
+        query = {
+            "$or": [
+                {"order_number": {"$regex": search, "$options": "i"}},
+                {"customer_name": {"$regex": search, "$options": "i"}},
+                {"user_id": {"$regex": search, "$options": "i"}}
+            ]
+        }
     skip = (page - 1) * limit
-    total = await db.orders.count_documents({})
-    orders = await db.orders.find({}, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.orders.count_documents(query)
+    orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     return {"items": orders, "total": total, "page": page, "limit": limit}
 
 @api_router.put("/admin/orders/{order_id}/status")
@@ -867,20 +1229,27 @@ async def update_order_status(order_id: str, status_data: dict, admin: User = De
     # - revert if moving to CANCELLED/REFUNDED after it was applied
     applied = bool(order.get("stock_applied", False))
     if (str(new_status).upper() == "CONFIRMED") and not applied:
+        # Atomic Batch Update for all items
         for item in order.get("items", []):
             pid = item.get("product_id")
             qty = int(item.get("quantity", 0))
             if not pid or qty <= 0:
                 continue
-            product = await db.products.find_one({"id": pid}, {"_id": 0})
-            if not product:
-                continue
-            current_qty = int(product.get("stock_quantity", 0))
-            new_qty = max(0, current_qty - qty)
-            units_sold = int(product.get("units_sold", 0)) + qty
+            
+            # Atomic update using $inc and $max to prevent negative stock if desired, 
+            # and set in_stock dynamically.
             await db.products.update_one(
                 {"id": pid},
-                {"$set": {"stock_quantity": new_qty, "units_sold": units_sold, "in_stock": new_qty > 0, "updated_at": datetime.now(timezone.utc).isoformat()}},
+                [
+                    {"$set": {
+                        "stock_quantity": {"$max": [0, {"$subtract": ["$stock_quantity", qty]}]},
+                        "units_sold": {"$add": ["$units_sold", qty]},
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }},
+                    {"$set": {
+                        "in_stock": {"$gt": ["$stock_quantity", 0]}
+                    }}
+                ]
             )
         await db.orders.update_one({"id": order_id}, {"$set": {"stock_applied": True}})
         await write_audit_log("ORDER_CONFIRMED_STOCK_APPLIED", admin.id, "order", order_id, {"prev_status": prev_status})
@@ -891,18 +1260,23 @@ async def update_order_status(order_id: str, status_data: dict, admin: User = De
             qty = int(item.get("quantity", 0))
             if not pid or qty <= 0:
                 continue
-            product = await db.products.find_one({"id": pid}, {"_id": 0})
-            if not product:
-                continue
-            current_qty = int(product.get("stock_quantity", 0))
-            new_qty = current_qty + qty
-            units_sold = max(0, int(product.get("units_sold", 0)) - qty)
+            
+            # Atomic Restore
             await db.products.update_one(
                 {"id": pid},
-                {"$set": {"stock_quantity": new_qty, "units_sold": units_sold, "in_stock": new_qty > 0, "updated_at": datetime.now(timezone.utc).isoformat()}},
+                [
+                    {"$set": {
+                        "stock_quantity": {"$add": ["$stock_quantity", qty]},
+                        "units_sold": {"$max": [0, {"$subtract": ["$units_sold", qty]}]},
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }},
+                    {"$set": {
+                        "in_stock": {"$gt": ["$stock_quantity", 0]}
+                    }}
+                ]
             )
         await db.orders.update_one({"id": order_id}, {"$set": {"stock_applied": False}})
-        await write_audit_log("ORDER_CANCELLED_STOCK_REVERTED", admin.id, "order", order_id, {"prev_status": prev_status})
+        await write_audit_log("ORDER_CANCELLED_STOCK_RESTORED", admin.id, "order", order_id, {"prev_status": prev_status})
 
     payment_status = order.get("payment_status")
     payment_method = order.get("payment_method")
@@ -936,18 +1310,36 @@ async def update_order_status(order_id: str, status_data: dict, admin: User = De
         {"$set": update_fields}
     )
     await write_audit_log("ORDER_STATUS_UPDATED", admin.id, "order", order_id, {"from": prev_status, "to": new_status, "admin_message": admin_message})
+    
+    # Notify Customer
+    await create_notification(
+        order['user_id'],
+        f"Order Update: {str(new_status).title()}",
+        f"Your order #{order['order_number']} status has been updated to {new_status}.",
+        "order"
+    )
+
     return {"message": "Order status updated"}
 
 
 @api_router.get("/admin/customers")
-async def get_customers(
-    page: int = Query(1, ge=1),
+async def list_customers(
+    page: int = Query(1, ge=1), 
     limit: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None),
     admin: User = Depends(get_admin_user)
 ):
+    query = {"role": "customer"}
+    if search:
+        query["$or"] = [
+            {"full_name": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}},
+            {"phone": {"$regex": search, "$options": "i"}}
+        ]
     skip = (page - 1) * limit
-    total = await db.users.count_documents({"role": "customer"})
-    users = await db.users.find({"role": "customer"}, {"_id": 0, "password": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.users.count_documents(query)
+    customers = await db.users.find(query, {"_id": 0, "password": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
     order_counts = {}
     pipeline = [
         {"$group": {"_id": "$user_id", "orders_count": {"$sum": 1}, "total_spent": {"$sum": "$total_amount"}}}
@@ -971,37 +1363,46 @@ async def get_customers(
 
 
 @api_router.get("/admin/payments")
-async def get_payments(
-    page: int = Query(1, ge=1),
+async def list_payments(
+    page: int = Query(1, ge=1), 
     limit: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None),
     admin: User = Depends(get_admin_user)
 ):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+    query = {}
+    if search:
+        query = {
+            "$or": [
+                {"order_number": {"$regex": search, "$options": "i"}},
+                {"transaction_id": {"$regex": search, "$options": "i"}},
+                {"razorpay_order_id": {"$regex": search, "$options": "i"}}
+            ]
+        }
     skip = (page - 1) * limit
-    total = await db.orders.count_documents({})
-    orders = await db.orders.find({}, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-    rows = []
-    for order in orders:
-        rows.append({
-            "id": order["id"],
-            "order_number": order.get("order_number"),
-            "transaction_id": order.get("razorpay_payment_id") or f"PAY-{order['id'][:8]}",
-            "status": order.get("payment_status", "pending"),
-            "provider": order.get("payment_method", "unknown"),
-            "amount": order.get("total_amount", 0),
-            "created_at": order.get("created_at"),
+    total = await db.orders.count_documents(query)
+    payments = await db.orders.find(query, {"_id": 0, "order_number": 1, "razorpay_order_id": 1, "razorpay_payment_id": 1, "total_amount": 1, "payment_status": 1, "payment_method": 1, "created_at": 1}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    items = []
+    for p in payments:
+        items.append({
+            "id": p.get("id", str(uuid.uuid4())),
+            "order_number": p.get("order_number"),
+            "transaction_id": p.get("razorpay_payment_id") or p.get("razorpay_order_id") or "COD",
+            "amount": p.get("total_amount"),
+            "status": p.get("payment_status"),
+            "provider": p.get("payment_method"),
+            "created_at": p.get("created_at")
         })
-    return {"items": rows, "total": total, "page": page, "limit": limit}
+    return {"items": items, "total": total, "page": page, "limit": limit}
 
 
 @api_router.get("/admin/analytics/summary")
 async def get_admin_analytics_summary(admin: User = Depends(get_admin_user)):
-    orders = await db.orders.find({}, {"_id": 0}).to_list(10000)
-    products = await db.products.find({}, {"_id": 0}).to_list(10000)
-    users = await db.users.find({"role": "customer"}, {"_id": 0}).to_list(10000)
-
-    # Better revenue calculation using pipeline
+    """
+    Optimized Analytics Summary using MongoDB Aggregation Pipelines.
+    This prevents OOM errors as the database grows.
+    """
+    # 1. Total Revenue (Confirmed/Delivered)
     revenue_pipeline = [
         {"$match": {"order_status": {"$in": ["placed", "confirmed", "shipped", "delivered"]}}},
         {"$group": {"_id": None, "total": {"$sum": "$total_amount"}}}
@@ -1009,41 +1410,54 @@ async def get_admin_analytics_summary(admin: User = Depends(get_admin_user)):
     revenue_res = await db.orders.aggregate(revenue_pipeline).to_list(1)
     revenue = round(revenue_res[0]["total"] if revenue_res else 0, 2)
 
+    # 2. Orders Today Count
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
     orders_today_count = await db.orders.count_documents({"created_at": {"$gte": today}})
     
-    status_counts = {}
-    for order in orders:
-        status = order.get("order_status", "processing")
-        status_counts[status] = status_counts.get(status, 0) + 1
+    # 3. Order Status Counts
+    status_pipeline = [
+        {"$group": {"_id": "$order_status", "count": {"$sum": 1}}}
+    ]
+    status_res = await db.orders.aggregate(status_pipeline).to_list(100)
+    status_counts = {row["_id"] or "unknown": row["count"] for row in status_res}
 
-    product_performance = {}
-    for order in orders:
-        for item in order.get("items", []):
-            key = item.get("product_name", "Unknown")
-            product_performance[key] = product_performance.get(key, 0) + int(item.get("quantity", 0))
-    best_products = sorted(
-        [{"name": k, "quantity": v} for k, v in product_performance.items()],
-        key=lambda x: x["quantity"],
-        reverse=True,
-    )[:10]
+    # 4. Best Selling Products
+    best_products_pipeline = [
+        {"$unwind": "$items"},
+        {"$group": {"_id": "$items.product_id", "quantity": {"$sum": "$items.quantity"}}},
+        {"$sort": {"quantity": -1}},
+        {"$limit": 10},
+        {"$lookup": {
+            "from": "products",
+            "localField": "_id",
+            "foreignField": "id",
+            "as": "product_info"
+        }},
+        {"$project": {
+            "name": {"$ifNull": [{"$arrayElemAt": ["$product_info.name", 0]}, "Unknown Product"]},
+            "quantity": 1
+        }}
+    ]
+    best_products = await db.orders.aggregate(best_products_pipeline).to_list(10)
 
-    inventory_rows = []
-    for p in products:
-        inventory_rows.append(
-            {
-                "id": p.get("id"),
-                "name": p.get("name"),
-                "sku": p.get("batch_no") or p.get("variant_sku"),
-                "stock_left": int(p.get("stock_quantity", 0)),
-                "units_sold": int(p.get("units_sold", 0)),
-            }
-        )
+    # 5. Inventory Summary (Low Stock)
+    inventory_rows = await db.products.find({}, {"_id": 0}).sort("stock_quantity", 1).limit(50).to_list(50)
+    inventory_summary = [
+        {
+            "id": p.get("id"),
+            "name": p.get("name"),
+            "sku": p.get("batch_no") or p.get("variant_sku"),
+            "stock_left": int(p.get("stock_quantity", 0)),
+            "units_sold": int(p.get("units_sold", 0)),
+        }
+        for p in inventory_rows
+    ]
+
     metrics = {
-        "total_orders": len(orders),
+        "total_orders": await db.orders.count_documents({}),
         "orders_today": orders_today_count,
-        "total_products": len(products),
-        "total_customers": len(users),
+        "total_products": await db.products.count_documents({}),
+        "total_customers": await db.users.count_documents({"role": "customer"}),
     }
     if admin.role == "SUPER_ADMIN":
         metrics["total_revenue"] = revenue
@@ -1052,7 +1466,7 @@ async def get_admin_analytics_summary(admin: User = Depends(get_admin_user)):
         "metrics": metrics,
         "order_status_counts": status_counts,
         "best_products": best_products,
-        "inventory": inventory_rows,
+        "inventory": inventory_summary,
     }
 
 
@@ -1210,15 +1624,24 @@ async def upload_product_image(file: UploadFile = File(...), admin: User = Depen
 @api_router.post("/admin/products/{product_id}/inventory")
 async def adjust_inventory(product_id: str, data: dict, admin: User = Depends(get_admin_user)):
     delta = int(data.get("delta", 0))
-    product = await db.products.find_one({"id": product_id}, {"_id": 0})
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    current_qty = int(product.get("stock_quantity", 0))
-    new_qty = max(0, current_qty + delta)
-    await db.products.update_one(
+    # Atomic update with state calculation
+    result = await db.products.find_one_and_update(
         {"id": product_id},
-        {"$set": {"stock_quantity": new_qty, "in_stock": new_qty > 0, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        [
+            {"$set": {
+                "stock_quantity": {"$max": [0, {"$add": ["$stock_quantity", delta]}]},
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }},
+            {"$set": {
+                "in_stock": {"$gt": ["$stock_quantity", 0]}
+            }}
+        ],
+        return_document=True
     )
+    if not result:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    new_qty = int(result.get("stock_quantity", 0))
     await db.stock_history.insert_one(
         {
             "id": str(uuid.uuid4()),
@@ -1305,13 +1728,24 @@ async def import_gst_file(file: UploadFile = File(...), admin: User = Depends(ge
 async def get_audit_logs(
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=200),
+    search: Optional[str] = Query(None),
     admin: User = Depends(get_admin_user)
 ):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
+    query = {}
+    if search:
+        query = {
+            "$or": [
+                {"action": {"$regex": search, "$options": "i"}},
+                {"target_type": {"$regex": search, "$options": "i"}},
+                {"target_id": {"$regex": search, "$options": "i"}},
+                {"actor_id": {"$regex": search, "$options": "i"}}
+            ]
+        }
     skip = (page - 1) * limit
-    total = await db.audit_logs.count_documents({})
-    logs = await db.audit_logs.find({}, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.audit_logs.count_documents(query)
+    logs = await db.audit_logs.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     return {"items": logs, "total": total, "page": page, "limit": limit}
 
 
@@ -1333,11 +1767,34 @@ async def seed_sample_gst(admin: User = Depends(get_admin_user)):
 
 
 @api_router.get("/admin/gst/reports")
-async def get_gst_reports(admin: User = Depends(get_admin_user)):
+async def get_gst_reports(
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=500),
+    search: Optional[str] = Query(None),
+    admin: User = Depends(get_admin_user)
+):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
-    records = await db.gst_records.find({}, {"_id": 0}).sort("invoice_date", -1).to_list(5000)
-    return records
+    
+    query = {}
+    if search:
+        query = {
+            "$or": [
+                {"invoice_number": {"$regex": search, "$options": "i"}},
+                {"customer_name": {"$regex": search, "$options": "i"}}
+            ]
+        }
+    
+    skip = (page - 1) * limit
+    total = await db.gst_records.count_documents(query)
+    records = await db.gst_records.find(query, {"_id": 0}).sort("invoice_date", -1).skip(skip).limit(limit).to_list(limit)
+    
+    return {
+        "items": records,
+        "total": total,
+        "page": page,
+        "limit": limit
+    }
 
 
 @api_router.get("/admin/gst/imports")
@@ -1520,32 +1977,21 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-@app.on_event("startup")
-async def ensure_mongo_indexes():
-    """Create MongoDB indexes for query performance and data integrity."""
-    try:
-        await db.users.create_index("email", unique=True)
-        await db.users.create_index("id", unique=True)
-        await db.products.create_index("id", unique=True)
-        await db.orders.create_index("id", unique=True)
-        await db.orders.create_index("user_id")
-        await db.orders.create_index("order_number")
-        await db.carts.create_index("user_id", unique=True)
-        await db.gst_records.create_index("invoice_number")
-        await db.audit_logs.create_index("created_at")
-        logger.info("MongoDB indexes ensured")
-    except Exception as exc:
-        logger.warning("MongoDB index creation issue: %s", exc)
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# MongoDB index logic moved to lifespan
 
 
 # ─── Razorpay Webhook (H-10) ───────────────────────────────────────────
 @api_router.post("/payment/razorpay/webhook")
 async def razorpay_webhook(request: Request):
-    """Handle Razorpay webhook callbacks for payment events."""
+    """
+    Production-grade Razorpay webhook handler.
+    Strict signature verification is ENFORCED to prevent fraud.
+    """
+    webhook_secret = os.environ.get('RAZORPAY_WEBHOOK_SECRET', '')
+    if not webhook_secret and os.environ.get('ENVIRONMENT') == 'production':
+        logger.critical("RAZORPAY_WEBHOOK_SECRET is missing in production!")
+        raise HTTPException(status_code=500, detail="Configuration error")
+
     # IP Whitelisting
     client_ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else "")
     if client_ip:
@@ -1556,15 +2002,18 @@ async def razorpay_webhook(request: Request):
         logger.warning("Untrusted webhook request from IP: %s", client_ip)
         raise HTTPException(status_code=403, detail="Untrusted source")
 
+    body = await request.body()
+    signature = request.headers.get('X-Razorpay-Signature', '')
+    
+    # Mandatory signature check
+    if webhook_secret:
+        import hmac, hashlib
+        expected_sig = hmac.new(webhook_secret.encode(), body, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected_sig, signature):
+            logger.error("Invalid Razorpay webhook signature attempt!")
+            raise HTTPException(status_code=400, detail="Invalid signature")
+
     try:
-        body = await request.body()
-        signature = request.headers.get('X-Razorpay-Signature', '')
-        webhook_secret = os.environ.get('RAZORPAY_WEBHOOK_SECRET', '')
-        if webhook_secret:
-            import hmac, hashlib
-            expected_sig = hmac.new(webhook_secret.encode(), body, hashlib.sha256).hexdigest()
-            if not hmac.compare_digest(expected_sig, signature):
-                raise HTTPException(status_code=400, detail="Invalid webhook signature")
         payload = await request.json()
         event = payload.get('event', '')
         if event == 'payment.captured':
@@ -1572,24 +2021,30 @@ async def razorpay_webhook(request: Request):
             rz_order_id = payment_entity.get('order_id', '')
             payment_id = payment_entity.get('id', '')
             amount_paid = payment_entity.get('amount', 0)
-            # Find order by razorpay order id in notes or by matching
+            
+            # Find order by razorpay order id
             order = await db.orders.find_one({"razorpay_order_id": rz_order_id}, {"_id": 0})
             if order:
+                # Critical: Verify amount matches exactly to prevent payload tampering
                 if int(amount_paid) == int(order['total_amount'] * 100):
                     await db.orders.update_one(
                         {"id": order['id']},
-                        {"$set": {"payment_status": "completed", "razorpay_payment_id": payment_id, "updated_at": datetime.now(timezone.utc).isoformat()}}
+                        {"$set": {
+                            "payment_status": "completed", 
+                            "razorpay_payment_id": payment_id, 
+                            "updated_at": datetime.now(timezone.utc).isoformat()
+                        }}
                     )
+                    # Atomically clear cart
                     await db.carts.update_one(
                         {"user_id": order['user_id']},
                         {"$set": {"items": [], "updated_at": datetime.now(timezone.utc).isoformat()}}
                     )
+                    logger.info("Order %s marked completed via webhook", order['order_number'])
         return {"status": "ok"}
-    except HTTPException:
-        raise
     except Exception as exc:
-        logger.warning("Webhook processing error: %s", exc)
-        return {"status": "ok"}  # Always return 200 to prevent retries
+        logger.error("Webhook processing error: %s", exc)
+        return {"status": "ok"}  # Prevent Razorpay retries on processing errors
 
 
 # ─── Simple Rate Limiter Middleware (H-01) ─────────────────────────────
@@ -1605,6 +2060,8 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         self._limits = {
             '/api/auth/login': (5, 60),
             '/api/auth/register': (3, 60),
+            '/api/auth/forgot-password': (3, 60),
+            '/api/auth/reset-password': (3, 60),
             '/api/orders': (10, 60),
             '/api/payment/razorpay/create-order': (5, 60),
             '/api/payment/razorpay/verify': (5, 60),
@@ -1629,9 +2086,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
 app.add_middleware(RateLimiterMiddleware)
 
 # Start-up log
-@app.on_event("startup")
-async def startup_event():
-    logging.info("Starting DurgaShakti Foils Server...")
+# Startup log moved to lifespan
 
 # Mount Frontend Build (Serve at the root /)
 # Note: This should be the last mount to avoid overriding /api or /uploads

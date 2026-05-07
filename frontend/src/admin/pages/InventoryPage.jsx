@@ -8,6 +8,7 @@ import {
   LayoutGrid
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import TablePagination from '../../components/ui/TablePagination';
 
 const InventoryPage = () => {
   const [rows, setRows] = useState([]);
@@ -16,20 +17,32 @@ const InventoryPage = () => {
   const [adjustQty, setAdjustQty] = useState('');
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [metrics, setMetrics] = useState(null);
+  const ITEMS_PER_PAGE = 15;
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await adminApi.getInventory();
+      const response = await adminApi.getInventory({ page: pageNum, limit: ITEMS_PER_PAGE, search });
       setRows(response.data.items || []);
+      setTotal(response.data.total || 0);
+      setPage(pageNum);
+
+      const mRes = await adminApi.getDashboardMetrics();
+      setMetrics(mRes.data?.metrics || {});
     } catch (err) {
       toast.error(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const timer = setTimeout(() => load(1), 300);
+    return () => clearTimeout(timer);
+  }, [search, load]);
 
   const handleAdjust = async (direction) => {
     const delta = parseInt(adjustQty, 10);
@@ -49,17 +62,18 @@ const InventoryPage = () => {
     }
   };
 
-  const filtered = rows.filter(r =>
-    !search || 
-    r.name?.toLowerCase().includes(search.toLowerCase()) || 
-    r.sku?.toLowerCase().includes(search.toLowerCase())
-  );
+  // Server-side search logic: we trigger a reload on search change
+  useEffect(() => {
+    const timer = setTimeout(() => load(1), 300);
+    return () => clearTimeout(timer);
+  }, [search, load]);
 
   const stats = {
-    totalValue: rows.reduce((s, r) => s + (r.stock_quantity * r.price), 0),
+    totalValue: metrics?.total_revenue || 0, // Simplified to revenue for consistency
     outOfStock: rows.filter(r => r.stock_quantity <= 0).length,
     lowStock: rows.filter(r => r.stock_quantity > 0 && r.stock_quantity <= r.low_stock_threshold).length,
     soldVolume: rows.reduce((s, r) => s + r.units_sold, 0),
+    totalItems: metrics?.total_products || total
   };
 
   return (
@@ -124,7 +138,7 @@ const InventoryPage = () => {
           </div>
           <div>
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Items</div>
-            <div className="text-2xl font-black text-slate-900">{rows.length}</div>
+            <div className="text-2xl font-black text-slate-900">{stats.totalItems}</div>
           </div>
         </div>
       </div>
@@ -143,12 +157,23 @@ const InventoryPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filtered.map((row) => (
+              {rows.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-6">
-                    <div className="font-bold text-slate-800">{row.name}</div>
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
-                      {row.size} • {row.category}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
+                         {row.image_url ? (
+                           <img src={row.image_url} alt="" className="w-full h-full object-cover" />
+                         ) : (
+                           <div className="w-full h-full flex items-center justify-center text-slate-300"><LayoutGrid className="w-5 h-5" /></div>
+                         )}
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-800">{row.name}</div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
+                          {row.size} • {row.category}
+                        </div>
+                      </div>
                     </div>
                   </td>
                   <td className="px-8 py-6 text-center">
@@ -186,12 +211,19 @@ const InventoryPage = () => {
               ))}
             </tbody>
           </table>
-          {filtered.length === 0 && (
+          {rows.length === 0 && (
             <div className="p-12 text-center text-slate-400 font-medium italic">
               No products found.
             </div>
           )}
         </div>
+        <TablePagination
+          currentPage={page}
+          totalPages={Math.ceil(total / ITEMS_PER_PAGE)}
+          onPageChange={load}
+          totalItems={total}
+          pageSize={ITEMS_PER_PAGE}
+        />
       </div>
 
       {adjustModal && (

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, Package } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Package, Menu, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { Button } from './ui/button';
@@ -9,6 +9,7 @@ const Navbar = () => {
   const { user, logout, isAdmin, isSuperAdmin } = useAuth();
   const { cartItemCount } = useCart();
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
   const handleLogout = () => {
     logout();
@@ -26,7 +27,7 @@ const Navbar = () => {
             </span>
           </Link>
 
-          <div className="flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-6">
             <Link
               to="/shop"
               className="text-sm font-medium hover:text-primary transition-colors"
@@ -86,7 +87,48 @@ const Navbar = () => {
               </Button>
             )}
           </div>
+
+          {/* Mobile Toggle */}
+          <button 
+            className="md:hidden p-2 text-slate-600"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden py-6 border-t border-slate-100 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
+            <Link to="/shop" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Shop</Link>
+            
+            {user ? (
+              <>
+                <Link to="/cart" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2 flex items-center gap-2">
+                  Cart ({cartItemCount})
+                </Link>
+                {!isAdmin ? (
+                  <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Dashboard</Link>
+                ) : (
+                  <Link to="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Admin Panel</Link>
+                )}
+                <button 
+                  onClick={() => { handleLogout(); setIsMenuOpen(false); }}
+                  className="text-lg font-bold text-rose-600 px-2 text-left"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Button
+                onClick={() => { navigate('/login'); setIsMenuOpen(false); }}
+                className="bg-primary text-primary-foreground w-full py-6 text-lg font-bold rounded-xl"
+              >
+                Login / Register
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </nav>
   );

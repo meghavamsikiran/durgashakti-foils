@@ -8,6 +8,7 @@ const OrderSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('order_id');
+  const orderNumber = searchParams.get('order_number');
 
   useEffect(() => {
     if (!orderId) {
@@ -26,7 +27,7 @@ const OrderSuccess = () => {
         <div className="mb-8">
           <CheckCircle className="w-24 h-24 text-green-500 mx-auto mb-4" />
           <h1 className="text-4xl font-bold mb-4" style={{ fontFamily: 'Manrope' }} data-testid="success-title">
-            Order Placed Successfully!
+            Successfully!
           </h1>
           <p className="text-lg text-muted-foreground">
             Thank you for your purchase. Your order has been confirmed.
@@ -36,7 +37,7 @@ const OrderSuccess = () => {
         {orderId && (
           <div className="bg-secondary/30 border border-border/50 rounded-sm p-6 mb-8">
             <p className="text-sm text-muted-foreground mb-2">Order ID</p>
-            <p className="font-mono font-semibold" data-testid="order-id">{orderId}</p>
+            <p className="font-mono font-semibold text-lg" data-testid="order-id">{orderNumber || orderId}</p>
           </div>
         )}
 

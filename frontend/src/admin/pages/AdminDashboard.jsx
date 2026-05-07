@@ -129,22 +129,31 @@ const AdminDashboard = () => {
             </div>
          </div>
 
-         <div className="bg-indigo-600 rounded-[2.5rem] p-10 text-white flex flex-col justify-between shadow-xl shadow-indigo-200">
-            <div className="space-y-4">
-               <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+          <div className="bg-indigo-600 rounded-[2.5rem] p-10 text-white flex flex-col justify-between shadow-xl shadow-indigo-200 relative overflow-hidden group">
+            <div className="space-y-4 relative z-10">
+               <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center group-hover:bg-white/20 transition-colors">
                   <TrendingUp className="w-6 h-6 text-white" />
                </div>
-               <h3 className="text-xl font-black uppercase tracking-tighter">Sales Growth</h3>
-               <p className="text-indigo-100 text-sm leading-relaxed">Overall performance has grown by 14% this month through better sales.</p>
+               <h3 className="text-xl font-black uppercase tracking-tighter">Velocity Report</h3>
+               <p className="text-indigo-100 text-sm leading-relaxed">System performance is optimal. Total sales velocity is up by 14.2% across all metrics.</p>
             </div>
             
-            <button 
-               onClick={() => navigate('/admin/analytics')}
-               className="mt-8 w-full py-4 bg-white text-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-colors shadow-lg"
-            >
-               View Detailed Reports
-            </button>
-         </div>
+            <div className="mt-8 relative z-10">
+               <div className="flex items-center gap-1 mb-4">
+                  {[1,2,3,4,5,6].map(i => (
+                    <div key={i} className="h-8 w-1 bg-white/20 rounded-full animate-pulse" style={{ animationDelay: `${i*0.2}s` }}></div>
+                  ))}
+               </div>
+               <button 
+                  onClick={() => navigate('/admin/analytics')}
+                  className="w-full py-4 bg-white text-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-lg active:scale-95"
+               >
+                  Full Insights
+               </button>
+            </div>
+
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors"></div>
+          </div>
       </div>
     </div>
   );

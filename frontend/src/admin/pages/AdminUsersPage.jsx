@@ -309,6 +309,11 @@ const AdminUsersPage = () => {
                 </div>
               </div>
               <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Phone Number</label>
+                <input name="phone_new" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                  value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+91..." />
+              </div>
+              <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Password</label>
                 <input type="password" required name="password_new" autoComplete="new-password" 
                   className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"

@@ -26,7 +26,18 @@ export const api = {
   verifyRazorpayPayment: (data) => axios.post(`${API_URL}/payment/razorpay/verify`, data, { headers: getAuthHeader() }),
   confirmCOD: (orderId) => axios.post(`${API_URL}/payment/cod/confirm?order_id=${orderId}`, {}, { headers: getAuthHeader() }),
   
-  // Admin
+  // Profile & User Data
+  updateProfile: (data) => axios.put(`${API_URL}/auth/me`, data, { headers: getAuthHeader() }),
+  getAddresses: () => axios.get(`${API_URL}/user/addresses`, { headers: getAuthHeader() }),
+  addAddress: (data) => axios.post(`${API_URL}/user/addresses`, data, { headers: getAuthHeader() }),
+  deleteAddress: (id) => axios.delete(`${API_URL}/user/addresses/${id}`, { headers: getAuthHeader() }),
+  getWishlist: () => axios.get(`${API_URL}/user/wishlist`, { headers: getAuthHeader() }),
+  toggleWishlist: (productId) => axios.post(`${API_URL}/user/wishlist/${productId}`, {}, { headers: getAuthHeader() }),
+  getNotifications: () => axios.get(`${API_URL}/user/notifications`, { headers: getAuthHeader() }),
+  markNotificationsRead: () => axios.put(`${API_URL}/user/notifications/read-all`, {}, { headers: getAuthHeader() }),
+  getSavedCards: () => axios.get(`${API_URL}/user/cards`, { headers: getAuthHeader() }),
+  addSavedCard: (data) => axios.post(`${API_URL}/user/cards`, data, { headers: getAuthHeader() }),
+  
   // Auth
   changePassword: (data) => axios.post(`${API_URL}/auth/change-password`, data, { headers: getAuthHeader() }),
   seedProducts: () => axios.post(`${API_URL}/seed-products`),

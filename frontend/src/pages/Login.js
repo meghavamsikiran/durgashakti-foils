@@ -119,6 +119,16 @@ const Login = () => {
                 required
                 data-testid="login-password-input"
               />
+              {isLogin && (
+                <div className="flex justify-end mt-1">
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Forgot Password?
+                  </Link>
+                </div>
+              )}
             </div>
 
             <Button

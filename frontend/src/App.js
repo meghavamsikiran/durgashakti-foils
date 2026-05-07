@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import Shop from './pages/Shop';
 import ProductDetail from './pages/ProductDetail';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Dashboard from './pages/Dashboard';
@@ -36,15 +37,7 @@ function AppRoutes() {
   const isAdminPath = location.pathname.startsWith('/admin');
 
   useEffect(() => {
-    if (isAdminPath) return;
-    const seedProducts = async () => {
-      try {
-        await api.seedProducts();
-      } catch (error) {
-        console.log('Products already seeded or error seeding');
-      }
-    };
-    seedProducts();
+    // Analytics/tracking could go here
   }, [isAdminPath]);
 
   return (
@@ -57,6 +50,7 @@ function AppRoutes() {
             <Route path="/shop" element={<Shop />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/dashboard" element={<Dashboard />} />

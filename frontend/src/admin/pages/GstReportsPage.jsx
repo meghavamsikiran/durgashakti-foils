@@ -1,34 +1,44 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import adminApi from '../services/adminApi';
+import { toast } from 'sonner';
 import { 
   FileText, ClipboardCheck, History, Search, 
   IndianRupee, Scale, Calculator, Download,
   ArrowUpRight, Calendar, AlertCircle
 } from 'lucide-react';
+import TablePagination from '../../components/ui/TablePagination';
 
 const GstReportsPage = () => {
   const [records, setRecords] = useState([]);
   const [imports, setImports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const ITEMS_PER_PAGE = 20;
+
+  const load = useCallback(async (pageNum = 1) => {
+    try {
+      setLoading(true);
+      const [recordsRes, importsRes] = await Promise.all([
+        adminApi.getGSTRecords({ page: pageNum, limit: 100, search }), 
+        adminApi.getGSTImports()
+      ]);
+      setRecords(recordsRes.data.items || []);
+      setTotal(recordsRes.data.total || 0);
+      setPage(pageNum);
+      setImports(importsRes.data || []);
+    } catch (err) {
+      toast.error('Failed to load GST data. Please refresh.');
+    } finally {
+      setLoading(false);
+    }
+  }, [search]);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const [recordsRes, importsRes] = await Promise.all([
-          adminApi.getGSTRecords({ page: 1, page_size: 500 }), 
-          adminApi.getGSTImports()
-        ]);
-        setRecords(recordsRes.data || []);
-        setImports(importsRes.data || []);
-      } catch (err) {
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+    const timer = setTimeout(() => load(1), 300);
+    return () => clearTimeout(timer);
+  }, [search, load]);
 
   const formatDate = (d) => {
     if (!d) return '—';
@@ -43,11 +53,8 @@ const GstReportsPage = () => {
     lastImport: imports[0]?.upload_date ? formatDate(imports[0].upload_date) : 'N/A'
   };
 
-  const filtered = records.filter(r => 
-    !search || 
-    r.invoice_number?.toLowerCase().includes(search.toLowerCase()) || 
-    r.customer_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const totalFilteredPages = Math.ceil(total / ITEMS_PER_PAGE);
+  const paginatedRecords = records;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -136,7 +143,7 @@ const GstReportsPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {filtered.map((row, idx) => (
+                  {paginatedRecords.map((row, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-8 py-5">
                         <div className="text-xs font-black text-slate-900">{row.invoice_number}</div>
@@ -156,6 +163,13 @@ const GstReportsPage = () => {
                 </tbody>
               </table>
             </div>
+            <TablePagination
+              currentPage={page}
+              totalPages={totalFilteredPages}
+              onPageChange={load}
+              totalItems={total}
+              pageSize={ITEMS_PER_PAGE}
+            />
           </div>
         </div>
 

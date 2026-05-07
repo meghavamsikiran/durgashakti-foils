@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import adminApi from '../services/adminApi';
 import { 
   Shield, Activity, Search, ChevronDown, ChevronUp,
@@ -6,6 +6,9 @@ import {
   AlertTriangle, CheckCircle2, RefreshCw, Eye
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import TablePagination from '../../components/ui/TablePagination';
+
+const PAGE_SIZE = 25;
 
 const AuditLogsPage = () => {
   const [rows, setRows] = useState([]);
@@ -15,21 +18,18 @@ const AuditLogsPage = () => {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
 
-  const load = async (pageNum = 1, append = false) => {
+  const load = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await adminApi.getAuditLogs({ page: pageNum, limit: 50 });
-      const newData = response.data.items || [];
-      setRows(prev => append ? [...prev, ...newData] : newData);
+      const response = await adminApi.getAuditLogs({ page: pageNum, limit: PAGE_SIZE, search });
+      setRows(response.data.items || []);
       setTotal(response.data.total || 0);
       setPage(pageNum);
     } catch {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => { load(1); }, []);
+  }, [search]);
 
   const formatDate = (d) => {
     if (!d) return '—';
@@ -44,9 +44,12 @@ const AuditLogsPage = () => {
     return { color: 'text-slate-600 bg-slate-50', icon: Activity };
   };
 
-  const filtered = rows.filter(r =>
-    !search || r.action?.toLowerCase().includes(search.toLowerCase()) || r.target_type?.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    const timer = setTimeout(() => load(1), 300);
+    return () => clearTimeout(timer);
+  }, [search, load]);
+
+  const filtered = rows;
 
   const stats = {
     totalEvents: total,
@@ -227,15 +230,14 @@ const AuditLogsPage = () => {
             </tbody>
           </table>
         </div>
+        <TablePagination
+          currentPage={page}
+          totalPages={Math.ceil(total / PAGE_SIZE)}
+          onPageChange={(p) => { load(p); setExpandedRow(null); }}
+          totalItems={total}
+          pageSize={PAGE_SIZE}
+        />
       </div>
-
-      {!loading && rows.length < total && (
-        <div className="flex justify-center pt-8">
-           <Button variant="outline" onClick={() => load(page + 1, true)} className="rounded-xl px-8 font-black uppercase tracking-widest border-slate-200 text-slate-500 hover:bg-slate-50 transition-all shadow-sm">
-              Load More Logs
-           </Button>
-        </div>
-      )}
     </div>
   );
 };

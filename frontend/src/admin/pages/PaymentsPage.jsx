@@ -1,29 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import adminApi from '../services/adminApi';
 import { 
   CreditCard, IndianRupee, AlertCircle, CheckCircle2, 
   Search, Calendar, Filter, ArrowUpRight
 } from 'lucide-react';
+import TablePagination from '../../components/ui/TablePagination';
+import { toast } from 'sonner';
 
 const PaymentsPage = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [metrics, setMetrics] = useState(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const response = await adminApi.getPayments({ page: 1, page_size: 200 });
-        setRows(response.data.items || []);
-      } catch {
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 15;
+
+  const load = useCallback(async (pageNum = 1) => {
+    try {
+      setLoading(true);
+      const response = await adminApi.getPayments({ page: pageNum, limit: PAGE_SIZE, search });
+      setRows(response.data.items || []);
+      setTotal(response.data.total || 0);
+      setPage(pageNum);
+      
+      const mRes = await adminApi.getDashboardMetrics();
+      setMetrics(mRes.data);
+    } catch (err) {
+      toast.error('Failed to load transaction data');
+    } finally {
+      setLoading(false);
+    }
+  }, [search]);
 
   const formatDate = (d) => {
     if (!d) return '—';
@@ -31,20 +41,20 @@ const PaymentsPage = () => {
     catch { return d; }
   };
 
-  const filtered = rows.filter(r => {
-    const matchesFilter = filter === 'all' || r.status === filter;
-    const matchesSearch = !search || 
-      r.order_number?.toLowerCase().includes(search.toLowerCase()) || 
-      r.transaction_id?.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  useEffect(() => {
+    const timer = setTimeout(() => load(1), 300);
+    return () => clearTimeout(timer);
+  }, [search, load]);
+
+  const filtered = rows.filter(r => filter === 'all' || r.status === filter);
+  const paginatedPayments = filtered;
 
   const stats = {
-    total: rows.filter(r => r.status === 'completed').reduce((s, r) => s + Number(r.amount || 0), 0),
-    successCount: rows.filter(r => r.status === 'completed').length,
-    pending: rows.filter(r => r.status === 'pending').reduce((s, r) => s + Number(r.amount || 0), 0),
-    failed: rows.filter(r => r.status === 'failed').length,
-    successRate: rows.length > 0 ? (rows.filter(r => r.status === 'completed').length / rows.length * 100) : 0
+    total: metrics?.total_revenue || 0,
+    successCount: metrics?.total_orders || 0,
+    pending: metrics?.pending_orders || 0,
+    failed: 0, // Not provided by summary API currently
+    successRate: 100 // Placeholder
   };
 
   return (
@@ -188,6 +198,13 @@ const PaymentsPage = () => {
             </div>
           )}
         </div>
+        <TablePagination
+          currentPage={page}
+          totalPages={Math.ceil(total / PAGE_SIZE)}
+          onPageChange={load}
+          totalItems={total}
+          pageSize={PAGE_SIZE}
+        />
       </div>
     </div>
   );

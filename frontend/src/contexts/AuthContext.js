@@ -41,15 +41,9 @@ export const AuthProvider = ({ children }) => {
     }
     try {
       let response;
-      try {
-        response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/v1/auth/me`, {
-          headers: { Authorization: `Bearer ${authToken}` }
-        });
-      } catch {
-        response = await axios.get(`${API_URL}/auth/me`, {
-          headers: { Authorization: `Bearer ${authToken}` }
-        });
-      }
+      response = await axios.get(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
       const userData = response.data.user || response.data;
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
@@ -65,16 +59,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
-    let response;
-    let accessToken;
-    try {
-      response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/v1/auth/login`, { email, password });
-      accessToken = response.data.access_token;
-      localStorage.setItem('refresh_token', response.data.refresh_token);
-    } catch {
-      response = await axios.post(`${API_URL}/auth/login`, { email, password });
-      accessToken = response.data.token;
-    }
+    const response = await axios.post(`${API_URL}/auth/login`, { email, password });
+    const accessToken = response.data.token;
     setToken(accessToken);
     localStorage.setItem('token', accessToken);
     await fetchUser(accessToken);
@@ -106,7 +92,7 @@ export const AuthProvider = ({ children }) => {
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, isAdmin, isSuperAdmin }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, isAdmin, isSuperAdmin, refreshUser: fetchUser }}>
       {children}
     </AuthContext.Provider>
   );
