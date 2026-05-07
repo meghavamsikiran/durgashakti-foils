@@ -1,0 +1,183 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "Durgashaktifoils Design System",
+      "persona": "The Industrial Artisan",
+      "tone": "Clean, Hygienic, Efficient, Premium, Trustworthy",
+      "theme_mode": "light",
+      "keywords": ["Sterling", "Hygienic", "Industrial", "Precision", "Freshness"]
+    },
+    "typography": {
+      "font_family": {
+        "headings": "Manrope, sans-serif",
+        "body": "Inter, sans-serif",
+        "accent": "JetBrains Mono, monospace"
+      },
+      "weights": {
+        "light": 300,
+        "regular": 400,
+        "medium": 500,
+        "bold": 700,
+        "black": 900
+      },
+      "scale": {
+        "h1": "text-5xl md:text-7xl font-bold tracking-tight leading-none",
+        "h2": "text-4xl md:text-5xl font-bold tracking-tight",
+        "h3": "text-2xl md:text-3xl font-semibold tracking-normal",
+        "body_lg": "text-lg md:text-xl leading-relaxed",
+        "body": "text-base leading-relaxed",
+        "caption": "text-xs uppercase tracking-widest font-semibold text-muted-foreground"
+      },
+      "imports": [
+        "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono:wght@400&display=swap"
+      ]
+    },
+    "colors": {
+      "palette": {
+        "background": "#FFFFFF",
+        "foreground": "#09090B",
+        "card": "#FFFFFF",
+        "card_foreground": "#09090B",
+        "popover": "#FFFFFF",
+        "popover_foreground": "#09090B",
+        "primary": "#006FEE",
+        "primary_foreground": "#FFFFFF",
+        "secondary": "#F4F4F5",
+        "secondary_foreground": "#18181B",
+        "muted": "#F4F4F5",
+        "muted_foreground": "#71717A",
+        "accent": "#F4F4F5",
+        "accent_foreground": "#18181B",
+        "destructive": "#EF4444",
+        "destructive_foreground": "#FFFFFF",
+        "border": "#E4E4E7",
+        "input": "#E4E4E7",
+        "ring": "#006FEE"
+      },
+      "gradients": {
+        "metallic_sheen": "linear-gradient(135deg, #F4F4F5 0%, #FFFFFF 50%, #E4E4E7 100%)",
+        "subtle_glow": "radial-gradient(circle at center, rgba(0, 111, 238, 0.05) 0%, transparent 70%)"
+      }
+    },
+    "spacing": {
+      "container_padding": "px-6 md:px-12 lg:px-24",
+      "section_gap": "py-24 md:py-32",
+      "component_gap": "gap-6 md:gap-8"
+    },
+    "borders": {
+      "radius": {
+        "default": "0.25rem",
+        "sm": "0.125rem",
+        "lg": "0.5rem",
+        "full": "9999px"
+      },
+      "width": {
+        "default": "1px",
+        "thick": "2px"
+      }
+    },
+    "shadows": {
+      "card": "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+      "float": "0 10px 30px -10px rgba(0, 0, 0, 0.1)",
+      "glow": "0 0 20px rgba(0, 111, 238, 0.15)"
+    },
+    "visual_enhancers": {
+      "glassmorphism": "bg-white/70 backdrop-blur-xl border-b border-white/20",
+      "noise_texture": "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E\")",
+      "micro_interactions": "transition-all duration-300 ease-out hover:-translate-y-1"
+    }
+  },
+  "layout_strategies": {
+    "marketing": {
+      "hero": "Asymmetric split. Left: Big typography. Right: Full-bleed product texture.",
+      "features": "Bento Grid (Mode A). Mix of large cards (images) and small cards (icons/text).",
+      "grid_cols": "grid-cols-1 md:grid-cols-12",
+      "container_max_width": "max-w-7xl mx-auto"
+    },
+    "product_listing": {
+      "layout": "Sidebar (Filters) + Grid (Products).",
+      "card_style": "Minimal. Image dominant. Price and Title below. Hover: Show 'Add to Cart'.",
+      "density": "Comfortable. gap-8."
+    },
+    "dashboard": {
+      "layout": "Dense Grid (Mode B).",
+      "card_style": "Flat, 1px border. No shadow. High information density.",
+      "nav": "Sidebar fixed."
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 rounded-sm font-semibold tracking-wide shadow-sm active:scale-95 transition-transform",
+      "secondary": "bg-secondary text-secondary-foreground hover:bg-secondary/80 h-12 px-8 rounded-sm font-medium transition-colors",
+      "outline": "border border-input bg-background hover:bg-accent hover:text-accent-foreground h-12 px-8 rounded-sm transition-colors",
+      "ghost": "hover:bg-accent hover:text-accent-foreground h-10 px-4 rounded-sm"
+    },
+    "cards": {
+      "product": "group relative overflow-hidden bg-card border border-border/50 rounded-sm hover:border-primary/50 transition-colors",
+      "feature": "bg-secondary/30 border border-border/50 p-8 rounded-sm hover:bg-secondary/50 transition-colors",
+      "stat": "bg-white border border-border p-6 rounded-sm flex flex-col gap-2"
+    },
+    "inputs": {
+      "default": "flex h-12 w-full rounded-sm border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+    }
+  },
+  "image_urls": {
+    "hero_texture": {
+      "url": "https://images.pexels.com/photos/7325110/pexels-photo-7325110.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "Close-up of shiny, crinkled aluminum foil texture",
+      "category": "hero",
+      "usage": "Use as a background texture or hero image with overlay."
+    },
+    "chef_usage": {
+      "url": "https://images.pexels.com/photos/4253711/pexels-photo-4253711.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "Chef wrapping food in foil",
+      "category": "lifestyle",
+      "usage": "Use in 'How to use' or 'Quality' sections."
+    },
+    "delivery": {
+      "url": "https://images.pexels.com/photos/6169668/pexels-photo-6169668.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "Logistics and delivery",
+      "category": "logistics",
+      "usage": "Use in 'Shipping' or 'About Us' section."
+    },
+    "product_mockups": {
+      "foil_roll_standard": "https://images.unsplash.com/photo-1762151532995-c2e6cb6449d6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwxfHxhbHVtaW51bSUyMGZvaWwlMjByb2xsJTIwa2l0Y2hlbnxlbnwwfHx8fDE3NzE2MTYzMjF8MA&ixlib=rb-4.1.0&q=85",
+      "food_wrapped": "https://images.pexels.com/photos/29306505/pexels-photo-29306505.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    }
+  },
+  "motion_guidelines": {
+    "page_load": "initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }}",
+    "stagger": "variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } }}",
+    "hover_lift": "whileHover={{ y: -5 }} transition={{ duration: 0.2 }}",
+    "button_tap": "whileTap={{ scale: 0.95 }}"
+  },
+  "instructions_to_main_agent": [
+    "Install 'lucide-react' for icons.",
+    "Install 'framer-motion' for animations.",
+    "Install 'clsx' and 'tailwind-merge' for class handling.",
+    "Ensure all text colors meet APCA contrast standards against the white background.",
+    "Use the 'Manrope' font for all headings. Import it in index.css.",
+    "Do not use generic 'card' components for the product grid; create a custom, minimal product card.",
+    "Implement a 'Quick View' feature for products using a Dialog component.",
+    "The 'Admin' dashboard should be distinct from the 'Shop' - denser, more tabular.",
+    "Use the defined image URLs. Do not leave empty src attributes.",
+    "Add a subtle 'noise' texture to the background of the Hero section to give it a premium paper/foil feel.",
+    "For the 'Add to Cart' button, use a loading state animation to provide feedback.",
+    "Ensure the layout is fully responsive. On mobile, the product grid should be 1 column, tablet 2, desktop 3 or 4.",
+    "Use 'Sonner' for toast notifications (e.g., 'Added to cart')."
+  ],
+  "universal_guidelines": [
+    "You tend to converge toward generic outputs. Avoid this.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur).",
+    "You MUST NOT apply universal transition (transition: all).",
+    "You MUST NOT center align the app container.",
+    "Always use modern button styles.",
+    "NEVER use AI assistant Emoji characters as icons.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "All interactive elements MUST include data-testid attribute."
+  ]
+}
