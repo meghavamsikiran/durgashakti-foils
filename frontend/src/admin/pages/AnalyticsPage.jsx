@@ -56,16 +56,7 @@ const AnalyticsPage = () => {
   const metrics = summary.metrics || {};
   const statusData = Object.entries(summary.order_status_counts || {}).map(([name, value]) => ({ name, value }));
   
-  // Simulated Time-Series for Professional Trend visualization
-  const trendData = [
-    { name: 'Mon', value: (metrics.total_revenue || 0) * 0.12 },
-    { name: 'Tue', value: (metrics.total_revenue || 0) * 0.15 },
-    { name: 'Wed', value: (metrics.total_revenue || 0) * 0.08 },
-    { name: 'Thu', value: (metrics.total_revenue || 0) * 0.18 },
-    { name: 'Fri', value: (metrics.total_revenue || 0) * 0.22 },
-    { name: 'Sat', value: (metrics.total_revenue || 0) * 0.14 },
-    { name: 'Sun', value: (metrics.total_revenue || 0) * 0.11 },
-  ];
+  const trendData = summary.revenue_trend || [];
 
   const productData = (summary.best_products || [])
     .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))

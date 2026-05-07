@@ -100,7 +100,8 @@ const AdminDashboard = () => {
          <div className="lg:col-span-2 bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl">
             <div className="relative z-10 space-y-8">
                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[10px] font-black uppercase tracking-widest">
-                  <Activity className="w-3 h-3" /> System Running Well
+                  {loading ? <div className="w-3 h-3 border-2 border-indigo-300 border-t-transparent rounded-full animate-spin"></div> : <Activity className="w-3 h-3" />}
+                  {loading ? "Checking Status..." : "Live Data Active"}
                </div>
                
                <div className="space-y-2">

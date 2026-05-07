@@ -543,9 +543,9 @@ const Dashboard = () => {
                 <motion.div key="cards" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                    <div className="flex items-center justify-between">
                       <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Saved Cards</h2>
-                      <Button onClick={() => setShowCardModal(true)} className="rounded-2xl h-14 px-8 gap-2 shadow-xl shadow-indigo-100 font-black uppercase tracking-widest bg-indigo-600 text-white">
-                         <PlusIcon className="w-5 h-5" /> Add New Card
-                      </Button>
+                      <div className="text-slate-400 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                        <Shield className="w-4 h-4" /> Secured by Razorpay
+                      </div>
                    </div>
                    
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -685,97 +685,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Add Card Modal */}
-      {showCardModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-6">
-           <motion.div 
-             initial={{ opacity: 0, scale: 0.9, y: 20 }}
-             animate={{ opacity: 1, scale: 1, y: 0 }}
-             className="bg-white rounded-[3rem] shadow-2xl w-full max-w-lg border border-slate-100 overflow-hidden"
-           >
-              <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center">
-                       <CreditCardIcon className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Add New Card</h3>
-                 </div>
-                 <button onClick={() => setShowCardModal(false)} className="w-12 h-12 flex items-center justify-center hover:bg-white rounded-2xl transition-all">
-                    <X className="w-6 h-6 text-slate-400" />
-                 </button>
-              </div>
-
-              <form onSubmit={handleSaveCard} className="p-10 space-y-8">
-                 <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Card Number</Label>
-                    <div className="relative">
-                       <Input 
-                         placeholder="0000 0000 0000 0000" 
-                         value={cardForm.number}
-                         onChange={e => {
-                            const val = e.target.value.replace(/\D/g, '').slice(0, 16);
-                            setCardForm({...cardForm, number: val});
-                         }}
-                         className="rounded-2xl h-16 bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold tracking-widest"
-                       />
-                       <div className="absolute right-6 top-5 opacity-40">
-                          {cardForm.number.startsWith('4') ? 'VISA' : cardForm.number.startsWith('5') ? 'MC' : <CreditCardIcon className="w-6 h-6" />}
-                       </div>
-                    </div>
-                 </div>
-
-                 <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Card Holder Name</Label>
-                    <Input 
-                      placeholder="FULL NAME" 
-                      value={cardForm.name}
-                      onChange={e => setCardForm({...cardForm, name: e.target.value.toUpperCase()})}
-                      className="rounded-2xl h-16 bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-black tracking-tight"
-                    />
-                 </div>
-
-                 <div className="grid grid-cols-2 gap-8">
-                    <div className="space-y-2">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Expiry Date</Label>
-                       <Input 
-                         placeholder="MM/YY" 
-                         value={cardForm.expiry}
-                         onChange={e => {
-                            let val = e.target.value.replace(/\D/g, '');
-                            if (val.length > 2) val = val.slice(0,2) + '/' + val.slice(2,4);
-                            setCardForm({...cardForm, expiry: val});
-                         }}
-                         maxLength={5}
-                         className="rounded-2xl h-16 bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold"
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">CVV</Label>
-                       <div className="relative">
-                          <Input 
-                            type="password"
-                            placeholder="***" 
-                            value={cardForm.cvv}
-                            onChange={e => setCardForm({...cardForm, cvv: e.target.value.replace(/\D/g, '').slice(0, 3)})}
-                            maxLength={3}
-                            className="rounded-2xl h-16 bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold"
-                          />
-                          <Lock className="absolute right-6 top-5 w-6 h-6 text-slate-300" />
-                       </div>
-                    </div>
-                 </div>
-
-                 <div className="pt-6 flex flex-col gap-4">
-                    <Button type="submit" className="h-16 rounded-[1.5rem] text-lg font-black uppercase tracking-widest shadow-2xl shadow-indigo-200">Save Securely</Button>
-                    <div className="flex items-center justify-center gap-2 text-slate-400">
-                       <Shield className="w-4 h-4" />
-                       <span className="text-[10px] font-black uppercase tracking-widest">256-bit SSL Encrypted Secure Payment</span>
-                    </div>
-                 </div>
-              </form>
-           </motion.div>
-        </div>
-      )}
     </div>
   );
 };

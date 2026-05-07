@@ -154,7 +154,7 @@ class Product(BaseModel):
 
 class CartItem(BaseModel):
     product_id: str
-    quantity: int
+    quantity: int = Field(ge=1)
 
 class Cart(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -166,12 +166,12 @@ class Cart(BaseModel):
 class OrderItem(BaseModel):
     product_id: str
     product_name: str
-    quantity: int
+    quantity: int = Field(ge=1)
     price: float
 
 class ShippingAddress(BaseModel):
     full_name: str = Field(min_length=1, max_length=120)
-    phone: str = Field(min_length=10, max_length=15, pattern=r'^\d{10,15}$')
+    phone: str = Field(min_length=10, max_length=20, pattern=r'^\+?[\d\s\-]{10,20}$')
     address_line1: str = Field(min_length=1, max_length=255)
     address_line2: Optional[str] = Field(default=None, max_length=255)
     city: str = Field(min_length=1, max_length=100)
@@ -1221,7 +1221,9 @@ async def update_order_status(order_id: str, status_data: dict, admin: User = De
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     prev_status = order.get("order_status", "processing")
-    new_status = status_data.get("status")
+    new_status = normalize_order_status(status_data.get("status"))
+    if new_status not in ORDER_STATUS_TRANSITIONS:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(ORDER_STATUS_TRANSITIONS.keys())}")
 
     # Inventory + sold units alignment:
     # - Stock is usually applied on order creation.
@@ -1453,6 +1455,26 @@ async def get_admin_analytics_summary(admin: User = Depends(get_admin_user)):
         for p in inventory_rows
     ]
 
+    # 6. Revenue Trend (last 7 days)
+    seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+    trend_pipeline = [
+        {"$match": {
+            "order_status": {"$in": ["placed", "confirmed", "shipped", "delivered"]},
+            "created_at": {"$gte": seven_days_ago.isoformat()}
+        }},
+        {"$project": {
+            "date": {"$substr": ["$created_at", 0, 10]},
+            "total_amount": 1
+        }},
+        {"$group": {
+            "_id": "$date",
+            "value": {"$sum": "$total_amount"}
+        }},
+        {"$sort": {"_id": 1}}
+    ]
+    trend_res = await db.orders.aggregate(trend_pipeline).to_list(7)
+    revenue_trend = [{"name": row["_id"], "value": round(row["value"], 2)} for row in trend_res]
+
     metrics = {
         "total_orders": await db.orders.count_documents({}),
         "orders_today": orders_today_count,
@@ -1467,6 +1489,7 @@ async def get_admin_analytics_summary(admin: User = Depends(get_admin_user)):
         "order_status_counts": status_counts,
         "best_products": best_products,
         "inventory": inventory_summary,
+        "revenue_trend": revenue_trend,
     }
 
 
@@ -1806,7 +1829,9 @@ async def get_gst_import_history(admin: User = Depends(get_admin_user)):
 
 # Seed initial products (protected)
 @api_router.post("/seed-products")
-async def seed_products():
+async def seed_products(admin: User = Depends(get_admin_user)):
+    if not is_super_admin_role(admin.role):
+        raise HTTPException(status_code=403, detail="Only super admin can seed products")
     existing = await db.products.count_documents({})
     if existing > 0:
         return {"message": "Products already seeded"}
@@ -1940,8 +1965,6 @@ async def seed_products():
 
 # Include the router
 
-app.include_router(api_router)
-
 # CORS — reject wildcard when credentials are enabled
 _cors_origins = os.environ.get('CORS_ORIGINS', '').strip()
 if _cors_origins == '*':
@@ -2044,7 +2067,7 @@ async def razorpay_webhook(request: Request):
         return {"status": "ok"}
     except Exception as exc:
         logger.error("Webhook processing error: %s", exc)
-        return {"status": "ok"}  # Prevent Razorpay retries on processing errors
+        raise HTTPException(status_code=500, detail="Processing error")
 
 
 # ─── Simple Rate Limiter Middleware (H-01) ─────────────────────────────
@@ -2083,6 +2106,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
                 self._hits[key].append(now)
         return await call_next(request)
 
+app.include_router(api_router)
 app.add_middleware(RateLimiterMiddleware)
 
 # Start-up log
