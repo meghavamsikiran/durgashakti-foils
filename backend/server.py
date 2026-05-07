@@ -1627,3 +1627,21 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 app.add_middleware(RateLimiterMiddleware)
+
+# Start-up log
+@app.on_event("startup")
+async def startup_event():
+    logging.info("Starting DurgaShakti Foils Server...")
+
+# Mount Frontend Build (Serve at the root /)
+# Note: This should be the last mount to avoid overriding /api or /uploads
+FRONTEND_BUILD_DIR = ROOT_DIR.parent / "frontend" / "build"
+if FRONTEND_BUILD_DIR.exists():
+    app.mount("/", StaticFiles(directory=str(FRONTEND_BUILD_DIR), html=True), name="frontend")
+    logging.info(f"Mounted frontend from {FRONTEND_BUILD_DIR}")
+else:
+    logging.warning(f"Frontend build directory not found at {FRONTEND_BUILD_DIR}. Run 'npm run build' in frontend.")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)

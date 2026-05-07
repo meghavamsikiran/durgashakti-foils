@@ -4,7 +4,8 @@ import adminApi from '../services/adminApi';
 import { 
   ShoppingBag, Clock, CheckCircle2, Truck, AlertCircle, 
   Search, Filter, ChevronRight, XCircle, RefreshCcw, 
-  IndianRupee, Calendar, MoreHorizontal, Eye, PackageCheck
+  IndianRupee, Calendar, MoreHorizontal, Eye, PackageCheck,
+  MapPin, Phone as PhoneIcon, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 
@@ -46,6 +47,7 @@ const OrdersPage = () => {
   const [total, setTotal] = useState(0);
   const [messageModal, setMessageModal] = useState(null);
   const [adminMessage, setAdminMessage] = useState('');
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -184,6 +186,7 @@ const OrdersPage = () => {
                 <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Status</th>
                 <th className="px-8 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-wider">Amount</th>
                 <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Actions</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -194,69 +197,143 @@ const OrdersPage = () => {
                 const actions = STATUS_FLOW[status] || [];
 
                 return (
-                  <tr key={order.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6">
-                      <div className="font-mono text-xs font-black text-indigo-600 mb-1">{order.order_number}</div>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="font-bold text-slate-800">{order.customer_name || 'Guest User'}</div>
-                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
-                        <div className={`w-1.5 h-1.5 rounded-full ${order.payment_status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-                        {order.payment_method} • {order.payment_status}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 text-center">
-                      <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${config.bg} ${config.color}`}>
-                        <StatusIcon className="w-3 h-3" />
-                        {status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6 text-right font-black text-slate-900 text-lg">
-                      ₹{Number(order.total_amount).toLocaleString('en-IN')}
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center justify-center gap-2">
-                        {actions.length > 0 ? actions.map((a) => {
-                          const actionLabels = {
-                            CONFIRMED: 'Confirm',
-                            CANCELLED: 'Cancel',
-                            PACKED: 'Pack',
-                            SHIPPED: 'Ship',
-                            DELIVERED: 'Deliver',
-                            RETURN_APPROVED: 'Approve',
-                            RETURN_REJECTED: 'Reject',
-                            REFUNDED: 'Refund'
-                          };
-                          const label = actionLabels[a] || a.replace('_', ' ');
-                          
-                          return (
-                            <button
-                              key={a}
-                              onClick={() => updateStatus(order.id, a)}
-                              className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
-                                a === 'CANCELLED' || a === 'RETURN_REJECTED' 
-                                  ? 'border-rose-100 text-rose-600 hover:bg-rose-50' 
-                                  : a === 'DELIVERED' || a === 'RETURN_APPROVED' || a === 'CONFIRMED'
-                                  ? 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'
-                                  : 'border-indigo-100 text-indigo-600 hover:bg-indigo-50'
-                              }`}
-                            >
-                              {label}
-                            </button>
-                          );
-                        }) : (
-                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-slate-400">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Finalized</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                   <React.Fragment key={order.id}>
+                     <tr className={`hover:bg-slate-50/50 transition-colors group ${expandedOrderId === order.id ? 'bg-indigo-50/30' : ''}`}>
+                       <td className="px-8 py-6">
+                         <div className="font-mono text-xs font-black text-indigo-600 mb-1">{order.order_number}</div>
+                         <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                           <Calendar className="w-3 h-3" />
+                           {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                         </div>
+                       </td>
+                       <td className="px-8 py-6">
+                         <div className="font-bold text-slate-800">{order.customer_name || 'Guest User'}</div>
+                         <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
+                           <div className={`w-1.5 h-1.5 rounded-full ${order.payment_status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+                           {order.payment_method} • {order.payment_status}
+                         </div>
+                       </td>
+                       <td className="px-8 py-6 text-center">
+                         <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${config.bg} ${config.color}`}>
+                           <StatusIcon className="w-3 h-3" />
+                           {status.replace('_', ' ')}
+                         </span>
+                       </td>
+                       <td className="px-8 py-6 text-right font-black text-slate-900 text-lg">
+                         ₹{Number(order.total_amount).toLocaleString('en-IN')}
+                       </td>
+                       <td className="px-8 py-6">
+                         <div className="flex items-center justify-center gap-2">
+                           {actions.length > 0 ? actions.map((a) => {
+                             const actionLabels = {
+                               CONFIRMED: 'Confirm',
+                               CANCELLED: 'Cancel',
+                               PACKED: 'Pack',
+                               SHIPPED: 'Ship',
+                               DELIVERED: 'Deliver',
+                               RETURN_APPROVED: 'Approve',
+                               RETURN_REJECTED: 'Reject',
+                               REFUNDED: 'Refund'
+                             };
+                             const label = actionLabels[a] || a.replace('_', ' ');
+                             
+                             return (
+                               <button
+                                 key={a}
+                                 onClick={(e) => { e.stopPropagation(); updateStatus(order.id, a); }}
+                                 className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                   a === 'CANCELLED' || a === 'RETURN_REJECTED' 
+                                     ? 'border-rose-100 text-rose-600 hover:bg-rose-50' 
+                                     : a === 'DELIVERED' || a === 'RETURN_APPROVED' || a === 'CONFIRMED'
+                                     ? 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'
+                                     : 'border-indigo-100 text-indigo-600 hover:bg-indigo-50'
+                                 }`}
+                               >
+                                 {label}
+                               </button>
+                             );
+                           }) : (
+                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-slate-400">
+                               <CheckCircle2 className="w-3.5 h-3.5" />
+                               <span className="text-[10px] font-black uppercase tracking-widest">Finalized</span>
+                             </div>
+                           )}
+                         </div>
+                       </td>
+                       <td className="px-8 py-6 text-center">
+                         <button 
+                            onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
+                            className="p-2 rounded-xl border border-slate-100 text-slate-400 hover:text-indigo-600 hover:bg-white transition-all shadow-sm"
+                         >
+                            {expandedOrderId === order.id ? <ChevronUp className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                         </button>
+                       </td>
+                     </tr>
+                     {expandedOrderId === order.id && (
+                       <tr className="bg-slate-50/50">
+                         <td colSpan="6" className="px-12 py-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                               <div className="space-y-4">
+                                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                     <ShoppingBag className="w-4 h-4 text-indigo-500" />
+                                     Order Items
+                                  </h4>
+                                  <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                                     <table className="min-w-full">
+                                        <thead className="bg-slate-50/30 border-b border-slate-100">
+                                           <tr>
+                                              <th className="px-4 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Product</th>
+                                              <th className="px-4 py-2 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Qty</th>
+                                              <th className="px-4 py-2 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Price</th>
+                                           </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50">
+                                           {order.items?.map((item, idx) => (
+                                              <tr key={idx}>
+                                                 <td className="px-4 py-3 text-xs font-bold text-slate-700">{item.product_name}</td>
+                                                 <td className="px-4 py-3 text-xs text-center font-black text-slate-500">{item.quantity}</td>
+                                                 <td className="px-4 py-3 text-xs text-right font-black text-slate-900">₹{Number(item.price * item.quantity).toLocaleString('en-IN')}</td>
+                                              </tr>
+                                           ))}
+                                        </tbody>
+                                     </table>
+                                  </div>
+                               </div>
+                               <div className="space-y-4">
+                                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                     <MapPin className="w-4 h-4 text-rose-500" />
+                                     Shipping Details
+                                  </h4>
+                                  <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                                     <div className="space-y-4">
+                                        <div className="flex items-start gap-3">
+                                           <MapPin className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />
+                                           <div>
+                                              <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Address</div>
+                                              <div className="text-xs font-bold text-slate-600 leading-relaxed">
+                                                 {order.shipping_address?.address_line1 || 'N/A'}<br />
+                                                 {order.shipping_address?.address_line2 && <>{order.shipping_address.address_line2}<br /></>}
+                                                 {order.shipping_address?.city}, {order.shipping_address?.state}<br />
+                                                 PIN: {order.shipping_address?.pincode}
+                                              </div>
+                                           </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                           <PhoneIcon className="w-4 h-4 text-slate-300 shrink-0" />
+                                           <div>
+                                              <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Phone Number</div>
+                                              <div className="text-xs font-bold text-slate-600">{order.customer_phone || order.shipping_address?.phone || 'N/A'}</div>
+                                           </div>
+                                        </div>
+                                     </div>
+                                  </div>
+                               </div>
+                            </div>
+                         </td>
+                       </tr>
+                     )}
+                   </React.Fragment>
+
                 );
               })}
             </tbody>
