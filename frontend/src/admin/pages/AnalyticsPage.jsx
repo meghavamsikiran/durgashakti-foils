@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import { 
   TrendingUp, Package, Users, ShoppingBag, IndianRupee, 
-  Download, Filter, Calendar, Search, ChevronDown, Activity
+  Download, Filter, Calendar, Search, ChevronDown, Activity, Zap, Trophy
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
@@ -18,6 +18,12 @@ const metricConfigs = {
   total_products: { label: 'Total Products', icon: Package, color: 'text-amber-600', bg: 'bg-amber-50' },
   total_customers: { label: 'Total Customers', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
   total_revenue: { label: 'Total Revenue', icon: IndianRupee, color: 'text-rose-600', bg: 'bg-rose-50' },
+  total_inventory_value: { label: 'Stock Value', icon: IndianRupee, color: 'text-rose-600', bg: 'bg-rose-50' },
+  total_units_sold: { label: 'Units Sold', icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  stock_health: { label: 'Stock Health', icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  sales_velocity: { label: 'Daily Velocity', icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
+  top_performer: { label: 'Top Performer', icon: Trophy, color: 'text-amber-600', bg: 'bg-amber-50' },
+  fastest_mover: { label: 'Fastest Mover', icon: Zap, color: 'text-indigo-600', bg: 'bg-indigo-50' },
 };
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
@@ -72,12 +78,45 @@ const AnalyticsPage = () => {
   const totalStockLeft = inventory.reduce((s, r) => s + (r.stock_left || 0), 0);
 
   const formatValue = (key, value) => {
-    if (key === 'total_revenue') return `₹${Number(value).toLocaleString('en-IN')}`;
-    return Number(value).toLocaleString();
+    if (key === 'total_revenue' || key === 'total_inventory_value') return `₹${Number(value).toLocaleString('en-IN')}`;
+    if (key === 'stock_health') return `${value}%`;
+    if (key === 'sales_velocity') return `${value} U/D`;
+    if (typeof value === 'object' && value !== null) return value.name || 'N/A';
+    return Number(value || 0).toLocaleString();
   };
 
   const handleExport = () => {
-    toast.success("Preparing report for download...");
+    try {
+      if (!summary.inventory || summary.inventory.length === 0) {
+        toast.error("No data available to export");
+        return;
+      }
+
+      const headers = ["Product Name", "SKU", "Stock Left", "Units Sold", "Category"];
+      const rows = summary.inventory.map(p => [
+        `"${p.name}"`,
+        `"${p.sku || 'N/A'}"`,
+        p.stock_left,
+        p.units_sold,
+        `"${p.category || 'General'}"`
+      ]);
+
+      const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Durgashakti_Product_Analytics_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Analytics report downloaded successfully");
+    } catch (err) {
+      toast.error("Failed to generate export");
+    }
   };
 
   const renderChart = (data, dataKey = "value") => {
@@ -215,19 +254,7 @@ const AnalyticsPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5">
-        {Object.entries(metrics).map(([key, value]) => {
-          const config = metricConfigs[key] || { label: key, icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50' };
-          const Icon = config.icon;
-          return (
-            <div key={key} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
-              <Icon className={`w-6 h-6 ${config.color} mb-4`} />
-              <div className="text-xs text-slate-500 uppercase tracking-widest font-black mb-1">{config.label}</div>
-              <div className="text-2xl font-black text-slate-900 tracking-tight">{formatValue(key, value)}</div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Redundant metrics grid removed as requested to focus on advanced charts */}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
@@ -265,7 +292,7 @@ const AnalyticsPage = () => {
 
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-8 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="font-bold text-slate-800">Inventory List</h3>
+          <h3 className="font-bold text-slate-800">Stock List</h3>
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-white px-3 py-1 rounded-full border">Sync Active</span>
         </div>
         <div className="overflow-x-auto">

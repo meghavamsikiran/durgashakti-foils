@@ -13,6 +13,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Dashboard from './pages/Dashboard';
+
 import OrderSuccess from './pages/OrderSuccess';
 import api from './utils/api';
 import AdminLayout from './admin/layouts/AdminLayout';
@@ -29,6 +30,7 @@ import AuditLogsPage from './admin/pages/AuditLogsPage';
 import SettingsPage from './admin/pages/SettingsPage';
 import AnalyticsPage from './admin/pages/AnalyticsPage';
 import AdminUsersPage from './admin/pages/AdminUsersPage';
+
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
@@ -54,6 +56,7 @@ function AppRoutes() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/dashboard" element={<Dashboard />} />
+
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route
               path="/admin/*"
@@ -66,7 +69,7 @@ function AppRoutes() {
               <Route index element={<AdminDashboard />} />
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="products" element={<ProductsPage />} />
-              <Route path="inventory" element={<InventoryPage />} />
+              <Route path="stock" element={<InventoryPage />} />
               <Route path="orders" element={<OrdersPage />} />
               <Route path="customers" element={<CustomersPage />} />
               <Route
@@ -78,6 +81,7 @@ function AppRoutes() {
                 }
               />
               <Route path="analytics" element={<AnalyticsPage />} />
+
               <Route
                 path="gst-reports"
                 element={

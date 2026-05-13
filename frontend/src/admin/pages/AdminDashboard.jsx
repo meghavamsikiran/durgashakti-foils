@@ -4,7 +4,7 @@ import adminApi from '../services/adminApi';
 import { 
   LayoutDashboard, ShoppingBag, Zap, Package, 
   Users, IndianRupee, TrendingUp, Calendar,
-  ArrowUpRight, Target, Activity
+  ArrowUpRight, Target, Activity, Trophy
 } from 'lucide-react';
 
 const metricConfigs = {
@@ -13,6 +13,12 @@ const metricConfigs = {
   total_products: { label: 'Total Products', icon: Package, color: 'text-purple-600', bg: 'bg-purple-50' },
   total_customers: { label: 'Total Customers', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
   total_revenue: { label: 'Total Revenue', icon: IndianRupee, color: 'text-blue-600', bg: 'bg-blue-50' },
+  total_inventory_value: { label: 'Stock Value', icon: IndianRupee, color: 'text-rose-600', bg: 'bg-rose-50' },
+  total_units_sold: { label: 'Units Sold', icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  stock_health: { label: 'Stock Health', icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  sales_velocity: { label: 'Daily Velocity', icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
+  top_performer: { label: 'Top Performer', icon: Trophy, color: 'text-amber-600', bg: 'bg-amber-50' },
+  fastest_mover: { label: 'Fastest Mover', icon: Zap, color: 'text-indigo-600', bg: 'bg-indigo-50' },
 };
 
 const AdminDashboard = () => {
@@ -49,8 +55,11 @@ const AdminDashboard = () => {
   );
 
   const formatValue = (key, value) => {
-    if (key === 'total_revenue') return `₹${Number(value).toLocaleString('en-IN')}`;
-    return Number(value).toLocaleString();
+    if (key === 'total_revenue' || key === 'total_inventory_value') return `₹${Number(value).toLocaleString('en-IN')}`;
+    if (key === 'stock_health') return `${value}%`;
+    if (key === 'sales_velocity') return `${value} U/D`;
+    if (typeof value === 'object' && value !== null) return value.name || 'N/A';
+    return Number(value || 0).toLocaleString();
   };
 
   return (

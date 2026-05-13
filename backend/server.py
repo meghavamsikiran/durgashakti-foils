@@ -12,7 +12,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional
 import uuid
-import shutil
+
 from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
@@ -89,7 +89,7 @@ async def lifespan(app: FastAPI):
         await db.products.create_index("id", unique=True)
         await db.orders.create_index("id", unique=True)
         await db.orders.create_index("user_id")
-        await db.orders.create_index("order_number")
+        await db.orders.create_index("order_number", unique=True)
         await db.carts.create_index("user_id", unique=True)
         await db.gst_records.create_index("invoice_number")
         await db.audit_logs.create_index("created_at")
@@ -106,8 +106,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 api_router = APIRouter(prefix="/api")
 
-app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
-
 # Security
 security = HTTPBearer()
 
@@ -120,6 +118,46 @@ class User(BaseModel):
     phone: Optional[str] = None
     role: str = "customer"  # customer or admin
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    wishlist: List[dict] = []
+    addresses: List[dict] = []
+
+
+
+def decode_token(token: str) -> dict:
+    try:
+        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    payload = decode_token(token)
+    user_id = payload.get('user_id') or payload.get('sub')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return User(**user)
+
+@api_router.post("/upload-v5")
+@api_router.get("/upload-v5")
+async def upload_v5_test(file: Optional[UploadFile] = File(None), user: User = Depends(get_current_user)):
+    if not file:
+        return {"status": "Route reachable", "user": user.email}
+    content_type = (file.content_type or "").lower()
+    allowed_types = {"image/png": ".png", "image/jpeg": ".jpg", "image/jpg": ".jpg", "image/webp": ".webp", "application/pdf": ".pdf"}
+    if content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    raw = await file.read()
+    ext = allowed_types[content_type]
+    name = f"spec_{uuid.uuid4().hex}{ext}"
+    path = UPLOADS_DIR / name
+    path.write_bytes(raw)
+    return {"url": f"/uploads/{name}", "file_name": file.filename or name}
+
 
 class UserRegister(BaseModel):
     email: EmailStr
@@ -140,6 +178,7 @@ class Product(BaseModel):
     thickness: str  # e.g., "11 micron"
     price: float
     discount_price: Optional[float] = None
+    badge: Optional[str] = None  # e.g., "Best Seller", "Huge Saving"
     image_url: str
     features: List[str]
     in_stock: bool = True
@@ -166,6 +205,7 @@ class Cart(BaseModel):
 class OrderItem(BaseModel):
     product_id: str
     product_name: str
+    image_url: Optional[str] = None
     quantity: int = Field(ge=1)
     price: float
 
@@ -201,12 +241,10 @@ class OrderCreate(BaseModel):
     shipping_address: ShippingAddress
     idempotency_key: Optional[str] = None
 
-
 class UserProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
-
 
 class UserAddress(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -220,12 +258,10 @@ class UserAddress(BaseModel):
     pincode: str
     is_default: bool = False
 
-
 class WishlistItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     product_id: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
 
 class Notification(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -236,7 +272,6 @@ class Notification(BaseModel):
     is_read: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-
 class SavedCard(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     brand: str  # visa, mastercard
@@ -244,7 +279,6 @@ class SavedCard(BaseModel):
     expiry_month: str
     expiry_year: str
     holder_name: str
-
 
 class AdminCreateRequest(BaseModel):
     email: EmailStr
@@ -271,6 +305,7 @@ class VariantInput(BaseModel):
     discount_price: Optional[float] = None
     stock_quantity: int = 0
     in_stock: bool = True
+    badge: Optional[str] = None
 
 
 class ProductBulkCreateRequest(BaseModel):
@@ -355,31 +390,6 @@ def create_token(user_id: str, email: str, role: str) -> str:
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-def decode_token(token: str) -> dict:
-    try:
-        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials
-    payload = decode_token(token)
-    user_id = payload.get('user_id') or payload.get('sub')
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token payload")
-    
-    # Check Mongo first
-    user = await db.users.find_one({"id": user_id}, {"_id": 0})
-    
-    # If not found in Mongo, raise error
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found or account deleted")
-    
-    if user.get('is_active') is False:
-        raise HTTPException(status_code=403, detail="Account is disabled")
-    return User(**user)
 
 async def get_admin_user(current_user: User = Depends(get_current_user)):
     if current_user.role not in {"admin", "SUPER_ADMIN"}:
@@ -474,6 +484,22 @@ async def add_address(address: UserAddress, current_user: User = Depends(get_cur
     return addr_doc
 
 
+@api_router.put("/user/addresses/{address_id}")
+async def update_address(address_id: str, address: UserAddress, current_user: User = Depends(get_current_user)):
+    addr_doc = address.model_dump()
+    if addr_doc.get('is_default'):
+        await db.users.update_one({"id": current_user.id}, {"$set": {"addresses.$[].is_default": False}})
+    
+    addr_doc['id'] = address_id
+    result = await db.users.update_one(
+        {"id": current_user.id, "addresses.id": address_id},
+        {"$set": {"addresses.$": addr_doc}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Address not found")
+    return addr_doc
+
+
 @api_router.delete("/user/addresses/{address_id}")
 async def delete_address(address_id: str, current_user: User = Depends(get_current_user)):
     await db.users.update_one(
@@ -529,6 +555,10 @@ async def get_saved_cards(current_user: User = Depends(get_current_user)):
 async def add_card(card: SavedCard, current_user: User = Depends(get_current_user)):
     await db.users.update_one({"id": current_user.id}, {"$push": {"saved_cards": card.model_dump()}})
     return card
+
+
+
+
 
 class ChangePasswordRequest(BaseModel):
     current_password: str
@@ -763,6 +793,14 @@ async def create_order(order_data: OrderCreate, current_user: User = Depends(get
         server_total += effective_price * item.quantity
 
     server_total = round(server_total, 2)
+    # Capture item images for persistence
+    enriched_items = []
+    for item in order_data.items:
+        product = await db.products.find_one({"id": item.product_id}, {"image_url": 1})
+        item_dict = item.model_dump()
+        item_dict['image_url'] = product.get('image_url') if product else None
+        enriched_items.append(item_dict)
+
     order_number = f"ORD-{int(time.time())}-{uuid.uuid4().hex[:8]}"
     now_iso = datetime.now(timezone.utc).isoformat()
 
@@ -770,7 +808,7 @@ async def create_order(order_data: OrderCreate, current_user: User = Depends(get
         order_number=order_number,
         user_id=current_user.id,
         customer_name=current_user.full_name,
-        items=order_data.items,
+        items=enriched_items,
         total_amount=server_total,
         payment_method=order_data.payment_method,
         payment_status="pending",
@@ -1350,11 +1388,11 @@ async def list_customers(
     for row in grouped:
         order_counts[row["_id"]] = row
     rows = []
-    for user in users:
+    for user in customers:
         stats = order_counts.get(user["id"], {"orders_count": 0, "total_spent": 0})
         rows.append({
             "id": user["id"],
-            "name": user.get("full_name"),
+            "name": user.get("full_name") or user.get("name") or "Anonymous",
             "email": user.get("email"),
             "phone": user.get("phone"),
             "created_at": user.get("created_at"),
@@ -1381,20 +1419,22 @@ async def list_payments(
             ]
         }
     skip = (page - 1) * limit
+    
     total = await db.orders.count_documents(query)
-    payments = await db.orders.find(query, {"_id": 0, "order_number": 1, "razorpay_order_id": 1, "razorpay_payment_id": 1, "total_amount": 1, "payment_status": 1, "payment_method": 1, "created_at": 1}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    orders_list = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     
     items = []
-    for p in payments:
+    for p in orders_list:
         items.append({
-            "id": p.get("id", str(uuid.uuid4())),
+            "id": p.get("id"),
             "order_number": p.get("order_number"),
             "transaction_id": p.get("razorpay_payment_id") or p.get("razorpay_order_id") or "COD",
             "amount": p.get("total_amount"),
             "status": p.get("payment_status"),
-            "provider": p.get("payment_method"),
+            "provider": p.get("payment_method") or "Razorpay",
             "created_at": p.get("created_at")
         })
+    
     return {"items": items, "total": total, "page": page, "limit": limit}
 
 
@@ -1406,11 +1446,86 @@ async def get_admin_analytics_summary(admin: User = Depends(get_admin_user)):
     """
     # 1. Total Revenue (Confirmed/Delivered)
     revenue_pipeline = [
-        {"$match": {"order_status": {"$in": ["placed", "confirmed", "shipped", "delivered"]}}},
+        {"$match": {"order_status": {"$in": ["processing", "placed", "confirmed", "shipped", "delivered"]}}},
         {"$group": {"_id": None, "total": {"$sum": "$total_amount"}}}
     ]
     revenue_res = await db.orders.aggregate(revenue_pipeline).to_list(1)
     revenue = round(revenue_res[0]["total"] if revenue_res else 0, 2)
+
+    # 1.1 Total Inventory Value
+    inventory_value_pipeline = [
+        {"$group": {"_id": None, "total": {"$sum": {"$multiply": ["$price", "$stock_quantity"]}}}}
+    ]
+    inventory_value_res = await db.products.aggregate(inventory_value_pipeline).to_list(1)
+    total_inventory_value = round(inventory_value_res[0]["total"] or 0, 2) if inventory_value_res else 0
+
+    # 1.2 Total Units Sold
+    units_sold_pipeline = [
+        {"$group": {"_id": None, "total": {"$sum": "$units_sold"}}}
+    ]
+    units_sold_res = await db.products.aggregate(units_sold_pipeline).to_list(1)
+    total_units_sold = int(units_sold_res[0]["total"] or 0) if units_sold_res else 0
+
+    # 1.3 Stock Alerts (Global)
+    out_of_stock_count = await db.products.count_documents({"stock_quantity": {"$lte": 0}})
+    low_stock_count = await db.products.count_documents({
+        "$expr": {
+            "$lte": ["$stock_quantity", {"$ifNull": ["$low_stock_threshold", 20]}]
+        }
+    })
+
+    # 1.4 Advanced Product Analytics
+    total_products_count = await db.products.count_documents({})
+    in_stock_count = await db.products.count_documents({"stock_quantity": {"$gt": 0}})
+    stock_health = round((in_stock_count / total_products_count * 100), 1) if total_products_count > 0 else 100
+
+    # Top Performer (by Actual Order Revenue)
+    tp_pipeline = [
+        {"$unwind": "$items"},
+        {"$group": {
+            "_id": "$items.product_id",
+            "revenue": {"$sum": {"$multiply": ["$items.quantity", "$items.price"]}},
+            "units": {"$sum": "$items.quantity"}
+        }},
+        {"$sort": {"revenue": -1}},
+        {"$limit": 1},
+        {"$lookup": {
+            "from": "products",
+            "localField": "_id",
+            "foreignField": "id",
+            "as": "prod"
+        }},
+        {"$project": {
+            "_id": 0,
+            "name": {"$ifNull": [{"$arrayElemAt": ["$prod.name", 0]}, "Unknown"]},
+            "revenue": 1
+        }}
+    ]
+    tp_res = await db.orders.aggregate(tp_pipeline).to_list(1)
+    top_performer = tp_res[0] if tp_res else {"name": "N/A", "revenue": 0}
+
+    # Fastest Mover (by Units Sold)
+    fm_pipeline = [
+        {"$sort": {"units_sold": -1}},
+        {"$limit": 1},
+        {"$project": {"_id": 0, "name": 1, "units_sold": 1}}
+    ]
+    fm_res = await db.products.aggregate(fm_pipeline).to_list(1)
+    fastest_mover = fm_res[0] if fm_res else {"name": "N/A", "units_sold": 0}
+
+    # Accurate Sales Velocity (Dynamic Days)
+    first_order = await db.orders.find_one({}, sort=[("created_at", 1)])
+    if first_order and "created_at" in first_order:
+        try:
+            start_date = datetime.fromisoformat(first_order["created_at"].replace("Z", "+00:00"))
+            days_active = max(1, (datetime.now(timezone.utc) - start_date).days)
+            sales_velocity = round(total_units_sold / days_active, 2)
+        except:
+            sales_velocity = round(total_units_sold / 30, 2)
+    else:
+        sales_velocity = 0.00
+
+
 
     # 2. Orders Today Count
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
@@ -1459,7 +1574,7 @@ async def get_admin_analytics_summary(admin: User = Depends(get_admin_user)):
     seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
     trend_pipeline = [
         {"$match": {
-            "order_status": {"$in": ["placed", "confirmed", "shipped", "delivered"]},
+            "order_status": {"$in": ["processing", "placed", "confirmed", "shipped", "delivered"]},
             "created_at": {"$gte": seven_days_ago.isoformat()}
         }},
         {"$project": {
@@ -1473,13 +1588,27 @@ async def get_admin_analytics_summary(admin: User = Depends(get_admin_user)):
         {"$sort": {"_id": 1}}
     ]
     trend_res = await db.orders.aggregate(trend_pipeline).to_list(7)
-    revenue_trend = [{"name": row["_id"], "value": round(row["value"], 2)} for row in trend_res]
+    trend_dict = {row["_id"]: row["value"] for row in trend_res}
+    revenue_trend = []
+    for i in range(6, -1, -1):
+        d = (datetime.now(timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d")
+        revenue_trend.append({"name": d, "value": round(trend_dict.get(d, 0), 2)})
 
     metrics = {
         "total_orders": await db.orders.count_documents({}),
         "orders_today": orders_today_count,
         "total_products": await db.products.count_documents({}),
         "total_customers": await db.users.count_documents({"role": "customer"}),
+        "total_inventory_value": total_inventory_value,
+        "total_units_sold": total_units_sold,
+        "out_of_stock_count": out_of_stock_count,
+        "low_stock_count": low_stock_count,
+        "stock_health": stock_health,
+        "top_performer": top_performer,
+        "fastest_mover": fastest_mover,
+        "sales_velocity": sales_velocity,
+        "security_events_count": await db.audit_logs.count_documents({"action": {"$in": ["ADMIN_CREATED", "ADMIN_PASSWORD_RESET"]}}),
+        "destructive_actions_count": await db.audit_logs.count_documents({"action": {"$regex": "DELETE"}})
     }
     if admin.role == "SUPER_ADMIN":
         metrics["total_revenue"] = revenue
@@ -2107,19 +2236,18 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 app.include_router(api_router)
-app.add_middleware(RateLimiterMiddleware)
+app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+
+# Mount Frontend Build (Serve at the root /)
+FRONTEND_BUILD_DIR = ROOT_DIR.parent / "frontend" / "build"
+if FRONTEND_BUILD_DIR.exists():
+    app.mount("/", StaticFiles(directory=str(FRONTEND_BUILD_DIR), html=True), name="frontend")
+else:
+    logging.warning(f"Frontend build directory not found at {FRONTEND_BUILD_DIR}")
 
 # Start-up log
 # Startup log moved to lifespan
 
-# Mount Frontend Build (Serve at the root /)
-# Note: This should be the last mount to avoid overriding /api or /uploads
-FRONTEND_BUILD_DIR = ROOT_DIR.parent / "frontend" / "build"
-if FRONTEND_BUILD_DIR.exists():
-    app.mount("/", StaticFiles(directory=str(FRONTEND_BUILD_DIR), html=True), name="frontend")
-    logging.info(f"Mounted frontend from {FRONTEND_BUILD_DIR}")
-else:
-    logging.warning(f"Frontend build directory not found at {FRONTEND_BUILD_DIR}. Run 'npm run build' in frontend.")
 
 if __name__ == "__main__":
     import uvicorn

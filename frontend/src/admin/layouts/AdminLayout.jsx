@@ -5,17 +5,18 @@ import { adminSidebar, isSuperAdminRole, superAdminSidebar } from '../constants/
 import { 
   LayoutDashboard, Package, Boxes, ShoppingCart, 
   Users, CreditCard, BarChart3, FileText, Upload, 
-  UserCog, ShieldAlert, Settings, LogOut, Package2
+  UserCog, ShieldAlert, Settings, LogOut, Package2, Layers
 } from 'lucide-react';
 
 const ICON_MAP = {
   'Dashboard': LayoutDashboard,
   'Products': Package,
-  'Inventory': Boxes,
+  'Stock': Boxes,
   'Orders': ShoppingCart,
   'Customers': Users,
   'Payments': CreditCard,
   'Analytics': BarChart3,
+
   'GST Reports': FileText,
   'Import GST Data': Upload,
   'Admins': UserCog,

@@ -25,6 +25,9 @@ const AuditLogsPage = () => {
       setRows(response.data.items || []);
       setTotal(response.data.total || 0);
       setPage(pageNum);
+
+      const mRes = await adminApi.getDashboardMetrics();
+      setMetrics(mRes.data?.metrics || {});
     } catch {
     } finally {
       setLoading(false);
@@ -53,8 +56,8 @@ const AuditLogsPage = () => {
 
   const stats = {
     totalEvents: total,
-    securityEvents: rows.filter(r => r.action?.includes('CREATE') || r.action?.includes('RESET')).length,
-    destructive: rows.filter(r => r.action?.includes('DELETE')).length,
+    securityEvents: metrics?.security_events_count || 0,
+    destructive: metrics?.destructive_actions_count || 0,
     recentRate: rows.length
   };
 

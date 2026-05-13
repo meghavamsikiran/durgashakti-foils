@@ -6,11 +6,12 @@ export const ROLES = {
 export const superAdminSidebar = [
   'Dashboard',
   'Products',
-  'Inventory',
+  'Stock',
   'Orders',
   'Customers',
   'Payments',
   'Analytics',
+
   'GST Reports',
   'Import GST Data',
   'Admins',

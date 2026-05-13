@@ -6,7 +6,7 @@ import {
   Package, Plus, Search, Tag, Box, 
   IndianRupee, TrendingUp, Filter, Trash2, 
   Upload, CheckCircle2, AlertCircle, X, ChevronRight,
-  Boxes, Edit, Trash
+  Boxes, Edit, Trash, Activity, Trophy, Zap
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import TablePagination from '../../components/ui/TablePagination';
@@ -37,6 +37,7 @@ const ProductsPage = () => {
     stock_quantity: 0,
     batch_no: '',
     size: '',
+    badge: '',
     variants: '',
   });
   const [metrics, setMetrics] = useState(null);
@@ -55,6 +56,7 @@ const ProductsPage = () => {
       stock_quantity: 0,
       batch_no: '',
       size: '',
+      badge: '',
       variants: '',
     });
     setImageFile(null);
@@ -95,6 +97,7 @@ const ProductsPage = () => {
       stock_quantity: product.stock_quantity || 0,
       batch_no: product.batch_no || '',
       size: product.size || '',
+      badge: product.badge || '',
       variants: '', // Not used in edit mode
     });
     setShowForm(true);
@@ -138,6 +141,7 @@ const ProductsPage = () => {
             discount_price: discountPrice ? Number(discountPrice) : null,
             stock_quantity: Number(stock || 0),
             in_stock: Number(stock || 0) > 0,
+            badge: parts[5] || null
           };
         });
 
@@ -171,10 +175,10 @@ const ProductsPage = () => {
   const paginatedProducts = rows;
 
   const stats = {
-    skus: metrics?.total_products || total,
-    volume: rows.reduce((acc, curr) => acc + (curr.units_sold || 0), 0), // Global volume not in summary yet
-    value: 0, // Calculated on page for now as global inventory value needs heavy aggregation
-    lowStock: rows.filter(r => r.stock_quantity <= 10).length
+    fastestMover: metrics?.fastest_mover?.name || 'N/A',
+    topPerformer: metrics?.top_performer?.name || 'N/A',
+    value: metrics?.total_inventory_value || 0,
+    lowStock: metrics?.low_stock_count || 0
   };
 
   return (
@@ -211,20 +215,24 @@ const ProductsPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
           <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-            <Tag className="w-6 h-6" />
+            <Zap className="w-6 h-6" />
           </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total SKUs</div>
-            <div className="text-2xl font-black text-slate-900">{stats.skus}</div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fastest Mover</div>
+            <div className="text-lg font-black text-slate-900 truncate" title={stats.fastestMover}>
+              {stats.fastestMover}
+            </div>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-            <TrendingUp className="w-6 h-6" />
+          <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+            <Trophy className="w-6 h-6" />
           </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sales Volume</div>
-            <div className="text-2xl font-black text-slate-900">{stats.volume}</div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Top Performer</div>
+            <div className="text-lg font-black text-slate-900 truncate" title={stats.topPerformer}>
+              {stats.topPerformer}
+            </div>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
@@ -232,7 +240,7 @@ const ProductsPage = () => {
             <IndianRupee className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Inventory Value</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Stock Value</div>
             <div className="text-2xl font-black text-slate-900">₹{Math.round(stats.value/1000)}k</div>
           </div>
         </div>
@@ -322,28 +330,46 @@ const ProductsPage = () => {
               </div>
               
               {isEdit ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Price (₹)</label>
-                    <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} />
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Original Price (₹)</label>
+                      <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Offer Price (₹)</label>
+                      <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none bg-emerald-50/30" value={form.discount_price} onChange={e => setForm({...form, discount_price: Number(e.target.value)})} />
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Stock</label>
-                    <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" value={form.stock_quantity} onChange={e => setForm({...form, stock_quantity: Number(e.target.value)})} />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Stock</label>
+                      <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" value={form.stock_quantity} onChange={e => setForm({...form, stock_quantity: Number(e.target.value)})} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Marketing Tag / Badge</label>
+                      <select className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" value={form.badge} onChange={e => setForm({...form, badge: e.target.value})}>
+                        <option value="">No Badge</option>
+                        <option value="Best Seller">Best Seller</option>
+                        <option value="Limited Offer">Limited Offer</option>
+                        <option value="Huge Saving">Huge Saving</option>
+                        <option value="New Arrival">New Arrival</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Variant Inventory Strategy</label>
-                    <span className="text-[9px] font-bold text-indigo-400">Size | SKU | Price | Discount | Stock</span>
+                    <span className="text-[9px] font-bold text-indigo-400">Size | SKU | Price | Offer | Stock | Badge</span>
                   </div>
                   <textarea rows={5} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-mono focus:ring-2 focus:ring-indigo-500/20 outline-none bg-slate-50/50"
-                    placeholder="Enter one per line:&#10;18 Micron | DSF-18-72 | 199 | 0 | 500&#10;11 Micron | DSF-11-25 | 129 | 0 | 1000"
+                    placeholder="Enter one per line:&#10;18 Micron | DSF-18-72 | 199 | 149 | 500 | Best Seller&#10;11 Micron | DSF-11-25 | 129 | 99 | 1000 | Huge Saving"
                     value={form.variants} onChange={e => setForm({...form, variants: e.target.value})} />
                   <div className="flex justify-between items-center px-1">
                     <p className="text-[9px] text-slate-400 font-medium italic">Use the | character to separate fields.</p>
-                    <button onClick={() => setForm({...form, variants: 'Small | SKU-S | 99 | 0 | 100\nLarge | SKU-L | 199 | 0 | 50'})} className="text-[9px] font-black text-indigo-500 uppercase tracking-widest hover:underline">Load Template</button>
+                    <button onClick={() => setForm({...form, variants: 'Small | SKU-S | 99 | 79 | 100 | New Arrival\nLarge | SKU-L | 199 | 149 | 50 | Best Seller'})} className="text-[9px] font-black text-indigo-500 uppercase tracking-widest hover:underline">Load Template</button>
                   </div>
                 </div>
               )}
@@ -395,7 +421,10 @@ const ProductsPage = () => {
                     <div className="text-[10px] font-mono font-bold text-slate-400 tracking-widest">{row.batch_no}</div>
                   </td>
                   <td className="px-8 py-6 text-center">
-                    <div className="text-sm font-black text-slate-800">₹{Number(row.price || 0).toLocaleString()}</div>
+                    <div className="text-sm font-black text-slate-800">₹{Number(row.discount_price || row.price || 0).toLocaleString()}</div>
+                    {row.discount_price > 0 && row.discount_price < row.price && (
+                      <div className="text-[9px] text-slate-400 line-through">₹{row.price}</div>
+                    )}
                   </td>
                   <td className="px-8 py-6 text-center">
                     <div className={`text-sm font-black ${row.stock_quantity <= 10 ? 'text-rose-600' : 'text-slate-800'}`}>

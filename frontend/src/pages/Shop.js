@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
 import TablePagination from '../components/ui/TablePagination';
@@ -14,15 +14,7 @@ const Shop = () => {
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 9;
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [products, priceFilter, sortBy]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       const response = await api.getProducts();
       const items = response.data.items || [];
@@ -33,9 +25,9 @@ const Shop = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...products];
 
     // Price filter
@@ -58,7 +50,15 @@ const Shop = () => {
 
     setFilteredProducts(filtered);
     setPage(1); // Reset to first page when filters change
-  };
+  }, [products, priceFilter, sortBy]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   return (
     <div className="min-h-screen py-12" data-testid="shop-page">

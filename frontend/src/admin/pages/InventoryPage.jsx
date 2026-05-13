@@ -5,7 +5,7 @@ import {
   Boxes, TrendingDown, IndianRupee, BarChart3, 
   Search, RefreshCw, PlusCircle, MinusCircle, 
   X, AlertTriangle, ArrowRight, PackageOpen,
-  LayoutGrid
+  LayoutGrid, Zap
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import TablePagination from '../../components/ui/TablePagination';
@@ -69,11 +69,11 @@ const InventoryPage = () => {
   }, [search, load]);
 
   const stats = {
-    totalValue: metrics?.total_revenue || 0, // Simplified to revenue for consistency
-    outOfStock: rows.filter(r => r.stock_quantity <= 0).length,
-    lowStock: rows.filter(r => r.stock_quantity > 0 && r.stock_quantity <= r.low_stock_threshold).length,
-    soldVolume: rows.reduce((s, r) => s + r.units_sold, 0),
-    totalItems: metrics?.total_products || total
+    totalValue: metrics?.total_inventory_value || 0,
+    outOfStock: metrics?.out_of_stock_count || 0,
+    lowStock: metrics?.low_stock_count || 0,
+    soldVolume: metrics?.total_units_sold || 0,
+    salesVelocity: metrics?.sales_velocity || 0
   };
 
   return (
@@ -82,7 +82,7 @@ const InventoryPage = () => {
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
             <Boxes className="w-8 h-8 text-indigo-600" />
-            Inventory
+            Product Stock
           </h1>
           <p className="text-slate-500 mt-1 font-medium">Monitor and update your product stock levels.</p>
         </div>
@@ -110,7 +110,7 @@ const InventoryPage = () => {
             <IndianRupee className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Inventory Value</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Stock Value</div>
             <div className="text-2xl font-black text-slate-900">₹{(stats.totalValue / 1000).toFixed(1)}k</div>
           </div>
         </div>
@@ -134,11 +134,11 @@ const InventoryPage = () => {
         </div>
         <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
           <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-            <LayoutGrid className="w-6 h-6" />
+            <Zap className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Items</div>
-            <div className="text-2xl font-black text-slate-900">{stats.totalItems}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sales Velocity</div>
+            <div className="text-2xl font-black text-slate-900">{stats.salesVelocity}<span className="text-[10px] text-slate-400 ml-1 font-bold tracking-widest">U/DAY</span></div>
           </div>
         </div>
       </div>

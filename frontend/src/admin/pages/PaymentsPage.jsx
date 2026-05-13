@@ -27,7 +27,7 @@ const PaymentsPage = () => {
       setPage(pageNum);
       
       const mRes = await adminApi.getDashboardMetrics();
-      setMetrics(mRes.data);
+      setMetrics(mRes.data?.metrics || {});
     } catch (err) {
       toast.error('Failed to load transaction data');
     } finally {

@@ -30,6 +30,7 @@ export const api = {
   updateProfile: (data) => axios.put(`${API_URL}/auth/me`, data, { headers: getAuthHeader() }),
   getAddresses: () => axios.get(`${API_URL}/user/addresses`, { headers: getAuthHeader() }),
   addAddress: (data) => axios.post(`${API_URL}/user/addresses`, data, { headers: getAuthHeader() }),
+  updateAddress: (id, data) => axios.put(`${API_URL}/user/addresses/${id}`, data, { headers: getAuthHeader() }),
   deleteAddress: (id) => axios.delete(`${API_URL}/user/addresses/${id}`, { headers: getAuthHeader() }),
   getWishlist: () => axios.get(`${API_URL}/user/wishlist`, { headers: getAuthHeader() }),
   toggleWishlist: (productId) => axios.post(`${API_URL}/user/wishlist/${productId}`, {}, { headers: getAuthHeader() }),
@@ -37,6 +38,8 @@ export const api = {
   markNotificationsRead: () => axios.put(`${API_URL}/user/notifications/read-all`, {}, { headers: getAuthHeader() }),
   getSavedCards: () => axios.get(`${API_URL}/user/cards`, { headers: getAuthHeader() }),
   addSavedCard: (data) => axios.post(`${API_URL}/user/cards`, data, { headers: getAuthHeader() }),
+  
+
   
   // Auth
   changePassword: (data) => axios.post(`${API_URL}/auth/change-password`, data, { headers: getAuthHeader() }),

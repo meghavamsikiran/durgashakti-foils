@@ -17,7 +17,19 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20">
+    <div className="w-full">
+      <div className="bg-slate-900 text-white overflow-hidden py-2 relative">
+        <div className="flex whitespace-nowrap animate-marquee">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] px-8 border-r border-white/10">✨ Durga Shakti Foils: Premium Aluminum Packaging Solutions</span>
+
+          
+          {/* Repeat for seamless loop */}
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] px-8 border-r border-white/10">✨ Durga Shakti Foils: Premium Aluminum Packaging Solutions</span>
+
+        </div>
+      </div>
+      
+      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2" data-testid="navbar-logo">
@@ -35,6 +47,8 @@ const Navbar = () => {
             >
               Shop
             </Link>
+
+
 
             {user ? (
               <>
@@ -101,6 +115,7 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="md:hidden py-6 border-t border-slate-100 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
             <Link to="/shop" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Shop</Link>
+
             
             {user ? (
               <>
@@ -131,7 +146,8 @@ const Navbar = () => {
         )}
       </div>
     </nav>
-  );
+  </div>
+);
 };
 
 export default Navbar;
