@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import adminApi from '../services/adminApi';
+import adminService from '../services/admin.service';
 import { 
   Settings, Building2, Phone, Mail, MapPin, 
   ShieldCheck, Save, Globe, Lock, Cpu,
@@ -27,8 +27,8 @@ const SettingsPage = () => {
     const load = async () => {
       try {
         const [settingsRes, meRes] = await Promise.all([
-          adminApi.getSettings(),
-          adminApi.getMe()
+          adminService.getSettings(),
+          adminService.getMe()
         ]);
         const data = settingsRes.data || {};
         const profile = data.company_profile || {};
@@ -49,7 +49,7 @@ const SettingsPage = () => {
   const save = async () => {
     try {
       setSaving(true);
-      await adminApi.updateSetting({
+      await adminService.updateSetting({
         key: 'company_profile',
         value: { companyName, gstNumber, companyPhone, companyEmail, companyAddress }
       });
@@ -72,7 +72,7 @@ const SettingsPage = () => {
     }
     try {
       setChangingPassword(true);
-      await adminApi.changePassword({ current_password: currentPassword, new_password: newPassword });
+      await adminService.changePassword({ current_password: currentPassword, new_password: newPassword });
       toast.success('Password updated successfully');
       setCurrentPassword('');
       setNewPassword('');
@@ -83,11 +83,11 @@ const SettingsPage = () => {
     }
   };
 
-  if (!loaded) return <div className="p-12 text-center text-slate-400 font-bold uppercase tracking-widest animate-pulse">Loading Settings...</div>;
+  if (!loaded) return <div className="p-12 text-center text-slate-500 font-bold uppercase tracking-widest animate-pulse">Loading Settings...</div>;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
             <Settings className="w-8 h-8 text-indigo-600" />
@@ -99,7 +99,7 @@ const SettingsPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 relative overflow-hidden">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden">
              <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
                 <Building2 className="w-32 h-32 text-indigo-900" />
              </div>
@@ -111,7 +111,7 @@ const SettingsPage = () => {
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Company Name</label>
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Company Name</label>
                    <div className="relative group">
                       <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
                          value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="DurgaShakti Foils" />
@@ -119,7 +119,7 @@ const SettingsPage = () => {
                    </div>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">GST Number</label>
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">GST Number</label>
                    <div className="relative group">
                       <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
                          value={gstNumber} onChange={e => setGstNumber(e.target.value)} placeholder="29XXXXX..." />
@@ -127,7 +127,7 @@ const SettingsPage = () => {
                    </div>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone Number</label>
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Phone Number</label>
                    <div className="relative group">
                       <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
                          value={companyPhone} onChange={e => setCompanyPhone(e.target.value)} placeholder="+91..." />
@@ -135,7 +135,7 @@ const SettingsPage = () => {
                    </div>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Address</label>
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Email Address</label>
                    <div className="relative group">
                       <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
                          value={companyEmail} onChange={e => setCompanyEmail(e.target.value)} placeholder="ops@durgashakti.com" />
@@ -143,7 +143,7 @@ const SettingsPage = () => {
                    </div>
                 </div>
                 <div className="md:col-span-2 space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Office Address</label>
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Office Address</label>
                    <div className="relative group">
                       <textarea rows={3} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
                          value={companyAddress} onChange={e => setCompanyAddress(e.target.value)} placeholder="Full physical address..." />
@@ -152,7 +152,7 @@ const SettingsPage = () => {
                 </div>
              </div>
 
-             <div className="mt-8 pt-8 border-t border-slate-100 flex justify-end">
+             <div className="mt-8 pt-8 border-t border-slate-200 flex justify-end">
                 <Button disabled={saving} onClick={save} className="rounded-xl px-12 font-black uppercase tracking-widest shadow-lg shadow-indigo-200 flex items-center gap-2">
                    {saving ? 'Saving...' : <><Save className="w-4 h-4" /> Save Settings</>}
                 </Button>
@@ -160,7 +160,7 @@ const SettingsPage = () => {
           </div>
           
           {me?.role === 'SUPER_ADMIN' ? (
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 relative overflow-hidden mt-8">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden mt-8">
                <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
                   <Lock className="w-32 h-32 text-indigo-900" />
                </div>
@@ -172,18 +172,18 @@ const SettingsPage = () => {
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Current Password</label>
+                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Current Password</label>
                      <input type="password" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-indigo-500/20" 
                         value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="••••••••" />
                   </div>
                   <div className="space-y-1">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">New Password</label>
+                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">New Password</label>
                      <input type="password" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-indigo-500/20" 
                         value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="At least 8 characters..." />
                   </div>
                </div>
 
-               <div className="mt-8 pt-8 border-t border-slate-100 flex justify-end">
+               <div className="mt-8 pt-8 border-t border-slate-200 flex justify-end">
                   <Button disabled={changingPassword} onClick={handleChangePassword} variant="outline" className="rounded-xl px-12 font-black uppercase tracking-widest flex items-center gap-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50">
                      {changingPassword ? 'Updating...' : <><RefreshCcw className="w-4 h-4" /> Update Password</>}
                   </Button>
@@ -193,7 +193,7 @@ const SettingsPage = () => {
             <div className="bg-slate-50 rounded-3xl border border-dashed border-slate-200 p-8 mt-8 flex flex-col items-center text-center">
                <ShieldCheck className="w-12 h-12 text-slate-300 mb-4" />
                <h3 className="text-sm font-bold text-slate-600">Password Management Restricted</h3>
-               <p className="text-xs text-slate-400 mt-1">Please contact your Super Admin to reset or change your password.</p>
+               <p className="text-xs text-slate-500 mt-1">Please contact your Super Admin to reset or change your password.</p>
             </div>
           )}
           
@@ -219,36 +219,36 @@ const SettingsPage = () => {
         </div>
 
         <div className="space-y-8">
-           <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
-              <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+              <h2 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
                  <Cpu className="w-4 h-4 text-indigo-500" />
                  Technical Details
               </h2>
               <div className="space-y-4">
-                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                       <Database className="w-4 h-4 text-slate-400" />
+                       <Database className="w-4 h-4 text-slate-500" />
                        <span className="text-xs font-bold text-slate-600">Database</span>
                     </div>
                     <span className="text-[10px] font-black text-emerald-600 uppercase">Active</span>
                  </div>
-                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                       <Lock className="w-4 h-4 text-slate-400" />
+                       <Lock className="w-4 h-4 text-slate-500" />
                        <span className="text-xs font-bold text-slate-600">Security Level</span>
                     </div>
                     <span className="text-[10px] font-black text-indigo-600 uppercase">High</span>
                  </div>
-                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                       <Cloud className="w-4 h-4 text-slate-400" />
+                       <Cloud className="w-4 h-4 text-slate-500" />
                        <span className="text-xs font-bold text-slate-600">Payment Provider</span>
                     </div>
                     <span className="text-[10px] font-black text-slate-800 uppercase">Razorpay Live</span>
                  </div>
               </div>
               
-              <div className="mt-8 pt-8 border-t border-slate-100">
+              <div className="mt-8 pt-8 border-t border-slate-200">
                  <Button variant="outline" className="w-full rounded-xl text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 hover:border-rose-100 transition-all">
                     Enable Maintenance Mode
                  </Button>
@@ -265,7 +265,7 @@ const SettingsPage = () => {
                     <div className="text-sm font-bold">ISO-27001</div>
                  </div>
               </div>
-              <p className="text-slate-400 text-xs leading-relaxed">All system actions are logged for safety and records.</p>
+              <p className="text-slate-500 text-xs leading-relaxed">All system actions are logged for safety and records.</p>
            </div>
         </div>
       </div>

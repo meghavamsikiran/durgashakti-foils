@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,6 +15,9 @@ export const useCheckout = () => {
   const { user } = useAuth();
   const { cart, clearCart } = useCart();
   
+  // Prevent duplicate order submissions
+  const orderInProgress = useRef(false);
+
   const [products, setProducts] = useState({});
   const [loading, setLoading] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState('shipping');
@@ -48,7 +51,9 @@ export const useCheckout = () => {
           pincode: primary.pincode
         });
       }
-    } catch (err) {}
+    } catch (err) {
+      // Silent — addresses are optional at this point
+    }
   }, []);
 
   const fetchProducts = useCallback(async () => {
@@ -59,7 +64,9 @@ export const useCheckout = () => {
         productMap[p.id] = p;
       });
       setProducts(productMap);
-    } catch (error) {}
+    } catch (error) {
+      toast.error('Failed to load product information');
+    }
   }, []);
 
   useEffect(() => {
@@ -98,8 +105,28 @@ export const useCheckout = () => {
 
   const validateShipping = async () => {
     const { full_name, phone, address_line1, city, state, pincode } = shippingInfo;
-    if (!full_name || !phone || !address_line1 || !city || !state || pincode.length !== 6) {
-      toast.error("Please fill all required fields correctly");
+    if (!full_name?.trim()) {
+      toast.error("Full name is required");
+      return false;
+    }
+    if (!phone?.trim()) {
+      toast.error("Phone number is required");
+      return false;
+    }
+    if (!address_line1?.trim()) {
+      toast.error("Address is required");
+      return false;
+    }
+    if (!city?.trim()) {
+      toast.error("City is required");
+      return false;
+    }
+    if (!state?.trim()) {
+      toast.error("State is required");
+      return false;
+    }
+    if (!pincode || pincode.length !== 6 || !/^\d{6}$/.test(pincode)) {
+      toast.error("Please enter a valid 6-digit pincode");
       return false;
     }
     return true;
@@ -126,11 +153,14 @@ export const useCheckout = () => {
                 razorpay_payment_id: paymentResponse.razorpay_payment_id,
                 razorpay_signature: paymentResponse.razorpay_signature
               });
+              // Clear cart BEFORE navigating to prevent race condition
+              try { await clearCart(); } catch {}
               toast.success('Payment successful! Order confirmed.');
               const orderData = await orderService.getOrder(orderId);
               navigate(`/order-success?order_id=${orderId}&order_number=${orderData.order_number}`);
               resolve();
             } catch (err) {
+              toast.error('Payment verification failed. Check your dashboard.');
               reject(err);
             }
           },
@@ -150,7 +180,10 @@ export const useCheckout = () => {
         }
 
         const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', () => reject(new Error('payment_failed')));
+        rzp.on('payment.failed', (response) => {
+          toast.error('Payment failed. You can retry from your dashboard.');
+          reject(new Error('payment_failed'));
+        });
         rzp.open();
       } catch (error) {
         reject(error);
@@ -159,7 +192,11 @@ export const useCheckout = () => {
   };
 
   const handlePlaceOrder = async () => {
+    // Prevent duplicate submissions
+    if (orderInProgress.current) return;
+    orderInProgress.current = true;
     setLoading(true);
+
     try {
       const orderItems = cart.items.map(item => ({
         product_id: item.product_id,
@@ -173,7 +210,7 @@ export const useCheckout = () => {
         total_amount: calculateTotal(),
         payment_method: paymentMethod === 'cod' ? 'cod' : 'razorpay',
         shipping_address: shippingInfo,
-        idempotency_key: `order_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+        idempotency_key: `order_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
       };
 
       const response = await orderService.createOrder(orderData);
@@ -181,25 +218,26 @@ export const useCheckout = () => {
 
       if (paymentMethod === 'cod') {
         await paymentService.confirmCOD(orderId);
-        if (clearCart) clearCart();
+        // Clear cart BEFORE navigating
+        try { await clearCart(); } catch {}
         toast.success('Order placed successfully!');
         navigate(`/order-success?order_id=${orderId}&order_number=${response.order_number}`);
       } else {
         await handleRazorpayPayment(orderId);
-        if (clearCart) clearCart();
+        // Cart already cleared inside handleRazorpayPayment handler
       }
     } catch (error) {
       if (error.message === 'payment_failed') {
-        toast.error('Payment failed. Retry from Dashboard.');
         navigate('/dashboard');
       } else if (error.message === 'payment_cancelled') {
-        toast.info('Payment cancelled. Order saved in Dashboard.');
+        toast.info('Payment cancelled. Your order is saved in your dashboard.');
         navigate('/dashboard');
       } else {
-        // Error already toasted by interceptor or handled here
+        // Error already toasted by interceptor
       }
     } finally {
       setLoading(false);
+      orderInProgress.current = false;
     }
   };
 

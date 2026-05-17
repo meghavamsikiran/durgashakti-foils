@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import api from '../utils/api';
+import api, { formatImageUrl } from '../utils/api';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -117,7 +117,7 @@ const ProductDetail = () => {
           >
             <div className="aspect-square rounded-sm overflow-hidden bg-secondary/30 shadow-float">
               <img
-                src={product.image_url}
+                src={formatImageUrl(product.image_url)}
                 alt={product.name}
                 className="w-full h-full object-cover"
                 data-testid="product-detail-image"
@@ -164,7 +164,7 @@ const ProductDetail = () => {
                   <span className="text-5xl font-black text-slate-900" style={{ fontFamily: 'Manrope' }} data-testid="product-detail-price">
                     ₹{product.discount_price}
                   </span>
-                  <span className="text-xl text-slate-400 line-through font-bold">₹{product.price}</span>
+                  <span className="text-xl text-slate-500 line-through font-bold">₹{product.price}</span>
                   <span className="text-emerald-600 font-black uppercase tracking-widest text-sm">
                     Save {Math.round(((product.price - product.discount_price) / product.price) * 100)}%
                   </span>
@@ -242,7 +242,7 @@ const ProductDetail = () => {
                 variant="outline"
                 onClick={handleToggleWishlist}
                 disabled={wishlisting}
-                className={`w-12 h-12 p-0 rounded-sm flex items-center justify-center transition-all ${isWishlisted ? 'border-rose-500 text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-rose-500'}`}
+                className={`w-12 h-12 p-0 rounded-sm flex items-center justify-center transition-all ${isWishlisted ? 'border-rose-500 text-rose-500 bg-rose-50' : 'text-slate-500 hover:text-rose-500'}`}
               >
                 <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''} ${wishlisting ? 'animate-pulse' : ''}`} />
               </Button>

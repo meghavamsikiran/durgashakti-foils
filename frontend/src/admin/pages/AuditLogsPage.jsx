@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import adminApi from '../services/adminApi';
+import adminService from '../services/admin.service';
 import { 
   Shield, Activity, Search, ChevronDown, ChevronUp,
   Fingerprint, Clock, User, HardDrive, Filter,
@@ -17,16 +17,17 @@ const AuditLogsPage = () => {
   const [expandedRow, setExpandedRow] = useState(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [metrics, setMetrics] = useState({});
 
   const load = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await adminApi.getAuditLogs({ page: pageNum, limit: PAGE_SIZE, search });
+      const response = await adminService.getAuditLogs({ page: pageNum, limit: PAGE_SIZE, search });
       setRows(response.data.items || []);
       setTotal(response.data.total || 0);
       setPage(pageNum);
 
-      const mRes = await adminApi.getDashboardMetrics();
+      const mRes = await adminService.getDashboardMetrics();
       setMetrics(mRes.data?.metrics || {});
     } catch {
     } finally {
@@ -65,7 +66,7 @@ const AuditLogsPage = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
             <Shield className="w-8 h-8 text-indigo-600" />
@@ -76,7 +77,7 @@ const AuditLogsPage = () => {
         
         <div className="flex items-center gap-3">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input 
               type="text"
               placeholder="Search Logs..."
@@ -89,54 +90,54 @@ const AuditLogsPage = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
             <Activity className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Logs</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Logs</div>
             <div className="text-2xl font-black text-slate-900">{stats.totalEvents}</div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
             <Fingerprint className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Login Events</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Login Events</div>
             <div className="text-2xl font-black text-slate-900">{stats.securityEvents}</div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
             <AlertTriangle className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Changes</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Changes</div>
             <div className="text-2xl font-black text-slate-900">{stats.destructive}</div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
             <Clock className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Recent Logs</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Recent Logs</div>
             <div className="text-2xl font-black text-slate-900">{stats.recentRate}</div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="bg-slate-50/50 border-b border-slate-100">
+            <thead className="bg-slate-50/50 border-b border-slate-200">
               <tr>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-wider">Action</th>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-wider">Target</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">ID</th>
-                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-wider">Time</th>
-                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-wider">Details</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Action</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Target</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">ID</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Time</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -158,12 +159,12 @@ const AuditLogsPage = () => {
                         <div className="text-xs font-bold text-slate-700 capitalize">{row.target_type}</div>
                       </td>
                       <td className="px-8 py-6 text-center">
-                        <div className="text-[10px] font-mono text-slate-400 font-bold uppercase tracking-widest">
+                        <div className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-widest">
                           {row.target_id?.substring(0, 10)}...
                         </div>
                       </td>
                       <td className="px-8 py-6 text-right">
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-end gap-1.5">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-end gap-1.5">
                           <Clock className="w-3 h-3" />
                           {formatDate(row.created_at)}
                         </div>
@@ -171,7 +172,7 @@ const AuditLogsPage = () => {
                       <td className="px-8 py-6 text-right">
                         <button 
                           onClick={() => setExpandedRow(isExpanded ? null : row.id)}
-                          className="p-2 rounded-xl border border-slate-100 text-slate-400 hover:text-indigo-600 hover:bg-white transition-all shadow-sm"
+                          className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-white transition-all shadow-sm"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -182,35 +183,35 @@ const AuditLogsPage = () => {
                         <td colSpan="5" className="px-12 py-8">
                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                               <div className="space-y-4">
-                                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                                     <HardDrive className="w-4 h-4 text-indigo-500" />
                                     Log Details
                                  </h4>
-                                 <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                                 <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                                     <table className="min-w-full">
                                        <tbody className="divide-y divide-slate-50">
                                           {row.metadata && Object.keys(row.metadata).length > 0 ? (
                                             Object.entries(row.metadata).map(([k, v]) => (
                                               <tr key={k}>
-                                                 <td className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/30 w-1/3 border-r border-slate-50">{formatKey(k)}</td>
+                                                 <td className="px-4 py-2.5 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-50/30 w-1/3 border-r border-slate-50">{formatKey(k)}</td>
                                                  <td className="px-4 py-2.5 text-xs text-slate-600 font-medium">
                                                    {typeof v === 'boolean' ? (v ? 'Enabled' : 'Disabled') : String(v)}
                                                  </td>
                                               </tr>
                                             ))
                                           ) : (
-                                            <tr><td className="p-8 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">No details found.</td></tr>
+                                            <tr><td className="p-8 text-center text-[10px] text-slate-500 font-bold uppercase tracking-widest italic">No details found.</td></tr>
                                           )}
                                        </tbody>
                                     </table>
                                  </div>
                               </div>
                               <div className="space-y-4">
-                                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                                     <User className="w-4 h-4 text-purple-500" />
                                     User Details
                                  </h4>
-                                 <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                                 <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                                     <div className="space-y-4">
                                        <div>
                                           <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">User ID</div>

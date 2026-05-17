@@ -40,17 +40,17 @@ const SettingsTab = ({ user, onUpdateProfile, onChangePassword }) => {
           <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Account Settings</h2>
         </div>
 
-        <form onSubmit={handleProfileSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8 p-10 bg-white rounded-[3rem] border border-slate-100 shadow-xl">
+        <form onSubmit={handleProfileSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8 p-10 bg-white rounded-[3rem] border border-slate-200 shadow-xl">
           <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
+            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Full Name</Label>
             <Input value={profileForm.full_name} onChange={e => setProfileForm({...profileForm, full_name: e.target.value})} className="h-16 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold" />
           </div>
           <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email Address</Label>
+            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Email Address</Label>
             <Input value={profileForm.email} disabled className="h-16 rounded-2xl bg-slate-100 border-transparent px-6 text-lg font-bold cursor-not-allowed opacity-60" />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Phone Number</Label>
+            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Phone Number</Label>
             <Input value={profileForm.phone} onChange={e => setProfileForm({...profileForm, phone: e.target.value})} className="h-16 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold" />
           </div>
           <div className="md:col-span-2 pt-4">
@@ -70,17 +70,17 @@ const SettingsTab = ({ user, onUpdateProfile, onChangePassword }) => {
           <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Security</h2>
         </div>
 
-        <form onSubmit={handlePasswordSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-8 p-10 bg-white rounded-[3rem] border border-slate-100 shadow-xl">
+        <form onSubmit={handlePasswordSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-8 p-10 bg-white rounded-[3rem] border border-slate-200 shadow-xl">
           <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Current Password</Label>
+            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Current Password</Label>
             <Input type="password" value={passwordForm.old_password} onChange={e => setPasswordForm({...passwordForm, old_password: e.target.value})} className="h-16 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold" />
           </div>
           <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">New Password</Label>
+            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">New Password</Label>
             <Input type="password" value={passwordForm.new_password} onChange={e => setPasswordForm({...passwordForm, new_password: e.target.value})} className="h-16 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold" />
           </div>
           <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Confirm Password</Label>
+            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Confirm Password</Label>
             <Input type="password" value={passwordForm.confirm_password} onChange={e => setPasswordForm({...passwordForm, confirm_password: e.target.value})} className="h-16 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold" />
           </div>
           <div className="md:col-span-3 pt-4">

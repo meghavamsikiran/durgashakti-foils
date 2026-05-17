@@ -37,7 +37,7 @@ const PaymentStep = ({ paymentMethod, onSetPaymentMethod, onBack }) => {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100"
+      className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-200"
     >
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Payment Selection</h2>
@@ -51,7 +51,7 @@ const PaymentStep = ({ paymentMethod, onSetPaymentMethod, onBack }) => {
             className={`flex items-center gap-4 p-6 border-2 rounded-3xl cursor-pointer transition-all ${
               paymentMethod === method.id
                 ? 'border-indigo-600 bg-indigo-50/30'
-                : 'border-slate-100 hover:border-slate-200 bg-slate-50/50'
+                : 'border-slate-200 hover:border-slate-200 bg-slate-50/50'
             }`}
           >
             <input
@@ -62,7 +62,7 @@ const PaymentStep = ({ paymentMethod, onSetPaymentMethod, onBack }) => {
               onChange={(e) => onSetPaymentMethod(e.target.value)}
               className="w-5 h-5 text-indigo-600 border-slate-300 focus:ring-indigo-600"
             />
-            <div className={`p-3 rounded-2xl ${paymentMethod === method.id ? 'bg-indigo-600 text-white' : 'bg-white text-slate-400 border border-slate-200'}`}>
+            <div className={`p-3 rounded-2xl ${paymentMethod === method.id ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>
               <method.icon className="w-6 h-6" />
             </div>
             <div className="flex-1">
@@ -78,7 +78,7 @@ const PaymentStep = ({ paymentMethod, onSetPaymentMethod, onBack }) => {
           <Shield className="w-6 h-6 text-indigo-400" />
           <span className="font-bold uppercase tracking-widest text-xs">Secure Transaction</span>
         </div>
-        <p className="text-sm text-slate-400 leading-relaxed">Your payment information is encrypted and processed securely by Razorpay. We do not store your full card details.</p>
+        <p className="text-sm text-slate-500 leading-relaxed">Your payment information is encrypted and processed securely by Razorpay. We do not store your full card details.</p>
       </div>
     </motion.div>
   );

@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import api from '../utils/api';
+import api, { formatImageUrl } from '../utils/api';
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
@@ -83,7 +83,7 @@ const ProductCard = ({ product }) => {
     >
       <div className="aspect-square overflow-hidden bg-secondary/30 relative">
         <img
-          src={product.image_url}
+          src={formatImageUrl(product.image_url)}
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           data-testid="product-image"
@@ -96,7 +96,7 @@ const ProductCard = ({ product }) => {
           className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md transition-all shadow-sm z-10 
             ${isWishlisted 
               ? 'bg-rose-500 text-white shadow-rose-200' 
-              : 'bg-white/80 text-slate-400 hover:text-rose-500 hover:bg-white'}`}
+              : 'bg-white/80 text-slate-500 hover:text-rose-500 hover:bg-white'}`}
           data-testid="wishlist-toggle"
         >
           <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''} ${wishlisting ? 'animate-pulse' : ''}`} />
@@ -149,7 +149,7 @@ const ProductCard = ({ product }) => {
                 <span className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }} data-testid="product-price">
                   ₹{product.discount_price}
                 </span>
-                <span className="text-xs text-slate-400 line-through">₹{product.price}</span>
+                <span className="text-xs text-slate-500 line-through">₹{product.price}</span>
               </>
             ) : (
               <span className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'Manrope' }} data-testid="product-price">

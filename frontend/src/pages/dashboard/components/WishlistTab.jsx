@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Heart, Trash2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { useCart } from '../../../contexts/CartContext';
+import { formatImageUrl } from '../../../utils/api';
 
 const WishlistTab = ({ wishlist, loading, onToggleWishlist }) => {
   const { addToCart } = useCart();
@@ -25,8 +26,8 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist }) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {wishlist.map(product => (
-            <div key={product.id} className="group p-4 rounded-3xl border border-slate-100 bg-white hover:shadow-lg transition-all relative">
-              <img src={product.image_url} alt="" className="w-full h-40 object-cover rounded-2xl mb-4" />
+            <div key={product.id} className="group p-4 rounded-3xl border border-slate-200 bg-white hover:shadow-lg transition-all relative">
+              <img src={formatImageUrl(product.image_url)} alt="" className="w-full h-40 object-cover rounded-2xl mb-4" />
               <h4 className="font-black text-slate-900 truncate">{product.name}</h4>
               <p className="text-xl font-black text-indigo-600 mt-1">₹{product.price}</p>
               <div className="flex gap-2 mt-4">

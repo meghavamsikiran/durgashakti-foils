@@ -29,9 +29,20 @@ export const useOrders = () => {
     }
   };
 
+  const returnOrder = async (orderId, formData) => {
+    try {
+      await orderService.returnOrder(orderId, formData);
+      toast.success('Return request submitted successfully');
+      fetchOrders();
+      return true;
+    } catch (err) {
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
 
-  return { orders, loading, fetchOrders, cancelOrder };
+  return { orders, loading, fetchOrders, cancelOrder, returnOrder };
 };

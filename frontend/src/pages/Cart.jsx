@@ -5,7 +5,7 @@ import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useCart } from '../contexts/CartContext';
 import { toast } from 'sonner';
-import api from '../utils/api';
+import api, { formatImageUrl } from '../utils/api';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -117,7 +117,7 @@ const Cart = () => {
                       <div className="flex gap-6">
                         <div className="w-24 h-24 flex-shrink-0 rounded-sm overflow-hidden bg-secondary/30">
                           <img
-                            src={product.image_url}
+                            src={formatImageUrl(product.image_url)}
                             alt={product.name}
                             className="w-full h-full object-cover"
                           />

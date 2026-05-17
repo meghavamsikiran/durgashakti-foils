@@ -113,7 +113,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-6 border-t border-slate-100 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
+          <div className="md:hidden py-6 border-t border-slate-200 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
             <Link to="/shop" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Shop</Link>
 
             

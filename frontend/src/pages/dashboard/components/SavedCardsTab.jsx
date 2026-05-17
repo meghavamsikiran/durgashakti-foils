@@ -39,24 +39,24 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
             <p className="text-slate-500 font-bold">No saved cards found</p>
           </div>
         ) : cards.map(card => (
-          <div key={card.id} className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl relative overflow-hidden group hover:scale-[1.02] transition-all">
+          <div key={card.id} className="p-8 rounded-[2.5rem] bg-white border border-slate-200 shadow-xl relative overflow-hidden group hover:scale-[1.02] transition-all">
             <div className="flex justify-between items-start mb-12">
               <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center">
                 <CreditCard className="w-6 h-6 text-white" />
               </div>
               <div className="text-right">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{card.card_network || 'Card'}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{card.card_network || 'Card'}</span>
               </div>
             </div>
             <div className="space-y-4">
               <div className="text-2xl font-black text-slate-900 tracking-[0.2em]">•••• •••• •••• {card.last4}</div>
               <div className="flex justify-between items-end">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Card Holder</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Card Holder</p>
                   <p className="font-black text-slate-900 uppercase">{card.holder_name || 'Valued Customer'}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Expires</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Expires</p>
                   <p className="font-black text-slate-900">{card.expiry_month}/{card.expiry_year}</p>
                 </div>
               </div>

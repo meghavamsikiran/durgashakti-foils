@@ -8,7 +8,7 @@ const NotificationsTab = ({ notifications, loading, onMarkAllAsRead }) => {
     switch (type) {
       case 'order': return <CheckCircle2 className="w-5 h-5 text-emerald-600" />;
       case 'payment': return <Info className="w-5 h-5 text-indigo-600" />;
-      default: return <Bell className="w-5 h-5 text-slate-400" />;
+      default: return <Bell className="w-5 h-5 text-slate-500" />;
     }
   };
 
@@ -40,7 +40,7 @@ const NotificationsTab = ({ notifications, loading, onMarkAllAsRead }) => {
           {notifications.map(notif => (
             <div 
               key={notif.id} 
-              className={`p-6 rounded-[2rem] border transition-all flex items-start gap-4 ${notif.is_read ? 'bg-white border-slate-100' : 'bg-indigo-50/30 border-indigo-100 shadow-lg shadow-indigo-100/20'}`}
+              className={`p-6 rounded-[2rem] border transition-all flex items-start gap-4 ${notif.is_read ? 'bg-white border-slate-200' : 'bg-indigo-50/30 border-indigo-100 shadow-lg shadow-indigo-100/20'}`}
             >
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${notif.is_read ? 'bg-slate-50' : 'bg-white shadow-sm'}`}>
                 {getIcon(notif.type)}
@@ -48,7 +48,7 @@ const NotificationsTab = ({ notifications, loading, onMarkAllAsRead }) => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <h4 className={`text-sm font-black truncate uppercase tracking-tight ${notif.is_read ? 'text-slate-700' : 'text-slate-900'}`}>{notif.title}</h4>
-                  <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">{new Date(notif.created_at).toLocaleDateString()}</span>
+                  <span className="text-[10px] font-bold text-slate-500 whitespace-nowrap">{new Date(notif.created_at).toLocaleDateString()}</span>
                 </div>
                 <p className={`text-sm leading-relaxed ${notif.is_read ? 'text-slate-500' : 'text-slate-600 font-medium'}`}>{notif.message}</p>
               </div>

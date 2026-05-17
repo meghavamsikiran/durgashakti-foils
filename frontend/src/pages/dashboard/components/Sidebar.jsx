@@ -17,14 +17,14 @@ const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, onLogout 
 
   return (
     <aside className="w-full lg:w-80 flex-shrink-0">
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden sticky top-8">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden sticky top-8">
         <div className="p-8 bg-slate-900 text-white relative overflow-hidden">
           <div className="relative z-10">
             <div className="w-16 h-16 bg-white/20 rounded-2xl backdrop-blur-xl flex items-center justify-center mb-4">
               <User className="w-8 h-8 text-white" />
             </div>
             <h2 className="text-xl font-black truncate">{user?.full_name}</h2>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{user?.email}</p>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{user?.email}</p>
           </div>
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
         </div>
@@ -46,7 +46,7 @@ const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, onLogout 
             </button>
           ))}
           
-          <hr className="my-4 border-slate-100" />
+          <hr className="my-4 border-slate-200" />
           
           <button 
             onClick={onLogout}

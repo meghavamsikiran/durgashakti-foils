@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import adminApi from '../services/adminApi';
+import adminService from '../services/admin.service';
 import TablePagination from '../../components/ui/TablePagination';
 import { 
   ShoppingBag, Clock, CheckCircle2, Truck, AlertCircle, 
@@ -9,6 +9,7 @@ import {
   MapPin, Phone as PhoneIcon, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import { formatImageUrl } from '../../utils/api';
 
 const STATUS_FLOW = {
   PENDING: ['CONFIRMED', 'CANCELLED'],
@@ -52,11 +53,12 @@ const OrdersPage = () => {
   const [messageModal, setMessageModal] = useState(null);
   const [adminMessage, setAdminMessage] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [selectedOrderForModal, setSelectedOrderForModal] = useState(null);
 
   const load = useCallback(async (p = 1) => {
     try {
       setLoading(true);
-      const response = await adminApi.getOrders({ page: p, limit: PAGE_SIZE, search });
+      const response = await adminService.getOrders({ page: p, limit: PAGE_SIZE, search });
       setRows(response.data.items || []);
       setTotal(response.data.total || 0);
       setPage(p);
@@ -80,7 +82,7 @@ const OrdersPage = () => {
   const updateStatus = async (orderId, newStatus, message = '') => {
     try {
       setSubmitting(true);
-      await adminApi.updateOrderStatus(orderId, { status: newStatus, admin_message: message });
+      await adminService.updateOrderStatus(orderId, { status: newStatus, admin_message: message });
       toast.success(`Order status updated to ${newStatus.toLowerCase().replace('_', ' ')}`);
       setMessageModal(null);
       setAdminMessage('');
@@ -108,7 +110,7 @@ const OrdersPage = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
             <ShoppingBag className="w-8 h-8 text-indigo-600" />
@@ -119,7 +121,7 @@ const OrdersPage = () => {
         
         <div className="flex items-center gap-3">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input 
               type="text"
               placeholder="Order Number..."
@@ -132,45 +134,45 @@ const OrdersPage = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
             <ShoppingBag className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Orders</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Orders</div>
             <div className="text-2xl font-black text-slate-900">{stats.total}</div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
             <Clock className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pending</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pending</div>
             <div className="text-2xl font-black text-slate-900">{stats.pending}</div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
             <Truck className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Delivered</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Delivered</div>
             <div className="text-2xl font-black text-slate-900">{stats.delivered}</div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
             <RefreshCcw className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Returns</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Returns</div>
             <div className="text-2xl font-black text-slate-900">{stats.returns}</div>
           </div>
         </div>
       </div>
 
-      <div className="bg-slate-50 p-1 rounded-2xl flex flex-wrap items-center gap-1 border border-slate-100">
+      <div className="bg-slate-50 p-1 rounded-2xl flex flex-wrap items-center gap-1 border border-slate-200">
         {['ALL', 'PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURN_REQUESTED'].map((s) => (
           <button
             key={s}
@@ -186,17 +188,17 @@ const OrdersPage = () => {
         ))}
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="bg-slate-50/50 border-b border-slate-100">
+            <thead className="bg-slate-50/50 border-b border-slate-200">
               <tr>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-wider">Order ID</th>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-wider">Customer</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Status</th>
-                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-wider">Amount</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Actions</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Details</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Order ID</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Customer</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Status</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Amount</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Actions</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -211,14 +213,14 @@ const OrdersPage = () => {
                      <tr className={`hover:bg-slate-50/50 transition-colors group ${expandedOrderId === order.id ? 'bg-indigo-50/30' : ''}`}>
                        <td className="px-8 py-6">
                          <div className="font-mono text-xs font-black text-indigo-600 mb-1">{order.order_number}</div>
-                         <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                         <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                            <Calendar className="w-3 h-3" />
                            {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
                          </div>
                        </td>
                        <td className="px-8 py-6">
                          <div className="font-bold text-slate-800">{order.customer_name || 'Guest User'}</div>
-                         <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
+                         <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
                            <div className={`w-1.5 h-1.5 rounded-full ${order.payment_status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
                            {order.payment_method} • {order.payment_status}
                          </div>
@@ -250,7 +252,15 @@ const OrdersPage = () => {
                              return (
                                <button
                                  key={a}
-                                 onClick={(e) => { e.stopPropagation(); updateStatus(order.id, a); }}
+                                 onClick={(e) => { 
+                                   e.stopPropagation(); 
+                                   if (['RETURN_APPROVED', 'RETURN_REJECTED', 'CANCELLED'].includes(a)) {
+                                     setMessageModal({ orderId: order.id, status: a });
+                                     setAdminMessage('');
+                                   } else {
+                                     updateStatus(order.id, a);
+                                   }
+                                 }}
                                  className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
                                    a === 'CANCELLED' || a === 'RETURN_REJECTED' 
                                      ? 'border-rose-100 text-rose-600 hover:bg-rose-50' 
@@ -263,7 +273,7 @@ const OrdersPage = () => {
                                </button>
                              );
                            }) : (
-                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-slate-400">
+                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500">
                                <CheckCircle2 className="w-3.5 h-3.5" />
                                <span className="text-[10px] font-black uppercase tracking-widest">Finalized</span>
                              </div>
@@ -271,78 +281,15 @@ const OrdersPage = () => {
                          </div>
                        </td>
                        <td className="px-8 py-6 text-center">
-                         <button 
-                            onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
-                            className="p-2 rounded-xl border border-slate-100 text-slate-400 hover:text-indigo-600 hover:bg-white transition-all shadow-sm"
-                         >
-                            {expandedOrderId === order.id ? <ChevronUp className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                         </button>
-                       </td>
-                     </tr>
-                     {expandedOrderId === order.id && (
-                       <tr className="bg-slate-50/50">
-                         <td colSpan="6" className="px-12 py-8">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                               <div className="space-y-4">
-                                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                     <ShoppingBag className="w-4 h-4 text-indigo-500" />
-                                     Order Items
-                                  </h4>
-                                  <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-                                     <table className="min-w-full">
-                                        <thead className="bg-slate-50/30 border-b border-slate-100">
-                                           <tr>
-                                              <th className="px-4 py-2 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Product</th>
-                                              <th className="px-4 py-2 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest">Qty</th>
-                                              <th className="px-4 py-2 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest">Price</th>
-                                           </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-50">
-                                           {order.items?.map((item, idx) => (
-                                              <tr key={idx}>
-                                                 <td className="px-4 py-3 text-xs font-bold text-slate-700">{item.product_name}</td>
-                                                 <td className="px-4 py-3 text-xs text-center font-black text-slate-500">{item.quantity}</td>
-                                                 <td className="px-4 py-3 text-xs text-right font-black text-slate-900">₹{Number(item.price * item.quantity).toLocaleString('en-IN')}</td>
-                                              </tr>
-                                           ))}
-                                        </tbody>
-                                     </table>
-                                  </div>
-                               </div>
-                               <div className="space-y-4">
-                                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                     <MapPin className="w-4 h-4 text-rose-500" />
-                                     Shipping Details
-                                  </h4>
-                                  <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-                                     <div className="space-y-4">
-                                        <div className="flex items-start gap-3">
-                                           <MapPin className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />
-                                           <div>
-                                              <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Address</div>
-                                              <div className="text-xs font-bold text-slate-600 leading-relaxed">
-                                                 {order.shipping_address?.address_line1 || 'N/A'}<br />
-                                                 {order.shipping_address?.address_line2 && <>{order.shipping_address.address_line2}<br /></>}
-                                                 {order.shipping_address?.city}, {order.shipping_address?.state}<br />
-                                                 PIN: {order.shipping_address?.pincode}
-                                              </div>
-                                           </div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                           <PhoneIcon className="w-4 h-4 text-slate-300 shrink-0" />
-                                           <div>
-                                              <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Phone Number</div>
-                                              <div className="text-xs font-bold text-slate-600">{order.customer_phone || order.shipping_address?.phone || 'N/A'}</div>
-                                           </div>
-                                        </div>
-                                     </div>
-                                  </div>
-                               </div>
-                            </div>
-                         </td>
-                       </tr>
-                     )}
-                   </React.Fragment>
+                          <button 
+                             onClick={() => setSelectedOrderForModal(order)}
+                             className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-white transition-all shadow-sm"
+                          >
+                             <Eye className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    </React.Fragment>
 
                 );
               })}
@@ -357,6 +304,198 @@ const OrdersPage = () => {
           pageSize={PAGE_SIZE}
         />
       </div>
+
+      {messageModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                {messageModal.status === 'RETURN_APPROVED' ? 'Approve Return' : messageModal.status === 'RETURN_REJECTED' ? 'Reject Return' : 'Cancel Order'}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">Provide a custom message or reason to deliver respectively to the customer.</p>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Message to Customer</label>
+              <textarea
+                placeholder={
+                  messageModal.status === 'RETURN_APPROVED'
+                    ? "E.g., Your return has been approved. Refund has been initiated."
+                    : messageModal.status === 'RETURN_REJECTED'
+                    ? "E.g., Rejection reason: The photo proof does not show any defective quality issues."
+                    : "E.g., Order cancelled due to stock unavailability."
+                }
+                value={adminMessage}
+                onChange={(e) => setAdminMessage(e.target.value)}
+                required
+                className="w-full p-4 min-h-[100px] rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"
+              />
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setMessageModal(null)}
+                className="flex-1 h-12 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={() => updateStatus(messageModal.orderId, messageModal.status, adminMessage)}
+                disabled={!adminMessage.trim()}
+                className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedOrderForModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-4xl w-full border border-slate-100 shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-6 border-b border-slate-100">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center">
+                    <ShoppingBag className="w-5 h-5" />
+                  </div>
+                  <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Order Details</h2>
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">
+                  Order #{selectedOrderForModal.order_number} • {new Date(selectedOrderForModal.created_at).toLocaleString()}
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedOrderForModal(null)} 
+                className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-all hover:scale-105"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto py-8 space-y-8 pr-2">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Order Items */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4 text-indigo-500" />
+                    Order Items
+                  </h4>
+                  <div className="bg-slate-50/50 rounded-3xl border border-slate-200/60 overflow-hidden shadow-sm">
+                    <table className="min-w-full">
+                      <thead className="bg-slate-100/50 border-b border-slate-200">
+                        <tr>
+                          <th className="px-5 py-3 text-left text-[9px] font-black text-slate-500 uppercase tracking-widest">Product</th>
+                          <th className="px-5 py-3 text-center text-[9px] font-black text-slate-500 uppercase tracking-widest">Qty</th>
+                          <th className="px-5 py-3 text-right text-[9px] font-black text-slate-500 uppercase tracking-widest">Price</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {selectedOrderForModal.items?.map((item, idx) => (
+                          <tr key={idx} className="bg-white/50">
+                            <td className="px-5 py-4 text-xs font-bold text-slate-700">{item.product_name}</td>
+                            <td className="px-5 py-4 text-xs text-center font-black text-slate-500">{item.quantity}</td>
+                            <td className="px-5 py-4 text-xs text-right font-black text-slate-900">₹{Number(item.price * item.quantity).toLocaleString('en-IN')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Shipping details */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-rose-500" />
+                    Shipping Details
+                  </h4>
+                  <div className="bg-slate-50/50 rounded-3xl border border-slate-200/60 p-6 shadow-sm space-y-4">
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Address</div>
+                        <div className="text-xs font-bold text-slate-600 leading-relaxed">
+                          {selectedOrderForModal.shipping_address?.address_line1 || 'N/A'}<br />
+                          {selectedOrderForModal.shipping_address?.address_line2 && <>{selectedOrderForModal.shipping_address.address_line2}<br /></>}
+                          {selectedOrderForModal.shipping_address?.city}, {selectedOrderForModal.shipping_address?.state}<br />
+                          PIN: {selectedOrderForModal.shipping_address?.pincode}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <PhoneIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                      <div>
+                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Phone Number</div>
+                        <div className="text-xs font-bold text-slate-600">{selectedOrderForModal.customer_phone || selectedOrderForModal.shipping_address?.phone || 'N/A'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Return details card inside popup */}
+              {selectedOrderForModal.return_reason && (
+                <div className="bg-orange-50/70 border border-orange-100 rounded-[2rem] p-6 shadow-sm flex flex-col md:flex-row gap-6 items-start">
+                  <div className="flex-1 space-y-4">
+                    <h4 className="text-[10px] font-black text-orange-600 uppercase tracking-widest flex items-center gap-2">
+                      <RefreshCcw className="w-4 h-4" />
+                      Return Request Details
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Customer Return Reason</div>
+                        <div className="text-xs font-bold text-slate-800 bg-white p-3 rounded-xl border border-slate-100">{selectedOrderForModal.return_reason}</div>
+                      </div>
+                      
+                      {selectedOrderForModal.admin_message && (
+                        <div>
+                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Admin Response Message</div>
+                          <div className="text-xs font-bold text-slate-800 bg-white p-3 rounded-xl border border-slate-100">{selectedOrderForModal.admin_message}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {selectedOrderForModal.return_image_url && (
+                    <div className="w-full md:w-36 shrink-0 space-y-1.5">
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Uploaded Proof Photo</div>
+                      <a
+                        href={formatImageUrl(selectedOrderForModal.return_image_url)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all group"
+                      >
+                        <img 
+                          src={formatImageUrl(selectedOrderForModal.return_image_url)} 
+                          alt="Proof" 
+                          className="w-full h-24 object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                          <Eye className="w-5 h-5 text-white" />
+                        </div>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-6 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setSelectedOrderForModal(null)}
+                className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import adminApi from '../services/adminApi';
+import adminService from '../services/admin.service';
 import { 
   Users, UserCheck, Star, IndianRupee, 
   Search, Mail, Phone, Calendar
@@ -19,12 +19,12 @@ const CustomersPage = () => {
   const load = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await adminApi.getCustomers({ page: pageNum, limit: ITEMS_PER_PAGE, search });
+      const response = await adminService.getCustomers({ page: pageNum, limit: ITEMS_PER_PAGE, search });
       setRows(response.data.items || []);
       setTotal(response.data.total || 0);
       setPage(pageNum);
 
-      const mRes = await adminApi.getDashboardMetrics();
+      const mRes = await adminService.getDashboardMetrics();
       setMetrics(mRes.data?.metrics || {});
     } catch {
     } finally {
@@ -55,7 +55,7 @@ const CustomersPage = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
             <UserCheck className="w-8 h-8 text-indigo-600" />
@@ -65,7 +65,7 @@ const CustomersPage = () => {
         </div>
         
         <div className="relative group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <input 
             type="text"
             placeholder="Search Customers..."
@@ -77,54 +77,54 @@ const CustomersPage = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
             <Users className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Database</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Database</div>
             <div className="text-2xl font-black text-slate-900">{stats.total}</div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
             <Star className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loyal Users</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Loyal Users</div>
             <div className="text-2xl font-black text-slate-900">{stats.loyal}</div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
             <IndianRupee className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gross Lifetime</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Gross Lifetime</div>
             <div className="text-2xl font-black text-slate-900">₹{stats.revenue.toLocaleString('en-IN')}</div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
             <Star className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Average LTV</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Average LTV</div>
             <div className="text-2xl font-black text-slate-900">₹{Math.round(stats.avg).toLocaleString('en-IN')}</div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="bg-slate-50/50 border-b border-slate-100">
+            <thead className="bg-slate-50/50 border-b border-slate-200">
               <tr>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-wider">Customer Identity</th>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-wider">Contact Details</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Total Volume</th>
-                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-wider">Lifetime Spend</th>
-                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-wider">Joined Date</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Customer Identity</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Contact Details</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Total Volume</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Lifetime Spend</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Joined Date</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -134,7 +134,7 @@ const CustomersPage = () => {
                     <div className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
                       {row.full_name || row.name || 'Anonymous'}
                     </div>
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
+                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
                       <Mail className="w-3 h-3" />
                       {row.email}
                     </div>
@@ -158,7 +158,7 @@ const CustomersPage = () => {
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-end gap-1.5">
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-end gap-1.5">
                       <Calendar className="w-3 h-3" />
                       {formatDate(row.created_at)}
                     </div>
@@ -168,7 +168,7 @@ const CustomersPage = () => {
             </tbody>
           </table>
           {rows.length === 0 && (
-            <div className="p-12 text-center text-slate-400 font-medium italic">
+            <div className="p-12 text-center text-slate-500 font-medium italic">
               No matching customer data found.
             </div>
           )}

@@ -23,7 +23,7 @@ const TransactionsTab = ({ orders }) => {
           <p className="text-slate-500 font-bold">No transactions found</p>
         </div>
       ) : (
-        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
+        <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
@@ -45,7 +45,7 @@ const TransactionsTab = ({ orders }) => {
                         </div>
                         <div>
                           <p className="font-black text-slate-900 text-sm">Order #{tx.order_number}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">TXN ID: {tx.id.slice(0, 8)}...</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase">TXN ID: {tx.id.slice(0, 8)}...</p>
                         </div>
                       </div>
                     </td>

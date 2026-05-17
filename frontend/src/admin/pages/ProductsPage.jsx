@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import adminApi from '../services/adminApi';
+import adminService from '../services/admin.service';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   Package, Plus, Search, Tag, Box, 
@@ -67,12 +67,12 @@ const ProductsPage = () => {
   const fetchRows = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await adminApi.getProducts({ page: pageNum, limit: ITEMS_PER_PAGE, search });
+      const response = await adminService.getProducts({ page: pageNum, limit: ITEMS_PER_PAGE, search });
       setRows(response.data.items || []);
       setTotal(response.data.total || 0);
       setPage(pageNum);
 
-      const mRes = await adminApi.getDashboardMetrics();
+      const mRes = await adminService.getDashboardMetrics();
       setMetrics(mRes.data?.metrics || {});
     } catch (err) {
       toast.error('Failed to load products');
@@ -106,7 +106,7 @@ const ProductsPage = () => {
   const handleDelete = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
-      await adminApi.deleteProduct(productId);
+      await adminService.deleteProduct(productId);
       toast.success('Product removed');
       fetchRows();
     } catch (err) {
@@ -122,7 +122,7 @@ const ProductsPage = () => {
     try {
       setSaving(true);
       if (isEdit) {
-        await adminApi.updateProduct(currentId, {
+        await adminService.updateProduct(currentId, {
           ...form,
           features: typeof form.features === 'string' ? form.features.split(',').map(f => f.trim()).filter(Boolean) : form.features
         });
@@ -149,7 +149,7 @@ const ProductsPage = () => {
           toast.error('Invalid Variants. Format: Size | SKU | Price | Discount | Stock'); 
           setSaving(false); return;
         }
-        await adminApi.createProduct({
+        await adminService.createProduct({
           ...form,
           features: form.features.split(',').map(f => f.trim()).filter(Boolean),
           variants,
@@ -183,7 +183,7 @@ const ProductsPage = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
             <Package className="w-8 h-8 text-indigo-600" />
@@ -194,7 +194,7 @@ const ProductsPage = () => {
         
         <div className="flex items-center gap-3">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input 
               type="text"
               placeholder="Search Items..."
@@ -213,50 +213,50 @@ const ProductsPage = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
           <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
             <Zap className="w-6 h-6" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fastest Mover</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Fastest Mover</div>
             <div className="text-lg font-black text-slate-900 truncate" title={stats.fastestMover}>
               {stats.fastestMover}
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
           <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
             <Trophy className="w-6 h-6" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Top Performer</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Top Performer</div>
             <div className="text-lg font-black text-slate-900 truncate" title={stats.topPerformer}>
               {stats.topPerformer}
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
           <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
             <IndianRupee className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Stock Value</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stock Value</div>
             <div className="text-2xl font-black text-slate-900">₹{Math.round(stats.value/1000)}k</div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
           <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
             <AlertCircle className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Low Stock</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Low Stock</div>
             <div className="text-2xl font-black text-slate-900">{stats.lowStock}</div>
           </div>
         </div>
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-8 animate-in slide-in-from-top duration-500 overflow-hidden relative">
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-8 animate-in slide-in-from-top duration-500 overflow-hidden relative">
           <div className="absolute top-0 right-0 p-8">
              <div className="w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-20 -mr-16 -mt-16"></div>
           </div>
@@ -269,23 +269,23 @@ const ProductsPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Product Title</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Product Title</label>
                 <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
                   placeholder="e.g., Ultra-Hold Foil Roll" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Description</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Description</label>
                 <textarea rows={4} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
                   placeholder="Technical details..." value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Thickness</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Thickness</label>
                     <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" 
                       placeholder="e.g., 11 Micron" value={form.thickness} onChange={e => setForm({...form, thickness: e.target.value})} />
                  </div>
                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Width</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Width</label>
                     <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" 
                       placeholder="e.g., 295mm" value={form.width} onChange={e => setForm({...form, width: e.target.value})} />
                  </div>
@@ -294,7 +294,7 @@ const ProductsPage = () => {
 
             <div className="space-y-6">
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Product Image</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Product Image</label>
                 <div className="flex gap-4">
                   <div className={`flex-1 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-4 transition-all ${form.image_url ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 hover:border-indigo-300'}`}>
                     {form.image_url ? (
@@ -306,7 +306,7 @@ const ProductsPage = () => {
                       <label htmlFor="img-up" className="flex flex-col items-center gap-2 cursor-pointer w-full h-full justify-center">
                         <Upload className="w-8 h-8 text-slate-300" />
                         <input type="file" className="hidden" id="img-up" onChange={e => setImageFile(e.target.files?.[0])} />
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-600 transition-colors">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-indigo-600 transition-colors">
                           {imageFile ? imageFile.name : 'Choose File'}
                         </span>
                       </label>
@@ -316,7 +316,7 @@ const ProductsPage = () => {
                     <Button disabled={imageUploading} onClick={async () => {
                       setImageUploading(true);
                       try {
-                        const res = await adminApi.uploadProductImage(imageFile);
+                        const res = await adminService.uploadProductImage(imageFile);
                         setForm({...form, image_url: `${process.env.REACT_APP_BACKEND_URL}${res.data.url}`});
                         setImageFile(null);
                         toast.success('Asset synced');
@@ -333,21 +333,21 @@ const ProductsPage = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Original Price (₹)</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Original Price (₹)</label>
                       <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Offer Price (₹)</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Offer Price (₹)</label>
                       <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none bg-emerald-50/30" value={form.discount_price} onChange={e => setForm({...form, discount_price: Number(e.target.value)})} />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Stock</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stock</label>
                       <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" value={form.stock_quantity} onChange={e => setForm({...form, stock_quantity: Number(e.target.value)})} />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Marketing Tag / Badge</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Marketing Tag / Badge</label>
                       <select className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none" value={form.badge} onChange={e => setForm({...form, badge: e.target.value})}>
                         <option value="">No Badge</option>
                         <option value="Best Seller">Best Seller</option>
@@ -361,14 +361,14 @@ const ProductsPage = () => {
               ) : (
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Variant Inventory Strategy</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Variant Inventory Strategy</label>
                     <span className="text-[9px] font-bold text-indigo-400">Size | SKU | Price | Offer | Stock | Badge</span>
                   </div>
                   <textarea rows={5} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-mono focus:ring-2 focus:ring-indigo-500/20 outline-none bg-slate-50/50"
                     placeholder="Enter one per line:&#10;18 Micron | DSF-18-72 | 199 | 149 | 500 | Best Seller&#10;11 Micron | DSF-11-25 | 129 | 99 | 1000 | Huge Saving"
                     value={form.variants} onChange={e => setForm({...form, variants: e.target.value})} />
                   <div className="flex justify-between items-center px-1">
-                    <p className="text-[9px] text-slate-400 font-medium italic">Use the | character to separate fields.</p>
+                    <p className="text-[9px] text-slate-500 font-medium italic">Use the | character to separate fields.</p>
                     <button onClick={() => setForm({...form, variants: 'Small | SKU-S | 99 | 79 | 100 | New Arrival\nLarge | SKU-L | 199 | 149 | 50 | Best Seller'})} className="text-[9px] font-black text-indigo-500 uppercase tracking-widest hover:underline">Load Template</button>
                   </div>
                 </div>
@@ -376,7 +376,7 @@ const ProductsPage = () => {
             </div>
           </div>
           
-          <div className="mt-8 pt-8 border-t border-slate-100 flex justify-end gap-4">
+          <div className="mt-8 pt-8 border-t border-slate-200 flex justify-end gap-4">
              <Button variant="ghost" onClick={() => { setShowForm(false); setIsEdit(false); }} className="rounded-xl font-bold">Discard</Button>
              <Button disabled={saving} onClick={saveProduct} className="rounded-xl px-12 font-black uppercase tracking-widest shadow-lg shadow-indigo-200">
                {saving ? 'Processing...' : (isEdit ? 'Update Product' : 'Add Product')}
@@ -385,18 +385,18 @@ const ProductsPage = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="bg-slate-50/50 border-b border-slate-100">
+            <thead className="bg-slate-50/50 border-b border-slate-200">
               <tr>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-wider">Product</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">SKU Code</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Price</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Stock Level</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Sales</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Status</th>
-                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-wider">Actions</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Product</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">SKU Code</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Price</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Stock Level</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Sales</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Status</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -413,17 +413,17 @@ const ProductsPage = () => {
                       </div>
                       <div>
                         <div className="font-bold text-slate-800">{row.name}</div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{row.size} • {row.thickness}</div>
+                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{row.size} • {row.thickness}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-6 text-center">
-                    <div className="text-[10px] font-mono font-bold text-slate-400 tracking-widest">{row.batch_no}</div>
+                    <div className="text-[10px] font-mono font-bold text-slate-500 tracking-widest">{row.batch_no}</div>
                   </td>
                   <td className="px-8 py-6 text-center">
                     <div className="text-sm font-black text-slate-800">₹{Number(row.discount_price || row.price || 0).toLocaleString()}</div>
                     {row.discount_price > 0 && row.discount_price < row.price && (
-                      <div className="text-[9px] text-slate-400 line-through">₹{row.price}</div>
+                      <div className="text-[9px] text-slate-500 line-through">₹{row.price}</div>
                     )}
                   </td>
                   <td className="px-8 py-6 text-center">
@@ -459,7 +459,7 @@ const ProductsPage = () => {
             </tbody>
           </table>
           {rows.length === 0 && (
-            <div className="p-12 text-center text-slate-400 font-medium italic">
+            <div className="p-12 text-center text-slate-500 font-medium italic">
               Catalog search returned zero results.
             </div>
           )}

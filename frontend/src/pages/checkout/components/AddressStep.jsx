@@ -61,7 +61,7 @@ const AddressStep = ({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
-      className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100"
+      className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200"
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
         <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tighter">Shipping Details</h2>
@@ -85,14 +85,14 @@ const AddressStep = ({
               <div 
                 key={addr.id} 
                 onClick={() => onSelectAddress(addr)}
-                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative group ${selectedAddressId === addr.id ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-100 bg-white hover:border-indigo-200'}`}
+                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative group ${selectedAddressId === addr.id ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-200 bg-white hover:border-indigo-200'}`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className={`p-2 rounded-lg ${selectedAddressId === addr.id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
                       {addr.label === 'Home' ? <Home className="w-3 h-3" /> : addr.label === 'Office' ? <Briefcase className="w-3 h-3" /> : <MapPin className="w-3 h-3" />}
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{addr.label}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{addr.label}</span>
                   </div>
                   {selectedAddressId === addr.id && <CheckCircle2 className="w-5 h-5 text-indigo-600" />}
                 </div>
@@ -100,7 +100,7 @@ const AddressStep = ({
                 <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
                   {addr.address_line1}, {addr.city}, {addr.state} - {addr.pincode}
                 </p>
-                <div className="mt-3 text-[10px] font-bold text-slate-400 uppercase">{addr.phone}</div>
+                <div className="mt-3 text-[10px] font-bold text-slate-500 uppercase">{addr.phone}</div>
               </div>
             ))}
           </div>
@@ -108,11 +108,11 @@ const AddressStep = ({
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Full Name</Label>
                 <Input name="full_name" value={shippingInfo.full_name} onChange={onInputChange} placeholder="Rahul Sharma" className="rounded-xl h-12" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Mobile</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Mobile</Label>
                 <PhoneInput
                   international
                   defaultCountry="IN"
@@ -125,14 +125,14 @@ const AddressStep = ({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Pincode</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Pincode</Label>
                 <div className="relative">
                   <Input name="pincode" value={shippingInfo.pincode} onChange={handlePincodeChange} placeholder="6 digits" className="rounded-xl h-12" maxLength={6} />
                   {checkingPincode && <Loader2 className="absolute right-4 top-3.5 w-5 h-5 animate-spin text-indigo-600" />}
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">State</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">State</Label>
                 <select 
                   name="state"
                   value={shippingInfo.state} 
@@ -146,19 +146,19 @@ const AddressStep = ({
                 </select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">City</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">City</Label>
                 <Input name="city" value={shippingInfo.city} onChange={onInputChange} placeholder="City" className="rounded-xl h-12" />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">House/Flat No., Building</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">House/Flat No., Building</Label>
               <Input name="address_line1" value={shippingInfo.address_line1} onChange={onInputChange} className="rounded-xl h-12" />
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between ml-1">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Area, Street, Landmark</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Area, Street, Landmark</Label>
                 <button 
                   type="button" 
                   onClick={handleDetectLocation} 

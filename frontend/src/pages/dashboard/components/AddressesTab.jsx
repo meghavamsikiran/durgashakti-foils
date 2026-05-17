@@ -110,7 +110,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
       </div>
 
       {showAddressForm ? (
-        <form onSubmit={handleSubmit} className="p-10 rounded-[3rem] bg-white border border-slate-100 shadow-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <form onSubmit={handleSubmit} className="p-10 rounded-[3rem] bg-white border border-slate-200 shadow-2xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center">
               <MapPin className="w-5 h-5" />
@@ -120,11 +120,11 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Full Name</Label>
               <Input placeholder="e.g. Rahul Sharma" value={addressForm.full_name} onChange={e => setAddressForm({...addressForm, full_name: e.target.value})} required className="rounded-2xl h-16 bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold" />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Mobile Number</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Mobile Number</Label>
               <PhoneInput
                 international
                 defaultCountry="IN"
@@ -138,14 +138,14 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Pincode</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Pincode</Label>
               <div className="relative">
                 <Input placeholder="6 digits" value={addressForm.pincode} onChange={handlePincodeChange} required maxLength={6} className="rounded-2xl h-16 bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold" />
                 {checkingPincode && <Loader2 className="absolute right-6 top-5 w-6 h-6 animate-spin text-indigo-600" />}
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">State</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">State</Label>
               <select 
                 value={addressForm.state} 
                 onChange={e => setAddressForm({...addressForm, state: e.target.value})}
@@ -158,7 +158,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
               </select>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">City / District</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">City / District</Label>
               <Input 
                 value={addressForm.city} 
                 onChange={e => setAddressForm({...addressForm, city: e.target.value})}
@@ -169,13 +169,13 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Flat, House no., Building, Apartment</Label>
+            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Flat, House no., Building, Apartment</Label>
             <Input value={addressForm.address_line1} onChange={e => setAddressForm({...addressForm, address_line1: e.target.value})} required className="rounded-2xl h-16 bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold" />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between ml-1">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Area, Street, Landmark (Optional)</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Area, Street, Landmark (Optional)</Label>
               <button 
                 type="button" 
                 onClick={handleDetectLocation} 
@@ -197,7 +197,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {addresses.length === 0 ? (
-            <div className="md:col-span-2 p-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+            <div className="md:col-span-2 p-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-200">
               <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
                 <MapPin className="w-10 h-10 text-slate-300" />
               </div>
@@ -205,7 +205,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
               <p className="text-slate-500 font-medium mt-2">Add your shipping address to start ordering.</p>
             </div>
           ) : addresses.map(addr => (
-            <div key={addr.id} className="p-8 rounded-[2.5rem] border border-slate-100 bg-white relative group hover:shadow-2xl hover:border-indigo-100 transition-all animate-in zoom-in-95 duration-500">
+            <div key={addr.id} className="p-8 rounded-[2.5rem] border border-slate-200 bg-white relative group hover:shadow-2xl hover:border-indigo-100 transition-all animate-in zoom-in-95 duration-500">
               <div className="flex items-center gap-3 mb-6">
                 <div className="px-4 py-1 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest">{addr.label}</div>
                 {addr.is_default && <div className="px-4 py-1 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest">Primary</div>}
@@ -217,7 +217,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
                 {addr.city}, {addr.state} - <span className="font-black text-slate-900">{addr.pincode}</span>
               </p>
               <div className="mt-6 flex items-center gap-3 pt-6 border-t border-slate-50">
-                <div className="flex items-center gap-2 text-slate-400 font-bold text-sm">
+                <div className="flex items-center gap-2 text-slate-500 font-bold text-sm">
                   {addr.phone}
                 </div>
               </div>

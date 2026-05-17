@@ -25,9 +25,14 @@ const ICON_MAP = {
 };
 
 const AdminLayout = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasPermission } = useAuth();
   const location = useLocation();
-  const menu = isSuperAdminRole(user?.role) ? superAdminSidebar : adminSidebar;
+  
+  // Filter menu based on dynamic permissions
+  const menu = superAdminSidebar.filter(item => {
+    if (!item.permission) return true; // Always visible (e.g. Dashboard)
+    return hasPermission(item.permission);
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -42,13 +47,13 @@ const AdminLayout = () => {
 
         <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
           {menu.map((item) => {
-            const Icon = ICON_MAP[item] || LayoutDashboard;
-            const path = `/admin/${item.toLowerCase().replace(/\s+/g, '-')}`;
-            const isActive = location.pathname === path || (item === 'Dashboard' && location.pathname === '/admin');
+            const Icon = ICON_MAP[item.label] || LayoutDashboard;
+            const path = `/admin/${item.label.toLowerCase().replace(/\s+/g, '-')}`;
+            const isActive = location.pathname === path || (item.label === 'Dashboard' && location.pathname === '/admin');
             
             return (
               <Link
-                key={item}
+                key={item.label}
                 to={path}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group ${
                   isActive 
@@ -57,7 +62,7 @@ const AdminLayout = () => {
                 }`}
               >
                 <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-indigo-400'}`} />
-                {item}
+                {item.label}
               </Link>
             );
           })}
@@ -76,7 +81,7 @@ const AdminLayout = () => {
           <button 
             type="button" 
             onClick={logout} 
-            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all"
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-bold text-slate-500 hover:bg-rose-500/10 hover:text-rose-500 transition-all"
           >
             <LogOut className="w-4 h-4" />
             Sign Out

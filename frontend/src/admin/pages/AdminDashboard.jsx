@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import adminApi from '../services/adminApi';
+import adminService from '../services/admin.service';
 import { 
   LayoutDashboard, ShoppingBag, Zap, Package, 
   Users, IndianRupee, TrendingUp, Calendar,
@@ -30,7 +30,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const response = await adminApi.getDashboardMetrics();
+        const response = await adminService.getDashboardMetrics();
         setMetrics(response.data?.metrics || {});
       } catch (err) {
         setError(err.message);
@@ -44,7 +44,7 @@ const AdminDashboard = () => {
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
       <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Loading Dashboard...</div>
+      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Loading Dashboard...</div>
     </div>
   );
   
@@ -64,7 +64,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
             <LayoutDashboard className="w-8 h-8 text-indigo-600" />
@@ -73,8 +73,8 @@ const AdminDashboard = () => {
           <p className="text-slate-500 mt-1 font-medium text-sm">A summary of your business performance at Durga Shakti Foils.</p>
         </div>
         
-        <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-slate-100 shadow-sm">
-          <Calendar className="w-4 h-4 text-slate-400" />
+        <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-slate-200 shadow-sm">
+          <Calendar className="w-4 h-4 text-slate-500" />
           <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
             {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
           </span>
@@ -87,13 +87,13 @@ const AdminDashboard = () => {
           const Icon = config.icon;
           
           return (
-            <div key={key} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
+            <div key={key} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
               <div className={`w-12 h-12 ${config.bg} ${config.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
                 <Icon className="w-6 h-6" />
               </div>
               
               <div className="space-y-1">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{config.label}</div>
+                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{config.label}</div>
                 <div className="text-2xl font-black text-slate-900 tracking-tight">{formatValue(key, value)}</div>
               </div>
 
@@ -115,7 +115,7 @@ const AdminDashboard = () => {
                
                <div className="space-y-2">
                   <h2 className="text-4xl font-black tracking-tighter leading-none">Status Summary</h2>
-                  <p className="text-slate-400 font-medium max-w-md">Your store and orders are running smoothly across all regions.</p>
+                  <p className="text-slate-500 font-medium max-w-md">Your store and orders are running smoothly across all regions.</p>
                </div>
 
                <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 pt-4">

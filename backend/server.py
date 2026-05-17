@@ -65,7 +65,7 @@ if not JWT_SECRET:
     JWT_SECRET = _sec.token_urlsafe(48)
     logging.warning('JWT_SECRET is missing — auto-generated random secret for local development. Set a strong JWT_SECRET in .env for persistence.')
 JWT_ALGORITHM = 'HS256'
-JWT_EXPIRATION_HOURS = 1  # 1 hour
+JWT_EXPIRATION_HOURS = 24  # 24 hours
 
 # Payment Gateway Configuration — Razorpay only
 razorpay_client = razorpay.Client(auth=(
@@ -84,16 +84,50 @@ async def lifespan(app: FastAPI):
     # Startup
     logging.info("Starting DurgaShakti Foils Server...")
     try:
+        # Users
         await db.users.create_index("email", unique=True)
         await db.users.create_index("id", unique=True)
+        await db.users.create_index("role")
+        
+        # Products
         await db.products.create_index("id", unique=True)
+        await db.products.create_index("category")
+        await db.products.create_index("batch_no")
+        await db.products.create_index("variant_sku", sparse=True)
+        await db.products.create_index("stock_quantity")
+        await db.products.create_index([("name", "text"), ("batch_no", "text")])
+        
+        # Orders
         await db.orders.create_index("id", unique=True)
         await db.orders.create_index("user_id")
         await db.orders.create_index("order_number", unique=True)
+        await db.orders.create_index("order_status")
+        await db.orders.create_index("created_at")
+        await db.orders.create_index("idempotency_key", unique=True, sparse=True)
+        await db.orders.create_index("razorpay_order_id", sparse=True)
+        
+        # Carts
         await db.carts.create_index("user_id", unique=True)
-        await db.gst_records.create_index("invoice_number")
+        
+        # Notifications
+        await db.notifications.create_index("user_id")
+        await db.notifications.create_index([("user_id", 1), ("is_read", 1)])
+        
+        # GST
+        await db.gst_records.create_index("invoice_number", unique=True)
+        await db.gst_records.create_index("import_id")
+        
+        # Audit
         await db.audit_logs.create_index("created_at")
-        logging.info("MongoDB indexes ensured")
+        await db.audit_logs.create_index("action")
+        
+        # Password Resets
+        await db.password_resets.create_index("email", unique=True)
+        
+        # Stock History
+        await db.stock_history.create_index("product_id")
+        
+        logging.info("MongoDB indexes ensured (%d collections indexed)", 8)
     except Exception as exc:
         logging.warning("MongoDB index creation issue: %s", exc)
     
@@ -116,7 +150,9 @@ class User(BaseModel):
     email: EmailStr
     full_name: str
     phone: Optional[str] = None
-    role: str = "customer"  # customer or admin
+    role: str = "customer"  # customer, admin, SUPER_ADMIN
+    status: str = "active"  # active, inactive
+    permissions: dict = {}
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     wishlist: List[dict] = []
     addresses: List[dict] = []
@@ -140,6 +176,8 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
+    if user.get("status") == "inactive":
+        raise HTTPException(status_code=403, detail="Account is deactivated")
     return User(**user)
 
 @api_router.post("/upload-v5")
@@ -396,6 +434,54 @@ async def get_admin_user(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
 
+def require_permission(permission: str):
+    async def permission_checker(admin: User = Depends(get_admin_user)):
+        if admin.role == "SUPER_ADMIN":
+            return admin
+        if not admin.permissions or not admin.permissions.get(permission):
+            raise HTTPException(status_code=403, detail=f"Permission denied: requires {permission}")
+        return admin
+    return permission_checker
+
+
+# ─── Order Status State Machine ─────────────────────────────────────────
+ORDER_STATUS_TRANSITIONS = {
+    "pending": ["confirmed", "cancelled"],
+    "processing": ["confirmed", "packed", "cancelled"],
+    "placed": ["confirmed", "packed", "cancelled"],
+    "confirmed": ["packed", "shipped", "cancelled"],
+    "packed": ["shipped", "cancelled"],
+    "shipped": ["delivered", "cancelled"],
+    "delivered": ["return_requested", "refunded"],
+    "return_requested": ["return_approved", "return_rejected"],
+    "return_approved": ["refunded"],
+    "return_rejected": [],
+    "cancelled": [],
+    "refunded": [],
+}
+
+
+def normalize_order_status(status: str | None) -> str:
+    """Normalize incoming status strings to lowercase canonical form."""
+    if not status:
+        raise HTTPException(status_code=400, detail="Status is required")
+    normalized = status.strip().lower()
+    # Map common variants
+    status_aliases = {
+        "confirm": "confirmed",
+        "ship": "shipped",
+        "deliver": "delivered",
+        "cancel": "cancelled",
+        "refund": "refunded",
+    }
+    return status_aliases.get(normalized, normalized)
+
+
+def is_super_admin_role(role: str | None) -> bool:
+    """Check if a role string represents super admin."""
+    return role == "SUPER_ADMIN"
+
+
 # Auth Routes
 @api_router.post("/auth/register")
 async def register(user_data: UserRegister):
@@ -589,7 +675,9 @@ async def forgot_password(data: ForgotPasswordRequest):
     expiry = datetime.now(timezone.utc) + timedelta(minutes=15)
     
     # LOG OTP FOR DEVELOPMENT (In case email fails)
-    print(f"\n[DEV] PASSWORD RESET OTP FOR {data.email}: {otp}\n")
+    if os.environ.get('ENVIRONMENT') != 'production':
+        print(f"\n[DEV] PASSWORD RESET OTP FOR {data.email}: {otp}\n")
+    logging.info("Password reset OTP generated for %s", data.email)
     
     await db.password_resets.update_one(
         {"email": data.email},
@@ -737,6 +825,14 @@ async def update_cart_item(item: CartItem, current_user: User = Depends(get_curr
     existing_item = next((i for i in items if i['product_id'] == item.product_id), None)
     
     if existing_item:
+        # Stock validation
+        product = await db.products.find_one({"id": item.product_id}, {"_id": 0})
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        stock_qty = int(product.get("stock_quantity", 0))
+        if item.quantity > stock_qty:
+            raise HTTPException(status_code=400, detail=f"Only {stock_qty} units available")
+            
         existing_item['quantity'] = item.quantity
         await db.carts.update_one(
             {"user_id": current_user.id},
@@ -865,17 +961,44 @@ async def create_order(order_data: OrderCreate, current_user: User = Depends(get
 
     return order
 
+async def enrich_order_items(orders_data):
+    if not orders_data:
+        return orders_data
+    
+    is_list = isinstance(orders_data, list)
+    orders = orders_data if is_list else [orders_data]
+    
+    # Gather all unique product IDs
+    product_ids = set()
+    for order in orders:
+        for item in order.get("items", []):
+            if not item.get("image_url") and item.get("product_id"):
+                product_ids.add(item["product_id"])
+                
+    if product_ids:
+        # Fetch all matching products in one bulk query
+        products = await db.products.find({"id": {"$in": list(product_ids)}}, {"id": 1, "image_url": 1}).to_list(1000)
+        product_image_map = {p["id"]: p.get("image_url") for p in products if p.get("image_url")}
+        
+        # Inject missing image_urls
+        for order in orders:
+            for item in order.get("items", []):
+                if not item.get("image_url") and item.get("product_id"):
+                    item["image_url"] = product_image_map.get(item["product_id"]) or "/uploads/foil_9m.png"
+                    
+    return orders_data if is_list else orders[0]
+
 @api_router.get("/orders")
 async def get_user_orders(current_user: User = Depends(get_current_user)):
-    orders = await db.orders.find({"user_id": current_user.id}, {"_id": 0}).sort("created_at", -1).to_list(1000)
-    return orders
+    orders = await db.orders.find({"user_id": current_user.id}, {"_id": 0}).sort("updated_at", -1).to_list(1000)
+    return await enrich_order_items(orders)
 
 @api_router.get("/orders/{order_id}")
 async def get_order(order_id: str, current_user: User = Depends(get_current_user)):
     order = await db.orders.find_one({"id": order_id, "user_id": current_user.id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    return order
+    return await enrich_order_items(order)
 
 @api_router.post("/orders/{order_id}/cancel")
 async def cancel_order(order_id: str, current_user: User = Depends(get_current_user)):
@@ -901,10 +1024,16 @@ async def cancel_order(order_id: str, current_user: User = Depends(get_current_u
             units_sold = max(0, int(product.get("units_sold", 0)) - qty)
             await db.products.update_one(
                 {"id": pid},
-                {
-                  "$inc": {"stock_quantity": qty, "units_sold": -qty},
-                  "$set": {"in_stock": True, "updated_at": datetime.now(timezone.utc).isoformat()}
-                },
+                [
+                    {"$set": {
+                        "stock_quantity": {"$add": ["$stock_quantity", qty]},
+                        "units_sold": {"$max": [0, {"$subtract": ["$units_sold", qty]}]},
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }},
+                    {"$set": {
+                        "in_stock": {"$gt": ["$stock_quantity", 0]}
+                    }}
+                ]
             )
             
     await db.orders.update_one(
@@ -1013,6 +1142,11 @@ async def verify_razorpay_payment(payment_data: dict, current_user: User = Depen
     order_id = payment_data.get('order_id')
     if not order_id:
         raise HTTPException(status_code=400, detail="order_id is required")
+    
+    # Verify order ownership
+    order_check = await db.orders.find_one({"id": order_id, "user_id": current_user.id}, {"_id": 1})
+    if not order_check:
+        raise HTTPException(status_code=404, detail="Order not found or access denied")
 
     # Test mode: skip signature verification, just mark as completed
     if is_test_mode():
@@ -1126,7 +1260,7 @@ async def check_test_mode():
 
 # Admin Routes
 @api_router.post("/admin/products")
-async def create_product(product: Product, admin: User = Depends(get_admin_user)):
+async def create_product(product: Product, admin: User = Depends(require_permission("manage_products"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
     doc = product.model_dump()
@@ -1136,7 +1270,7 @@ async def create_product(product: Product, admin: User = Depends(get_admin_user)
 
 
 @api_router.post("/admin/products/bulk")
-async def create_product_bulk(payload: ProductBulkCreateRequest, admin: User = Depends(get_admin_user)):
+async def create_product_bulk(payload: ProductBulkCreateRequest, admin: User = Depends(require_permission("manage_products"))):
     """
     Optimized bulk product creation with batch SKU validation.
     """
@@ -1194,10 +1328,10 @@ async def create_product_bulk(payload: ProductBulkCreateRequest, admin: User = D
     return {"message": f"Created {len(docs)} variants", "created_count": len(docs)}
 
 @api_router.put("/admin/products/{product_id}")
-async def update_product(product_id: str, product_data: dict, admin: User = Depends(get_admin_user)):
+async def update_product(product_id: str, product_data: dict, admin: User = Depends(require_permission("manage_products"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
-    ALLOWED_FIELDS = {'name', 'description', 'size', 'thickness', 'price', 'discount_price', 'image_url', 'features', 'in_stock', 'stock_quantity', 'category', 'batch_no', 'width'}
+    ALLOWED_FIELDS = {'name', 'description', 'size', 'thickness', 'price', 'discount_price', 'badge', 'image_url', 'features', 'in_stock', 'stock_quantity', 'category', 'batch_no', 'width', 'low_stock_threshold'}
     safe_data = {k: v for k, v in product_data.items() if k in ALLOWED_FIELDS}
     if not safe_data:
         raise HTTPException(status_code=400, detail="No valid fields to update")
@@ -1217,7 +1351,7 @@ async def update_product(product_id: str, product_data: dict, admin: User = Depe
     return {"message": "Product updated"}
 
 @api_router.delete("/admin/products/{product_id}")
-async def delete_product(product_id: str, admin: User = Depends(get_admin_user)):
+async def delete_product(product_id: str, admin: User = Depends(require_permission("manage_products"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
     
@@ -1237,7 +1371,7 @@ async def get_all_orders(
     page: int = Query(1, ge=1), 
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
-    admin: User = Depends(get_admin_user)
+    admin: User = Depends(require_permission("manage_orders"))
 ):
     query = {}
     if search:
@@ -1250,11 +1384,12 @@ async def get_all_orders(
         }
     skip = (page - 1) * limit
     total = await db.orders.count_documents(query)
-    orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-    return {"items": orders, "total": total, "page": page, "limit": limit}
+    orders = await db.orders.find(query, {"_id": 0}).sort("updated_at", -1).skip(skip).limit(limit).to_list(limit)
+    enriched_orders = await enrich_order_items(orders)
+    return {"items": enriched_orders, "total": total, "page": page, "limit": limit}
 
 @api_router.put("/admin/orders/{order_id}/status")
-async def update_order_status(order_id: str, status_data: dict, admin: User = Depends(get_admin_user)):
+async def update_order_status(order_id: str, status_data: dict, admin: User = Depends(require_permission("manage_orders"))):
     order = await db.orders.find_one({"id": order_id}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -1322,13 +1457,14 @@ async def update_order_status(order_id: str, status_data: dict, admin: User = De
     payment_method = order.get("payment_method")
     admin_message = status_data.get("admin_message", "")
     
-    if str(new_status).upper() == "REFUNDED" and payment_status == "completed" and payment_method == "razorpay":
-        payment_id = order.get("razorpay_payment_id")
-        if payment_id and not is_test_mode():
-            try:
-                razorpay_client.payment.refund(payment_id, {'amount': int(order.get('total_amount', 0) * 100)})
-            except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Razorpay refund failed: {str(e)}")
+    if str(new_status).upper() == "REFUNDED":
+        if payment_status == "completed" and payment_method == "razorpay":
+            payment_id = order.get("razorpay_payment_id")
+            if payment_id and not is_test_mode():
+                try:
+                    razorpay_client.payment.refund(payment_id, {'amount': int(order.get('total_amount', 0) * 100)})
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"Razorpay refund failed: {str(e)}")
         payment_status = "refunded"
 
     update_fields = {
@@ -1338,6 +1474,9 @@ async def update_order_status(order_id: str, status_data: dict, admin: User = De
     }
     if str(new_status).upper() == "DELIVERED":
         update_fields["delivered_at"] = update_fields["updated_at"]
+        if str(payment_method).upper() == "COD":
+            payment_status = "completed"
+            update_fields["payment_status"] = "completed"
     if admin_message:
         update_fields["admin_message"] = admin_message
     
@@ -1351,13 +1490,22 @@ async def update_order_status(order_id: str, status_data: dict, admin: User = De
     )
     await write_audit_log("ORDER_STATUS_UPDATED", admin.id, "order", order_id, {"from": prev_status, "to": new_status, "admin_message": admin_message})
     
-    # Notify Customer
-    await create_notification(
-        order['user_id'],
-        f"Order Update: {str(new_status).title()}",
-        f"Your order #{order['order_number']} status has been updated to {new_status}.",
-        "order"
-    )
+    # Notify Customer (only if it's a registered customer and user_id is present)
+    user_id = order.get("user_id")
+    if user_id and user_id != "guest":
+        try:
+            msg_body = f"Your order #{order['order_number']} status has been updated to {new_status.replace('_', ' ')}."
+            if admin_message:
+                msg_body += f" Note: {admin_message}"
+            
+            await create_notification(
+                user_id,
+                f"Order Update: {str(new_status).replace('_', ' ').title()}",
+                msg_body,
+                "order"
+            )
+        except Exception as notif_err:
+            logging.getLogger(__name__).warning("Failed to create customer notification: %s", notif_err)
 
     return {"message": "Order status updated"}
 
@@ -1367,7 +1515,7 @@ async def list_customers(
     page: int = Query(1, ge=1), 
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
-    admin: User = Depends(get_admin_user)
+    admin: User = Depends(require_permission("manage_customers"))
 ):
     query = {"role": "customer"}
     if search:
@@ -1382,6 +1530,13 @@ async def list_customers(
     
     order_counts = {}
     pipeline = [
+        {"$match": {
+            "order_status": {"$in": ["processing", "placed", "confirmed", "shipped", "delivered"]},
+            "$or": [
+                {"payment_status": "completed"},
+                {"payment_method": "cod"}
+            ]
+        }},
         {"$group": {"_id": "$user_id", "orders_count": {"$sum": 1}, "total_spent": {"$sum": "$total_amount"}}}
     ]
     grouped = await db.orders.aggregate(pipeline).to_list(10000)
@@ -1407,7 +1562,7 @@ async def list_payments(
     page: int = Query(1, ge=1), 
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
-    admin: User = Depends(get_admin_user)
+    admin: User = Depends(require_permission("access_financial_reports"))
 ):
     query = {}
     if search:
@@ -1439,14 +1594,20 @@ async def list_payments(
 
 
 @api_router.get("/admin/analytics/summary")
-async def get_admin_analytics_summary(admin: User = Depends(get_admin_user)):
+async def get_admin_analytics_summary(admin: User = Depends(require_permission("access_financial_reports"))):
     """
     Optimized Analytics Summary using MongoDB Aggregation Pipelines.
     This prevents OOM errors as the database grows.
     """
-    # 1. Total Revenue (Confirmed/Delivered)
+    # 1. Total Revenue (Confirmed/Delivered/Paid or COD)
     revenue_pipeline = [
-        {"$match": {"order_status": {"$in": ["processing", "placed", "confirmed", "shipped", "delivered"]}}},
+        {"$match": {
+            "order_status": {"$in": ["processing", "placed", "confirmed", "shipped", "delivered"]},
+            "$or": [
+                {"payment_status": "completed"},
+                {"payment_method": "cod"}
+            ]
+        }},
         {"$group": {"_id": None, "total": {"$sum": "$total_amount"}}}
     ]
     revenue_res = await db.orders.aggregate(revenue_pipeline).to_list(1)
@@ -1564,8 +1725,8 @@ async def get_admin_analytics_summary(admin: User = Depends(get_admin_user)):
             "id": p.get("id"),
             "name": p.get("name"),
             "sku": p.get("batch_no") or p.get("variant_sku"),
-            "stock_left": int(p.get("stock_quantity", 0)),
-            "units_sold": int(p.get("units_sold", 0)),
+            "stock_left": int(p.get("stock_quantity") or 0),
+            "units_sold": int(p.get("units_sold") or 0),
         }
         for p in inventory_rows
     ]
@@ -1623,7 +1784,7 @@ async def get_admin_analytics_summary(admin: User = Depends(get_admin_user)):
 
 
 @api_router.get("/admin/admin-users")
-async def list_admin_users(admin: User = Depends(get_admin_user)):
+async def list_admin_users(admin: User = Depends(require_permission("manage_admins"))):
     admins = await db.users.find({"role": {"$in": ["admin", "SUPER_ADMIN"]}}, {"_id": 0, "password": 0}).to_list(1000)
     for row in admins:
         if "is_active" not in row:
@@ -1632,13 +1793,16 @@ async def list_admin_users(admin: User = Depends(get_admin_user)):
 
 
 @api_router.post("/admin/admin-users")
-async def create_admin_user(payload: AdminCreateRequest, admin: User = Depends(get_admin_user)):
+async def create_admin_user(payload: AdminCreateRequest, admin: User = Depends(require_permission("manage_admins"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Only super admin can create admins")
     existing = await db.users.find_one({"email": payload.email}, {"_id": 0})
     if existing:
         raise HTTPException(status_code=400, detail="Email already exists")
-    role = payload.role if payload.role in {"admin", "SUPER_ADMIN"} else "admin"
+    if payload.role == "SUPER_ADMIN":
+        raise HTTPException(status_code=400, detail="Only one Super Admin is allowed. Cannot create another Super Admin.")
+    
+    role = "admin"
     doc = {
         "id": str(uuid.uuid4()),
         "email": payload.email,
@@ -1655,7 +1819,7 @@ async def create_admin_user(payload: AdminCreateRequest, admin: User = Depends(g
 
 
 @api_router.put("/admin/admin-users/{user_id}/status")
-async def update_admin_status(user_id: str, data: dict, admin: User = Depends(get_admin_user)):
+async def update_admin_status(user_id: str, data: dict, admin: User = Depends(require_permission("manage_admins"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Only super admin can manage admin status")
     if user_id == admin.id:
@@ -1676,7 +1840,7 @@ class AdminUpdateRequest(BaseModel):
 
 
 @api_router.put("/admin/admin-users/{user_id}")
-async def update_admin_user(user_id: str, data: AdminUpdateRequest, admin: User = Depends(get_admin_user)):
+async def update_admin_user(user_id: str, data: AdminUpdateRequest, admin: User = Depends(require_permission("manage_admins"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Only super admin can edit admins")
     target = await db.users.find_one({"id": user_id, "role": {"$in": ["admin", "SUPER_ADMIN"]}}, {"_id": 0})
@@ -1693,8 +1857,11 @@ async def update_admin_user(user_id: str, data: AdminUpdateRequest, admin: User 
         updates["email"] = data.email
     if data.phone is not None:
         updates["phone"] = data.phone
-    if data.role is not None and data.role in {"admin", "SUPER_ADMIN"}:
-        updates["role"] = data.role
+    if data.role is not None:
+        if data.role == "SUPER_ADMIN":
+            raise HTTPException(status_code=400, detail="Only one Super Admin is allowed. Cannot promote to Super Admin.")
+        if data.role == "admin":
+            updates["role"] = data.role
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
     await db.users.update_one({"id": user_id}, {"$set": updates})
@@ -1703,7 +1870,7 @@ async def update_admin_user(user_id: str, data: AdminUpdateRequest, admin: User 
 
 
 @api_router.delete("/admin/admin-users/{user_id}")
-async def delete_admin_user(user_id: str, admin: User = Depends(get_admin_user)):
+async def delete_admin_user(user_id: str, admin: User = Depends(require_permission("manage_admins"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Only super admin can delete admins")
     if user_id == admin.id:
@@ -1721,7 +1888,7 @@ class PasswordResetRequest(BaseModel):
 
 
 @api_router.put("/admin/admin-users/{user_id}/reset-password")
-async def reset_admin_password(user_id: str, data: PasswordResetRequest, admin: User = Depends(get_admin_user)):
+async def reset_admin_password(user_id: str, data: PasswordResetRequest, admin: User = Depends(require_permission("manage_admins"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Only super admin can reset passwords")
     target = await db.users.find_one({"id": user_id, "role": {"$in": ["admin", "SUPER_ADMIN"]}}, {"_id": 0})
@@ -1734,7 +1901,7 @@ async def reset_admin_password(user_id: str, data: PasswordResetRequest, admin: 
 
 
 @api_router.get("/admin/settings")
-async def get_settings(admin: User = Depends(get_admin_user)):
+async def get_settings(admin: User = Depends(require_permission("manage_settings"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
     settings = await db.settings.find({}, {"_id": 0}).to_list(100)
@@ -1742,7 +1909,7 @@ async def get_settings(admin: User = Depends(get_admin_user)):
 
 
 @api_router.post("/admin/settings")
-async def save_setting(data: dict, admin: User = Depends(get_admin_user)):
+async def save_setting(data: dict, admin: User = Depends(require_permission("manage_settings"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
     key = data.get("key")
@@ -1755,7 +1922,7 @@ async def save_setting(data: dict, admin: User = Depends(get_admin_user)):
 
 
 @api_router.post("/admin/uploads/image")
-async def upload_product_image(file: UploadFile = File(...), admin: User = Depends(get_admin_user)):
+async def upload_product_image(file: UploadFile = File(...), admin: User = Depends(require_permission("manage_products"))):
     content_type = (file.content_type or "").lower()
     if content_type not in {"image/png", "image/jpeg", "image/jpg", "image/webp"}:
         raise HTTPException(status_code=400, detail="Only png/jpg/jpeg/webp images are supported")
@@ -1774,7 +1941,7 @@ async def upload_product_image(file: UploadFile = File(...), admin: User = Depen
 
 
 @api_router.post("/admin/products/{product_id}/inventory")
-async def adjust_inventory(product_id: str, data: dict, admin: User = Depends(get_admin_user)):
+async def adjust_inventory(product_id: str, data: dict, admin: User = Depends(require_permission("manage_inventory"))):
     delta = int(data.get("delta", 0))
     # Atomic update with state calculation
     result = await db.products.find_one_and_update(
@@ -1809,7 +1976,7 @@ async def adjust_inventory(product_id: str, data: dict, admin: User = Depends(ge
 
 
 @api_router.post("/admin/gst/import")
-async def import_gst_file(file: UploadFile = File(...), admin: User = Depends(get_admin_user)):
+async def import_gst_file(file: UploadFile = File(...), admin: User = Depends(require_permission("access_gst_reports"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Only super admin can import GST")
     filename = (file.filename or "").lower()
@@ -1881,7 +2048,7 @@ async def get_audit_logs(
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=200),
     search: Optional[str] = Query(None),
-    admin: User = Depends(get_admin_user)
+    admin: User = Depends(require_permission("access_gst_reports"))
 ):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
@@ -1902,7 +2069,7 @@ async def get_audit_logs(
 
 
 @api_router.post("/admin/gst/seed-sample")
-async def seed_sample_gst(admin: User = Depends(get_admin_user)):
+async def seed_sample_gst(admin: User = Depends(require_permission("access_gst_reports"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
     import_id = str(uuid.uuid4())
@@ -1923,7 +2090,7 @@ async def get_gst_reports(
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=500),
     search: Optional[str] = Query(None),
-    admin: User = Depends(get_admin_user)
+    admin: User = Depends(require_permission("manage_admins"))
 ):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
@@ -1950,7 +2117,7 @@ async def get_gst_reports(
 
 
 @api_router.get("/admin/gst/imports")
-async def get_gst_import_history(admin: User = Depends(get_admin_user)):
+async def get_gst_import_history(admin: User = Depends(require_permission("access_gst_reports"))):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
     imports = await db.gst_imports.find({}, {"_id": 0}).sort("upload_date", -1).to_list(1000)
@@ -1958,7 +2125,7 @@ async def get_gst_import_history(admin: User = Depends(get_admin_user)):
 
 # Seed initial products (protected)
 @api_router.post("/seed-products")
-async def seed_products(admin: User = Depends(get_admin_user)):
+async def seed_products(admin: User = Depends(require_permission("manage_products"))):
     if not is_super_admin_role(admin.role):
         raise HTTPException(status_code=403, detail="Only super admin can seed products")
     existing = await db.products.count_documents({})
@@ -2235,6 +2402,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
                 self._hits[key].append(now)
         return await call_next(request)
 
+app.add_middleware(RateLimiterMiddleware)
 app.include_router(api_router)
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 

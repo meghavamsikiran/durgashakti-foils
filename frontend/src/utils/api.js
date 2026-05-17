@@ -1,49 +1,52 @@
-import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
-
-const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+/**
+ * DEPRECATED: Use individual service modules from /services/ instead.
+ * This file is kept for backward compatibility with pages that still import it.
+ * All calls are now routed through the centralized apiClient with interceptors.
+ */
+import apiClient from '../services/core/apiClient';
 
 export const api = {
   // Products
-  getProducts: (params) => axios.get(`${API_URL}/products`, { params }),
-  getProduct: (id) => axios.get(`${API_URL}/products/${id}`),
+  getProducts: (params) => apiClient.get('/products', { params }),
+  getProduct: (id) => apiClient.get(`/products/${id}`),
   
   // Orders
-  createOrder: (data) => axios.post(`${API_URL}/orders`, data, { headers: getAuthHeader() }),
-  getOrders: () => axios.get(`${API_URL}/orders`, { headers: getAuthHeader() }),
-  getOrder: (id) => axios.get(`${API_URL}/orders/${id}`, { headers: getAuthHeader() }),
-  cancelOrder: (id) => axios.post(`${API_URL}/orders/${id}/cancel`, {}, { headers: getAuthHeader() }),
-  returnOrder: (id, formData) => axios.post(`${API_URL}/orders/${id}/return`, formData, { 
-    headers: { ...getAuthHeader(), 'Content-Type': 'multipart/form-data' } 
+  createOrder: (data) => apiClient.post('/orders', data),
+  getOrders: () => apiClient.get('/orders'),
+  getOrder: (id) => apiClient.get(`/orders/${id}`),
+  cancelOrder: (id) => apiClient.post(`/orders/${id}/cancel`),
+  returnOrder: (id, formData) => apiClient.post(`/orders/${id}/return`, formData, { 
+    headers: { 'Content-Type': 'multipart/form-data' } 
   }),
   
   // Payment
-  createRazorpayOrder: (orderId) => axios.post(`${API_URL}/payment/razorpay/create-order?order_id=${orderId}`, {}, { headers: getAuthHeader() }),
-  verifyRazorpayPayment: (data) => axios.post(`${API_URL}/payment/razorpay/verify`, data, { headers: getAuthHeader() }),
-  confirmCOD: (orderId) => axios.post(`${API_URL}/payment/cod/confirm?order_id=${orderId}`, {}, { headers: getAuthHeader() }),
+  createRazorpayOrder: (orderId) => apiClient.post(`/payment/razorpay/create-order?order_id=${orderId}`),
+  verifyRazorpayPayment: (data) => apiClient.post('/payment/razorpay/verify', data),
+  confirmCOD: (orderId) => apiClient.post(`/payment/cod/confirm?order_id=${orderId}`),
   
   // Profile & User Data
-  updateProfile: (data) => axios.put(`${API_URL}/auth/me`, data, { headers: getAuthHeader() }),
-  getAddresses: () => axios.get(`${API_URL}/user/addresses`, { headers: getAuthHeader() }),
-  addAddress: (data) => axios.post(`${API_URL}/user/addresses`, data, { headers: getAuthHeader() }),
-  updateAddress: (id, data) => axios.put(`${API_URL}/user/addresses/${id}`, data, { headers: getAuthHeader() }),
-  deleteAddress: (id) => axios.delete(`${API_URL}/user/addresses/${id}`, { headers: getAuthHeader() }),
-  getWishlist: () => axios.get(`${API_URL}/user/wishlist`, { headers: getAuthHeader() }),
-  toggleWishlist: (productId) => axios.post(`${API_URL}/user/wishlist/${productId}`, {}, { headers: getAuthHeader() }),
-  getNotifications: () => axios.get(`${API_URL}/user/notifications`, { headers: getAuthHeader() }),
-  markNotificationsRead: () => axios.put(`${API_URL}/user/notifications/read-all`, {}, { headers: getAuthHeader() }),
-  getSavedCards: () => axios.get(`${API_URL}/user/cards`, { headers: getAuthHeader() }),
-  addSavedCard: (data) => axios.post(`${API_URL}/user/cards`, data, { headers: getAuthHeader() }),
-  
-
+  updateProfile: (data) => apiClient.put('/auth/me', data),
+  getAddresses: () => apiClient.get('/user/addresses'),
+  addAddress: (data) => apiClient.post('/user/addresses', data),
+  updateAddress: (id, data) => apiClient.put(`/user/addresses/${id}`, data),
+  deleteAddress: (id) => apiClient.delete(`/user/addresses/${id}`),
+  getWishlist: () => apiClient.get('/user/wishlist'),
+  toggleWishlist: (productId) => apiClient.post(`/user/wishlist/${productId}`),
+  getNotifications: () => apiClient.get('/user/notifications'),
+  markNotificationsRead: () => apiClient.put('/user/notifications/read-all'),
+  getSavedCards: () => apiClient.get('/user/cards'),
+  addSavedCard: (data) => apiClient.post('/user/cards', data),
   
   // Auth
-  changePassword: (data) => axios.post(`${API_URL}/auth/change-password`, data, { headers: getAuthHeader() }),
-  seedProducts: () => axios.post(`${API_URL}/seed-products`),
+  changePassword: (data) => apiClient.post('/auth/change-password', data),
+  seedProducts: () => apiClient.post('/seed-products'),
+};
+
+export const formatImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+  return `${backendUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
 export default api;

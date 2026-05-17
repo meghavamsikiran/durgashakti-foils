@@ -24,9 +24,9 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
   for (let i = start; i <= end; i++) pages.push(i);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-100 bg-slate-50/30">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-slate-50/30">
       {/* Left: item count */}
-      <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
         {totalItems != null && (
           <>
             Showing {Math.min((currentPage - 1) * (pageSize || 10) + 1, totalItems)}–
@@ -41,7 +41,7 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
         <button
           disabled={currentPage === 1}
           onClick={() => onPageChange(1)}
-          className="p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+          className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
           aria-label="First page"
         >
           <ChevronsLeft className="w-4 h-4" />
@@ -51,7 +51,7 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
         <button
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
-          className="p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+          className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
           aria-label="Previous page"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -86,7 +86,7 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
         <button
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          className="p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+          className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
           aria-label="Next page"
         >
           <ChevronRight className="w-4 h-4" />
@@ -96,7 +96,7 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
         <button
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(totalPages)}
-          className="p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+          className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
           aria-label="Last page"
         >
           <ChevronsRight className="w-4 h-4" />

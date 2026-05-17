@@ -26,7 +26,7 @@ const Dashboard = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   // Feature hooks
-  const { orders, loading: ordersLoading, fetchOrders, cancelOrder } = useOrders();
+  const { orders, loading: ordersLoading, fetchOrders, cancelOrder, returnOrder } = useOrders();
   const { wishlist, loading: wishlistLoading, toggleWishlist } = useWishlist();
   const { addresses, loading: addressesLoading, addAddress, updateAddress, deleteAddress } = useAddresses();
   const { notifications, loading: notificationsLoading, unreadCount, markAllAsRead } = useNotifications();
@@ -95,6 +95,7 @@ const Dashboard = () => {
         order={selectedOrder} 
         isOpen={!!selectedOrder} 
         onClose={() => setSelectedOrder(null)} 
+        onReturnOrder={returnOrder}
       />
     </div>
   );

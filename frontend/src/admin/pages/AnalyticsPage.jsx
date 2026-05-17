@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import adminApi from '../services/adminApi';
+import adminService from '../services/admin.service';
 import { 
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
+import { useProgress } from '../../components/ui/ProgressToast';
 
 const metricConfigs = {
   total_orders: { label: 'Total Orders', icon: ShoppingBag, color: 'text-indigo-600', bg: 'bg-indigo-50' },
@@ -35,11 +36,12 @@ const AnalyticsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [topLimit, setTopLimit] = useState(10);
   const [timeframe, setTimeframe] = useState('Last 7 Days');
+  const { startProgress, updateProgress, finishProgress } = useProgress();
 
   useEffect(() => {
     const load = async () => {
       try {
-        const response = await adminApi.getDashboardMetrics();
+        const response = await adminService.getDashboardMetrics();
         setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
       } catch (error) {
         toast.error("Failed to load dashboard metrics");
@@ -86,11 +88,20 @@ const AnalyticsPage = () => {
   };
 
   const handleExport = () => {
+    const progressId = startProgress({
+      label: `Durgashakti_Analytics_${new Date().toISOString().split('T')[0]}.csv`,
+      type: 'export',
+      fileType: 'spreadsheet',
+      message: 'Preparing analytics data...',
+    });
+
     try {
       if (!summary.inventory || summary.inventory.length === 0) {
-        toast.error("No data available to export");
+        finishProgress(progressId, { message: 'No data available to export', isError: true });
         return;
       }
+
+      updateProgress(progressId, { progress: 30, message: 'Building CSV rows...' });
 
       const headers = ["Product Name", "SKU", "Stock Left", "Units Sold", "Category"];
       const rows = summary.inventory.map(p => [
@@ -101,6 +112,8 @@ const AnalyticsPage = () => {
         `"${p.category || 'General'}"`
       ]);
 
+      updateProgress(progressId, { progress: 60, message: 'Generating file...' });
+
       const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
@@ -110,18 +123,21 @@ const AnalyticsPage = () => {
       link.setAttribute("download", `Durgashakti_Product_Analytics_${new Date().toISOString().split('T')[0]}.csv`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
+
+      updateProgress(progressId, { progress: 90, message: 'Downloading...' });
+
       link.click();
       document.body.removeChild(link);
       
-      toast.success("Analytics report downloaded successfully");
+      finishProgress(progressId, { message: 'Report downloaded successfully!' });
     } catch (err) {
-      toast.error("Failed to generate export");
+      finishProgress(progressId, { message: 'Failed to generate export', isError: true });
     }
   };
 
   const renderChart = (data, dataKey = "value") => {
     if (!data || data.length === 0) return (
-      <div className="h-64 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-lg border border-dashed">
+      <div className="h-64 flex flex-col items-center justify-center text-slate-500 bg-slate-50/50 rounded-lg border border-dashed">
         <Search className="w-8 h-8 mb-2 opacity-20" />
         <p className="text-sm">No data matching filters</p>
       </div>
@@ -202,7 +218,7 @@ const AnalyticsPage = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
             <TrendingUp className="w-8 h-8 text-indigo-600" />
@@ -213,7 +229,7 @@ const AnalyticsPage = () => {
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input 
               type="text"
               placeholder="Search products..."
@@ -226,7 +242,7 @@ const AnalyticsPage = () => {
         </div>
       </div>
 
-      <div className="bg-slate-50 p-2 rounded-2xl flex flex-wrap items-center gap-4 border border-slate-100 shadow-inner">
+      <div className="bg-slate-50 p-2 rounded-2xl flex flex-wrap items-center gap-4 border border-slate-200 shadow-inner">
         <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200">
           <Calendar className="w-4 h-4 text-indigo-600" />
           <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="text-sm font-bold text-slate-700 outline-none bg-transparent">
@@ -245,7 +261,7 @@ const AnalyticsPage = () => {
           </select>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200">
-          <span className="text-xs font-black text-slate-400 uppercase tracking-tighter">Show:</span>
+          <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">Show:</span>
           <select value={topLimit} onChange={(e) => setTopLimit(Number(e.target.value))} className="text-sm font-bold text-slate-700 outline-none bg-transparent">
             <option value={5}>05 Items</option>
             <option value={10}>10 Items</option>
@@ -257,14 +273,14 @@ const AnalyticsPage = () => {
       {/* Redundant metrics grid removed as requested to focus on advanced charts */}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
           <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
             <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
             Revenue Trend
           </h2>
           {renderChart(trendData)}
         </div>
-        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
           <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
             <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
             Order Status
@@ -274,14 +290,14 @@ const AnalyticsPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
           <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
             <div className="w-1.5 h-6 bg-amber-500 rounded-full"></div>
             Stock Levels
           </h2>
           {renderChart(inventoryData)}
         </div>
-        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
           <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
             <div className="w-1.5 h-6 bg-rose-500 rounded-full"></div>
             Best Sellers
@@ -290,20 +306,20 @@ const AnalyticsPage = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-8 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-8 py-6 bg-slate-50/50 border-b border-slate-200 flex items-center justify-between">
           <h3 className="font-bold text-slate-800">Stock List</h3>
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-white px-3 py-1 rounded-full border">Sync Active</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white px-3 py-1 rounded-full border">Sync Active</span>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-slate-50/30">
               <tr>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-wider">Product</th>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-400 uppercase tracking-wider">Stock Health</th>
-                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-wider">Remaining</th>
-                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-400 uppercase tracking-wider">Sold</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-400 uppercase tracking-wider">Status</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Product</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Stock Health</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Remaining</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Sold</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -311,7 +327,7 @@ const AnalyticsPage = () => {
                 <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-5">
                     <div className="font-bold text-slate-800 group-hover:text-indigo-600">{p.name}</div>
-                    <div className="text-[10px] text-slate-400 font-mono mt-0.5">{p.sku || 'N/A'}</div>
+                    <div className="text-[10px] text-slate-500 font-mono mt-0.5">{p.sku || 'N/A'}</div>
                   </td>
                   <td className="px-8 py-5">
                     <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
