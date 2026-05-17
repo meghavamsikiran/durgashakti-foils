@@ -13,6 +13,7 @@ import { formatImageUrl } from '../../utils/api';
 
 const STATUS_FLOW = {
   PENDING: ['CONFIRMED', 'CANCELLED'],
+  PENDING_PAYMENT: ['CANCELLED'],
   PROCESSING: ['CONFIRMED', 'CANCELLED'],
   PLACED: ['CONFIRMED', 'CANCELLED'],
   CONFIRMED: ['PACKED', 'CANCELLED'],
@@ -21,13 +22,14 @@ const STATUS_FLOW = {
   DELIVERED: [],
   CANCELLED: [],
   RETURN_REQUESTED: ['RETURN_APPROVED', 'RETURN_REJECTED'],
-  RETURN_APPROVED: ['REFUNDED'],
+  RETURN_APPROVED: [],
   RETURN_REJECTED: [],
   REFUNDED: [],
 };
 
 const statusConfigs = {
   PENDING: { color: 'text-amber-600', bg: 'bg-amber-50', icon: Clock },
+  PENDING_PAYMENT: { color: 'text-rose-600', bg: 'bg-rose-50', icon: Clock },
   PLACED: { color: 'text-blue-600', bg: 'bg-blue-50', icon: ShoppingBag },
   CONFIRMED: { color: 'text-indigo-600', bg: 'bg-indigo-50', icon: CheckCircle2 },
   PACKED: { color: 'text-violet-600', bg: 'bg-violet-50', icon: PackageCheck },
@@ -58,7 +60,11 @@ const OrdersPage = () => {
   const load = useCallback(async (p = 1) => {
     try {
       setLoading(true);
-      const response = await adminService.getOrders({ page: p, limit: PAGE_SIZE, search });
+      const params = { page: p, limit: PAGE_SIZE, search };
+      if (filter !== 'ALL') {
+        params.status_filter = filter;
+      }
+      const response = await adminService.getOrders(params);
       setRows(response.data.items || []);
       setTotal(response.data.total || 0);
       setPage(p);
@@ -67,22 +73,22 @@ const OrdersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, filter]);
 
   useEffect(() => {
     const timer = setTimeout(() => load(1), 300);
     return () => clearTimeout(timer);
-  }, [search, load]);
+  }, [search, filter, load]);
 
   const handlePageChange = (newPage) => {
-    setPage(newPage);
     setExpandedOrderId(null);
+    load(newPage);
   };
 
-  const updateStatus = async (orderId, newStatus, message = '') => {
+  const updateStatus = async (orderId, newStatus, message = '', extraData = {}) => {
     try {
       setSubmitting(true);
-      await adminService.updateOrderStatus(orderId, { status: newStatus, admin_message: message });
+      await adminService.updateOrderStatus(orderId, { status: newStatus, admin_message: message, ...extraData });
       toast.success(`Order status updated to ${newStatus.toLowerCase().replace('_', ' ')}`);
       setMessageModal(null);
       setAdminMessage('');
@@ -100,7 +106,7 @@ const OrdersPage = () => {
 
   const getStats = () => ({
     total: total,
-    pending: rows.filter(r => ['PENDING', 'PROCESSING', 'PLACED'].includes((r.status || '').toUpperCase())).length,
+    pending: rows.filter(r => ['PENDING', 'PENDING_PAYMENT', 'PROCESSING', 'PLACED'].includes((r.status || '').toUpperCase())).length,
     confirmed: rows.filter(r => (r.status || '').toUpperCase() === 'CONFIRMED').length,
     returns: rows.filter(r => (r.status || '').toUpperCase().startsWith('RETURN')).length,
     delivered: rows.filter(r => (r.status || '').toUpperCase() === 'DELIVERED').length,
@@ -173,7 +179,7 @@ const OrdersPage = () => {
       </div>
 
       <div className="bg-slate-50 p-1 rounded-2xl flex flex-wrap items-center gap-1 border border-slate-200">
-        {['ALL', 'PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURN_REQUESTED'].map((s) => (
+        {['ALL', 'PENDING', 'PENDING_PAYMENT', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURN_REQUESTED'].map((s) => (
           <button
             key={s}
             onClick={() => setFilter(s)}
@@ -247,30 +253,31 @@ const OrdersPage = () => {
                                RETURN_REJECTED: 'Reject',
                                REFUNDED: 'Refund'
                              };
-                             const label = actionLabels[a] || a.replace('_', ' ');
-                             
-                             return (
-                               <button
-                                 key={a}
-                                 onClick={(e) => { 
-                                   e.stopPropagation(); 
-                                   if (['RETURN_APPROVED', 'RETURN_REJECTED', 'CANCELLED'].includes(a)) {
-                                     setMessageModal({ orderId: order.id, status: a });
-                                     setAdminMessage('');
-                                   } else {
-                                     updateStatus(order.id, a);
-                                   }
-                                 }}
-                                 className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
-                                   a === 'CANCELLED' || a === 'RETURN_REJECTED' 
-                                     ? 'border-rose-100 text-rose-600 hover:bg-rose-50' 
-                                     : a === 'DELIVERED' || a === 'RETURN_APPROVED' || a === 'CONFIRMED'
-                                     ? 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'
-                                     : 'border-indigo-100 text-indigo-600 hover:bg-indigo-50'
-                                 }`}
-                               >
-                                 {label}
-                               </button>
+                              const label = actionLabels[a] || a.replace('_', ' ');
+                              const isDeliverWithCOD = a === 'DELIVERED' && order.payment_method === 'cod' && order.payment_status !== 'completed';
+                              
+                              return (
+                                <button
+                                  key={a}
+                                  onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    if (['RETURN_APPROVED', 'RETURN_REJECTED', 'CANCELLED'].includes(a)) {
+                                      setMessageModal({ orderId: order.id, status: a });
+                                      setAdminMessage('');
+                                    } else {
+                                      updateStatus(order.id, a, '', isDeliverWithCOD ? { mark_paid: true } : {});
+                                    }
+                                  }}
+                                  className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                    a === 'CANCELLED' || a === 'RETURN_REJECTED' 
+                                      ? 'border-rose-100 text-rose-600 hover:bg-rose-50' 
+                                      : a === 'DELIVERED' || a === 'RETURN_APPROVED' || a === 'CONFIRMED'
+                                      ? 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'
+                                      : 'border-indigo-100 text-indigo-600 hover:bg-indigo-50'
+                                  }`}
+                                >
+                                  {isDeliverWithCOD ? 'Deliver & Mark Paid' : label}
+                                </button>
                              );
                            }) : (
                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500">

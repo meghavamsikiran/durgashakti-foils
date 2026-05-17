@@ -218,6 +218,21 @@ const AuditLogsPage = () => {
                                           <div className="text-xs font-mono font-bold text-slate-600 bg-slate-50 p-2 rounded-lg truncate">{row.actor_id || 'SYSTEM_PROCESS'}</div>
                                        </div>
                                        <div>
+                                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Updated By Name & Role</div>
+                                          <div className="text-xs font-black text-slate-800 bg-indigo-50/50 border border-indigo-100 p-2.5 rounded-xl truncate flex items-center gap-2">
+                                             <User className="w-3.5 h-3.5 text-indigo-500" />
+                                             {row.actor_name || 'System Process'} ({row.actor_role ? row.actor_role.replace('_', ' ') : 'SYSTEM'})
+                                          </div>
+                                       </div>
+                                       {row.actor_email && (
+                                          <div>
+                                             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Actor Email</div>
+                                             <div className="text-xs font-bold text-slate-600 bg-slate-50 p-2 rounded-xl truncate">{row.actor_email}</div>
+                                          </div>
+                                       )}
+                                       <div>
+                                       </div>
+                                       <div>
                                           <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Target ID</div>
                                           <div className="text-xs font-mono font-bold text-slate-600 bg-slate-50 p-2 rounded-lg truncate">{row.target_id || 'N/A'}</div>
                                        </div>

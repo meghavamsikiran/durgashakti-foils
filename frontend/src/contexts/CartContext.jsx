@@ -65,12 +65,15 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = useCallback(async (productId, quantity = 1) => {
     if (!token) {
-      const newItems = [...cart.items];
-      const existing = newItems.find(i => i.product_id === productId);
-      if (existing) {
-        existing.quantity += quantity;
+      const items = cart.items || [];
+      const existingIdx = items.findIndex(i => i.product_id === productId);
+      let newItems;
+      if (existingIdx >= 0) {
+        newItems = items.map((item, idx) =>
+          idx === existingIdx ? { ...item, quantity: (item.quantity || 0) + quantity } : item
+        );
       } else {
-        newItems.push({ product_id: productId, quantity });
+        newItems = [...items, { product_id: productId, quantity }];
       }
       const newCart = { items: newItems };
       setCart(newCart);

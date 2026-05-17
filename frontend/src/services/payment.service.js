@@ -15,6 +15,11 @@ const paymentService = {
     const response = await apiClient.post(`/payment/cod/confirm?order_id=${orderId}`);
     return response.data;
   },
+
+  payCODOnline: async (orderId) => {
+    const response = await apiClient.post('/payment/razorpay/pay-cod', { order_id: orderId });
+    return response.data;
+  },
 };
 
 export default paymentService;

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { QrCode, CreditCard, Landmark, Truck, Shield } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 
-const PaymentStep = ({ paymentMethod, onSetPaymentMethod, onBack }) => {
+const PaymentStep = ({ paymentMethod, onSetPaymentMethod, codEnabled = true, onBack }) => {
   const paymentMethods = [
     {
       id: 'upi',
@@ -45,33 +45,58 @@ const PaymentStep = ({ paymentMethod, onSetPaymentMethod, onBack }) => {
       </div>
 
       <div className="space-y-4">
-        {paymentMethods.map((method) => (
-          <label
-            key={method.id}
-            className={`flex items-center gap-4 p-6 border-2 rounded-3xl cursor-pointer transition-all ${
-              paymentMethod === method.id
-                ? 'border-indigo-600 bg-indigo-50/30'
-                : 'border-slate-200 hover:border-slate-200 bg-slate-50/50'
-            }`}
-          >
-            <input
-              type="radio"
-              name="payment_method"
-              value={method.id}
-              checked={paymentMethod === method.id}
-              onChange={(e) => onSetPaymentMethod(e.target.value)}
-              className="w-5 h-5 text-indigo-600 border-slate-300 focus:ring-indigo-600"
-            />
-            <div className={`p-3 rounded-2xl ${paymentMethod === method.id ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>
-              <method.icon className="w-6 h-6" />
-            </div>
-            <div className="flex-1">
-              <p className="font-black text-slate-900 uppercase tracking-tight">{method.name}</p>
-              <p className="text-xs text-slate-500 font-medium mt-1">{method.description}</p>
-            </div>
-          </label>
-        ))}
+        {paymentMethods.map((method) => {
+          const isDisabled = method.id === 'cod' && !codEnabled;
+          return (
+            <label
+              key={method.id}
+              className={`flex items-center gap-4 p-6 border-2 rounded-3xl transition-all ${
+                isDisabled
+                  ? 'opacity-40 cursor-not-allowed border-slate-100 bg-slate-50/50'
+                  : paymentMethod === method.id
+                  ? 'border-indigo-600 bg-indigo-50/30 cursor-pointer'
+                  : 'border-slate-200 hover:border-slate-300 bg-slate-50/50 cursor-pointer'
+              }`}
+            >
+              <input
+                type="radio"
+                name="payment_method"
+                value={method.id}
+                disabled={isDisabled}
+                checked={paymentMethod === method.id}
+                onChange={(e) => onSetPaymentMethod(e.target.value)}
+                className={`w-5 h-5 border-slate-300 focus:ring-indigo-600 ${isDisabled ? 'text-slate-300 cursor-not-allowed' : 'text-indigo-600 cursor-pointer'}`}
+              />
+              <div className={`p-3 rounded-2xl ${isDisabled ? 'bg-slate-200 text-slate-400' : paymentMethod === method.id ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>
+                <method.icon className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className={`font-black uppercase tracking-tight ${isDisabled ? 'text-slate-400' : 'text-slate-900'}`}>{method.name}</p>
+                  {isDisabled && (
+                    <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-slate-200 text-slate-500">
+                      Prepaid Only
+                    </span>
+                  )}
+                </div>
+                <p className={`text-xs font-medium mt-1 ${isDisabled ? 'text-slate-400' : 'text-slate-500'}`}>{method.description}</p>
+              </div>
+            </label>
+          );
+        })}
       </div>
+
+      {!codEnabled && (
+        <div className="p-5 rounded-3xl bg-amber-50 border border-amber-200/60 flex items-start gap-4 mt-6">
+          <div className="p-2 rounded-xl bg-amber-100 text-amber-800 flex-shrink-0">
+            <Shield className="w-5 h-5" />
+          </div>
+          <div className="text-xs text-amber-800 font-medium leading-relaxed">
+            <span className="font-extrabold uppercase tracking-tight block mb-0.5">Prepaid Orders Only</span>
+            Currently, we accept only prepaid orders. Cash on Delivery (COD) is temporarily disabled.
+          </div>
+        </div>
+      )}
 
       <div className="mt-12 p-6 bg-slate-900 rounded-[2rem] text-white">
         <div className="flex items-center gap-3 mb-4">

@@ -40,8 +40,9 @@ const AnalyticsPage = () => {
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
       try {
-        const response = await adminService.getDashboardMetrics();
+        const response = await adminService.getDashboardMetrics(timeframe);
         setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
       } catch (error) {
         toast.error("Failed to load dashboard metrics");
@@ -50,7 +51,7 @@ const AnalyticsPage = () => {
       }
     };
     load();
-  }, []);
+  }, [timeframe]);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -246,6 +247,7 @@ const AnalyticsPage = () => {
         <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200">
           <Calendar className="w-4 h-4 text-indigo-600" />
           <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="text-sm font-bold text-slate-700 outline-none bg-transparent">
+            <option>Today</option>
             <option>Last 7 Days</option>
             <option>This Month</option>
             <option>Fiscal Year</option>

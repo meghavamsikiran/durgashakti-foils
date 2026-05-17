@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Clock, Package } from 'lucide-react';
+import { ShoppingBag, Clock, Package, Wallet } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import TablePagination from '../../../components/ui/TablePagination';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,7 @@ const OrdersTab = ({ orders, loading, onCancelOrder, onSelectOrder }) => {
     const s = (status || 'pending').toLowerCase();
     const config = {
       pending: { bg: 'bg-blue-50 text-blue-600', label: 'Placed' },
+      pending_payment: { bg: 'bg-rose-50 text-rose-600', label: 'Payment Pending' },
       processing: { bg: 'bg-indigo-50 text-indigo-600', label: 'Processing' },
       confirmed: { bg: 'bg-purple-50 text-purple-600', label: 'Confirmed' },
       packed: { bg: 'bg-cyan-50 text-cyan-600', label: 'Packed' },
@@ -70,7 +71,7 @@ const OrdersTab = ({ orders, loading, onCancelOrder, onSelectOrder }) => {
                 <div className="text-right">
                   <div className="text-2xl font-black text-slate-900 mb-4">₹{(order.total_amount || 0).toLocaleString()}</div>
                   <div className="flex items-center justify-end gap-2">
-                    {['pending', 'processing'].includes(order.order_status) && (
+                    {['pending', 'pending_payment', 'processing'].includes(order.order_status) && (
                       <Button variant="ghost" onClick={() => onCancelOrder(order.id)} className="text-rose-500 hover:bg-rose-50 rounded-xl text-xs font-bold px-4">Cancel</Button>
                     )}
                     <Button onClick={() => onSelectOrder(order)} className="rounded-xl px-6 font-bold shadow-indigo-100 shadow-lg">View Details</Button>

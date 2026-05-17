@@ -17,6 +17,7 @@ const Checkout = () => {
     setCheckoutStep,
     paymentMethod,
     setPaymentMethod,
+    codEnabled,
     savedAddresses,
     selectedAddressId,
     shippingInfo,
@@ -59,6 +60,7 @@ const Checkout = () => {
                 <PaymentStep 
                   paymentMethod={paymentMethod}
                   onSetPaymentMethod={setPaymentMethod}
+                  codEnabled={codEnabled}
                   onBack={() => setCheckoutStep('shipping')}
                 />
               )}

@@ -447,6 +447,8 @@ def require_permission(permission: str):
 # ─── Order Status State Machine ─────────────────────────────────────────
 ORDER_STATUS_TRANSITIONS = {
     "pending": ["confirmed", "cancelled"],
+    "pending_payment": ["cancelled", "overdue"],
+    "overdue": ["cancelled"],
     "processing": ["confirmed", "packed", "cancelled"],
     "placed": ["confirmed", "packed", "cancelled"],
     "confirmed": ["packed", "shipped", "cancelled"],
@@ -477,6 +479,20 @@ def normalize_order_status(status: str | None) -> str:
     return status_aliases.get(normalized, normalized)
 
 
+import re
+
+def sanitize_search_term(term: str | None, max_length: int = 100) -> str | None:
+    """Sanitize user search input to prevent ReDoS and NoSQL injection."""
+    if not term:
+        return None
+    term = str(term).strip()
+    if len(term) > max_length:
+        term = term[:max_length]
+    # Escape regex special characters
+    term = re.escape(term)
+    return term
+
+
 def is_super_admin_role(role: str | None) -> bool:
     """Check if a role string represents super admin."""
     return role == "SUPER_ADMIN"
@@ -498,6 +514,7 @@ async def register(user_data: UserRegister):
     doc = user.model_dump()
     doc['password'] = hash_password(user_data.password)
     doc['created_at'] = doc['created_at'].isoformat()
+    doc['is_active'] = True
     
     await db.users.insert_one(doc)
     
@@ -708,7 +725,20 @@ async def forgot_password(data: ForgotPasswordRequest):
 async def reset_password(data: ResetPasswordRequest):
     reset_record = await db.password_resets.find_one({"email": data.email})
     if not reset_record or reset_record['otp'] != data.otp:
+        # Track failed attempts to prevent brute-force
+        if reset_record:
+            failed = reset_record.get("failed_attempts", 0) + 1
+            await db.password_resets.update_one(
+                {"email": data.email},
+                {"$set": {"failed_attempts": failed}}
+            )
+            if failed >= 5:
+                await db.password_resets.delete_one({"email": data.email})
+                raise HTTPException(status_code=429, detail="Too many failed attempts. Please request a new OTP.")
         raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    
+    if reset_record.get("failed_attempts", 0) >= 5:
+        raise HTTPException(status_code=429, detail="Too many failed attempts. Please request a new OTP.")
     
     expiry = datetime.fromisoformat(reset_record['expiry'])
     if datetime.now(timezone.utc) > expiry:
@@ -727,6 +757,7 @@ async def get_products(
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None)
 ):
+    search = sanitize_search_term(search)
     query = {}
     if search:
         query = {
@@ -868,6 +899,15 @@ async def clear_cart(current_user: User = Depends(get_current_user)):
 # Order Routes
 @api_router.post("/orders")
 async def create_order(order_data: OrderCreate, current_user: User = Depends(get_current_user)):
+    # Validate Cash on Delivery setting
+    if order_data.payment_method == "cod":
+        payment_settings = await db.settings.find_one({"key": "payment_settings"}, {"_id": 0})
+        cod_enabled = True
+        if payment_settings and "value" in payment_settings:
+            cod_enabled = payment_settings["value"].get("cod_enabled", True)
+        if not cod_enabled:
+            raise HTTPException(status_code=400, detail="Currently we accept only prepaid orders.")
+
     # Idempotency check
     if order_data.idempotency_key:
         existing = await db.orders.find_one({"idempotency_key": order_data.idempotency_key}, {"_id": 0})
@@ -915,6 +955,8 @@ async def create_order(order_data: OrderCreate, current_user: User = Depends(get
     doc['created_at'] = now_iso
     doc['updated_at'] = now_iso
     doc['shipping_address'] = order_data.shipping_address.model_dump()
+    if doc['payment_method'] != 'cod':
+        doc['order_status'] = 'pending_payment'
     doc['stock_applied'] = True
     if order_data.idempotency_key:
         doc['idempotency_key'] = order_data.idempotency_key
@@ -1006,7 +1048,7 @@ async def cancel_order(order_id: str, current_user: User = Depends(get_current_u
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
-    if order.get("order_status", "processing").lower() not in ["pending", "processing", "placed"]:
+    if order.get("order_status", "processing").lower() not in ["pending", "pending_payment", "processing", "placed"]:
         raise HTTPException(status_code=400, detail="Only pending or processing orders can be cancelled")
         
     applied = bool(order.get("stock_applied", False))
@@ -1019,9 +1061,6 @@ async def cancel_order(order_id: str, current_user: User = Depends(get_current_u
             product = await db.products.find_one({"id": pid}, {"_id": 0})
             if not product:
                 continue
-            current_qty = int(product.get("stock_quantity", 0))
-            new_qty = current_qty + qty
-            units_sold = max(0, int(product.get("units_sold", 0)) - qty)
             await db.products.update_one(
                 {"id": pid},
                 [
@@ -1148,18 +1187,25 @@ async def verify_razorpay_payment(payment_data: dict, current_user: User = Depen
     if not order_check:
         raise HTTPException(status_code=404, detail="Order not found or access denied")
 
+    # Fetch order to determine current status and whether to update order_status
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    current_order_status = order.get("order_status", "") if order else ""
+    # Only transition from pending_payment to processing for initial payment
+    # COD online payments during delivery should not change order_status
+    updated_status = "processing" if current_order_status == "pending_payment" else current_order_status
+
     # Test mode: skip signature verification, just mark as completed
     if is_test_mode():
         await db.orders.update_one(
             {"id": order_id},
             {"$set": {
                 "payment_status": "completed",
+                "order_status": updated_status,
                 "razorpay_payment_id": payment_data.get("razorpay_payment_id", "pay_dummy_123"),
                 "updated_at": datetime.now(timezone.utc).isoformat()
             }}
         )
         # Clear cart after successful payment
-        order = await db.orders.find_one({"id": order_id}, {"_id": 0})
         if order:
             await db.carts.update_one(
                 {"user_id": order['user_id']},
@@ -1176,7 +1222,6 @@ async def verify_razorpay_payment(payment_data: dict, current_user: User = Depen
     try:
         razorpay_client.utility.verify_payment_signature(payment_data)
         # Verify payment amount matches order total
-        order = await db.orders.find_one({"id": order_id}, {"_id": 0})
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
         try:
@@ -1185,12 +1230,13 @@ async def verify_razorpay_payment(payment_data: dict, current_user: User = Depen
                 raise HTTPException(status_code=400, detail="Payment amount mismatch")
         except HTTPException:
             raise
-        except Exception:
-            pass  # If fetch fails, signature verification is still valid
+        except Exception as fetch_err:
+            logger.warning("Payment fetch failed (continuing with signature verification): %s", fetch_err)
         await db.orders.update_one(
             {"id": order_id},
             {"$set": {
-                "payment_status": "completed", 
+                "payment_status": "completed",
+                "order_status": updated_status,
                 "razorpay_payment_id": payment_data.get('razorpay_payment_id'),
                 "updated_at": datetime.now(timezone.utc).isoformat()
             }}
@@ -1222,6 +1268,62 @@ async def confirm_cod_payment(order_id: str, current_user: User = Depends(get_cu
     )
     await write_audit_log("ORDER_COD_CONFIRMED", current_user.id, "order", order_id)
     return {"success": True, "message": "COD order confirmed"}
+
+
+# ─── COD Online Payment During Delivery ─────────────────────────────────
+@api_router.post("/payment/razorpay/pay-cod")
+async def pay_cod_online(payment_data: dict, current_user: User = Depends(get_current_user)):
+    """
+    Allows customers to pay for COD orders online when the delivery person arrives.
+    Creates a Razorpay payment order for the COD amount.
+    """
+    order_id = payment_data.get('order_id')
+    if not order_id:
+        raise HTTPException(status_code=400, detail="order_id is required")
+
+    order = await db.orders.find_one({"id": order_id, "user_id": current_user.id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.get("payment_method") != "cod":
+        raise HTTPException(status_code=400, detail="This order is not a COD order")
+
+    if order.get("payment_status") == "completed":
+        raise HTTPException(status_code=400, detail="This order has already been paid")
+
+
+
+    if is_test_mode():
+        mock_order_id = f"order_test_{str(uuid.uuid4())[:16]}"
+        return {
+            "razorpay_order_id": mock_order_id,
+            "amount": int(order['total_amount'] * 100),
+            "currency": "INR",
+            "key_id": os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_dummy'),
+            "test_mode": True
+        }
+
+    try:
+        razorpay_order = razorpay_client.order.create({
+            "amount": int(order['total_amount'] * 100),
+            "currency": "INR",
+            "receipt": f"COD-{order['order_number']}",
+            "notes": {"order_id": order_id, "type": "cod_online"}
+        })
+        await db.orders.update_one(
+            {"id": order_id},
+            {"$set": {"razorpay_order_id": razorpay_order['id'], "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        return {
+            "razorpay_order_id": razorpay_order['id'],
+            "amount": razorpay_order['amount'],
+            "currency": razorpay_order['currency'],
+            "key_id": os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_dummy'),
+            "test_mode": False
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create payment: {str(e)}")
+
 
 @api_router.post("/cart/bulk-sync")
 async def bulk_sync_cart(items: List[CartItem], current_user: User = Depends(get_current_user)):
@@ -1371,9 +1473,13 @@ async def get_all_orders(
     page: int = Query(1, ge=1), 
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
+    status: Optional[str] = Query(None, alias="status_filter"),
     admin: User = Depends(require_permission("manage_orders"))
 ):
+    search = sanitize_search_term(search)
     query = {}
+    if status and status.upper() != "ALL":
+        query["order_status"] = {"$regex": f"^{re.escape(status.lower())}$", "$options": "i"}
     if search:
         query = {
             "$or": [
@@ -1398,21 +1504,31 @@ async def update_order_status(order_id: str, status_data: dict, admin: User = De
     if new_status not in ORDER_STATUS_TRANSITIONS:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(ORDER_STATUS_TRANSITIONS.keys())}")
 
+    # Validate state machine transition
+    valid_transitions = ORDER_STATUS_TRANSITIONS.get(prev_status, [])
+    if new_status not in valid_transitions:
+        raise HTTPException(status_code=400, detail=f"Cannot transition from '{prev_status}' to '{new_status}'")
+
+    payment_status = order.get("payment_status")
+    payment_method = order.get("payment_method")
+    admin_message = status_data.get("admin_message", "")
+
+    # Payment validation: pre-paid orders must be paid before advancement
+    if payment_method != "cod" and payment_status != "completed":
+        if new_status not in ("cancelled", "overdue"):
+            raise HTTPException(status_code=400, detail="Cannot advance order: payment not completed. Please wait for payment confirmation.")
+
     # Inventory + sold units alignment:
     # - Stock is usually applied on order creation.
     # - apply stock/sales when moving to CONFIRMED (if not already applied)
     # - revert if moving to CANCELLED/REFUNDED after it was applied
     applied = bool(order.get("stock_applied", False))
     if (str(new_status).upper() == "CONFIRMED") and not applied:
-        # Atomic Batch Update for all items
         for item in order.get("items", []):
             pid = item.get("product_id")
             qty = int(item.get("quantity", 0))
             if not pid or qty <= 0:
                 continue
-            
-            # Atomic update using $inc and $max to prevent negative stock if desired, 
-            # and set in_stock dynamically.
             await db.products.update_one(
                 {"id": pid},
                 [
@@ -1429,14 +1545,12 @@ async def update_order_status(order_id: str, status_data: dict, admin: User = De
         await db.orders.update_one({"id": order_id}, {"$set": {"stock_applied": True}})
         await write_audit_log("ORDER_CONFIRMED_STOCK_APPLIED", admin.id, "order", order_id, {"prev_status": prev_status})
 
-    if (str(new_status).upper() in {"CANCELLED", "REFUNDED"}) and applied:
+    if (str(new_status).upper() in {"CANCELLED", "REFUNDED", "RETURN_APPROVED"}) and applied:
         for item in order.get("items", []):
             pid = item.get("product_id")
             qty = int(item.get("quantity", 0))
             if not pid or qty <= 0:
                 continue
-            
-            # Atomic Restore
             await db.products.update_one(
                 {"id": pid},
                 [
@@ -1453,54 +1567,56 @@ async def update_order_status(order_id: str, status_data: dict, admin: User = De
         await db.orders.update_one({"id": order_id}, {"$set": {"stock_applied": False}})
         await write_audit_log("ORDER_CANCELLED_STOCK_RESTORED", admin.id, "order", order_id, {"prev_status": prev_status})
 
-    payment_status = order.get("payment_status")
-    payment_method = order.get("payment_method")
-    admin_message = status_data.get("admin_message", "")
-    
-    if str(new_status).upper() == "REFUNDED":
-        if payment_status == "completed" and payment_method == "razorpay":
-            payment_id = order.get("razorpay_payment_id")
-            if payment_id and not is_test_mode():
-                try:
-                    razorpay_client.payment.refund(payment_id, {'amount': int(order.get('total_amount', 0) * 100)})
-                except Exception as e:
-                    raise HTTPException(status_code=500, detail=f"Razorpay refund failed: {str(e)}")
+    # Auto-refund on return_approved or refunded
+    if str(new_status).upper() in ("REFUNDED", "RETURN_APPROVED"):
+        payment_id = order.get("razorpay_payment_id")
+        if payment_status == "completed" and payment_id and not is_test_mode():
+            try:
+                razorpay_client.payment.refund(payment_id, {'amount': int(order.get('total_amount', 0) * 100)})
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Refund failed: {str(e)}")
         payment_status = "refunded"
 
+    # Determine effective order_status
+    effective_status = new_status
+    if str(new_status).upper() == "RETURN_APPROVED":
+        effective_status = "refunded"
+    if str(new_status).upper() == "RETURN_REJECTED":
+        effective_status = "RETURN_REJECTED"
+
     update_fields = {
-        "order_status": new_status,
+        "order_status": effective_status,
         "payment_status": payment_status,
         "updated_at": datetime.now(timezone.utc).isoformat()
     }
     if str(new_status).upper() == "DELIVERED":
         update_fields["delivered_at"] = update_fields["updated_at"]
-        if str(payment_method).upper() == "COD":
-            payment_status = "completed"
+        # For COD, if admin explicitly marks as paid (cash collected), set payment to completed
+        if payment_method == "cod" and status_data.get("mark_paid"):
             update_fields["payment_status"] = "completed"
     if admin_message:
         update_fields["admin_message"] = admin_message
-    
-    # If return rejected, revert status back to delivered so customer keeps the product
-    if str(new_status).upper() == "RETURN_REJECTED":
-        update_fields["order_status"] = "RETURN_REJECTED"
 
     await db.orders.update_one(
         {"id": order_id},
         {"$set": update_fields}
     )
-    await write_audit_log("ORDER_STATUS_UPDATED", admin.id, "order", order_id, {"from": prev_status, "to": new_status, "admin_message": admin_message})
+    await write_audit_log("ORDER_STATUS_UPDATED", admin.id, "order", order_id, {"from": prev_status, "to": effective_status, "admin_message": admin_message})
     
-    # Notify Customer (only if it's a registered customer and user_id is present)
+    # Notify Customer
     user_id = order.get("user_id")
     if user_id and user_id != "guest":
         try:
-            msg_body = f"Your order #{order['order_number']} status has been updated to {new_status.replace('_', ' ')}."
+            display_status = effective_status.replace('_', ' ')
+            msg_body = f"Your order #{order['order_number']} status has been updated to {display_status}."
             if admin_message:
                 msg_body += f" Note: {admin_message}"
+            if str(new_status).upper() == "RETURN_APPROVED":
+                msg_body += " Your refund has been processed successfully."
             
             await create_notification(
                 user_id,
-                f"Order Update: {str(new_status).replace('_', ' ').title()}",
+                f"Order Update: {display_status.title()}",
                 msg_body,
                 "order"
             )
@@ -1517,6 +1633,7 @@ async def list_customers(
     search: Optional[str] = Query(None),
     admin: User = Depends(require_permission("manage_customers"))
 ):
+    search = sanitize_search_term(search)
     query = {"role": "customer"}
     if search:
         query["$or"] = [
@@ -1531,11 +1648,8 @@ async def list_customers(
     order_counts = {}
     pipeline = [
         {"$match": {
-            "order_status": {"$in": ["processing", "placed", "confirmed", "shipped", "delivered"]},
-            "$or": [
-                {"payment_status": "completed"},
-                {"payment_method": "cod"}
-            ]
+            "order_status": {"$in": ["processing", "PROCESSING", "placed", "PLACED", "confirmed", "CONFIRMED", "packed", "PACKED", "shipped", "SHIPPED", "delivered", "DELIVERED", "return_rejected", "RETURN_REJECTED"]},
+            "payment_status": {"$in": ["completed", "COMPLETED"]}
         }},
         {"$group": {"_id": "$user_id", "orders_count": {"$sum": 1}, "total_spent": {"$sum": "$total_amount"}}}
     ]
@@ -1564,12 +1678,13 @@ async def list_payments(
     search: Optional[str] = Query(None),
     admin: User = Depends(require_permission("access_financial_reports"))
 ):
+    search = sanitize_search_term(search)
     query = {}
     if search:
         query = {
             "$or": [
                 {"order_number": {"$regex": search, "$options": "i"}},
-                {"transaction_id": {"$regex": search, "$options": "i"}},
+                {"razorpay_payment_id": {"$regex": search, "$options": "i"}},
                 {"razorpay_order_id": {"$regex": search, "$options": "i"}}
             ]
         }
@@ -1594,20 +1709,34 @@ async def list_payments(
 
 
 @api_router.get("/admin/analytics/summary")
-async def get_admin_analytics_summary(admin: User = Depends(require_permission("access_financial_reports"))):
+async def get_admin_analytics_summary(timeframe: Optional[str] = None, admin: User = Depends(require_permission("access_financial_reports"))):
     """
-    Optimized Analytics Summary using MongoDB Aggregation Pipelines.
+    Optimized Analytics Summary using MongoDB Aggregation Pipelines with timeframe filtering.
     This prevents OOM errors as the database grows.
     """
-    # 1. Total Revenue (Confirmed/Delivered/Paid or COD)
+    # Calculate date boundary
+    date_filter = None
+    now = datetime.now(timezone.utc)
+    if timeframe == "Today":
+        date_filter = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif timeframe == "This Month":
+        date_filter = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    elif timeframe == "Fiscal Year":
+        fiscal_year = now.year if now.month >= 4 else now.year - 1
+        date_filter = datetime(fiscal_year, 4, 1, 0, 0, 0, tzinfo=timezone.utc)
+    elif timeframe == "Last 7 Days":
+        date_filter = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # 1. Total Revenue (only completed payments within the timeframe)
+    revenue_match = {
+        "order_status": {"$in": ["processing", "PROCESSING", "placed", "PLACED", "confirmed", "CONFIRMED", "packed", "PACKED", "shipped", "SHIPPED", "delivered", "DELIVERED", "return_rejected", "RETURN_REJECTED"]},
+        "payment_status": {"$in": ["completed", "COMPLETED"]}
+    }
+    if date_filter:
+        revenue_match["created_at"] = {"$gte": date_filter.isoformat()}
+        
     revenue_pipeline = [
-        {"$match": {
-            "order_status": {"$in": ["processing", "placed", "confirmed", "shipped", "delivered"]},
-            "$or": [
-                {"payment_status": "completed"},
-                {"payment_method": "cod"}
-            ]
-        }},
+        {"$match": revenue_match},
         {"$group": {"_id": None, "total": {"$sum": "$total_amount"}}}
     ]
     revenue_res = await db.orders.aggregate(revenue_pipeline).to_list(1)
@@ -1620,11 +1749,20 @@ async def get_admin_analytics_summary(admin: User = Depends(require_permission("
     inventory_value_res = await db.products.aggregate(inventory_value_pipeline).to_list(1)
     total_inventory_value = round(inventory_value_res[0]["total"] or 0, 2) if inventory_value_res else 0
 
-    # 1.2 Total Units Sold
+    # 1.2 Total Units Sold within timeframe
+    units_sold_match = {
+        "order_status": {"$in": ["processing", "PROCESSING", "placed", "PLACED", "confirmed", "CONFIRMED", "packed", "PACKED", "shipped", "SHIPPED", "delivered", "DELIVERED", "return_rejected", "RETURN_REJECTED"]},
+        "payment_status": {"$in": ["completed", "COMPLETED"]}
+    }
+    if date_filter:
+        units_sold_match["created_at"] = {"$gte": date_filter.isoformat()}
+        
     units_sold_pipeline = [
-        {"$group": {"_id": None, "total": {"$sum": "$units_sold"}}}
+        {"$match": units_sold_match},
+        {"$unwind": "$items"},
+        {"$group": {"_id": None, "total": {"$sum": "$items.quantity"}}}
     ]
-    units_sold_res = await db.products.aggregate(units_sold_pipeline).to_list(1)
+    units_sold_res = await db.orders.aggregate(units_sold_pipeline).to_list(1)
     total_units_sold = int(units_sold_res[0]["total"] or 0) if units_sold_res else 0
 
     # 1.3 Stock Alerts (Global)
@@ -1641,7 +1779,15 @@ async def get_admin_analytics_summary(admin: User = Depends(require_permission("
     stock_health = round((in_stock_count / total_products_count * 100), 1) if total_products_count > 0 else 100
 
     # Top Performer (by Actual Order Revenue)
+    tp_match = {
+        "order_status": {"$in": ["processing", "PROCESSING", "placed", "PLACED", "confirmed", "CONFIRMED", "packed", "PACKED", "shipped", "SHIPPED", "delivered", "DELIVERED", "return_rejected", "RETURN_REJECTED"]},
+        "payment_status": {"$in": ["completed", "COMPLETED"]}
+    }
+    if date_filter:
+        tp_match["created_at"] = {"$gte": date_filter.isoformat()}
+        
     tp_pipeline = [
+        {"$match": tp_match},
         {"$unwind": "$items"},
         {"$group": {
             "_id": "$items.product_id",
@@ -1686,21 +1832,32 @@ async def get_admin_analytics_summary(admin: User = Depends(require_permission("
     else:
         sales_velocity = 0.00
 
-
-
     # 2. Orders Today Count
-    today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-    orders_today_count = await db.orders.count_documents({"created_at": {"$gte": today}})
+    today_iso = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    orders_today_count = await db.orders.count_documents({"created_at": {"$gte": today_iso}})
     
     # 3. Order Status Counts
+    status_match = {}
+    if date_filter:
+        status_match["created_at"] = {"$gte": date_filter.isoformat()}
+        
     status_pipeline = [
+        {"$match": status_match},
         {"$group": {"_id": "$order_status", "count": {"$sum": 1}}}
     ]
     status_res = await db.orders.aggregate(status_pipeline).to_list(100)
     status_counts = {row["_id"] or "unknown": row["count"] for row in status_res}
 
     # 4. Best Selling Products
+    best_products_match = {
+        "order_status": {"$in": ["processing", "PROCESSING", "placed", "PLACED", "confirmed", "CONFIRMED", "packed", "PACKED", "shipped", "SHIPPED", "delivered", "DELIVERED", "return_rejected", "RETURN_REJECTED"]},
+        "payment_status": {"$in": ["completed", "COMPLETED"]}
+    }
+    if date_filter:
+        best_products_match["created_at"] = {"$gte": date_filter.isoformat()}
+        
     best_products_pipeline = [
+        {"$match": best_products_match},
         {"$unwind": "$items"},
         {"$group": {"_id": "$items.product_id", "quantity": {"$sum": "$items.quantity"}}},
         {"$sort": {"quantity": -1}},
@@ -1731,33 +1888,116 @@ async def get_admin_analytics_summary(admin: User = Depends(require_permission("
         for p in inventory_rows
     ]
 
-    # 6. Revenue Trend (last 7 days)
-    seven_days_ago = (datetime.now(timezone.utc) - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-    trend_pipeline = [
-        {"$match": {
-            "order_status": {"$in": ["processing", "placed", "confirmed", "shipped", "delivered"]},
-            "created_at": {"$gte": seven_days_ago.isoformat()}
-        }},
-        {"$project": {
-            "date": {"$substr": ["$created_at", 0, 10]},
-            "total_amount": 1
-        }},
-        {"$group": {
-            "_id": "$date",
-            "value": {"$sum": "$total_amount"}
-        }},
-        {"$sort": {"_id": 1}}
-    ]
-    trend_res = await db.orders.aggregate(trend_pipeline).to_list(7)
-    trend_dict = {row["_id"]: row["value"] for row in trend_res}
+    # 6. Revenue Trend
     revenue_trend = []
-    for i in range(6, -1, -1):
-        d = (datetime.now(timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d")
-        revenue_trend.append({"name": d, "value": round(trend_dict.get(d, 0), 2)})
+    if timeframe == "Today":
+        # Group by hour for today
+        trend_pipeline = [
+            {"$match": {
+                "order_status": {"$in": ["processing", "PROCESSING", "placed", "PLACED", "confirmed", "CONFIRMED", "packed", "PACKED", "shipped", "SHIPPED", "delivered", "DELIVERED", "return_rejected", "RETURN_REJECTED"]},
+                "payment_status": {"$in": ["completed", "COMPLETED"]},
+                "created_at": {"$gte": date_filter.isoformat()}
+            }},
+            {"$project": {
+                "hour": {"$substr": ["$created_at", 11, 2]},
+                "total_amount": 1
+            }},
+            {"$group": {
+                "_id": "$hour",
+                "value": {"$sum": "$total_amount"}
+            }},
+            {"$sort": {"_id": 1}}
+        ]
+        trend_res = await db.orders.aggregate(trend_pipeline).to_list(24)
+        trend_dict = {row["_id"]: row["value"] for row in trend_res}
+        for h in range(24):
+            hour_str = f"{h:02d}:00"
+            revenue_trend.append({"name": hour_str, "value": round(trend_dict.get(f"{h:02d}", 0), 2)})
+            
+    elif timeframe == "This Month":
+        # Group by day for this month
+        trend_pipeline = [
+            {"$match": {
+                "order_status": {"$in": ["processing", "PROCESSING", "placed", "PLACED", "confirmed", "CONFIRMED", "packed", "PACKED", "shipped", "SHIPPED", "delivered", "DELIVERED", "return_rejected", "RETURN_REJECTED"]},
+                "payment_status": {"$in": ["completed", "COMPLETED"]},
+                "created_at": {"$gte": date_filter.isoformat()}
+            }},
+            {"$project": {
+                "date": {"$substr": ["$created_at", 0, 10]},
+                "total_amount": 1
+            }},
+            {"$group": {
+                "_id": "$date",
+                "value": {"$sum": "$total_amount"}
+            }},
+            {"$sort": {"_id": 1}}
+        ]
+        trend_res = await db.orders.aggregate(trend_pipeline).to_list(31)
+        trend_dict = {row["_id"]: row["value"] for row in trend_res}
+        days_in_month = (now - date_filter).days + 1
+        for i in range(days_in_month):
+            d = (date_filter + timedelta(days=i)).strftime("%Y-%m-%d")
+            revenue_trend.append({"name": d, "value": round(trend_dict.get(d, 0), 2)})
+            
+    elif timeframe == "Fiscal Year":
+        # Group by month for fiscal year
+        trend_pipeline = [
+            {"$match": {
+                "order_status": {"$in": ["processing", "PROCESSING", "placed", "PLACED", "confirmed", "CONFIRMED", "packed", "PACKED", "shipped", "SHIPPED", "delivered", "DELIVERED", "return_rejected", "RETURN_REJECTED"]},
+                "payment_status": {"$in": ["completed", "COMPLETED"]},
+                "created_at": {"$gte": date_filter.isoformat()}
+            }},
+            {"$project": {
+                "month": {"$substr": ["$created_at", 0, 7]},
+                "total_amount": 1
+            }},
+            {"$group": {
+                "_id": "$month",
+                "value": {"$sum": "$total_amount"}
+            }},
+            {"$sort": {"_id": 1}}
+        ]
+        trend_res = await db.orders.aggregate(trend_pipeline).to_list(12)
+        trend_dict = {row["_id"]: row["value"] for row in trend_res}
+        current_date = date_filter
+        while current_date <= now:
+            m = current_date.strftime("%Y-%m")
+            revenue_trend.append({"name": current_date.strftime("%b %Y"), "value": round(trend_dict.get(m, 0), 2)})
+            next_m = current_date.replace(day=28) + timedelta(days=5)
+            current_date = next_m.replace(day=1)
+            
+    else: # Default/Last 7 Days
+        trend_pipeline = [
+            {"$match": {
+                "order_status": {"$in": ["processing", "PROCESSING", "placed", "PLACED", "confirmed", "CONFIRMED", "packed", "PACKED", "shipped", "SHIPPED", "delivered", "DELIVERED", "return_rejected", "RETURN_REJECTED"]},
+                "payment_status": {"$in": ["completed", "COMPLETED"]},
+                "created_at": {"$gte": (date_filter or (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)).isoformat()}
+            }},
+            {"$project": {
+                "date": {"$substr": ["$created_at", 0, 10]},
+                "total_amount": 1
+            }},
+            {"$group": {
+                "_id": "$date",
+                "value": {"$sum": "$total_amount"}
+            }},
+            {"$sort": {"_id": 1}}
+        ]
+        trend_res = await db.orders.aggregate(trend_pipeline).to_list(7)
+        trend_dict = {row["_id"]: row["value"] for row in trend_res}
+        for i in range(6, -1, -1):
+            d = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+            revenue_trend.append({"name": d, "value": round(trend_dict.get(d, 0), 2)})
+
+    orders_count_match = {}
+    if date_filter:
+        orders_count_match["created_at"] = {"$gte": date_filter.isoformat()}
+    total_orders = await db.orders.count_documents(orders_count_match)
 
     metrics = {
-        "total_orders": await db.orders.count_documents({}),
+        "total_orders": total_orders,
         "orders_today": orders_today_count,
+        "total_revenue": revenue,
         "total_products": await db.products.count_documents({}),
         "total_customers": await db.users.count_documents({"role": "customer"}),
         "total_inventory_value": total_inventory_value,
@@ -1921,6 +2161,15 @@ async def save_setting(data: dict, admin: User = Depends(require_permission("man
     return {"message": "Setting saved"}
 
 
+@api_router.get("/settings/public")
+async def get_public_settings():
+    settings = await db.settings.find({"key": {"$in": ["company_profile", "payment_settings"]}}, {"_id": 0}).to_list(5)
+    settings_dict = {s["key"]: s["value"] for s in settings}
+    if "payment_settings" not in settings_dict:
+        settings_dict["payment_settings"] = {"cod_enabled": True}
+    return settings_dict
+
+
 @api_router.post("/admin/uploads/image")
 async def upload_product_image(file: UploadFile = File(...), admin: User = Depends(require_permission("manage_products"))):
     content_type = (file.content_type or "").lower()
@@ -2052,6 +2301,7 @@ async def get_audit_logs(
 ):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
+    search = sanitize_search_term(search)
     query = {}
     if search:
         query = {
@@ -2064,7 +2314,33 @@ async def get_audit_logs(
         }
     skip = (page - 1) * limit
     total = await db.audit_logs.count_documents(query)
-    logs = await db.audit_logs.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    pipeline = [
+        {"$match": query},
+        {"$sort": {"created_at": -1}},
+        {"$skip": skip},
+        {"$limit": limit},
+        {"$lookup": {
+            "from": "users",
+            "localField": "actor_id",
+            "foreignField": "id",
+            "as": "actor_user"
+        }},
+        {"$project": {
+            "_id": 0,
+            "id": 1,
+            "action": 1,
+            "actor_id": 1,
+            "target_type": 1,
+            "target_id": 1,
+            "metadata": 1,
+            "created_at": 1,
+            "actor_name": {"$ifNull": [{"$arrayElemAt": ["$actor_user.full_name", 0]}, "System Process"]},
+            "actor_email": {"$ifNull": [{"$arrayElemAt": ["$actor_user.email", 0]}, "system@durgashakti.com"]},
+            "actor_role": {"$ifNull": [{"$arrayElemAt": ["$actor_user.role", 0]}, "SYSTEM"]}
+        }}
+    ]
+    logs = await db.audit_logs.aggregate(pipeline).to_list(limit)
     return {"items": logs, "total": total, "page": page, "limit": limit}
 
 
@@ -2090,11 +2366,12 @@ async def get_gst_reports(
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=500),
     search: Optional[str] = Query(None),
-    admin: User = Depends(require_permission("manage_admins"))
+    admin: User = Depends(require_permission("access_gst_reports"))
 ):
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
     
+    search = sanitize_search_term(search)
     query = {}
     if search:
         query = {
@@ -2345,21 +2622,29 @@ async def razorpay_webhook(request: Request):
             order = await db.orders.find_one({"razorpay_order_id": rz_order_id}, {"_id": 0})
             if order:
                 # Critical: Verify amount matches exactly to prevent payload tampering
-                if int(amount_paid) == int(order['total_amount'] * 100):
-                    await db.orders.update_one(
-                        {"id": order['id']},
-                        {"$set": {
-                            "payment_status": "completed", 
-                            "razorpay_payment_id": payment_id, 
-                            "updated_at": datetime.now(timezone.utc).isoformat()
-                        }}
-                    )
-                    # Atomically clear cart
-                    await db.carts.update_one(
-                        {"user_id": order['user_id']},
-                        {"$set": {"items": [], "updated_at": datetime.now(timezone.utc).isoformat()}}
-                    )
-                    logger.info("Order %s marked completed via webhook", order['order_number'])
+                if int(amount_paid) != int(order['total_amount'] * 100):
+                    logger.warning("Webhook amount mismatch for order %s: expected %d, got %d", order['order_number'], int(order['total_amount'] * 100), int(amount_paid))
+                    return {"status": "amount_mismatch"}
+                # Preserve current order status (only transition from pending_payment to processing)
+                current_status = order.get("order_status", "")
+                new_status = "processing" if current_status == "pending_payment" else current_status
+                await db.orders.update_one(
+                    {"id": order['id']},
+                    {"$set": {
+                        "payment_status": "completed",
+                        "order_status": new_status,
+                        "razorpay_payment_id": payment_id, 
+                        "updated_at": datetime.now(timezone.utc).isoformat()
+                    }}
+                )
+                # Atomically clear cart
+                await db.carts.update_one(
+                    {"user_id": order['user_id']},
+                    {"$set": {"items": [], "updated_at": datetime.now(timezone.utc).isoformat()}}
+                )
+                logger.info("Order %s marked completed via webhook", order['order_number'])
+            else:
+                logger.warning("Webhook received for unknown razorpay_order_id: %s", rz_order_id)
         return {"status": "ok"}
     except Exception as exc:
         logger.error("Webhook processing error: %s", exc)

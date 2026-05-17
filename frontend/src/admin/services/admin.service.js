@@ -6,7 +6,7 @@ import apiClient from '../../services/core/apiClient';
  */
 const adminService = {
   // Dashboard
-  getDashboardMetrics: () => apiClient.get('/admin/analytics/summary'),
+  getDashboardMetrics: (timeframe) => apiClient.get('/admin/analytics/summary', { params: { timeframe } }),
 
   // Products
   getProducts: (params) => apiClient.get('/products', { params }),

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info } from 'lucide-react';
+import { X, Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { formatImageUrl } from '../../../utils/api';
 import { useProgress } from '../../../components/ui/ProgressToast';
+import paymentService from '../../../services/payment.service';
+import { toast } from 'sonner';
 
 const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
   const { startProgress, updateProgress, finishProgress } = useProgress();
@@ -13,6 +15,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [submittingReturn, setSubmittingReturn] = useState(false);
+  const [payingOnline, setPayingOnline] = useState(false);
 
   if (!isOpen || !order) return null;
 
@@ -59,21 +62,204 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
     }
   };
 
+  const handlePayOnline = async () => {
+    if (payingOnline) return;
+    
+    if (!window.Razorpay) {
+      toast.error('Payment gateway not loaded. Refresh and try again.');
+      return;
+    }
+    
+    setPayingOnline(true);
+    try {
+      const response = await paymentService.payCODOnline(order.id);
+      const { razorpay_order_id, amount, currency, key_id } = response;
+
+      const options = {
+        key: key_id || process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_test_SlmLztmM54CPAn',
+        amount: amount,
+        currency: currency || 'INR',
+        name: 'DurgaShakti Foils',
+        description: `COD Payment - Order ${order.order_number}`,
+        order_id: razorpay_order_id,
+        handler: async (paymentResponse) => {
+          try {
+            await paymentService.verifyRazorpayPayment({
+              order_id: order.id,
+              razorpay_order_id: paymentResponse.razorpay_order_id,
+              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_signature: paymentResponse.razorpay_signature
+            });
+            window.location.reload();
+          } catch {
+            setPayingOnline(false);
+          }
+        },
+        prefill: {
+          name: order.shipping_address?.full_name || '',
+          email: '',
+          contact: order.shipping_address?.phone || ''
+        },
+        theme: { color: '#4f46e5' },
+        modal: { ondismiss: () => setPayingOnline(false) }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', () => {
+        setPayingOnline(false);
+      });
+      rzp.open();
+    } catch {
+      setPayingOnline(false);
+    }
+  };
+
+  const getExpectedDeliveryDate = (createdAt) => {
+    if (!createdAt) return '—';
+    const date = new Date(createdAt);
+    date.setDate(date.getDate() + 4);
+    return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  const generateInvoiceHtml = (orderData) => {
+    const itemsHtml = orderData.items.map(item => `
+      <tr class="item">
+        <td>${item.product_name}</td>
+        <td style="text-align: center;">${item.quantity}</td>
+        <td style="text-align: right;">₹${item.price.toLocaleString('en-IN')}</td>
+        <td style="text-align: right;">₹${(item.quantity * item.price).toLocaleString('en-IN')}</td>
+      </tr>
+    `).join('');
+
+    const subtotal = orderData.total_amount - (orderData.shipping_cost || 0);
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Invoice - ${orderData.order_number}</title>
+  <style>
+    body { font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; margin: 0; padding: 40px; background-color: #f8fafc; }
+    .invoice-box { max-width: 800px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 24px; background: #ffffff; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05); }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1f5f9; padding-bottom: 30px; margin-bottom: 30px; }
+    .logo { font-size: 24px; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: -0.05em; }
+    .invoice-title { text-align: right; }
+    .invoice-title h1 { margin: 0; font-size: 28px; font-weight: 900; color: #0f172a; text-transform: uppercase; }
+    .invoice-title p { margin: 5px 0 0 0; font-size: 14px; color: #64748b; font-weight: 600; }
+    .details { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+    .details h3 { margin: 0 0 10px 0; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; }
+    .details p { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.5; color: #334155; }
+    .details .phone { font-weight: 700; color: #0f172a; margin-top: 5px; }
+    .table-container { margin-bottom: 40px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 12px 16px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; border-bottom: 2px solid #f1f5f9; }
+    td { padding: 16px; font-size: 14px; font-weight: 600; color: #334155; border-bottom: 1px solid #f1f5f9; }
+    tr.item:hover { background-color: #f8fafc; }
+    .totals { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; margin-top: 30px; }
+    .total-row { display: flex; justify-content: space-between; width: 300px; font-size: 14px; font-weight: 600; color: #64748b; }
+    .total-row.grand-total { font-size: 20px; font-weight: 900; color: #4f46e5; border-top: 2px solid #f1f5f9; padding-top: 15px; margin-top: 5px; }
+    .total-row span:last-child { font-weight: 800; color: #0f172a; }
+    .total-row.grand-total span:last-child { color: #4f46e5; }
+    .footer { text-align: center; border-top: 2px solid #f1f5f9; padding-top: 30px; margin-top: 50px; font-size: 12px; color: #94a3b8; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="invoice-box">
+    <div class="header">
+      <div class="logo">DurgaShakti Foils</div>
+      <div class="invoice-title">
+        <h1>Invoice</h1>
+        <p>Order #${orderData.order_number}</p>
+      </div>
+    </div>
+    
+    <div class="details">
+      <div>
+        <h3>Billed To</h3>
+        <p>${orderData.shipping_address?.full_name}</p>
+        <p>${orderData.shipping_address?.address_line1}</p>
+        <p>${orderData.shipping_address?.city}, ${orderData.shipping_address?.state} - ${orderData.shipping_address?.pincode}</p>
+        <p class="phone">Phone: ${orderData.shipping_address?.phone}</p>
+      </div>
+      <div style="text-align: right;">
+        <h3>Invoice Details</h3>
+        <p><strong>Date:</strong> ${new Date(orderData.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+        <p><strong>Payment Method:</strong> ${orderData.payment_method ? orderData.payment_method.toUpperCase() : 'N/A'}</p>
+        <p><strong>Payment Status:</strong> ${orderData.payment_status ? orderData.payment_status.toUpperCase() : 'N/A'}</p>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Product Description</th>
+            <th style="text-align: center; width: 80px;">Qty</th>
+            <th style="text-align: right; width: 120px;">Unit Price</th>
+            <th style="text-align: right; width: 120px;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals">
+      <div class="total-row">
+        <span>Subtotal</span>
+        <span>₹${subtotal.toLocaleString('en-IN')}</span>
+      </div>
+      <div class="total-row">
+        <span>Shipping</span>
+        <span>₹${(orderData.shipping_cost || 0).toLocaleString('en-IN')}</span>
+      </div>
+      <div class="total-row grand-total">
+        <span>Total Amount</span>
+        <span>₹${orderData.total_amount.toLocaleString('en-IN')}</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Thank you for shopping with DurgaShakti Foils!</p>
+      <p>For any queries, contact support at support@durgashaktifoils.com</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+  };
+
   const handleDownloadInvoice = () => {
     const progressId = startProgress({
-      label: `Invoice_${order.order_number}.pdf`,
+      label: `Invoice_${order.order_number}.html`,
       type: 'download',
       fileType: 'file',
       message: 'Generating invoice...',
     });
 
-    // Simulate invoice generation (replace with real API call when available)
     setTimeout(() => {
-      updateProgress(progressId, { progress: 50, message: 'Building PDF...' });
+      updateProgress(progressId, { progress: 50, message: 'Building HTML Invoice...' });
       setTimeout(() => {
         updateProgress(progressId, { progress: 85, message: 'Preparing download...' });
         setTimeout(() => {
-          finishProgress(progressId, { message: 'Invoice ready!' });
+          try {
+            const htmlContent = generateInvoiceHtml(order);
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Invoice_${order.order_number}.html`;
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            finishProgress(progressId, { message: 'Invoice ready!' });
+          } catch (err) {
+            finishProgress(progressId, { message: 'Failed to download invoice', isError: true });
+          }
         }, 600);
       }, 800);
     }, 500);
@@ -298,6 +484,16 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
 
                     <div className="p-6 rounded-[2rem] bg-indigo-50 border border-indigo-100 flex items-center justify-between">
                       <div>
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1">Expected Delivery</h3>
+                        <p className="font-black text-slate-900 uppercase tracking-tight">
+                          {order.order_status === 'delivered' ? 'Delivered' : getExpectedDeliveryDate(order.created_at)}
+                        </p>
+                      </div>
+                      <Calendar className="w-8 h-8 text-indigo-200" />
+                    </div>
+
+                    <div className="p-6 rounded-[2rem] bg-indigo-50 border border-indigo-100 flex items-center justify-between">
+                      <div>
                         <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1">Payment Method</h3>
                         <p className="font-black text-slate-900 uppercase tracking-tight">{order.payment_method || 'Razorpay'}</p>
                       </div>
@@ -361,12 +557,23 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
           {/* Footer */}
           {!isReturning && (
             <div className="p-8 border-t border-slate-200 flex gap-4">
-              <Button
-                className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-indigo-100"
-                onClick={handleDownloadInvoice}
-              >
-                 <ExternalLink className="w-4 h-4 mr-2" /> Download Invoice
-              </Button>
+              {order.payment_status === 'completed' && (
+                <Button
+                  className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-indigo-100"
+                  onClick={handleDownloadInvoice}
+                >
+                   <ExternalLink className="w-4 h-4 mr-2" /> Download Invoice
+                </Button>
+              )}
+              {order.payment_method === 'cod' && order.payment_status !== 'completed' && (
+                <Button
+                  onClick={handlePayOnline}
+                  disabled={payingOnline}
+                  className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-100"
+                >
+                  <Wallet className="w-4 h-4 mr-2" /> {payingOnline ? 'Processing...' : 'Pay Online'}
+                </Button>
+              )}
               {order.order_status === 'delivered' && (
                 <Button
                   variant="ghost"

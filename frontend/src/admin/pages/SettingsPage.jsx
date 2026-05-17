@@ -17,6 +17,7 @@ const SettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [me, setMe] = useState(null);
+  const [codEnabled, setCodEnabled] = useState(true);
 
   // Security State
   const [currentPassword, setCurrentPassword] = useState('');
@@ -37,6 +38,8 @@ const SettingsPage = () => {
         setCompanyPhone(profile.companyPhone || '');
         setCompanyEmail(profile.companyEmail || '');
         setCompanyAddress(profile.companyAddress || '');
+        const paymentSettings = data.payment_settings || {};
+        setCodEnabled(paymentSettings.cod_enabled !== false);
         setMe(meRes.data);
       } catch {
       } finally {
@@ -80,6 +83,20 @@ const SettingsPage = () => {
       toast.error(error.message);
     } finally {
       setChangingPassword(false);
+    }
+  };
+
+  const handleToggleCod = async (checked) => {
+    try {
+      setCodEnabled(checked);
+      await adminService.updateSetting({
+        key: 'payment_settings',
+        value: { cod_enabled: checked }
+      });
+      toast.success(`Cash on Delivery (COD) ${checked ? 'enabled' : 'disabled'} successfully`);
+    } catch (error) {
+      setCodEnabled(!checked);
+      toast.error(error.message || 'Failed to update payment settings');
     }
   };
 
@@ -160,15 +177,60 @@ const SettingsPage = () => {
           </div>
           
           {me?.role === 'SUPER_ADMIN' ? (
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden mt-8">
-               <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
-                  <Lock className="w-32 h-32 text-indigo-900" />
+            <>
+               {/* Payment Control Center */}
+               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
+                     <Settings className="w-32 h-32 text-indigo-950" />
+                  </div>
+                  
+                  <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-4 flex items-center gap-2">
+                     <Settings className="w-5 h-5 text-indigo-600" />
+                     Payment Control Center
+                  </h2>
+                  <p className="text-xs text-slate-500 mb-8 font-medium">Control checkout payment options for DurgaShakti Foils customers.</p>
+
+                  <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                     <div className="flex items-start gap-4">
+                        <div className="p-3 rounded-xl bg-indigo-100 text-indigo-600 flex-shrink-0">
+                           <RefreshCcw className="w-6 h-6 animate-pulse" />
+                        </div>
+                        <div>
+                           <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Cash on Delivery (COD)</h3>
+                           <p className="text-xs text-slate-500 mt-1 max-w-md">Activate or deactivate Cash on Delivery. When disabled, customers will only be allowed to make prepaid transactions during checkout.</p>
+                        </div>
+                     </div>
+                     
+                     <div className="flex items-center gap-3 self-end md:self-auto">
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${codEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
+                           {codEnabled ? 'Active' : 'Disabled'}
+                        </span>
+                        <button 
+                           onClick={() => handleToggleCod(!codEnabled)}
+                           className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-300 ${
+                              codEnabled ? 'bg-indigo-600' : 'bg-slate-300'
+                           }`}
+                        >
+                           <div 
+                              className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${
+                                 codEnabled ? 'translate-x-6' : 'translate-x-0'
+                              }`}
+                           />
+                        </button>
+                     </div>
+                  </div>
                </div>
-               
-               <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-8 flex items-center gap-2">
-                  <Lock className="w-5 h-5 text-indigo-600" />
-                  Security & Password
-               </h2>
+
+               {/* Password Management */}
+               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden mt-8">
+                  <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
+                     <Lock className="w-32 h-32 text-indigo-900" />
+                  </div>
+                  
+                  <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-8 flex items-center gap-2">
+                     <Lock className="w-5 h-5 text-indigo-600" />
+                     Security & Password
+                  </h2>
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1">
@@ -189,6 +251,7 @@ const SettingsPage = () => {
                   </Button>
                </div>
             </div>
+            </>
           ) : (
             <div className="bg-slate-50 rounded-3xl border border-dashed border-slate-200 p-8 mt-8 flex flex-col items-center text-center">
                <ShieldCheck className="w-12 h-12 text-slate-300 mb-4" />

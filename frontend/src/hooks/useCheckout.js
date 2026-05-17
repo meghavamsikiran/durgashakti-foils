@@ -7,6 +7,7 @@ import productService from '../services/product.service';
 import addressService from '../services/address.service';
 import orderService from '../services/order.service';
 import paymentService from '../services/payment.service';
+import settingsService from '../services/settings.service';
 
 const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_test_SlmLztmM54CPAn';
 
@@ -22,6 +23,7 @@ export const useCheckout = () => {
   const [loading, setLoading] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState('shipping');
   const [paymentMethod, setPaymentMethod] = useState('upi');
+  const [codEnabled, setCodEnabled] = useState(true);
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [shippingInfo, setShippingInfo] = useState({
@@ -69,6 +71,16 @@ export const useCheckout = () => {
     }
   }, []);
 
+  const fetchSettings = useCallback(async () => {
+    try {
+      const data = await settingsService.getPublicSettings();
+      const codState = data.payment_settings?.cod_enabled !== false;
+      setCodEnabled(codState);
+    } catch (err) {
+      // Safe fallback
+    }
+  }, []);
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -80,7 +92,8 @@ export const useCheckout = () => {
     }
     fetchProducts();
     fetchAddresses();
-  }, [user, cart.items, navigate, fetchProducts, fetchAddresses]);
+    fetchSettings();
+  }, [user, cart.items, navigate, fetchProducts, fetchAddresses, fetchSettings]);
 
   const calculateTotal = useCallback(() => {
     return cart.items?.reduce((total, item) => {
@@ -134,6 +147,13 @@ export const useCheckout = () => {
 
   const handleRazorpayPayment = (orderId) => {
     return new Promise(async (resolve, reject) => {
+      // Check SDK before making any API calls
+      if (!window.Razorpay) {
+        toast.error('Payment gateway not loaded. Refresh and try again.');
+        reject(new Error('razorpay_sdk_missing'));
+        return;
+      }
+
       try {
         const response = await paymentService.createRazorpayOrder(orderId);
         const { razorpay_order_id, amount, currency, key_id } = response;
@@ -153,7 +173,6 @@ export const useCheckout = () => {
                 razorpay_payment_id: paymentResponse.razorpay_payment_id,
                 razorpay_signature: paymentResponse.razorpay_signature
               });
-              // Clear cart BEFORE navigating to prevent race condition
               try { await clearCart(); } catch {}
               toast.success('Payment successful! Order confirmed.');
               const orderData = await orderService.getOrder(orderId);
@@ -172,12 +191,6 @@ export const useCheckout = () => {
           theme: { color: '#1a56db' },
           modal: { ondismiss: () => reject(new Error('payment_cancelled')) }
         };
-
-        if (!window.Razorpay) {
-          toast.error('Payment gateway not loaded. Refresh and try again.');
-          reject(new Error('Razorpay SDK not loaded'));
-          return;
-        }
 
         const rzp = new window.Razorpay(options);
         rzp.on('payment.failed', (response) => {
@@ -198,12 +211,22 @@ export const useCheckout = () => {
     setLoading(true);
 
     try {
-      const orderItems = cart.items.map(item => ({
-        product_id: item.product_id,
-        product_name: products[item.product_id]?.name || '',
-        quantity: item.quantity,
-        price: products[item.product_id]?.discount_price || products[item.product_id]?.price || 0
-      }));
+      const orderItems = cart.items.map(item => {
+        const product = products[item.product_id];
+        if (!product) {
+          throw new Error(`Product information not loaded. Please refresh and try again.`);
+        }
+        const price = product.discount_price || product.price || 0;
+        if (price <= 0) {
+          throw new Error(`Invalid price for "${product.name}". Please contact support.`);
+        }
+        return {
+          product_id: item.product_id,
+          product_name: product.name || '',
+          quantity: item.quantity,
+          price: price
+        };
+      });
 
       const orderData = {
         items: orderItems,
@@ -227,11 +250,14 @@ export const useCheckout = () => {
         // Cart already cleared inside handleRazorpayPayment handler
       }
     } catch (error) {
-      if (error.message === 'payment_failed') {
+      const msg = error.message || '';
+      if (msg === 'payment_failed') {
         navigate('/dashboard');
-      } else if (error.message === 'payment_cancelled') {
+      } else if (msg === 'payment_cancelled') {
         toast.info('Payment cancelled. Your order is saved in your dashboard.');
         navigate('/dashboard');
+      } else if (msg === 'razorpay_sdk_missing') {
+        // Toast already shown
       } else {
         // Error already toasted by interceptor
       }
@@ -248,6 +274,7 @@ export const useCheckout = () => {
     setCheckoutStep,
     paymentMethod,
     setPaymentMethod,
+    codEnabled,
     savedAddresses,
     selectedAddressId,
     shippingInfo,

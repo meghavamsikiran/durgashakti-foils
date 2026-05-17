@@ -82,3 +82,14 @@ agenthub/agents/youtube/db
 
 # Mobile development
 android-sdk/ 
+
+# OpenCode AI config
+opencode.json
+
+# Scratch files and logs
+scratch/
+**/*.log
+**/*.err
+brain/
+sample_gst_data.csv
+backend/uploads/

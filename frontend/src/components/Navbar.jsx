@@ -17,8 +17,8 @@ const Navbar = () => {
   };
 
   return (
-    <div className="w-full">
-      <div className="bg-slate-900 text-white overflow-hidden py-2 relative">
+    <>
+      <div className="w-full bg-slate-900 text-white overflow-hidden py-2 relative">
         <div className="flex whitespace-nowrap animate-marquee">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] px-8 border-r border-white/10">✨ Durga Shakti Foils: Premium Aluminum Packaging Solutions</span>
 
@@ -146,7 +146,7 @@ const Navbar = () => {
         )}
       </div>
     </nav>
-  </div>
+  </>
 );
 };
 
