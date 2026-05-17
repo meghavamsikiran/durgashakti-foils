@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
+import { formatImageUrl } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
   Package, Plus, Search, Tag, Box, 
@@ -307,7 +308,7 @@ const ProductsPage = () => {
                   <div className={`flex-1 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-4 transition-all ${form.image_url ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 hover:border-indigo-300'}`}>
                     {form.image_url ? (
                       <div className="flex flex-col items-center gap-2">
-                        <img src={form.image_url} alt="Preview" className="w-16 h-16 object-cover rounded-lg shadow-sm" />
+                        <img src={formatImageUrl(form.image_url)} alt="Preview" className="w-16 h-16 object-cover rounded-lg shadow-sm" />
                         <button onClick={() => setForm({...form, image_url: ''})} className="text-[9px] font-black text-rose-500 uppercase tracking-widest hover:underline">Change Image</button>
                       </div>
                     ) : (
@@ -325,7 +326,7 @@ const ProductsPage = () => {
                       setImageUploading(true);
                       try {
                         const res = await adminService.uploadProductImage(imageFile);
-                        setForm({...form, image_url: `${process.env.REACT_APP_BACKEND_URL}${res.data.url}`});
+                        setForm({...form, image_url: `${process.env.REACT_APP_BACKEND_URL || 'https://durgashakti-foils-1.onrender.com'}${res.data.url}`});
                         setImageFile(null);
                         toast.success('Asset synced');
                       } catch (err) { toast.error(err.message); }
@@ -414,7 +415,7 @@ const ProductsPage = () => {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
                          {row.image_url ? (
-                           <img src={row.image_url} alt="" className="w-full h-full object-cover" />
+                           <img src={formatImageUrl(row.image_url)} alt="" className="w-full h-full object-cover" />
                          ) : (
                            <div className="w-full h-full flex items-center justify-center text-slate-300"><Box className="w-5 h-5" /></div>
                          )}
