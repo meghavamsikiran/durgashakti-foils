@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { setupInterceptors } from './interceptors';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
+const API_URL = (process.env.REACT_APP_BACKEND_URL || 'https://durgashakti-foils-1.onrender.com') + '/api';
 
 const apiClient = axios.create({
   baseURL: API_URL,
