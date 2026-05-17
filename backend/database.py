@@ -58,6 +58,8 @@ def init_engine():
         pool_recycle=300,
         connect_args={
             "ssl": "require",
+            "statement_cache_size": 0,
+            "prepared_statement_cache_size": 0,
         },
     )
     async_session_factory = sessionmaker(
