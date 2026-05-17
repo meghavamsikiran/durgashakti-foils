@@ -227,6 +227,13 @@ const AdminUsersPage = () => {
     inactive: rows.filter(a => a.is_active === false).length,
   };
 
+  if (loading && rows.length === 0) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Loading Administrators...</div>
+    </div>
+  );
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
@@ -368,6 +375,11 @@ const AdminUsersPage = () => {
               ))}
             </tbody>
           </table>
+          {filtered.length === 0 && !loading && (
+            <div className="p-12 text-center text-slate-500 font-medium italic">
+              No administrator accounts found.
+            </div>
+          )}
         </div>
       </div>
 

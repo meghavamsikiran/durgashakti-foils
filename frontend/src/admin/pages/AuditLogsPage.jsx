@@ -22,12 +22,13 @@ const AuditLogsPage = () => {
   const load = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await adminService.getAuditLogs({ page: pageNum, limit: PAGE_SIZE, search });
-      setRows(response.data.items || []);
-      setTotal(response.data.total || 0);
+      const [response, mRes] = await Promise.all([
+        adminService.getAuditLogs({ page: pageNum, limit: PAGE_SIZE, search }),
+        adminService.getDashboardMetrics()
+      ]);
+      setRows(response.data?.items || []);
+      setTotal(response.data?.total || 0);
       setPage(pageNum);
-
-      const mRes = await adminService.getDashboardMetrics();
       setMetrics(mRes.data?.metrics || {});
     } catch {
     } finally {
@@ -63,6 +64,13 @@ const AuditLogsPage = () => {
   };
 
   const formatKey = (key) => key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+  if (loading && rows.length === 0) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Loading System Logs...</div>
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -248,6 +256,11 @@ const AuditLogsPage = () => {
               })}
             </tbody>
           </table>
+          {filtered.length === 0 && !loading && (
+            <div className="p-12 text-center text-slate-500 font-medium italic">
+              No system logs found matching the search criteria.
+            </div>
+          )}
         </div>
         <TablePagination
           currentPage={page}

@@ -66,7 +66,7 @@ const Login = () => {
               : 'Sign up to start shopping'}
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+          <form key={isLogin ? 'login-form' : 'register-form'} onSubmit={handleSubmit} className="space-y-4" autoComplete={isLogin ? "on" : "off"}>
             {!isLogin && (
               <>
                 <div>
@@ -100,7 +100,7 @@ const Login = () => {
               <Input
                 id="email"
                 type="email"
-                autoComplete="off"
+                autoComplete={isLogin ? "email" : "new-email"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -113,7 +113,7 @@ const Login = () => {
               <Input
                 id="password"
                 type="password"
-                autoComplete="new-password"
+                autoComplete={isLogin ? "current-password" : "new-password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -143,7 +143,14 @@ const Login = () => {
 
           <div className="mt-6 text-center">
             <button
-              onClick={() => setIsLogin(!isLogin)}
+              type="button"
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setEmail('');
+                setPassword('');
+                setFullName('');
+                setPhone('');
+              }}
               className="text-sm text-primary hover:underline"
               data-testid="toggle-auth-mode"
             >

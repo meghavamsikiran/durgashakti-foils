@@ -19,12 +19,13 @@ const CustomersPage = () => {
   const load = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await adminService.getCustomers({ page: pageNum, limit: ITEMS_PER_PAGE, search });
-      setRows(response.data.items || []);
-      setTotal(response.data.total || 0);
+      const [response, mRes] = await Promise.all([
+        adminService.getCustomers({ page: pageNum, limit: ITEMS_PER_PAGE, search }),
+        adminService.getDashboardMetrics()
+      ]);
+      setRows(response.data?.items || []);
+      setTotal(response.data?.total || 0);
       setPage(pageNum);
-
-      const mRes = await adminService.getDashboardMetrics();
       setMetrics(mRes.data?.metrics || {});
     } catch {
     } finally {
@@ -52,6 +53,13 @@ const CustomersPage = () => {
     revenue: metrics?.total_revenue || 0,
     avg: (metrics?.total_revenue && metrics?.total_customers) ? (metrics.total_revenue / metrics.total_customers) : 0
   };
+
+  if (loading && rows.length === 0) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Loading Customers...</div>
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -167,7 +175,7 @@ const CustomersPage = () => {
               ))}
             </tbody>
           </table>
-          {rows.length === 0 && (
+          {rows.length === 0 && !loading && (
             <div className="p-12 text-center text-slate-500 font-medium italic">
               No matching customer data found.
             </div>

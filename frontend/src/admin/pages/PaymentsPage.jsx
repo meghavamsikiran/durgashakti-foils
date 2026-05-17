@@ -21,12 +21,13 @@ const PaymentsPage = () => {
   const load = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
-      const response = await adminService.getPayments({ page: pageNum, limit: PAGE_SIZE, search });
-      setRows(response.data.items || []);
-      setTotal(response.data.total || 0);
+      const [response, mRes] = await Promise.all([
+        adminService.getPayments({ page: pageNum, limit: PAGE_SIZE, search }),
+        adminService.getDashboardMetrics()
+      ]);
+      setRows(response.data?.items || []);
+      setTotal(response.data?.total || 0);
       setPage(pageNum);
-      
-      const mRes = await adminService.getDashboardMetrics();
       setMetrics(mRes.data?.metrics || {});
     } catch (err) {
       toast.error('Failed to load transaction data');
@@ -56,6 +57,13 @@ const PaymentsPage = () => {
     failed: 0, // Not provided by summary API currently
     successRate: 100 // Placeholder
   };
+
+  if (loading && rows.length === 0) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Loading Financial Records...</div>
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -192,7 +200,7 @@ const PaymentsPage = () => {
               ))}
             </tbody>
           </table>
-          {filtered.length === 0 && (
+          {filtered.length === 0 && !loading && (
             <div className="p-12 text-center text-slate-500 font-medium italic">
               No financial records found for this criteria.
             </div>
