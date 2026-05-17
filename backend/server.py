@@ -54,9 +54,15 @@ app = FastAPI(lifespan=lifespan)
 
 # ── CORS Middleware ──────────────────────────────────────────────────────
 cors_origins = os.environ.get('CORS_ORIGINS', '').strip()
-cors_list = [o.strip() for o in cors_origins.split(',') if o.strip()]
+cors_list = [o.strip() for o in cors_origins.split(',') if o.strip() and o.strip() != '*']
 if not cors_list:
     cors_list = ["http://localhost:3000", "http://localhost:3001"]
+
+cors_list.extend([
+    "https://durgashakti-foils.vercel.app",
+    "https://durgashakti-foils-git-main-meghavamsikirans-projects.vercel.app"
+])
+cors_list = list(set(cors_list))
 
 app.add_middleware(
     CORSMiddleware,
