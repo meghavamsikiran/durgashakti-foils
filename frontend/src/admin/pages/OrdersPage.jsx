@@ -12,19 +12,23 @@ import { Button } from '../../components/ui/button';
 import { formatImageUrl } from '../../utils/api';
 
 const STATUS_FLOW = {
-  PENDING: ['CONFIRMED', 'CANCELLED'],
   PENDING_PAYMENT: ['CANCELLED'],
+  CONFIRMED: ['PACKAGING', 'CANCELLED'],
+  PACKAGING: ['SHIPPED', 'CANCELLED'],
+  SHIPPED: ['OUT_FOR_DELIVERY', 'CANCELLED'],
+  OUT_FOR_DELIVERY: ['DELIVERED', 'FAILED', 'CANCELLED'],
+  DELIVERED: [],
+  FAILED: [],
+  CANCELLED: [],
+  REFUNDED: [],
+  // Legacy status support for compatibility
+  PENDING: ['CONFIRMED', 'CANCELLED'],
   PROCESSING: ['CONFIRMED', 'CANCELLED'],
   PLACED: ['CONFIRMED', 'CANCELLED'],
-  CONFIRMED: ['PACKED', 'CANCELLED'],
   PACKED: ['SHIPPED', 'CANCELLED'],
-  SHIPPED: ['DELIVERED'],
-  DELIVERED: [],
-  CANCELLED: [],
   RETURN_REQUESTED: ['RETURN_APPROVED', 'RETURN_REJECTED'],
   RETURN_APPROVED: [],
   RETURN_REJECTED: [],
-  REFUNDED: [],
 };
 
 const statusConfigs = {
@@ -32,9 +36,12 @@ const statusConfigs = {
   PENDING_PAYMENT: { color: 'text-rose-600', bg: 'bg-rose-50', icon: Clock },
   PLACED: { color: 'text-blue-600', bg: 'bg-blue-50', icon: ShoppingBag },
   CONFIRMED: { color: 'text-indigo-600', bg: 'bg-indigo-50', icon: CheckCircle2 },
+  PACKAGING: { color: 'text-violet-600', bg: 'bg-violet-50', icon: PackageCheck },
   PACKED: { color: 'text-violet-600', bg: 'bg-violet-50', icon: PackageCheck },
   SHIPPED: { color: 'text-sky-600', bg: 'bg-sky-50', icon: Truck },
+  OUT_FOR_DELIVERY: { color: 'text-amber-600', bg: 'bg-amber-50', icon: Truck },
   DELIVERED: { color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle2 },
+  FAILED: { color: 'text-rose-600', bg: 'bg-rose-50', icon: XCircle },
   CANCELLED: { color: 'text-rose-600', bg: 'bg-rose-50', icon: XCircle },
   RETURN_REQUESTED: { color: 'text-orange-600', bg: 'bg-orange-50', icon: RefreshCcw },
   RETURN_APPROVED: { color: 'text-teal-600', bg: 'bg-teal-50', icon: CheckCircle2 },
@@ -53,6 +60,8 @@ const OrdersPage = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [messageModal, setMessageModal] = useState(null);
+  const [trackingModal, setTrackingModal] = useState(null);
+  const [trackingForm, setTrackingForm] = useState({ carrier: '', tracking_id: '', tracking_url: '' });
   const [adminMessage, setAdminMessage] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [selectedOrderForModal, setSelectedOrderForModal] = useState(null);
@@ -75,10 +84,32 @@ const OrdersPage = () => {
     }
   }, [search, filter]);
 
+  const loadSilent = useCallback(async (p = 1) => {
+    try {
+      const params = { page: p, limit: PAGE_SIZE, search };
+      if (filter !== 'ALL') {
+        params.status_filter = filter;
+      }
+      const response = await adminService.getOrders(params);
+      setRows(response.data.items || []);
+      setTotal(response.data.total || 0);
+    } catch (err) {
+      // Ignore background errors
+    }
+  }, [search, filter]);
+
   useEffect(() => {
     const timer = setTimeout(() => load(1), 300);
     return () => clearTimeout(timer);
   }, [search, filter, load]);
+
+  // Periodic silent polling in the background (every 10 seconds) for real-time order dashboard
+  useEffect(() => {
+    const timer = setInterval(() => {
+      loadSilent(page);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [loadSilent, page]);
 
   const handlePageChange = (newPage) => {
     setExpandedOrderId(null);
@@ -91,6 +122,8 @@ const OrdersPage = () => {
       await adminService.updateOrderStatus(orderId, { status: newStatus, admin_message: message, ...extraData });
       toast.success(`Order status updated to ${newStatus.toLowerCase().replace('_', ' ')}`);
       setMessageModal(null);
+      setTrackingModal(null);
+      setTrackingForm({ carrier: '', tracking_id: '', tracking_url: '' });
       setAdminMessage('');
       load();
     } catch (err) {
@@ -106,9 +139,8 @@ const OrdersPage = () => {
 
   const getStats = () => ({
     total: total,
-    pending: rows.filter(r => ['PENDING', 'PENDING_PAYMENT', 'PROCESSING', 'PLACED'].includes((r.status || '').toUpperCase())).length,
     confirmed: rows.filter(r => (r.status || '').toUpperCase() === 'CONFIRMED').length,
-    returns: rows.filter(r => (r.status || '').toUpperCase().startsWith('RETURN')).length,
+    packaging: rows.filter(r => ['PACKAGING', 'PACKED'].includes((r.status || '').toUpperCase())).length,
     delivered: rows.filter(r => (r.status || '').toUpperCase() === 'DELIVERED').length,
   });
 
@@ -157,12 +189,21 @@ const OrdersPage = () => {
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+            <CheckCircle2 className="w-6 h-6 text-indigo-600" />
+          </div>
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Confirmed</div>
+            <div className="text-2xl font-black text-slate-900">{stats.confirmed}</div>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 bg-violet-50 text-violet-600 rounded-xl flex items-center justify-center">
             <Clock className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pending</div>
-            <div className="text-2xl font-black text-slate-900">{stats.pending}</div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Packaging</div>
+            <div className="text-2xl font-black text-slate-900">{stats.packaging}</div>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
@@ -174,19 +215,10 @@ const OrdersPage = () => {
             <div className="text-2xl font-black text-slate-900">{stats.delivered}</div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
-            <RefreshCcw className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Returns</div>
-            <div className="text-2xl font-black text-slate-900">{stats.returns}</div>
-          </div>
-        </div>
       </div>
 
       <div className="bg-slate-50 p-1 rounded-2xl flex flex-wrap items-center gap-1 border border-slate-200">
-        {['ALL', 'PENDING', 'PENDING_PAYMENT', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURN_REQUESTED'].map((s) => (
+        {['ALL', 'PENDING_PAYMENT', 'CONFIRMED', 'PACKAGING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURN_REQUESTED', 'CANCELLED', 'FAILED'].map((s) => (
           <button
             key={s}
             onClick={() => setFilter(s)}
@@ -253,38 +285,48 @@ const OrdersPage = () => {
                              const actionLabels = {
                                CONFIRMED: 'Confirm',
                                CANCELLED: 'Cancel',
-                               PACKED: 'Pack',
+                               PACKAGING: 'Package',
+                               PACKED: 'Package',
                                SHIPPED: 'Ship',
+                               OUT_FOR_DELIVERY: 'Dispatch Out',
                                DELIVERED: 'Deliver',
+                               FAILED: 'Mark Failed',
                                RETURN_APPROVED: 'Approve',
                                RETURN_REJECTED: 'Reject',
                                REFUNDED: 'Refund'
                              };
-                              const label = actionLabels[a] || a.replace('_', ' ');
-                              const isDeliverWithCOD = a === 'DELIVERED' && order.payment_method === 'cod' && order.payment_status !== 'completed';
+                             const label = actionLabels[a] || a.replace('_', ' ');
+                              const isDeliverWithCOD = a === 'DELIVERED' && order.payment_method === 'cod' && order.payment_status !== 'Paid' && order.payment_status !== 'completed';
                               
-                              return (
-                                <button
-                                  key={a}
-                                  onClick={(e) => { 
-                                    e.stopPropagation(); 
-                                    if (['RETURN_APPROVED', 'RETURN_REJECTED', 'CANCELLED'].includes(a)) {
-                                      setMessageModal({ orderId: order.id, status: a });
-                                      setAdminMessage('');
-                                    } else {
-                                      updateStatus(order.id, a, '', isDeliverWithCOD ? { mark_paid: true } : {});
-                                    }
-                                  }}
-                                  className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
-                                    a === 'CANCELLED' || a === 'RETURN_REJECTED' 
-                                      ? 'border-rose-100 text-rose-600 hover:bg-rose-50' 
-                                      : a === 'DELIVERED' || a === 'RETURN_APPROVED' || a === 'CONFIRMED'
-                                      ? 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'
-                                      : 'border-indigo-100 text-indigo-600 hover:bg-indigo-50'
-                                  }`}
-                                >
-                                  {isDeliverWithCOD ? 'Deliver & Mark Paid' : label}
-                                </button>
+                             return (
+                               <button
+                                 key={a}
+                                 onClick={(e) => { 
+                                   e.stopPropagation(); 
+                                   if (a === 'SHIPPED') {
+                                     setTrackingModal({ orderId: order.id, status: a });
+                                     setTrackingForm({
+                                       carrier: order.carrier || '',
+                                       tracking_id: order.tracking_id || '',
+                                       tracking_url: order.tracking_url || ''
+                                     });
+                                   } else if (['RETURN_APPROVED', 'RETURN_REJECTED', 'CANCELLED'].includes(a)) {
+                                     setMessageModal({ orderId: order.id, status: a });
+                                     setAdminMessage('');
+                                   } else {
+                                     updateStatus(order.id, a, '', isDeliverWithCOD ? { mark_paid: true } : {});
+                                   }
+                                 }}
+                                 className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                   a === 'CANCELLED' || a === 'RETURN_REJECTED' || a === 'FAILED'
+                                     ? 'border-rose-100 text-rose-600 hover:bg-rose-50' 
+                                     : a === 'DELIVERED' || a === 'RETURN_APPROVED' || a === 'CONFIRMED'
+                                     ? 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'
+                                     : 'border-indigo-100 text-indigo-600 hover:bg-indigo-50'
+                                 }`}
+                               >
+                                 {isDeliverWithCOD ? 'Deliver & Mark Paid' : label}
+                               </button>
                              );
                            }) : (
                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500">
@@ -364,6 +406,52 @@ const OrdersPage = () => {
                 className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all"
               >
                 Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {trackingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Shipment Details</h3>
+              <p className="text-xs text-slate-500 mt-1">Add courier details before marking this order as shipped.</p>
+            </div>
+            <div className="space-y-4">
+              <input
+                placeholder="Carrier / courier"
+                value={trackingForm.carrier}
+                onChange={(e) => setTrackingForm({ ...trackingForm, carrier: e.target.value })}
+                className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              />
+              <input
+                placeholder="Tracking ID"
+                value={trackingForm.tracking_id}
+                onChange={(e) => setTrackingForm({ ...trackingForm, tracking_id: e.target.value })}
+                className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              />
+              <input
+                placeholder="Tracking URL (optional)"
+                value={trackingForm.tracking_url}
+                onChange={(e) => setTrackingForm({ ...trackingForm, tracking_url: e.target.value })}
+                className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setTrackingModal(null)}
+                className="flex-1 h-12 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={() => updateStatus(trackingModal.orderId, trackingModal.status, '', trackingForm)}
+                disabled={!trackingForm.tracking_id.trim() || submitting}
+                className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all"
+              >
+                Ship Order
               </button>
             </div>
           </div>
@@ -451,6 +539,22 @@ const OrdersPage = () => {
                         <div className="text-xs font-bold text-slate-600">{selectedOrderForModal.customer_phone || selectedOrderForModal.shipping_address?.phone || 'N/A'}</div>
                       </div>
                     </div>
+                    {selectedOrderForModal.tracking_id && (
+                      <div className="flex items-start gap-3">
+                        <Truck className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                        <div>
+                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tracking</div>
+                          <div className="text-xs font-bold text-slate-600">
+                            {selectedOrderForModal.carrier || 'Courier'} - {selectedOrderForModal.tracking_id}
+                          </div>
+                          {selectedOrderForModal.tracking_url && (
+                            <a href={selectedOrderForModal.tracking_url} target="_blank" rel="noreferrer" className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">
+                              Open tracking link
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

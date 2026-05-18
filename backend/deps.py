@@ -159,6 +159,7 @@ class ProductBulkCreateRequest(BaseModel):
     thickness: str = "11 Micron"
     width: str = "295mm"
     image_url: str
+    media_urls: List[dict] = []
     features: List[str] = []
     variants: List[VariantInput]
 
@@ -195,6 +196,7 @@ class ProductSchema(BaseModel):
     discount_price: Optional[float] = None
     badge: Optional[str] = None
     image_url: str
+    media_urls: List[dict] = []
     features: List[str]
     in_stock: bool = True
     stock_quantity: int = 0
@@ -278,7 +280,10 @@ def row_to_dict(row) -> dict:
     """Convert an SQLAlchemy model instance to a plain dict."""
     d = {}
     for c in row.__table__.columns:
-        val = getattr(row, c.key if c.key != 'metadata_' else 'metadata_')
+        key = c.key
+        if key == 'metadata' or key == 'metadata_':
+            key = 'metadata_'
+        val = getattr(row, key)
         col_name = c.name  # actual DB column name
         if isinstance(val, uuid.UUID):
             val = str(val)
@@ -288,6 +293,7 @@ def row_to_dict(row) -> dict:
             val = float(val)
         d[col_name] = val
     return d
+
 
 
 # ── Auth Dependencies ────────────────────────────────────────────────────
@@ -379,25 +385,38 @@ async def send_email(to_email: str, subject: str, body: str):
 
 # ── Order Status Machine ────────────────────────────────────────────────
 ORDER_STATUS_TRANSITIONS = {
-    "pending": ["confirmed", "cancelled"],
-    "pending_payment": ["cancelled", "overdue"],
+    "pending_payment": ["confirmed", "cancelled", "overdue"],
     "overdue": ["cancelled"],
-    "processing": ["confirmed", "packed", "cancelled"],
-    "placed": ["confirmed", "packed", "cancelled"],
-    "confirmed": ["packed", "shipped", "cancelled"],
-    "packed": ["shipped", "cancelled"],
-    "shipped": ["delivered", "cancelled"],
-    "delivered": ["return_requested", "refunded"],
-    "return_requested": ["return_approved", "return_rejected"],
-    "return_approved": ["refunded"],
-    "return_rejected": [],
+    "pending": ["confirmed", "cancelled"],
+    "processing": ["confirmed", "packaging", "cancelled"],
+    "placed": ["confirmed", "packaging", "cancelled"],
+    "confirmed": ["packaging", "cancelled"],
+    "packaging": ["shipped", "cancelled"],
+    "shipped": ["out_for_delivery", "cancelled"],
+    "out_for_delivery": ["delivered", "failed", "cancelled"],
+    "delivered": [],
     "cancelled": [],
     "refunded": [],
+    "failed": [],
+    "return_requested": ["return_approved", "return_rejected"],
+    "return_approved": [],
+    "return_rejected": [],
 }
 
 def normalize_order_status(status: str | None) -> str:
     if not status:
         raise HTTPException(status_code=400, detail="Status is required")
     normalized = status.strip().lower()
-    aliases = {"confirm": "confirmed", "ship": "shipped", "deliver": "delivered", "cancel": "cancelled", "refund": "refunded"}
+    aliases = {
+        "confirm": "confirmed",
+        "ship": "shipped",
+        "deliver": "delivered",
+        "cancel": "cancelled",
+        "refund": "refunded",
+        "package": "packaging",
+        "packed": "packaging",
+        "packaging": "packaging",
+        "out_for_delivery": "out_for_delivery",
+        "failed": "failed"
+    }
     return aliases.get(normalized, normalized)

@@ -10,6 +10,12 @@ from datetime import datetime, timezone, timedelta
 
 router = APIRouter(prefix="/api")
 
+REVENUE_ORDER_STATUSES = [
+    "processing", "placed", "confirmed", "packaging", "shipped",
+    "out_for_delivery", "delivered", "return_requested", "return_rejected"
+]
+REVENUE_PAYMENT_STATUSES = ["completed", "Paid"]
+
 
 @router.get("/admin/payments")
 async def list_payments(
@@ -67,11 +73,13 @@ async def get_analytics_summary(
         date_filter = datetime(fy, 4, 1, 0, 0, 0, tzinfo=timezone.utc)
     elif timeframe == "Last 7 Days":
         date_filter = (now - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+    elif timeframe == "All Time":
+        date_filter = None
 
     # 1. Revenue
     rev_q = select(func.sum(OrderModel.total_amount)).where(
-        OrderModel.order_status.in_(["processing", "placed", "confirmed", "packed", "shipped", "delivered"]),
-        OrderModel.payment_status == "completed"
+        OrderModel.order_status.in_(REVENUE_ORDER_STATUSES),
+        OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES)
     )
     if date_filter:
         rev_q = rev_q.where(OrderModel.created_at >= date_filter)
@@ -88,17 +96,36 @@ async def get_analytics_summary(
     total_units_sold = int(units_sold_val)
 
     # Stock alerts
-    out_of_stock_count = (await db.execute(select(func.count(ProductModel.id)).where(ProductModel.stock_quantity <= 0))).scalar() or 0
-    low_stock_count = (await db.execute(select(func.count(ProductModel.id)).where(ProductModel.stock_quantity <= ProductModel.low_stock_threshold))).scalar() or 0
+    out_of_stock_count = (await db.execute(
+        select(func.count(ProductModel.id))
+        .where(ProductModel.stock_quantity.isnot(None), ProductModel.stock_quantity <= 0)
+    )).scalar() or 0
+    
+    low_stock_count = (await db.execute(
+        select(func.count(ProductModel.id))
+        .where(
+            ProductModel.stock_quantity.isnot(None),
+            ProductModel.stock_quantity > 0,
+            ProductModel.stock_quantity <= ProductModel.low_stock_threshold
+        )
+    )).scalar() or 0
 
-    total_prods = (await db.execute(select(func.count(ProductModel.id)))).scalar() or 0
-    in_stock_count = (await db.execute(select(func.count(ProductModel.id)).where(ProductModel.stock_quantity > 0))).scalar() or 0
+    total_prods = (await db.execute(
+        select(func.count(ProductModel.id))
+        .where(ProductModel.stock_quantity.isnot(None))
+    )).scalar() or 0
+    
+    in_stock_count = (await db.execute(
+        select(func.count(ProductModel.id))
+        .where(ProductModel.stock_quantity.isnot(None), ProductModel.stock_quantity > 0)
+    )).scalar() or 0
+    
     stock_health = round((in_stock_count / total_prods * 100), 1) if total_prods > 0 else 100.0
 
     # Top Performer
     top_p_res = await db.execute(select(ProductModel).order_by(ProductModel.units_sold.desc()).limit(1))
     top_p = top_p_res.scalar_one_or_none()
-    top_performer = {"name": top_p.name if top_p else "N/A", "revenue": float((top_p.units_sold * top_p.price) if top_p else 0)}
+    top_performer = {"name": top_p.name if top_p else "N/A", "revenue": float((top_p.units_sold * (top_p.discount_price or top_p.price)) if top_p else 0)}
 
     # Fastest Mover
     fastest_mover = {"name": top_p.name if top_p else "N/A", "units_sold": int(top_p.units_sold if top_p else 0)}
@@ -143,10 +170,94 @@ async def get_analytics_summary(
         "destructive_actions_count": (await db.execute(select(func.count(AuditLogModel.id)).where(AuditLogModel.action.ilike("%DELETE%")))).scalar() or 0
     }
 
+    # 2. Best Sellers calculation
+    best_prods_q = select(OrderModel.items).where(
+        OrderModel.order_status.in_(REVENUE_ORDER_STATUSES),
+        OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES)
+    )
+    if date_filter:
+        best_prods_q = best_prods_q.where(OrderModel.created_at >= date_filter)
+    
+    best_prods_res = await db.execute(best_prods_q)
+    product_counts = {}
+    for items_json in best_prods_res.scalars().all():
+        for item in (items_json or []):
+            name = item.get("product_name") or item.get("name") or "Unknown Product"
+            qty = int(item.get("quantity", 0))
+            if name:
+                product_counts[name] = product_counts.get(name, 0) + qty
+                
+    best_products = [
+        {"name": k, "quantity": v}
+        for k, v in sorted(product_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    ]
+
+    # 3. Revenue Trend calculation
+    trend_q = select(OrderModel.created_at, OrderModel.total_amount).where(
+        OrderModel.order_status.in_(REVENUE_ORDER_STATUSES),
+        OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES)
+    )
+    if date_filter:
+        trend_q = trend_q.where(OrderModel.created_at >= date_filter)
+    
+    trend_res = await db.execute(trend_q)
+    orders_trend = trend_res.all()
+    
+    trend_map = {}
+    
+    if timeframe == "Today":
+        for dt, amt in orders_trend:
+            if dt:
+                hr_str = dt.strftime("%H:00")
+                trend_map[hr_str] = trend_map.get(hr_str, 0.0) + float(amt)
+        sorted_keys = sorted(trend_map.keys())
+        revenue_trend = [{"name": k, "value": round(trend_map[k], 2)} for k in sorted_keys]
+        
+    elif timeframe == "This Month":
+        for dt, amt in orders_trend:
+            if dt:
+                day_str = dt.strftime("%b %d")
+                trend_map[day_str] = trend_map.get(day_str, 0.0) + float(amt)
+        sorted_keys = sorted(trend_map.keys(), key=lambda x: datetime.strptime(x, "%b %d"))
+        revenue_trend = [{"name": k, "value": round(trend_map[k], 2)} for k in sorted_keys]
+        
+    elif timeframe == "Fiscal Year":
+        for dt, amt in orders_trend:
+            if dt:
+                m_str = dt.strftime("%b")
+                trend_map[m_str] = trend_map.get(m_str, 0.0) + float(amt)
+        fy_months = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"]
+        sorted_keys = [m for m in fy_months if m in trend_map]
+        for m in trend_map:
+            if m not in sorted_keys:
+                sorted_keys.append(m)
+        revenue_trend = [{"name": k, "value": round(trend_map[k], 2)} for k in sorted_keys]
+        
+    elif timeframe == "All Time":
+        for dt, amt in orders_trend:
+            if dt:
+                m_str = dt.strftime("%b %Y")
+                trend_map[m_str] = trend_map.get(m_str, 0.0) + float(amt)
+        sorted_keys = sorted(trend_map.keys(), key=lambda x: datetime.strptime(x, "%b %Y"))
+        revenue_trend = [{"name": k, "value": round(trend_map[k], 2)} for k in sorted_keys]
+        
+    else: # Default "Last 7 Days"
+        for i in range(7):
+            d = (now - timedelta(days=i)).strftime("%b %d")
+            trend_map[d] = 0.0
+            
+        for dt, amt in orders_trend:
+            if dt:
+                d_str = dt.strftime("%b %d")
+                if d_str in trend_map:
+                    trend_map[d_str] = trend_map.get(d_str, 0.0) + float(amt)
+        sorted_keys = sorted(trend_map.keys(), key=lambda x: datetime.strptime(x, "%b %d"))
+        revenue_trend = [{"name": k, "value": round(trend_map[k], 2)} for k in sorted_keys]
+
     return {
         "metrics": metrics,
         "order_status_counts": status_counts,
-        "best_products": [],
+        "best_products": best_products,
         "inventory": inventory_summary,
-        "revenue_trend": []
+        "revenue_trend": revenue_trend
     }

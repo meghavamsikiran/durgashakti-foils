@@ -20,6 +20,13 @@ const adminService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  uploadProductMedia: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post('/admin/uploads/media', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 
   // Inventory
   getInventory: async (params = {}) => {

@@ -68,6 +68,7 @@ class ProductModel(Base):
     discount_price = Column(Numeric(12, 2), nullable=True)
     badge = Column(String(100), nullable=True)
     image_url = Column(Text, nullable=True)
+    media_urls = Column(JSONB, default=list, nullable=False, server_default=text("'[]'::jsonb"))  # list of {url, type: 'image'|'video'}
     features = Column(JSONB, default=list, nullable=False, server_default=text("'[]'::jsonb"))
     in_stock = Column(Boolean, default=True, nullable=False)
     stock_quantity = Column(Integer, default=0, nullable=False)
@@ -105,6 +106,10 @@ class OrderModel(Base):
     idempotency_key = Column(String(255), unique=True, nullable=True)
     razorpay_order_id = Column(String(255), nullable=True)
     razorpay_payment_id = Column(String(255), nullable=True)
+    carrier = Column(String(120), nullable=True)
+    tracking_id = Column(String(255), nullable=True)
+    tracking_url = Column(Text, nullable=True)
+    shipped_at = Column(DateTime(timezone=True), nullable=True)
     return_reason = Column(Text, nullable=True)
     return_image_url = Column(Text, nullable=True)
     admin_message = Column(Text, nullable=True)

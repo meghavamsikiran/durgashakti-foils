@@ -18,6 +18,7 @@ const ProductDetail = () => {
   const { addToCart } = useCart();
   const { user, refreshUser } = useAuth();
   const [wishlisting, setWishlisting] = useState(false);
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   
   // Dynamic Tag Logic
   const getDynamicTag = () => {
@@ -96,6 +97,11 @@ const ProductDetail = () => {
 
   if (!product) return null;
 
+  const mediaList = product.media_urls && product.media_urls.length > 0 
+    ? product.media_urls 
+    : [{ url: product.image_url, type: 'image' }];
+  const activeMedia = mediaList[activeMediaIndex] || mediaList[0];
+
   return (
     <div className="min-h-screen py-12" data-testid="product-detail-page">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
@@ -114,14 +120,104 @@ const ProductDetail = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
+            className="flex flex-col gap-4 md:flex-row md:items-start"
           >
-            <div className="aspect-square rounded-sm overflow-hidden bg-secondary/30 shadow-float">
-              <img
-                src={formatImageUrl(product.image_url)}
-                alt={product.name}
-                className="w-full h-full object-cover"
-                data-testid="product-detail-image"
-              />
+            {/* Desktop Thumbnail Sidebar (visible on md and up) */}
+            <div className="hidden md:flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200">
+              {mediaList.map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveMediaIndex(idx)}
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 bg-secondary/20 transition-all flex-shrink-0 flex items-center justify-center relative ${
+                    activeMediaIndex === idx 
+                      ? 'border-indigo-600 shadow-md ring-2 ring-indigo-600/10' 
+                      : 'border-slate-200 hover:border-indigo-300'
+                  }`}
+                >
+                  {item.type === 'video' ? (
+                    <div className="w-full h-full relative flex items-center justify-center bg-slate-950 text-white">
+                      <video src={formatImageUrl(item.url)} className="w-full h-full object-cover opacity-60" muted playsInline />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center shadow-sm">
+                          <svg className="w-3.5 h-3.5 text-white fill-current translate-x-[1px]" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={formatImageUrl(item.url)}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Main Interactive Media Box */}
+            <div className="flex-1 flex flex-col gap-4">
+              <div className="aspect-square w-full rounded-2xl overflow-hidden bg-secondary/20 border border-slate-100 shadow-lg relative group flex items-center justify-center">
+                {activeMedia.type === 'video' ? (
+                  <div className="w-full h-full bg-slate-950 flex items-center justify-center relative">
+                    <video
+                      key={activeMedia.url}
+                      src={formatImageUrl(activeMedia.url)}
+                      className="w-full h-full object-contain"
+                      controls
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-full overflow-hidden relative cursor-zoom-in">
+                    <img
+                      src={formatImageUrl(activeMedia.url)}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-500 ease-out origin-center group-hover:scale-150"
+                      data-testid="product-detail-image"
+                    />
+                    <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-500 shadow-sm border border-slate-100/50">
+                      Hover to zoom
+                    </div>
+                  </div>
+                )}
+                
+                {/* Wishlist Heart Overlay on Image */}
+                <button
+                  onClick={handleToggleWishlist}
+                  disabled={wishlisting}
+                  className={`absolute top-4 left-4 p-2.5 rounded-full backdrop-blur-md transition-all shadow-md z-10 
+                    ${isWishlisted 
+                      ? 'bg-rose-500 text-white shadow-rose-200' 
+                      : 'bg-white/80 text-slate-500 hover:text-rose-500 hover:bg-white'}`}
+                >
+                  <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''} ${wishlisting ? 'animate-pulse' : ''}`} />
+                </button>
+              </div>
+
+              {/* Mobile Horizontal Carousel Indicators */}
+              <div className="flex md:hidden items-center justify-between gap-4 mt-2">
+                <div className="flex items-center gap-1.5 overflow-x-auto py-1 px-2 w-full justify-center scrollbar-none">
+                  {mediaList.map((item, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveMediaIndex(idx)}
+                      className={`w-3 h-3 rounded-full transition-all border ${
+                        activeMediaIndex === idx 
+                          ? 'bg-indigo-600 w-6 border-indigo-600' 
+                          : 'bg-slate-300 border-transparent hover:bg-slate-400'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-[10px] font-black text-slate-500 bg-slate-100 border border-slate-200/50 px-2.5 py-0.5 rounded-full shrink-0">
+                  {activeMediaIndex + 1} / {mediaList.length}
+                </span>
+              </div>
             </div>
           </motion.div>
 

@@ -153,7 +153,10 @@ async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(
     if (reset_record.failed_attempts or 0) >= 5:
         raise HTTPException(status_code=429, detail="Too many failed attempts.")
 
-    if datetime.now(timezone.utc) > reset_record.expiry.replace(tzinfo=timezone.utc) if reset_record.expiry.tzinfo is None else reset_record.expiry:
+    expiry = reset_record.expiry
+    if expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) > expiry:
         raise HTTPException(status_code=400, detail="OTP has expired")
 
     await db.execute(update(UserModel).where(UserModel.email == data.email).values(password=hash_password(data.new_password)))

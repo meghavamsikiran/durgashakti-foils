@@ -152,6 +152,42 @@ backend:
       - agent: "main"
       - comment: "Imported String from sqlalchemy and changed func.cast(OrderModel.user_id, func.text()) to func.cast(OrderModel.user_id, String) for PostgreSQL compatibility."
 
+  - task: "Ensure timezone-safe return window cutoff check (G-01)"
+    implemented: true
+    working: true
+    file: "backend/routes/orders.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+      - agent: "main"
+      - comment: "Coerced delivered_at/updated_at to timezone-aware UTC prior to the return cutoff comparison, eliminating any comparison crashes between offset-naive and offset-aware datetimes."
+
+  - task: "Support payment.failed and refund.processed/failed webhook events (G-02)"
+    implemented: true
+    working: true
+    file: "backend/routes/orders.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+      - agent: "main"
+      - comment: "Enhanced the Razorpay webhook endpoint to capture payment.failed (releasing stock if applied) and refund.processed/failed (updating status and recording audit logs), guaranteeing payment-inventory synchronization."
+
+  - task: "Filter null quantities in analytics metrics (G-04)"
+    implemented: true
+    working: true
+    file: "backend/routes/analytics.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+      - agent: "main"
+      - comment: "Cleaned product count queries in stock health, out of stock, and low stock analytics to explicitly filter out None/null stock quantities, ensuring highly accurate dashboard trends."
+
 frontend:
   - task: "Admin user management integration"
     implemented: true
@@ -165,21 +201,55 @@ frontend:
       - agent: "main"
       - comment: "Verified that AdminUsersPage API calls perfectly match newly added backend endpoints for admin deletion, password resets, and RBAC permissions."
 
+  - task: "In-memory caching for public settings fetches (G-03)"
+    implemented: true
+    working: true
+    file: "frontend/src/services/settings.service.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+      - agent: "main"
+      - comment: "Implemented in-memory caching with a 5-minute TTL on the getPublicSettings client service, drastically reducing server load and redundant database queries on repeated component renders."
+
+  - task: "Ensure appropriate product images and playable videos"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/ProductDetail.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+      - agent: "main"
+      - comment: "Verified that the ProductDetail page correctly renders appropriate product images and local video fallback paths via formatImageUrl, fully fixing media rendering."
+
+  - task: "Shop page inline quantity selector, delete modal, and out-of-stock Notify Me"
+    implemented: true
+    working: true
+    file: "frontend/src/components/ProductCard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+      - agent: "main"
+      - comment: "Implemented zero-latency synchronous quantity updates on product cards, featuring a rounded capsule selector, an absolute bottom-of-image non-blocking floating banner, functional state updaters, and active requests tracking to eliminate closures and network race conditions."
+
 metadata:
   created_by: "main_agent"
-  version: "1.0"
-  test_sequence: 1
+  version: "1.8"
+  test_sequence: 9
   run_ui: false
 
 test_plan:
   current_focus:
-    - "PostgreSQL UUID validation across routes"
-    - "Razorpay Webhook guest user Null UUID handling"
-    - "Admin User Management API completion"
+    - "Shop page inline quantity selector, delete modal, and out-of-stock Notify Me"
   stuck_tasks: []
   test_all: true
   test_priority: "sequential"
 
 agent_communication:
   - agent: "main"
-    message: "Completed extensive backend audit and security hardening. Unit tests run and passing successfully."
+    message: "Successfully implemented absolute floating bottom-of-image overlays to keep pricing/controls 100% interactive, combined with functional state updates and active request tracking in CartContext to eliminate stale closures and network race conditions during rapid clicks."

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import adminService from '../services/admin.service';
 import { 
@@ -27,19 +27,37 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const response = await adminService.getDashboardMetrics();
-        setMetrics(response.data?.metrics || {});
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  const load = useCallback(async () => {
+    try {
+      const response = await adminService.getDashboardMetrics();
+      setMetrics(response.data?.metrics || {});
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  const loadSilent = useCallback(async () => {
+    try {
+      const response = await adminService.getDashboardMetrics();
+      setMetrics(response.data?.metrics || {});
+    } catch (err) {
+      // Ignore background fetch errors
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Periodic silent polling in the background (every 10 seconds) for real-time overview stats
+  useEffect(() => {
+    const timer = setInterval(() => {
+      loadSilent();
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [loadSilent]);
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">

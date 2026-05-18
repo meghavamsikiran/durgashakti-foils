@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import adminService from '../services/admin.service';
 import { 
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
@@ -32,26 +32,43 @@ const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 const AnalyticsPage = () => {
   const [summary, setSummary] = useState({ metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
   const [loading, setLoading] = useState(true);
-  const [chartType, setChartType] = useState('BAR'); // BAR, PIE, LINE, DONUT
   const [searchQuery, setSearchQuery] = useState('');
   const [topLimit, setTopLimit] = useState(10);
-  const [timeframe, setTimeframe] = useState('Last 7 Days');
+  const [timeframe, setTimeframe] = useState('All Time');
   const { startProgress, updateProgress, finishProgress } = useProgress();
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const response = await adminService.getDashboardMetrics(timeframe);
-        setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
-      } catch (error) {
-        toast.error("Failed to load dashboard metrics");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  const load = useCallback(async () => {
+    try {
+      const response = await adminService.getDashboardMetrics(timeframe);
+      setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
+    } catch (error) {
+      toast.error("Failed to load dashboard metrics");
+    } finally {
+      setLoading(false);
+    }
   }, [timeframe]);
+
+  const loadSilent = useCallback(async () => {
+    try {
+      const response = await adminService.getDashboardMetrics(timeframe);
+      setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
+    } catch (error) {
+      // Ignore background errors
+    }
+  }, [timeframe]);
+
+  useEffect(() => {
+    setLoading(true);
+    load();
+  }, [load]);
+
+  // Periodic silent polling in the background (every 10 seconds) for real-time charts & inventory
+  useEffect(() => {
+    const timer = setInterval(() => {
+      loadSilent();
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [loadSilent]);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -63,7 +80,15 @@ const AnalyticsPage = () => {
   );
 
   const metrics = summary.metrics || {};
-  const statusData = Object.entries(summary.order_status_counts || {}).map(([name, value]) => ({ name, value }));
+  
+  const normalizedStatusCounts = {};
+  Object.entries(summary.order_status_counts || {}).forEach(([key, val]) => {
+    let normalizedKey = key.toLowerCase()
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
+    normalizedStatusCounts[normalizedKey] = (normalizedStatusCounts[normalizedKey] || 0) + val;
+  });
+  const statusData = Object.entries(normalizedStatusCounts).map(([name, value]) => ({ name, value }));
   
   const trendData = summary.revenue_trend || [];
 
@@ -136,86 +161,13 @@ const AnalyticsPage = () => {
     }
   };
 
-  const renderChart = (data, dataKey = "value") => {
-    if (!data || data.length === 0) return (
-      <div className="h-64 flex flex-col items-center justify-center text-slate-500 bg-slate-50/50 rounded-lg border border-dashed">
-        <Search className="w-8 h-8 mb-2 opacity-20" />
-        <p className="text-sm">No data matching filters</p>
-      </div>
-    );
 
-    switch (chartType) {
-      case 'PIE':
-      case 'DONUT':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-              <Pie
-                data={data}
-                innerRadius={chartType === 'DONUT' ? 80 : 0}
-                outerRadius={120}
-                paddingAngle={4}
-                dataKey={dataKey}
-                label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                formatter={(value, name) => [value, name.length > 20 ? name.substring(0, 20) + '...' : name]}
-              />
-              <Legend 
-                layout="vertical" 
-                verticalAlign="middle" 
-                align="right"
-                wrapperStyle={{ paddingLeft: '20px', fontSize: '11px', fontWeight: '600' }}
-                formatter={(value) => (
-                  <span className="text-slate-600">
-                    {value.length > 25 ? value.substring(0, 25) + '...' : value}
-                  </span>
-                )}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        );
-      case 'LINE':
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={data}>
-              <defs>
-                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-              <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-              <Area type="monotone" dataKey={dataKey} stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        );
-      default: // BAR
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-              <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-              <Bar dataKey={dataKey} radius={[6, 6, 0, 0]}>
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        );
-    }
-  };
+  const renderEmptyState = () => (
+    <div className="h-64 flex flex-col items-center justify-center text-slate-500 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+      <Search className="w-8 h-8 mb-2 opacity-20 text-slate-400" />
+      <p className="text-sm font-medium text-slate-500">No data matching filters</p>
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -247,6 +199,7 @@ const AnalyticsPage = () => {
         <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200">
           <Calendar className="w-4 h-4 text-indigo-600" />
           <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="text-sm font-bold text-slate-700 outline-none bg-transparent">
+            <option>All Time</option>
             <option>Today</option>
             <option>Last 7 Days</option>
             <option>This Month</option>
@@ -254,15 +207,6 @@ const AnalyticsPage = () => {
           </select>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200 ml-auto">
-          <ChevronDown className="w-4 h-4 text-indigo-600" />
-          <select value={chartType} onChange={(e) => setChartType(e.target.value)} className="text-sm font-bold text-slate-700 outline-none bg-transparent">
-            <option value="BAR">Bar Display</option>
-            <option value="LINE">Area Trend</option>
-            <option value="PIE">Pie Distribution</option>
-            <option value="DONUT">Donut Summary</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200">
           <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">Show:</span>
           <select value={topLimit} onChange={(e) => setTopLimit(Number(e.target.value))} className="text-sm font-bold text-slate-700 outline-none bg-transparent">
             <option value={5}>05 Items</option>
@@ -280,14 +224,64 @@ const AnalyticsPage = () => {
             <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
             Revenue Trend
           </h2>
-          {renderChart(trendData)}
+          {(!trendData || trendData.length === 0) ? renderEmptyState() : (
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={trendData} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `₹${val}`} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                  formatter={(value) => [`₹${Number(value).toLocaleString('en-IN')}`, 'Revenue']}
+                />
+                <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
         <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
           <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
             <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
             Order Status
           </h2>
-          {renderChart(statusData)}
+          {(!statusData || statusData.length === 0) ? renderEmptyState() : (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  innerRadius={65}
+                  outerRadius={100}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {statusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                  formatter={(value) => [value, 'Orders']}
+                />
+                <Legend 
+                  layout="horizontal" 
+                  verticalAlign="bottom" 
+                  align="center"
+                  iconType="circle"
+                  wrapperStyle={{ fontSize: '11px', fontWeight: '600', paddingTop: '15px' }}
+                  formatter={(value) => {
+                    const item = statusData.find(d => d.name === value);
+                    return <span className="text-slate-600 mr-2">{value} ({item ? item.value : 0})</span>;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
@@ -297,14 +291,74 @@ const AnalyticsPage = () => {
             <div className="w-1.5 h-6 bg-amber-500 rounded-full"></div>
             Stock Levels
           </h2>
-          {renderChart(inventoryData)}
+          {(!inventoryData || inventoryData.length === 0) ? renderEmptyState() : (
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart
+                layout="vertical"
+                data={inventoryData}
+                margin={{ top: 10, right: 30, left: 110, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                <YAxis 
+                  type="category" 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tickFormatter={(name) => (name || '').length > 20 ? (name || '').substring(0, 18) + '...' : name}
+                  tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }}
+                  width={100}
+                />
+                <Tooltip 
+                  cursor={{ fill: '#f8fafc' }} 
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                  formatter={(value) => [value, 'Stock Left']}
+                />
+                <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                  {inventoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
         <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
           <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
             <div className="w-1.5 h-6 bg-rose-500 rounded-full"></div>
             Best Sellers
           </h2>
-          {renderChart(productData)}
+          {(!productData || productData.length === 0) ? renderEmptyState() : (
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart
+                layout="vertical"
+                data={productData}
+                margin={{ top: 10, right: 30, left: 110, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                <YAxis 
+                  type="category" 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tickFormatter={(name) => (name || '').length > 20 ? (name || '').substring(0, 18) + '...' : name}
+                  tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }}
+                  width={100}
+                />
+                <Tooltip 
+                  cursor={{ fill: '#f8fafc' }} 
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                  formatter={(value) => [value, 'Units Sold']}
+                />
+                <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                  {productData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 

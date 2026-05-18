@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import apiClient from '../services/core/apiClient';
 import { useAuth } from './AuthContext';
 
@@ -30,12 +30,16 @@ export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState({ items: [] });
   const [loading, setLoading] = useState(false);
   const { token, user } = useAuth();
+  const activeRequestsCount = useRef(0);
 
   const fetchCart = useCallback(async () => {
     if (!token) return;
     try {
       const response = await apiClient.get('/cart');
-      setCart(response.data || { items: [] });
+      // Ignore background fetch responses if there are active, newer local state updates in progress
+      if (activeRequestsCount.current === 0) {
+        setCart(response.data || { items: [] });
+      }
     } catch (error) {
       console.error('Error fetching cart:', error);
     }
@@ -64,8 +68,11 @@ export const CartProvider = ({ children }) => {
   }, [token, user, fetchCart, syncGuestCart]);
 
   const addToCart = useCallback(async (productId, quantity = 1) => {
-    if (!token) {
-      const items = cart.items || [];
+    let rollbackCart = null;
+    
+    setCart(prev => {
+      rollbackCart = prev;
+      const items = prev.items || [];
       const existingIdx = items.findIndex(i => i.product_id === productId);
       let newItems;
       if (existingIdx >= 0) {
@@ -75,64 +82,94 @@ export const CartProvider = ({ children }) => {
       } else {
         newItems = [...items, { product_id: productId, quantity }];
       }
-      const newCart = { items: newItems };
-      setCart(newCart);
-      saveGuestCart(newCart);
-      return;
-    }
+      const newCart = { ...prev, items: newItems };
+      if (!token) {
+        saveGuestCart(newCart);
+      }
+      return newCart;
+    });
 
+    if (!token) return;
+
+    activeRequestsCount.current += 1;
     setLoading(true);
     try {
       await apiClient.post('/cart/add', { product_id: productId, quantity });
       await fetchCart();
     } catch (error) {
+      if (rollbackCart) {
+        setCart(rollbackCart);
+      }
       throw error;
     } finally {
+      activeRequestsCount.current -= 1;
       setLoading(false);
     }
-  }, [token, cart.items, fetchCart]);
+  }, [token, fetchCart]);
 
   const updateCartItem = useCallback(async (productId, quantity) => {
-    if (!token) {
-      const newItems = cart.items.map(i =>
+    let rollbackCart = null;
+
+    setCart(prev => {
+      rollbackCart = prev;
+      const newItems = (prev.items || []).map(i =>
         i.product_id === productId ? { ...i, quantity } : i
       );
-      const newCart = { items: newItems };
-      setCart(newCart);
-      saveGuestCart(newCart);
-      return;
-    }
+      const newCart = { ...prev, items: newItems };
+      if (!token) {
+        saveGuestCart(newCart);
+      }
+      return newCart;
+    });
 
+    if (!token) return;
+
+    activeRequestsCount.current += 1;
     setLoading(true);
     try {
       await apiClient.put('/cart/update', { product_id: productId, quantity });
       await fetchCart();
     } catch (error) {
+      if (rollbackCart) {
+        setCart(rollbackCart);
+      }
       throw error;
     } finally {
+      activeRequestsCount.current -= 1;
       setLoading(false);
     }
-  }, [token, cart.items, fetchCart]);
+  }, [token, fetchCart]);
 
   const removeFromCart = useCallback(async (productId) => {
-    if (!token) {
-      const newItems = cart.items.filter(i => i.product_id !== productId);
-      const newCart = { items: newItems };
-      setCart(newCart);
-      saveGuestCart(newCart);
-      return;
-    }
+    let rollbackCart = null;
 
+    setCart(prev => {
+      rollbackCart = prev;
+      const newItems = (prev.items || []).filter(i => i.product_id !== productId);
+      const newCart = { ...prev, items: newItems };
+      if (!token) {
+        saveGuestCart(newCart);
+      }
+      return newCart;
+    });
+
+    if (!token) return;
+
+    activeRequestsCount.current += 1;
     setLoading(true);
     try {
       await apiClient.delete(`/cart/remove/${productId}`);
       await fetchCart();
     } catch (error) {
+      if (rollbackCart) {
+        setCart(rollbackCart);
+      }
       throw error;
     } finally {
+      activeRequestsCount.current -= 1;
       setLoading(false);
     }
-  }, [token, cart.items, fetchCart]);
+  }, [token, fetchCart]);
 
   const clearCart = useCallback(async () => {
     if (!token) {

@@ -33,6 +33,20 @@ const CustomersPage = () => {
     }
   }, [search]);
 
+  const loadSilent = useCallback(async (pageNum = 1) => {
+    try {
+      const [response, mRes] = await Promise.all([
+        adminService.getCustomers({ page: pageNum, limit: ITEMS_PER_PAGE, search }),
+        adminService.getDashboardMetrics()
+      ]);
+      setRows(response.data?.items || []);
+      setTotal(response.data?.total || 0);
+      setMetrics(mRes.data?.metrics || {});
+    } catch {
+      // Ignore background errors
+    }
+  }, [search]);
+
   const formatDate = (d) => {
     if (!d) return '—';
     try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); }
@@ -43,6 +57,14 @@ const CustomersPage = () => {
     const timer = setTimeout(() => load(1), 300);
     return () => clearTimeout(timer);
   }, [search, load]);
+
+  // Periodic silent polling in the background (every 10 seconds) for real-time customer directory
+  useEffect(() => {
+    const timer = setInterval(() => {
+      loadSilent(page);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [loadSilent, page]);
 
   const totalFilteredPages = Math.ceil(total / ITEMS_PER_PAGE);
   const paginatedCustomers = rows;

@@ -1,20 +1,27 @@
 import asyncio
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
+import sys
 from dotenv import load_dotenv
-from pathlib import Path
 
-async def check_products():
-    load_dotenv(Path('d:/archive/backend/.env'))
-    client = AsyncIOMotorClient(os.environ['MONGO_URL'])
-    db = client[os.environ['DB_NAME']]
-    p_count = await db.products.count_documents({})
-    o_count = await db.orders.count_documents({})
-    print(f"Products in DB: {p_count}")
-    print(f"Orders in DB: {o_count}")
-    if p_count > 0:
-        p = await db.products.find_one({}, {"name": 1, "_id": 0})
-        print(f"Sample product: {p['name']}")
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-if __name__ == "__main__":
-    asyncio.run(check_products())
+import database
+from sqlalchemy import text
+
+async def main():
+    load_dotenv()
+    database.init_engine()
+    print("Connecting to DB...")
+    async with database.engine.connect() as conn:
+        result = await conn.execute(text("SELECT id, name, image_url, media_urls FROM products"))
+        rows = result.all()
+        print(f"Found {len(rows)} products:")
+        for r in rows:
+            print(f"ID: {r.id}")
+            print(f"Name: {r.name}")
+            print(f"Image URL: {r.image_url}")
+            print(f"Media URLs: {r.media_urls}")
+            print("-" * 40)
+
+if __name__ == '__main__':
+    asyncio.run(main())

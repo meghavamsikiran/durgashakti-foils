@@ -13,9 +13,9 @@ from deps import (
     AdminCreateRequest, AdminUpdateRequest, PasswordResetRequest,
     require_permission, sanitize_search_term, is_super_admin_role,
     write_audit_log, row_to_dict, normalize_order_status,
-    ORDER_STATUS_TRANSITIONS, UPLOADS_DIR, validate_uuid
+    ORDER_STATUS_TRANSITIONS, UPLOADS_DIR, validate_uuid, is_valid_uuid
 )
-from storage_service import upload_image, delete_asset
+from storage_service import upload_image, upload_media, delete_asset
 import uuid
 from datetime import datetime, timezone
 import pandas as pd
@@ -39,6 +39,7 @@ async def create_product(product: ProductSchema, admin: UserSchema = Depends(req
         discount_price=product.discount_price,
         badge=product.badge,
         image_url=product.image_url,
+        media_urls=product.media_urls,
         features=product.features,
         in_stock=product.in_stock,
         stock_quantity=product.stock_quantity,
@@ -81,6 +82,7 @@ async def create_product_bulk(payload: ProductBulkCreateRequest, admin: UserSche
             price=v.price,
             discount_price=v.discount_price,
             image_url=payload.image_url,
+            media_urls=payload.media_urls,
             features=payload.features,
             in_stock=v.in_stock and v.stock_quantity > 0,
             stock_quantity=v.stock_quantity,
@@ -103,7 +105,7 @@ async def update_product(product_id: str, product_data: dict, admin: UserSchema 
     if admin.role != "SUPER_ADMIN":
         raise HTTPException(status_code=403, detail="Super admin only")
     validate_uuid(product_id)
-    allowed = {'name', 'description', 'size', 'thickness', 'price', 'discount_price', 'badge', 'image_url', 'features', 'in_stock', 'stock_quantity', 'category', 'batch_no', 'width', 'low_stock_threshold'}
+    allowed = {'name', 'description', 'size', 'thickness', 'price', 'discount_price', 'badge', 'image_url', 'media_urls', 'features', 'in_stock', 'stock_quantity', 'category', 'batch_no', 'width', 'low_stock_threshold'}
     safe_data = {k: v for k, v in product_data.items() if k in allowed}
     if not safe_data:
         raise HTTPException(status_code=400, detail="No valid fields")
@@ -133,6 +135,8 @@ async def delete_product(product_id: str, admin: UserSchema = Depends(require_pe
     p = res.scalar_one_or_none()
     if p:
         await delete_asset(p.image_url)
+        for mu in (p.media_urls or []):
+            await delete_asset(mu.get('url', ''))
         await db.delete(p)
         await db.flush()
         await write_audit_log(db, "PRODUCT_DELETED", admin.id, "product", product_id)
@@ -191,19 +195,21 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
         raise HTTPException(status_code=400, detail=f"Cannot transition from {prev_status} to {new_status}")
 
     now = datetime.now(timezone.utc)
-    if order.payment_method != "cod" and order.payment_status != "completed":
+    if order.payment_method != "cod" and order.payment_status not in ("Paid", "completed"):
         if new_status not in ("cancelled", "overdue"):
             raise HTTPException(status_code=400, detail="Cannot advance unpaid order")
 
     applied = bool(order.stock_applied)
-    if new_status.upper() == "CONFIRMED" and not applied:
+    if new_status == "confirmed" and not applied:
         for item in (order.items or []):
             pid = item.get("product_id")
             qty = int(item.get("quantity", 0))
-            if pid and qty > 0:
+            if pid and is_valid_uuid(pid) and qty > 0:
                 p_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
                 p = p_res.scalar_one_or_none()
                 if p:
+                    if int(p.stock_quantity or 0) < qty:
+                        raise HTTPException(status_code=400, detail=f"Insufficient stock for {p.name}")
                     p.stock_quantity = max(0, int(p.stock_quantity or 0) - qty)
                     p.units_sold = int(p.units_sold or 0) + qty
                     p.updated_at = now
@@ -211,11 +217,11 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
                         p.in_stock = False
         order.stock_applied = True
 
-    if new_status.upper() in {"CANCELLED", "REFUNDED", "RETURN_APPROVED"} and applied:
+    if new_status in {"cancelled", "refunded", "return_approved"} and applied:
         for item in (order.items or []):
             pid = item.get("product_id")
             qty = int(item.get("quantity", 0))
-            if pid and qty > 0:
+            if pid and is_valid_uuid(pid) and qty > 0:
                 p_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
                 p = p_res.scalar_one_or_none()
                 if p:
@@ -226,18 +232,56 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
         order.stock_applied = False
 
     effective_status = new_status
-    if new_status.upper() == "RETURN_APPROVED":
+    if new_status == "return_approved":
+        # Check if prepaid order is Paid/completed to initiate Razorpay refund
+        if order.payment_method != "cod" and order.payment_status in ("Paid", "completed"):
+            payment_id = order.razorpay_payment_id
+            
+            # Import Razorpay dependencies dynamically to avoid circular references
+            from routes.orders import razorpay_client, is_test_mode
+            import logging
+            
+            is_dummy_pay = not payment_id or payment_id.startswith(("pay_dummy_", "pay_sample_", "pay_test_"))
+            if not is_dummy_pay and not is_test_mode():
+                try:
+                    amount_paise = int(float(order.total_amount) * 100)
+                    logging.info(f"Initiating digital Razorpay refund for payment {payment_id} of amount {amount_paise} paise.")
+                    refund = razorpay_client.refund.create({
+                        "payment_id": payment_id,
+                        "amount": amount_paise,
+                        "speed": "optimum"
+                    })
+                    logging.info(f"Razorpay refund processed successfully. Refund ID: {refund.get('id')}")
+                except Exception as e:
+                    logging.error(f"Razorpay refund failed: {e}")
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Failed to process digital refund via Razorpay: {str(e)}"
+                    )
+            else:
+                logging.info(f"Skipping live Razorpay refund for dummy/test payment {payment_id} or test mode.")
+
         effective_status = "refunded"
         order.payment_status = "refunded"
-    if new_status.upper() == "RETURN_REJECTED":
+    if new_status == "return_rejected":
         effective_status = "return_rejected"
 
     order.order_status = effective_status
     order.updated_at = now
-    if new_status.upper() == "DELIVERED":
+    if new_status == "shipped":
+        carrier = str(status_data.get("carrier") or "").strip()
+        tracking_id = str(status_data.get("tracking_id") or "").strip()
+        tracking_url = str(status_data.get("tracking_url") or "").strip()
+        if not tracking_id:
+            raise HTTPException(status_code=400, detail="Tracking ID is required before marking an order shipped")
+        order.carrier = carrier or None
+        order.tracking_id = tracking_id
+        order.tracking_url = tracking_url or None
+        order.shipped_at = now
+    if new_status == "delivered":
         order.delivered_at = now
         if order.payment_method == "cod" and status_data.get("mark_paid", True):
-            order.payment_status = "completed"
+            order.payment_status = "Paid"
     if status_data.get("admin_message"):
         order.admin_message = status_data["admin_message"]
 
@@ -280,7 +324,7 @@ async def list_customers(
     if user_ids:
         stat_res = await db.execute(
             select(OrderModel.user_id, func.count(OrderModel.id).label('cnt'), func.sum(OrderModel.total_amount).label('tot'))
-            .where(OrderModel.user_id.in_(user_ids), OrderModel.payment_status == "completed")
+            .where(OrderModel.user_id.in_(user_ids), OrderModel.payment_status.in_(["completed", "Paid"]))
             .group_by(OrderModel.user_id)
         )
         for row in stat_res.all():
@@ -491,6 +535,35 @@ async def upload_image_endpoint(file: UploadFile = File(...), admin: UserSchema 
         raise HTTPException(status_code=400, detail="Max 5MB")
     url = await upload_image(raw, ct, prefix="product")
     return {"url": url, "file_name": file.filename or url.split("/")[-1]}
+
+
+@router.post("/admin/uploads/media")
+async def upload_media_endpoint(file: UploadFile = File(...), admin: UserSchema = Depends(require_permission("manage_products"))):
+    ct = (file.content_type or "").lower()
+    allowed_images = {"image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"}
+    allowed_videos = {"video/mp4", "video/webm", "video/ogg", "video/quicktime"}
+    
+    is_image = ct in allowed_images
+    is_video = ct in allowed_videos
+    
+    if not is_image and not is_video:
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid media format. Supported: PNG, JPEG, JPG, WEBP, GIF, MP4, WEBM, OGG, MOV"
+        )
+    
+    raw = await file.read()
+    # 5MB limit for images, 50MB limit for videos
+    limit = 5 * 1024 * 1024 if is_image else 50 * 1024 * 1024
+    if len(raw) > limit:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"File too large. Max allowed: {'5MB' if is_image else '50MB'}"
+        )
+        
+    url = await upload_media(raw, ct, prefix="product_media")
+    media_type = "image" if is_image else "video"
+    return {"url": url, "type": media_type, "file_name": file.filename or url.split("/")[-1]}
 
 
 @router.post("/admin/gst/import")

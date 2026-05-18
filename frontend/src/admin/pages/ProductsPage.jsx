@@ -20,6 +20,7 @@ const ProductsPage = () => {
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const [mediaUploading, setMediaUploading] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
@@ -32,6 +33,7 @@ const ProductsPage = () => {
     thickness: '',
     width: '',
     image_url: '',
+    media_urls: [],
     features: '',
     price: 0,
     discount_price: 0,
@@ -47,10 +49,11 @@ const ProductsPage = () => {
     setForm({
       name: '',
       description: '',
-      category: '',
+      category: 'Aluminum Foil',
       thickness: '',
       width: '',
       image_url: '',
+      media_urls: [],
       features: '',
       price: 0,
       discount_price: 0,
@@ -83,6 +86,20 @@ const ProductsPage = () => {
     }
   }, [search]);
 
+  const fetchRowsSilent = useCallback(async (pageNum = 1) => {
+    try {
+      const [response, mRes] = await Promise.all([
+        adminService.getProducts({ page: pageNum, limit: ITEMS_PER_PAGE, search }),
+        adminService.getDashboardMetrics()
+      ]);
+      setRows(response.data?.items || []);
+      setTotal(response.data?.total || 0);
+      setMetrics(mRes.data?.metrics || {});
+    } catch (err) {
+      // Ignore background errors
+    }
+  }, [search]);
+
   const handleEdit = (product) => {
     setIsEdit(true);
     setCurrentId(product.id);
@@ -93,6 +110,7 @@ const ProductsPage = () => {
       thickness: product.thickness || '11 Micron',
       width: product.width || '295mm',
       image_url: product.image_url || '',
+      media_urls: product.media_urls || [],
       features: Array.isArray(product.features) ? product.features.join(', ') : (product.features || ''),
       price: product.price || 0,
       discount_price: product.discount_price || 0,
@@ -114,6 +132,71 @@ const ProductsPage = () => {
     } catch (err) {
       toast.error(err.message);
     }
+  };
+
+  const handleMediaUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    const currentMediaCount = form.media_urls?.length || 0;
+    const remainingSlots = 10 - currentMediaCount;
+    
+    if (remainingSlots <= 0) {
+      toast.error("Maximum 10 images and videos are allowed.");
+      return;
+    }
+    
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+    if (files.length > remainingSlots) {
+      toast.warning(`Only ${remainingSlots} slot(s) remaining. Uploading the first ${remainingSlots} file(s).`);
+    }
+    
+    setMediaUploading(true);
+    
+    for (const file of filesToUpload) {
+      const isImg = file.type.startsWith("image/");
+      const isVid = file.type.startsWith("video/");
+      
+      if (!isImg && !isVid) {
+        toast.error(`Unsupported format: ${file.name}`);
+        continue;
+      }
+      
+      const maxSize = isImg ? 5 * 1024 * 1024 : 50 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error(`File too large: ${file.name} (Max: ${isImg ? '5MB' : '50MB'})`);
+        continue;
+      }
+      
+      const uploadToastId = toast.loading(`Uploading ${file.name}...`);
+      try {
+        const res = await adminService.uploadProductMedia(file);
+        const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://durgashakti-foils-1.onrender.com';
+        const absoluteUrl = res.data.url.startsWith("http") ? res.data.url : `${backendUrl}${res.data.url}`;
+        
+        setForm(prev => ({
+          ...prev,
+          media_urls: [...(prev.media_urls || []), {
+            url: absoluteUrl,
+            type: res.data.type,
+            file_name: file.name
+          }]
+        }));
+        
+        toast.success(`${file.name} uploaded!`, { id: uploadToastId });
+      } catch (err) {
+        toast.error(`Failed to upload ${file.name}: ${err.message || 'Error'}`, { id: uploadToastId });
+      }
+    }
+    
+    setMediaUploading(false);
+  };
+  
+  const removeMediaItem = (indexToRemove) => {
+    setForm(prev => ({
+      ...prev,
+      media_urls: (prev.media_urls || []).filter((_, idx) => idx !== indexToRemove)
+    }));
+    toast.success("Media asset removed from gallery");
   };
 
   const saveProduct = async () => {
@@ -172,6 +255,14 @@ const ProductsPage = () => {
     const timer = setTimeout(() => fetchRows(1), 300);
     return () => clearTimeout(timer);
   }, [search, fetchRows]);
+
+  // Periodic silent polling in the background (every 10 seconds) for real-time products & metrics
+  useEffect(() => {
+    const timer = setInterval(() => {
+      fetchRowsSilent(page);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [fetchRowsSilent, page]);
 
   const totalFilteredPages = Math.ceil(total / ITEMS_PER_PAGE);
   const paginatedProducts = rows;
@@ -303,7 +394,7 @@ const ProductsPage = () => {
 
             <div className="space-y-6">
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Product Image</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Primary Product Image</label>
                 <div className="flex gap-4">
                   <div className={`flex-1 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-4 transition-all ${form.image_url ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 hover:border-indigo-300'}`}>
                     {form.image_url ? (
@@ -336,6 +427,73 @@ const ProductsPage = () => {
                     </Button>
                   )}
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    Product Gallery (Max 10 Images/Videos)
+                  </label>
+                  <span className="text-[9px] font-bold text-indigo-500 bg-indigo-50 px-2.5 py-0.5 rounded-full">
+                    {(form.media_urls || []).length} / 10 Assets
+                  </span>
+                </div>
+                
+                <div className={`border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-6 transition-all relative ${
+                  mediaUploading ? 'border-indigo-100 bg-indigo-50/20' : 
+                  (form.media_urls || []).length >= 10 ? 'border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed' :
+                  'border-slate-200 hover:border-indigo-300 bg-slate-50/30'
+                }`}>
+                  <label htmlFor="media-up" className={`flex flex-col items-center gap-2 w-full h-full justify-center ${
+                    (form.media_urls || []).length >= 10 || mediaUploading ? 'cursor-not-allowed' : 'cursor-pointer'
+                  }`}>
+                    <Upload className={`w-8 h-8 ${mediaUploading ? 'text-indigo-400 animate-bounce' : 'text-slate-300'}`} />
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      id="media-up" 
+                      multiple 
+                      accept="image/*,video/*"
+                      disabled={mediaUploading || (form.media_urls || []).length >= 10}
+                      onChange={e => handleMediaUpload(e.target.files)} 
+                    />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                      {mediaUploading ? 'Uploading assets...' : 
+                       (form.media_urls || []).length >= 10 ? 'Gallery Full (10 max)' : 'Upload Images / Videos'}
+                    </span>
+                    <span className="text-[8px] text-slate-400 uppercase tracking-wider">
+                      Supports PNG, JPG, WEBP, GIF (Max 5MB) & MP4, WEBM, MOV (Max 50MB)
+                    </span>
+                  </label>
+                </div>
+
+                {(form.media_urls || []).length > 0 && (
+                  <div className="grid grid-cols-5 gap-3 mt-4">
+                    {(form.media_urls || []).map((item, idx) => (
+                      <div key={idx} className="aspect-square relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group hover:border-indigo-300 transition-colors shadow-sm">
+                        {item.type === 'video' ? (
+                          <div className="w-full h-full flex flex-col items-center justify-center p-1 bg-slate-900 text-white relative">
+                            <video src={formatImageUrl(item.url)} className="w-full h-full object-cover opacity-60" muted playsInline />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-[8px] bg-indigo-600 text-white font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm flex items-center gap-0.5">
+                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span>
+                                Video
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <img src={formatImageUrl(item.url)} alt="" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                        )}
+                        <button 
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeMediaItem(idx); }}
+                          className="absolute top-1 right-1 p-1 bg-rose-500 hover:bg-rose-600 text-white rounded-full transition-colors shadow shadow-rose-200 z-10"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               
               {isEdit ? (

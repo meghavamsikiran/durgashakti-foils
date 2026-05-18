@@ -44,6 +44,17 @@ def _local_fallback_path() -> Path:
 
 ALLOWED_IMAGE_TYPES = {"image/png": ".png", "image/jpeg": ".jpg", "image/jpg": ".jpg", "image/webp": ".webp"}
 ALLOWED_DOC_TYPES = {"application/pdf": ".pdf"}
+ALLOWED_MEDIA_TYPES = {
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+    "video/mp4": ".mp4",
+    "video/webm": ".webm",
+    "video/ogg": ".ogg",
+    "video/quicktime": ".mov"
+}
 
 
 def _ext_for_content_type(content_type: str, allowed: dict) -> str:
@@ -51,6 +62,35 @@ def _ext_for_content_type(content_type: str, allowed: dict) -> str:
     if ct not in allowed:
         raise HTTPException(status_code=400, detail=f"Unsupported file type: {ct}")
     return allowed[ct]
+
+
+async def upload_media(raw: bytes, content_type: str, prefix: str = "media") -> str:
+    """
+    Upload any media asset (image or video) to Supabase Storage.
+    Returns a public URL string.
+    Falls back to local /uploads/ if Supabase is not configured.
+    """
+    ext = _ext_for_content_type(content_type, ALLOWED_MEDIA_TYPES)
+    filename = f"{prefix}_{uuid.uuid4().hex}{ext}"
+
+    client = _get_client()
+    if client:
+        try:
+            client.storage.from_(BUCKET_NAME).upload(
+                path=filename,
+                file=raw,
+                file_options={"content-type": content_type, "upsert": "true"},
+            )
+            public_url = client.storage.from_(BUCKET_NAME).get_public_url(filename)
+            logger.info("Uploaded media %s to Supabase Storage: %s", filename, public_url)
+            return public_url
+        except Exception as e:
+            logger.error("Supabase Storage media upload failed: %s — falling back to local.", e)
+
+    # Local fallback
+    local_path = _local_fallback_path() / filename
+    local_path.write_bytes(raw)
+    return f"/uploads/{filename}"
 
 
 async def upload_image(raw: bytes, content_type: str, prefix: str = "img") -> str:

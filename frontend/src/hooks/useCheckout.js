@@ -9,7 +9,7 @@ import orderService from '../services/order.service';
 import paymentService from '../services/payment.service';
 import settingsService from '../services/settings.service';
 
-const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_test_SlmLztmM54CPAn';
+const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID;
 
 export const useCheckout = () => {
   const navigate = useNavigate();

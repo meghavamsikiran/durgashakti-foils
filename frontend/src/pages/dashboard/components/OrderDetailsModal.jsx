@@ -76,7 +76,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
       const { razorpay_order_id, amount, currency, key_id } = response;
 
       const options = {
-        key: key_id || process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_test_SlmLztmM54CPAn',
+        key: key_id || process.env.REACT_APP_RAZORPAY_KEY_ID,
         amount: amount,
         currency: currency || 'INR',
         name: 'DurgaShakti Foils',
@@ -449,16 +449,57 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                     <div>
                       <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 ml-1">Timeline</h3>
                       <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-slate-100">
-                        {[
-                          { label: 'Placed', date: order.created_at, status: 'completed' },
-                          { label: 'Confirmed', date: order.confirmed_at, status: order.confirmed_at ? 'completed' : 'pending' },
-                          { label: 'Shipped', date: order.shipped_at, status: order.shipped_at ? 'completed' : 'pending' },
-                          { label: 'Delivered', date: order.delivered_at, status: order.delivered_at ? 'completed' : 'pending' },
-                        ].map((step, idx) => (
+                        {(() => {
+                          const status = (order.order_status || '').toLowerCase();
+                          const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                          const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                          const isDelivered = ['delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+
+                          const steps = [
+                            { label: 'Placed', date: order.created_at, status: 'completed' }
+                          ];
+
+                          if (status === 'cancelled') {
+                            steps.push({ label: 'Cancelled', date: order.updated_at || order.created_at, status: 'completed' });
+                          } else {
+                            steps.push({ label: 'Confirmed', date: isConfirmed ? order.created_at : null, status: isConfirmed ? 'completed' : 'pending' });
+                            steps.push({ label: 'Shipped', date: isShipped ? (order.shipped_at || order.updated_at) : null, status: isShipped ? 'completed' : 'pending' });
+                            steps.push({ label: 'Delivered', date: isDelivered ? (order.delivered_at || order.updated_at) : null, status: isDelivered ? 'completed' : 'pending' });
+
+                            if (status === 'return_requested') {
+                              steps.push({ label: 'Return Requested', date: order.updated_at, status: 'completed' });
+                            } else if (status === 'return_approved' || status === 'refunded') {
+                              steps.push({ label: 'Return Approved & Refunded', date: order.updated_at, status: 'completed' });
+                            } else if (status === 'return_rejected') {
+                              steps.push({ label: 'Return Rejected', date: order.updated_at, status: 'completed' });
+                            }
+                          }
+                          return steps;
+                        })().map((step, idx) => (
                           <div key={idx} className="flex gap-4 relative z-10">
-                            <div className={`w-6 h-6 rounded-full border-4 border-white flex-shrink-0 shadow-sm ${step.status === 'completed' ? 'bg-indigo-600' : 'bg-slate-200'}`} />
+                            <div className={`w-6 h-6 rounded-full border-4 border-white flex-shrink-0 shadow-sm ${
+                              step.status === 'completed'
+                                ? step.label.includes('Cancel') || step.label.includes('Rejected')
+                                  ? 'bg-rose-600'
+                                  : step.label.includes('Request')
+                                    ? 'bg-amber-500'
+                                    : step.label.includes('Refund') || step.label.includes('Approved')
+                                      ? 'bg-emerald-600'
+                                      : 'bg-indigo-600'
+                                : 'bg-slate-200'
+                            }`} />
                             <div>
-                              <p className={`text-xs font-black uppercase tracking-tight ${step.status === 'completed' ? 'text-slate-900' : 'text-slate-500'}`}>{step.label}</p>
+                              <p className={`text-xs font-black uppercase tracking-tight ${
+                                step.status === 'completed'
+                                  ? step.label.includes('Cancel') || step.label.includes('Rejected')
+                                    ? 'text-rose-600'
+                                    : step.label.includes('Request')
+                                      ? 'text-amber-600'
+                                      : step.label.includes('Refund') || step.label.includes('Approved')
+                                        ? 'text-emerald-600'
+                                        : 'text-slate-900'
+                                  : 'text-slate-500'
+                              }`}>{step.label}</p>
                               {step.date && <p className="text-[10px] font-bold text-slate-500">{new Date(step.date).toLocaleString()}</p>}
                             </div>
                           </div>
@@ -492,6 +533,22 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                       <Calendar className="w-8 h-8 text-indigo-200" />
                     </div>
 
+                    {order.tracking_id && (
+                      <div className="p-6 rounded-[2rem] bg-sky-50 border border-sky-100 flex items-center justify-between gap-4">
+                        <div>
+                          <h3 className="text-[10px] font-black uppercase tracking-widest text-sky-600 mb-1">Shipment Tracking</h3>
+                          <p className="font-black text-slate-900 uppercase tracking-tight">{order.carrier || 'Courier'}</p>
+                          <p className="text-xs font-bold text-slate-600 mt-1">{order.tracking_id}</p>
+                          {order.tracking_url && (
+                            <a href={order.tracking_url} target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase tracking-widest text-sky-700 hover:underline mt-2 inline-block">
+                              Track package
+                            </a>
+                          )}
+                        </div>
+                        <Truck className="w-8 h-8 text-sky-200 shrink-0" />
+                      </div>
+                    )}
+
                     <div className="p-6 rounded-[2rem] bg-indigo-50 border border-indigo-100 flex items-center justify-between">
                       <div>
                         <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1">Payment Method</h3>
@@ -522,7 +579,13 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
 
                           {order.admin_message && (
                             <div className="bg-white p-3 rounded-xl border border-amber-100/50">
-                              <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 block mb-0.5">Admin Response</span>
+                              <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 block mb-0.5">
+                                {order.order_status === 'return_approved' 
+                                  ? 'Approval Remarks' 
+                                  : order.order_status === 'return_rejected' 
+                                    ? 'Rejection Reason' 
+                                    : 'Store Remarks'}
+                              </span>
                               <p className="text-xs font-semibold text-slate-700 leading-relaxed">{order.admin_message}</p>
                             </div>
                           )}
@@ -557,7 +620,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
           {/* Footer */}
           {!isReturning && (
             <div className="p-8 border-t border-slate-200 flex gap-4">
-              {order.payment_status === 'completed' && (
+              {(order.payment_status === 'Paid' || order.payment_status === 'completed') && (
                 <Button
                   className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-indigo-100"
                   onClick={handleDownloadInvoice}
@@ -565,7 +628,10 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                    <ExternalLink className="w-4 h-4 mr-2" /> Download Invoice
                 </Button>
               )}
-              {order.payment_method === 'cod' && order.payment_status !== 'completed' && (
+              {order.payment_method === 'cod' && 
+               order.payment_status !== 'Paid' && 
+               order.payment_status !== 'completed' && 
+               !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase()) && (
                 <Button
                   onClick={handlePayOnline}
                   disabled={payingOnline}

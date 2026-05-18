@@ -80,7 +80,8 @@ def test_order_status_normalizer():
 def test_order_status_transitions():
     assert "confirmed" in ORDER_STATUS_TRANSITIONS["pending"]
     assert "cancelled" in ORDER_STATUS_TRANSITIONS["pending"]
-    assert "shipped" in ORDER_STATUS_TRANSITIONS["confirmed"]
+    assert "packaging" in ORDER_STATUS_TRANSITIONS["confirmed"]
+    assert "shipped" in ORDER_STATUS_TRANSITIONS["packaging"]
     assert len(ORDER_STATUS_TRANSITIONS["cancelled"]) == 0
     assert len(ORDER_STATUS_TRANSITIONS["refunded"]) == 0
 

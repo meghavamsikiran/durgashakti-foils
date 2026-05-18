@@ -9,7 +9,7 @@ from deps import (
     UserSchema, OrderCreate, get_current_user, row_to_dict,
     write_audit_log, send_email, create_notification,
     ORDER_STATUS_TRANSITIONS, normalize_order_status,
-    UPLOADS_DIR, validate_uuid
+    UPLOADS_DIR, validate_uuid, is_valid_uuid
 )
 from storage_service import upload_image
 from datetime import datetime, timezone, timedelta
@@ -90,7 +90,9 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
 
     order_number = f"ORD-{int(time.time())}-{uuid.uuid4().hex[:8]}"
     now = datetime.now(timezone.utc)
-    order_status = "pending_payment" if order_data.payment_method != "cod" else "processing"
+    order_status = "confirmed" if order_data.payment_method == "cod" else "pending_payment"
+    payment_status = "Cash On Delivery" if order_data.payment_method == "cod" else "pending"
+    stock_applied = True if order_data.payment_method == "cod" else False
 
     order = OrderModel(
         order_number=order_number,
@@ -99,9 +101,9 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         items=enriched_items,
         total_amount=server_total,
         payment_method=order_data.payment_method,
-        payment_status="pending",
+        payment_status=payment_status,
         order_status=order_status,
-        stock_applied=True,
+        stock_applied=stock_applied,
         shipping_address=order_data.shipping_address.model_dump(),
         idempotency_key=order_data.idempotency_key,
         created_at=now,
@@ -110,32 +112,33 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
     db.add(order)
     await db.flush()
 
-    # Atomic stock deduction
-    deducted = []
-    try:
-        for item in order_data.items:
-            prod_res = await db.execute(select(ProductModel).where(ProductModel.id == item.product_id).with_for_update())
-            product = prod_res.scalar_one()
-            if int(product.stock_quantity or 0) < item.quantity:
-                raise HTTPException(status_code=400, detail=f"Insufficient stock for '{item.product_name}'")
-            product.stock_quantity = max(0, int(product.stock_quantity) - item.quantity)
-            product.units_sold = int(product.units_sold or 0) + item.quantity
-            product.updated_at = now
-            if product.stock_quantity <= 0:
-                product.in_stock = False
-            deducted.append(item)
-    except HTTPException:
-        for d_item in deducted:
-            prod_res = await db.execute(select(ProductModel).where(ProductModel.id == d_item.product_id))
-            p = prod_res.scalar_one_or_none()
-            if p:
-                p.stock_quantity = int(p.stock_quantity or 0) + d_item.quantity
-                p.units_sold = max(0, int(p.units_sold or 0) - d_item.quantity)
-                p.in_stock = True
-                p.updated_at = now
-        order.order_status = "cancelled"
-        order.stock_applied = False
-        raise
+    # Atomic stock deduction (Only for COD now!)
+    if order_data.payment_method == "cod":
+        deducted = []
+        try:
+            for item in order_data.items:
+                prod_res = await db.execute(select(ProductModel).where(ProductModel.id == item.product_id).with_for_update())
+                product = prod_res.scalar_one()
+                if int(product.stock_quantity or 0) < item.quantity:
+                    raise HTTPException(status_code=400, detail=f"Insufficient stock for '{item.product_name}'")
+                product.stock_quantity = max(0, int(product.stock_quantity) - item.quantity)
+                product.units_sold = int(product.units_sold or 0) + item.quantity
+                product.updated_at = now
+                if product.stock_quantity <= 0:
+                    product.in_stock = False
+                deducted.append(item)
+        except HTTPException:
+            for d_item in deducted:
+                prod_res = await db.execute(select(ProductModel).where(ProductModel.id == d_item.product_id))
+                p = prod_res.scalar_one_or_none()
+                if p:
+                    p.stock_quantity = int(p.stock_quantity or 0) + d_item.quantity
+                    p.units_sold = max(0, int(p.units_sold or 0) - d_item.quantity)
+                    p.in_stock = True
+                    p.updated_at = now
+            order.order_status = "cancelled"
+            order.stock_applied = False
+            raise
 
     if order_data.payment_method == "cod":
         await send_email(
@@ -216,8 +219,13 @@ async def return_order(
 
     delivered_date = order.delivered_at or order.updated_at
     if delivered_date:
+        if delivered_date.tzinfo is None:
+            delivered_date = delivered_date.replace(tzinfo=timezone.utc)
+        else:
+            delivered_date = delivered_date.astimezone(timezone.utc)
         cutoff_date = (delivered_date + timedelta(days=4)).replace(hour=0, minute=0, second=0, microsecond=0)
-        if datetime.now(timezone.utc) > cutoff_date:
+        now_utc = datetime.now(timezone.utc)
+        if now_utc > cutoff_date:
             raise HTTPException(status_code=400, detail="Return window has closed.")
 
     image_url = None
@@ -247,8 +255,11 @@ async def create_razorpay_order(order_id: str, current_user: UserSchema = Depend
         raise HTTPException(status_code=404, detail="Order not found")
 
     if is_test_mode():
+        test_order_id = f"order_test_{str(uuid.uuid4())[:16]}"
+        order.razorpay_order_id = test_order_id
+        order.updated_at = datetime.now(timezone.utc)
         return {
-            "razorpay_order_id": f"order_test_{str(uuid.uuid4())[:16]}",
+            "razorpay_order_id": test_order_id,
             "amount": int(float(order.total_amount) * 100),
             "currency": "INR",
             "key_id": os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_dummy'),
@@ -286,40 +297,69 @@ async def verify_razorpay_payment(payment_data: dict, current_user: UserSchema =
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found or access denied")
+    if payment_data.get("razorpay_order_id") and order.razorpay_order_id and payment_data.get("razorpay_order_id") != order.razorpay_order_id:
+        raise HTTPException(status_code=400, detail="Payment order mismatch")
 
-    current_order_status = order.order_status or ""
-    updated_status = "processing" if current_order_status == "pending_payment" else current_order_status
     now = datetime.now(timezone.utc)
 
-    if is_test_mode():
-        order.payment_status = "completed"
-        order.order_status = updated_status
-        order.razorpay_payment_id = payment_data.get("razorpay_payment_id", "pay_dummy_123")
-        order.updated_at = now
-        # Clear cart
-        cart_res = await db.execute(select(CartModel).where(CartModel.user_id == current_user.id))
-        cart = cart_res.scalar_one_or_none()
-        if cart:
-            cart.items = []
-            cart.updated_at = now
-        await send_email(current_user.email, f"Payment Successful - Order {order.order_number}",
-            f"<h1>Payment Received!</h1><p>Order {order.order_number} was successful. Total: ₹{order.total_amount}</p>")
-        return {"success": True, "message": "Payment verified (test mode)"}
+    if not is_test_mode():
+        try:
+            razorpay_client.utility.verify_payment_signature(payment_data)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Payment signature verification failed")
 
-    try:
-        razorpay_client.utility.verify_payment_signature(payment_data)
-        order.payment_status = "completed"
-        order.order_status = updated_status
-        order.razorpay_payment_id = payment_data.get('razorpay_payment_id')
-        order.updated_at = now
-        cart_res = await db.execute(select(CartModel).where(CartModel.user_id == current_user.id))
-        cart = cart_res.scalar_one_or_none()
-        if cart:
-            cart.items = []
-            cart.updated_at = now
-        return {"success": True, "message": "Payment verified"}
-    except Exception:
-        raise HTTPException(status_code=400, detail="Payment verification failed")
+    # Atomic stock deduction upon successful payment verification
+    if not order.stock_applied:
+        deducted = []
+        try:
+            for item in (order.items or []):
+                pid = item.get("product_id")
+                qty = int(item.get("quantity", 0))
+                if pid and qty > 0:
+                    prod_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
+                    product = prod_res.scalar_one_or_none()
+                    if not product:
+                        raise HTTPException(status_code=400, detail="Product not found")
+                    if int(product.stock_quantity or 0) < qty:
+                        raise HTTPException(status_code=400, detail=f"Insufficient stock for '{product.name}'")
+                    product.stock_quantity = max(0, int(product.stock_quantity) - qty)
+                    product.units_sold = int(product.units_sold or 0) + qty
+                    product.updated_at = now
+                    if product.stock_quantity <= 0:
+                        product.in_stock = False
+                    deducted.append((product, qty))
+            order.stock_applied = True
+        except Exception as e:
+            for prod, qty in deducted:
+                prod.stock_quantity = int(prod.stock_quantity or 0) + qty
+                prod.units_sold = max(0, int(prod.units_sold or 0) - qty)
+                prod.in_stock = True
+                prod.updated_at = now
+            order.order_status = "failed"
+            order.payment_status = "failed"
+            await db.flush()
+            if isinstance(e, HTTPException):
+                raise e
+            raise HTTPException(status_code=400, detail=str(e))
+
+    order.payment_status = "Paid"
+    order.order_status = "confirmed"
+    order.razorpay_payment_id = payment_data.get("razorpay_payment_id", "pay_dummy_123")
+    order.updated_at = now
+
+    # Clear cart
+    cart_res = await db.execute(select(CartModel).where(CartModel.user_id == current_user.id))
+    cart = cart_res.scalar_one_or_none()
+    if cart:
+        cart.items = []
+        cart.updated_at = now
+
+    await send_email(
+        current_user.email,
+        f"Payment Successful - Order {order.order_number}",
+        f"<h1>Payment Received!</h1><p>Order {order.order_number} has been confirmed. Total: ₹{order.total_amount}</p>"
+    )
+    return {"success": True, "message": "Payment verified and order confirmed"}
 
 
 @router.post("/payment/cod/confirm")
@@ -330,8 +370,8 @@ async def confirm_cod_payment(order_id: str, current_user: UserSchema = Depends(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     now = datetime.now(timezone.utc)
-    order.payment_status = "pending"
-    order.order_status = "processing"
+    order.payment_status = "Cash On Delivery"
+    order.order_status = "confirmed"
     order.updated_at = now
     cart_res = await db.execute(select(CartModel).where(CartModel.user_id == current_user.id))
     cart = cart_res.scalar_one_or_none()
@@ -354,12 +394,15 @@ async def pay_cod_online(payment_data: dict, current_user: UserSchema = Depends(
         raise HTTPException(status_code=404, detail="Order not found")
     if order.payment_method != "cod":
         raise HTTPException(status_code=400, detail="This order is not a COD order")
-    if order.payment_status == "completed":
+    if order.payment_status in ("completed", "Paid"):
         raise HTTPException(status_code=400, detail="This order has already been paid")
 
     if is_test_mode():
+        test_order_id = f"order_test_{str(uuid.uuid4())[:16]}"
+        order.razorpay_order_id = test_order_id
+        order.updated_at = datetime.now(timezone.utc)
         return {
-            "razorpay_order_id": f"order_test_{str(uuid.uuid4())[:16]}",
+            "razorpay_order_id": test_order_id,
             "amount": int(float(order.total_amount) * 100),
             "currency": "INR",
             "key_id": os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_dummy'),
@@ -415,6 +458,8 @@ async def razorpay_webhook(request: Request, db: AsyncSession = Depends(get_db))
     try:
         payload = await request.json()
         event = payload.get('event', '')
+        now = datetime.now(timezone.utc)
+
         if event == 'payment.captured':
             payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
             rz_order_id = payment_entity.get('order_id', '')
@@ -426,17 +471,122 @@ async def razorpay_webhook(request: Request, db: AsyncSession = Depends(get_db))
             if order:
                 if int(amount_paid) != int(float(order.total_amount) * 100):
                     return {"status": "amount_mismatch"}
-                new_status = "processing" if order.order_status == "pending_payment" else order.order_status
-                order.payment_status = "completed"
-                order.order_status = new_status
+                
+                # Atomic stock deduction upon successful payment verification via webhook
+                if not order.stock_applied:
+                    deducted = []
+                    try:
+                        for item in (order.items or []):
+                            pid = item.get("product_id")
+                            qty = int(item.get("quantity", 0))
+                            if pid and qty > 0:
+                                prod_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
+                                product = prod_res.scalar_one_or_none()
+                                if not product or int(product.stock_quantity or 0) < qty:
+                                    raise Exception("Insufficient stock")
+                                product.stock_quantity = max(0, int(product.stock_quantity) - qty)
+                                product.units_sold = int(product.units_sold or 0) + qty
+                                product.updated_at = now
+                                if product.stock_quantity <= 0:
+                                    product.in_stock = False
+                                deducted.append((product, qty))
+                        order.stock_applied = True
+                        order.payment_status = "Paid"
+                        order.order_status = "confirmed"
+                    except Exception:
+                        for prod, qty in deducted:
+                            prod.stock_quantity = int(prod.stock_quantity or 0) + qty
+                            prod.units_sold = max(0, int(prod.units_sold or 0) - qty)
+                            prod.in_stock = True
+                            prod.updated_at = now
+                        order.order_status = "failed"
+                        order.payment_status = "failed"
+                else:
+                    order.payment_status = "Paid"
+                    order.order_status = "confirmed"
+
                 order.razorpay_payment_id = payment_id
-                order.updated_at = datetime.now(timezone.utc)
+                order.updated_at = now
                 if order.user_id:
                     cart_res = await db.execute(select(CartModel).where(CartModel.user_id == order.user_id))
                     cart = cart_res.scalar_one_or_none()
                     if cart:
                         cart.items = []
-                        cart.updated_at = datetime.now(timezone.utc)
+                        cart.updated_at = now
+                await write_audit_log(db, "ORDER_PAYMENT_CAPTURED_WEBHOOK", order.user_id, "order", str(order.id), {"payment_id": payment_id})
+
+        elif event == 'payment.failed':
+            payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
+            rz_order_id = payment_entity.get('order_id', '')
+            error_description = payment_entity.get('error_description', 'Unknown payment failure reason')
+
+            result = await db.execute(select(OrderModel).where(OrderModel.razorpay_order_id == rz_order_id))
+            order = result.scalar_one_or_none()
+            if order:
+                order.payment_status = "failed"
+                order.order_status = "failed"
+                order.updated_at = now
+
+                # Release stock if stock was somehow applied
+                if order.stock_applied:
+                    for item in (order.items or []):
+                        pid = item.get("product_id")
+                        qty = int(item.get("quantity", 0))
+                        if pid and is_valid_uuid(pid) and qty > 0:
+                            prod_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
+                            product = prod_res.scalar_one_or_none()
+                            if product:
+                                product.stock_quantity = int(product.stock_quantity or 0) + qty
+                                product.units_sold = max(0, int(product.units_sold or 0) - qty)
+                                product.in_stock = True
+                                product.updated_at = now
+                    order.stock_applied = False
+
+                logger.info(f"Payment failed for Order {order.order_number} via Webhook. Error: {error_description}")
+                await write_audit_log(db, "ORDER_PAYMENT_FAILED_WEBHOOK", order.user_id, "order", str(order.id), {"error": error_description})
+
+        elif event == 'refund.processed':
+            refund_entity = payload.get('payload', {}).get('refund', {}).get('entity', {})
+            payment_id = refund_entity.get('payment_id', '')
+            refund_id = refund_entity.get('id', '')
+            status = refund_entity.get('status', '')
+
+            result = await db.execute(select(OrderModel).where(OrderModel.razorpay_payment_id == payment_id))
+            order = result.scalar_one_or_none()
+            if order:
+                order.payment_status = "refunded"
+                order.order_status = "refunded"
+                order.updated_at = now
+
+                # Release stock if not already released
+                if order.stock_applied:
+                    for item in (order.items or []):
+                        pid = item.get("product_id")
+                        qty = int(item.get("quantity", 0))
+                        if pid and is_valid_uuid(pid) and qty > 0:
+                            prod_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
+                            product = prod_res.scalar_one_or_none()
+                            if product:
+                                product.stock_quantity = int(product.stock_quantity or 0) + qty
+                                product.units_sold = max(0, int(product.units_sold or 0) - qty)
+                                product.in_stock = True
+                                product.updated_at = now
+                    order.stock_applied = False
+
+                logger.info(f"Refund processed for Order {order.order_number} via Webhook. Refund ID: {refund_id}")
+                await write_audit_log(db, "ORDER_REFUND_PROCESSED_WEBHOOK", order.user_id, "order", str(order.id), {"refund_id": refund_id, "status": status})
+
+        elif event == 'refund.failed':
+            refund_entity = payload.get('payload', {}).get('refund', {}).get('entity', {})
+            payment_id = refund_entity.get('payment_id', '')
+            refund_id = refund_entity.get('id', '')
+
+            result = await db.execute(select(OrderModel).where(OrderModel.razorpay_payment_id == payment_id))
+            order = result.scalar_one_or_none()
+            if order:
+                logger.error(f"Refund FAILED for Order {order.order_number} via Webhook. Refund ID: {refund_id}")
+                await write_audit_log(db, "ORDER_REFUND_FAILED_WEBHOOK", order.user_id, "order", str(order.id), {"refund_id": refund_id})
+
         return {"status": "ok"}
     except Exception as exc:
         logger.error("Webhook processing error: %s", exc)

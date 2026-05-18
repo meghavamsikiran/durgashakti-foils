@@ -18,6 +18,15 @@ export const useOrders = () => {
     }
   }, []);
 
+  const fetchOrdersSilent = useCallback(async () => {
+    try {
+      const data = await orderService.getOrders();
+      setOrders(data || []);
+    } catch (err) {
+      // Ignore background fetch errors to prevent user distraction
+    }
+  }, []);
+
   const cancelOrder = async (orderId) => {
     if (!window.confirm('Cancel this order?')) return;
     try {
@@ -40,9 +49,18 @@ export const useOrders = () => {
     }
   };
 
+  // Initial load
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  // Periodic silent polling in the background (every 10 seconds) for real-time responsiveness
+  useEffect(() => {
+    const timer = setInterval(() => {
+      fetchOrdersSilent();
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [fetchOrdersSilent]);
 
   return { orders, loading, fetchOrders, cancelOrder, returnOrder };
 };

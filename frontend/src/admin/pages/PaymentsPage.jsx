@@ -36,6 +36,20 @@ const PaymentsPage = () => {
     }
   }, [search]);
 
+  const loadSilent = useCallback(async (pageNum = 1) => {
+    try {
+      const [response, mRes] = await Promise.all([
+        adminService.getPayments({ page: pageNum, limit: PAGE_SIZE, search }),
+        adminService.getDashboardMetrics()
+      ]);
+      setRows(response.data?.items || []);
+      setTotal(response.data?.total || 0);
+      setMetrics(mRes.data?.metrics || {});
+    } catch (err) {
+      // Ignore background errors
+    }
+  }, [search]);
+
   const formatDate = (d) => {
     if (!d) return '—';
     try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
@@ -46,6 +60,14 @@ const PaymentsPage = () => {
     const timer = setTimeout(() => load(1), 300);
     return () => clearTimeout(timer);
   }, [search, load]);
+
+  // Periodic silent polling in the background (every 10 seconds) for real-time payments list
+  useEffect(() => {
+    const timer = setInterval(() => {
+      loadSilent(page);
+    }, 10000);
+    return () => clearInterval(timer);
+  }, [loadSilent, page]);
 
   const filtered = rows.filter(r => filter === 'all' || r.status === filter);
   const paginatedPayments = filtered;
