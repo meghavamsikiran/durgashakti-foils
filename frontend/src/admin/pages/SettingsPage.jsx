@@ -102,7 +102,7 @@ const SettingsPage = () => {
     }
   };
 
-  if (!loaded) return <div className="p-12 text-center text-slate-500 font-bold uppercase tracking-widest animate-pulse">Loading Settings...</div>;
+  if (!loaded) return null;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
