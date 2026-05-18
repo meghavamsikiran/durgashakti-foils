@@ -42,11 +42,8 @@ const Navbar = () => {
       <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2" data-testid="navbar-logo">
-            <img src="/img1.jpg" alt="Company Logo" className="w-8 h-8 rounded-full object-cover shadow-sm" />
-            <span className="font-bold text-xl tracking-tight" style={{ fontFamily: 'Manrope' }}>
-              Durga Shakti<span className="text-primary ml-1">Foils</span>
-            </span>
+          <Link to="/" className="flex items-center" data-testid="navbar-logo">
+            <img src="/img1.jpg" alt="Durga Shakti Foils Logo" className="h-12 w-auto object-contain" />
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
