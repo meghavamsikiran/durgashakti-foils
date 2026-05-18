@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import TrishoolLoader from '../loaders/TrishoolLoader';
+import { subscribe } from '../../services/core/loadingState';
 
 /**
  * RouteTransitionLoader — Shows the sacred Trishul loading animation
@@ -12,6 +13,7 @@ import TrishoolLoader from '../loaders/TrishoolLoader';
 const RouteTransitionLoader = () => {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
+  const [networkLoading, setNetworkLoading] = useState(false);
   const prevPath = useRef(location.pathname);
   const timerRef = useRef(null);
 
@@ -36,7 +38,11 @@ const RouteTransitionLoader = () => {
     };
   }, [location.pathname]);
 
-  if (!loading) return null;
+  useEffect(() => {
+    return subscribe(setNetworkLoading);
+  }, []);
+
+  if (!loading && !networkLoading) return null;
 
   return <TrishoolLoader />;
 };

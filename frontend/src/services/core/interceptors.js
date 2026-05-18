@@ -1,9 +1,11 @@
 import { toast } from 'sonner';
+import { setLoading } from './loadingState';
 
 export const setupInterceptors = (apiClient) => {
   // Request Interceptor
   apiClient.interceptors.request.use(
     (config) => {
+      setLoading(true);
       const token = localStorage.getItem('token');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -18,6 +20,7 @@ export const setupInterceptors = (apiClient) => {
   // Response Interceptor
   apiClient.interceptors.response.use(
     (response) => {
+      setLoading(false);
       return response;
     },
     (error) => {
@@ -52,6 +55,7 @@ export const setupInterceptors = (apiClient) => {
           toast.error(errorMessage);
         }
         
+        setLoading(false);
         return Promise.reject({
           message: errorMessage,
           status: response.status,
@@ -60,6 +64,7 @@ export const setupInterceptors = (apiClient) => {
       }
 
       // Handle network errors
+      setLoading(false);
       if (error.message === 'Network Error') {
         toast.error('🌐 Live server is spin-up waking from sleep mode. Please wait 30 seconds and refresh!', {
           duration: 12000,
