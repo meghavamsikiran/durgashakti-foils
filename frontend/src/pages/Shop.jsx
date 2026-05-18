@@ -128,11 +128,7 @@ const Shop = () => {
 
           {/* Products Grid */}
           <div className="flex-1">
-            {loading ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">Loading products...</p>
-              </div>
-            ) : filteredProducts.length === 0 ? (
+            {loading ? null : filteredProducts.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">No products found</p>
               </div>

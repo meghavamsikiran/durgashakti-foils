@@ -173,11 +173,7 @@ const Home = () => {
             </Button>
           </div>
 
-          {loading ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Loading products...</p>
-            </div>
-          ) : (
+          {loading ? null : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {products.map((product, index) => (
                 <motion.div
