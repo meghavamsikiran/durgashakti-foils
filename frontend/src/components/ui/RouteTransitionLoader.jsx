@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import TrishulLoader from './TrishulLoader';
+import TrishoolLoader from '../loaders/TrishoolLoader';
 
 /**
  * RouteTransitionLoader — Shows the sacred Trishul loading animation
@@ -38,7 +38,7 @@ const RouteTransitionLoader = () => {
 
   if (!loading) return null;
 
-  return <TrishulLoader />;
+  return <TrishoolLoader />;
 };
 
 export default RouteTransitionLoader;

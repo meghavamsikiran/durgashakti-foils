@@ -1,5 +1,5 @@
 import React from 'react';
-import TrishulLoader from './TrishulLoader';
+import TrishoolLoader from '../loaders/TrishoolLoader';
 
 /**
  * Premium non-blocking loader for Durga Shakti Foils.
@@ -15,7 +15,7 @@ const FoilLoader = ({ message = "Loading..." }) => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* ─── Trishul Top Progress Animation ─── */}
-      <TrishulLoader />
+      <TrishoolLoader />
 
       {/* ─── Keyframes (scoped inline) ─── */}
       <style>{`
