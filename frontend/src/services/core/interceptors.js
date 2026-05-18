@@ -61,7 +61,9 @@ export const setupInterceptors = (apiClient) => {
 
       // Handle network errors
       if (error.message === 'Network Error') {
-        toast.error('Network error. Please check your connection.');
+        toast.error('🌐 Live server is spin-up waking from sleep mode. Please wait 30 seconds and refresh!', {
+          duration: 12000,
+        });
       } else {
         toast.error(error.message);
       }
