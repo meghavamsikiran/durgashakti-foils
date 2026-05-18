@@ -64,6 +64,9 @@ async def get_analytics_summary(
 ):
     now = datetime.now(timezone.utc)
     date_filter = None
+    if not timeframe:
+        timeframe = "All Time"
+
     if timeframe == "Today":
         date_filter = now.replace(hour=0, minute=0, second=0, microsecond=0)
     elif timeframe == "This Month":
