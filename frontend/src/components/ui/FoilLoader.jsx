@@ -1,4 +1,5 @@
 import React from 'react';
+import TrishulLoader from './TrishulLoader';
 
 /**
  * Premium non-blocking loader for Durga Shakti Foils.
@@ -6,32 +7,18 @@ import React from 'react';
  * Design philosophy:
  * - NEVER blocks or overlays the screen
  * - Takes normal document flow (no fixed/absolute positioning over content)
- * - Uses a slim animated top progress bar (YouTube/Amazon style) 
+ * - Uses the sacred Trishul (trident) animated top progress bar
  * - Shows beautiful skeleton shimmer placeholders mimicking real page layout
  * - Themed with metallic silver gradients matching aluminum foil products
  */
 const FoilLoader = ({ message = "Loading..." }) => {
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* ─── Top Progress Bar (YouTube / Amazon style) ─── */}
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: '3px',
-        zIndex: 9999,
-        background: 'linear-gradient(90deg, #818cf8, #c7d2fe, #e0e7ff, #818cf8)',
-        backgroundSize: '300% 100%',
-        animation: 'dsf-bar-slide 1.5s linear infinite',
-      }} />
+      {/* ─── Trishul Top Progress Animation ─── */}
+      <TrishulLoader />
 
       {/* ─── Keyframes (scoped inline) ─── */}
       <style>{`
-        @keyframes dsf-bar-slide {
-          0% { background-position: 0% 50%; }
-          100% { background-position: 300% 50%; }
-        }
         @keyframes dsf-shimmer {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
@@ -137,10 +124,10 @@ const FoilLoader = ({ message = "Loading..." }) => {
           <div style={{
             width: '16px',
             height: '16px',
-            border: '2px solid #818cf8',
+            border: '2px solid #F97316',
             borderTopColor: 'transparent',
             borderRadius: '50%',
-            animation: 'dsf-bar-slide 0.8s linear infinite',
+            animation: 'dsf-shimmer 0.8s linear infinite',
           }} />
           <span style={{
             fontSize: '12px',

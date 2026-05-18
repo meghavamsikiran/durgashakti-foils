@@ -8,6 +8,7 @@ import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ProgressProvider } from './components/ui/ProgressToast';
+import RouteTransitionLoader from './components/ui/RouteTransitionLoader';
 
 // Eagerly loaded (critical path)
 import Home from './pages/Home';
@@ -58,6 +59,7 @@ function AppRoutes() {
       <CartProvider>
         <ProgressProvider>
         <div className="App">
+          <RouteTransitionLoader />
           {!isAdminPath && <Navbar />}
           <Suspense fallback={<PageLoader />}>
             <Routes>
