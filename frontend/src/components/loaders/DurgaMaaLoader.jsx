@@ -26,7 +26,7 @@ const DurgaMaaLoader = () => {
         playsInline
         onTimeUpdate={handleTimeUpdate}
         className="w-full h-full object-cover"
-        style={{ mixBlendMode: 'multiply' }}
+        style={{ mixBlendMode: 'multiply', filter: 'contrast(1.2) brightness(1.1)' }}
       />
     </div>
   );

@@ -43,7 +43,7 @@ const AdminLayout = () => {
           <span className="font-black text-lg tracking-tighter text-white uppercase">Durga Shakti<span className="text-indigo-400 ml-1">Foils</span></span>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1 scrollbar-none">
           {menu.map((item) => {
             const Icon = ICON_MAP[item.label] || LayoutDashboard;
             const path = `/admin/${item.label.toLowerCase().replace(/\s+/g, '-')}`;
