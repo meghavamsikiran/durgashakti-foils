@@ -13,19 +13,33 @@ import { subscribe, resetLoading } from '../../services/core/loadingState';
  */
 const RouteTransitionLoader = () => {
   const [networkLoading, setNetworkLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     return subscribe(setNetworkLoading);
   }, []);
 
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const mobileWidth = window.innerWidth < 768;
+      setIsMobile(mobileUA || mobileWidth);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <div className={`pointer-events-none transition-opacity duration-300 ${networkLoading ? 'opacity-100' : 'opacity-0'}`}>
       <TrishoolLoader />
-      <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center space-y-4" style={{ mixBlendMode: 'multiply' }}>
-        <div className="w-40 aspect-square">
-          <DurgaMaaLoader />
+      {!isMobile && (
+        <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center space-y-4" style={{ mixBlendMode: 'multiply' }}>
+          <div className="w-40 aspect-square">
+            <DurgaMaaLoader />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
