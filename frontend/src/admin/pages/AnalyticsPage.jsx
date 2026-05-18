@@ -103,6 +103,9 @@ const AnalyticsPage = () => {
     .map(p => ({ name: p.name, value: p.stock_left }));
   
   const inventory = summary.inventory || [];
+  const filteredInventory = (summary.inventory || [])
+    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .slice(0, topLimit);
   const totalStockLeft = inventory.reduce((s, r) => s + (r.stock_left || 0), 0);
 
   const formatValue = (key, value) => {
@@ -379,7 +382,7 @@ const AnalyticsPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {inventory.map((p) => (
+              {filteredInventory.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-5">
                     <div className="font-bold text-slate-800 group-hover:text-indigo-600">{p.name}</div>
