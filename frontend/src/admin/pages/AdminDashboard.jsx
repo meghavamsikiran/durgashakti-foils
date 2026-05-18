@@ -6,6 +6,7 @@ import {
   Users, IndianRupee, TrendingUp, Calendar,
   ArrowUpRight, Target, Activity, Trophy
 } from 'lucide-react';
+import PageLoader from '../../components/ui/PageLoader';
 
 const metricConfigs = {
   total_orders: { label: 'Total Orders', icon: ShoppingBag, color: 'text-indigo-600', bg: 'bg-indigo-50' },
@@ -59,12 +60,7 @@ const AdminDashboard = () => {
     return () => clearInterval(timer);
   }, [loadSilent]);
 
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Loading Dashboard...</div>
-    </div>
-  );
+  if (loading) return <PageLoader message="Loading Dashboard..." />;
   
   if (error) return (
     <div className="p-8 bg-rose-50 border border-rose-100 rounded-3xl text-rose-600 font-bold text-sm">

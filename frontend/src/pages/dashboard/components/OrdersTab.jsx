@@ -4,6 +4,7 @@ import { ShoppingBag, Clock, Package, Wallet, Search } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import TablePagination from '../../../components/ui/TablePagination';
 import { useNavigate } from 'react-router-dom';
+import PageLoader from '../../../components/ui/PageLoader';
 
 const OrdersTab = ({ orders, loading, onCancelOrder, onSelectOrder }) => {
   const navigate = useNavigate();
@@ -52,12 +53,7 @@ const OrdersTab = ({ orders, loading, onCancelOrder, onSelectOrder }) => {
     return matchesOrderNumber || matchesProducts || matchesStatus;
   });
 
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center py-20">
-      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Loading orders...</p>
-    </div>
-  );
+  if (loading) return <PageLoader message="Loading orders..." />;
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">

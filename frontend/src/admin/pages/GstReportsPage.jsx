@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import TablePagination from '../../components/ui/TablePagination';
 import { useProgress } from '../../components/ui/ProgressToast';
+import PageLoader from '../../components/ui/PageLoader';
 
 const GstReportsPage = () => {
   const [records, setRecords] = useState([]);
@@ -95,12 +96,7 @@ const GstReportsPage = () => {
   const totalFilteredPages = Math.ceil(total / ITEMS_PER_PAGE);
   const paginatedRecords = records;
 
-  if (loading && records.length === 0) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Loading Ledger...</div>
-    </div>
-  );
+  if (loading && records.length === 0) return <PageLoader message="Loading Ledger..." />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">

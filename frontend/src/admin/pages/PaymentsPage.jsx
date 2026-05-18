@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import TablePagination from '../../components/ui/TablePagination';
 import { toast } from 'sonner';
+import PageLoader from '../../components/ui/PageLoader';
 
 const PaymentsPage = () => {
   const [rows, setRows] = useState([]);
@@ -80,12 +81,7 @@ const PaymentsPage = () => {
     successRate: 100 // Placeholder
   };
 
-  if (loading && rows.length === 0) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Loading Financial Records...</div>
-    </div>
-  );
+  if (loading && rows.length === 0) return <PageLoader message="Loading Financial Records..." />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">

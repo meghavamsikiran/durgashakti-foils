@@ -4,6 +4,7 @@ import { MapPin, Plus as PlusIcon, Loader2, LocateFixed, Pencil, Trash2 } from '
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
+import PageLoader from '../../../components/ui/PageLoader';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { usePincodeLookup } from '../../../hooks/usePincodeLookup';
@@ -92,12 +93,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (loading && !showAddressForm) return (
-    <div className="flex flex-col items-center justify-center py-20">
-      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Loading addresses...</p>
-    </div>
-  );
+  if (loading && !showAddressForm) return <PageLoader message="Loading addresses..." />;
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">

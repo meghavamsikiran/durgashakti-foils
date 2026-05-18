@@ -2,14 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Plus, CreditCard } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import PageLoader from '../../../components/ui/PageLoader';
 
 const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
-  if (loading) return (
-    <div className="flex flex-col items-center justify-center py-20">
-      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Syncing secure vault...</p>
-    </div>
-  );
+  if (loading) return <PageLoader message="Syncing secure vault..." />;
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">

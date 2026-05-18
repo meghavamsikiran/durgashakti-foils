@@ -41,14 +41,9 @@ const SettingsPage = lazy(() => import('./admin/pages/SettingsPage'));
 const AnalyticsPage = lazy(() => import('./admin/pages/AnalyticsPage'));
 const AdminUsersPage = lazy(() => import('./admin/pages/AdminUsersPage'));
 
-import FoilLoader from './components/ui/FoilLoader';
+import PageLoader from './components/ui/PageLoader';
 import './App.css';
 import Maintenance from './pages/Maintenance';
-
-/** Suspense fallback for lazy-loaded routes */
-const PageLoader = () => (
-  <FoilLoader message="Loading page assets" />
-);
 
 function AppRoutes() {
   const location = useLocation();

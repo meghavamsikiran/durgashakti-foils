@@ -5,6 +5,7 @@ import {
   Search, Mail, Phone, Calendar
 } from 'lucide-react';
 import TablePagination from '../../components/ui/TablePagination';
+import PageLoader from '../../components/ui/PageLoader';
 
 const CustomersPage = () => {
   const [rows, setRows] = useState([]);
@@ -76,12 +77,7 @@ const CustomersPage = () => {
     avg: (metrics?.total_revenue && metrics?.total_customers) ? (metrics.total_revenue / metrics.total_customers) : 0
   };
 
-  if (loading && rows.length === 0) return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-      <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Loading Customers...</div>
-    </div>
-  );
+  if (loading && rows.length === 0) return <PageLoader message="Loading Customers..." />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
