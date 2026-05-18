@@ -47,14 +47,24 @@ const Navbar = () => {
             >
               Shop
             </Link>
-
-
+            <Link
+              to="/about"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              About Us
+            </Link>
+            <Link
+              to="/contact"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              Contact Us
+            </Link>
 
             {user ? (
               <>
                 <Link
                   to="/cart"
-                  className="relative"
+                  className="relative mr-2"
                   data-testid="navbar-cart-link"
                 >
                   <ShoppingCart className="w-5 h-5 hover:text-primary transition-colors" />
@@ -68,18 +78,19 @@ const Navbar = () => {
                   )}
                 </Link>
 
-                {!isAdmin ? (
-                  <Link
-                    to="/dashboard"
-                    data-testid="navbar-dashboard-link"
-                  >
-                    <User className="w-5 h-5 hover:text-primary transition-colors" />
-                  </Link>
-                ) : (
-                  <Link to="/admin/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
-                    {isSuperAdmin ? 'Super Admin' : 'Admin'}
-                  </Link>
-                )}
+                <Link
+                  to={isAdmin ? "/admin/dashboard" : "/dashboard"}
+                  title={isAdmin ? (isSuperAdmin ? "Super Admin Panel" : "Admin Panel") : "Customer Dashboard"}
+                  className="flex items-center gap-1.5 hover:text-primary transition-colors"
+                  data-testid="navbar-dashboard-link"
+                >
+                  <User className="w-5 h-5" />
+                  {isAdmin && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary uppercase tracking-wider">
+                      {isSuperAdmin ? "Super Admin" : "Admin"}
+                    </span>
+                  )}
+                </Link>
 
                 <Button
                   variant="ghost"
@@ -115,6 +126,8 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="md:hidden py-6 border-t border-slate-200 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
             <Link to="/shop" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Shop</Link>
+            <Link to="/about" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">About Us</Link>
+            <Link to="/contact" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Contact Us</Link>
 
             
             {user ? (

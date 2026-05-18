@@ -28,14 +28,14 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   About Us
                 </Link>
               </li>
               <li>
-                <a href="mailto:DurgaShaktifoils@gmail.com" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
