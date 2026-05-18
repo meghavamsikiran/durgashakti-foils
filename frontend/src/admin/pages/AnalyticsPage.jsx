@@ -189,7 +189,7 @@ const AnalyticsPage = () => {
               className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none w-56"
             />
           </div>
-          <Button variant="outline" className="rounded-xl" onClick={handleExport}><Download className="w-4 h-4 mr-2" /> Export</Button>
+          <Button variant="outline" className="rounded-xl" onClick={handleExport}><Download className="w-4 h-4 mr-2" /> Download</Button>
         </div>
       </div>
 
