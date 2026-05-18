@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import adminService from '../services/admin.service';
+import apiClient from '../../services/core/apiClient';
 import { 
   LayoutDashboard, ShoppingBag, Zap, Package, 
   Users, IndianRupee, TrendingUp, Calendar,
@@ -41,7 +42,7 @@ const AdminDashboard = () => {
 
   const loadSilent = useCallback(async () => {
     try {
-      const response = await adminService.getDashboardMetrics();
+      const response = await apiClient.get('/admin/analytics/summary', { silent: true });
       setMetrics(response.data?.metrics || {});
     } catch (err) {
       // Ignore background fetch errors

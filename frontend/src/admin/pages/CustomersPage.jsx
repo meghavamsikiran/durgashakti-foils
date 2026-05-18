@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import adminService from '../services/admin.service';
+import apiClient from '../../services/core/apiClient';
 import { 
   Users, UserCheck, Star, IndianRupee, 
   Search, Mail, Phone, Calendar
@@ -37,8 +38,8 @@ const CustomersPage = () => {
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
       const [response, mRes] = await Promise.all([
-        adminService.getCustomers({ page: pageNum, limit: ITEMS_PER_PAGE, search }),
-        adminService.getDashboardMetrics()
+        apiClient.get('/admin/customers', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true }),
+        apiClient.get('/admin/analytics/summary', { silent: true })
       ]);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
