@@ -40,6 +40,7 @@ const AdminUsersPage = lazy(() => import('./admin/pages/AdminUsersPage'));
 
 import FoilLoader from './components/ui/FoilLoader';
 import './App.css';
+import Maintenance from './pages/Maintenance';
 
 /** Suspense fallback for lazy-loaded routes */
 const PageLoader = () => (
@@ -157,6 +158,15 @@ function AppRoutes() {
 }
 
 function App() {
+  // Default to true during this maintenance phase so the live deployment is protected instantly
+  const isMaintenanceMode = process.env.REACT_APP_MAINTENANCE_MODE !== 'false';
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const showMaintenance = isMaintenanceMode && (!isLocal || process.env.REACT_APP_FORCE_MAINTENANCE === 'true');
+
+  if (showMaintenance) {
+    return <Maintenance />;
+  }
+
   return (
     <BrowserRouter>
       <ErrorBoundary>

@@ -88,6 +88,30 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app.add_middleware(SecurityHeadersMiddleware)
 
 
+# ── Maintenance Middleware ────────────────────────────────────────────────
+class MaintenanceMiddleware(BaseHTTPMiddleware):
+    """Intercepts requests during maintenance, serving a 503 Service Unavailable message."""
+    async def dispatch(self, request, call_next):
+        is_maintenance = os.environ.get('BACKEND_MAINTENANCE_MODE', 'true') != 'false'
+        client_ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else 'unknown')
+        client_ip = client_ip.split(",")[0].strip()
+        is_local = client_ip in ('127.0.0.1', 'localhost', '::1', '0.0.0.0')
+        
+        # Intercept api routes for external visitors under maintenance
+        if is_maintenance and not is_local and request.url.path.startswith('/api'):
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "status": "maintenance",
+                    "message": "DurgaShakti Foils API is currently undergoing scheduled systems maintenance. We will be back online shortly."
+                }
+            )
+        return await call_next(request)
+
+
+app.add_middleware(MaintenanceMiddleware)
+
+
 # ── Rate Limiter Middleware ──────────────────────────────────────────────
 class RateLimiterMiddleware(BaseHTTPMiddleware):
     """In-memory rate limiter for auth & checkout endpoints."""
