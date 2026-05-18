@@ -16,6 +16,8 @@ import ProductDetail from './pages/ProductDetail';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import Cart from './pages/Cart';
+import About from './pages/About';
+import Contact from './pages/Contact';
 
 // Lazy loaded (authenticated routes)
 const Checkout = lazy(() => import('./pages/Checkout'));
@@ -66,6 +68,8 @@ function AppRoutes() {
               <Route path="/login" element={<Login />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/cart" element={<Cart />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
 
               {/* Protected Customer Routes */}
               <Route path="/checkout" element={

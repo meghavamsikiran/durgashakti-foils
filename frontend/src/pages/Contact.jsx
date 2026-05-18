@@ -50,8 +50,9 @@ const Contact = () => {
 
   // Robust maps URL parser to make any input dynamic & working!
   const getEmbedMapUrl = (mapInput, address, name) => {
-    if (!mapInput) {
-      const query = address || name || "DurgaShaktiFoils PVT.LTD Mallampet Hyderabad";
+    // If no map input is given, or if they pasted a Google Maps short redirection URL (which frame block blocks)
+    if (!mapInput || mapInput.includes('maps.app.goo.gl') || mapInput.includes('goo.gl/maps')) {
+      const query = address || "Shop No. 1, Plot No. 54, Road No. 1, Maruthi Nagar, Mallampet, Hyderabad, Telangana 500090";
       return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
     }
     
@@ -66,7 +67,7 @@ const Contact = () => {
       return mapInput;
     }
     
-    // Else treat as search query or share link inside a secure query embedder
+    // Else treat as search query (e.g. text address or coordinates)
     return `https://maps.google.com/maps?q=${encodeURIComponent(mapInput)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
   };
 
