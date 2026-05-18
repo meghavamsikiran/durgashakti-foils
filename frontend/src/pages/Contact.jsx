@@ -5,10 +5,37 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { reveal, fadeInUp, staggerContainer } from '../animations/variants';
+import settingsService from '../services/settings.service';
 
 const Contact = () => {
   const [formData, setFormData] = React.useState({ name: '', email: '', message: '' });
   const [submitted, setSubmitted] = React.useState(false);
+  const [profile, setProfile] = React.useState({
+    companyName: 'Durga Shakti Foils',
+    companyPhone: '+91 83675 42954',
+    companyEmail: 'DurgaShaktifoils@gmail.com',
+    companyAddress: 'Shop No. 1, Plot No. 54, Road No. 1, Maruthi Nagar, Mallampet, Hyderabad, Telangana 500090'
+  });
+
+  React.useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const data = await settingsService.getPublicSettings();
+        if (data?.company_profile) {
+          const cp = data.company_profile;
+          setProfile({
+            companyName: cp.companyName || 'Durga Shakti Foils',
+            companyPhone: cp.companyPhone || '+91 83675 42954',
+            companyEmail: cp.companyEmail || 'DurgaShaktifoils@gmail.com',
+            companyAddress: cp.companyAddress || 'Shop No. 1, Plot No. 54, Road No. 1, Maruthi Nagar, Mallampet, Hyderabad, Telangana 500090'
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load settings on Contact Page:', err);
+      }
+    };
+    loadSettings();
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -79,8 +106,8 @@ const Contact = () => {
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Email Address</span>
-                    <a href="mailto:DurgaShaktifoils@gmail.com" className="text-base font-extrabold text-slate-800 hover:text-primary transition-colors block">
-                      DurgaShaktifoils@gmail.com
+                    <a href={`mailto:${profile.companyEmail}`} className="text-base font-extrabold text-slate-800 hover:text-primary transition-colors block">
+                      {profile.companyEmail}
                     </a>
                   </div>
                 </motion.div>
@@ -96,11 +123,8 @@ const Contact = () => {
                   <div>
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Call Support</span>
                     <div className="space-y-1">
-                      <a href="tel:+918367542954" className="text-base font-extrabold text-slate-800 hover:text-primary transition-colors block">
-                        +91 83675 42954
-                      </a>
-                      <a href="tel:+919901452954" className="text-base font-extrabold text-slate-800 hover:text-primary transition-colors block">
-                        +91 99014 52954
+                      <a href={`tel:${profile.companyPhone}`} className="text-base font-extrabold text-slate-800 hover:text-primary transition-colors block">
+                        {profile.companyPhone}
                       </a>
                     </div>
                   </div>
@@ -133,10 +157,8 @@ const Contact = () => {
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Our Facility</span>
-                    <p className="text-sm font-bold text-slate-800 leading-relaxed">
-                      Shop No. 1, Plot No. 54, Road No. 1,<br />
-                      Maruthi Nagar, Mallampet,<br />
-                      Hyderabad, Telangana 500090
+                    <p className="text-sm font-bold text-slate-800 leading-relaxed whitespace-pre-line">
+                      {profile.companyAddress}
                     </p>
                   </div>
                 </motion.div>
@@ -165,7 +187,7 @@ const Contact = () => {
                 <div className="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-2">
                   <div>
                     <h4 className="font-extrabold text-slate-900 leading-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                      DurgaShaktiFoils PVT.LTD
+                      {profile.companyName}
                     </h4>
                     <p className="text-xs text-slate-400 font-bold uppercase mt-1">Aluminium Supplier • Hyderabad</p>
                   </div>
