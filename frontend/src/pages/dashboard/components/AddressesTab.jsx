@@ -53,7 +53,8 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
         pincode: data.pincode,
         state: data.state || prev.state,
         city: data.city || prev.city,
-        address_line2: data.area || prev.address_line2
+        address_line1: data.address_line1 || prev.address_line1,
+        address_line2: data.address_line2 || prev.address_line2
       }));
     } catch (err) {}
   };

@@ -20,14 +20,26 @@ export const useGeoLocationAddress = () => {
           
           if (data.address && data.address.postcode) {
             const pin = data.address.postcode.replace(/\D/g, '').slice(0, 6);
-            const areaDetails = [data.address.amenity, data.address.road, data.address.suburb, data.address.neighbourhood].filter(Boolean).join(', ');
+            const line1 = [
+              data.address.building,
+              data.address.house_number,
+              data.address.amenity
+            ].filter(Boolean).join(', ');
+
+            const line2 = [
+              data.address.road,
+              data.address.suburb,
+              data.address.neighbourhood,
+              data.address.city_district
+            ].filter(Boolean).join(', ');
             
             toast.success("Location detected successfully!");
             resolve({
               pincode: pin,
               state: data.address.state,
               city: data.address.city || data.address.district || data.address.suburb,
-              area: areaDetails
+              address_line1: line1,
+              address_line2: line2
             });
           } else {
             toast.error("Could not detect pincode for this location");
