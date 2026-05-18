@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
+import apiClient from '../../services/core/apiClient';
 import TablePagination from '../../components/ui/TablePagination';
 import { 
   ShoppingBag, Clock, CheckCircle2, Truck, AlertCircle, 
@@ -91,7 +92,7 @@ const OrdersPage = () => {
       if (filter !== 'ALL') {
         params.status_filter = filter;
       }
-      const response = await adminService.getOrders(params);
+      const response = await apiClient.get('/admin/orders', { params, silent: true });
       setRows(response.data.items || []);
       setTotal(response.data.total || 0);
     } catch (err) {

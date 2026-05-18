@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
+import apiClient from '../../services/core/apiClient';
 import { formatImageUrl } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -90,8 +91,8 @@ const ProductsPage = () => {
   const fetchRowsSilent = useCallback(async (pageNum = 1) => {
     try {
       const [response, mRes] = await Promise.all([
-        adminService.getProducts({ page: pageNum, limit: ITEMS_PER_PAGE, search }),
-        adminService.getDashboardMetrics()
+        apiClient.get('/admin/products', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true }),
+        apiClient.get('/admin/analytics/summary', { silent: true })
       ]);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);

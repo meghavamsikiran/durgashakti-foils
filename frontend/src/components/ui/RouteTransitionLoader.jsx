@@ -49,7 +49,7 @@ const RouteTransitionLoader = () => {
   return (
     <div className="pointer-events-none">
       <TrishoolLoader />
-      <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center space-y-4">
+      <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center space-y-4" style={{ mixBlendMode: 'multiply' }}>
         <DurgaMaaLoader />
       </div>
     </div>
