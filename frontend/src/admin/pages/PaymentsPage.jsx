@@ -7,6 +7,7 @@ import {
 import TablePagination from '../../components/ui/TablePagination';
 import { toast } from 'sonner';
 import PageLoader from '../../components/ui/PageLoader';
+import apiClient from '../../services/core/apiClient';
 
 const PaymentsPage = () => {
   const [rows, setRows] = useState([]);
@@ -40,8 +41,8 @@ const PaymentsPage = () => {
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
       const [response, mRes] = await Promise.all([
-        adminService.getPayments({ page: pageNum, limit: PAGE_SIZE, search }),
-        adminService.getDashboardMetrics()
+        apiClient.get('/admin/payments', { params: { page: pageNum, limit: PAGE_SIZE, search }, silent: true }),
+        apiClient.get('/admin/analytics/summary', { silent: true })
       ]);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
@@ -81,7 +82,7 @@ const PaymentsPage = () => {
     successRate: 100 // Placeholder
   };
 
-  if (loading && rows.length === 0) return <PageLoader message="Loading Financial Records..." />;
+  if (loading && rows.length === 0) return null;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
