@@ -19,7 +19,19 @@ export const useGeoLocationAddress = () => {
           const data = await res.json();
           
           if (data.address && data.address.postcode) {
-            const pin = data.address.postcode.replace(/\D/g, '').slice(0, 6);
+            let pin = data.address.postcode.replace(/\D/g, '').slice(0, 6);
+            const state = data.address.state || '';
+            const city = data.address.city || data.address.district || data.address.suburb || '';
+
+            // Smart Indian Pincode Typo Correction (OSM Wiki database typos)
+            if (pin.length === 6) {
+              const isTelanganaAP = /telangana|andhra/i.test(state) || /hyderabad|guntur|vijayawada|secunderabad|madhapur/i.test(city);
+              if (isTelanganaAP && !pin.startsWith('5')) {
+                // If it starts with '8' or another typo digit but maps to Telangana/AP, correct first digit to '5'
+                pin = '5' + pin.slice(1);
+              }
+            }
+
             const line1 = [
               data.address.building,
               data.address.house_number,
@@ -36,8 +48,8 @@ export const useGeoLocationAddress = () => {
             toast.success("Location detected successfully!");
             resolve({
               pincode: pin,
-              state: data.address.state,
-              city: data.address.city || data.address.district || data.address.suburb,
+              state: state,
+              city: city || data.address.city || data.address.district || data.address.suburb,
               address_line1: line1,
               address_line2: line2
             });
@@ -57,6 +69,10 @@ export const useGeoLocationAddress = () => {
         toast.error("Location access denied or unavailable");
         setLoading(false);
         reject(error);
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
       });
     });
   }, []);
