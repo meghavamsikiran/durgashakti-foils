@@ -14,6 +14,7 @@ const SettingsPage = () => {
   const [companyPhone, setCompanyPhone] = useState('');
   const [companyEmail, setCompanyEmail] = useState('');
   const [companyAddress, setCompanyAddress] = useState('');
+  const [googleMapsLink, setGoogleMapsLink] = useState('');
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [me, setMe] = useState(null);
@@ -38,6 +39,7 @@ const SettingsPage = () => {
         setCompanyPhone(profile.companyPhone || '');
         setCompanyEmail(profile.companyEmail || '');
         setCompanyAddress(profile.companyAddress || '');
+        setGoogleMapsLink(profile.googleMapsLink || '');
         const paymentSettings = data.payment_settings || {};
         setCodEnabled(paymentSettings.cod_enabled !== false);
         setMe(meRes.data);
@@ -54,7 +56,7 @@ const SettingsPage = () => {
       setSaving(true);
       await adminService.updateSetting({
         key: 'company_profile',
-        value: { companyName, gstNumber, companyPhone, companyEmail, companyAddress }
+        value: { companyName, gstNumber, companyPhone, companyEmail, companyAddress, googleMapsLink }
       });
       toast.success('Settings saved successfully');
     } catch (error) {
@@ -167,6 +169,14 @@ const SettingsPage = () => {
                       <MapPin className="absolute left-3.5 top-4 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
                    </div>
                 </div>
+                 <div className="md:col-span-2 space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Google Maps Share / Embed Link</label>
+                    <div className="relative group">
+                       <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                          value={googleMapsLink} onChange={e => setGoogleMapsLink(e.target.value)} placeholder="https://maps.app.goo.gl/FMk4dnhXvGeTrRFM6 or search query..." />
+                       <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                    </div>
+                 </div>
              </div>
 
              <div className="mt-8 pt-8 border-t border-slate-200 flex justify-end">
