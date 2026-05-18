@@ -2,13 +2,13 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { isAdminRole, isSuperAdminRole } from '../constants/rbac';
-import FoilLoader from '../../components/ui/FoilLoader';
+import PageLoader from '../../components/ui/PageLoader';
 
 const ProtectedAdminRoute = ({ children, permission = null }) => {
   const { user, loading, hasPermission } = useAuth();
 
   if (loading) {
-    return <FoilLoader message="Loading admin session" />;
+    return <PageLoader message="Loading admin session" />;
   }
   if (!user || !isAdminRole(user.role)) {
     return <Navigate to="/login" replace />;

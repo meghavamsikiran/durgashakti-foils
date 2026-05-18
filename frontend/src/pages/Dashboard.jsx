@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import PageLoader from '../components/ui/PageLoader';
 import { useOrders } from '../hooks/useOrders';
 import { useWishlist } from '../hooks/useWishlist';
 import { useAddresses } from '../hooks/useAddresses';
@@ -20,7 +21,7 @@ import TransactionsTab from './dashboard/components/TransactionsTab';
 import OrderDetailsModal from './dashboard/components/OrderDetailsModal';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('orders');
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -33,8 +34,10 @@ const Dashboard = () => {
   const { cards, loading: cardsLoading } = useSavedCards();
 
   useEffect(() => {
-    if (!user) navigate('/login');
-  }, [user, navigate]);
+    if (!authLoading && !user) navigate('/login');
+  }, [authLoading, user, navigate]);
+
+  if (authLoading) return <PageLoader message="Authenticating..." />;
 
   const handleUpdateProfile = async (data) => {
     try {
