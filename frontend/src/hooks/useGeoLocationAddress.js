@@ -2,14 +2,46 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Layer 1: BigDataCloud reverse geocoding (free, no API key, best urban India)
+// Layer 1: Google Maps Geocoding (Ultimate Precision)
+// ─────────────────────────────────────────────────────────────────────────────
+const fetchGoogleMaps = async (lat, lon, apiKey) => {
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.status !== 'OK') throw new Error('Google Maps API failed: ' + data.status);
+  
+  let raw_pincode = '', city = '', state = '', locality = '', sublocality = '', route = '', premise = '';
+  
+  const components = data.results[0].address_components;
+  for (const comp of components) {
+    if (comp.types.includes('postal_code')) raw_pincode = comp.long_name;
+    if (comp.types.includes('locality')) city = comp.long_name;
+    if (comp.types.includes('administrative_area_level_1')) state = comp.long_name;
+    if (comp.types.includes('sublocality_level_1')) locality = comp.long_name;
+    if (comp.types.includes('sublocality_level_2')) sublocality = comp.long_name;
+    if (comp.types.includes('route')) route = comp.long_name;
+    if (comp.types.includes('premise')) premise = comp.long_name;
+  }
+  
+  return {
+    raw_pincode: raw_pincode.replace(/\D/g, '').slice(0, 6),
+    city: city,
+    state: state,
+    locality: locality || sublocality,
+    suburb: sublocality,
+    road: route,
+    building: premise
+  };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Layer 2: BigDataCloud reverse geocoding (free fallback)
 // ─────────────────────────────────────────────────────────────────────────────
 const fetchBigDataCloud = async (lat, lon) => {
   const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('BigDataCloud failed');
   const data = await res.json();
-  // BDC gives: locality (neighbourhood), city, principalSubdivision (state), postcode
   const postcode = data.postcode ? data.postcode.replace(/\D/g, '').slice(0, 6) : '';
   return {
     raw_pincode: postcode,
@@ -22,7 +54,7 @@ const fetchBigDataCloud = async (lat, lon) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Layer 2: India Post official pincode API — validates pincode & corrects city
+// Layer 3: India Post official pincode API
 // ─────────────────────────────────────────────────────────────────────────────
 const validateWithIndiaPost = async (pincode) => {
   if (!pincode || pincode.length !== 6) return null;
@@ -43,7 +75,7 @@ const validateWithIndiaPost = async (pincode) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Layer 3: Nominatim fallback (OpenStreetMap)
+// Layer 4: Nominatim fallback
 // ─────────────────────────────────────────────────────────────────────────────
 const fetchNominatim = async (lat, lon) => {
   const res = await fetch(
@@ -86,16 +118,30 @@ export const useGeoLocationAddress = () => {
             const { latitude, longitude } = position.coords;
             let geocoded = null;
             let source = '';
+            
+            const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-            // ── Layer 1: BigDataCloud ─────────────────────────────────────
-            try {
-              geocoded = await fetchBigDataCloud(latitude, longitude);
-              source = 'BigDataCloud';
-            } catch (e) {
-              console.warn('BigDataCloud failed, falling back to Nominatim:', e);
+            // ── Layer 1: Google Maps ─────────────────────────────────────
+            if (googleMapsKey) {
+              try {
+                geocoded = await fetchGoogleMaps(latitude, longitude, googleMapsKey);
+                source = 'Google Maps';
+              } catch (e) {
+                console.warn('Google Maps failed, falling back to BigDataCloud:', e);
+              }
             }
 
-            // ── Layer 3 fallback: Nominatim ───────────────────────────────
+            // ── Layer 2: BigDataCloud ─────────────────────────────────────
+            if (!geocoded || !geocoded.raw_pincode) {
+              try {
+                geocoded = await fetchBigDataCloud(latitude, longitude);
+                source = 'BigDataCloud';
+              } catch (e) {
+                console.warn('BigDataCloud failed, falling back to Nominatim:', e);
+              }
+            }
+
+            // ── Layer 4 fallback: Nominatim ───────────────────────────────
             if (!geocoded || !geocoded.raw_pincode) {
               try {
                 geocoded = await fetchNominatim(latitude, longitude);
@@ -112,17 +158,14 @@ export const useGeoLocationAddress = () => {
             let state = geocoded.state;
             let locality = geocoded.locality || '';
 
-            // ── Layer 2: India Post Pincode validation ────────────────────
-            // Cross-validate the pincode with India's official postal database.
-            // If the raw pincode is invalid, try adjacent digits for Telangana zone.
+            // ── Layer 3: India Post Pincode validation ────────────────────
             let indiaPostData = await validateWithIndiaPost(pin);
 
             if (!indiaPostData && pin.length === 6) {
-              // Try common Indian zone corrections (OSM typo healing)
               const stateUpper = state.toLowerCase();
               const corrections = [];
               if (/telangana|andhra/.test(stateUpper)) {
-                corrections.push('5' + pin.slice(1)); // correct first digit to zone 5
+                corrections.push('5' + pin.slice(1));
               } else if (/maharashtra/.test(stateUpper)) {
                 corrections.push('4' + pin.slice(1));
               } else if (/karnataka/.test(stateUpper)) {
@@ -143,11 +186,9 @@ export const useGeoLocationAddress = () => {
               }
             }
 
-            // If India Post validated, use its authoritative state + city
             if (indiaPostData) {
               city = indiaPostData.city || city;
               state = indiaPostData.state || state;
-              // Prefer the India Post local post office name as locality if BDC locality is empty
               if (!locality && indiaPostData.locality) locality = indiaPostData.locality;
               console.info(`Pincode validated via India Post (${source} coords → IndiaPost)`);
             } else {
@@ -167,11 +208,10 @@ export const useGeoLocationAddress = () => {
               geocoded.city_district
             ].filter(Boolean);
 
-            // Deduplicate: remove from line2 anything already in line1
             const line1Str = line1Parts.join(', ');
             const line2Str = [...new Set(line2Parts)].join(', ');
 
-            toast.success('Location detected accurately!');
+            toast.success(`Location detected accurately via ${source}!`);
             resolve({
               pincode: pin,
               state,
@@ -200,9 +240,9 @@ export const useGeoLocationAddress = () => {
           reject(error);
         },
         {
-          enableHighAccuracy: true,  // Force GPS + Wi-Fi triangulation
-          timeout: 15000,            // 15s for GPS to get a fix
-          maximumAge: 0,             // Never use cached positions
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0,
         }
       );
     });
