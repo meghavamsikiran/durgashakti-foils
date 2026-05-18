@@ -22,7 +22,7 @@ const Navbar = () => {
         <div className="flex whitespace-nowrap animate-marquee">
           <div className="flex">
             {[...Array(10)].map((_, i) => (
-              <span key={i} className="text-[10px] font-black uppercase tracking-[0.2em] px-8 border-r border-white/10 flex items-center gap-2">
+              <span key={i} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                 <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
                 Durga Shakti Foils: Premium Packing Solutions
               </span>
@@ -30,7 +30,7 @@ const Navbar = () => {
           </div>
           <div className="flex">
             {[...Array(10)].map((_, i) => (
-              <span key={`dup-${i}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-8 border-r border-white/10 flex items-center gap-2">
+              <span key={`dup-${i}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                 <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
                 Durga Shakti Foils: Premium Packing Solutions
               </span>
