@@ -81,15 +81,10 @@ const Navbar = () => {
                 <Link
                   to={isAdmin ? "/admin/dashboard" : "/dashboard"}
                   title={isAdmin ? (isSuperAdmin ? "Super Admin Panel" : "Admin Panel") : "Customer Dashboard"}
-                  className="flex items-center gap-1.5 hover:text-primary transition-colors"
+                  className="hover:text-primary transition-colors"
                   data-testid="navbar-dashboard-link"
                 >
                   <User className="w-5 h-5" />
-                  {isAdmin && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary uppercase tracking-wider">
-                      {isSuperAdmin ? "Super Admin" : "Admin"}
-                    </span>
-                  )}
                 </Link>
 
                 <Button
