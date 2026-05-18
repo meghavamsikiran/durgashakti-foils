@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import TrishoolLoader from '../loaders/TrishoolLoader';
-import { subscribe } from '../../services/core/loadingState';
+import { subscribe, resetLoading } from '../../services/core/loadingState';
 
 /**
  * RouteTransitionLoader — Shows the sacred Trishul loading animation
@@ -21,6 +21,7 @@ const RouteTransitionLoader = () => {
     // Only trigger on actual route changes, not initial mount
     if (prevPath.current !== location.pathname) {
       prevPath.current = location.pathname;
+      resetLoading();
       setLoading(true);
 
       // Clear any existing timer

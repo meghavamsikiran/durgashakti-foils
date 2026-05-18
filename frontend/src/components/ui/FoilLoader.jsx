@@ -14,10 +14,7 @@ import TrishoolLoader from '../loaders/TrishoolLoader';
 const FoilLoader = ({ message = "Loading..." }) => {
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* ─── Trishul Top Progress Animation ─── */}
-      <TrishoolLoader />
-
-      {/* ─── Keyframes (scoped inline) ─── */}
+      {/* ─── Skeleton Content Area ─── */}
       <style>{`
         @keyframes dsf-shimmer {
           0% { transform: translateX(-100%); }

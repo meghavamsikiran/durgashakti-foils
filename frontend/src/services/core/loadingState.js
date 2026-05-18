@@ -25,3 +25,11 @@ export const setLoading = (val) => {
     listeners.forEach(l => l(state.isLoading));
   }
 };
+
+export const resetLoading = () => {
+  loadingCount = 0;
+  if (state.isLoading) {
+    state.isLoading = false;
+    listeners.forEach(l => l(false));
+  }
+};
