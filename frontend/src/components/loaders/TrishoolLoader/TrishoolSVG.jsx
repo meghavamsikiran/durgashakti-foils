@@ -1,7 +1,3 @@
-/**
- * TrishoolSVG — Precise mathematical SVG curves professionally built.
- * Divine cinematic Saffron metallic glow.
- */
 import React from 'react';
 
 const TrishoolSVG = ({ width = "100%", height = "100%", className = '' }) => {
@@ -14,7 +10,8 @@ const TrishoolSVG = ({ width = "100%", height = "100%", className = '' }) => {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={{
-        filter: 'drop-shadow(0 0 12px #ff8c00) drop-shadow(0 0 24px #ff6a00) drop-shadow(0 0 40px rgba(255,140,0,0.5))'
+        // Reduced the blur radius significantly so the shape remains crisp and recognizable
+        filter: 'drop-shadow(0 0 4px #ff8c00) drop-shadow(0 0 8px #ff6a00)'
       }}
     >
       <defs>
@@ -47,8 +44,10 @@ const TrishoolSVG = ({ width = "100%", height = "100%", className = '' }) => {
         <path d="M420 250 C500 370, 640 380, 760 310 C660 280, 600 280, 520 290 Z" />
       </g>
 
-      {/* 6. Inner Hollow Curves (Negative Space for premium divine structure) */}
-      <g fill="#111">
+      {/* 6. Inner Hollow Curves 
+          Using slate-50 (f8fafc) to match background and create the negative space cutouts.
+      */}
+      <g fill="#f8fafc">
         <path d="M520 220 C590 160, 660 160, 710 205 C640 210, 580 220, 520 220 Z" />
         <path d="M520 280 C590 340, 660 340, 710 295 C640 290, 580 280, 520 280 Z" />
       </g>

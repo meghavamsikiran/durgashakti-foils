@@ -7,14 +7,13 @@ import TrishoolSVG from './TrishoolSVG';
  * Built with precise SVG Bezier curves and Framer Motion.
  */
 const TrishoolLoader = ({ isProcessing = false }) => {
-  // Ultra smooth easing and precise cinematic motion
   const duration = 2.2;
   const ease = [0.22, 1, 0.36, 1];
 
   return (
     <div 
       className="fixed top-0 left-0 right-0 z-[99999] pointer-events-none overflow-hidden"
-      style={{ height: '140px' }} 
+      style={{ height: '60px' }} // Adjusted height to clip less but remain a top loader
     >
       {/* Energy Trail */}
       <motion.div
@@ -23,11 +22,11 @@ const TrishoolLoader = ({ isProcessing = false }) => {
         transition={{ duration, ease, repeat: Infinity }}
         className="absolute left-0"
         style={{
-          top: '70px',
-          marginTop: '-10px',
-          height: '20px',
+          top: '30px',
+          marginTop: '-4px',
+          height: '8px',
           background: 'linear-gradient(90deg, transparent, #ff6a00, #ffae42, #ffffff)',
-          filter: 'blur(25px)',
+          boxShadow: '0 0 15px #ff6a00, 0 0 5px #ffae42',
           willChange: 'width, opacity',
           transform: 'translateZ(0)' // GPU Accelerated
         }}
@@ -35,11 +34,14 @@ const TrishoolLoader = ({ isProcessing = false }) => {
 
       {/* Horizontal Motion Trishool */}
       <motion.div
-        initial={{ x: '-400px', opacity: 0 }}
-        animate={{ x: ['-400px', '120vw'], opacity: [0, 1, 1, 0] }}
+        initial={{ x: '-200px', opacity: 0 }}
+        animate={{ x: ['-200px', '100vw'], opacity: [0, 1, 1, 0] }}
         transition={{ duration, ease, repeat: Infinity }}
-        className="absolute left-0 top-1/2 -translate-y-1/2 w-[240px] md:w-[420px]"
+        className="absolute left-0"
         style={{
+          top: '0px',
+          width: '120px', // Proper size for a top loader
+          height: '60px', 
           willChange: 'transform, opacity',
           transform: 'translateZ(0)', // GPU Accelerated
         }}
