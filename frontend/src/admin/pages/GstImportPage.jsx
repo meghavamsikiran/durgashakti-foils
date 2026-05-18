@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/button';
 import AdminTable from '../components/AdminTable';
 import adminService from '../services/admin.service';
 import { useProgress } from '../../components/ui/ProgressToast';
+import apiClient from '../../services/core/apiClient';
 
 const GstImportPage = () => {
   const [history, setHistory] = useState([]);
@@ -34,7 +35,7 @@ const GstImportPage = () => {
 
   const loadHistory = async () => {
     try {
-      const response = await adminService.getGSTImports();
+      const response = await apiClient.get('/admin/gst/imports', { silent: true });
       setHistory(response.data || []);
       setPageError(null);
     } catch (err) {
