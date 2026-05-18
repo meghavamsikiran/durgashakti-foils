@@ -16,7 +16,7 @@ const DurgaMaaLoader = () => {
   };
 
   return (
-    <div className="relative w-32 h-32 flex items-center justify-center overflow-hidden bg-white">
+    <div className="relative w-40 h-32 flex items-center justify-center overflow-hidden">
       <video 
         ref={videoRef}
         src="/durgamaloader.mp4" 
@@ -25,8 +25,8 @@ const DurgaMaaLoader = () => {
         muted 
         playsInline
         onTimeUpdate={handleTimeUpdate}
-        className="w-full h-full object-cover bg-white"
-        style={{ backgroundColor: 'white' }}
+        className="w-full h-full object-cover"
+        style={{ mixBlendMode: 'multiply' }}
       />
     </div>
   );
