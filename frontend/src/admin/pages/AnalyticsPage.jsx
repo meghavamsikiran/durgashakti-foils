@@ -72,7 +72,7 @@ const AnalyticsPage = () => {
     return () => clearInterval(timer);
   }, [loadSilent]);
 
-  if (loading) return <PageLoader message="Loading data..." />;
+  if (loading) return null;
 
   const metrics = summary.metrics || {};
   

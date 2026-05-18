@@ -148,7 +148,7 @@ const OrdersPage = () => {
 
   const stats = getStats();
 
-  if (loading && rows.length === 0) return <PageLoader message="Loading Orders..." />;
+  if (loading && rows.length === 0) return null;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
