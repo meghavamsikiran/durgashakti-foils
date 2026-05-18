@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import adminService from '../services/admin.service';
+import apiClient from '../../services/core/apiClient';
 import { 
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -51,7 +52,7 @@ const AnalyticsPage = () => {
 
   const loadSilent = useCallback(async () => {
     try {
-      const response = await adminService.getDashboardMetrics(timeframe);
+      const response = await apiClient.get('/admin/analytics/summary', { params: { timeframe }, silent: true });
       setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
     } catch (error) {
       // Ignore background errors

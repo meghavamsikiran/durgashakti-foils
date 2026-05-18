@@ -4,7 +4,7 @@ import DurgaMaaLoader from '../loaders/DurgaMaaLoader';
 
 const PageLoader = ({ message = "Loading..." }) => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+    <div className="fixed inset-0 z-[50] flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm space-y-4">
       <DurgaMaaLoader />
       {message && (
         <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">{message}</div>
