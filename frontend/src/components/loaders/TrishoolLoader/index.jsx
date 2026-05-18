@@ -14,7 +14,12 @@ const TrishoolLoader = ({ isProcessing = false }) => {
       <motion.div
         initial={{ x: '-100vw', opacity: 0 }}
         animate={{ x: ['-20vw', '120vw'], opacity: [0, 1, 1, 0] }}
-        transition={{ duration, ease, repeat: Infinity }}
+        transition={{ 
+          duration, 
+          ease, 
+          repeat: Infinity,
+          opacity: { times: [0, 0.1, 0.9, 1] }
+        }}
         className="absolute left-0 top-0 h-full flex items-center"
         style={{
           width: '75px', // Exact width for the Trishool SVG (Reduced from 100px)
