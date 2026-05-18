@@ -13,40 +13,42 @@ const TrishoolLoader = ({ isProcessing = false }) => {
   return (
     <div 
       className="fixed top-0 left-0 right-0 z-[99999] pointer-events-none overflow-hidden"
-      style={{ height: '60px' }} // Adjusted height to clip less but remain a top loader
+      style={{ height: '60px' }}
     >
-      {/* Energy Trail */}
+      {/* 
+        Single Horizontal Motion Wrapper 
+        The SVG and the trail move together as one unit.
+      */}
       <motion.div
-        initial={{ width: '0%', opacity: 0 }}
-        animate={{ width: ['0%', '100%', '100%'], opacity: [0, 1, 0] }}
+        initial={{ x: '-100vw', opacity: 0 }}
+        animate={{ x: ['-20vw', '120vw'], opacity: [0, 1, 1, 0] }}
         transition={{ duration, ease, repeat: Infinity }}
-        className="absolute left-0"
+        className="absolute left-0 top-0 h-full flex items-center"
         style={{
-          top: '30px',
-          marginTop: '-4px',
-          height: '8px',
-          background: 'linear-gradient(90deg, transparent, #ff6a00, #ffae42, #ffffff)',
-          boxShadow: '0 0 15px #ff6a00, 0 0 5px #ffae42',
-          willChange: 'width, opacity',
-          transform: 'translateZ(0)' // GPU Accelerated
-        }}
-      />
-
-      {/* Horizontal Motion Trishool */}
-      <motion.div
-        initial={{ x: '-200px', opacity: 0 }}
-        animate={{ x: ['-200px', '100vw'], opacity: [0, 1, 1, 0] }}
-        transition={{ duration, ease, repeat: Infinity }}
-        className="absolute left-0"
-        style={{
-          top: '0px',
-          width: '120px', // Proper size for a top loader
-          height: '60px', 
+          width: '120px', // width of the SVG head
           willChange: 'transform, opacity',
-          transform: 'translateZ(0)', // GPU Accelerated
+          transform: 'translateZ(0)',
         }}
       >
-        <TrishoolSVG width="100%" height="100%" />
+        {/* 
+          Comet Energy Trail 
+          Attached exactly to the back (left edge) of the moving container
+        */}
+        <div 
+          className="absolute right-full"
+          style={{
+            width: '80vw', // Long tail trailing off to the left
+            height: '8px',
+            background: 'linear-gradient(90deg, transparent, rgba(255,106,0,0.5), #ff6a00, #ffae42)',
+            boxShadow: '0 0 15px #ff6a00, 0 0 5px #ffae42',
+            borderRadius: '4px',
+            marginRight: '-10px', // Overlap slightly with the shaft of the SVG
+          }}
+        />
+
+        <div className="relative w-full h-full z-10 flex items-center">
+          <TrishoolSVG width="100%" height="auto" />
+        </div>
       </motion.div>
     </div>
   );
