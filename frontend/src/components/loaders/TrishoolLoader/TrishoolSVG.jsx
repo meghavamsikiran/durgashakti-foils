@@ -1,81 +1,143 @@
 /**
- * TrishoolSVG — Precise Shiva Trishul head, horizontal, pointing RIGHT.
- * Thick pointed leaf-blade prongs (NOT hooks/C-shapes).
- * Rich dark amber with fiery glow.
+ * TrishoolSVG — Authentic Shiva Trishul matching reference exactly.
+ *
+ * Shape: Heart-silhouette trishul pointing RIGHT.
+ * - Center prong: wide triangular arrowhead
+ * - Side prongs: thick lobes that curve OUT then sweep INWARD toward
+ *   the center prong (forming the two halves of a heart shape)
+ * - Bright gold outline on all edges for 3D metallic embossed look
+ * - Rich warm orange body, NOT yellow
  */
 import React from 'react';
 
-const TrishoolSVG = ({ width = 90, height = 40, className = '' }) => {
+const TrishoolSVG = ({ width = 80, height = 38, className = '' }) => {
   const uid = React.useId?.() || 'ts';
-  const ids = { b: `${uid}-b`, d: `${uid}-d`, t: `${uid}-t`, g: `${uid}-g` };
+  const ids = {
+    body: `${uid}-body`,
+    dark: `${uid}-dark`,
+    outline: `${uid}-outline`,
+    glow: `${uid}-glow`,
+  };
 
   return (
     <svg
       width={width}
       height={height}
-      viewBox="0 0 220 130"
+      viewBox="0 0 200 140"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      style={{ filter: 'drop-shadow(0 1px 8px rgba(234,88,12,0.9)) drop-shadow(0 0 16px rgba(249,115,22,0.4))' }}
+      style={{ filter: 'drop-shadow(0 0 6px rgba(234,88,12,0.85)) drop-shadow(0 0 14px rgba(249,115,22,0.4))' }}
     >
       <defs>
-        <linearGradient id={ids.b} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#78350F" />
-          <stop offset="25%" stopColor="#92400E" />
-          <stop offset="50%" stopColor="#B45309" />
-          <stop offset="75%" stopColor="#D97706" />
+        {/* Rich warm orange body gradient */}
+        <linearGradient id={ids.body} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#B45309" />
+          <stop offset="35%" stopColor="#D97706" />
+          <stop offset="65%" stopColor="#E8930B" />
           <stop offset="100%" stopColor="#F59E0B" />
         </linearGradient>
-        <linearGradient id={ids.d} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#F59E0B" />
-          <stop offset="40%" stopColor="#B45309" />
-          <stop offset="100%" stopColor="#78350F" />
+
+        {/* Darker gradient for depth on side prongs */}
+        <linearGradient id={ids.dark} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#E8930B" />
+          <stop offset="50%" stopColor="#D97706" />
+          <stop offset="100%" stopColor="#B45309" />
         </linearGradient>
-        <linearGradient id={ids.t} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#D97706" />
-          <stop offset="100%" stopColor="#FDE68A" />
+
+        {/* Bright gold for outline */}
+        <linearGradient id={ids.outline} x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FBBF24" />
+          <stop offset="50%" stopColor="#FDE68A" />
+          <stop offset="100%" stopColor="#FFFBEB" />
         </linearGradient>
-        <filter id={ids.g} x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="bl" />
-          <feColorMatrix in="bl" type="matrix"
-            values="1 0 0 0 0.8  0 0.5 0 0 0.2  0 0 0.2 0 0  0 0 0 0.65 0" result="gl" />
-          <feMerge><feMergeNode in="gl" /><feMergeNode in="SourceGraphic" /></feMerge>
+
+        {/* Fiery glow filter */}
+        <filter id={ids.glow} x="-15%" y="-15%" width="130%" height="130%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="b" />
+          <feColorMatrix in="b" type="matrix"
+            values="1 0 0 0 0.75
+                    0 0.45 0 0 0.15
+                    0 0 0.15 0 0
+                    0 0 0 0.5 0" result="g" />
+          <feMerge><feMergeNode in="g" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
       </defs>
 
-      <g filter={`url(#${ids.g})`}>
-        {/* SHAFT */}
-        <rect x="0" y="61" width="52" height="8" rx="4" fill={`url(#${ids.b})`} />
-        <rect x="3" y="62" width="46" height="2" rx="1" fill="rgba(253,230,138,0.15)" />
+      <g filter={`url(#${ids.glow})`}>
 
-        {/* JUNCTION */}
-        <ellipse cx="52" cy="65" rx="7" ry="16" fill={`url(#${ids.d})`} />
-        <ellipse cx="52" cy="65" rx="4" ry="11" fill="#92400E" opacity="0.5" />
+        {/* ═══════════ SHAFT (handle) ═══════════ */}
+        <rect x="2" y="66" width="32" height="8" rx="4" fill={`url(#${ids.body})`}
+          stroke={`url(#${ids.outline})`} strokeWidth="1.5" />
+        {/* Shaft ridges */}
+        <rect x="28" y="62" width="5" height="16" rx="2" fill="#D97706"
+          stroke="#FBBF24" strokeWidth="1" />
+        <rect x="22" y="64" width="3" height="12" rx="1.5" fill="#B45309"
+          stroke="#FBBF24" strokeWidth="0.8" />
 
-        {/* CENTER PRONG — thick tapered blade */}
-        <path d="M 58 52 C 85 50, 145 54, 194 62 L 205 65 L 194 68 C 145 76, 85 80, 58 78 Z" fill={`url(#${ids.b})`} />
-        <path d="M 62 53 C 90 51, 148 55, 196 63 L 194 64 C 146 56, 88 53, 62 55 Z" fill="rgba(253,230,138,0.18)" />
-
-        {/* TOP PRONG — thick pointed blade going UP-RIGHT (not a C/hook) */}
+        {/* ═══════════ CENTER PRONG — wide triangular arrowhead ═══════════
+            Concave edges for that sleek spearhead look. */}
         <path
-          d="M 54 44 C 52 22, 78 4, 138 2 L 132 14 C 80 18, 56 34, 56 52 Z"
-          fill={`url(#${ids.d})`}
+          d={`
+            M 50 48
+            C 75 52, 130 58, 188 68
+            L 194 70
+            L 188 72
+            C 130 82, 75 88, 50 92
+            Z
+          `}
+          fill={`url(#${ids.body})`}
+          stroke={`url(#${ids.outline})`}
+          strokeWidth="2"
+          strokeLinejoin="round"
         />
-        <path d="M 134 4 L 138 2 L 134 10 Z" fill={`url(#${ids.t})`} />
-        <path d="M 54 42 C 52 24, 76 6, 130 4 L 128 8 C 76 10, 54 26, 55 42 Z" fill="rgba(253,230,138,0.15)" />
+        {/* Center prong spine highlight */}
+        <path d="M 55 70 L 185 70" stroke="rgba(253,230,138,0.25)" strokeWidth="1.5" />
 
-        {/* BOTTOM PRONG — mirror, thick pointed blade going DOWN-RIGHT */}
+        {/* ═══════════ TOP PRONG — thick lobe curving OUT then INWARD ═══════════
+            Forms top half of heart shape. Starts at junction, sweeps UP,
+            curves RIGHT-DOWN, tip ends near center prong base. */}
         <path
-          d="M 54 86 C 52 108, 78 126, 138 128 L 132 116 C 80 112, 56 96, 56 78 Z"
-          fill={`url(#${ids.d})`}
+          d={`
+            M 42 56
+            C 36 28, 54 4, 88 -2
+            C 116 -6, 142 6, 140 32
+            C 139 46, 126 52, 110 50
+            L 50 48
+            C 50 46, 48 40, 50 36
+            C 54 22, 68 8, 92 6
+            C 110 4, 126 14, 126 32
+            C 126 40, 118 46, 108 46
+            L 50 48
+            Z
+          `}
+          fill={`url(#${ids.dark})`}
+          stroke={`url(#${ids.outline})`}
+          strokeWidth="2"
+          strokeLinejoin="round"
         />
-        <path d="M 134 126 L 138 128 L 134 120 Z" fill={`url(#${ids.t})`} />
-        <path d="M 54 88 C 52 106, 76 124, 130 126 L 128 122 C 76 120, 54 104, 55 88 Z" fill="rgba(253,230,138,0.15)" />
 
-        {/* Decorative crescents */}
-        <path d="M 58 50 Q 66 46, 72 50 Q 66 52, 60 54 Z" fill="#D97706" opacity="0.5" />
-        <path d="M 58 80 Q 66 84, 72 80 Q 66 78, 60 76 Z" fill="#D97706" opacity="0.5" />
+        {/* ═══════════ BOTTOM PRONG — mirror of top, thick lobe ═══════════
+            Forms bottom half of heart shape. */}
+        <path
+          d={`
+            M 42 84
+            C 36 112, 54 136, 88 142
+            C 116 146, 142 134, 140 108
+            C 139 94, 126 88, 110 90
+            L 50 92
+            C 50 94, 48 100, 50 104
+            C 54 118, 68 132, 92 134
+            C 110 136, 126 126, 126 108
+            C 126 100, 118 94, 108 94
+            L 50 92
+            Z
+          `}
+          fill={`url(#${ids.dark})`}
+          stroke={`url(#${ids.outline})`}
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
       </g>
     </svg>
   );
