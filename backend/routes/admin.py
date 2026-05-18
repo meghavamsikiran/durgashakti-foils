@@ -605,7 +605,9 @@ async def import_gst_file(file: UploadFile = File(...), admin: UserSchema = Depe
             )
             db.add(g)
             inserted += 1
-        except Exception:
+        except Exception as e:
+            import logging
+            logging.error(f"Failed to import GST record: {e}")
             failed += 1
     db.add(GstImportModel(id=import_id, file_name=file.filename, uploaded_by=admin.id, record_count=inserted, error_count=failed))
     await db.flush()
