@@ -10,9 +10,11 @@ import contactService from '../services/contact.service';
 import { toast } from 'sonner';
 
 const Contact = () => {
-  const [formData, setFormData] = React.useState({ name: '', email: '', message: '' });
+  const [formData, setFormData] = React.useState({ name: '', email: '', phone: '', message: '' });
   const [submitted, setSubmitted] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
+  const [acceptedTerms, setAcceptedTerms] = React.useState(false);
+  const [showTermsModal, setShowTermsModal] = React.useState(false);
   const [profile, setProfile] = React.useState({
     companyName: 'Durga Shakti Foils',
     companyPhone: '+91 83675 42954',
@@ -44,11 +46,16 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!acceptedTerms) {
+      toast.error('You must accept the Terms of Service to submit.');
+      return;
+    }
     try {
       setSubmitting(true);
       await contactService.submitContact(formData);
       setSubmitted(true);
-      setFormData({ name: '', email: '', message: '' });
+      setFormData({ name: '', email: '', phone: '', message: '' });
+      setAcceptedTerms(false);
       toast.success('Your message has been sent successfully!');
       setTimeout(() => {
         setSubmitted(false);
@@ -169,6 +176,18 @@ const Contact = () => {
                         className={inputClass} 
                       />
                     </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">Phone Number</Label>
+                      <Input 
+                        required
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="Enter your Phone Number" 
+                        className={inputClass} 
+                      />
+                    </div>
                     
                     <div className="flex flex-col gap-1.5">
                       <Label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">Message</Label>
@@ -182,9 +201,16 @@ const Contact = () => {
                     </div>
 
                     <div className="flex items-center gap-2 py-2">
-                      <input type="checkbox" required id="terms" className="rounded border-slate-300 text-primary focus:ring-primary w-4 h-4 cursor-pointer" />
+                      <input 
+                        type="checkbox" 
+                        required 
+                        id="terms" 
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        className="rounded border-slate-300 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                      />
                       <label htmlFor="terms" className="text-[11px] text-slate-400 font-semibold cursor-pointer">
-                        I accept the <span className="underline hover:text-primary">Terms of Service</span>
+                        I accept the <span onClick={() => setShowTermsModal(true)} className="underline hover:text-primary text-indigo-600 font-bold">Terms of Service</span>
                       </label>
                     </div>
 
@@ -287,6 +313,59 @@ const Contact = () => {
         </div>
       </section>
 
+      {/* ── TERMS AND CONDITIONS MODAL ───────────────────────────────────── */}
+      {showTermsModal && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[80vh] overflow-y-auto p-8 shadow-2xl border border-slate-100 flex flex-col space-y-6">
+            <div className="flex justify-between items-center border-b pb-4">
+              <h3 className="text-xl font-extrabold text-slate-900" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                Terms & Conditions
+              </h3>
+              <button 
+                onClick={() => setShowTermsModal(false)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="text-slate-600 text-xs space-y-4 leading-relaxed overflow-y-auto flex-1 pr-2">
+              <p className="font-bold">Welcome to Durga Shakti Foils!</p>
+              <p>These terms and conditions outline the rules and regulations for the use of Durga Shakti Foils' Website and Services.</p>
+              
+              <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[10px] mt-4">1. Privacy Policy</h4>
+              <p>Your privacy is extremely important to us. Any customer details, including Name, Email, and Phone Number submitted through our contact form, are strictly used for answering inquiry purposes and processed under safe end-to-end encryption.</p>
+              
+              <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[10px] mt-4">2. Manufacturing & Quality Standard</h4>
+              <p>All aluminum foils manufactured by Durga Shakti Foils are ISO 9001:2015 certified, conforming to high-grade packaging food safety and commercial-grade thickness standards.</p>
+              
+              <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[10px] mt-4">3. Custom Sizing & Bulk Orders</h4>
+              <p>Bulk inquiries are processed individually. Sizing specifications provided by the client are strictly adhered to, and order confirmations require prior payment confirmations as agreed upon during invoice generation.</p>
+
+              <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[10px] mt-4">4. Shipping & Deliveries</h4>
+              <p>Deliveries are executed through authorized regional logistical partners. Durga Shakti Foils is committed to maintaining high standards of transport safety and shipping schedules.</p>
+            </div>
+
+            <div className="pt-4 border-t flex gap-3">
+              <Button 
+                onClick={() => {
+                  setAcceptedTerms(true);
+                  setShowTermsModal(false);
+                }}
+                className="flex-1 bg-primary text-white font-bold text-xs uppercase py-3 rounded-xl tracking-wider hover:bg-primary/95"
+              >
+                Accept Terms
+              </Button>
+              <Button 
+                onClick={() => setShowTermsModal(false)}
+                className="flex-1 bg-slate-100 text-slate-700 font-bold text-xs uppercase py-3 rounded-xl tracking-wider hover:bg-slate-200"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
