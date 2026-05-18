@@ -13,16 +13,16 @@ const TrishoolLoader = ({ isProcessing = false }) => {
     >
       <motion.div
         initial={{ x: '-100vw', opacity: 0 }}
-        animate={{ x: ['-20vw', '-20vw', '120vw', '120vw'], opacity: [0, 1, 1, 0] }}
+        animate={{ x: ['0vw', '0vw', '100vw', '100vw'], opacity: [0, 1, 1, 0] }}
         transition={{ 
           duration, 
-          ease: ["linear", [0.22, 1, 0.36, 1], "linear"], 
+          ease: "linear", 
           repeat: Infinity,
           times: [0, 0.1, 0.9, 1]
         }}
         className="absolute left-0 top-0 h-full flex items-center"
         style={{
-          width: '75px', // Exact width for the Trishool SVG (Reduced from 100px)
+          width: '75px', // Exact width for the Trishool SVG
           willChange: 'transform, opacity',
           transform: 'translateZ(0)',
         }}
@@ -34,7 +34,7 @@ const TrishoolLoader = ({ isProcessing = false }) => {
             width: '60vw',
             height: '2px', // Very thin and sharp
             background: 'linear-gradient(90deg, transparent, #FF8F00, #FFC107)',
-            marginRight: '-5px',
+            marginRight: '-35px', // Increased overlap to close the gap
           }}
         />
 
