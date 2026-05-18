@@ -158,8 +158,8 @@ function AppRoutes() {
 }
 
 function App() {
-  // Default to true during this maintenance phase so the live deployment is protected instantly
-  const isMaintenanceMode = process.env.REACT_APP_MAINTENANCE_MODE !== 'false';
+  // Check if maintenance mode is explicitly enabled
+  const isMaintenanceMode = process.env.REACT_APP_MAINTENANCE_MODE === 'true';
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   const showMaintenance = isMaintenanceMode && (!isLocal || process.env.REACT_APP_FORCE_MAINTENANCE === 'true');
 

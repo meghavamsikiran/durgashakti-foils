@@ -94,7 +94,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 class MaintenanceMiddleware(BaseHTTPMiddleware):
     """Intercepts requests during maintenance, serving a 503 Service Unavailable message."""
     async def dispatch(self, request, call_next):
-        is_maintenance = os.environ.get('BACKEND_MAINTENANCE_MODE', 'true') != 'false'
+        is_maintenance = os.environ.get('BACKEND_MAINTENANCE_MODE', 'false') == 'true'
         client_ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else 'unknown')
         client_ip = client_ip.split(",")[0].strip()
         is_local = client_ip in ('127.0.0.1', 'localhost', '::1', '0.0.0.0')
