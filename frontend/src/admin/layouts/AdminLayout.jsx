@@ -38,8 +38,9 @@ const AdminLayout = () => {
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col fixed inset-y-0 shadow-2xl z-20">
-        <div className="p-6 flex items-center justify-center border-b border-slate-800">
-          <img src="/img1.jpg" alt="Durga Shakti Foils Logo" className="w-full max-w-[200px] h-auto object-contain rounded-md bg-white/5 p-1" />
+        <div className="p-6 flex items-center gap-3 border-b border-slate-800">
+          <img src="/favicon.png" alt="Durga Maa" className="w-8 h-8 object-contain drop-shadow-md" />
+          <span className="font-black text-lg tracking-tighter text-white uppercase">Durga Shakti<span className="text-indigo-400 ml-1">Foils</span></span>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
