@@ -7,9 +7,9 @@ const DurgaMaaLoader = () => {
     const video = videoRef.current;
     if (!video) return;
     
-    // If the video is close to the end (e.g. within 0.3 seconds), loop it manually
+    // If the video is close to the end (e.g. within 0.6 seconds), loop it manually
     // This helps skip any dead space at the end of the video file that causes a delay
-    if (video.duration && video.currentTime >= video.duration - 0.3) {
+    if (video.duration && video.currentTime >= video.duration - 0.6) {
       video.currentTime = 0;
       video.play();
     }
