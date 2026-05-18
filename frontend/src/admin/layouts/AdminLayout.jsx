@@ -39,8 +39,8 @@ const AdminLayout = () => {
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col fixed inset-y-0 shadow-2xl z-20">
         <div className="p-6 flex items-center gap-3 border-b border-slate-800">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
-            <Package2 className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-full overflow-hidden border border-indigo-500/30 flex items-center justify-center bg-white">
+            <img src="/img1.jpg" alt="Logo" className="w-full h-full object-cover" />
           </div>
           <span className="font-black text-lg tracking-tighter text-white uppercase">Durga Shakti<span className="text-indigo-400 ml-1">Foils</span></span>
         </div>

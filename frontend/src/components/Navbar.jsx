@@ -20,12 +20,22 @@ const Navbar = () => {
     <>
       <div className="w-full bg-slate-900 text-white overflow-hidden py-2 relative">
         <div className="flex whitespace-nowrap animate-marquee">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] px-8 border-r border-white/10">✨ Durga Shakti Foils: Premium Aluminum Packaging Solutions</span>
-
-          
-          {/* Repeat for seamless loop */}
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] px-8 border-r border-white/10">✨ Durga Shakti Foils: Premium Aluminum Packaging Solutions</span>
-
+          <div className="flex">
+            {[...Array(10)].map((_, i) => (
+              <span key={i} className="text-[10px] font-black uppercase tracking-[0.2em] px-8 border-r border-white/10 flex items-center gap-2">
+                <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
+                Durga Shakti Foils: Premium Packing Solutions
+              </span>
+            ))}
+          </div>
+          <div className="flex">
+            {[...Array(10)].map((_, i) => (
+              <span key={`dup-${i}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-8 border-r border-white/10 flex items-center gap-2">
+                <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
+                Durga Shakti Foils: Premium Packing Solutions
+              </span>
+            ))}
+          </div>
         </div>
       </div>
       
@@ -33,7 +43,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2" data-testid="navbar-logo">
-            <Package className="w-6 h-6 text-primary" />
+            <img src="/img1.jpg" alt="Company Logo" className="w-8 h-8 rounded-full object-cover shadow-sm" />
             <span className="font-bold text-xl tracking-tight" style={{ fontFamily: 'Manrope' }}>
               Durga Shakti<span className="text-primary ml-1">Foils</span>
             </span>
