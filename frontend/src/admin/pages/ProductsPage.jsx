@@ -319,7 +319,7 @@ const ProductsPage = () => {
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Fastest Mover</div>
-            <div className="text-lg font-black text-slate-900 truncate" title={stats.fastestMover}>
+            <div className="text-xs sm:text-sm lg:text-base font-black text-slate-900 leading-tight" title={stats.fastestMover}>
               {stats.fastestMover}
             </div>
           </div>
@@ -330,7 +330,7 @@ const ProductsPage = () => {
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Top Performer</div>
-            <div className="text-lg font-black text-slate-900 truncate" title={stats.topPerformer}>
+            <div className="text-xs sm:text-sm lg:text-base font-black text-slate-900 leading-tight" title={stats.topPerformer}>
               {stats.topPerformer}
             </div>
           </div>
