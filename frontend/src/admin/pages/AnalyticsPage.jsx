@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
+import PageLoader from '../../components/ui/PageLoader';
 import { useProgress } from '../../components/ui/ProgressToast';
 
 const metricConfigs = {
@@ -70,14 +71,7 @@ const AnalyticsPage = () => {
     return () => clearInterval(timer);
   }, [loadSilent]);
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
-        <p className="text-slate-500 font-medium animate-pulse">Loading data...</p>
-      </div>
-    </div>
-  );
+  if (loading) return <PageLoader message="Loading data..." />;
 
   const metrics = summary.metrics || {};
   
