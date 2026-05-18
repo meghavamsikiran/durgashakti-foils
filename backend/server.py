@@ -34,6 +34,7 @@ from routes.cart import router as cart_router
 from routes.orders import router as orders_router
 from routes.admin import router as admin_router
 from routes.analytics import router as analytics_router
+from routes.geolocation import router as geolocation_router
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +159,7 @@ app.include_router(cart_router)
 app.include_router(orders_router)
 app.include_router(admin_router)
 app.include_router(analytics_router)
+app.include_router(geolocation_router)
 
 # Mount Uploads directory
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
