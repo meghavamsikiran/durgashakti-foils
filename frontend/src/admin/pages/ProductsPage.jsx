@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import TablePagination from '../../components/ui/TablePagination';
+import TrishoolLoader from '../../components/loaders/TrishoolLoader';
 
 const ProductsPage = () => {
   const { isSuperAdmin } = useAuth();
@@ -276,6 +277,7 @@ const ProductsPage = () => {
 
   if (loading && rows.length === 0) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+      <TrishoolLoader />
       <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
       <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest animate-pulse">Loading Catalog...</div>
     </div>
