@@ -220,3 +220,15 @@ class GstImportModel(Base):
     record_count = Column(Integer, default=0)
     error_count = Column(Integer, default=0)
     status = Column(String(50), default="completed")
+
+# ── Contact Submissions ──────────────────────────────────────────────────
+class ContactModel(Base):
+    __tablename__ = "contacts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False)
+    phone = Column(String(20), nullable=True)
+    message = Column(Text, nullable=False)
+    status = Column(String(50), default="pending", nullable=False) # pending, read, replied
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False, index=True)

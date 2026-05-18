@@ -58,6 +58,7 @@ export const superAdminSidebar = [
   { label: 'Products', permission: 'manage_products' },
   { label: 'Stock', permission: 'manage_inventory' },
   { label: 'Customers', permission: 'manage_customers' },
+  { label: 'Inquiries', permission: 'manage_customers' },
   { label: 'Payments', permission: 'access_financial_reports' },
   { label: 'Analytics', permission: 'access_financial_reports' },
   { label: 'GST Reports', permission: 'access_gst_reports' },

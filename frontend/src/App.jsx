@@ -41,6 +41,7 @@ const AuditLogsPage = lazy(() => import('./admin/pages/AuditLogsPage'));
 const SettingsPage = lazy(() => import('./admin/pages/SettingsPage'));
 const AnalyticsPage = lazy(() => import('./admin/pages/AnalyticsPage'));
 const AdminUsersPage = lazy(() => import('./admin/pages/AdminUsersPage'));
+const InquiriesPage = lazy(() => import('./admin/pages/InquiriesPage'));
 
 import PageLoader from './components/ui/PageLoader';
 import './App.css';
@@ -95,6 +96,7 @@ function AppRoutes() {
                 <Route path="stock" element={<ProtectedAdminRoute permission="manage_inventory"><InventoryPage /></ProtectedAdminRoute>} />
                 <Route path="orders" element={<ProtectedAdminRoute permission="manage_orders"><OrdersPage /></ProtectedAdminRoute>} />
                 <Route path="customers" element={<ProtectedAdminRoute permission="manage_customers"><CustomersPage /></ProtectedAdminRoute>} />
+                <Route path="inquiries" element={<ProtectedAdminRoute permission="manage_customers"><InquiriesPage /></ProtectedAdminRoute>} />
                 <Route
                   path="payments"
                   element={

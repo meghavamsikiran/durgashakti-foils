@@ -6,10 +6,13 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { reveal, fadeInUp, staggerContainer } from '../animations/variants';
 import settingsService from '../services/settings.service';
+import contactService from '../services/contact.service';
+import { toast } from 'sonner';
 
 const Contact = () => {
   const [formData, setFormData] = React.useState({ name: '', email: '', message: '' });
   const [submitted, setSubmitted] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
   const [profile, setProfile] = React.useState({
     companyName: 'Durga Shakti Foils',
     companyPhone: '+91 83675 42954',
@@ -39,13 +42,23 @@ const Contact = () => {
     loadSettings();
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
+    try {
+      setSubmitting(true);
+      await contactService.submitContact(formData);
+      setSubmitted(true);
       setFormData({ name: '', email: '', message: '' });
-    }, 3000);
+      toast.success('Your message has been sent successfully!');
+      setTimeout(() => {
+        setSubmitted(false);
+      }, 5000);
+    } catch (err) {
+      console.error('Failed to submit contact form:', err);
+      toast.error(err.message || 'Failed to submit form. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Robust maps URL parser with high zoom (z=19) centering exact business
@@ -175,8 +188,12 @@ const Contact = () => {
                       </label>
                     </div>
 
-                    <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl text-xs transition-all shadow-md">
-                      SUBMIT
+                    <Button 
+                      type="submit" 
+                      disabled={submitting}
+                      className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl text-xs transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {submitting ? 'SUBMITTING...' : 'SUBMIT'}
                     </Button>
                   </form>
                 )}
