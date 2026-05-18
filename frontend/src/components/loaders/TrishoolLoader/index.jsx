@@ -13,12 +13,11 @@ const TrishoolLoader = ({ isProcessing = false }) => {
     >
       <motion.div
         initial={{ x: '-100vw', opacity: 0 }}
-        animate={{ x: ['-20vw', '120vw'], opacity: [0, 1, 1, 0] }}
+        animate={{ x: ['-20vw', '0vw', '100vw', '120vw'], opacity: [0, 1, 1, 0] }}
         transition={{ 
           duration, 
-          ease, 
-          repeat: Infinity,
-          opacity: { times: [0, 0.1, 0.9, 1] }
+          ease: "linear", 
+          repeat: Infinity
         }}
         className="absolute left-0 top-0 h-full flex items-center"
         style={{
