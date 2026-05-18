@@ -9,7 +9,7 @@ const DurgaMaaLoader = () => {
         loop 
         muted 
         playsInline
-        className="w-full h-full object-contain bg-white"
+        className="w-full h-full object-cover bg-white"
         style={{ backgroundColor: 'white' }}
       />
     </div>
