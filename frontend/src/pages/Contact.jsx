@@ -48,12 +48,12 @@ const Contact = () => {
     }, 3000);
   };
 
-  // Robust maps URL parser to make any input dynamic & working!
+  // Robust maps URL parser with high zoom (z=19) centering exact business
   const getEmbedMapUrl = (mapInput, address, name) => {
     // If no map input is given, or if they pasted a Google Maps short redirection URL (which frame block blocks)
     if (!mapInput || mapInput.includes('maps.app.goo.gl') || mapInput.includes('goo.gl/maps')) {
-      const query = address || "Shop No. 1, Plot No. 54, Road No. 1, Maruthi Nagar, Mallampet, Hyderabad, Telangana 500090";
-      return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+      const query = "DurgaShaktiFoils PVT.LTD, Maruthi Nagar, Mallampet, Hyderabad";
+      return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=19&ie=UTF8&iwloc=&output=embed`;
     }
     
     // Check if user pasted full HTML iframe code
@@ -68,13 +68,13 @@ const Contact = () => {
     }
     
     // Else treat as search query (e.g. text address or coordinates)
-    return `https://maps.google.com/maps?q=${encodeURIComponent(mapInput)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    return `https://maps.google.com/maps?q=${encodeURIComponent(mapInput)}&t=&z=19&ie=UTF8&iwloc=&output=embed`;
   };
 
   const inputClass = "h-11 rounded-xl border-slate-200 bg-slate-50/50 px-4 text-sm focus:border-primary focus:ring-0 transition-all placeholder:text-slate-300";
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900" style={{ fontFamily: 'Outfit, sans-serif' }}>
+    <div className="min-h-screen bg-slate-50 text-slate-900 animate-in fade-in duration-500" style={{ fontFamily: 'Outfit, sans-serif' }}>
       
       {/* ── HERO SECTION ────────────────────────────────────────────────── */}
       <section className="pt-24 pb-12 md:pt-32 md:pb-16 bg-white relative overflow-hidden border-b border-slate-100">
@@ -89,7 +89,7 @@ const Contact = () => {
           >
             <motion.span 
               variants={fadeInUp} 
-              className="text-xs font-black tracking-[0.25em] text-primary uppercase mb-3 inline-block"
+              className="text-xs font-black tracking-[0.25em] text-primary bg-primary/5 px-4 py-1.5 rounded-full uppercase mb-4 inline-block"
             >
               Get in Touch
             </motion.span>
@@ -104,7 +104,7 @@ const Contact = () => {
               variants={fadeInUp} 
               className="text-sm md:text-base text-slate-500 font-medium max-w-lg mx-auto"
             >
-              Reach out to us directly through our form, contact details, or find directions to our facility on the map below.
+              Have a bulk inquiry, custom sizing request, or need order support? Reach out and we will assist you immediately.
             </motion.p>
           </motion.div>
         </div>
@@ -114,20 +114,20 @@ const Contact = () => {
       <section className="py-12 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 rounded-3xl overflow-hidden shadow-2xl border border-slate-200/50 bg-white">
+          <div className="grid grid-cols-1 lg:grid-cols-3 rounded-3xl overflow-hidden shadow-xl border border-slate-200/50 bg-white">
             
             {/* 1. LEFT COLUMN: Contact Form */}
             <div className="p-8 md:p-12 flex flex-col justify-between bg-white">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 mb-6" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                  Contact Us
+                  Contact Form
                 </h2>
                 
                 {submitted ? (
                   <motion.div 
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-emerald-50 text-emerald-800 border border-emerald-100 p-6 rounded-2xl text-center my-auto"
+                    className="bg-primary/5 text-primary border border-primary/10 p-6 rounded-2xl text-center my-auto"
                   >
                     <span className="text-base font-black block mb-1">🎉 Message Sent!</span>
                     <span className="text-xs font-medium leading-relaxed">Thank you. We will get back to you shortly.</span>
@@ -175,7 +175,7 @@ const Contact = () => {
                       </label>
                     </div>
 
-                    <Button type="submit" className="w-full h-12 bg-[#F1C40F] hover:bg-[#D4AC0D] text-slate-950 font-black uppercase tracking-widest rounded-xl text-xs transition-all shadow-md">
+                    <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl text-xs transition-all shadow-md">
                       SUBMIT
                     </Button>
                   </form>
@@ -183,7 +183,7 @@ const Contact = () => {
               </div>
               
               <div className="mt-8 pt-6 border-t border-slate-100 flex items-center gap-2 text-slate-400">
-                <Shield className="w-4 h-4 text-slate-300" />
+                <Shield className="w-4 h-4 text-primary/50" />
                 <span className="text-[10px] font-bold uppercase tracking-wider">Secure end-to-end processing</span>
               </div>
             </div>
@@ -194,11 +194,11 @@ const Contact = () => {
               
               {/* Call Us section */}
               <div className="space-y-3">
-                <span className="text-xs font-black tracking-[0.2em] text-[#F1C40F] uppercase block">
+                <span className="text-xs font-black tracking-[0.2em] text-primary uppercase block">
                   CALL US
                 </span>
                 <div className="space-y-1">
-                  <a href={`tel:${profile.companyPhone}`} className="text-lg font-bold hover:text-[#F1C40F] transition-colors block">
+                  <a href={`tel:${profile.companyPhone}`} className="text-lg font-bold hover:text-primary transition-colors block">
                     {profile.companyPhone}
                   </a>
                 </div>
@@ -206,7 +206,7 @@ const Contact = () => {
 
               {/* Location section */}
               <div className="space-y-3">
-                <span className="text-xs font-black tracking-[0.2em] text-[#F1C40F] uppercase block">
+                <span className="text-xs font-black tracking-[0.2em] text-primary uppercase block">
                   LOCATION
                 </span>
                 <p className="text-sm font-medium text-slate-300 leading-relaxed whitespace-pre-line max-w-xs mx-auto">
@@ -216,11 +216,11 @@ const Contact = () => {
 
               {/* Business Details / Email */}
               <div className="space-y-3">
-                <span className="text-xs font-black tracking-[0.2em] text-[#F1C40F] uppercase block">
+                <span className="text-xs font-black tracking-[0.2em] text-primary uppercase block">
                   OUR SERVICES & CONTACT
                 </span>
                 <div className="space-y-1 text-slate-300 text-sm">
-                  <a href={`mailto:${profile.companyEmail}`} className="font-bold hover:text-[#F1C40F] transition-colors block mb-2">
+                  <a href={`mailto:${profile.companyEmail}`} className="font-bold hover:text-primary transition-colors block mb-2">
                     {profile.companyEmail}
                   </a>
                   <p className="text-xs text-slate-400">Business Hours: Mon - Sat (8am - 8pm)</p>
@@ -257,9 +257,9 @@ const Contact = () => {
                   href={profile.googleMapsLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 bg-[#F1C40F] hover:bg-[#D4AC0D] text-slate-950 font-black px-4 py-2.5 rounded-xl shadow-md text-[10px] tracking-wide uppercase transition-colors"
+                  className="flex items-center gap-1.5 bg-primary hover:bg-primary/95 text-primary-foreground font-black px-4 py-2.5 rounded-xl shadow-md text-[10px] tracking-wide uppercase transition-colors"
                 >
-                  <Navigation className="w-3.5 h-3.5 fill-slate-950 text-slate-950" />
+                  <Navigation className="w-3.5 h-3.5 fill-primary-foreground text-primary-foreground" />
                   Get Directions
                 </motion.a>
               </div>
