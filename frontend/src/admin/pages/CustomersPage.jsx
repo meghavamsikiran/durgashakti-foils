@@ -77,7 +77,7 @@ const CustomersPage = () => {
     avg: (metrics?.total_revenue && metrics?.total_customers) ? (metrics.total_revenue / metrics.total_customers) : 0
   };
 
-  if (loading && rows.length === 0) return <PageLoader message="Loading Customers..." />;
+  if (loading && rows.length === 0) return null;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">

@@ -9,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ProgressProvider } from './components/ui/ProgressToast';
 import RouteTransitionLoader from './components/ui/RouteTransitionLoader';
+import SuspenseTrigger from './components/ui/SuspenseTrigger';
 
 // Eagerly loaded (critical path)
 import Home from './pages/Home';
@@ -56,7 +57,7 @@ function AppRoutes() {
         <div className="App">
           <RouteTransitionLoader />
           {!isAdminPath && <Navbar />}
-          <Suspense fallback={<PageLoader />}>
+          <Suspense fallback={<SuspenseTrigger />}>
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
