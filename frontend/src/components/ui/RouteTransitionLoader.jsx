@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import TrishoolLoader from '../loaders/TrishoolLoader';
+import DurgaMaaLoader from '../loaders/DurgaMaaLoader';
 import { subscribe, resetLoading } from '../../services/core/loadingState';
 
 /**
@@ -45,7 +46,14 @@ const RouteTransitionLoader = () => {
 
   if (!loading && !networkLoading) return null;
 
-  return <TrishoolLoader />;
+  return (
+    <>
+      <TrishoolLoader />
+      <div className="fixed inset-0 z-[99998] bg-white/50 backdrop-blur-sm flex items-center justify-center">
+        <DurgaMaaLoader />
+      </div>
+    </>
+  );
 };
 
 export default RouteTransitionLoader;
