@@ -1,3 +1,8 @@
+/**
+ * TrishoolSVG — Precisely modeled after the reference image.
+ * No heavy blurs, no glowing blobs. Just perfect geometry,
+ * clean metallic gradients, and sharp edges.
+ */
 import React from 'react';
 
 const TrishoolSVG = ({ width = "100%", height = "100%", className = '' }) => {
@@ -5,51 +10,82 @@ const TrishoolSVG = ({ width = "100%", height = "100%", className = '' }) => {
     <svg
       width={width}
       height={height}
-      viewBox="0 0 1000 500"
+      viewBox="0 0 120 100"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      style={{
-        // Reduced the blur radius significantly so the shape remains crisp and recognizable
-        filter: 'drop-shadow(0 0 4px #ff8c00) drop-shadow(0 0 8px #ff6a00)'
-      }}
+      style={{ overflow: 'visible' }}
     >
       <defs>
-        {/* Molten saffron metallic gradient */}
-        <linearGradient id="metallicGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#ff7a00" />
-          <stop offset="30%" stopColor="#ffae42" />
-          <stop offset="50%" stopColor="#fff2b0" />
-          <stop offset="70%" stopColor="#ff9a1f" />
-          <stop offset="100%" stopColor="#ff6a00" />
+        {/* Crisp metallic gold outline */}
+        <linearGradient id="goldStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#FFF8E1" />
+          <stop offset="20%" stopColor="#FFECB3" />
+          <stop offset="50%" stopColor="#FFC107" />
+          <stop offset="80%" stopColor="#FFA000" />
+          <stop offset="100%" stopColor="#FF8F00" />
+        </linearGradient>
+
+        {/* Rich, solid orange inner body */}
+        <linearGradient id="orangeBody" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FFB300" />
+          <stop offset="30%" stopColor="#F57C00" />
+          <stop offset="70%" stopColor="#E65100" />
+          <stop offset="100%" stopColor="#BF360C" />
         </linearGradient>
       </defs>
 
-      {/* Main Geometry System */}
-      <g fill="url(#metallicGradient)">
-        {/* 1. Main Shaft */}
-        <rect x="80" y="236" width="340" height="28" rx="14" />
+      {/* Main Solid Shape */}
+      <g stroke="url(#goldStroke)" strokeWidth="2.5" fill="url(#orangeBody)" strokeLinejoin="round" strokeLinecap="round">
         
-        {/* 2. Handle Rings */}
-        <rect x="90" y="222" width="14" height="56" rx="7" />
-        <rect x="116" y="222" width="14" height="56" rx="7" />
+        {/* Shaft */}
+        <rect x="0" y="46" width="40" height="8" />
+        
+        {/* Base Rings */}
+        <rect x="8" y="41" width="4" height="18" rx="2" />
+        <rect x="18" y="41" width="4" height="18" rx="2" />
 
-        {/* 3. Center Spear Blade */}
-        <path d="M420 250 L520 205 L760 250 L520 295 Z" />
+        {/* Top Prong (Sweeps back, then curves forward to a sharp tip) */}
+        <path d="
+          M 40 46
+          C 60 20, 80 20, 95 32
+          C 85 18, 65 5, 40 10
+          C 20 15, 25 35, 35 46
+          Z
+        " />
 
-        {/* 4. Upper Curved Prong (Cubic Bézier) */}
-        <path d="M420 250 C500 130, 640 120, 760 190 C660 220, 600 220, 520 210 Z" />
+        {/* Bottom Prong (Mirror of Top Prong) */}
+        <path d="
+          M 40 54
+          C 60 80, 80 80, 95 68
+          C 85 82, 65 95, 40 90
+          C 20 85, 25 65, 35 54
+          Z
+        " />
 
-        {/* 5. Lower Curved Prong (Mirrored Cubic Bézier) */}
-        <path d="M420 250 C500 370, 640 380, 760 310 C660 280, 600 280, 520 290 Z" />
+        {/* Center Spear (Sharp arrowhead) */}
+        <path d="
+          M 35 46
+          L 55 46
+          L 55 35
+          L 115 50
+          L 55 65
+          L 55 54
+          L 35 54
+          Z
+        " />
       </g>
 
-      {/* 6. Inner Hollow Curves 
-          Using slate-50 (f8fafc) to match background and create the negative space cutouts.
-      */}
-      <g fill="#f8fafc">
-        <path d="M520 220 C590 160, 660 160, 710 205 C640 210, 580 220, 520 220 Z" />
-        <path d="M520 280 C590 340, 660 340, 710 295 C640 290, 580 280, 520 280 Z" />
+      {/* 3D Highlight Ridges (Adds depth without using blurry filters) */}
+      <g stroke="#FFD54F" strokeWidth="1" fill="none" opacity="0.6">
+        {/* Center spear ridge */}
+        <line x1="55" y1="50" x2="110" y2="50" />
+        
+        {/* Top prong inner ridge */}
+        <path d="M 42 45 C 55 25, 75 22, 90 32" />
+        
+        {/* Bottom prong inner ridge */}
+        <path d="M 42 55 C 55 75, 75 78, 90 68" />
       </g>
     </svg>
   );
