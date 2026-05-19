@@ -11,13 +11,26 @@ from deps import (
     write_audit_log, send_email, row_to_dict,
 )
 from datetime import datetime, timezone, timedelta
-import os, random, uuid
+from pydantic import BaseModel
+import os, random, uuid, re, httpx
 
 router = APIRouter(prefix="/api")
 
+class GoogleLoginRequest(BaseModel):
+    access_token: str
+
+def is_valid_gmail(email: str) -> bool:
+    # Match standard valid gmail format: alphanumeric + dots/pluses before @gmail.com
+    pattern = r"^[a-zA-Z0-9._%+-]+@gmail\.com$"
+    return bool(re.match(pattern, email, re.IGNORECASE))
 
 @router.post("/auth/register")
 async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
+    if not is_valid_gmail(user_data.email):
+        raise HTTPException(
+            status_code=400,
+            detail="Only valid @gmail.com accounts are permitted to register."
+        )
     existing = await db.execute(select(UserModel).where(UserModel.email == user_data.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -49,6 +62,11 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
 
 @router.post("/auth/login")
 async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
+    if not is_valid_gmail(credentials.email):
+        raise HTTPException(
+            status_code=400,
+            detail="Only valid @gmail.com accounts are permitted to login."
+        )
     result = await db.execute(select(UserModel).where(UserModel.email == credentials.email))
     user_row = result.scalar_one_or_none()
     if not user_row:
@@ -62,6 +80,77 @@ async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
     user = UserSchema(**d)
     if user.role in {'admin', 'SUPER_ADMIN'}:
         await write_audit_log(db, "ADMIN_LOGIN", str(user_row.id), "user", str(user_row.id))
+    token = create_token(str(user_row.id), user.email, user.role)
+    return {"token": token, "user": user}
+
+
+@router.post("/auth/google")
+async def google_login(payload: GoogleLoginRequest, db: AsyncSession = Depends(get_db)):
+    # 1. Fetch user information from Google OAuth2 API
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                params={"access_token": payload.access_token}
+            )
+            if resp.status_code != 200:
+                raise HTTPException(status_code=400, detail="Invalid Google access token")
+            google_user = resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Google authentication failed: {str(e)}")
+
+    email = google_user.get("email")
+    name = google_user.get("name", "Google User")
+    
+    if not email:
+        raise HTTPException(status_code=400, detail="Google account did not return a valid email address.")
+        
+    if not is_valid_gmail(email):
+        raise HTTPException(
+            status_code=400,
+            detail="Only valid @gmail.com accounts are permitted to authenticate."
+        )
+
+    # 2. Check if user already exists
+    result = await db.execute(select(UserModel).where(UserModel.email == email))
+    user_row = result.scalar_one_or_none()
+
+    if not user_row:
+        # Create a new user automatically
+        user_id = str(uuid.uuid4())
+        # Generate a highly secure random password hash for Google-based registration
+        random_pwd = os.urandom(24).hex()
+        user_row = UserModel(
+            id=user_id,
+            email=email,
+            password=hash_password(random_pwd),
+            full_name=name,
+            phone="",
+            role="customer",
+            is_active=True,
+        )
+        db.add(user_row)
+        await db.flush()
+        
+        # Send dynamic welcome email (fire-and-forget)
+        try:
+            from email_templates import welcome_email
+            subj, body = welcome_email(name)
+            import asyncio
+            asyncio.create_task(send_email(email, subj, body))
+        except Exception:
+            pass
+    else:
+        if user_row.is_active is False:
+            raise HTTPException(status_code=403, detail="Account is disabled. Please contact support.")
+
+    d = row_to_dict(user_row)
+    d.pop('password', None)
+    user = UserSchema(**d)
+    
+    if user.role in {'admin', 'SUPER_ADMIN'}:
+        await write_audit_log(db, "ADMIN_LOGIN", str(user_row.id), "user", str(user_row.id))
+        
     token = create_token(str(user_row.id), user.email, user.role)
     return {"token": token, "user": user}
 

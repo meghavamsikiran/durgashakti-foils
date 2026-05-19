@@ -113,19 +113,29 @@ export const AuthProvider = ({ children }) => {
     return !!(user.permissions && user.permissions[permission]);
   }, [user]);
 
+  const loginWithGoogle = useCallback(async (accessToken) => {
+    const response = await apiClient.post('/auth/google', { access_token: accessToken });
+    const tokenVal = response.data.token;
+    setToken(tokenVal);
+    localStorage.setItem('token', tokenVal);
+    await fetchUser(tokenVal);
+    return response.data;
+  }, [fetchUser]);
+
   const value = useMemo(() => ({
     user,
     token,
     loading,
     login,
     register,
+    loginWithGoogle,
     logout,
     isAdmin: user?.role === 'admin' || user?.role === 'SUPER_ADMIN',
     isSuperAdmin: user?.role === 'SUPER_ADMIN',
     isAuthenticated: !!user && !!token,
     hasPermission,
     refreshUser: fetchUser
-  }), [user, token, loading, login, register, logout, fetchUser, hasPermission]);
+  }), [user, token, loading, login, register, loginWithGoogle, logout, fetchUser, hasPermission]);
 
   return (
     <AuthContext.Provider value={value}>

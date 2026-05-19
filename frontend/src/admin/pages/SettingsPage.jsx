@@ -526,45 +526,10 @@ const SettingsPage = () => {
                      </Button>
                   </div>
                </div>
-
-               {/* Password Management */}
-               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden mt-8">
-                  <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
-                     <Lock className="w-32 h-32 text-indigo-900" />
-                  </div>
-                  
-                  <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-8 flex items-center gap-2">
-                     <Lock className="w-5 h-5 text-indigo-600" />
-                     Security & Password
-                  </h2>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1">
-                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Current Password</label>
-                     <input type="password" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-indigo-500/20" 
-                        value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="••••••••" />
-                  </div>
-                  <div className="space-y-1">
-                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">New Password</label>
-                     <input type="password" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-indigo-500/20" 
-                        value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="At least 8 characters..." />
-                  </div>
-               </div>
-
-               <div className="mt-8 pt-8 border-t border-slate-200 flex justify-end">
-                  <Button disabled={changingPassword} onClick={handleChangePassword} variant="outline" className="rounded-xl px-12 font-black uppercase tracking-widest flex items-center gap-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50">
-                     {changingPassword ? 'Updating...' : <><RefreshCcw className="w-4 h-4" /> Update Password</>}
-                  </Button>
-               </div>
-            </div>
             </>
-          ) : (
-            <div className="bg-slate-50 rounded-3xl border border-dashed border-slate-200 p-8 mt-8 flex flex-col items-center text-center">
-               <ShieldCheck className="w-12 h-12 text-slate-300 mb-4" />
-               <h3 className="text-sm font-bold text-slate-600">Password Management Restricted</h3>
-               <p className="text-xs text-slate-500 mt-1">Please contact your Super Admin to reset or change your password.</p>
-            </div>
-          )}
+          ) : null}
+
+
           
           <div className="bg-indigo-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl mt-8">
              <div className="relative z-10">
