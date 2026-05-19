@@ -102,9 +102,7 @@ const DurgaMaaLoader = () => {
 
   // Desktop Video Loader
   return (
-    <div 
-      className="relative w-40 h-32 flex items-center justify-center overflow-hidden bg-transparent border-0 outline-none select-none shadow-none"
-    >
+    <div className="relative w-48 h-40 flex items-center justify-center overflow-visible bg-transparent border-none outline-none select-none shadow-none pointer-events-none">
       <video 
         ref={videoRef}
         src="/durgamaloader.mp4" 
@@ -113,17 +111,15 @@ const DurgaMaaLoader = () => {
         muted 
         playsInline
         onTimeUpdate={handleTimeUpdate}
-        className="w-full h-full object-cover border-0 outline-none bg-transparent"
+        className="w-full h-full object-contain border-none outline-none bg-transparent"
         style={{ 
-          filter: 'contrast(1.3) brightness(1.15)',
-          mixBlendMode: 'multiply',
-          transform: 'scale(1.2)', // Zoom in slightly to avoid edge lines
+          filter: 'contrast(1.4) brightness(1.2)',
+          mixBlendMode: 'darken',
           backgroundColor: 'transparent',
           border: 'none',
           outline: 'none',
-          /* The magic mask! This applies a radial gradient that is 100% visible in the center, and fades to 0% transparency at the edges */
-          WebkitMaskImage: 'radial-gradient(ellipse 65% 65% at 50% 50%, black 50%, transparent 100%)',
-          maskImage: 'radial-gradient(ellipse 65% 65% at 50% 50%, black 50%, transparent 100%)'
+          WebkitMaskImage: 'none',
+          maskImage: 'none'
         }}
       />
     </div>
