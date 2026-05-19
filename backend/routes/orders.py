@@ -141,11 +141,13 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
             raise
 
     if order_data.payment_method == "cod":
-        await send_email(
-            current_user.email,
-            f"Order Confirmation - {order_number}",
-            f"<h1>Thank you for your order!</h1><p>Order {order_number} has been received.</p><p>Total: ₹{server_total}</p><p>Payment: COD</p>"
-        )
+        try:
+            from email_templates import order_confirmation_email
+            subj, body = order_confirmation_email(current_user.full_name or current_user.email, row_to_dict(order))
+            import asyncio
+            asyncio.create_task(send_email(current_user.email, subj, body))
+        except Exception:
+            pass
 
     return row_to_dict(order)
 
@@ -198,6 +200,13 @@ async def cancel_order(order_id: str, current_user: UserSchema = Depends(get_cur
     order.order_status = "cancelled"
     order.stock_applied = False
     order.updated_at = now
+    try:
+        from email_templates import order_cancelled_email
+        import asyncio
+        subj, body = order_cancelled_email(current_user.full_name or current_user.email, str(order.order_number), float(order.total_amount or 0))
+        asyncio.create_task(send_email(current_user.email, subj, body))
+    except Exception:
+        pass
     return {"message": "Order cancelled successfully"}
 
 
@@ -242,6 +251,13 @@ async def return_order(
     order.return_reason = reason
     order.return_image_url = image_url
     order.updated_at = datetime.now(timezone.utc)
+    try:
+        from email_templates import return_requested_email
+        import asyncio
+        subj, body = return_requested_email(current_user.full_name or current_user.email, str(order.order_number), reason)
+        asyncio.create_task(send_email(current_user.email, subj, body))
+    except Exception:
+        pass
     return {"message": "Return request submitted successfully"}
 
 
@@ -354,11 +370,17 @@ async def verify_razorpay_payment(payment_data: dict, current_user: UserSchema =
         cart.items = []
         cart.updated_at = now
 
-    await send_email(
-        current_user.email,
-        f"Payment Successful - Order {order.order_number}",
-        f"<h1>Payment Received!</h1><p>Order {order.order_number} has been confirmed. Total: ₹{order.total_amount}</p>"
-    )
+    try:
+        from email_templates import payment_success_email, order_confirmation_email
+        import asyncio
+        order_dict = row_to_dict(order)
+        subj, body = payment_success_email(current_user.full_name or current_user.email, order_dict)
+        asyncio.create_task(send_email(current_user.email, subj, body))
+        # Also send order confirmation with items
+        subj2, body2 = order_confirmation_email(current_user.full_name or current_user.email, order_dict)
+        asyncio.create_task(send_email(current_user.email, subj2, body2))
+    except Exception:
+        pass
     return {"success": True, "message": "Payment verified and order confirmed"}
 
 

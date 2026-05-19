@@ -287,6 +287,40 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
 
     await db.flush()
     await write_audit_log(db, "ORDER_STATUS_UPDATED", admin.id, "order", order_id, {"from": prev_status, "to": effective_status})
+
+    # ── Transactional Emails ─────────────────────────────────────────────
+    try:
+        # Fetch customer email
+        from sqlalchemy import select as _sel
+        from models import UserModel as _UM
+        user_res = await db.execute(_sel(_UM).where(_UM.id == order.user_id))
+        cust = user_res.scalar_one_or_none()
+        if cust:
+            import asyncio
+            from deps import send_email as _send
+            from email_templates import (
+                order_shipped_email, order_delivered_email,
+                return_approved_email, return_rejected_email,
+                order_cancelled_email,
+            )
+            order_dict = row_to_dict(order)
+            cust_name = cust.full_name or cust.email
+            subj = body = None
+            if effective_status == "shipped":
+                subj, body = order_shipped_email(cust_name, order_dict)
+            elif effective_status == "delivered":
+                subj, body = order_delivered_email(cust_name, order_dict)
+            elif effective_status == "refunded" and new_status == "return_approved":
+                subj, body = return_approved_email(cust_name, str(order.order_number), float(order.total_amount or 0))
+            elif effective_status == "return_rejected":
+                subj, body = return_rejected_email(cust_name, str(order.order_number), status_data.get("admin_message", ""))
+            elif effective_status == "cancelled":
+                subj, body = order_cancelled_email(cust_name, str(order.order_number), float(order.total_amount or 0))
+            if subj and body:
+                asyncio.create_task(_send(cust.email, subj, body))
+    except Exception:
+        pass
+
     return {"message": "Order status updated"}
 
 

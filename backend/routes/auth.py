@@ -36,6 +36,14 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
     token = create_token(user_id, user_data.email, "customer")
     d = row_to_dict(new_user)
     d.pop('password', None)
+    # Send welcome email (fire-and-forget)
+    try:
+        from email_templates import welcome_email
+        subj, body = welcome_email(user_data.full_name or user_data.email)
+        import asyncio
+        asyncio.create_task(send_email(user_data.email, subj, body))
+    except Exception:
+        pass
     return {"token": token, "user": UserSchema(**d)}
 
 
