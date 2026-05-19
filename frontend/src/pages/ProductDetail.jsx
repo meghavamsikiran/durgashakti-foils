@@ -15,6 +15,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [quantity, setQuantity] = useState(1);
   const { cart, addToCart, updateCartItem, removeFromCart } = useCart();
   const { user, refreshUser } = useAuth();
   const [wishlisting, setWishlisting] = useState(false);
@@ -298,43 +299,73 @@ const ProductDetail = () => {
               }
 
               return (
-                <div className="flex gap-4">
-                  <Button
-                    onClick={async () => {
-                      try {
-                        setAdding(true);
-                        await addToCart(product.id, 1);
-                        toast.success('Added to cart!');
-                      } catch (error) {
-                        toast.error(error.message || 'Failed to add to cart');
-                      } finally {
-                        setAdding(false);
-                      }
-                    }}
-                    disabled={adding || Number(product.stock_quantity) <= 0 || product.in_stock === false}
-                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-sm font-semibold cursor-pointer"
-                    data-testid="add-to-cart-detail-button"
-                  >
-                    {adding ? (
-                      'Adding...'
-                    ) : (Number(product.stock_quantity) <= 0 || product.in_stock === false) ? (
-                      'Out of Stock'
-                    ) : (
-                      <>
-                        <ShoppingCart className="w-4 h-4 mr-2" />
-                        Add to Cart
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleToggleWishlist}
-                    disabled={wishlisting}
-                    className={`w-12 h-12 p-0 rounded-sm flex items-center justify-center transition-all cursor-pointer ${isWishlisted ? 'border-rose-500 text-rose-500 bg-rose-50' : 'text-slate-500 hover:text-rose-500'}`}
-                  >
-                    <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''} ${wishlisting ? 'animate-pulse' : ''}`} />
-                  </Button>
-                </div>
+                <>
+                  <div className="mb-6">
+                    <label className="text-sm font-semibold mb-2 block">Quantity</label>
+                    <div className="flex items-center gap-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        disabled={quantity <= 1}
+                        className="w-12 h-12 p-0 flex items-center justify-center"
+                        data-testid="decrease-quantity"
+                      >
+                        {quantity <= 1 ? <Trash2 className="w-4 h-4 text-slate-400" /> : <Minus className="w-4 h-4" />}
+                      </Button>
+                      <span className="text-xl font-semibold w-12 text-center" data-testid="product-quantity">{quantity}</span>
+                      <Button
+                        variant="outline"
+                        onClick={() => setQuantity(Math.min(quantity + 1, Number(product.stock_quantity) || 999))}
+                        disabled={quantity >= Number(product.stock_quantity)}
+                        className="w-12 h-12 p-0 flex items-center justify-center"
+                        data-testid="increase-quantity"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                      {Number(product.stock_quantity) > 0 && (
+                        <span className="text-sm text-muted-foreground">{product.stock_quantity} available</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          setAdding(true);
+                          await addToCart(product.id, quantity);
+                          toast.success('Added to cart!');
+                        } catch (error) {
+                          toast.error(error.message || 'Failed to add to cart');
+                        } finally {
+                          setAdding(false);
+                        }
+                      }}
+                      disabled={adding || Number(product.stock_quantity) <= 0 || product.in_stock === false}
+                      className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-sm font-semibold cursor-pointer"
+                      data-testid="add-to-cart-detail-button"
+                    >
+                      {adding ? (
+                        'Adding...'
+                      ) : (Number(product.stock_quantity) <= 0 || product.in_stock === false) ? (
+                        'Out of Stock'
+                      ) : (
+                        <>
+                          <ShoppingCart className="w-4 h-4 mr-2" />
+                          Add to Cart
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleToggleWishlist}
+                      disabled={wishlisting}
+                      className={`w-12 h-12 p-0 rounded-sm flex items-center justify-center transition-all cursor-pointer ${isWishlisted ? 'border-rose-500 text-rose-500 bg-rose-50' : 'text-slate-500 hover:text-rose-500'}`}
+                    >
+                      <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''} ${wishlisting ? 'animate-pulse' : ''}`} />
+                    </Button>
+                  </div>
+                </>
               );
             })()}
 
