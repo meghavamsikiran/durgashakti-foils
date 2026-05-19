@@ -89,7 +89,7 @@ def test_order_status_transitions():
 def test_shipping_address_schema():
     valid_data = {
         "full_name": "Rajesh Kumar",
-        "phone": "+919876543210",
+        "phone": "+918367542954",
         "address_line1": "12/4 Industrial Area",
         "city": "Bengaluru",
         "state": "Karnataka",
@@ -139,12 +139,12 @@ def test_admin_requests_schemas():
     from deps import AdminCreateRequest, AdminUpdateRequest
     
     create_req = AdminCreateRequest(
-        email="admin@durgashakti.com",
+        email="admin@gmail.com",
         password="SuperPassword123",
         full_name="Rajesh Sharma",
         permissions={"manage_orders": True}
     )
-    assert create_req.email == "admin@durgashakti.com"
+    assert create_req.email == "admin@gmail.com"
     assert create_req.permissions == {"manage_orders": True}
     
     update_req = AdminUpdateRequest(
