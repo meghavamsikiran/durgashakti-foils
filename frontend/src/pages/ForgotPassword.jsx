@@ -13,7 +13,16 @@ const ForgotPassword = () => {
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    let timer;
+    if (resendTimer > 0) {
+      timer = setTimeout(() => setResendTimer(prev => prev - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [resendTimer]);
 
   const handleSendOTP = async (e) => {
     e.preventDefault();
@@ -22,8 +31,23 @@ const ForgotPassword = () => {
       await authService.forgotPassword(email);
       toast.success('OTP sent to your email');
       setStep(2);
+      setResendTimer(30); // Start 30s countdown
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (resendTimer > 0) return;
+    setLoading(true);
+    try {
+      await authService.forgotPassword(email);
+      toast.success('OTP resent to your email');
+      setResendTimer(30); // Restart 30s countdown
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to resend OTP');
     } finally {
       setLoading(false);
     }
@@ -95,6 +119,23 @@ const ForgotPassword = () => {
                   placeholder="000000"
                   className="tracking-widest text-center font-bold text-lg"
                 />
+                <div className="flex items-center justify-between mt-2 px-1">
+                  <span className="text-[11px] text-muted-foreground">
+                    Didn't receive the code?
+                  </span>
+                  <button
+                    type="button"
+                    disabled={resendTimer > 0 || loading}
+                    onClick={handleResendOTP}
+                    className={`text-[11px] font-bold transition-all ${
+                      resendTimer > 0 
+                        ? 'text-slate-400 cursor-not-allowed' 
+                        : 'text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer'
+                    }`}
+                  >
+                    {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
+                  </button>
+                </div>
               </div>
               <div>
                 <Label htmlFor="newPassword">New Password</Label>
