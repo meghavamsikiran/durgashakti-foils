@@ -77,9 +77,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24 pt-12">
-        <ProfileHeader user={user} activeTab={activeTab} />
-        
-        <div className="flex flex-col xl:flex-row gap-8 xl:gap-12">
+        <div className="flex flex-col xl:flex-row gap-8 xl:gap-12 items-start">
           <Sidebar 
             user={user} 
             activeTab={activeTab} 
@@ -88,7 +86,8 @@ const Dashboard = () => {
             onLogout={logout} 
           />
           
-          <main className="flex-1 min-w-0">
+          <main className="flex-1 min-w-0 w-full flex flex-col gap-8">
+            <ProfileHeader user={user} activeTab={activeTab} />
             {renderTabContent()}
           </main>
         </div>

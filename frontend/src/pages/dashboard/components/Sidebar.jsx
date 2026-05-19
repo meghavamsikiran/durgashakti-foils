@@ -16,8 +16,8 @@ const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, onLogout 
   ];
 
   return (
-    <aside className="w-full xl:w-80 flex-shrink-0 xl:sticky xl:top-24 self-start">
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
+    <aside className="w-full xl:w-80 flex-shrink-0 xl:sticky xl:top-24 self-start xl:h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide rounded-3xl">
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden min-h-full">
         <div className="p-6 md:p-8 bg-slate-900 text-white relative overflow-hidden">
           <div className="relative z-10 flex flex-row items-center gap-4 xl:flex-col xl:items-start">
             <div className="w-12 h-12 xl:w-16 xl:h-16 bg-white/20 rounded-2xl backdrop-blur-xl flex items-center justify-center mb-0 xl:mb-4 flex-shrink-0">
