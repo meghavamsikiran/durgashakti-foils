@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import axios from 'axios';
+import authService from '../services/auth.service';
 
 const ForgotPassword = () => {
   const [step, setStep] = useState(1); // 1: Email, 2: OTP & New Password
@@ -19,7 +19,7 @@ const ForgotPassword = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post('/api/auth/forgot-password', { email });
+      await authService.forgotPassword(email);
       toast.success('OTP sent to your email');
       setStep(2);
     } catch (err) {
@@ -33,7 +33,7 @@ const ForgotPassword = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post('/api/auth/reset-password', { 
+      await authService.resetPassword({ 
         email, 
         otp, 
         new_password: newPassword 
