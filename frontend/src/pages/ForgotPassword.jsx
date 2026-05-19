@@ -33,7 +33,7 @@ const ForgotPassword = () => {
       setStep(2);
       setResendTimer(30); // Start 30s countdown
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to send OTP');
+      toast.error(err.message || 'Failed to send OTP');
     } finally {
       setLoading(false);
     }
@@ -47,7 +47,7 @@ const ForgotPassword = () => {
       toast.success('OTP resent to your email');
       setResendTimer(30); // Restart 30s countdown
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to resend OTP');
+      toast.error(err.message || 'Failed to resend OTP');
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ const ForgotPassword = () => {
       toast.success('Password reset successful! Please login.');
       navigate('/login');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Reset failed');
+      toast.error(err.message || 'Reset failed');
     } finally {
       setLoading(false);
     }

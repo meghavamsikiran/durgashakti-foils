@@ -124,13 +124,13 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         self._hits = defaultdict(list)
         self._lock = threading.Lock()
         self._limits = {
-            '/api/auth/login': (5, 60),
-            '/api/auth/register': (3, 60),
-            '/api/auth/forgot-password': (3, 60),
-            '/api/auth/reset-password': (3, 60),
-            '/api/orders': (10, 60),
-            '/api/payment/razorpay/create-order': (5, 60),
-            '/api/payment/razorpay/verify': (5, 60),
+            '/api/auth/login': (10, 60),
+            '/api/auth/register': (10, 60),
+            '/api/auth/forgot-password': (15, 60),
+            '/api/auth/reset-password': (15, 60),
+            '/api/orders': (20, 60),
+            '/api/payment/razorpay/create-order': (15, 60),
+            '/api/payment/razorpay/verify': (15, 60),
         }
 
     async def dispatch(self, request, call_next):
