@@ -16,7 +16,10 @@ const DurgaMaaLoader = () => {
   };
 
   return (
-    <div className="relative w-40 h-32 flex items-center justify-center overflow-hidden">
+    <div 
+      className="relative w-40 h-32 flex items-center justify-center overflow-hidden bg-transparent"
+      style={{ mixBlendMode: 'multiply' }}
+    >
       <video 
         ref={videoRef}
         src="/durgamaloader.mp4" 
@@ -26,7 +29,12 @@ const DurgaMaaLoader = () => {
         playsInline
         onTimeUpdate={handleTimeUpdate}
         className="w-full h-full object-cover"
-        style={{ filter: 'contrast(1.2) brightness(1.1)' }}
+        style={{ 
+          filter: 'contrast(1.2) brightness(1.1)',
+          mixBlendMode: 'multiply',
+          transform: 'scale(1.08)',
+          backgroundColor: 'transparent'
+        }}
       />
     </div>
   );
