@@ -91,6 +91,33 @@ const SettingsTab = ({ user, onUpdateProfile, onChangePassword }) => {
           </div>
         </form>
       </div>
+
+      <div className="space-y-8 pb-12">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-100">
+            <Lock className="w-5 h-5" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Danger Zone</h2>
+        </div>
+        <div className="p-10 bg-red-50 rounded-[3rem] border border-red-200 shadow-xl flex flex-col items-start gap-4">
+          <div className="space-y-2">
+            <h3 className="text-lg font-black text-red-900">Delete Account Permanently</h3>
+            <p className="text-red-700 font-medium">Once you delete your account, there is no going back. Please be certain.</p>
+          </div>
+          <Button 
+            onClick={() => {
+              if(window.confirm('Are you absolutely sure you want to permanently delete your account? This action cannot be undone.')) {
+                // We'll dispatch a custom event or use a prop if provided. 
+                // Let's rely on a window event to let CustomerDashboard handle it easily.
+                window.dispatchEvent(new CustomEvent('request-account-deletion'));
+              }
+            }}
+            className="h-14 rounded-2xl px-8 gap-2 font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white"
+          >
+            Delete Account
+          </Button>
+        </div>
+      </div>
     </motion.div>
   );
 };

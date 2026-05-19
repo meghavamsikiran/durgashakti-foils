@@ -93,6 +93,22 @@ async def update_profile(data: UserProfileUpdate, current_user: UserSchema = Dep
     return UserSchema(**d)
 
 
+@router.delete("/auth/me")
+async def delete_account(current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    # This deletes the user and cascades to carts, addresses, notifications.
+    # Orders have ondelete="SET NULL", so they are retained for accounting.
+    res = await db.execute(select(UserModel).where(UserModel.id == current_user.id))
+    u = res.scalar_one_or_none()
+    if not u:
+        raise HTTPException(status_code=404, detail="User not found")
+    if u.role == "SUPER_ADMIN":
+        raise HTTPException(status_code=400, detail="Cannot delete Super Admin account")
+        
+    await db.delete(u)
+    await db.flush()
+    return {"message": "Account deleted permanently"}
+
+
 @router.post("/auth/change-password")
 async def change_password(data: ChangePasswordRequest, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(UserModel).where(UserModel.id == current_user.id))

@@ -1,7 +1,7 @@
 """Transactional email templates for DurgaShakti Foils."""
 from datetime import datetime, timezone, timedelta
 
-LOGO_URL = "https://durgashakti-foils.vercel.app/logo192.png"
+LOGO_URL = "https://durgashakti-foils.vercel.app/favicon.png"
 BRAND_COLOR = "#b45309"
 BRAND_DARK = "#1e1b4b"
 SITE_URL = "https://durgashakti-foils.vercel.app"
@@ -16,8 +16,8 @@ def _base(content: str, title: str) -> str:
 <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
   <!-- Header -->
   <tr><td style="background:linear-gradient(135deg,{BRAND_DARK} 0%,{BRAND_COLOR} 100%);padding:32px 40px;text-align:center;">
-    <img src="{LOGO_URL}" width="56" height="56" style="border-radius:50%;border:3px solid rgba(255,255,255,0.3);margin-bottom:12px;" alt="Logo">
-    <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:0.5px;">DurgaShakti Foils</h1>
+    <img src="{LOGO_URL}" width="120" height="120" style="border-radius:50%;border:4px solid rgba(255,255,255,0.3);margin-bottom:16px;object-fit:cover;" alt="DurgaShakti Foils Logo">
+    <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:800;letter-spacing:1px;">DurgaShakti Foils</h1>
     <p style="margin:4px 0 0;color:rgba(255,255,255,0.75);font-size:13px;">Premium Quality Packaging Solutions</p>
   </td></tr>
   <!-- Body -->
@@ -76,7 +76,7 @@ def _info_row(label: str, value: str) -> str:
 
 def _cta_button(text: str, url: str) -> str:
     return f"""<div style="text-align:center;margin:28px 0;">
-      <a href="{url}" style="display:inline-block;background:linear-gradient(135deg,{BRAND_DARK},{BRAND_COLOR});color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:0.3px;">{text}</a>
+      <a href="{url}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:linear-gradient(135deg,{BRAND_DARK},{BRAND_COLOR});color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:0.3px;">{text}</a>
     </div>"""
 
 
@@ -135,7 +135,7 @@ def order_confirmation_email(name: str, order: dict) -> tuple[str, str]:
     </div>
     {_section_title("Delivery Address")}
     <p style="color:#374151;font-size:14px;background:#f9fafb;padding:14px;border-radius:8px;">{addr_str}</p>
-    {_cta_button("Track Your Order", SITE_URL + "/dashboard")}"""
+    {_cta_button("Track Your Order", f"{SITE_URL}/dashboard?order={order_num}")}"""
     return f"Order Confirmed - {order_num} | DurgaShakti Foils", _base(content, f"Order {order_num}")
 
 
@@ -162,7 +162,7 @@ def payment_success_email(name: str, order: dict) -> tuple[str, str]:
         {_info_row("Date & Time", datetime.now(timezone.utc).strftime("%d %B %Y, %I:%M %p UTC"))}
       </table>
     </div>
-    {_cta_button("View Order", SITE_URL + "/dashboard")}"""
+    {_cta_button("View Order", f"{SITE_URL}/dashboard?order={order_num}")}"""
     return f"Payment Successful - ₹{total:.2f} | {order_num}", _base(content, "Payment Success")
 
 
@@ -183,7 +183,7 @@ def payment_failed_email(name: str, order_num: str, reason: str = "") -> tuple[s
       {f'<p style="margin:0;color:#7f1d1d;font-size:13px;">Reason: {reason}</p>' if reason else ''}
     </div>
     <p style="color:#374151;font-size:14px;">Please try again using a different payment method or contact your bank.</p>
-    {_cta_button("Retry Payment", SITE_URL + "/dashboard")}"""
+    {_cta_button("Retry Payment", f"{SITE_URL}/dashboard?order={order_num}")}"""
     return f"Payment Failed - {order_num} | DurgaShakti Foils", _base(content, "Payment Failed")
 
 
@@ -210,7 +210,7 @@ def order_shipped_email(name: str, order: dict) -> tuple[str, str]:
         {_info_row("Tracking ID", tracking_id)}
       </table>
     </div>
-    {_cta_button("Track Shipment", tracking_url if tracking_url else SITE_URL + "/dashboard")}
+    {_cta_button("Track Shipment", tracking_url if tracking_url else f"{SITE_URL}/dashboard?order={order_num}")}
     <p style="color:#9ca3af;font-size:12px;text-align:center;">Expected delivery within 3-5 business days.</p>"""
     return f"Your Order {order_num} is Shipped! 🚚", _base(content, "Order Shipped")
 
@@ -249,7 +249,7 @@ def order_delivered_email(name: str, order: dict) -> tuple[str, str]:
     <div style="background:#fef3c7;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;">
       <p style="margin:0;color:#92400e;font-size:13px;">🔄 Return window: <strong>4 days</strong> from delivery date. Visit your dashboard to initiate a return.</p>
     </div>
-    {_cta_button("View Order / Return", SITE_URL + "/dashboard")}
+    {_cta_button("View Order / Return", f"{SITE_URL}/dashboard?order={order_num}")}
     <p style="color:#9ca3af;font-size:12px;text-align:center;">Thank you for shopping with DurgaShakti Foils! 💛</p>"""
     return f"Delivered! Order {order_num} Receipt | DurgaShakti Foils", _base(content, "Order Delivered")
 
@@ -300,7 +300,7 @@ def return_requested_email(name: str, order_num: str, reason: str) -> tuple[str,
       </table>
     </div>
     <p style="color:#374151;font-size:14px;">Our team will review your return request within 1-2 business days and notify you of the decision.</p>
-    {_cta_button("View Request Status", SITE_URL + "/dashboard")}"""
+    {_cta_button("View Request Status", f"{SITE_URL}/dashboard?order={order_num}")}"""
     return f"Return Request Submitted - {order_num} | DurgaShakti Foils", _base(content, "Return Requested")
 
 
@@ -325,7 +325,7 @@ def return_approved_email(name: str, order_num: str, total: float) -> tuple[str,
       </table>
     </div>
     <p style="color:#374151;font-size:14px;text-align:center;">Your refund will be credited to the original payment method within 5-7 business days.</p>
-    {_cta_button("View Dashboard", SITE_URL + "/dashboard")}"""
+    {_cta_button("View Dashboard", f"{SITE_URL}/dashboard?order={order_num}")}"""
     return f"Return Approved - Refund Initiated | {order_num}", _base(content, "Return Approved")
 
 

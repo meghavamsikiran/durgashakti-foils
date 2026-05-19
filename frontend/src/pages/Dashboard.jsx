@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PageLoader from '../components/ui/PageLoader';
 import { useOrders } from '../hooks/useOrders';
@@ -23,6 +23,7 @@ import OrderDetailsModal from './dashboard/components/OrderDetailsModal';
 const Dashboard = () => {
   const { user, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('orders');
   const [selectedOrder, setSelectedOrder] = useState(null);
 
@@ -34,8 +35,31 @@ const Dashboard = () => {
   const { cards, loading: cardsLoading, saveCard } = useSavedCards();
 
   useEffect(() => {
-    if (!authLoading && !user) navigate('/login');
-  }, [authLoading, user, navigate]);
+    if (!authLoading && !user) {
+      navigate('/login');
+    } else if (user) {
+      const params = new URLSearchParams(location.search);
+      const orderId = params.get('order');
+      if (orderId && orders.length > 0) {
+        const order = orders.find(o => o.order_number === orderId || o.id === orderId);
+        if (order) setSelectedOrder(order);
+      }
+    }
+  }, [authLoading, user, navigate, location.search, orders]);
+
+  useEffect(() => {
+    const handleDeleteAccount = async () => {
+      try {
+        await authService.deleteAccount();
+        logout();
+        navigate('/');
+      } catch (err) {
+        alert("Failed to delete account. Please try again.");
+      }
+    };
+    window.addEventListener('request-account-deletion', handleDeleteAccount);
+    return () => window.removeEventListener('request-account-deletion', handleDeleteAccount);
+  }, [logout, navigate]);
 
   if (authLoading) return <PageLoader message="Authenticating..." />;
 
