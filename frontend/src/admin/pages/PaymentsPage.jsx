@@ -82,7 +82,7 @@ const PaymentsPage = () => {
     successRate: 100 // Placeholder
   };
 
-  if (loading && rows.length === 0) return null;
+  if (loading && rows.length === 0) return <PageLoader />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">

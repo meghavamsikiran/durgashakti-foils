@@ -96,7 +96,7 @@ const GstReportsPage = () => {
   const totalFilteredPages = Math.ceil(total / ITEMS_PER_PAGE);
   const paginatedRecords = records;
 
-  if (loading && records.length === 0) return null;
+  if (loading && records.length === 0) return <PageLoader />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">

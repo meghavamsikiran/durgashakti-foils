@@ -61,7 +61,7 @@ const AdminDashboard = () => {
     return () => clearInterval(timer);
   }, [loadSilent]);
 
-  if (loading) return null;
+  if (loading) return <PageLoader />;
   
   if (error) return (
     <div className="p-8 bg-rose-50 border border-rose-100 rounded-3xl text-rose-600 font-bold text-sm">

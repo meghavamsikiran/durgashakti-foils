@@ -276,7 +276,7 @@ const ProductsPage = () => {
     lowStock: metrics?.low_stock_count || 0
   };
 
-  if (loading && rows.length === 0) return null;
+  if (loading && rows.length === 0) return <PageLoader />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">

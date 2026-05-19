@@ -7,6 +7,7 @@ import {
   Cloud, Database, RefreshCcw, Timer, Megaphone, Sparkles, Play
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import PageLoader from '../../components/ui/PageLoader';
 
 const formatToLocalInput = (isoString) => {
   if (!isoString) return '';
@@ -189,7 +190,7 @@ const SettingsPage = () => {
     }
   };
 
-  if (!loaded) return null;
+  if (!loaded) return <PageLoader />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
