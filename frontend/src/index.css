@@ -144,3 +144,10 @@ h1, h2, h3, h4, h5, h6 {
   top: 110px !important;
 }
 
+/* Force Sonner close button to the right */
+[data-sonner-toast] [data-close-button] {
+  left: auto !important;
+  right: 0px !important;
+  transform: translate(50%, -50%) !important;
+}
+

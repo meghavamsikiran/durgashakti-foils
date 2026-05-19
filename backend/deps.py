@@ -372,11 +372,25 @@ def _send_vercel_relay(url: str, payload: dict):
     with urllib.request.urlopen(req, timeout=12) as response:
         return response.status, response.read().decode('utf-8')
 
-async def send_email(to_email: str, subject: str, body: str):
+async def send_email(to_email: str, subject: str, body: str, attachments: list = None) -> bool:
+    """Send an email via Vercel HTTPS SMTP Relay or fallback directly to SMTP."""
+    try:
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.base import MIMEBase
+        from email import encoders
+        import smtplib
+        import os
+        import base64
+        import asyncio
+        import logging
+    except ImportError:
+        return False, "Failed to import email modules"
+
     smtp_host = os.environ.get('SMTP_HOST', '')
     smtp_port = int(os.environ.get('SMTP_PORT', 587))
     smtp_user = os.environ.get('SMTP_USER', '')
-    smtp_pass = os.environ.get('SMTP_PASS', '').replace(' ', '')  # Google App Passwords have display spaces
+    smtp_pass = os.environ.get('SMTP_PASS', '').replace(' ', '')
     smtp_from = os.environ.get('SMTP_FROM', smtp_user)
     is_production = os.environ.get('ENVIRONMENT') == 'production'
     
@@ -398,6 +412,9 @@ async def send_email(to_email: str, subject: str, body: str):
             "smtp_user": smtp_user,
             "smtp_pass": smtp_pass
         }
+        if attachments:
+            payload["attachments"] = attachments
+            
         status, res_text = await asyncio.to_thread(_send_vercel_relay, vercel_url, payload)
         if status == 200:
             logging.info("Email successfully sent via Vercel HTTPS Relay: %s", res_text)
@@ -412,6 +429,17 @@ async def send_email(to_email: str, subject: str, body: str):
     msg['To'] = to_email
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'html'))
+    
+    if attachments:
+        for att in attachments:
+            part = MIMEBase('application', 'octet-stream')
+            content = att['content']
+            if ',' in content:
+                content = content.split(',')[-1]
+            part.set_payload(base64.b64decode(content))
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f"attachment; filename= {att['filename']}")
+            msg.attach(part)
 
     try:
         logging.info("Attempting direct SMTP connection on %s:%d...", smtp_host, smtp_port)

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft } from 'lucide-react';
+import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X } from 'lucide-react';
 import { Button } from './../components/ui/button';
 import { formatImageUrl } from './../utils/api';
 import { useProgress } from './../components/ui/ProgressToast';
@@ -56,14 +56,16 @@ const OrderDetailsPage = () => {
   const handleSubmitReturn = async (e) => {
     e.preventDefault();
     if (!reason) return;
+    if (!image) {
+      toast.error('Proof image is mandatory for returns');
+      return;
+    }
     setSubmittingReturn(true);
     try {
       const formData = new FormData();
       const finalReason = reason === 'Other' ? `Other: ${otherDetails}` : reason;
       formData.append('reason', finalReason);
-      if (image) {
-        formData.append('image', image);
-      }
+      formData.append('image', image);
       await apiClient.post(`/orders/${id}/return`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -393,7 +395,7 @@ const OrderDetailsPage = () => {
                     )}
 
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Upload Proof Image (Optional)</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Upload Proof Image *</label>
                       <div className="relative group border-2 border-dashed border-slate-200 hover:border-indigo-500 transition-all duration-300 rounded-[2rem] p-4 flex flex-col items-center justify-center bg-white hover:bg-indigo-50/10 cursor-pointer min-h-[140px]">
                         <input
                           type="file"

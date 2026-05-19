@@ -43,9 +43,10 @@ const Dashboard = () => {
       try {
         await authService.deleteAccount();
         logout();
+        toast.success("Account deleted successfully");
         navigate('/');
       } catch (err) {
-        alert("Failed to delete account. Please try again.");
+        toast.error("Failed to delete account. Please try again.");
       }
     };
     window.addEventListener('request-account-deletion', handleDeleteAccount);

@@ -309,7 +309,7 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
             if effective_status == "shipped":
                 subj, body = order_shipped_email(cust_name, order_dict)
             elif effective_status == "delivered":
-                subj, body = order_delivered_email(cust_name, order_dict)
+                subj, body, att = order_delivered_email(cust_name, order_dict)
             elif effective_status == "refunded" and new_status == "return_approved":
                 subj, body = return_approved_email(cust_name, str(order.order_number), float(order.total_amount or 0))
             elif effective_status == "return_rejected":
@@ -317,7 +317,10 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
             elif effective_status == "cancelled":
                 subj, body = order_cancelled_email(cust_name, str(order.order_number), float(order.total_amount or 0))
             if subj and body:
-                asyncio.create_task(_send(cust.email, subj, body))
+                if effective_status == "delivered" and 'att' in locals():
+                    asyncio.create_task(_send(cust.email, subj, body, attachments=att))
+                else:
+                    asyncio.create_task(_send(cust.email, subj, body))
     except Exception:
         pass
 

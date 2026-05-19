@@ -1,9 +1,9 @@
 """Transactional email templates for DurgaShakti Foils."""
 from datetime import datetime, timezone, timedelta
 
-LOGO_URL = "https://durgashakti-foils.vercel.app/favicon.png"
-BRAND_COLOR = "#b45309"
-BRAND_DARK = "#1e1b4b"
+LOGO_URL = "https://durgashakti-foils.vercel.app/img2.png"
+BRAND_COLOR = "#ea580c" # Match logo orange/red
+BRAND_DARK = "#9a3412"
 SITE_URL = "https://durgashakti-foils.vercel.app"
 
 def _base(content: str, title: str) -> str:
@@ -15,10 +15,8 @@ def _base(content: str, title: str) -> str:
 <tr><td align="center">
 <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
   <!-- Header -->
-  <tr><td style="background:linear-gradient(135deg,{BRAND_DARK} 0%,{BRAND_COLOR} 100%);padding:32px 40px;text-align:center;">
-    <img src="{LOGO_URL}" width="120" height="120" style="border-radius:50%;border:4px solid rgba(255,255,255,0.3);margin-bottom:16px;object-fit:cover;" alt="DurgaShakti Foils Logo">
-    <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:800;letter-spacing:1px;">DurgaShakti Foils</h1>
-    <p style="margin:4px 0 0;color:rgba(255,255,255,0.75);font-size:13px;">Premium Quality Packaging Solutions</p>
+  <tr><td style="background:#ffffff;padding:32px 40px;text-align:center;border-bottom:1px solid #f3f4f6;">
+    <img src="{LOGO_URL}" width="280" style="margin:0 auto;object-fit:contain;display:block;" alt="DurgaShakti Foils Logo">
   </td></tr>
   <!-- Body -->
   <tr><td style="padding:36px 40px;">{content}</td></tr>
@@ -218,7 +216,31 @@ def order_shipped_email(name: str, order: dict) -> tuple[str, str]:
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. ORDER DELIVERED + RECEIPT
 # ─────────────────────────────────────────────────────────────────────────────
-def order_delivered_email(name: str, order: dict) -> tuple[str, str]:
+def generate_invoice_html(order: dict) -> str:
+    order_num = order.get("order_number", "")
+    items_html = ""
+    for item in order.get("items", []):
+        items_html += f"<tr><td>{item.get('product_name')}</td><td>{item.get('quantity')}</td><td>{float(item.get('price', 0)):.2f}</td><td>{float(item.get('price', 0))*int(item.get('quantity', 0)):.2f}</td></tr>"
+    return f"""
+    <html>
+    <head><style>
+    body {{ font-family: Arial, sans-serif; }}
+    table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+    th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+    th {{ background-color: #f3f4f6; }}
+    </style></head>
+    <body>
+    <h2>Invoice - {order_num}</h2>
+    <p>Thank you for shopping with DurgaShakti Foils Pvt Ltd.</p>
+    <table>
+    <tr><th>Product</th><th>Qty</th><th>Unit Price (INR)</th><th>Total (INR)</th></tr>
+    {items_html}
+    </table>
+    <h3 style="text-align:right;">Grand Total: INR {float(order.get('total_amount', 0)):.2f}</h3>
+    </body></html>
+    """
+
+def order_delivered_email(name: str, order: dict) -> tuple[str, str, list]:
     first = name.split()[0] if name else "Customer"
     order_num = order.get("order_number", "N/A")
     items = order.get("items", [])
@@ -251,7 +273,26 @@ def order_delivered_email(name: str, order: dict) -> tuple[str, str]:
     </div>
     {_cta_button("View Order / Return", f"{SITE_URL}/order/{order_num}")}
     <p style="color:#9ca3af;font-size:12px;text-align:center;">Thank you for shopping with DurgaShakti Foils! 💛</p>"""
-    return f"Delivered! Order {order_num} Receipt | DurgaShakti Foils", _base(content, "Order Delivered")
+    
+    attachments = []
+    try:
+        from xhtml2pdf import pisa
+        import io, base64
+        pdf_file = io.BytesIO()
+        invoice_html = generate_invoice_html(order)
+        pisa_status = pisa.CreatePDF(io.StringIO(invoice_html), dest=pdf_file)
+        if not pisa_status.err:
+            pdf_bytes = pdf_file.getvalue()
+            b64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+            attachments.append({
+                "filename": f"Invoice_{order_num}.pdf",
+                "content": f"data:application/pdf;base64,{b64_pdf}"
+            })
+    except Exception as e:
+        print("Failed to generate PDF:", e)
+        pass
+
+    return f"Delivered! Order {order_num} Receipt | DurgaShakti Foils", _base(content, "Order Delivered"), attachments
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -351,3 +392,19 @@ def return_rejected_email(name: str, order_num: str, admin_message: str = "") ->
     <p style="color:#374151;font-size:14px;text-align:center;">If you have questions, please <a href="{SITE_URL}/contact" style="color:{BRAND_COLOR};">contact our support team</a>.</p>
     {_cta_button("Contact Support", SITE_URL + "/contact")}"""
     return f"Return Request Update - {order_num} | DurgaShakti Foils", _base(content, "Return Rejected")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 11. ACCOUNT DELETED
+# ─────────────────────────────────────────────────────────────────────────────
+def account_deleted_email(name: str) -> tuple[str, str]:
+    first = name.split()[0] if name else "Customer"
+    content = f"""
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:48px;margin-bottom:8px;">👋</div>
+      <p style="font-size:22px;font-weight:800;color:{BRAND_DARK};margin:12px 0 4px;">Account Deleted</p>
+      <p style="color:#6b7280;font-size:14px;">Hi {first}, your account has been successfully deleted.</p>
+    </div>
+    <p style="color:#374151;font-size:14px;line-height:1.6;">We're sorry to see you go. Your personal information has been removed from our systems in accordance with our privacy policy.</p>
+    <p style="color:#374151;font-size:14px;line-height:1.6;">If you ever decide to return, we'll be here with open arms!</p>
+    {_cta_button("Visit Website", SITE_URL)}"""
+    return "Account Successfully Deleted | DurgaShakti Foils", _base(content, "Account Deleted")

@@ -18,10 +18,21 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { to, subject, body, smtp_user, smtp_pass } = req.body;
+  const { to, subject, body, smtp_user, smtp_pass, attachments } = req.body;
 
   if (!to || !subject || !body || !smtp_user || !smtp_pass) {
     return res.status(400).json({ error: 'Missing required parameters' });
+  }
+
+  const mailOptions = {
+    from: `DurgaShakti Foils <${smtp_user}>`,
+    to,
+    subject,
+    html: body,
+  };
+
+  if (attachments && Array.isArray(attachments)) {
+    mailOptions.attachments = attachments;
   }
 
   // Try Port 587 (TLS)
@@ -39,12 +50,7 @@ module.exports = async (req, res) => {
       greetingTimeout: 8000,
     });
 
-    await transporter.sendMail({
-      from: `DurgaShakti Foils <${smtp_user}>`,
-      to,
-      subject,
-      html: body,
-    });
+    await transporter.sendMail(mailOptions);
 
     console.log(`Vercel Relay: SUCCESS on port 587!`);
     return res.status(200).json({ message: 'Email sent successfully via Vercel Port 587!' });
@@ -65,12 +71,7 @@ module.exports = async (req, res) => {
         greetingTimeout: 8000,
       });
 
-      await transporter.sendMail({
-        from: `DurgaShakti Foils <${smtp_user}>`,
-        to,
-        subject,
-        html: body,
-      });
+      await transporter.sendMail(mailOptions);
 
       console.log(`Vercel Relay: SUCCESS on fallback port 465!`);
       return res.status(200).json({ message: 'Email sent successfully via Vercel Fallback Port 465!' });

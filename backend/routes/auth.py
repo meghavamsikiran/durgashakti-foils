@@ -52,9 +52,9 @@ async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(UserModel).where(UserModel.email == credentials.email))
     user_row = result.scalar_one_or_none()
     if not user_row:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Account not found. Please sign up.")
     if not verify_password(credentials.password, user_row.password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
     if user_row.is_active is False:
         raise HTTPException(status_code=403, detail="Account is disabled. Please contact support.")
     d = row_to_dict(user_row)
@@ -104,8 +104,21 @@ async def delete_account(current_user: UserSchema = Depends(get_current_user), d
     if u.role == "SUPER_ADMIN":
         raise HTTPException(status_code=400, detail="Cannot delete Super Admin account")
         
+    user_email = u.email
+    user_name = u.full_name
+
     await db.delete(u)
     await db.flush()
+
+    # Send account deletion email
+    try:
+        from email_templates import account_deleted_email
+        import asyncio
+        sub, html = account_deleted_email(user_name or "Valued Customer")
+        asyncio.create_task(send_email(user_email, sub, html))
+    except Exception:
+        pass
+        
     return {"message": "Account deleted permanently"}
 
 
