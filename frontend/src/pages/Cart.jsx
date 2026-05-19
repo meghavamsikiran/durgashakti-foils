@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { useCart } from '../contexts/CartContext';
 import { toast } from 'sonner';
 import api, { formatImageUrl } from '../utils/api';
+import PageLoader from '../components/ui/PageLoader';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ const Cart = () => {
   if (loadingProducts) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading cart...</p>
+        <PageLoader />
       </div>
     );
   }

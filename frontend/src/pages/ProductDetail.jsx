@@ -7,6 +7,7 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import api, { formatImageUrl } from '../utils/api';
+import PageLoader from '../components/ui/PageLoader';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -89,8 +90,8 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
+        <PageLoader />
       </div>
     );
   }
