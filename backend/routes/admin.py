@@ -679,6 +679,85 @@ async def get_gst_imports(admin: UserSchema = Depends(require_permission("access
     return [row_to_dict(i) for i in res.scalars().all()]
 
 
+@router.post("/admin/gst/seed-sample")
+async def seed_sample_gst(admin: UserSchema = Depends(require_permission("access_gst_reports")), db: AsyncSession = Depends(get_db)):
+    if admin.role != "SUPER_ADMIN":
+        raise HTTPException(status_code=403, detail="Super admin only")
+    
+    import_id = str(uuid.uuid4())
+    samples = [
+        {
+            "invoice_number": "INV-2026-003",
+            "invoice_date": "2026-05-10",
+            "customer_name": "Aman Packaging Industries",
+            "taxable_amount": 45000.0,
+            "gst_amount": 8100.0,
+            "cgst_amount": 4050.0,
+            "sgst_amount": 4050.0,
+            "igst_amount": 0.0,
+            "total_amount": 53100.0
+        },
+        {
+            "invoice_number": "INV-2026-004",
+            "invoice_date": "2026-05-12",
+            "customer_name": "Balaji Retail Distributors",
+            "taxable_amount": 12500.0,
+            "gst_amount": 2250.0,
+            "cgst_amount": 1125.0,
+            "sgst_amount": 1125.0,
+            "igst_amount": 0.0,
+            "total_amount": 14750.0
+        },
+        {
+            "invoice_number": "INV-2026-005",
+            "invoice_date": "2026-05-15",
+            "customer_name": "Apex Food Packagers LLC",
+            "taxable_amount": 85000.0,
+            "gst_amount": 15300.0,
+            "cgst_amount": 0.0,
+            "sgst_amount": 0.0,
+            "igst_amount": 15300.0,
+            "total_amount": 100300.0
+        }
+    ]
+    
+    inserted = 0
+    failed = 0
+    for s in samples:
+        existing = await db.execute(select(GstRecordModel).where(GstRecordModel.invoice_number == s["invoice_number"]))
+        if existing.scalar_one_or_none():
+            failed += 1
+            continue
+            
+        g = GstRecordModel(
+            id=str(uuid.uuid4()),
+            import_id=import_id,
+            invoice_number=s["invoice_number"],
+            invoice_date=s["invoice_date"],
+            customer_name=s["customer_name"],
+            taxable_amount=s["taxable_amount"],
+            gst_amount=s["gst_amount"],
+            cgst_amount=s["cgst_amount"],
+            sgst_amount=s["sgst_amount"],
+            igst_amount=s["igst_amount"],
+            total_amount=s["total_amount"],
+        )
+        db.add(g)
+        inserted += 1
+        
+    if inserted > 0:
+        db.add(GstImportModel(
+            id=import_id, 
+            file_name="seed_sample.csv", 
+            uploaded_by=admin.id, 
+            record_count=inserted, 
+            error_count=failed
+        ))
+        await db.flush()
+        
+    return {"import_id": import_id, "record_count": inserted, "error_count": failed}
+
+
 @router.get("/admin/audit-logs")
 async def get_audit_logs(page: int = Query(1), limit: int = Query(50), search: Optional[str] = None, admin: UserSchema = Depends(require_permission("access_gst_reports")), db: AsyncSession = Depends(get_db)):
     if admin.role != "SUPER_ADMIN":
