@@ -71,8 +71,9 @@ const Cart = () => {
 
   const handleConfirmRemove = async () => {
     if (!removingProductId) return;
-    await handleRemove(removingProductId);
-    setRemovingProductId(null);
+    const productId = removingProductId;
+    setRemovingProductId(null); // Close modal instantly for optimistic UI
+    await handleRemove(productId);
   };
 
   const calculateTotal = () => {

@@ -298,39 +298,49 @@ const ProductDetail = () => {
 
               if (cartQty > 0) {
                 return (
-                  <div className="mb-6 flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-300">
+                  <div className="mb-6 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-300">
                     <label className="text-sm font-semibold block text-indigo-900 bg-indigo-50 px-3 py-1 rounded-sm w-max">
                       Item in Cart
                     </label>
-                    <div className="flex items-center justify-between border-2 border-indigo-500 bg-white rounded-full h-14 w-[160px] px-4 shadow-[0_0_15px_rgba(99,102,241,0.2)] select-none">
-                      <button
-                        onClick={async () => {
-                          if (cartQty === 1) {
-                            await removeFromCart(product.id);
-                            toast.success('Removed from cart');
-                          } else {
-                            await updateCartItem(product.id, cartQty - 1);
-                          }
-                        }}
-                        className="h-full flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-colors focus:outline-none cursor-pointer"
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div className="flex items-center justify-between border-2 border-indigo-500 bg-white rounded-full h-14 w-[160px] px-4 shadow-[0_0_15px_rgba(99,102,241,0.2)] select-none">
+                        <button
+                          onClick={async () => {
+                            if (cartQty === 1) {
+                              await removeFromCart(product.id);
+                              toast.success('Removed from cart');
+                            } else {
+                              await updateCartItem(product.id, cartQty - 1);
+                            }
+                          }}
+                          className="h-full flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-colors focus:outline-none cursor-pointer"
+                        >
+                          {cartQty === 1 ? <Trash2 className="w-5 h-5 hover:text-rose-600 transition-colors" /> : <Minus className="w-5 h-5" />}
+                        </button>
+                        <span className="font-black text-slate-900 text-2xl tabular-nums tracking-tight">
+                          {cartQty}
+                        </span>
+                        <button
+                          onClick={async () => {
+                            if (cartQty >= Number(product.stock_quantity)) {
+                              toast.error(`Only ${product.stock_quantity} units available`);
+                              return;
+                            }
+                            await updateCartItem(product.id, cartQty + 1);
+                          }}
+                          className="h-full flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-colors focus:outline-none cursor-pointer"
+                        >
+                          <Plus className="w-5 h-5" />
+                        </button>
+                      </div>
+                      
+                      <Button
+                        onClick={() => navigate('/cart')}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white h-14 px-8 rounded-full font-bold shadow-[0_0_15px_rgba(79,70,229,0.3)] transition-transform active:scale-95 cursor-pointer text-base tracking-wide flex items-center gap-2"
                       >
-                        {cartQty === 1 ? <Trash2 className="w-5 h-5 hover:text-rose-600 transition-colors" /> : <Minus className="w-5 h-5" />}
-                      </button>
-                      <span className="font-black text-slate-900 text-2xl tabular-nums tracking-tight">
-                        {cartQty}
-                      </span>
-                      <button
-                        onClick={async () => {
-                          if (cartQty >= Number(product.stock_quantity)) {
-                            toast.error(`Only ${product.stock_quantity} units available`);
-                            return;
-                          }
-                          await updateCartItem(product.id, cartQty + 1);
-                        }}
-                        className="h-full flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-colors focus:outline-none cursor-pointer"
-                      >
-                        <Plus className="w-5 h-5" />
-                      </button>
+                        <ShoppingCart className="w-5 h-5" />
+                        Go to Cart
+                      </Button>
                     </div>
                   </div>
                 );
