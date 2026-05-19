@@ -70,10 +70,19 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
+    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+
+    if (!clientId || clientId === 'your_google_client_id_here' || clientId.trim() === '') {
+      toast.error('Google Sign-In is not configured yet!', {
+        description: 'Please set the REACT_APP_GOOGLE_CLIENT_ID environment variable in your deployment settings.',
+        duration: 8000,
+      });
+      return;
+    }
+
     try {
       const client = window.google?.accounts?.oauth2?.initTokenClient({
-        // Durga Shakti Foils secure public oauth client ID (fallbacks securely to standard client token)
-        client_id: '908316277983-fsmv126938a.apps.googleusercontent.com', 
+        client_id: clientId, 
         scope: 'openid email profile',
         callback: async (tokenResponse) => {
           if (tokenResponse && tokenResponse.access_token) {
