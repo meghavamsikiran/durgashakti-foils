@@ -291,7 +291,7 @@ const ProductDetail = () => {
               </ul>
             </div>
 
-            {/* Cart Sync Logic: If item is in cart, show capsule selector, otherwise show Add to Cart */}
+            {/* Cart Sync Logic: If item is in cart, show Go to Cart only, otherwise show Add to Cart */}
             {(() => {
               const cartItem = cart?.items?.find(item => item.product_id === product?.id);
               const cartQty = cartItem ? cartItem.quantity : 0;
@@ -300,40 +300,9 @@ const ProductDetail = () => {
                 return (
                   <div className="mb-6 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-300">
                     <label className="text-sm font-semibold block text-indigo-900 bg-indigo-50 px-3 py-1 rounded-sm w-max">
-                      Item in Cart
+                      Item added to Cart
                     </label>
-                    <div className="flex flex-wrap items-center gap-4">
-                      <div className="flex items-center justify-between border-2 border-indigo-500 bg-white rounded-full h-14 w-[160px] px-4 shadow-[0_0_15px_rgba(99,102,241,0.2)] select-none">
-                        <button
-                          onClick={async () => {
-                            if (cartQty === 1) {
-                              await removeFromCart(product.id);
-                              toast.success('Removed from cart');
-                            } else {
-                              await updateCartItem(product.id, cartQty - 1);
-                            }
-                          }}
-                          className="h-full flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-colors focus:outline-none cursor-pointer"
-                        >
-                          {cartQty === 1 ? <Trash2 className="w-5 h-5 hover:text-rose-600 transition-colors" /> : <Minus className="w-5 h-5" />}
-                        </button>
-                        <span className="font-black text-slate-900 text-2xl tabular-nums tracking-tight">
-                          {cartQty}
-                        </span>
-                        <button
-                          onClick={async () => {
-                            if (cartQty >= Number(product.stock_quantity)) {
-                              toast.error(`Only ${product.stock_quantity} units available`);
-                              return;
-                            }
-                            await updateCartItem(product.id, cartQty + 1);
-                          }}
-                          className="h-full flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-colors focus:outline-none cursor-pointer"
-                        >
-                          <Plus className="w-5 h-5" />
-                        </button>
-                      </div>
-                      
+                    <div className="flex items-center gap-4">
                       <Button
                         onClick={() => navigate('/cart')}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white h-14 px-8 rounded-full font-bold shadow-[0_0_15px_rgba(79,70,229,0.3)] transition-transform active:scale-95 cursor-pointer text-base tracking-wide flex items-center gap-2"
@@ -355,18 +324,20 @@ const ProductDetail = () => {
                         variant="outline"
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                         disabled={quantity <= 1}
+                        className="w-12 h-12 p-0 flex items-center justify-center"
                         data-testid="decrease-quantity"
                       >
-                        -
+                        {quantity <= 1 ? <Trash2 className="w-4 h-4 text-slate-400" /> : <Minus className="w-4 h-4" />}
                       </Button>
                       <span className="text-xl font-semibold w-12 text-center" data-testid="product-quantity">{quantity}</span>
                       <Button
                         variant="outline"
                         onClick={() => setQuantity(Math.min(quantity + 1, Number(product.stock_quantity) || 999))}
                         disabled={quantity >= Number(product.stock_quantity)}
+                        className="w-12 h-12 p-0 flex items-center justify-center"
                         data-testid="increase-quantity"
                       >
-                        +
+                        <Plus className="w-4 h-4" />
                       </Button>
                       {Number(product.stock_quantity) > 0 && (
                         <span className="text-sm text-muted-foreground">{product.stock_quantity} available</span>
