@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Check, ArrowLeft, Heart } from 'lucide-react';
+import { ShoppingCart, Check, ArrowLeft, Heart, Trash2, Plus, Minus } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,7 +16,7 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const { addToCart } = useCart();
+  const { cart, addToCart, updateCartItem, removeFromCart } = useCart();
   const { user, refreshUser } = useAuth();
   const [wishlisting, setWishlisting] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
@@ -291,59 +291,109 @@ const ProductDetail = () => {
               </ul>
             </div>
 
-            <div className="mb-6">
-              <label className="text-sm font-semibold mb-2 block">Quantity</label>
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={quantity <= 1}
-                  data-testid="decrease-quantity"
-                >
-                  -
-                </Button>
-                <span className="text-xl font-semibold w-12 text-center" data-testid="product-quantity">{quantity}</span>
-                <Button
-                  variant="outline"
-                  onClick={() => setQuantity(Math.min(quantity + 1, Number(product.stock_quantity) || 999))}
-                  disabled={quantity >= Number(product.stock_quantity)}
-                  data-testid="increase-quantity"
-                >
-                  +
-                </Button>
-                {Number(product.stock_quantity) > 0 && (
-                  <span className="text-sm text-muted-foreground">{product.stock_quantity} available</span>
-                )}
-              </div>
-            </div>
+            {/* Cart Sync Logic: If item is in cart, show capsule selector, otherwise show Add to Cart */}
+            {(() => {
+              const cartItem = cart?.items?.find(item => item.product_id === product?.id);
+              const cartQty = cartItem ? cartItem.quantity : 0;
 
-            <div className="flex gap-4">
-              <Button
-                onClick={handleAddToCart}
-                disabled={adding || Number(product.stock_quantity) <= 0 || product.in_stock === false}
-                className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-sm font-semibold"
-                data-testid="add-to-cart-detail-button"
-              >
-                {adding ? (
-                  'Adding...'
-                ) : (Number(product.stock_quantity) <= 0 || product.in_stock === false) ? (
-                  'Out of Stock'
-                ) : (
-                  <>
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Add to Cart
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleToggleWishlist}
-                disabled={wishlisting}
-                className={`w-12 h-12 p-0 rounded-sm flex items-center justify-center transition-all ${isWishlisted ? 'border-rose-500 text-rose-500 bg-rose-50' : 'text-slate-500 hover:text-rose-500'}`}
-              >
-                <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''} ${wishlisting ? 'animate-pulse' : ''}`} />
-              </Button>
-            </div>
+              if (cartQty > 0) {
+                return (
+                  <div className="mb-6 flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-300">
+                    <label className="text-sm font-semibold block text-indigo-900 bg-indigo-50 px-3 py-1 rounded-sm w-max">
+                      Item in Cart
+                    </label>
+                    <div className="flex items-center justify-between border-2 border-indigo-500 bg-white rounded-full h-14 w-[160px] px-4 shadow-[0_0_15px_rgba(99,102,241,0.2)] select-none">
+                      <button
+                        onClick={async () => {
+                          if (cartQty === 1) {
+                            await removeFromCart(product.id);
+                            toast.success('Removed from cart');
+                          } else {
+                            await updateCartItem(product.id, cartQty - 1);
+                          }
+                        }}
+                        className="h-full flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-colors focus:outline-none cursor-pointer"
+                      >
+                        {cartQty === 1 ? <Trash2 className="w-5 h-5 hover:text-rose-600 transition-colors" /> : <Minus className="w-5 h-5" />}
+                      </button>
+                      <span className="font-black text-slate-900 text-2xl tabular-nums tracking-tight">
+                        {cartQty}
+                      </span>
+                      <button
+                        onClick={async () => {
+                          if (cartQty >= Number(product.stock_quantity)) {
+                            toast.error(`Only ${product.stock_quantity} units available`);
+                            return;
+                          }
+                          await updateCartItem(product.id, cartQty + 1);
+                        }}
+                        className="h-full flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-colors focus:outline-none cursor-pointer"
+                      >
+                        <Plus className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <>
+                  <div className="mb-6">
+                    <label className="text-sm font-semibold mb-2 block">Quantity</label>
+                    <div className="flex items-center gap-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        disabled={quantity <= 1}
+                        data-testid="decrease-quantity"
+                      >
+                        -
+                      </Button>
+                      <span className="text-xl font-semibold w-12 text-center" data-testid="product-quantity">{quantity}</span>
+                      <Button
+                        variant="outline"
+                        onClick={() => setQuantity(Math.min(quantity + 1, Number(product.stock_quantity) || 999))}
+                        disabled={quantity >= Number(product.stock_quantity)}
+                        data-testid="increase-quantity"
+                      >
+                        +
+                      </Button>
+                      {Number(product.stock_quantity) > 0 && (
+                        <span className="text-sm text-muted-foreground">{product.stock_quantity} available</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <Button
+                      onClick={handleAddToCart}
+                      disabled={adding || Number(product.stock_quantity) <= 0 || product.in_stock === false}
+                      className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-sm font-semibold cursor-pointer"
+                      data-testid="add-to-cart-detail-button"
+                    >
+                      {adding ? (
+                        'Adding...'
+                      ) : (Number(product.stock_quantity) <= 0 || product.in_stock === false) ? (
+                        'Out of Stock'
+                      ) : (
+                        <>
+                          <ShoppingCart className="w-4 h-4 mr-2" />
+                          Add to Cart
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleToggleWishlist}
+                      disabled={wishlisting}
+                      className={`w-12 h-12 p-0 rounded-sm flex items-center justify-center transition-all cursor-pointer ${isWishlisted ? 'border-rose-500 text-rose-500 bg-rose-50' : 'text-slate-500 hover:text-rose-500'}`}
+                    >
+                      <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''} ${wishlisting ? 'animate-pulse' : ''}`} />
+                    </Button>
+                  </div>
+                </>
+              );
+            })()}
 
             {(Number(product.stock_quantity) <= 0 || product.in_stock === false) && (
               <p className="text-sm text-destructive mt-4 font-semibold">This product is currently out of stock</p>

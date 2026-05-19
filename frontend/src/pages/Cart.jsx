@@ -167,7 +167,6 @@ const Cart = () => {
                                 e.stopPropagation();
                                 handleDecrement(item.product_id, item.quantity);
                               }}
-                              disabled={loading}
                               className="h-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer disabled:opacity-50"
                               title={item.quantity === 1 ? "Remove item" : "Decrease quantity"}
                               data-testid={`decrease-quantity-${product.id}`}
@@ -186,7 +185,6 @@ const Cart = () => {
                                 e.stopPropagation();
                                 handleIncrement(item.product_id, item.quantity, product.stock_quantity);
                               }}
-                              disabled={loading}
                               className="h-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer disabled:opacity-50"
                               title="Increase quantity"
                               data-testid={`increase-quantity-${product.id}`}

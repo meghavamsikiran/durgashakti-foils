@@ -18,8 +18,7 @@ const InquiriesPage = () => {
     try {
       setLoading(true);
       const response = await apiClient.get('/admin/contacts', {
-        params: { page: pageNum, limit: PAGE_SIZE },
-        silent: true
+        params: { page: pageNum, limit: PAGE_SIZE }
       });
       setInquiries(response.data.items || []);
       setTotal(response.data.total || 0);

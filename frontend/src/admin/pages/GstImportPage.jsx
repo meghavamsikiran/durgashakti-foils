@@ -38,7 +38,7 @@ const GstImportPage = () => {
   const loadHistory = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/admin/gst/imports', { silent: true });
+      const response = await apiClient.get('/admin/gst/imports');
       setHistory(response.data || []);
       setPageError(null);
     } catch (err) {
