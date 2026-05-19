@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import TrishoolSVG from './TrishoolSVG';
 
-const TrishoolLoader = () => {
-  const [progress, setProgress] = useState(0);
+const TrishoolLoader = ({ isProcessing = false }) => {
+  const duration = 3.5; // Slowed down from 2.2
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -17,57 +17,42 @@ const TrishoolLoader = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
-    let current = 0;
-    const interval = setInterval(() => {
-      if (current < 65) {
-        // Swift initial sweep
-        current += Math.random() * 6 + 3;
-      } else if (current < 85) {
-        // Decelerating
-        current += Math.random() * 2 + 0.5;
-      } else if (current < 97) {
-        // Slow creep while waiting for complete data load
-        current += Math.random() * 0.2 + 0.03;
-      }
-      setProgress(Math.min(current, 98));
-    }, 70);
-
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <div 
       className="fixed top-0 left-0 right-0 z-[99999] pointer-events-none overflow-hidden"
-      style={{ height: isMobile ? '12px' : '40px' }}
+      style={{ height: isMobile ? '12px' : '40px' }} // 12px on mobile, 40px on desktop
     >
-      {/* Dynamic speed trail ending exactly at the Trishul's rear */}
-      <div 
-        className="absolute left-0 top-0 h-full"
-        style={{
-          width: `${progress}%`,
-          height: isMobile ? '1.5px' : '3px',
-          background: 'linear-gradient(90deg, transparent, #FF8F00 50%, #FFC107 100%)',
-          transition: 'width 100ms linear',
-          opacity: 0.9,
+      <motion.div
+        initial={{ x: '-100vw', opacity: 0 }}
+        animate={{ x: ['0vw', '0vw', '100vw', '100vw'], opacity: [0, 1, 1, 0] }}
+        transition={{ 
+          duration, 
+          ease: "linear", 
+          repeat: Infinity,
+          times: [0, 0.1, 0.9, 1]
         }}
-      />
-
-      {/* Trishul Leader Icon */}
-      <div
-        className="absolute top-0 h-full flex items-center"
+        className="absolute left-0 top-0 h-full flex items-center"
         style={{
-          left: `${progress}%`,
-          width: isMobile ? '24px' : '75px',
-          marginLeft: isMobile ? '-12px' : '-37px', // Centering offset
-          transition: 'left 100ms linear',
-          willChange: 'left',
+          width: isMobile ? '24px' : '75px', // 24px on mobile, 75px on desktop
+          willChange: 'transform, opacity',
+          transform: 'translateZ(0)',
         }}
       >
+        {/* Clean, sharp speed trail without heavy blurs */}
+        <div 
+          className="absolute right-full"
+          style={{
+            width: '60vw',
+            height: isMobile ? '1px' : '2px', // 1px on mobile, 2px on desktop
+            background: 'linear-gradient(90deg, transparent, #FF8F00, #FFC107)',
+            marginRight: isMobile ? '-10px' : '-35px', // Scale the overlap spacing
+          }}
+        />
+
         <div className="relative w-full h-full z-10 flex items-center justify-center">
           <TrishoolSVG width="100%" height="auto" />
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
