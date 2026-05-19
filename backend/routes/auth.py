@@ -52,9 +52,9 @@ async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(UserModel).where(UserModel.email == credentials.email))
     user_row = result.scalar_one_or_none()
     if not user_row:
-        raise HTTPException(status_code=401, detail="Account not found. Please sign up.")
+        raise HTTPException(status_code=401, detail="Account doesnot exists with given username, you want to create ?")
     if not verify_password(credentials.password, user_row.password):
-        raise HTTPException(status_code=401, detail="Incorrect password. Please try again.")
+        raise HTTPException(status_code=401, detail="Wrong username/password")
     if user_row.is_active is False:
         raise HTTPException(status_code=403, detail="Account is disabled. Please contact support.")
     d = row_to_dict(user_row)

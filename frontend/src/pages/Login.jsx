@@ -8,6 +8,9 @@ import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 
 const normalizeAuthError = (error) => {
+  if (error?.message) {
+    return error.message;
+  }
   const detail = error?.response?.data?.detail;
   if (Array.isArray(detail)) {
     return detail.map((entry) => entry?.msg || entry?.type || 'Validation error').join(', ');
