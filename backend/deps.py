@@ -357,6 +357,21 @@ async def create_notification(db: AsyncSession, user_id: str, title: str, messag
     db.add(notif)
     await db.flush()
 
+import urllib.request
+import json
+import asyncio
+
+def _send_vercel_relay(url: str, payload: dict):
+    data = json.dumps(payload).encode('utf-8')
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={'Content-Type': 'application/json'},
+        method='POST'
+    )
+    with urllib.request.urlopen(req, timeout=12) as response:
+        return response.status, response.read().decode('utf-8')
+
 async def send_email(to_email: str, subject: str, body: str):
     smtp_host = os.environ.get('SMTP_HOST', '')
     smtp_port = int(os.environ.get('SMTP_PORT', 587))
@@ -371,16 +386,35 @@ async def send_email(to_email: str, subject: str, body: str):
             return False, "SMTP not configured or placeholder values detected on production."
         logging.info("--- MOCK EMAIL ---  To: %s  Subject: %s", to_email, subject)
         return True, "Mock Sent"
-        
+
+    # Route 1: Try high-deliverability Vercel HTTPS SMTP Relay (never blocked by Render)
+    try:
+        vercel_url = "https://durgashakti-foils.vercel.app/api/send-email"
+        logging.info("Attempting email dispatch via Vercel HTTPS Relay to %s...", to_email)
+        payload = {
+            "to": to_email,
+            "subject": subject,
+            "body": body,
+            "smtp_user": smtp_user,
+            "smtp_pass": smtp_pass
+        }
+        status, res_text = await asyncio.to_thread(_send_vercel_relay, vercel_url, payload)
+        if status == 200:
+            logging.info("Email successfully sent via Vercel HTTPS Relay: %s", res_text)
+            return True, "Sent"
+        logging.warning("Vercel Relay returned non-200 status (%d): %s. Falling back to local SMTP...", status, res_text)
+    except Exception as ev:
+        logging.warning("Vercel HTTPS Relay failed: %s. Falling back to direct SMTP...", ev)
+
+    # Route 2: Fallback to direct SMTP (usually port 587)
     msg = MIMEMultipart()
     msg['From'] = smtp_from
     msg['To'] = to_email
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'html'))
 
-    # Try standard SMTP (usually port 587)
     try:
-        logging.info("Attempting SMTP connection via standard smtplib.SMTP on %s:%d...", smtp_host, smtp_port)
+        logging.info("Attempting direct SMTP connection on %s:%d...", smtp_host, smtp_port)
         if smtp_port == 465:
             server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10)
         else:
@@ -390,23 +424,23 @@ async def send_email(to_email: str, subject: str, body: str):
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
-        logging.info("Email sent successfully to %s via port %d", to_email, smtp_port)
+        logging.info("Email sent successfully directly via port %d", smtp_port)
         return True, "Sent"
     except Exception as e1:
-        logging.warning("SMTP Port %d failed: %s. Attempting fallback to SMTP_SSL on Port 465...", smtp_port, e1)
+        logging.warning("Direct SMTP Port %d failed: %s. Attempting fallback to SMTP_SSL on Port 465...", smtp_port, e1)
         
-        # Fallback to SSL on 465 (highly reliable in blocked cloud environments)
+        # Fallback to SSL on 465
         try:
-            logging.info("Attempting fallback SMTP_SSL connection on %s:465...", smtp_host)
+            logging.info("Attempting direct fallback SMTP_SSL connection on %s:465...", smtp_host)
             server = smtplib.SMTP_SSL(smtp_host, 465, timeout=10)
             server.login(smtp_user, smtp_pass)
             server.send_message(msg)
             server.quit()
-            logging.info("Email sent successfully to %s via fallback port 465", to_email)
+            logging.info("Email sent successfully directly via fallback port 465")
             return True, "Sent"
         except Exception as e2:
-            err_msg = f"Port {smtp_port} failed ({type(e1).__name__}: {e1}). Fallback Port 465 failed ({type(e2).__name__}: {e2})."
-            logging.error("Failed to send email to %s: %s", to_email, err_msg)
+            err_msg = f"Vercel Relay failed. Direct Port {smtp_port} failed ({type(e1).__name__}: {e1}). Direct Fallback Port 465 failed ({type(e2).__name__}: {e2})."
+            logging.error("All email delivery routes failed to send to %s: %s", to_email, err_msg)
             return False, err_msg
 
 
