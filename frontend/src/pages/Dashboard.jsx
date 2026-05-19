@@ -79,7 +79,7 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24 pt-12">
         <ProfileHeader user={user} activeTab={activeTab} />
         
-        <div className="flex flex-col lg:flex-row gap-12">
+        <div className="flex flex-col xl:flex-row gap-8 xl:gap-12">
           <Sidebar 
             user={user} 
             activeTab={activeTab} 

@@ -97,10 +97,10 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Addresses</h2>
         {!showAddressForm && (
-          <Button onClick={() => setShowAddressForm(true)} className="rounded-2xl h-14 px-8 gap-2 shadow-xl shadow-indigo-100 font-black uppercase tracking-widest bg-indigo-600 text-white">
+          <Button onClick={() => setShowAddressForm(true)} className="rounded-2xl h-14 px-8 gap-2 shadow-xl shadow-indigo-100 font-black uppercase tracking-widest bg-indigo-600 text-white w-full sm:w-auto justify-center">
             <PlusIcon className="w-5 h-5" /> New Address
           </Button>
         )}

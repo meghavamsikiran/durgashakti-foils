@@ -9,9 +9,9 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Security Vault</h2>
-        <Button onClick={() => alert('Razorpay Secure Tokenization flow would start here.')} className="rounded-2xl h-14 px-8 gap-2 bg-slate-900 text-white font-black uppercase tracking-widest">
+        <Button onClick={() => alert('Razorpay Secure Tokenization flow would start here.')} className="rounded-2xl h-14 px-8 gap-2 bg-slate-900 text-white font-black uppercase tracking-widest w-full sm:w-auto justify-center">
           <Plus className="w-5 h-5" /> Add Card
         </Button>
       </div>

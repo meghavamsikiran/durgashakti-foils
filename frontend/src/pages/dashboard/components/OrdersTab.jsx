@@ -109,9 +109,9 @@ const OrdersTab = ({ orders, loading, onCancelOrder, onSelectOrder }) => {
                     </h3>
                     <p className="text-sm text-slate-500 font-medium">Placed on {order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left md:text-right flex-shrink-0">
                     <div className="text-2xl font-black text-slate-900 mb-4">₹{(order.total_amount || 0).toLocaleString()}</div>
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-start md:justify-end gap-2">
                       {['pending', 'pending_payment', 'processing'].includes(order.order_status) && (
                         <Button variant="ghost" onClick={() => onCancelOrder(order.id)} className="text-rose-500 hover:bg-rose-50 rounded-xl text-xs font-bold px-4">Cancel</Button>
                       )}
