@@ -33,13 +33,11 @@ const RouteTransitionLoader = () => {
   return (
     <div className={`pointer-events-none transition-opacity duration-300 ${networkLoading ? 'opacity-100' : 'opacity-0'}`}>
       <TrishoolLoader />
-      {!isMobile && (
-        <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center space-y-4" style={{ mixBlendMode: 'multiply' }}>
-          <div className="w-40 aspect-square">
-            <DurgaMaaLoader />
-          </div>
+      <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center space-y-4" style={{ mixBlendMode: 'multiply' }}>
+        <div className="w-24 h-24 md:w-40 md:aspect-square flex items-center justify-center">
+          <DurgaMaaLoader />
         </div>
-      )}
+      </div>
     </div>
   );
 };
