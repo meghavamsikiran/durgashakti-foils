@@ -132,9 +132,9 @@ async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depend
         <p style="color: #64748b; font-size: 14px;">Valid for 15 minutes.</p>
     </div>
     """
-    sent = await send_email(data.email, "Password Reset OTP - DurgaShakti Foils", email_body)
+    sent, err_msg = await send_email(data.email, "Password Reset OTP - DurgaShakti Foils", email_body)
     if not sent:
-        raise HTTPException(status_code=500, detail="Failed to deliver OTP email. Please verify backend SMTP settings.")
+        raise HTTPException(status_code=500, detail=f"SMTP Deliverability Error: {err_msg}")
     return {"message": "If an account exists with this email, an OTP has been sent."}
 
 

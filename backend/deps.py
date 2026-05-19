@@ -368,26 +368,46 @@ async def send_email(to_email: str, subject: str, body: str):
     if not all([smtp_host, smtp_user, smtp_pass]) or "example.com" in smtp_host:
         logging.warning("SMTP not configured. Host=%s User=%s PassLen=%d", smtp_host, smtp_user, len(smtp_pass))
         if is_production:
-            return False  # Don't pretend success in production
+            return False, "SMTP not configured or placeholder values detected on production."
         logging.info("--- MOCK EMAIL ---  To: %s  Subject: %s", to_email, subject)
-        return True
+        return True, "Mock Sent"
+        
+    msg = MIMEMultipart()
+    msg['From'] = smtp_from
+    msg['To'] = to_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'html'))
+
+    # Try standard SMTP (usually port 587)
     try:
-        msg = MIMEMultipart()
-        msg['From'] = smtp_from
-        msg['To'] = to_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'html'))
-        logging.info("Connecting to SMTP %s:%d for %s...", smtp_host, smtp_port, to_email)
-        server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
-        server.starttls()
+        logging.info("Attempting SMTP connection via standard smtplib.SMTP on %s:%d...", smtp_host, smtp_port)
+        if smtp_port == 465:
+            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10)
+        else:
+            server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
+            server.starttls()
+            
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
-        logging.info("Email sent successfully to %s", to_email)
-        return True
-    except Exception as e:
-        logging.error("Failed to send email to %s: %s", to_email, e)
-        return False
+        logging.info("Email sent successfully to %s via port %d", to_email, smtp_port)
+        return True, "Sent"
+    except Exception as e1:
+        logging.warning("SMTP Port %d failed: %s. Attempting fallback to SMTP_SSL on Port 465...", smtp_port, e1)
+        
+        # Fallback to SSL on 465 (highly reliable in blocked cloud environments)
+        try:
+            logging.info("Attempting fallback SMTP_SSL connection on %s:465...", smtp_host)
+            server = smtplib.SMTP_SSL(smtp_host, 465, timeout=10)
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+            server.quit()
+            logging.info("Email sent successfully to %s via fallback port 465", to_email)
+            return True, "Sent"
+        except Exception as e2:
+            err_msg = f"Port {smtp_port} failed ({type(e1).__name__}: {e1}). Fallback Port 465 failed ({type(e2).__name__}: {e2})."
+            logging.error("Failed to send email to %s: %s", to_email, err_msg)
+            return False, err_msg
 
 
 # ── Order Status Machine ────────────────────────────────────────────────
