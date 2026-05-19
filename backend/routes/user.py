@@ -106,6 +106,17 @@ async def toggle_wishlist(product_id: str, current_user: UserSchema = Depends(ge
         return {"status": "added"}
 
 
+@router.delete("/user/wishlist")
+async def clear_wishlist(current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(UserModel).where(UserModel.id == current_user.id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.wishlist = []
+    await db.flush()
+    return {"message": "Wishlist cleared successfully"}
+
+
 # ── Notifications ────────────────────────────────────────────────────────
 @router.get("/user/notifications")
 async def get_notifications(current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):

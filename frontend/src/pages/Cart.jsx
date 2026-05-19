@@ -10,7 +10,7 @@ import PageLoader from '../components/ui/PageLoader';
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { cart, updateCartItem, removeFromCart, loading } = useCart();
+  const { cart, updateCartItem, removeFromCart, clearCart, loading } = useCart();
   const [products, setProducts] = useState({});
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [removingProductId, setRemovingProductId] = useState(null);
@@ -97,9 +97,30 @@ const Cart = () => {
   return (
     <div className="min-h-screen py-12" data-testid="cart-page">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-8" style={{ fontFamily: 'Manrope' }} data-testid="cart-title">
-          Shopping Cart
-        </h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight" style={{ fontFamily: 'Manrope' }} data-testid="cart-title">
+            Shopping Cart
+          </h1>
+          {cart?.items?.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (window.confirm("Are you sure you want to clear your cart?")) {
+                  try {
+                    await clearCart();
+                    toast.success("Cart cleared");
+                  } catch (e) {
+                    toast.error("Failed to clear cart");
+                  }
+                }
+              }}
+              className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 rounded-sm shadow-sm transition-all"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear Cart
+            </Button>
+          )}
+        </div>
 
         {!cart.items || cart.items.length === 0 ? (
           <motion.div

@@ -28,9 +28,19 @@ export const useWishlist = () => {
     }
   };
 
+  const clearWishlist = async () => {
+    try {
+      await wishlistService.clearWishlist();
+      setWishlist([]);
+      toast.success('Wishlist cleared');
+    } catch (err) {
+      toast.error('Failed to clear wishlist');
+    }
+  };
+
   useEffect(() => {
     fetchWishlist();
   }, [fetchWishlist]);
 
-  return { wishlist, loading, fetchWishlist, toggleWishlist };
+  return { wishlist, loading, fetchWishlist, toggleWishlist, clearWishlist };
 };

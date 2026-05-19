@@ -28,7 +28,7 @@ const Dashboard = () => {
 
   // Feature hooks
   const { orders, loading: ordersLoading, fetchOrders, cancelOrder, returnOrder } = useOrders();
-  const { wishlist, loading: wishlistLoading, toggleWishlist } = useWishlist();
+  const { wishlist, loading: wishlistLoading, toggleWishlist, clearWishlist } = useWishlist();
   const { addresses, loading: addressesLoading, addAddress, updateAddress, deleteAddress } = useAddresses();
   const { notifications, loading: notificationsLoading, unreadCount, markAllAsRead } = useNotifications();
   const { cards, loading: cardsLoading, saveCard } = useSavedCards();
@@ -62,7 +62,7 @@ const Dashboard = () => {
       case 'cards':
         return <SavedCardsTab cards={cards} loading={cardsLoading} onSaveCard={saveCard} />;
       case 'wishlist':
-        return <WishlistTab wishlist={wishlist} loading={wishlistLoading} onToggleWishlist={toggleWishlist} />;
+        return <WishlistTab wishlist={wishlist} loading={wishlistLoading} onToggleWishlist={toggleWishlist} onClearWishlist={clearWishlist} />;
       case 'addresses':
         return <AddressesTab addresses={addresses} loading={addressesLoading} onAddAddress={addAddress} onUpdateAddress={updateAddress} onDeleteAddress={deleteAddress} />;
       case 'notifications':

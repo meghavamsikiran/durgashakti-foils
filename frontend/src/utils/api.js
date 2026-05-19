@@ -32,6 +32,7 @@ export const api = {
   deleteAddress: (id) => apiClient.delete(`/user/addresses/${id}`),
   getWishlist: () => apiClient.get('/user/wishlist'),
   toggleWishlist: (productId) => apiClient.post(`/user/wishlist/${productId}`),
+  clearWishlist: () => apiClient.delete('/user/wishlist'),
   getNotifications: () => apiClient.get('/user/notifications'),
   markNotificationsRead: () => apiClient.put('/user/notifications/read-all'),
   getSavedCards: () => apiClient.get('/user/cards'),

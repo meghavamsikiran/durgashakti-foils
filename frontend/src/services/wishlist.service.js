@@ -10,6 +10,11 @@ const wishlistService = {
     const response = await apiClient.post(`/user/wishlist/${productId}`);
     return response.data;
   },
+
+  clearWishlist: async () => {
+    const response = await apiClient.delete('/user/wishlist');
+    return response.data;
+  }
 };
 
 export default wishlistService;
