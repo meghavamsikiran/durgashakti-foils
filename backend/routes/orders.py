@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
-from typing import Optional
+from typing import Optional, List
 from database import get_db
 from models import OrderModel, ProductModel, CartModel, SettingModel
 from deps import (
@@ -214,7 +214,7 @@ async def cancel_order(order_id: str, current_user: UserSchema = Depends(get_cur
 async def return_order(
     order_id: str,
     reason: str = Form(...),
-    image: Optional[UploadFile] = File(None),
+    image: List[UploadFile] = File(None),
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -237,19 +237,28 @@ async def return_order(
         if now_utc > cutoff_date:
             raise HTTPException(status_code=400, detail="Return window has closed.")
 
-    image_url = None
+    uploaded_urls = []
     if image:
-        content_type = (image.content_type or '').lower()
-        if content_type not in {'image/png', 'image/jpeg', 'image/jpg', 'image/webp'}:
-            raise HTTPException(status_code=400, detail='Only png/jpg/jpeg/webp images are supported')
-        raw = await image.read()
-        if len(raw) > 5 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail='Image must be under 5MB')
-        image_url = await upload_image(raw, content_type, prefix=f"return_{order_id}")
+        files_list = image if isinstance(image, list) else [image]
+        for f in files_list:
+            if not f or not f.filename:
+                continue
+            content_type = (f.content_type or '').lower()
+            is_image = any(t in content_type for t in {'image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'})
+            is_video = any(t in content_type for t in {'video/mp4', 'video/quicktime', 'video/webm', 'video/ogg', 'video/avi'})
+            if not (is_image or is_video):
+                raise HTTPException(status_code=400, detail='Only png/jpg/jpeg/webp/gif images and mp4/mov/webm/ogg/avi videos are supported')
+            raw = await f.read()
+            if len(raw) > 20 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail='Each file must be under 20MB')
+            
+            from storage_service import upload_media
+            url = await upload_media(raw, content_type, prefix=f"return_{order_id}")
+            uploaded_urls.append(url)
 
     order.order_status = "return_requested"
     order.return_reason = reason
-    order.return_image_url = image_url
+    order.return_image_url = ",".join(uploaded_urls) if uploaded_urls else None
     order.updated_at = datetime.now(timezone.utc)
     try:
         from email_templates import return_requested_email

@@ -41,68 +41,68 @@ export const useGeoLocationAddress = () => {
             // ── Perform Client-Side Reverse Geocoding directly from browser IP ──
             let geocoded = null;
 
-            // Layer 1: BigDataCloud
+            // Layer 1: Nominatim (High Accuracy)
             try {
-              const bdcRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
-              if (bdcRes.ok) {
-                const data = await bdcRes.json();
-                const raw_pincode = (data.postcode || "").replace(" ", "").slice(0, 6);
-                const city = data.city || data.locality || "";
-                const state = data.principalSubdivision || "";
-                const locality = data.locality || "";
-                
-                let sublocality = "";
-                let route = "";
-                if (data.localityInfo) {
-                  if (data.localityInfo.administrative) {
-                    const admin3 = data.localityInfo.administrative.find(a => a.order === 3);
-                    if (admin3) sublocality = admin3.name || "";
-                  }
-                  if (data.localityInfo.informational) {
-                    const info0 = data.localityInfo.informational.find(i => i.order === 0);
-                    if (info0) route = info0.name || "";
-                  }
-                }
+              const nomRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=en`);
+              if (nomRes.ok) {
+                const data = await nomRes.json();
+                const a = data.address || {};
+                const raw_pincode = (a.postcode || "").replace(" ", "").slice(0, 6);
+                const city = a.city || a.district || a.suburb || "";
+                const state = a.state || "";
                 
                 geocoded = {
-                  source: "BigDataCloud",
+                  source: "Nominatim",
                   pincode: raw_pincode,
                   city,
                   state,
-                  locality,
-                  sublocality,
-                  route,
-                  building: ""
+                  locality: a.suburb || a.neighbourhood || "",
+                  sublocality: a.neighbourhood || "",
+                  route: a.road || "",
+                  building: [a.building, a.house_number, a.amenity].filter(Boolean).join(", ")
                 };
               }
             } catch (e) {
-              console.warn("BigDataCloud client-side failed:", e);
+              console.warn("Nominatim client-side failed:", e);
             }
 
-            // Layer 2: Nominatim
+            // Layer 2: BigDataCloud Fallback
             if (!geocoded || !geocoded.pincode) {
               try {
-                const nomRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`);
-                if (nomRes.ok) {
-                  const data = await nomRes.json();
-                  const a = data.address || {};
-                  const raw_pincode = (a.postcode || "").replace(" ", "").slice(0, 6);
-                  const city = a.city || a.district || a.suburb || "";
-                  const state = a.state || "";
+                const bdcRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+                if (bdcRes.ok) {
+                  const data = await bdcRes.json();
+                  const raw_pincode = (data.postcode || "").replace(" ", "").slice(0, 6);
+                  const city = data.city || data.locality || "";
+                  const state = data.principalSubdivision || "";
+                  const locality = data.locality || "";
+                  
+                  let sublocality = "";
+                  let route = "";
+                  if (data.localityInfo) {
+                    if (data.localityInfo.administrative) {
+                      const admin3 = data.localityInfo.administrative.find(a => a.order === 3);
+                      if (admin3) sublocality = admin3.name || "";
+                    }
+                    if (data.localityInfo.informational) {
+                      const info0 = data.localityInfo.informational.find(i => i.order === 0);
+                      if (info0) route = info0.name || "";
+                    }
+                  }
                   
                   geocoded = {
-                    source: "Nominatim",
+                    source: "BigDataCloud",
                     pincode: raw_pincode,
                     city,
                     state,
-                    locality: a.suburb || a.neighbourhood || "",
-                    sublocality: a.neighbourhood || "",
-                    route: a.road || "",
-                    building: [a.building, a.house_number, a.amenity].filter(Boolean).join(", ")
+                    locality,
+                    sublocality,
+                    route,
+                    building: ""
                   };
                 }
               } catch (e) {
-                console.warn("Nominatim client-side failed:", e);
+                console.warn("BigDataCloud client-side failed:", e);
               }
             }
 

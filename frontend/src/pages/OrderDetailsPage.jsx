@@ -18,10 +18,14 @@ const OrderDetailsPage = () => {
   const [isReturning, setIsReturning] = useState(false);
   const [reason, setReason] = useState('');
   const [otherDetails, setOtherDetails] = useState('');
-  const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [returnFiles, setReturnFiles] = useState([]);
+  const [returnPreviews, setReturnPreviews] = useState([]);
   const [submittingReturn, setSubmittingReturn] = useState(false);
   const [payingOnline, setPayingOnline] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id, isReturning]);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -41,23 +45,35 @@ const OrderDetailsPage = () => {
   if (loading) return <PageLoader message="Loading order details..." />;
   if (!order) return null;
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+  const handleFilesChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      setReturnFiles(prev => [...prev, ...files]);
+      
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setReturnPreviews(prev => [...prev, {
+            type: file.type.startsWith('video/') ? 'video' : 'image',
+            url: reader.result,
+            name: file.name
+          }]);
+        };
+        reader.readAsDataURL(file);
+      });
     }
+  };
+
+  const handleRemoveFile = (index) => {
+    setReturnFiles(prev => prev.filter((_, i) => i !== index));
+    setReturnPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmitReturn = async (e) => {
     e.preventDefault();
     if (!reason) return;
-    if (!image) {
-      toast.error('Proof image is mandatory for returns');
+    if (returnFiles.length === 0) {
+      toast.error('At least one proof image/video is mandatory for returns');
       return;
     }
     setSubmittingReturn(true);
@@ -65,12 +81,16 @@ const OrderDetailsPage = () => {
       const formData = new FormData();
       const finalReason = reason === 'Other' ? `Other: ${otherDetails}` : reason;
       formData.append('reason', finalReason);
-      formData.append('image', image);
+      returnFiles.forEach(file => {
+        formData.append('image', file);
+      });
       await apiClient.post(`/orders/${id}/return`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       toast.success("Return request submitted successfully");
       setIsReturning(false);
+      setReturnFiles([]);
+      setReturnPreviews([]);
       // Reload order
       const res = await apiClient.get(`/orders/${id}`);
       setOrder(res.data);
@@ -395,37 +415,46 @@ const OrderDetailsPage = () => {
                     )}
 
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Upload Proof Image *</label>
-                      <div className="relative group border-2 border-dashed border-slate-200 hover:border-indigo-500 transition-all duration-300 rounded-[2rem] p-4 flex flex-col items-center justify-center bg-white hover:bg-indigo-50/10 cursor-pointer min-h-[140px]">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Upload Proof (Images/Videos) *</label>
+                      <div className="relative group border-2 border-dashed border-slate-200 hover:border-indigo-500 transition-all duration-300 rounded-[2rem] p-6 flex flex-col items-center justify-center bg-white hover:bg-indigo-50/10 cursor-pointer min-h-[140px]">
                         <input
                           type="file"
-                          accept="image/*"
-                          onChange={handleImageChange}
+                          multiple
+                          accept="image/*,video/*"
+                          onChange={handleFilesChange}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                         />
-                        {imagePreview ? (
-                          <div className="relative w-full h-28 rounded-2xl overflow-hidden z-20">
-                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                setImage(null);
-                                setImagePreview(null);
-                              }}
-                              className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/70 text-white flex items-center justify-center hover:bg-slate-900 transition-colors"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="text-center flex flex-col items-center justify-center">
-                            <Upload className="w-8 h-8 text-slate-400 group-hover:text-indigo-500 transition-colors mb-2" />
-                            <span className="text-xs font-bold text-slate-500 group-hover:text-indigo-600">Select Image File</span>
-                          </div>
-                        )}
+                        <div className="text-center flex flex-col items-center justify-center pointer-events-none">
+                          <Upload className="w-8 h-8 text-slate-400 group-hover:text-indigo-500 transition-colors mb-2" />
+                          <span className="text-xs font-bold text-slate-500 group-hover:text-indigo-600">Select Images / Videos</span>
+                          <span className="text-[10px] text-slate-400 mt-1">Upload multiple files up to 20MB each</span>
+                        </div>
                       </div>
+
+                      {returnPreviews.length > 0 && (
+                        <div className="grid grid-cols-3 gap-3 pt-2">
+                          {returnPreviews.map((preview, index) => (
+                            <div key={index} className="relative w-full h-24 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
+                              {preview.type === 'video' ? (
+                                <video src={preview.url} className="w-full h-full object-cover" />
+                              ) : (
+                                <img src={preview.url} alt="Preview" className="w-full h-full object-cover" />
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  handleRemoveFile(index);
+                                }}
+                                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/70 text-white flex items-center justify-center hover:bg-slate-900 transition-colors z-20"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex gap-3 pt-2">
@@ -436,8 +465,8 @@ const OrderDetailsPage = () => {
                           setIsReturning(false);
                           setReason('');
                           setOtherDetails('');
-                          setImage(null);
-                          setImagePreview(null);
+                          setReturnFiles([]);
+                          setReturnPreviews([]);
                         }}
                         className="flex-1 h-12 rounded-xl font-black uppercase tracking-widest border border-slate-200 text-xs text-slate-600 hover:bg-slate-100"
                       >
@@ -600,19 +629,24 @@ const OrderDetailsPage = () => {
 
                           {order.return_image_url && (
                             <div>
-                              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-1">Uploaded Proof</span>
-                              <a
-                                href={formatImageUrl(order.return_image_url)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-block relative rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm w-20 h-20 hover:ring-2 hover:ring-indigo-500 transition-all"
-                              >
-                                <img 
-                                  src={formatImageUrl(order.return_image_url)} 
-                                  alt="Proof" 
-                                  className="w-full h-full object-cover"
-                                />
-                              </a>
+                              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-2">Uploaded Proof</span>
+                              <div className="flex flex-wrap gap-3">
+                                {order.return_image_url.split(',').map((url, index) => {
+                                  const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
+                                  const fullUrl = formatImageUrl(url);
+                                  return (
+                                    <div key={index} className="relative rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm w-20 h-20 hover:ring-2 hover:ring-indigo-500 transition-all flex items-center justify-center">
+                                      {isVideo ? (
+                                        <video src={fullUrl} controls className="w-full h-full object-cover" />
+                                      ) : (
+                                        <a href={fullUrl} target="_blank" rel="noreferrer" className="w-full h-full">
+                                          <img src={fullUrl} alt="Proof" className="w-full h-full object-cover" />
+                                        </a>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                         </div>
