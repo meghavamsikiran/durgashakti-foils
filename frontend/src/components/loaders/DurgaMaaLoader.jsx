@@ -104,7 +104,6 @@ const DurgaMaaLoader = () => {
   return (
     <div 
       className="relative w-40 h-32 flex items-center justify-center overflow-hidden bg-transparent border-none outline-none select-none shadow-none pointer-events-none"
-      style={{ mixBlendMode: 'multiply' }}
     >
       <video 
         ref={videoRef}
@@ -116,8 +115,7 @@ const DurgaMaaLoader = () => {
         onTimeUpdate={handleTimeUpdate}
         className="w-full h-full object-cover border-none outline-none bg-transparent"
         style={{ 
-          filter: 'contrast(1.2) brightness(1.1)',
-          mixBlendMode: 'multiply',
+          filter: 'contrast(1.25) brightness(1.15)',
           transform: 'scale(1.08)',
           backgroundColor: 'transparent',
         }}
