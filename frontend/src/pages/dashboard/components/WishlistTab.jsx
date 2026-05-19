@@ -27,7 +27,7 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist }) => {
               <h4 className="font-black text-slate-900 truncate">{product.name}</h4>
               <p className="text-xl font-black text-indigo-600 mt-1">₹{product.price}</p>
               <div className="flex gap-2 mt-4">
-                <Button onClick={() => addToCart(product)} className="flex-1 rounded-xl">Add to Cart</Button>
+                <Button onClick={() => addToCart(product.id)} className="flex-1 rounded-xl">Add to Cart</Button>
                 <Button variant="ghost" onClick={() => onToggleWishlist(product.id)} className="rounded-xl text-rose-500 hover:bg-rose-50">
                   <Trash2 className="w-4 h-4" />
                 </Button>

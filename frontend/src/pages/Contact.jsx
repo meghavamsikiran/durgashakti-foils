@@ -132,7 +132,7 @@ const Contact = () => {
 
       {/* ── NICEPAGE VISUAL ARCHITECTURE 3-COLUMN LAYOUT ─────────────────── */}
       <section className="py-12 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-3 rounded-3xl overflow-hidden shadow-xl border border-slate-200/50 bg-white">
             
@@ -273,7 +273,7 @@ const Contact = () => {
             </div>
 
             {/* 3. RIGHT COLUMN: dynamic Google Map */}
-            <div className="w-full h-[400px] lg:h-auto min-h-[400px] relative bg-slate-100 flex flex-col">
+            <div className="w-full h-[400px] lg:h-auto min-h-[400px] relative bg-slate-100 flex flex-col overflow-hidden min-w-0">
               <iframe 
                 title="Durga Shakti Foils Location"
                 src={getEmbedMapUrl(profile.googleMapsLink, profile.companyAddress, profile.companyName)}

@@ -4,12 +4,12 @@ import {
   Bell, Settings, MapPin, ShieldCheck 
 } from 'lucide-react';
 
-const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, onLogout }) => {
+const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, wishlistCount, onLogout }) => {
   const menuItems = [
     { id: 'orders', label: 'My Orders', icon: Package },
     { id: 'transactions', label: 'Payments', icon: CreditCard },
     { id: 'cards', label: 'Saved Cards', icon: ShieldCheck },
-    { id: 'wishlist', label: 'Wishlist', icon: Heart },
+    { id: 'wishlist', label: 'Wishlist', icon: Heart, badge: wishlistCount },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
     { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadNotifications },
     { id: 'settings', label: 'Settings', icon: Settings },

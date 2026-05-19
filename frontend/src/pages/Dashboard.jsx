@@ -31,7 +31,7 @@ const Dashboard = () => {
   const { wishlist, loading: wishlistLoading, toggleWishlist } = useWishlist();
   const { addresses, loading: addressesLoading, addAddress, updateAddress, deleteAddress } = useAddresses();
   const { notifications, loading: notificationsLoading, unreadCount, markAllAsRead } = useNotifications();
-  const { cards, loading: cardsLoading } = useSavedCards();
+  const { cards, loading: cardsLoading, saveCard } = useSavedCards();
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/login');
@@ -60,7 +60,7 @@ const Dashboard = () => {
       case 'transactions':
         return <TransactionsTab orders={orders} />;
       case 'cards':
-        return <SavedCardsTab cards={cards} loading={cardsLoading} />;
+        return <SavedCardsTab cards={cards} loading={cardsLoading} onSaveCard={saveCard} />;
       case 'wishlist':
         return <WishlistTab wishlist={wishlist} loading={wishlistLoading} onToggleWishlist={toggleWishlist} />;
       case 'addresses':
@@ -83,6 +83,7 @@ const Dashboard = () => {
             activeTab={activeTab} 
             setActiveTab={setActiveTab} 
             unreadNotifications={unreadCount}
+            wishlistCount={wishlist?.length || 0}
             onLogout={logout} 
           />
           
