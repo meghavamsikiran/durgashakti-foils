@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Plus, Minus, ShoppingBag, X } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useCart } from '../contexts/CartContext';
 import { toast } from 'sonner';
@@ -14,6 +14,8 @@ const Cart = () => {
   const [products, setProducts] = useState({});
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [removingProductId, setRemovingProductId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 4;
 
   useEffect(() => {
     fetchProducts();
@@ -93,6 +95,8 @@ const Cart = () => {
   }
 
   const total = calculateTotal();
+  const totalPages = Math.ceil((cart?.items?.length || 0) / ITEMS_PER_PAGE);
+  const currentItems = (cart?.items || []).slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
     <div className="min-h-screen py-12" data-testid="cart-page">
@@ -147,7 +151,7 @@ const Cart = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <div className="space-y-4">
-                {cart.items.map((item, index) => {
+                {currentItems.map((item, index) => {
                   const product = products[item.product_id];
                   if (!product) return null;
 
@@ -220,6 +224,30 @@ const Cart = () => {
                   );
                 })}
               </div>
+
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-8">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="w-10 h-10 p-0 rounded-full"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </Button>
+                  <span className="text-sm font-semibold text-slate-500">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="w-10 h-10 p-0 rounded-full"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div className="lg:col-span-1">
