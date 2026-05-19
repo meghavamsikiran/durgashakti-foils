@@ -36,8 +36,8 @@ JWT_SECRET = os.environ.get('JWT_SECRET', '')
 if not JWT_SECRET:
     JWT_SECRET = "super_secret_local_dev_only_key_ds_foils"
 
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_HOURS = 168  # 7 days
 
 security = HTTPBearer()
 
