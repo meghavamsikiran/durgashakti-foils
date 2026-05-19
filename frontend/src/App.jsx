@@ -47,6 +47,16 @@ import PageLoader from './components/ui/PageLoader';
 import './App.css';
 import Maintenance from './pages/Maintenance';
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
+
 function AppRoutes() {
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith('/admin');
@@ -56,6 +66,7 @@ function AppRoutes() {
       <CartProvider>
         <ProgressProvider>
         <div className="App">
+          <ScrollToTop />
           <RouteTransitionLoader />
           {!isAdminPath && <Navbar />}
           <Suspense fallback={<SuspenseTrigger />}>
