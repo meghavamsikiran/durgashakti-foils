@@ -14,6 +14,7 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [clearing, setClearing] = useState(false);
+  const [addedItems, setAddedItems] = useState({});
 
   if (loading) return <PageLoader message="Loading wishlist..." />;
 
@@ -56,7 +57,7 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {currentItems.map(product => {
-              const inCart = cart?.items?.some(i => i.product_id === product.id);
+              const isJustAdded = addedItems[product.id];
 
               return (
                 <div key={product.id} className="group p-4 rounded-3xl border border-slate-200 bg-white hover:shadow-lg transition-all relative">
@@ -64,12 +65,19 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
                   <h4 className="font-black text-slate-900 truncate">{product.name}</h4>
                   <p className="text-xl font-black text-indigo-600 mt-1">₹{product.price}</p>
                   <div className="flex gap-2 mt-4">
-                    {inCart ? (
+                    {isJustAdded ? (
                       <Button onClick={() => navigate('/cart')} className="flex-1 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-md">
                         Go to Cart
                       </Button>
                     ) : (
-                      <Button onClick={() => addToCart(product.id)} className="flex-1 rounded-xl">Add to Cart</Button>
+                      <Button onClick={async () => {
+                        try {
+                          await addToCart(product.id);
+                          setAddedItems(prev => ({ ...prev, [product.id]: true }));
+                        } catch (e) {
+                          console.error(e);
+                        }
+                      }} className="flex-1 rounded-xl">Add to Cart</Button>
                     )}
                     <Button variant="ghost" onClick={() => onToggleWishlist(product.id)} className="rounded-xl text-rose-500 hover:bg-rose-50">
                       <Trash2 className="w-4 h-4" />
