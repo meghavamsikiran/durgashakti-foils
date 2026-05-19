@@ -4,10 +4,8 @@ import DurgaMaaLoader from '../loaders/DurgaMaaLoader';
 
 const PageLoader = () => {
   return (
-    <div className="w-full py-16 flex flex-col items-center justify-center bg-transparent border-none outline-none select-none shadow-none pointer-events-none">
-      <div className="flex items-center justify-center bg-transparent border-none outline-none">
-        <DurgaMaaLoader />
-      </div>
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-transparent pointer-events-none">
+      <DurgaMaaLoader />
     </div>
   );
 };
