@@ -1,7 +1,7 @@
 """Transactional email templates for DurgaShakti Foils."""
 from datetime import datetime, timezone, timedelta
 
-LOGO_URL = "https://durgashakti-foils.vercel.app/img2.png"
+LOGO_URL = "https://durgashakti-foils.vercel.app/logo-orange.png"
 BRAND_COLOR = "#ea580c" # Match logo orange/red
 BRAND_DARK = "#9a3412"
 SITE_URL = "https://durgashakti-foils.vercel.app"
