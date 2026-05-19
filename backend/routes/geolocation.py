@@ -38,7 +38,7 @@ def reverse_geocode(
         res = requests.get(url, timeout=10)
         if res.status_code == 200:
             data = res.json()
-            raw_pincode = data.get("postcode", "").replace(" ", "")[:6]
+            raw_pincode = (data.get("postcode") or "").replace(" ", "")[:6]
             city = data.get("city") or data.get("locality") or ""
             state = data.get("principalSubdivision") or ""
             locality = data.get("locality") or ""
@@ -48,10 +48,10 @@ def reverse_geocode(
             loc_info = data.get("localityInfo", {})
             for admin in loc_info.get("administrative", []):
                 if admin.get("order") == 3:
-                    sublocality = admin.get("name", "")
+                    sublocality = admin.get("name") or ""
             for info in loc_info.get("informational", []):
                 if info.get("order") == 0:
-                    route = info.get("name", "")
+                    route = info.get("name") or ""
             
             geocoded = {
                 "source": "BigDataCloud",
@@ -75,7 +75,7 @@ def reverse_geocode(
             if res.status_code == 200:
                 data = res.json()
                 a = data.get("address", {})
-                raw_pincode = a.get("postcode", "").replace(" ", "")[:6]
+                raw_pincode = (a.get("postcode") or "").replace(" ", "")[:6]
                 city = a.get("city") or a.get("district") or a.get("suburb") or ""
                 state = a.get("state") or ""
                 

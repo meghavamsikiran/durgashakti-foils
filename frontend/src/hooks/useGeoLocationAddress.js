@@ -58,7 +58,7 @@ export const useGeoLocationAddress = () => {
             let indiaPostData = await validateWithIndiaPost(pin);
 
             if (!indiaPostData && pin.length === 6) {
-              const stateUpper = state.toLowerCase();
+              const stateUpper = (state || '').toLowerCase();
               const corrections = [];
               if (/telangana|andhra/.test(stateUpper)) {
                 corrections.push('5' + pin.slice(1));
