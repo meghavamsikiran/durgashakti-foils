@@ -59,7 +59,14 @@ const ProductCard = ({ product }) => {
   };
 
   const activeTag = getDynamicTag();
-  const isWishlisted = user?.wishlist?.some(item => item.product_id === product.id);
+  const actualWishlisted = user?.wishlist?.some(item => item.product_id === product.id);
+  const [optimisticWishlist, setOptimisticWishlist] = React.useState(null);
+
+  React.useEffect(() => {
+    setOptimisticWishlist(actualWishlisted);
+  }, [actualWishlisted]);
+
+  const isWishlisted = optimisticWishlist !== null ? optimisticWishlist : actualWishlisted;
 
   const handleToggleWishlist = async (e) => {
     e.stopPropagation();
@@ -69,12 +76,16 @@ const ProductCard = ({ product }) => {
       return;
     }
 
+    const previousState = isWishlisted;
+    setOptimisticWishlist(!previousState); // Instant visual update
     setWishlisting(true);
+    
     try {
       await api.toggleWishlist(product.id);
       await refreshUser();
-      toast.success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+      toast.success(previousState ? 'Removed from wishlist' : 'Added to wishlist');
     } catch (error) {
+      setOptimisticWishlist(previousState); // Rollback on failure
       toast.error('Failed to update wishlist');
     } finally {
       setWishlisting(false);
