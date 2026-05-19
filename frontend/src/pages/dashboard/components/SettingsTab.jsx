@@ -62,35 +62,7 @@ const SettingsTab = ({ user, onUpdateProfile, onChangePassword }) => {
         </form>
       </div>
 
-      <div className="space-y-8 pb-12">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center shadow-lg shadow-rose-100">
-            <Lock className="w-5 h-5" />
-          </div>
-          <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Security</h2>
-        </div>
 
-        <form onSubmit={handlePasswordSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-8 p-10 bg-white rounded-[3rem] border border-slate-200 shadow-xl">
-          <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Current Password</Label>
-            <Input type="password" value={passwordForm.old_password} onChange={e => setPasswordForm({...passwordForm, old_password: e.target.value})} className="h-16 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold" />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">New Password</Label>
-            <Input type="password" value={passwordForm.new_password} onChange={e => setPasswordForm({...passwordForm, new_password: e.target.value})} className="h-16 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold" />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Confirm Password</Label>
-            <Input type="password" value={passwordForm.confirm_password} onChange={e => setPasswordForm({...passwordForm, confirm_password: e.target.value})} className="h-16 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold" />
-          </div>
-          <div className="md:col-span-3 pt-4">
-            <Button type="submit" disabled={updatingPassword} className="h-16 rounded-2xl px-10 gap-2 font-black uppercase tracking-widest bg-slate-900 text-white">
-              {updatingPassword ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
-              Update Password
-            </Button>
-          </div>
-        </form>
-      </div>
 
       <div className="space-y-8 pb-12">
         <div className="flex items-center gap-3">
