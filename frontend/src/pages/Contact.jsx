@@ -8,6 +8,8 @@ import { reveal, fadeInUp, staggerContainer } from '../animations/variants';
 import settingsService from '../services/settings.service';
 import contactService from '../services/contact.service';
 import { toast } from 'sonner';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 const Contact = () => {
   const [formData, setFormData] = React.useState({ name: '', email: '', phone: '', message: '' });
@@ -179,13 +181,12 @@ const Contact = () => {
 
                     <div className="flex flex-col gap-1.5">
                       <Label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">Phone Number</Label>
-                      <Input 
-                        required
-                        type="tel"
+                      <PhoneInput 
+                        international
+                        defaultCountry="IN"
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="Enter your Phone Number" 
-                        className={inputClass} 
+                        onChange={(val) => setFormData({ ...formData, phone: val || '' })}
+                        className="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2 text-sm focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all outline-none" 
                       />
                     </div>
                     

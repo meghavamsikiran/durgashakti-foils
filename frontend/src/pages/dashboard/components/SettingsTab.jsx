@@ -4,6 +4,8 @@ import { User, Lock, Save, Loader2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 const SettingsTab = ({ user, onUpdateProfile, onChangePassword }) => {
   const [profileForm, setProfileForm] = useState({ full_name: user?.full_name || '', email: user?.email || '', phone: user?.phone || '' });
@@ -51,7 +53,13 @@ const SettingsTab = ({ user, onUpdateProfile, onChangePassword }) => {
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Phone Number</Label>
-            <Input value={profileForm.phone} onChange={e => setProfileForm({...profileForm, phone: e.target.value})} className="h-16 rounded-2xl bg-slate-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all px-6 text-lg font-bold" />
+            <PhoneInput
+              international
+              defaultCountry="IN"
+              value={profileForm.phone}
+              onChange={val => setProfileForm({...profileForm, phone: val || ''})}
+              className="flex h-16 rounded-2xl bg-slate-50 border border-slate-200/30 focus-within:bg-white focus-within:border-indigo-600 px-6 text-lg font-bold outline-none"
+            />
           </div>
           <div className="md:col-span-2 pt-4">
             <Button type="submit" disabled={updatingProfile} className="h-16 rounded-2xl px-10 gap-2 font-black uppercase tracking-widest bg-indigo-600 text-white shadow-xl shadow-indigo-100">
