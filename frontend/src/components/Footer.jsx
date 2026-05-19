@@ -7,7 +7,7 @@ const Footer = () => {
   const [profile, setProfile] = useState({
     companyName: 'Durga Shakti Foils',
     companyPhone: '+91 83675 42954',
-    companyEmail: 'DurgaShaktifoils@gmail.com',
+    companyEmail: '',
     companyAddress: 'Plot no 1, Road No. 1, Maruthi nagar, Mallampet, Hyderabad, Telangana 500090'
   });
 
@@ -20,7 +20,7 @@ const Footer = () => {
           setProfile({
             companyName: cp.companyName || 'Durga Shakti Foils',
             companyPhone: cp.companyPhone || '+91 83675 42954',
-            companyEmail: cp.companyEmail || 'DurgaShaktifoils@gmail.com',
+            companyEmail: cp.companyEmail || '',
             companyAddress: cp.companyAddress || 'Plot no 1, Road No. 1, Maruthi nagar, Mallampet, Hyderabad, Telangana 500090'
           });
         }
@@ -99,12 +99,14 @@ const Footer = () => {
                   {profile.companyPhone}
                 </a>
               </li>
-              <li className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-primary flex-shrink-0" />
-                <a href={`mailto:${profile.companyEmail}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  {profile.companyEmail}
-                </a>
-              </li>
+              {profile.companyEmail && (
+                <li className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-primary flex-shrink-0" />
+                  <a href={`mailto:${profile.companyEmail}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                    {profile.companyEmail}
+                  </a>
+                </li>
+              )}
             </ul>
           </div>
         </div>

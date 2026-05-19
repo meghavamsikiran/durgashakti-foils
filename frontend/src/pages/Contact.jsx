@@ -18,7 +18,7 @@ const Contact = () => {
   const [profile, setProfile] = React.useState({
     companyName: 'Durga Shakti Foils',
     companyPhone: '+91 83675 42954',
-    companyEmail: 'DurgaShaktifoils@gmail.com',
+    companyEmail: '',
     companyAddress: 'Shop No. 1, Plot No. 54, Road No. 1, Maruthi Nagar, Mallampet, Hyderabad, Telangana 500090',
     googleMapsLink: 'https://maps.app.goo.gl/FMk4dnhXvGeTrRFM6'
   });
@@ -32,7 +32,7 @@ const Contact = () => {
           setProfile({
             companyName: cp.companyName || 'Durga Shakti Foils',
             companyPhone: cp.companyPhone || '+91 83675 42954',
-            companyEmail: cp.companyEmail || 'DurgaShaktifoils@gmail.com',
+            companyEmail: cp.companyEmail || '',
             companyAddress: cp.companyAddress || 'Shop No. 1, Plot No. 54, Road No. 1, Maruthi Nagar, Mallampet, Hyderabad, Telangana 500090',
             googleMapsLink: cp.googleMapsLink || 'https://maps.app.goo.gl/FMk4dnhXvGeTrRFM6'
           });
@@ -257,19 +257,20 @@ const Contact = () => {
                 </p>
               </div>
 
-              {/* Business Details / Email */}
-              <div className="space-y-3">
-                <span className="text-xs font-black tracking-[0.2em] text-primary uppercase block">
-                  OUR SERVICES & CONTACT
-                </span>
-                <div className="space-y-1 text-slate-300 text-sm">
-                  <a href={`mailto:${profile.companyEmail}`} className="font-bold hover:text-primary transition-colors block mb-2">
-                    {profile.companyEmail}
-                  </a>
-                  <p className="text-xs text-slate-400">Business Hours: Mon - Sat (8am - 8pm)</p>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">ISO 9001:2015 Certified Manufacturing</p>
+              {profile.companyEmail && (
+                <div className="space-y-3">
+                  <span className="text-xs font-black tracking-[0.2em] text-primary uppercase block">
+                    OUR SERVICES & CONTACT
+                  </span>
+                  <div className="space-y-1 text-slate-300 text-sm">
+                    <a href={`mailto:${profile.companyEmail}`} className="font-bold hover:text-primary transition-colors block mb-2">
+                      {profile.companyEmail}
+                    </a>
+                    <p className="text-xs text-slate-400">Business Hours: Mon - Sat (8am - 8pm)</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">ISO 9001:2015 Certified Manufacturing</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* 3. RIGHT COLUMN: dynamic Google Map */}
