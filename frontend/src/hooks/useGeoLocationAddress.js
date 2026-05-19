@@ -38,13 +38,75 @@ export const useGeoLocationAddress = () => {
           try {
             const { latitude, longitude } = position.coords;
             
-            // ── Call our secure backend geocoding proxy ───────────────────
-            const res = await apiClient.get(`/geolocation/reverse-geocode`, {
-              params: { lat: latitude, lon: longitude }
-            });
-            
-            const geocoded = res.data;
+            // ── Perform Client-Side Reverse Geocoding directly from browser IP ──
+            let geocoded = null;
+
+            // Layer 1: BigDataCloud
+            try {
+              const bdcRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+              if (bdcRes.ok) {
+                const data = await bdcRes.json();
+                const raw_pincode = (data.postcode || "").replace(" ", "").slice(0, 6);
+                const city = data.city || data.locality || "";
+                const state = data.principalSubdivision || "";
+                const locality = data.locality || "";
+                
+                let sublocality = "";
+                let route = "";
+                if (data.localityInfo) {
+                  if (data.localityInfo.administrative) {
+                    const admin3 = data.localityInfo.administrative.find(a => a.order === 3);
+                    if (admin3) sublocality = admin3.name || "";
+                  }
+                  if (data.localityInfo.informational) {
+                    const info0 = data.localityInfo.informational.find(i => i.order === 0);
+                    if (info0) route = info0.name || "";
+                  }
+                }
+                
+                geocoded = {
+                  source: "BigDataCloud",
+                  pincode: raw_pincode,
+                  city,
+                  state,
+                  locality,
+                  sublocality,
+                  route,
+                  building: ""
+                };
+              }
+            } catch (e) {
+              console.warn("BigDataCloud client-side failed:", e);
+            }
+
+            // Layer 2: Nominatim
             if (!geocoded || !geocoded.pincode) {
+              try {
+                const nomRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`);
+                if (nomRes.ok) {
+                  const data = await nomRes.json();
+                  const a = data.address || {};
+                  const raw_pincode = (a.postcode || "").replace(" ", "").slice(0, 6);
+                  const city = a.city || a.district || a.suburb || "";
+                  const state = a.state || "";
+                  
+                  geocoded = {
+                    source: "Nominatim",
+                    pincode: raw_pincode,
+                    city,
+                    state,
+                    locality: a.suburb || a.neighbourhood || "",
+                    sublocality: a.neighbourhood || "",
+                    route: a.road || "",
+                    building: [a.building, a.house_number, a.amenity].filter(Boolean).join(", ")
+                  };
+                }
+              } catch (e) {
+                console.warn("Nominatim client-side failed:", e);
+              }
+            }
+
+            if (!geocoded) {
               throw new Error('Failed to retrieve valid geocoded address.');
             }
 

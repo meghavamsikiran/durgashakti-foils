@@ -23,7 +23,13 @@ const Dashboard = () => {
   const { user, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('orders');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('dashboardActiveTab') || 'orders';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('dashboardActiveTab', activeTab);
+  }, [activeTab]);
 
   // Feature hooks
   const { orders, loading: ordersLoading, fetchOrders, cancelOrder, returnOrder } = useOrders();
