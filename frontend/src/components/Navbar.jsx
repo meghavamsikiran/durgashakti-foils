@@ -68,9 +68,27 @@ const Navbar = () => {
     return () => clearInterval(interval);
   }, [bannerConfig.timer_enabled, bannerConfig.timer_target]);
 
+  const stripEdgeEmojis = (str) => {
+    if (!str) return '';
+    try {
+      const regexStart = /^[\s\p{Emoji_Presentation}\p{Extended_Pictographic}✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]+/gu;
+      const regexEnd = /[\s\p{Emoji_Presentation}\p{Extended_Pictographic}✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]+$/gu;
+      return str.replace(regexStart, '').replace(regexEnd, '').trim();
+    } catch (e) {
+      const fallbackStart = /^[\s\uD800-\uDBFF\uDC00-\uDFFF✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]+/g;
+      const fallbackEnd = /[\s\uD800-\uDBFF\uDC00-\uDFFF✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]+$/g;
+      return str.replace(fallbackStart, '').replace(fallbackEnd, '').trim();
+    }
+  };
+
   const getDisplayTexts = () => {
-    const t1 = bannerConfig.text1 || "Durga Shakti Foils: Premium Packing Solutions";
+    let t1 = bannerConfig.text1 || "Durga Shakti Foils: Premium Packing Solutions";
     let t2 = bannerConfig.text2 || "";
+
+    if (bannerConfig.use_favicon !== false) {
+      t1 = stripEdgeEmojis(t1);
+      t2 = stripEdgeEmojis(t2);
+    }
 
     if (t2.includes("{timer}")) {
       t2 = t2.replace("{timer}", timerText || "...");
