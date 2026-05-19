@@ -187,7 +187,7 @@ async def cancel_order(order_id: str, current_user: UserSchema = Depends(get_cur
         for item in (order.items or []):
             pid = item.get("product_id")
             qty = int(item.get("quantity", 0))
-            if not pid or qty <= 0:
+            if not pid or not is_valid_uuid(pid) or qty <= 0:
                 continue
             prod_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
             product = prod_res.scalar_one_or_none()
@@ -340,7 +340,7 @@ async def verify_razorpay_payment(payment_data: dict, current_user: UserSchema =
             for item in (order.items or []):
                 pid = item.get("product_id")
                 qty = int(item.get("quantity", 0))
-                if pid and qty > 0:
+                if pid and is_valid_uuid(pid) and qty > 0:
                     prod_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
                     product = prod_res.scalar_one_or_none()
                     if not product:
@@ -510,7 +510,7 @@ async def razorpay_webhook(request: Request, db: AsyncSession = Depends(get_db))
                         for item in (order.items or []):
                             pid = item.get("product_id")
                             qty = int(item.get("quantity", 0))
-                            if pid and qty > 0:
+                            if pid and is_valid_uuid(pid) and qty > 0:
                                 prod_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
                                 product = prod_res.scalar_one_or_none()
                                 if not product or int(product.stock_quantity or 0) < qty:

@@ -111,7 +111,11 @@ const OrderDetailsPage = () => {
     
     setPayingOnline(true);
     try {
-      const response = await paymentService.payCODOnline(order.id);
+      const isCod = order.payment_method === 'cod';
+      const response = isCod 
+        ? await paymentService.payCODOnline(order.id)
+        : await paymentService.createRazorpayOrder(order.id);
+      
       const { razorpay_order_id, amount, currency, key_id } = response;
 
       const options = {
@@ -119,7 +123,9 @@ const OrderDetailsPage = () => {
         amount: amount,
         currency: currency || 'INR',
         name: 'DurgaShakti Foils',
-        description: `COD Payment - Order ${order.order_number}`,
+        description: isCod 
+          ? `COD Payment - Order ${order.order_number}`
+          : `Prepaid Retry - Order ${order.order_number}`,
         order_id: razorpay_order_id,
         handler: async (paymentResponse) => {
           try {
@@ -670,8 +676,7 @@ const OrderDetailsPage = () => {
                    <ExternalLink className="w-4 h-4 mr-2" /> Download Invoice
                 </Button>
               )}
-              {order.payment_method === 'cod' && 
-               order.payment_status !== 'Paid' && 
+              {order.payment_status !== 'Paid' && 
                order.payment_status !== 'completed' && 
                !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase()) && (
                 <Button
@@ -679,7 +684,7 @@ const OrderDetailsPage = () => {
                   disabled={payingOnline}
                   className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-100"
                 >
-                  <Wallet className="w-4 h-4 mr-2" /> {payingOnline ? 'Processing...' : 'Pay Online'}
+                  <Wallet className="w-4 h-4 mr-2" /> {payingOnline ? 'Processing...' : order.payment_method === 'cod' ? 'Pay Online' : 'Pay Now'}
                 </Button>
               )}
               {order.order_status === 'delivered' && (
