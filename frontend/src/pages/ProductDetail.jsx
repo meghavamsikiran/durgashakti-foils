@@ -306,11 +306,11 @@ const ProductDetail = () => {
                       <Button
                         variant="outline"
                         onClick={() => {
-                          const next = Math.max(1, quantity - 1);
+                          const next = Math.max(0, quantity - 1);
                           setQuantity(next);
                           if (setPendingQty) setPendingQty(product.id, next);
                         }}
-                        disabled={quantity <= 1}
+                        disabled={quantity <= 0}
                         className="w-12 h-12 p-0 flex items-center justify-center"
                         data-testid="decrease-quantity"
                       >
@@ -352,7 +352,7 @@ const ProductDetail = () => {
                           setAdding(false);
                         }
                       }}
-                      disabled={adding || Number(product.stock_quantity) <= 0 || product.in_stock === false}
+                      disabled={adding || Number(product.stock_quantity) <= 0 || product.in_stock === false || quantity === 0}
                       className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-sm font-semibold cursor-pointer"
                       data-testid="add-to-cart-detail-button"
                     >
