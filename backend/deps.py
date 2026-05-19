@@ -277,6 +277,24 @@ class AdminUpdateRequest(BaseModel):
 class PasswordResetRequest(BaseModel):
     new_password: str = Field(min_length=8, max_length=128)
 
+class ContactCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    email: EmailStr
+    message: str = Field(min_length=1, max_length=1000)
+    phone: Optional[str] = None
+
+    @field_validator("email")
+    @classmethod
+    def validate_email_address(cls, v):
+        return validate_gmail_address(v)
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v):
+        if v is not None and v != "":
+            return validate_phone_number(v)
+        return v
+
 class VariantInput(BaseModel):
     size: str
     sku: str

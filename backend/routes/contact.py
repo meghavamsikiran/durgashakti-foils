@@ -4,39 +4,18 @@ from sqlalchemy import select, func
 from typing import Optional
 from database import get_db
 from models import ContactModel
-import re
-from deps import require_permission, UserSchema, validate_phone_number
+from deps import require_permission, UserSchema, ContactCreate
 
 router = APIRouter(prefix="/api")
 
 # ── Public Endpoints ─────────────────────────────────────────────────────
 @router.post("/contact")
-async def submit_contact(data: dict, db: AsyncSession = Depends(get_db)):
-    name = data.get("name")
-    email = data.get("email")
-    message = data.get("message")
-    phone = data.get("phone")
-
-    if not name or not email or not message:
-        raise HTTPException(status_code=400, detail="Name, email, and message are required")
-
-    # Email validation
-    email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-    if not re.match(email_regex, email):
-        raise HTTPException(status_code=400, detail="Please provide a valid email address.")
-
-    # Phone validation
-    if phone:
-        try:
-            phone = validate_phone_number(phone)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-
+async def submit_contact(payload: ContactCreate, db: AsyncSession = Depends(get_db)):
     contact = ContactModel(
-        name=name,
-        email=email,
-        message=message,
-        phone=phone
+        name=payload.name,
+        email=payload.email,
+        message=payload.message,
+        phone=payload.phone
     )
     db.add(contact)
     await db.flush()
