@@ -33,13 +33,6 @@ const RouteTransitionLoader = () => {
   return (
     <div className={`pointer-events-none transition-opacity duration-300 ${networkLoading ? 'opacity-100' : 'opacity-0'}`}>
       <TrishoolLoader />
-      {!isMobile && (
-        <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center space-y-4 bg-transparent pointer-events-none border-none outline-none">
-          <div className="w-40 aspect-square flex items-center justify-center bg-transparent border-none outline-none">
-            <DurgaMaaLoader />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

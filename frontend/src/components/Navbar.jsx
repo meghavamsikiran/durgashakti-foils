@@ -105,7 +105,9 @@ const Navbar = () => {
           <div className="flex">
             {bannerItems.map((item) => (
               <span key={item.id} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
-                <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
+                {bannerConfig.use_favicon !== false && (
+                   <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
+                )}
                 {item.text}
               </span>
             ))}
@@ -113,7 +115,9 @@ const Navbar = () => {
           <div className="flex">
             {bannerItems.map((item) => (
               <span key={`dup-${item.id}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
-                <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
+                {bannerConfig.use_favicon !== false && (
+                   <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
+                )}
                 {item.text}
               </span>
             ))}

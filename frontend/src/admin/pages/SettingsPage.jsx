@@ -45,6 +45,7 @@ const SettingsPage = () => {
   const [bannerText2, setBannerText2] = useState('');
   const [bannerTimerEnabled, setBannerTimerEnabled] = useState(false);
   const [bannerTimerTarget, setBannerTimerTarget] = useState('');
+  const [bannerUseFavicon, setBannerUseFavicon] = useState(true);
   const [savingBanner, setSavingBanner] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -56,14 +57,21 @@ const SettingsPage = () => {
     "✨ Experience Purity & Perfection with Durga Shakti Premium Foils ✨",
     "🌟 Elevate Your Kitchen Standards with India's #1 Food-Grade Aluminum Foil 🌟",
     "🕉️ Celebrate the Divine Festivities with Exclusive Offers on Durga Shakti Foils 🕉️",
-    "🛡️ Unmatched Quality & Protection: Discover the Durga Shakti Difference 🛡️"
+    "🛡️ Unmatched Quality & Protection: Discover the Durga Shakti Difference 🛡️",
+    "🍃 100% Recyclable & Eco-Friendly Premium Foils for a Sustainable Future 🍃",
+    "👑 Keep Your Food Fresh, Hot, and Healthy with Royal Standard Foils 👑",
+    "💎 Premium Quality Assured: Trusted by Thousands of Indian Households 💎",
+    "🎉 Welcome to Durga Shakti Foils: Where Quality Meets Tradition 🎉"
   ];
 
   const premiumThemes2 = [
     "⏳ Hurry! Our Exclusive 50% Off Flash Sale Ends In: {timer} ⏳",
     "🔥 Limited Time Offer: Premium Packaging at Unbeatable Prices ends in {timer} 🔥",
     "⚡ Don't Miss Out! Special Festival Discount expires in {timer} ⚡",
-    "🎁 Unlock Your Special Gift on All Orders Placed within the next {timer} 🎁"
+    "🎁 Unlock Your Special Gift on All Orders Placed within the next {timer} 🎁",
+    "🚀 Flash Deal Activated! Free Shipping on all orders ending in {timer} 🚀",
+    "💰 Last Chance to Save! Big Festive Bonanza closes in exactly {timer} 💰",
+    "🎊 Midnight Special: Prices drop again in {timer} - Shop Now! 🎊"
   ];
 
   const applyMagicTheme = (setText, themesArray, currentText) => {
@@ -98,6 +106,7 @@ const SettingsPage = () => {
         setBannerText2(bannerSettings.text2 || '');
         setBannerTimerEnabled(!!bannerSettings.timer_enabled);
         setBannerTimerTarget(formatToLocalInput(bannerSettings.timer_target || ''));
+        setBannerUseFavicon(bannerSettings.use_favicon !== false);
 
         setMe(meRes.data);
       } catch {
@@ -132,7 +141,8 @@ const SettingsPage = () => {
           text1: bannerText1,
           text2: bannerText2,
           timer_enabled: bannerTimerEnabled,
-          timer_target: formatToISO(bannerTimerTarget)
+          timer_target: formatToISO(bannerTimerTarget),
+          use_favicon: bannerUseFavicon
         }
       });
       toast.success('Scrolling banner settings saved successfully');
@@ -331,7 +341,7 @@ const SettingsPage = () => {
                               {bannerText1 || 'PRIMARY ANNOUNCEMENT TEXT WILL APPEAR HERE'}
                            </span>
                            <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
-                              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+                              {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
                            </span>
                            {(bannerText2 || bannerTimerEnabled) && (
                               <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-rose-200">
@@ -339,14 +349,14 @@ const SettingsPage = () => {
                               </span>
                            )}
                            <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
-                              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+                              {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
                            </span>
                            {/* Duplicate for smooth scrolling illusion */}
                            <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-indigo-200">
                               {bannerText1 || 'PRIMARY ANNOUNCEMENT TEXT WILL APPEAR HERE'}
                            </span>
                            <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
-                              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+                              {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
                            </span>
                            {(bannerText2 || bannerTimerEnabled) && (
                               <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-rose-200">
@@ -399,9 +409,39 @@ const SettingsPage = () => {
                      </div>
 
                      <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-6">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 pb-6">
+                           <div className="flex items-start gap-4">
+                              <div className="p-3 rounded-xl bg-amber-100 text-amber-600 flex-shrink-0 shadow-sm border border-amber-200">
+                                 <Sparkles className="w-6 h-6" />
+                              </div>
+                              <div>
+                                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Show Favicon Spacer</h3>
+                                 <p className="text-xs text-slate-500 mt-1 max-w-md">Use the brand Favicon as a beautiful spacer between texts. Disable this if your text templates already use abundant emojis.</p>
+                              </div>
+                           </div>
+                           
+                           <div className="flex items-center gap-3 self-end md:self-auto">
+                              <span className={`text-[10px] font-black uppercase tracking-widest ${bannerUseFavicon ? 'text-amber-600' : 'text-slate-400'}`}>
+                                 {bannerUseFavicon ? 'Visible' : 'Hidden'}
+                              </span>
+                              <button 
+                                 onClick={() => setBannerUseFavicon(!bannerUseFavicon)}
+                                 className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-300 shadow-inner ${
+                                    bannerUseFavicon ? 'bg-amber-500' : 'bg-slate-300'
+                                 }`}
+                              >
+                                 <div 
+                                    className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${
+                                       bannerUseFavicon ? 'translate-x-6' : 'translate-x-0'
+                                    }`}
+                                 />
+                              </button>
+                           </div>
+                        </div>
+
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                            <div className="flex items-start gap-4">
-                              <div className="p-3 rounded-xl bg-indigo-100 text-indigo-600 flex-shrink-0">
+                              <div className="p-3 rounded-xl bg-indigo-100 text-indigo-600 flex-shrink-0 shadow-sm border border-indigo-200">
                                  <Timer className="w-6 h-6 animate-pulse" />
                               </div>
                               <div>
@@ -416,7 +456,7 @@ const SettingsPage = () => {
                               </span>
                               <button 
                                  onClick={() => setBannerTimerEnabled(!bannerTimerEnabled)}
-                                 className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-300 ${
+                                 className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-300 shadow-inner ${
                                     bannerTimerEnabled ? 'bg-indigo-600' : 'bg-slate-300'
                                  }`}
                               >
@@ -430,15 +470,18 @@ const SettingsPage = () => {
                         </div>
 
                         {bannerTimerEnabled && (
-                           <div className="space-y-1 pt-4 border-t border-slate-200/60 animate-in slide-in-from-top duration-350">
-                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Countdown Target Date & Time</label>
-                              <input 
-                                 type="datetime-local" 
-                                 className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all bg-white" 
-                                 value={bannerTimerTarget} 
-                                 onChange={e => setBannerTimerTarget(e.target.value)} 
-                              />
-                              <p className="text-[10px] text-slate-400 mt-1 font-medium">Select the target date/time in your local system timezone. It will be saved accurately as a universal standard timezone.</p>
+                           <div className="space-y-2 pt-6 border-t border-slate-200/60 animate-in slide-in-from-top duration-350">
+                              <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Countdown Target Date & Time</label>
+                              <div className="relative group">
+                                 <input 
+                                    type="datetime-local" 
+                                    className="w-full rounded-xl border border-indigo-100 px-12 py-4 text-sm font-bold text-slate-800 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all bg-white shadow-sm hover:border-indigo-300 cursor-pointer" 
+                                    value={bannerTimerTarget} 
+                                    onChange={e => setBannerTimerTarget(e.target.value)} 
+                                 />
+                                 <Timer className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-indigo-400 group-hover:text-indigo-600 transition-colors pointer-events-none" />
+                              </div>
+                              <p className="text-[10px] text-slate-400 mt-2 font-medium">Select the target date/time in your local system timezone. It will automatically convert to the universal server timezone.</p>
                            </div>
                         )}
                      </div>
