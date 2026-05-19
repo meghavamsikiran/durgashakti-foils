@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Check, ArrowLeft, Heart, Trash2, Plus, Minus } from 'lucide-react';
+import { ShoppingCart, Check, ArrowLeft, Heart, Trash2, Plus, Minus, AlertTriangle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,7 +16,7 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const { cart, addToCart, updateCartItem, removeFromCart } = useCart();
+  const { cart, addToCart, updateCartItem, removeFromCart, setPendingQty } = useCart();
   const { user, refreshUser } = useAuth();
   const [wishlisting, setWishlisting] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
@@ -274,106 +274,99 @@ const ProductDetail = () => {
               </ul>
             </div>
 
+            {/* Cart Sync Logic: If item is in cart, show Go to Cart only, otherwise show Add to Cart */}
             {(() => {
               const cartItem = cart?.items?.find(item => item.product_id === product?.id);
-              const inCart = !!cartItem;
-              const displayQty = inCart ? cartItem.quantity : quantity;
+              const cartQty = cartItem ? cartItem.quantity : 0;
+
+              if (cartQty > 0) {
+                return (
+                  <div className="mb-6 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-300">
+                    <label className="text-sm font-semibold block text-indigo-900 bg-indigo-50 px-3 py-1 rounded-sm w-max">
+                      Item added to Cart
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <Button
+                        onClick={() => navigate('/cart')}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white h-14 px-8 rounded-full font-bold shadow-[0_0_15px_rgba(79,70,229,0.3)] transition-transform active:scale-95 cursor-pointer text-base tracking-wide flex items-center gap-2"
+                      >
+                        <ShoppingCart className="w-5 h-5" />
+                        Go to Cart
+                      </Button>
+                    </div>
+                  </div>
+                );
+              }
 
               return (
                 <>
                   <div className="mb-6">
                     <label className="text-sm font-semibold mb-2 block">Quantity</label>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-wrap">
                       <Button
                         variant="outline"
-                        onClick={async () => {
-                          if (inCart) {
-                            if (displayQty <= 1) {
-                              await removeFromCart(product.id);
-                              toast.success('Removed from cart');
-                            } else {
-                              await updateCartItem(product.id, displayQty - 1);
-                            }
-                          } else {
-                            setQuantity(Math.max(1, quantity - 1));
-                          }
+                        onClick={() => {
+                          const next = Math.max(1, quantity - 1);
+                          setQuantity(next);
+                          if (setPendingQty) setPendingQty(product.id, next);
                         }}
-                        disabled={!inCart && quantity <= 1}
-                        className="w-12 h-12 p-0 flex items-center justify-center cursor-pointer"
+                        disabled={quantity <= 1}
+                        className="w-12 h-12 p-0 flex items-center justify-center"
                         data-testid="decrease-quantity"
                       >
-                        {displayQty <= 1 ? <Trash2 className={`w-4 h-4 ${inCart ? 'text-rose-500' : 'text-slate-400'}`} /> : <Minus className="w-4 h-4" />}
+                        {quantity <= 1 ? <Trash2 className="w-4 h-4 text-slate-400" /> : <Minus className="w-4 h-4" />}
                       </Button>
-                      <span className="text-xl font-semibold w-12 text-center" data-testid="product-quantity">
-                        {displayQty}
-                      </span>
+                      <span className="text-xl font-semibold w-12 text-center" data-testid="product-quantity">{quantity}</span>
                       <Button
                         variant="outline"
-                        onClick={async () => {
-                          const maxStock = Number(product.stock_quantity) || 999;
-                          if (displayQty >= maxStock) {
-                            toast.error(`Only ${maxStock} units available`);
-                            return;
-                          }
-                          if (inCart) {
-                            await updateCartItem(product.id, displayQty + 1);
-                          } else {
-                            setQuantity(displayQty + 1);
-                          }
+                        onClick={() => {
+                          const next = Math.min(quantity + 1, Number(product.stock_quantity) || 999);
+                          setQuantity(next);
+                          if (setPendingQty) setPendingQty(product.id, next);
                         }}
-                        disabled={displayQty >= (Number(product.stock_quantity) || 999)}
-                        className="w-12 h-12 p-0 flex items-center justify-center cursor-pointer"
+                        disabled={quantity >= Number(product.stock_quantity)}
+                        className="w-12 h-12 p-0 flex items-center justify-center"
                         data-testid="increase-quantity"
                       >
                         <Plus className="w-4 h-4" />
                       </Button>
-                      
                       {Number(product.stock_quantity) <= 10 && Number(product.stock_quantity) > 0 && (
-                        <span className="text-sm text-rose-500 font-bold bg-rose-50 px-3 py-1 rounded-full animate-pulse">
-                          {product.stock_quantity} units left hurry up!
+                        <span className="flex items-center gap-1 text-sm font-bold text-rose-600 animate-pulse">
+                          <AlertTriangle className="w-4 h-4" />
+                          Only {product.stock_quantity} left! Hurry up
                         </span>
                       )}
                     </div>
                   </div>
 
                   <div className="flex gap-4">
-                    {inCart ? (
-                      <Button
-                        onClick={() => navigate('/cart')}
-                        className="flex-1 bg-indigo-600 text-white hover:bg-indigo-700 h-12 rounded-sm font-semibold cursor-pointer tracking-wide flex items-center justify-center gap-2"
-                      >
-                        <ShoppingCart className="w-4 h-4" />
-                        Go to Cart
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={async () => {
-                          try {
-                            setAdding(true);
-                            await addToCart(product.id, quantity);
-                            toast.success('Added to cart!');
-                          } catch (error) {
-                            toast.error(error.message || 'Failed to add to cart');
-                          } finally {
-                            setAdding(false);
-                          }
-                        }}
-                        disabled={adding || Number(product.stock_quantity) <= 0 || product.in_stock === false}
-                        className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-sm font-semibold cursor-pointer"
-                        data-testid="add-to-cart-detail-button"
-                      >
-                        {adding ? (
-                          'Adding...'
-                        ) : (Number(product.stock_quantity) <= 0 || product.in_stock === false) ? (
-                          'Out of Stock'
-                        ) : (
-                          <>
-                            <ShoppingCart className="w-4 h-4 mr-2" />
-                            Add to Cart
-                          </>
-                        )}
-                      </Button>
-                    )}
+                    <Button
+                      onClick={async () => {
+                        try {
+                          setAdding(true);
+                          await addToCart(product.id, quantity);
+                          toast.success('Added to cart!');
+                        } catch (error) {
+                          toast.error(error.message || 'Failed to add to cart');
+                        } finally {
+                          setAdding(false);
+                        }
+                      }}
+                      disabled={adding || Number(product.stock_quantity) <= 0 || product.in_stock === false}
+                      className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-sm font-semibold cursor-pointer"
+                      data-testid="add-to-cart-detail-button"
+                    >
+                      {adding ? (
+                        'Adding...'
+                      ) : (Number(product.stock_quantity) <= 0 || product.in_stock === false) ? (
+                        'Out of Stock'
+                      ) : (
+                        <>
+                          <ShoppingCart className="w-4 h-4 mr-2" />
+                          Add to Cart
+                        </>
+                      )}
+                    </Button>
                     <Button
                       variant="outline"
                       onClick={handleToggleWishlist}

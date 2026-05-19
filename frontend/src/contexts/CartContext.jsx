@@ -29,8 +29,14 @@ const saveGuestCart = (cart) => {
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState({ items: [] });
   const [loading, setLoading] = useState(false);
+  const [pendingQty, setPendingQtyState] = useState({}); // productId -> qty preview before add
   const { token, user } = useAuth();
   const activeRequestsCount = useRef(0);
+
+  // Called from PDP to preview qty in navbar badge live before adding to cart
+  const setPendingQty = useCallback((productId, qty) => {
+    setPendingQtyState(prev => ({ ...prev, [productId]: qty }));
+  }, []);
 
   const fetchCart = useCallback(async () => {
     if (!token) return;
@@ -96,6 +102,8 @@ export const CartProvider = ({ children }) => {
     try {
       await apiClient.post('/cart/add', { product_id: productId, quantity });
       activeRequestsCount.current -= 1;
+      // Clear pending preview for this product once it's in cart
+      setPendingQtyState(prev => { const n = { ...prev }; delete n[productId]; return n; });
       await fetchCart();
     } catch (error) {
       activeRequestsCount.current -= 1;
@@ -192,10 +200,15 @@ export const CartProvider = ({ children }) => {
     }
   }, [token]);
 
-  const cartItemCount = useMemo(() =>
-    cart.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0,
-    [cart.items]
-  );
+  const cartItemCount = useMemo(() => {
+    const cartTotal = cart.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0;
+    // Add pending previews for products NOT yet in cart
+    const pendingTotal = Object.entries(pendingQty).reduce((total, [productId, qty]) => {
+      const alreadyInCart = cart.items?.some(i => i.product_id === Number(productId));
+      return alreadyInCart ? total : total + qty;
+    }, 0);
+    return cartTotal + pendingTotal;
+  }, [cart.items, pendingQty]);
 
   const value = useMemo(() => ({
     cart,
@@ -205,8 +218,9 @@ export const CartProvider = ({ children }) => {
     removeFromCart,
     clearCart,
     fetchCart,
-    cartItemCount
-  }), [cart, loading, addToCart, updateCartItem, removeFromCart, clearCart, fetchCart, cartItemCount]);
+    cartItemCount,
+    setPendingQty
+  }), [cart, loading, addToCart, updateCartItem, removeFromCart, clearCart, fetchCart, cartItemCount, setPendingQty]);
 
   return (
     <CartContext.Provider value={value}>
