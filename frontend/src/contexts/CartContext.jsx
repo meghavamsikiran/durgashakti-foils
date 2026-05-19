@@ -95,14 +95,15 @@ export const CartProvider = ({ children }) => {
     setLoading(true);
     try {
       await apiClient.post('/cart/add', { product_id: productId, quantity });
+      activeRequestsCount.current -= 1;
       await fetchCart();
     } catch (error) {
+      activeRequestsCount.current -= 1;
       if (rollbackCart) {
         setCart(rollbackCart);
       }
       throw error;
     } finally {
-      activeRequestsCount.current -= 1;
       setLoading(false);
     }
   }, [token, fetchCart]);
@@ -128,14 +129,15 @@ export const CartProvider = ({ children }) => {
     setLoading(true);
     try {
       await apiClient.put('/cart/update', { product_id: productId, quantity });
+      activeRequestsCount.current -= 1;
       await fetchCart();
     } catch (error) {
+      activeRequestsCount.current -= 1;
       if (rollbackCart) {
         setCart(rollbackCart);
       }
       throw error;
     } finally {
-      activeRequestsCount.current -= 1;
       setLoading(false);
     }
   }, [token, fetchCart]);
@@ -159,14 +161,15 @@ export const CartProvider = ({ children }) => {
     setLoading(true);
     try {
       await apiClient.delete(`/cart/remove/${productId}`);
+      activeRequestsCount.current -= 1;
       await fetchCart();
     } catch (error) {
+      activeRequestsCount.current -= 1;
       if (rollbackCart) {
         setCart(rollbackCart);
       }
       throw error;
     } finally {
-      activeRequestsCount.current -= 1;
       setLoading(false);
     }
   }, [token, fetchCart]);

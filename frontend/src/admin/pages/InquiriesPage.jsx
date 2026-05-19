@@ -4,6 +4,7 @@ import AdminTable from '../components/AdminTable';
 import apiClient from '../../services/core/apiClient';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
+import PageLoader from '../../components/ui/PageLoader';
 
 const InquiriesPage = () => {
   const [inquiries, setInquiries] = useState([]);
@@ -62,6 +63,8 @@ const InquiriesPage = () => {
       default: return <Circle className="w-3.5 h-3.5 mr-1.5" />;
     }
   };
+
+  if (loading && inquiries.length === 0) return <PageLoader />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 max-w-7xl mx-auto">

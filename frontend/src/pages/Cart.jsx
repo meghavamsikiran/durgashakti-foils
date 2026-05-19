@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trash2, Plus, Minus, ShoppingBag, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useCart } from '../contexts/CartContext';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ const Cart = () => {
   const { cart, updateCartItem, removeFromCart, loading } = useCart();
   const [products, setProducts] = useState({});
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [removingProductId, setRemovingProductId] = useState(null);
 
   useEffect(() => {
     fetchProducts();
@@ -38,18 +39,40 @@ const Cart = () => {
     try {
       await updateCartItem(productId, newQuantity);
     } catch (error) {
-      const message = error.response?.data?.detail || 'Failed to update quantity';
+      const message = error.message || 'Failed to update quantity';
       toast.error(message);
+    }
+  };
+
+  const handleIncrement = (productId, currentQty, stockQuantity) => {
+    const nextQty = currentQty + 1;
+    if (nextQty > Number(stockQuantity || 0)) {
+      toast.error(`Only ${stockQuantity || 0} units available in stock`);
+      return;
+    }
+    handleUpdateQuantity(productId, nextQty);
+  };
+
+  const handleDecrement = (productId, currentQty) => {
+    if (currentQty === 1) {
+      setRemovingProductId(productId);
+    } else {
+      handleUpdateQuantity(productId, currentQty - 1);
     }
   };
 
   const handleRemove = async (productId) => {
     try {
       await removeFromCart(productId);
-      toast.success('Item removed from cart');
     } catch (error) {
-      toast.error('Failed to remove item');
+      toast.error(error.message || 'Failed to remove item');
     }
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!removingProductId) return;
+    await handleRemove(removingProductId);
+    setRemovingProductId(null);
   };
 
   const calculateTotal = () => {
@@ -136,39 +159,40 @@ const Cart = () => {
                           </p>
                         </div>
 
-                        <div className="flex flex-col items-end justify-between">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemove(item.product_id)}
-                            disabled={loading}
-                            data-testid={`remove-item-${product.id}`}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateQuantity(item.product_id, item.quantity - 1)}
-                              disabled={loading || item.quantity <= 1}
+                        <div className="flex flex-col items-end justify-center h-full">
+                          {/* Premium Capsule Quantity Selector */}
+                          <div className="flex items-center justify-between border border-slate-200 bg-white rounded-full h-10 w-[115px] px-3 shadow-sm hover:border-slate-300 transition-all select-none">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDecrement(item.product_id, item.quantity);
+                              }}
+                              disabled={loading}
+                              className="h-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer disabled:opacity-50"
+                              title={item.quantity === 1 ? "Remove item" : "Decrease quantity"}
                               data-testid={`decrease-quantity-${product.id}`}
                             >
-                              <Minus className="w-3 h-3" />
-                            </Button>
-                            <span className="w-8 text-center font-semibold" data-testid={`cart-item-quantity-${product.id}`}>
+                              {item.quantity === 1 ? (
+                                <Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-600 transition-colors" />
+                              ) : (
+                                <Minus className="w-4 h-4 text-slate-400" />
+                              )}
+                            </button>
+                            <span className="font-bold text-slate-900 text-lg tabular-nums" data-testid={`cart-item-quantity-${product.id}`}>
                               {item.quantity}
                             </span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateQuantity(item.product_id, item.quantity + 1)}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleIncrement(item.product_id, item.quantity, product.stock_quantity);
+                              }}
                               disabled={loading}
+                              className="h-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer disabled:opacity-50"
+                              title="Increase quantity"
                               data-testid={`increase-quantity-${product.id}`}
                             >
-                              <Plus className="w-3 h-3" />
-                            </Button>
+                              <Plus className="w-4 h-4 text-slate-400" />
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -226,6 +250,51 @@ const Cart = () => {
           </div>
         )}
       </div>
+
+      {/* Remove Item Confirmation Modal */}
+      <AnimatePresence>
+        {removingProductId && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setRemovingProductId(null)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white border border-slate-200 max-w-sm w-full p-6 rounded-sm shadow-2xl relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setRemovingProductId(null)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <h3 className="text-slate-900 font-bold text-xl tracking-wide mb-2" style={{ fontFamily: 'Manrope' }}>
+                REMOVE ITEM?
+              </h3>
+              
+              <p className="text-slate-600 text-sm mb-6">
+                Are you sure you want to remove this item from your cart?
+              </p>
+              
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => setRemovingProductId(null)}
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-sm text-center transition-colors tracking-wide text-sm cursor-pointer"
+                >
+                  GO BACK
+                </button>
+                <button
+                  onClick={handleConfirmRemove}
+                  className="w-full border border-slate-300 bg-rose-50/40 hover:bg-rose-50 text-rose-700 font-bold py-3 rounded-sm text-center transition-colors tracking-wide text-sm cursor-pointer"
+                >
+                  REMOVE ITEM
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

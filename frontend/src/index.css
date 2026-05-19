@@ -138,3 +138,9 @@ h1, h2, h3, h4, h5, h6 {
         scrollbar-width: none;
     }
 }
+
+/* Adjust top-center toaster to clear the header */
+[data-sonner-toaster][data-position="top-center"] {
+  top: 110px !important;
+}
+

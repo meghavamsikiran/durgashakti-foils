@@ -10,10 +10,12 @@ import AdminTable from '../components/AdminTable';
 import adminService from '../services/admin.service';
 import { useProgress } from '../../components/ui/ProgressToast';
 import apiClient from '../../services/core/apiClient';
+import PageLoader from '../../components/ui/PageLoader';
 
 const GstImportPage = () => {
   const [history, setHistory] = useState([]);
   const [dragActive, setDragActive] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Workflow states
   const [selectedFile, setSelectedFile] = useState(null);
@@ -35,11 +37,14 @@ const GstImportPage = () => {
 
   const loadHistory = async () => {
     try {
+      setLoading(true);
       const response = await apiClient.get('/admin/gst/imports', { silent: true });
       setHistory(response.data || []);
       setPageError(null);
     } catch (err) {
       setPageError(err.message || 'Failed to establish secure connection with the compliance ledger databases.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -211,6 +216,8 @@ const GstImportPage = () => {
     const file = e.dataTransfer.files?.[0];
     if (file) handleFileSelect(file);
   };
+
+  if (loading && history.length === 0) return <PageLoader />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">

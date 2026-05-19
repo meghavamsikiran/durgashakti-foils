@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
+from sqlalchemy.orm.attributes import flag_modified
 from typing import List
 from database import get_db
 from models import CartModel, ProductModel
@@ -34,6 +35,7 @@ async def get_cart(current_user: UserSchema = Depends(get_current_user), db: Asy
     if items_modified:
         cart.items = valid_items
         cart.updated_at = datetime.now(timezone.utc)
+        flag_modified(cart, "items")
         await db.flush()
 
     return {"items": valid_items, "user_id": str(cart.user_id), "id": str(cart.id)}
@@ -74,6 +76,7 @@ async def add_to_cart(item: CartItem, current_user: UserSchema = Depends(get_cur
             items.append(item.model_dump())
         cart.items = items
         cart.updated_at = now
+        flag_modified(cart, "items")
     await db.flush()
     return {"message": "Item added to cart"}
 
@@ -101,6 +104,7 @@ async def update_cart_item(item: CartItem, current_user: UserSchema = Depends(ge
     existing_item['quantity'] = item.quantity
     cart.items = items
     cart.updated_at = datetime.now(timezone.utc)
+    flag_modified(cart, "items")
     await db.flush()
     return {"message": "Cart updated"}
 
@@ -114,6 +118,7 @@ async def remove_from_cart(product_id: str, current_user: UserSchema = Depends(g
         raise HTTPException(status_code=404, detail="Cart not found")
     cart.items = [i for i in (cart.items or []) if i['product_id'] != product_id]
     cart.updated_at = datetime.now(timezone.utc)
+    flag_modified(cart, "items")
     await db.flush()
     return {"message": "Item removed from cart"}
 
@@ -125,6 +130,7 @@ async def clear_cart(current_user: UserSchema = Depends(get_current_user), db: A
     if cart:
         cart.items = []
         cart.updated_at = datetime.now(timezone.utc)
+        flag_modified(cart, "items")
         await db.flush()
     return {"message": "Cart cleared"}
 
@@ -153,6 +159,7 @@ async def bulk_sync_cart(items: List[CartItem], current_user: UserSchema = Depen
     if cart:
         cart.items = current_items
         cart.updated_at = now
+        flag_modified(cart, "items")
     else:
         cart = CartModel(user_id=current_user.id, items=current_items, updated_at=now)
         db.add(cart)
