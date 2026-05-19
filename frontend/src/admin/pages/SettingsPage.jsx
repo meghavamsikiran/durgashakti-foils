@@ -190,33 +190,33 @@ const SettingsPage = () => {
     }
   };
 
-  const stripEdgeEmojis = (str) => {
-    if (!str) return '';
+  const hasEdgeEmoji = (str) => {
+    if (!str) return false;
     try {
-      const regexStart = /^[\s\p{Emoji_Presentation}\p{Extended_Pictographic}✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]+/gu;
-      const regexEnd = /[\s\p{Emoji_Presentation}\p{Extended_Pictographic}✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]+$/gu;
-      return str.replace(regexStart, '').replace(regexEnd, '').trim();
+      const regexStart = /^[\s\p{Emoji_Presentation}\p{Extended_Pictographic}✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]/u;
+      const regexEnd = /[\p{Emoji_Presentation}\p{Extended_Pictographic}✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]\s*$/u;
+      return regexStart.test(str) || regexEnd.test(str);
     } catch (e) {
-      const fallbackStart = /^[\s\uD800-\uDBFF\uDC00-\uDFFF✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]+/g;
-      const fallbackEnd = /[\s\uD800-\uDBFF\uDC00-\uDFFF✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]+$/g;
-      return str.replace(fallbackStart, '').replace(fallbackEnd, '').trim();
+      const fallbackStart = /^[\s\uD800-\uDBFF\uDC00-\uDFFF✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]/;
+      const fallbackEnd = /[\uD800-\uDBFF\uDC00-\uDFFF✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]\s*$/;
+      return fallbackStart.test(str) || fallbackEnd.test(str);
     }
   };
 
   const getPreviewTexts = () => {
-    let t1 = bannerText1;
-    let t2 = bannerText2;
-    if (bannerUseFavicon) {
-      t1 = stripEdgeEmojis(t1);
-      t2 = stripEdgeEmojis(t2);
-    }
+    const t1 = bannerText1 || 'PRIMARY ANNOUNCEMENT TEXT WILL APPEAR HERE';
+    const t2 = (bannerText2 || 'SECONDARY TEXT WILL APPEAR HERE').replace('{timer}', bannerTimerEnabled ? '12HR 59MINS 08SECS' : '{timer}');
     return {
-      p1: t1 || 'PRIMARY ANNOUNCEMENT TEXT WILL APPEAR HERE',
-      p2: (t2 || 'SECONDARY TEXT WILL APPEAR HERE').replace('{timer}', bannerTimerEnabled ? '12HR 59MINS 08SECS' : '{timer}')
+      p1: t1,
+      p2: t2,
+      hasEmoji1: hasEdgeEmoji(bannerText1),
+      hasEmoji2: hasEdgeEmoji(bannerText2)
     };
   };
 
-  const { p1, p2 } = getPreviewTexts();
+  const { p1, p2, hasEmoji1, hasEmoji2 } = getPreviewTexts();
+  const showFaviconSpacer1 = !hasEmoji1 && (!(bannerText2 || bannerTimerEnabled) || !hasEmoji2);
+  const showFaviconSpacer2 = !hasEmoji1 && !hasEmoji2;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -367,24 +367,30 @@ const SettingsPage = () => {
                            <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-indigo-200">
                               {p1}
                            </span>
-                           <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
-                              {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
-                           </span>
+                           {(!bannerUseFavicon || showFaviconSpacer1) && (
+                              <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
+                                 {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
+                              </span>
+                           )}
                            {(bannerText2 || bannerTimerEnabled) && (
                               <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-rose-200">
                                  {p2}
                               </span>
                            )}
-                           <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
-                              {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
-                           </span>
+                           {(bannerText2 || bannerTimerEnabled) && (!bannerUseFavicon || showFaviconSpacer2) && (
+                              <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
+                                 {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
+                              </span>
+                           )}
                            {/* Duplicate for smooth scrolling illusion */}
                            <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-indigo-200">
                               {p1}
                            </span>
-                           <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
-                              {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
-                           </span>
+                           {(!bannerUseFavicon || showFaviconSpacer1) && (
+                              <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
+                                 {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
+                              </span>
+                           )}
                            {(bannerText2 || bannerTimerEnabled) && (
                               <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-rose-200">
                                  {p2}

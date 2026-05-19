@@ -68,27 +68,22 @@ const Navbar = () => {
     return () => clearInterval(interval);
   }, [bannerConfig.timer_enabled, bannerConfig.timer_target]);
 
-  const stripEdgeEmojis = (str) => {
-    if (!str) return '';
+  const hasEdgeEmoji = (str) => {
+    if (!str) return false;
     try {
-      const regexStart = /^[\s\p{Emoji_Presentation}\p{Extended_Pictographic}✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]+/gu;
-      const regexEnd = /[\s\p{Emoji_Presentation}\p{Extended_Pictographic}✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]+$/gu;
-      return str.replace(regexStart, '').replace(regexEnd, '').trim();
+      const regexStart = /^[\s\p{Emoji_Presentation}\p{Extended_Pictographic}✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]/u;
+      const regexEnd = /[\p{Emoji_Presentation}\p{Extended_Pictographic}✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]\s*$/u;
+      return regexStart.test(str) || regexEnd.test(str);
     } catch (e) {
-      const fallbackStart = /^[\s\uD800-\uDBFF\uDC00-\uDFFF✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]+/g;
-      const fallbackEnd = /[\s\uD800-\uDBFF\uDC00-\uDFFF✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]+$/g;
-      return str.replace(fallbackStart, '').replace(fallbackEnd, '').trim();
+      const fallbackStart = /^[\s\uD800-\uDBFF\uDC00-\uDFFF✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]/;
+      const fallbackEnd = /[\uD800-\uDBFF\uDC00-\uDFFF✨🌟🕉️🛡️🍃👑💎🎉⏳🔥⚡🎁🚀💰🎊]\s*$/;
+      return fallbackStart.test(str) || fallbackEnd.test(str);
     }
   };
 
   const getDisplayTexts = () => {
     let t1 = bannerConfig.text1 || "Durga Shakti Foils: Premium Packing Solutions";
     let t2 = bannerConfig.text2 || "";
-
-    if (bannerConfig.use_favicon !== false) {
-      t1 = stripEdgeEmojis(t1);
-      t2 = stripEdgeEmojis(t2);
-    }
 
     if (t2.includes("{timer}")) {
       t2 = t2.replace("{timer}", timerText || "...");
@@ -103,9 +98,9 @@ const Navbar = () => {
   const bannerItems = React.useMemo(() => {
     const list = [];
     for (let i = 0; i < 8; i++) {
-      list.push({ text: t1, id: `t1-${i}` });
+      list.push({ text: t1, id: `t1-${i}`, hasEmoji: hasEdgeEmoji(t1) });
       if (t2) {
-        list.push({ text: t2, id: `t2-${i}` });
+        list.push({ text: t2, id: `t2-${i}`, hasEmoji: hasEdgeEmoji(t2) });
       }
     }
     return list;
@@ -121,24 +116,32 @@ const Navbar = () => {
       <div className="w-full bg-slate-900 text-white overflow-hidden py-2 relative">
         <div className="flex whitespace-nowrap animate-marquee">
           <div className="flex">
-            {bannerItems.map((item) => (
-              <span key={item.id} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
-                {bannerConfig.use_favicon !== false && (
-                   <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
-                )}
-                {item.text}
-              </span>
-            ))}
+            {bannerItems.map((item, index) => {
+              const prevItem = index === 0 ? bannerItems[bannerItems.length - 1] : bannerItems[index - 1];
+              const showFavicon = bannerConfig.use_favicon !== false && !item.hasEmoji && !prevItem.hasEmoji;
+              return (
+                <span key={item.id} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
+                  {showFavicon && (
+                     <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
+                  )}
+                  {item.text}
+                </span>
+              );
+            })}
           </div>
           <div className="flex">
-            {bannerItems.map((item) => (
-              <span key={`dup-${item.id}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
-                {bannerConfig.use_favicon !== false && (
-                   <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
-                )}
-                {item.text}
-              </span>
-            ))}
+            {bannerItems.map((item, index) => {
+              const prevItem = index === 0 ? bannerItems[bannerItems.length - 1] : bannerItems[index - 1];
+              const showFavicon = bannerConfig.use_favicon !== false && !item.hasEmoji && !prevItem.hasEmoji;
+              return (
+                <span key={`dup-${item.id}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
+                  {showFavicon && (
+                     <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
+                  )}
+                  {item.text}
+                </span>
+              );
+            })}
           </div>
         </div>
       </div>
