@@ -4,6 +4,7 @@ import ProductCard from '../components/ProductCard';
 import TablePagination from '../components/ui/TablePagination';
 import api from '../utils/api';
 import { SlidersHorizontal } from 'lucide-react';
+import PageLoader from '../components/ui/PageLoader';
 
 const Shop = () => {
   const [products, setProducts] = useState([]);
@@ -128,7 +129,7 @@ const Shop = () => {
 
           {/* Products Grid */}
           <div className="flex-1">
-            {loading ? null : filteredProducts.length === 0 ? (
+            {loading ? <PageLoader /> : filteredProducts.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">No products found</p>
               </div>
