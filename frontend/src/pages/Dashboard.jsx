@@ -18,14 +18,12 @@ import NotificationsTab from './dashboard/components/NotificationsTab';
 import SavedCardsTab from './dashboard/components/SavedCardsTab';
 import SettingsTab from './dashboard/components/SettingsTab';
 import TransactionsTab from './dashboard/components/TransactionsTab';
-import OrderDetailsModal from './dashboard/components/OrderDetailsModal';
 
 const Dashboard = () => {
   const { user, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('orders');
-  const [selectedOrder, setSelectedOrder] = useState(null);
 
   // Feature hooks
   const { orders, loading: ordersLoading, fetchOrders, cancelOrder, returnOrder } = useOrders();
@@ -37,15 +35,8 @@ const Dashboard = () => {
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/login');
-    } else if (user) {
-      const params = new URLSearchParams(location.search);
-      const orderId = params.get('order');
-      if (orderId && orders.length > 0) {
-        const order = orders.find(o => o.order_number === orderId || o.id === orderId);
-        if (order) setSelectedOrder(order);
-      }
     }
-  }, [authLoading, user, navigate, location.search, orders]);
+  }, [authLoading, user, navigate]);
 
   useEffect(() => {
     const handleDeleteAccount = async () => {
@@ -80,7 +71,7 @@ const Dashboard = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'orders':
-        return <OrdersTab orders={orders} loading={ordersLoading} onCancelOrder={cancelOrder} onSelectOrder={setSelectedOrder} />;
+        return <OrdersTab orders={orders} loading={ordersLoading} onCancelOrder={cancelOrder} />;
       case 'transactions':
         return <TransactionsTab orders={orders} />;
       case 'cards':
@@ -117,13 +108,6 @@ const Dashboard = () => {
           </main>
         </div>
       </div>
-
-      <OrderDetailsModal 
-        order={selectedOrder} 
-        isOpen={!!selectedOrder} 
-        onClose={() => setSelectedOrder(null)} 
-        onReturnOrder={returnOrder}
-      />
     </div>
   );
 };

@@ -135,7 +135,7 @@ def order_confirmation_email(name: str, order: dict) -> tuple[str, str]:
     </div>
     {_section_title("Delivery Address")}
     <p style="color:#374151;font-size:14px;background:#f9fafb;padding:14px;border-radius:8px;">{addr_str}</p>
-    {_cta_button("Track Your Order", f"{SITE_URL}/dashboard?order={order_num}")}"""
+    {_cta_button("Track Your Order", f"{SITE_URL}/order/{order_num}")}"""
     return f"Order Confirmed - {order_num} | DurgaShakti Foils", _base(content, f"Order {order_num}")
 
 
@@ -162,7 +162,7 @@ def payment_success_email(name: str, order: dict) -> tuple[str, str]:
         {_info_row("Date & Time", datetime.now(timezone.utc).strftime("%d %B %Y, %I:%M %p UTC"))}
       </table>
     </div>
-    {_cta_button("View Order", f"{SITE_URL}/dashboard?order={order_num}")}"""
+    {_cta_button("View Order", f"{SITE_URL}/order/{order_num}")}"""
     return f"Payment Successful - ₹{total:.2f} | {order_num}", _base(content, "Payment Success")
 
 
@@ -183,7 +183,7 @@ def payment_failed_email(name: str, order_num: str, reason: str = "") -> tuple[s
       {f'<p style="margin:0;color:#7f1d1d;font-size:13px;">Reason: {reason}</p>' if reason else ''}
     </div>
     <p style="color:#374151;font-size:14px;">Please try again using a different payment method or contact your bank.</p>
-    {_cta_button("Retry Payment", f"{SITE_URL}/dashboard?order={order_num}")}"""
+    {_cta_button("Retry Payment", f"{SITE_URL}/order/{order_num}")}"""
     return f"Payment Failed - {order_num} | DurgaShakti Foils", _base(content, "Payment Failed")
 
 
@@ -210,7 +210,7 @@ def order_shipped_email(name: str, order: dict) -> tuple[str, str]:
         {_info_row("Tracking ID", tracking_id)}
       </table>
     </div>
-    {_cta_button("Track Shipment", tracking_url if tracking_url else f"{SITE_URL}/dashboard?order={order_num}")}
+    {_cta_button("Track Shipment", tracking_url if tracking_url else f"{SITE_URL}/order/{order_num}")}
     <p style="color:#9ca3af;font-size:12px;text-align:center;">Expected delivery within 3-5 business days.</p>"""
     return f"Your Order {order_num} is Shipped! 🚚", _base(content, "Order Shipped")
 
@@ -249,7 +249,7 @@ def order_delivered_email(name: str, order: dict) -> tuple[str, str]:
     <div style="background:#fef3c7;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;">
       <p style="margin:0;color:#92400e;font-size:13px;">🔄 Return window: <strong>4 days</strong> from delivery date. Visit your dashboard to initiate a return.</p>
     </div>
-    {_cta_button("View Order / Return", f"{SITE_URL}/dashboard?order={order_num}")}
+    {_cta_button("View Order / Return", f"{SITE_URL}/order/{order_num}")}
     <p style="color:#9ca3af;font-size:12px;text-align:center;">Thank you for shopping with DurgaShakti Foils! 💛</p>"""
     return f"Delivered! Order {order_num} Receipt | DurgaShakti Foils", _base(content, "Order Delivered")
 
@@ -300,7 +300,7 @@ def return_requested_email(name: str, order_num: str, reason: str) -> tuple[str,
       </table>
     </div>
     <p style="color:#374151;font-size:14px;">Our team will review your return request within 1-2 business days and notify you of the decision.</p>
-    {_cta_button("View Request Status", f"{SITE_URL}/dashboard?order={order_num}")}"""
+    {_cta_button("View Request Status", f"{SITE_URL}/order/{order_num}")}"""
     return f"Return Request Submitted - {order_num} | DurgaShakti Foils", _base(content, "Return Requested")
 
 

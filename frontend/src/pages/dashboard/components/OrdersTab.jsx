@@ -6,7 +6,7 @@ import TablePagination from '../../../components/ui/TablePagination';
 import { useNavigate } from 'react-router-dom';
 import PageLoader from '../../../components/ui/PageLoader';
 
-const OrdersTab = ({ orders, loading, onCancelOrder, onSelectOrder }) => {
+const OrdersTab = ({ orders, loading, onCancelOrder }) => {
   const navigate = useNavigate();
   const [ordersPage, setOrdersPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,7 +115,7 @@ const OrdersTab = ({ orders, loading, onCancelOrder, onSelectOrder }) => {
                       {['pending', 'pending_payment', 'processing'].includes(order.order_status) && (
                         <Button variant="ghost" onClick={() => onCancelOrder(order.id)} className="text-rose-500 hover:bg-rose-50 rounded-xl text-xs font-bold px-4">Cancel</Button>
                       )}
-                      <Button onClick={() => onSelectOrder(order)} className="rounded-xl px-6 font-bold shadow-indigo-100 shadow-lg">View Details</Button>
+                      <Button onClick={() => window.open(`/order/${order.id}`, '_blank')} className="rounded-xl px-6 font-bold shadow-indigo-100 shadow-lg">View Details</Button>
                     </div>
                   </div>
                 </div>

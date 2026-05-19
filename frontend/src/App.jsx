@@ -24,6 +24,7 @@ import Contact from './pages/Contact';
 // Lazy loaded (authenticated routes)
 const Checkout = lazy(() => import('./pages/Checkout'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const OrderDetailsPage = lazy(() => import('./pages/OrderDetailsPage'));
 const OrderSuccess = lazy(() => import('./pages/OrderSuccess'));
 
 // Admin (lazy loaded)
@@ -87,6 +88,9 @@ function AppRoutes() {
               } />
               <Route path="/dashboard" element={
                 <ProtectedRoute><Dashboard /></ProtectedRoute>
+              } />
+              <Route path="/order/:id" element={
+                <ProtectedRoute><OrderDetailsPage /></ProtectedRoute>
               } />
               <Route path="/order-success" element={
                 <ProtectedRoute><OrderSuccess /></ProtectedRoute>
