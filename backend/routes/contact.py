@@ -4,7 +4,8 @@ from sqlalchemy import select, func
 from typing import Optional
 from database import get_db
 from models import ContactModel
-from deps import require_permission, UserSchema
+import re
+from deps import require_permission, UserSchema, validate_phone_number
 
 router = APIRouter(prefix="/api")
 
@@ -18,6 +19,18 @@ async def submit_contact(data: dict, db: AsyncSession = Depends(get_db)):
 
     if not name or not email or not message:
         raise HTTPException(status_code=400, detail="Name, email, and message are required")
+
+    # Email validation
+    email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    if not re.match(email_regex, email):
+        raise HTTPException(status_code=400, detail="Please provide a valid email address.")
+
+    # Phone validation
+    if phone:
+        try:
+            phone = validate_phone_number(phone)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
 
     contact = ContactModel(
         name=name,

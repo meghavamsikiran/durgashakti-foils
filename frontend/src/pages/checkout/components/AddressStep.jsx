@@ -171,6 +171,9 @@ const AddressStep = ({
                 </button>
               </div>
               <Input name="address_line2" value={shippingInfo.address_line2} onChange={onInputChange} className="rounded-xl h-12" />
+              <p className="text-[10px] font-semibold text-amber-600/80 italic ml-1">
+                * Note: Geolocation approximations depend on browser permissions/settings and might not work precisely. Please verify loaded address details.
+              </p>
             </div>
           </div>
         )}

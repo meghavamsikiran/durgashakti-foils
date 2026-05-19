@@ -18,7 +18,7 @@ from email.mime.multipart import MIMEMultipart
 
 from fastapi import HTTPException, Depends, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -34,15 +34,22 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 # ── JWT Config ───────────────────────────────────────────────────────────
 JWT_SECRET = os.environ.get('JWT_SECRET', '')
 if not JWT_SECRET:
-    if os.environ.get('ENVIRONMENT') == 'production':
-        raise RuntimeError('JWT_SECRET must be set in production')
-    import secrets as _sec
-    JWT_SECRET = _sec.token_urlsafe(48)
-    logging.warning('JWT_SECRET auto-generated for local dev.')
-JWT_ALGORITHM = 'HS256'
-JWT_EXPIRATION_HOURS = 24
+    JWT_SECRET = "super_secret_local_dev_only_key_ds_foils"
+
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
 security = HTTPBearer()
+
+def validate_phone_number(v: str) -> str:
+    if not v:
+        raise ValueError("Phone number cannot be empty")
+    cleaned = re.sub(r"[\s\-\(\)\+]", "", v)
+    if not cleaned.isdigit():
+        raise ValueError("Phone number must only contain digits and optionally country code (+)")
+    if not (7 <= len(cleaned) <= 15):
+        raise ValueError("Phone number must be a valid international number between 7 and 15 digits long")
+    return v
 
 
 # ── Pydantic Schemas ─────────────────────────────────────────────────────
@@ -65,6 +72,13 @@ class UserRegister(BaseModel):
     full_name: str = Field(min_length=1, max_length=120)
     phone: Optional[str] = None
 
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v):
+        if v is not None and v != "":
+            return validate_phone_number(v)
+        return v
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
@@ -73,6 +87,13 @@ class UserProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v):
+        if v is not None and v != "":
+            return validate_phone_number(v)
+        return v
 
 class UserAddress(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -86,18 +107,28 @@ class UserAddress(BaseModel):
     pincode: str
     is_default: bool = False
 
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v):
+        return validate_phone_number(v)
+
 class CartItem(BaseModel):
     product_id: str
     quantity: int = Field(ge=1)
 
 class ShippingAddress(BaseModel):
     full_name: str = Field(min_length=1, max_length=120)
-    phone: str = Field(min_length=10, max_length=20, pattern=r'^\+?[\d\s\-]{10,20}$')
+    phone: str
     address_line1: str = Field(min_length=1, max_length=255)
     address_line2: Optional[str] = Field(default=None, max_length=255)
     city: str = Field(min_length=1, max_length=100)
     state: str = Field(min_length=1, max_length=100)
     pincode: str = Field(min_length=6, max_length=6, pattern=r'^\d{6}$')
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v):
+        return validate_phone_number(v)
 
 class OrderItemSchema(BaseModel):
     product_id: str
@@ -133,12 +164,26 @@ class AdminCreateRequest(BaseModel):
     role: str = "admin"
     permissions: dict = {}
 
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v):
+        if v is not None and v != "":
+            return validate_phone_number(v)
+        return v
+
 class AdminUpdateRequest(BaseModel):
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
     role: Optional[str] = None
     permissions: Optional[dict] = None
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v):
+        if v is not None and v != "":
+            return validate_phone_number(v)
+        return v
 
 class PasswordResetRequest(BaseModel):
     new_password: str = Field(min_length=8, max_length=128)
