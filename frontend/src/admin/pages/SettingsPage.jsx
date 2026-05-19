@@ -4,7 +4,7 @@ import adminService from '../services/admin.service';
 import { 
   Settings, Building2, Phone, Mail, MapPin, 
   ShieldCheck, Save, Globe, Lock, Cpu,
-  Cloud, Database, RefreshCcw, Timer, Megaphone
+  Cloud, Database, RefreshCcw, Timer, Megaphone, Sparkles, Play
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 
@@ -47,10 +47,33 @@ const SettingsPage = () => {
   const [bannerTimerTarget, setBannerTimerTarget] = useState('');
   const [savingBanner, setSavingBanner] = useState(false);
 
-  // Security State
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // Magic Wand Theme Generators
+  const premiumThemes1 = [
+    "✨ Experience Purity & Perfection with Durga Shakti Premium Foils ✨",
+    "🌟 Elevate Your Kitchen Standards with India's #1 Food-Grade Aluminum Foil 🌟",
+    "🕉️ Celebrate the Divine Festivities with Exclusive Offers on Durga Shakti Foils 🕉️",
+    "🛡️ Unmatched Quality & Protection: Discover the Durga Shakti Difference 🛡️"
+  ];
+
+  const premiumThemes2 = [
+    "⏳ Hurry! Our Exclusive 50% Off Flash Sale Ends In: {timer} ⏳",
+    "🔥 Limited Time Offer: Premium Packaging at Unbeatable Prices ends in {timer} 🔥",
+    "⚡ Don't Miss Out! Special Festival Discount expires in {timer} ⚡",
+    "🎁 Unlock Your Special Gift on All Orders Placed within the next {timer} 🎁"
+  ];
+
+  const applyMagicTheme = (setText, themesArray, currentText) => {
+    let currentIndex = themesArray.indexOf(currentText);
+    let nextIndex = (currentIndex + 1) % themesArray.length;
+    setText(themesArray[nextIndex]);
+    toast.success('✨ Magic Theme Applied & Grammar Polished!', { 
+      description: 'The banner text has been professionally formatted.'
+    });
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -287,7 +310,7 @@ const SettingsPage = () => {
 
                {/* Sacred Banner Management */}
                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden mt-8">
-                  <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
+                  <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12 pointer-events-none">
                      <Megaphone className="w-32 h-32 text-indigo-950" />
                   </div>
                   
@@ -295,23 +318,79 @@ const SettingsPage = () => {
                      <Megaphone className="w-5 h-5 text-indigo-600" />
                      Sacred Banner Management
                   </h2>
-                  <p className="text-xs text-slate-500 mb-8 font-medium">Customize the scrolling announcement messages at the top of the store.</p>
+                  <p className="text-xs text-slate-500 mb-8 font-medium">Customize the scrolling announcement messages. Click the magic wand to auto-generate beautiful, grammar-corrected premium themes.</p>
+
+                  {/* Live Animated Preview */}
+                  <div className="mb-8 p-4 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner">
+                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                        <Play className="w-3 h-3 text-indigo-500" /> Live Preview
+                     </h3>
+                     <div className="w-full bg-slate-950 text-white overflow-hidden py-2.5 rounded-xl border border-slate-800 shadow-lg relative flex items-center">
+                        <div className="whitespace-nowrap animate-marquee flex items-center">
+                           <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-indigo-200">
+                              {bannerText1 || 'PRIMARY ANNOUNCEMENT TEXT WILL APPEAR HERE'}
+                           </span>
+                           <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+                           </span>
+                           {(bannerText2 || bannerTimerEnabled) && (
+                              <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-rose-200">
+                                 {(bannerText2 || 'SECONDARY TEXT WILL APPEAR HERE').replace('{timer}', bannerTimerEnabled ? '12HR 59MINS 08SECS' : '{timer}')}
+                              </span>
+                           )}
+                           <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+                           </span>
+                           {/* Duplicate for smooth scrolling illusion */}
+                           <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-indigo-200">
+                              {bannerText1 || 'PRIMARY ANNOUNCEMENT TEXT WILL APPEAR HERE'}
+                           </span>
+                           <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+                           </span>
+                           {(bannerText2 || bannerTimerEnabled) && (
+                              <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-rose-200">
+                                 {(bannerText2 || 'SECONDARY TEXT WILL APPEAR HERE').replace('{timer}', bannerTimerEnabled ? '12HR 59MINS 08SECS' : '{timer}')}
+                              </span>
+                           )}
+                        </div>
+                        {/* Edge Gradients for polished look */}
+                        <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none" />
+                        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none" />
+                     </div>
+                  </div>
 
                   <div className="space-y-6">
-                     <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Primary Announcement (Text 1)</label>
+                     <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Primary Announcement (Text 1)</label>
+                           <button 
+                              onClick={() => applyMagicTheme(setBannerText1, premiumThemes1, bannerText1)}
+                              className="text-[10px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white px-3 py-1 rounded-full transition-all flex items-center gap-1.5 shadow-sm active:scale-95 border border-indigo-100"
+                           >
+                              <Sparkles className="w-3 h-3" /> Auto-Polish & Theme
+                           </button>
+                        </div>
                         <input 
-                           className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" 
+                           className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-medium text-slate-800" 
                            value={bannerText1} 
                            onChange={e => setBannerText1(e.target.value)} 
                            placeholder="e.g. Durga Shakti Foils: Premium Packing Solutions" 
                         />
                      </div>
 
-                     <div className="space-y-1">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Secondary Announcement (Text 2 - Alternate)</label>
+                     <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Secondary Announcement (Text 2 - Alternate)</label>
+                           <button 
+                              onClick={() => applyMagicTheme(setBannerText2, premiumThemes2, bannerText2)}
+                              className="text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white px-3 py-1 rounded-full transition-all flex items-center gap-1.5 shadow-sm active:scale-95 border border-rose-100"
+                           >
+                              <Sparkles className="w-3 h-3" /> Auto-Polish & Theme
+                           </button>
+                        </div>
                         <input 
-                           className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" 
+                           className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-medium text-slate-800" 
                            value={bannerText2} 
                            onChange={e => setBannerText2(e.target.value)} 
                            placeholder="e.g. 50% off discount sale starts/ends in {timer}" 

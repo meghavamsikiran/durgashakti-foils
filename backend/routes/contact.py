@@ -56,3 +56,23 @@ async def list_contacts(
         for c in res.scalars().all()
     ]
     return {"items": items, "total": total, "page": page, "limit": limit}
+
+@router.put("/admin/contacts/{contact_id}/status")
+async def update_contact_status(
+    contact_id: str,
+    data: dict,
+    admin: UserSchema = Depends(require_permission("manage_customers")),
+    db: AsyncSession = Depends(get_db)
+):
+    status = data.get("status")
+    if not status:
+        raise HTTPException(status_code=400, detail="Status is required")
+        
+    res = await db.execute(select(ContactModel).where(ContactModel.id == contact_id))
+    contact = res.scalar_one_or_none()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact inquiry not found")
+        
+    contact.status = status
+    await db.flush()
+    return {"message": "Status updated successfully", "status": contact.status}
