@@ -105,8 +105,8 @@ const DurgaMaaLoader = () => {
   // Desktop Video Loader
   return (
     <div 
-      className="relative w-40 h-32 flex items-center justify-center overflow-hidden bg-transparent"
-      style={{ mixBlendMode: 'multiply' }}
+      className="relative w-40 h-32 flex items-center justify-center overflow-hidden bg-transparent border-0 outline-none select-none shadow-none"
+      style={{ mixBlendMode: 'multiply', border: 'none', outline: 'none' }}
     >
       <video 
         ref={videoRef}
@@ -116,12 +116,14 @@ const DurgaMaaLoader = () => {
         muted 
         playsInline
         onTimeUpdate={handleTimeUpdate}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover border-0 outline-none bg-transparent"
         style={{ 
           filter: 'contrast(1.2) brightness(1.1)',
           mixBlendMode: 'multiply',
           transform: 'scale(1.08)',
-          backgroundColor: 'transparent'
+          backgroundColor: 'transparent',
+          border: 'none',
+          outline: 'none'
         }}
       />
     </div>

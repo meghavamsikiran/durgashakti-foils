@@ -4,9 +4,29 @@ import adminService from '../services/admin.service';
 import { 
   Settings, Building2, Phone, Mail, MapPin, 
   ShieldCheck, Save, Globe, Lock, Cpu,
-  Cloud, Database, RefreshCcw
+  Cloud, Database, RefreshCcw, Timer, Megaphone
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+
+const formatToLocalInput = (isoString) => {
+  if (!isoString) return '';
+  try {
+    const d = new Date(isoString);
+    const tzOffset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+  } catch {
+    return '';
+  }
+};
+
+const formatToISO = (localString) => {
+  if (!localString) return '';
+  try {
+    return new Date(localString).toISOString();
+  } catch {
+    return '';
+  }
+};
 
 const SettingsPage = () => {
   const [companyName, setCompanyName] = useState('');
@@ -19,6 +39,13 @@ const SettingsPage = () => {
   const [loaded, setLoaded] = useState(false);
   const [me, setMe] = useState(null);
   const [codEnabled, setCodEnabled] = useState(true);
+
+  // Scrolling Banner State
+  const [bannerText1, setBannerText1] = useState('');
+  const [bannerText2, setBannerText2] = useState('');
+  const [bannerTimerEnabled, setBannerTimerEnabled] = useState(false);
+  const [bannerTimerTarget, setBannerTimerTarget] = useState('');
+  const [savingBanner, setSavingBanner] = useState(false);
 
   // Security State
   const [currentPassword, setCurrentPassword] = useState('');
@@ -42,6 +69,13 @@ const SettingsPage = () => {
         setGoogleMapsLink(profile.googleMapsLink || '');
         const paymentSettings = data.payment_settings || {};
         setCodEnabled(paymentSettings.cod_enabled !== false);
+
+        const bannerSettings = data.scrolling_banner || {};
+        setBannerText1(bannerSettings.text1 || '');
+        setBannerText2(bannerSettings.text2 || '');
+        setBannerTimerEnabled(!!bannerSettings.timer_enabled);
+        setBannerTimerTarget(formatToLocalInput(bannerSettings.timer_target || ''));
+
         setMe(meRes.data);
       } catch {
       } finally {
@@ -63,6 +97,26 @@ const SettingsPage = () => {
       toast.error(error.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveBanner = async () => {
+    try {
+      setSavingBanner(true);
+      await adminService.updateSetting({
+        key: 'scrolling_banner',
+        value: {
+          text1: bannerText1,
+          text2: bannerText2,
+          timer_enabled: bannerTimerEnabled,
+          timer_target: formatToISO(bannerTimerTarget)
+        }
+      });
+      toast.success('Scrolling banner settings saved successfully');
+    } catch (error) {
+      toast.error(error.message || 'Failed to save scrolling banner settings');
+    } finally {
+      setSavingBanner(false);
     }
   };
 
@@ -228,6 +282,93 @@ const SettingsPage = () => {
                            />
                         </button>
                      </div>
+                  </div>
+               </div>
+
+               {/* Sacred Banner Management */}
+               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden mt-8">
+                  <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
+                     <Megaphone className="w-32 h-32 text-indigo-950" />
+                  </div>
+                  
+                  <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-4 flex items-center gap-2">
+                     <Megaphone className="w-5 h-5 text-indigo-600" />
+                     Sacred Banner Management
+                  </h2>
+                  <p className="text-xs text-slate-500 mb-8 font-medium">Customize the scrolling announcement messages at the top of the store.</p>
+
+                  <div className="space-y-6">
+                     <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Primary Announcement (Text 1)</label>
+                        <input 
+                           className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" 
+                           value={bannerText1} 
+                           onChange={e => setBannerText1(e.target.value)} 
+                           placeholder="e.g. Durga Shakti Foils: Premium Packing Solutions" 
+                        />
+                     </div>
+
+                     <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Secondary Announcement (Text 2 - Alternate)</label>
+                        <input 
+                           className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all" 
+                           value={bannerText2} 
+                           onChange={e => setBannerText2(e.target.value)} 
+                           placeholder="e.g. 50% off discount sale starts/ends in {timer}" 
+                        />
+                        <p className="text-[10px] text-slate-400 mt-1 font-medium">Use <span className="font-mono bg-slate-100 px-1 rounded text-indigo-600 font-bold">{'{timer}'}</span> anywhere in the text to dynamically insert the live countdown clock.</p>
+                     </div>
+
+                     <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-6">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                           <div className="flex items-start gap-4">
+                              <div className="p-3 rounded-xl bg-indigo-100 text-indigo-600 flex-shrink-0">
+                                 <Timer className="w-6 h-6 animate-pulse" />
+                              </div>
+                              <div>
+                                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Enable Live Countdown Timer</h3>
+                                 <p className="text-xs text-slate-500 mt-1 max-w-md">Tick this to activate the dynamic live countdown timer replacing the {'{timer}'} tag.</p>
+                              </div>
+                           </div>
+                           
+                           <div className="flex items-center gap-3 self-end md:self-auto">
+                              <span className={`text-[10px] font-black uppercase tracking-widest ${bannerTimerEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
+                                 {bannerTimerEnabled ? 'Enabled' : 'Disabled'}
+                              </span>
+                              <button 
+                                 onClick={() => setBannerTimerEnabled(!bannerTimerEnabled)}
+                                 className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-300 ${
+                                    bannerTimerEnabled ? 'bg-indigo-600' : 'bg-slate-300'
+                                 }`}
+                              >
+                                 <div 
+                                    className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${
+                                       bannerTimerEnabled ? 'translate-x-6' : 'translate-x-0'
+                                    }`}
+                                 />
+                              </button>
+                           </div>
+                        </div>
+
+                        {bannerTimerEnabled && (
+                           <div className="space-y-1 pt-4 border-t border-slate-200/60 animate-in slide-in-from-top duration-350">
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Countdown Target Date & Time</label>
+                              <input 
+                                 type="datetime-local" 
+                                 className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all bg-white" 
+                                 value={bannerTimerTarget} 
+                                 onChange={e => setBannerTimerTarget(e.target.value)} 
+                              />
+                              <p className="text-[10px] text-slate-400 mt-1 font-medium">Select the target date/time in your local system timezone. It will be saved accurately as a universal standard timezone.</p>
+                           </div>
+                        )}
+                     </div>
+                  </div>
+
+                  <div className="mt-8 pt-8 border-t border-slate-200 flex justify-end">
+                     <Button disabled={savingBanner} onClick={saveBanner} className="rounded-xl px-12 font-black uppercase tracking-widest shadow-lg shadow-indigo-200 flex items-center gap-2">
+                        {savingBanner ? 'Saving...' : <><Save className="w-4 h-4" /> Save Banner Settings</>}
+                     </Button>
                   </div>
                </div>
 

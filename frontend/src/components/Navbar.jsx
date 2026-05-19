@@ -4,12 +4,94 @@ import { ShoppingCart, User, LogOut, Package, Menu, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { Button } from './ui/button';
+import settingsService from '../services/settings.service';
 
 const Navbar = () => {
   const { user, logout, isAdmin, isSuperAdmin } = useAuth();
   const { cartItemCount } = useCart();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+
+  // Banner dynamic config state
+  const [bannerConfig, setBannerConfig] = React.useState({
+    text1: 'Durga Shakti Foils: Premium Packing Solutions',
+    text2: '',
+    timer_enabled: false,
+    timer_target: ''
+  });
+  const [timerText, setTimerText] = React.useState('');
+
+  React.useEffect(() => {
+    let active = true;
+    const fetchBanner = async () => {
+      try {
+        const data = await settingsService.getPublicSettings();
+        if (data && data.scrolling_banner && active) {
+          setBannerConfig(data.scrolling_banner);
+        }
+      } catch (err) {
+        console.error("Failed to load banner settings in Navbar:", err);
+      }
+    };
+    fetchBanner();
+    return () => { active = false; };
+  }, []);
+
+  React.useEffect(() => {
+    if (!bannerConfig.timer_enabled || !bannerConfig.timer_target) {
+      setTimerText('');
+      return;
+    }
+
+    const updateTimer = () => {
+      const difference = +new Date(bannerConfig.timer_target) - +new Date();
+      if (difference <= 0) {
+        setTimerText('Ended');
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+
+      let parts = [];
+      if (days > 0) parts.push(`${days}d`);
+      if (hours > 0 || days > 0) parts.push(`${hours}hr`);
+      if (minutes > 0 || hours > 0 || days > 0) parts.push(`${minutes}mins`);
+      parts.push(`${seconds}secs`);
+      setTimerText(parts.join(' '));
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [bannerConfig.timer_enabled, bannerConfig.timer_target]);
+
+  const getDisplayTexts = () => {
+    const t1 = bannerConfig.text1 || "Durga Shakti Foils: Premium Packing Solutions";
+    let t2 = bannerConfig.text2 || "";
+
+    if (t2.includes("{timer}")) {
+      t2 = t2.replace("{timer}", timerText || "...");
+    } else if (timerText && bannerConfig.timer_enabled) {
+      t2 = `${t2} ${timerText}`;
+    }
+
+    return { t1, t2 };
+  };
+
+  const { t1, t2 } = getDisplayTexts();
+  const bannerItems = React.useMemo(() => {
+    const list = [];
+    for (let i = 0; i < 8; i++) {
+      list.push({ text: t1, id: `t1-${i}` });
+      if (t2) {
+        list.push({ text: t2, id: `t2-${i}` });
+      }
+    }
+    return list;
+  }, [t1, t2]);
 
   const handleLogout = () => {
     logout();
@@ -21,18 +103,18 @@ const Navbar = () => {
       <div className="w-full bg-slate-900 text-white overflow-hidden py-2 relative">
         <div className="flex whitespace-nowrap animate-marquee">
           <div className="flex">
-            {[...Array(10)].map((_, i) => (
-              <span key={i} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
+            {bannerItems.map((item) => (
+              <span key={item.id} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                 <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
-                Durga Shakti Foils: Premium Packing Solutions
+                {item.text}
               </span>
             ))}
           </div>
           <div className="flex">
-            {[...Array(10)].map((_, i) => (
-              <span key={`dup-${i}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
+            {bannerItems.map((item) => (
+              <span key={`dup-${item.id}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                 <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
-                Durga Shakti Foils: Premium Packing Solutions
+                {item.text}
               </span>
             ))}
           </div>
