@@ -44,12 +44,39 @@ security = HTTPBearer()
 def validate_phone_number(v: str) -> str:
     if not v:
         raise ValueError("Phone number cannot be empty")
-    cleaned = re.sub(r"[\s\-\(\)\+]", "", v)
-    if not cleaned.isdigit():
-        raise ValueError("Phone number must only contain digits and optionally country code (+)")
-    if not (7 <= len(cleaned) <= 15):
-        raise ValueError("Phone number must be a valid international number between 7 and 15 digits long")
-    return v
+    
+    # Strip spaces, hyphens, and parentheses
+    cleaned = re.sub(r"[\s\-\(\)]", "", v)
+    
+    # Auto-format local Indian numbers:
+    # 1. 10-digit Indian mobile number (e.g. 8367542954)
+    if cleaned.isdigit() and len(cleaned) == 10:
+        cleaned = "+91" + cleaned
+    # 2. Local 0-prefixed 11-digit number (e.g. 08367542954)
+    elif cleaned.isdigit() and len(cleaned) == 11 and cleaned.startswith("0"):
+        cleaned = "+91" + cleaned[1:]
+        
+    # Enforce country code starting with '+'
+    if not cleaned.startswith("+"):
+        raise ValueError("Phone number must include a valid country code starting with '+' (e.g. +91 83675 42954)")
+        
+    # Verify remaining characters are digits
+    digits_only = cleaned[1:]
+    if not digits_only.isdigit():
+        raise ValueError("Phone number must contain only digits after the '+' prefix")
+        
+    if not (10 <= len(cleaned) <= 16):
+        raise ValueError("Phone number must be between 10 and 15 digits including country code")
+        
+    # Prevent obvious fake/test sequences in local part (last 10 digits)
+    if len(digits_only) >= 10:
+        local_part = digits_only[-10:]
+        if len(set(local_part)) == 1:
+            raise ValueError("Phone number cannot consist of the same repeating digit (e.g. 0000000000)")
+        if local_part in ["1234567890", "0123456789", "9876543210", "1234567891"]:
+            raise ValueError("Invalid phone number sequence (e.g. 1234567890)")
+            
+    return cleaned
 
 
 # ── Pydantic Schemas ─────────────────────────────────────────────────────
