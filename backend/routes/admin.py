@@ -401,6 +401,10 @@ async def create_admin_user(payload: AdminCreateRequest, admin: UserSchema = Dep
     res = await db.execute(select(UserModel).where(UserModel.email == payload.email))
     if res.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already exists")
+    if payload.phone:
+        res_phone = await db.execute(select(UserModel).where(UserModel.phone == payload.phone))
+        if res_phone.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Phone number already registered to another account")
     if payload.role == "SUPER_ADMIN":
         raise HTTPException(status_code=400, detail="Only one Super Admin allowed")
 
@@ -450,7 +454,11 @@ async def update_admin_user(user_id: str, data: AdminUpdateRequest, admin: UserS
         raise HTTPException(status_code=404, detail="Admin not found")
 
     if data.full_name: u.full_name = data.full_name
-    if data.phone: u.phone = data.phone
+    if data.phone and data.phone != u.phone:
+        dup_phone = await db.execute(select(UserModel).where(UserModel.phone == data.phone, UserModel.id != user_id))
+        if dup_phone.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Phone number already in use by another account")
+        u.phone = data.phone
     if data.email and data.email != u.email:
         dup = await db.execute(select(UserModel).where(UserModel.email == data.email, UserModel.id != user_id))
         if dup.scalar_one_or_none():

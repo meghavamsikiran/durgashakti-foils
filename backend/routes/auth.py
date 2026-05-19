@@ -34,6 +34,11 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(UserModel).where(UserModel.email == user_data.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")
+        
+    if user_data.phone:
+        existing_phone = await db.execute(select(UserModel).where(UserModel.phone == user_data.phone))
+        if existing_phone.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Phone number already registered to another account")
     user_id = str(uuid.uuid4())
     new_user = UserModel(
         id=user_id,
@@ -166,6 +171,10 @@ async def update_profile(data: UserProfileUpdate, current_user: UserSchema = Dep
     if data.full_name is not None:
         update_data['full_name'] = data.full_name
     if data.phone is not None:
+        if data.phone != "" and data.phone != current_user.phone:
+            dup_phone = await db.execute(select(UserModel).where(UserModel.phone == data.phone, UserModel.id != current_user.id))
+            if dup_phone.scalar_one_or_none():
+                raise HTTPException(status_code=400, detail="Phone number already in use by another account")
         update_data['phone'] = data.phone
     if data.email is not None and data.email != current_user.email:
         dup = await db.execute(select(UserModel).where(UserModel.email == data.email, UserModel.id != current_user.id))
