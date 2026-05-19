@@ -10,6 +10,8 @@ import {
 import { Button } from '../../components/ui/button';
 import { PERMISSION_GROUPS, getAllPermissionKeys } from '../constants/rbac';
 import PageLoader from '../../components/ui/PageLoader';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
   const allKeys = getAllPermissionKeys();
@@ -414,8 +416,13 @@ const AdminUsersPage = () => {
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Phone Number</label>
-                        <input name="phone_new" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
-                          value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+91..." />
+                        <PhoneInput
+                          international
+                          defaultCountry="IN"
+                          value={form.phone}
+                          onChange={val => setForm({...form, phone: val || ''})}
+                          className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
+                        />
                       </div>
                     </div>
                     <div className="space-y-1">
@@ -485,8 +492,13 @@ const AdminUsersPage = () => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Phone Number</label>
-                  <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                    value={editForm.phone} onChange={e => setEditForm({...editForm, phone: e.target.value})} placeholder="+91..." />
+                  <PhoneInput
+                    international
+                    defaultCountry="IN"
+                    value={editForm.phone}
+                    onChange={val => setEditForm({...editForm, phone: val || ''})}
+                    className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
+                  />
                 </div>
               </div>
 

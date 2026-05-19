@@ -25,6 +25,9 @@ from sqlalchemy import select
 from database import get_db
 from models import UserModel, AuditLogModel, NotificationModel
 
+import phonenumbers
+from phonenumbers import NumberParseException
+
 logger = logging.getLogger(__name__)
 
 ROOT_DIR = Path(__file__).parent
@@ -49,10 +52,8 @@ def validate_phone_number(v: str) -> str:
     cleaned = re.sub(r"[\s\-\(\)]", "", v)
     
     # Auto-format local Indian numbers:
-    # 1. 10-digit Indian mobile number (e.g. 8367542954)
     if cleaned.isdigit() and len(cleaned) == 10:
         cleaned = "+91" + cleaned
-    # 2. Local 0-prefixed 11-digit number (e.g. 08367542954)
     elif cleaned.isdigit() and len(cleaned) == 11 and cleaned.startswith("0"):
         cleaned = "+91" + cleaned[1:]
         
@@ -65,9 +66,6 @@ def validate_phone_number(v: str) -> str:
     if not digits_only.isdigit():
         raise ValueError("Phone number must contain only digits after the '+' prefix")
         
-    if not (10 <= len(cleaned) <= 16):
-        raise ValueError("Phone number must be between 10 and 15 digits including country code")
-        
     # Prevent obvious fake/test sequences in local part (last 10 digits)
     if len(digits_only) >= 10:
         local_part = digits_only[-10:]
@@ -76,6 +74,31 @@ def validate_phone_number(v: str) -> str:
         if local_part in ["1234567890", "0123456789", "9876543210", "1234567891"]:
             raise ValueError("Invalid phone number sequence (e.g. 1234567890)")
             
+    # Deep validation via Google phonenumbers library to ensure it actually exists
+    try:
+        parsed = phonenumbers.parse(cleaned, None)
+        if not phonenumbers.is_valid_number(parsed):
+            raise ValueError("The phone number provided does not exist or is invalid for its country code")
+        return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+    except NumberParseException as e:
+        raise ValueError(f"Invalid phone number format: {str(e)}")
+
+def validate_gmail_address(v: str) -> str:
+    if not v:
+        raise ValueError("Email address cannot be empty")
+    cleaned = v.strip().lower()
+    
+    # Enforce strict @gmail.com suffix
+    if not cleaned.endswith("@gmail.com"):
+        raise ValueError("Email address must end strictly with '@gmail.com'")
+        
+    # Check domain deliverability / existence using email-validator
+    from email_validator import validate_email, EmailNotValidError
+    try:
+        validate_email(cleaned, check_deliverability=True)
+    except EmailNotValidError as e:
+        raise ValueError(f"Email domain does not exist or is unreachable: {str(e)}")
+        
     return cleaned
 
 
@@ -99,6 +122,11 @@ class UserRegister(BaseModel):
     full_name: str = Field(min_length=1, max_length=120)
     phone: Optional[str] = None
 
+    @field_validator("email")
+    @classmethod
+    def validate_email_address(cls, v):
+        return validate_gmail_address(v)
+
     @field_validator("phone")
     @classmethod
     def validate_phone(cls, v):
@@ -110,10 +138,22 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+    @field_validator("email")
+    @classmethod
+    def validate_email_address(cls, v):
+        return validate_gmail_address(v)
+
 class UserProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
+
+    @field_validator("email")
+    @classmethod
+    def validate_email_address(cls, v):
+        if v is not None and v != "":
+            return validate_gmail_address(v)
+        return v
 
     @field_validator("phone")
     @classmethod
@@ -178,10 +218,20 @@ class ChangePasswordRequest(BaseModel):
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
+    @field_validator("email")
+    @classmethod
+    def validate_email_address(cls, v):
+        return validate_gmail_address(v)
+
 class ResetPasswordRequest(BaseModel):
     email: EmailStr
     otp: str
     new_password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email_address(cls, v):
+        return validate_gmail_address(v)
 
 class AdminCreateRequest(BaseModel):
     email: EmailStr
@@ -190,6 +240,11 @@ class AdminCreateRequest(BaseModel):
     phone: Optional[str] = None
     role: str = "admin"
     permissions: dict = {}
+
+    @field_validator("email")
+    @classmethod
+    def validate_email_address(cls, v):
+        return validate_gmail_address(v)
 
     @field_validator("phone")
     @classmethod
@@ -204,6 +259,13 @@ class AdminUpdateRequest(BaseModel):
     phone: Optional[str] = None
     role: Optional[str] = None
     permissions: Optional[dict] = None
+
+    @field_validator("email")
+    @classmethod
+    def validate_email_address(cls, v):
+        if v is not None and v != "":
+            return validate_gmail_address(v)
+        return v
 
     @field_validator("phone")
     @classmethod
