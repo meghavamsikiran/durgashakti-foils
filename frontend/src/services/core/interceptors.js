@@ -51,7 +51,7 @@ export const setupInterceptors = (apiClient) => {
         }
 
         // Avoid showing toast for certain errors if needed, or handle globally
-        if (response.status !== 401) {
+        if (response.status !== 401 && !response.config?.silent) {
           toast.error(errorMessage);
         }
         
@@ -64,13 +64,15 @@ export const setupInterceptors = (apiClient) => {
       }
 
       // Handle network errors
-      if (!error.config?.silent) setLoading(false);
-      if (error.message === 'Network Error') {
-        toast.error('🌐 Live server is spin-up waking from sleep mode. Please wait 30 seconds and refresh!', {
-          duration: 12000,
-        });
-      } else {
-        toast.error(error.message);
+      if (!error.config?.silent) {
+        setLoading(false);
+        if (error.message === 'Network Error') {
+          toast.error('🌐 Live server is spin-up waking from sleep mode. Please wait 30 seconds and refresh!', {
+            duration: 12000,
+          });
+        } else {
+          toast.error(error.message);
+        }
       }
 
       return Promise.reject(error);

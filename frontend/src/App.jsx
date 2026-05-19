@@ -164,7 +164,7 @@ function AppRoutes() {
             </Routes>
           </Suspense>
           {!isAdminPath && <Footer />}
-          <Toaster position="bottom-right" />
+          <Toaster position="top-right" closeButton />
         </div>
         </ProgressProvider>
       </CartProvider>
