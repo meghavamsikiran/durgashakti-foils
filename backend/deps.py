@@ -358,12 +358,17 @@ async def create_notification(db: AsyncSession, user_id: str, title: str, messag
     await db.flush()
 
 async def send_email(to_email: str, subject: str, body: str):
-    smtp_host = os.environ.get('SMTP_HOST')
+    smtp_host = os.environ.get('SMTP_HOST', '')
     smtp_port = int(os.environ.get('SMTP_PORT', 587))
-    smtp_user = os.environ.get('SMTP_USER')
-    smtp_pass = os.environ.get('SMTP_PASS')
+    smtp_user = os.environ.get('SMTP_USER', '')
+    smtp_pass = os.environ.get('SMTP_PASS', '').replace(' ', '')  # Google App Passwords have display spaces
     smtp_from = os.environ.get('SMTP_FROM', smtp_user)
+    is_production = os.environ.get('ENVIRONMENT') == 'production'
+    
     if not all([smtp_host, smtp_user, smtp_pass]) or "example.com" in smtp_host:
+        logging.warning("SMTP not configured. Host=%s User=%s PassLen=%d", smtp_host, smtp_user, len(smtp_pass))
+        if is_production:
+            return False  # Don't pretend success in production
         logging.info("--- MOCK EMAIL ---  To: %s  Subject: %s", to_email, subject)
         return True
     try:
@@ -372,11 +377,13 @@ async def send_email(to_email: str, subject: str, body: str):
         msg['To'] = to_email
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'html'))
+        logging.info("Connecting to SMTP %s:%d for %s...", smtp_host, smtp_port, to_email)
         server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
         server.starttls()
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
+        logging.info("Email sent successfully to %s", to_email)
         return True
     except Exception as e:
         logging.error("Failed to send email to %s: %s", to_email, e)
