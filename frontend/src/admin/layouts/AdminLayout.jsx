@@ -32,8 +32,8 @@ const AdminLayout = () => {
   
   // Filter menu based on dynamic permissions
   const menu = superAdminSidebar.filter(item => {
-    if (!item.permission) return true; // Always visible (e.g. Dashboard)
-    return hasPermission(item.permission);
+    if (!item.permissions) return true;
+    return item.permissions.some(p => hasPermission(p));
   });
 
   return (

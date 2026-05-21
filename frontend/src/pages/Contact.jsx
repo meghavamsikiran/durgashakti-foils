@@ -10,8 +10,10 @@ import contactService from '../services/contact.service';
 import { toast } from 'sonner';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
+import { useAuth } from '../contexts/AuthContext';
 
 const Contact = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = React.useState({ name: '', email: '', phone: '', message: '' });
   const [submitted, setSubmitted] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
@@ -24,6 +26,17 @@ const Contact = () => {
     companyAddress: 'Shop No. 1, Plot No. 54, Road No. 1, Maruthi Nagar, Mallampet, Hyderabad, Telangana 500090',
     googleMapsLink: 'https://maps.app.goo.gl/FMk4dnhXvGeTrRFM6'
   });
+
+  React.useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.full_name || '',
+        email: user.email || '',
+        phone: user.phone || ''
+      }));
+    }
+  }, [user]);
 
   React.useEffect(() => {
     const loadSettings = async () => {

@@ -26,9 +26,7 @@ router = APIRouter(prefix="/api")
 
 # ── Products (Admin) ─────────────────────────────────────────────────────
 @router.post("/admin/products")
-async def create_product(product: ProductSchema, admin: UserSchema = Depends(require_permission("manage_products")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+async def create_product(product: ProductSchema, admin: UserSchema = Depends(require_permission("create_products")), db: AsyncSession = Depends(get_db)):
     p = ProductModel(
         id=product.id,
         name=product.name,
@@ -55,9 +53,7 @@ async def create_product(product: ProductSchema, admin: UserSchema = Depends(req
 
 
 @router.post("/admin/products/bulk")
-async def create_product_bulk(payload: ProductBulkCreateRequest, admin: UserSchema = Depends(require_permission("manage_products")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+async def create_product_bulk(payload: ProductBulkCreateRequest, admin: UserSchema = Depends(require_permission("create_products")), db: AsyncSession = Depends(get_db)):
     if not payload.variants:
         raise HTTPException(status_code=400, detail="At least one variant required")
 
@@ -101,9 +97,7 @@ async def create_product_bulk(payload: ProductBulkCreateRequest, admin: UserSche
 
 
 @router.put("/admin/products/{product_id}")
-async def update_product(product_id: str, product_data: dict, admin: UserSchema = Depends(require_permission("manage_products")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+async def update_product(product_id: str, product_data: dict, admin: UserSchema = Depends(require_permission("edit_products")), db: AsyncSession = Depends(get_db)):
     validate_uuid(product_id)
     allowed = {'name', 'description', 'size', 'thickness', 'price', 'discount_price', 'badge', 'image_url', 'media_urls', 'features', 'in_stock', 'stock_quantity', 'category', 'batch_no', 'width', 'low_stock_threshold'}
     safe_data = {k: v for k, v in product_data.items() if k in allowed}
@@ -127,9 +121,7 @@ async def update_product(product_id: str, product_data: dict, admin: UserSchema 
 
 
 @router.delete("/admin/products/{product_id}")
-async def delete_product(product_id: str, admin: UserSchema = Depends(require_permission("manage_products")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+async def delete_product(product_id: str, admin: UserSchema = Depends(require_permission("delete_products")), db: AsyncSession = Depends(get_db)):
     validate_uuid(product_id)
     res = await db.execute(select(ProductModel).where(ProductModel.id == product_id))
     p = res.scalar_one_or_none()
@@ -150,7 +142,7 @@ async def get_all_orders(
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
     status: Optional[str] = Query(None, alias="status_filter"),
-    admin: UserSchema = Depends(require_permission("manage_orders")),
+    admin: UserSchema = Depends(require_permission("view_orders")),
     db: AsyncSession = Depends(get_db)
 ):
     search = sanitize_search_term(search)
@@ -178,7 +170,7 @@ async def get_all_orders(
 
 
 @router.put("/admin/orders/{order_id}/status")
-async def update_order_status(order_id: str, status_data: dict, admin: UserSchema = Depends(require_permission("manage_orders")), db: AsyncSession = Depends(get_db)):
+async def update_order_status(order_id: str, status_data: dict, admin: UserSchema = Depends(require_permission("update_order_status")), db: AsyncSession = Depends(get_db)):
     validate_uuid(order_id)
     res = await db.execute(select(OrderModel).where(OrderModel.id == order_id))
     order = res.scalar_one_or_none()
@@ -395,9 +387,7 @@ async def list_admin_users(admin: UserSchema = Depends(require_permission("manag
 
 
 @router.post("/admin/admin-users")
-async def create_admin_user(payload: AdminCreateRequest, admin: UserSchema = Depends(require_permission("manage_admins")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+async def create_admin_user(payload: AdminCreateRequest, admin: UserSchema = Depends(require_permission("create_admin")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(UserModel).where(UserModel.email == payload.email))
     if res.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already exists")
@@ -408,7 +398,14 @@ async def create_admin_user(payload: AdminCreateRequest, admin: UserSchema = Dep
     if payload.role == "SUPER_ADMIN":
         raise HTTPException(status_code=400, detail="Only one Super Admin allowed")
 
-    from deps import hash_password
+    from deps import hash_password, send_email
+    import asyncio
+    from email_templates import admin_onboarding_email
+
+    # Set first-login password reset requirement
+    permissions_dict = payload.permissions or {}
+    permissions_dict["is_first_login"] = True
+
     uid = str(uuid.uuid4())
     u = UserModel(
         id=uid,
@@ -418,18 +415,24 @@ async def create_admin_user(payload: AdminCreateRequest, admin: UserSchema = Dep
         role="admin",
         is_active=True,
         password=hash_password(payload.password),
-        permissions=payload.permissions,
+        permissions=permissions_dict,
     )
     db.add(u)
     await db.flush()
     await write_audit_log(db, "ADMIN_CREATED", admin.id, "user", uid)
+
+    # Dispatch email
+    try:
+        subj, body = admin_onboarding_email(payload.full_name, payload.email, payload.password)
+        asyncio.create_task(send_email(payload.email, subj, body))
+    except Exception as e:
+        pass
+
     return {"message": "Admin created", "user_id": uid}
 
 
 @router.put("/admin/admin-users/{user_id}/status")
-async def update_admin_status(user_id: str, data: dict, admin: UserSchema = Depends(require_permission("manage_admins")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+async def update_admin_status(user_id: str, data: dict, admin: UserSchema = Depends(require_permission("disable_admin")), db: AsyncSession = Depends(get_db)):
     validate_uuid(user_id)
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot disable yourself")
@@ -444,9 +447,7 @@ async def update_admin_status(user_id: str, data: dict, admin: UserSchema = Depe
 
 
 @router.put("/admin/admin-users/{user_id}")
-async def update_admin_user(user_id: str, data: AdminUpdateRequest, admin: UserSchema = Depends(require_permission("manage_admins")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+async def update_admin_user(user_id: str, data: AdminUpdateRequest, admin: UserSchema = Depends(require_permission("edit_admin")), db: AsyncSession = Depends(get_db)):
     validate_uuid(user_id)
     res = await db.execute(select(UserModel).where(UserModel.id == user_id, UserModel.role.in_(["admin", "SUPER_ADMIN"])))
     u = res.scalar_one_or_none()
@@ -471,9 +472,7 @@ async def update_admin_user(user_id: str, data: AdminUpdateRequest, admin: UserS
 
 
 @router.delete("/admin/admin-users/{user_id}")
-async def delete_admin_user(user_id: str, admin: UserSchema = Depends(require_permission("manage_admins")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+async def delete_admin_user(user_id: str, admin: UserSchema = Depends(require_permission("delete_admin")), db: AsyncSession = Depends(get_db)):
     validate_uuid(user_id)
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
@@ -490,9 +489,7 @@ async def delete_admin_user(user_id: str, admin: UserSchema = Depends(require_pe
 
 
 @router.put("/admin/admin-users/{user_id}/reset-password")
-async def reset_admin_password(user_id: str, req: PasswordResetRequest, admin: UserSchema = Depends(require_permission("manage_admins")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+async def reset_admin_password(user_id: str, req: PasswordResetRequest, admin: UserSchema = Depends(require_permission("edit_admin")), db: AsyncSession = Depends(get_db)):
     validate_uuid(user_id)
     res = await db.execute(select(UserModel).where(UserModel.id == user_id, UserModel.role.in_(["admin", "SUPER_ADMIN"])))
     u = res.scalar_one_or_none()
@@ -507,7 +504,7 @@ async def reset_admin_password(user_id: str, req: PasswordResetRequest, admin: U
 
 # ── Inventory (Admin) ────────────────────────────────────────────────────
 @router.post("/admin/products/{product_id}/inventory")
-async def adjust_inventory(product_id: str, data: dict, admin: UserSchema = Depends(require_permission("manage_inventory")), db: AsyncSession = Depends(get_db)):
+async def adjust_inventory(product_id: str, data: dict, admin: UserSchema = Depends(require_permission("update_stock")), db: AsyncSession = Depends(get_db)):
     validate_uuid(product_id)
     delta = int(data.get("delta", 0))
     res = await db.execute(select(ProductModel).where(ProductModel.id == product_id).with_for_update())
@@ -534,16 +531,12 @@ async def adjust_inventory(product_id: str, data: dict, admin: UserSchema = Depe
 # ── Settings (Admin) ─────────────────────────────────────────────────────
 @router.get("/admin/settings")
 async def get_settings(admin: UserSchema = Depends(require_permission("manage_settings")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
     res = await db.execute(select(SettingModel))
     return {s.key: s.value for s in res.scalars().all()}
 
 
 @router.post("/admin/settings")
 async def save_setting(data: dict, admin: UserSchema = Depends(require_permission("manage_settings")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
     key = data.get("key")
     val = data.get("value")
     if not key:
@@ -619,9 +612,7 @@ async def upload_media_endpoint(file: UploadFile = File(...), admin: UserSchema 
 
 
 @router.post("/admin/gst/import")
-async def import_gst_file(file: UploadFile = File(...), admin: UserSchema = Depends(require_permission("access_gst_reports")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+async def import_gst_file(file: UploadFile = File(...), admin: UserSchema = Depends(require_permission("upload_gst_files")), db: AsyncSession = Depends(get_db)):
     fn = (file.filename or "").lower()
     if not fn.endswith((".csv", ".xlsx", ".xls")):
         raise HTTPException(status_code=400, detail="Unsupported format")
@@ -667,7 +658,7 @@ async def import_gst_file(file: UploadFile = File(...), admin: UserSchema = Depe
 
 
 @router.get("/admin/gst/reports")
-async def get_gst_reports(page: int = Query(1), limit: int = Query(50), search: Optional[str] = None, admin: UserSchema = Depends(require_permission("access_gst_reports")), db: AsyncSession = Depends(get_db)):
+async def get_gst_reports(page: int = Query(1), limit: int = Query(50), search: Optional[str] = None, admin: UserSchema = Depends(require_permission("view_gst_reports")), db: AsyncSession = Depends(get_db)):
     search = sanitize_search_term(search)
     base_q = select(GstRecordModel)
     count_q = select(func.count(GstRecordModel.id))
@@ -682,15 +673,13 @@ async def get_gst_reports(page: int = Query(1), limit: int = Query(50), search: 
 
 
 @router.get("/admin/gst/imports")
-async def get_gst_imports(admin: UserSchema = Depends(require_permission("access_gst_reports")), db: AsyncSession = Depends(get_db)):
+async def get_gst_imports(admin: UserSchema = Depends(require_permission("view_gst_reports")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(GstImportModel).order_by(GstImportModel.upload_date.desc()).limit(100))
     return [row_to_dict(i) for i in res.scalars().all()]
 
 
 @router.post("/admin/gst/seed-sample")
-async def seed_sample_gst(admin: UserSchema = Depends(require_permission("access_gst_reports")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+async def seed_sample_gst(admin: UserSchema = Depends(require_permission("import_gst_data")), db: AsyncSession = Depends(get_db)):
     
     import_id = str(uuid.uuid4())
     samples = [
@@ -767,9 +756,7 @@ async def seed_sample_gst(admin: UserSchema = Depends(require_permission("access
 
 
 @router.get("/admin/audit-logs")
-async def get_audit_logs(page: int = Query(1), limit: int = Query(50), search: Optional[str] = None, admin: UserSchema = Depends(require_permission("access_gst_reports")), db: AsyncSession = Depends(get_db)):
-    if admin.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Super admin only")
+async def get_audit_logs(page: int = Query(1), limit: int = Query(50), search: Optional[str] = None, admin: UserSchema = Depends(require_permission("view_audit_logs")), db: AsyncSession = Depends(get_db)):
     search = sanitize_search_term(search)
     base_q = select(AuditLogModel)
     count_q = select(func.count(AuditLogModel.id))

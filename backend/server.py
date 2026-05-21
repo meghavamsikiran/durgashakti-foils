@@ -19,9 +19,9 @@ from starlette.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 # Initialize DB engine
-load_dotenv()
+load_dotenv(override=True)
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+load_dotenv(ROOT_DIR / '.env', override=True)
 
 from database import init_engine
 from deps import UPLOADS_DIR

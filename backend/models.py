@@ -231,4 +231,6 @@ class ContactModel(Base):
     phone = Column(String(20), nullable=True)
     message = Column(Text, nullable=False)
     status = Column(String(50), default="pending", nullable=False) # pending, read, replied
+    reply_message = Column(Text, nullable=True)
+    replied_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False, index=True)

@@ -12,6 +12,8 @@ const InquiriesPage = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [selectedInquiry, setSelectedInquiry] = useState(null);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
   const PAGE_SIZE = 20;
 
   const loadInquiries = async (pageNum = 1) => {
@@ -43,13 +45,49 @@ const InquiriesPage = () => {
         setSelectedInquiry({ ...selectedInquiry, status: newStatus });
       }
     } catch (err) {
-      toast.error('Failed to update status');
+      toast.error(err.response?.data?.detail || 'Failed to update status');
+    }
+  };
+
+  const handleSendReply = async (e) => {
+    e.preventDefault();
+    if (!replyMessage.trim()) {
+      toast.error('Reply message cannot be empty');
+      return;
+    }
+    try {
+      setSubmittingReply(true);
+      const response = await apiClient.post(`/admin/contacts/${selectedInquiry.id}/reply`, {
+        reply_message: replyMessage
+      });
+      
+      if (response.data.email_sent === false) {
+        toast.warning(`Reply saved, but email delivery failed: ${response.data.email_error}`);
+      } else {
+        toast.success(response.data.message || 'Reply sent successfully');
+      }
+      
+      const updated = { 
+        ...selectedInquiry, 
+        reply_message: replyMessage, 
+        replied_at: new Date().toISOString(),
+        status: 'replied' 
+      };
+      
+      setInquiries(inquiries.map(inc => inc.id === selectedInquiry.id ? updated : inc));
+      setSelectedInquiry(updated);
+      setReplyMessage('');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send reply');
+    } finally {
+      setSubmittingReply(false);
     }
   };
 
   const getStatusStyle = (status) => {
     switch (status) {
       case 'resolved': return 'bg-emerald-50 text-emerald-600 border-emerald-200';
+      case 'replied': return 'bg-indigo-50 text-indigo-600 border-indigo-200';
       case 'in_progress': return 'bg-amber-50 text-amber-600 border-amber-200';
       default: return 'bg-slate-50 text-slate-600 border-slate-200';
     }
@@ -58,6 +96,7 @@ const InquiriesPage = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'resolved': return <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />;
+      case 'replied': return <Mail className="w-3.5 h-3.5 mr-1.5" />;
       case 'in_progress': return <AlertCircle className="w-3.5 h-3.5 mr-1.5" />;
       default: return <Circle className="w-3.5 h-3.5 mr-1.5" />;
     }
@@ -132,6 +171,7 @@ const InquiriesPage = () => {
               >
                 <option value="pending">Pending</option>
                 <option value="in_progress">In Progress</option>
+                <option value="replied">Replied</option>
                 <option value="resolved">Resolved</option>
               </select>
             ),
@@ -150,7 +190,7 @@ const InquiriesPage = () => {
       {/* Inquiry Detail Modal */}
       {selectedInquiry && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2rem] max-w-2xl w-full p-8 shadow-2xl shadow-indigo-900/20 border border-white/50 flex flex-col">
+          <div className="bg-white rounded-[2rem] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 shadow-2xl shadow-indigo-900/20 border border-white/50 flex flex-col scrollbar-thin">
             <div className="flex justify-between items-start mb-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
@@ -227,24 +267,63 @@ const InquiriesPage = () => {
 
               {/* Status Update */}
               <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                  Status: 
-                  <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest flex items-center border ${getStatusStyle(selectedInquiry.status || 'pending')}`}>
-                    {getStatusIcon(selectedInquiry.status || 'pending')}
-                    {(selectedInquiry.status || 'pending').replace('_', ' ')}
-                  </span>
+                <span className="text-sm font-bold text-slate-700">
+                  Status:
                 </span>
                 <select
                   value={selectedInquiry.status || 'pending'}
                   onChange={(e) => handleUpdateStatus(selectedInquiry.id, e.target.value)}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-4 py-2 rounded-xl text-xs transition-colors outline-none cursor-pointer appearance-none pr-8 relative"
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
+                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative ${getStatusStyle(selectedInquiry.status || 'pending')}`}
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
                 >
-                  <option value="pending">Mark as Pending</option>
-                  <option value="in_progress">Mark In Progress</option>
-                  <option value="resolved">Mark as Resolved</option>
+                  <option value="pending">Pending</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="replied">Replied</option>
+                  <option value="resolved">Resolved</option>
                 </select>
               </div>
+
+              {/* Reply History */}
+              {selectedInquiry.reply_message && (
+                <div className="flex flex-col gap-3 text-slate-700 bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100 shadow-sm">
+                  <div className="flex items-center gap-2 text-indigo-600 font-black uppercase text-[10px] tracking-widest">
+                    <Mail className="w-4 h-4" /> Reply Sent {selectedInquiry.replied_at && `on ${new Date(selectedInquiry.replied_at).toLocaleString()}`}
+                  </div>
+                  <p className="text-slate-800 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                    {selectedInquiry.reply_message}
+                  </p>
+                </div>
+              )}
+
+              {/* Send Reply Email */}
+              {selectedInquiry.status === 'resolved' ? (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                  This inquiry is marked as resolved/closed. You cannot send replies unless it is re-opened (change status to Pending or In Progress).
+                </div>
+              ) : (
+                <form onSubmit={handleSendReply} className="space-y-4 pt-4 border-t border-slate-100">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">
+                      {selectedInquiry.reply_message ? 'Send Another Reply' : 'Compose Reply'}
+                    </label>
+                    <textarea
+                      required
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
+                      placeholder="Type your response email here..."
+                      className="w-full min-h-[100px] rounded-xl border border-slate-200 bg-slate-50/50 p-4 text-sm focus:border-indigo-500 focus:ring-0 transition-all outline-none"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={submittingReply}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest py-3 rounded-xl text-xs transition-all shadow-md disabled:opacity-50"
+                  >
+                    {submittingReply ? 'Sending Email...' : 'Send Reply Email'}
+                  </Button>
+                </form>
+              )}
             </div>
 
             <div className="mt-8 flex justify-end">
@@ -252,7 +331,7 @@ const InquiriesPage = () => {
                 onClick={() => setSelectedInquiry(null)}
                 className="bg-slate-900 text-white font-extrabold text-sm px-8 py-4 rounded-2xl tracking-wide hover:bg-indigo-600 transition-all shadow-lg hover:shadow-indigo-500/25 active:scale-95"
               >
-                Close Inquiry
+                Close Details
               </Button>
             </div>
           </div>

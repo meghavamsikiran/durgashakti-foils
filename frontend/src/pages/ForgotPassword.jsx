@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -8,8 +8,9 @@ import { toast } from 'sonner';
 import authService from '../services/auth.service';
 
 const ForgotPassword = () => {
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1); // 1: Email, 2: OTP & New Password
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => searchParams.get('email') || '');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);

@@ -96,29 +96,37 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        {Object.entries(metrics).map(([key, value]) => {
-          const config = metricConfigs[key] || { label: key, icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50' };
-          const Icon = config.icon;
-          
-          return (
-            <div key={key} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
-              <div className={`w-12 h-12 ${config.bg} ${config.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                <Icon className="w-6 h-6" />
-              </div>
-              
-              <div className="space-y-1">
-                <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{config.label}</div>
-                <div className="text-2xl font-black text-slate-900 tracking-tight">{formatValue(key, value)}</div>
-              </div>
+      {Object.keys(metrics).length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          {Object.entries(metrics).map(([key, value]) => {
+            const config = metricConfigs[key] || { label: key, icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50' };
+            const Icon = config.icon;
+            
+            return (
+              <div key={key} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
+                <div className={`w-12 h-12 ${config.bg} ${config.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                  <Icon className="w-6 h-6" />
+                </div>
+                
+                <div className="space-y-1">
+                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{config.label}</div>
+                  <div className="text-2xl font-black text-slate-900 tracking-tight">{formatValue(key, value)}</div>
+                </div>
 
-              <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <ArrowUpRight className={`w-4 h-4 ${config.color}`} />
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ArrowUpRight className={`w-4 h-4 ${config.color}`} />
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-slate-50 border border-slate-200 rounded-3xl p-8 text-center">
+          <Activity className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm font-bold text-slate-500">Metrics are scoped to your permissions.</p>
+          <p className="text-xs text-slate-400 mt-1">Contact a Super Admin if you need broader access.</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
          <div className="lg:col-span-2 bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl">

@@ -11,8 +11,10 @@ import {
 import { Button } from '../../components/ui/button';
 import TablePagination from '../../components/ui/TablePagination';
 import PageLoader from '../../components/ui/PageLoader';
+import { useAuth } from '../../contexts/AuthContext';
 
 const InventoryPage = () => {
+  const { hasPermission } = useAuth();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adjustModal, setAdjustModal] = useState(null);
@@ -29,12 +31,12 @@ const InventoryPage = () => {
       setLoading(true);
       const [response, mRes] = await Promise.all([
         adminService.getInventory({ page: pageNum, limit: ITEMS_PER_PAGE, search }),
-        adminService.getDashboardMetrics()
+        adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
       ]);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
       setPage(pageNum);
-      setMetrics(mRes.data?.metrics || {});
+      setMetrics(mRes.data?.metrics || null);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -109,44 +111,46 @@ const InventoryPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-            <IndianRupee className="w-6 h-6" />
+      {hasPermission('view_analytics') && metrics && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+              <IndianRupee className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stock Value</div>
+              <div className="text-2xl font-black text-slate-900">₹{(stats.totalValue / 1000).toFixed(1)}k</div>
+            </div>
           </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stock Value</div>
-            <div className="text-2xl font-black text-slate-900">₹{(stats.totalValue / 1000).toFixed(1)}k</div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
+              <TrendingDown className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Low Stock</div>
+              <div className="text-2xl font-black text-slate-900">{stats.outOfStock + stats.lowStock}</div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+              <BarChart3 className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Units Sold</div>
+              <div className="text-2xl font-black text-slate-900">{stats.soldVolume}</div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+              <Zap className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sales Velocity</div>
+              <div className="text-2xl font-black text-slate-900">{stats.salesVelocity}<span className="text-[10px] text-slate-500 ml-1 font-bold tracking-widest">U/DAY</span></div>
+            </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
-            <TrendingDown className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Low Stock</div>
-            <div className="text-2xl font-black text-slate-900">{stats.outOfStock + stats.lowStock}</div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-            <BarChart3 className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Units Sold</div>
-            <div className="text-2xl font-black text-slate-900">{stats.soldVolume}</div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-            <Zap className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sales Velocity</div>
-            <div className="text-2xl font-black text-slate-900">{stats.salesVelocity}<span className="text-[10px] text-slate-500 ml-1 font-bold tracking-widest">U/DAY</span></div>
-          </div>
-        </div>
-      </div>
+      )}
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">

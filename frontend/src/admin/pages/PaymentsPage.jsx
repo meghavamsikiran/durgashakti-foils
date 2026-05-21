@@ -8,8 +8,10 @@ import TablePagination from '../../components/ui/TablePagination';
 import { toast } from 'sonner';
 import PageLoader from '../../components/ui/PageLoader';
 import apiClient from '../../services/core/apiClient';
+import { useAuth } from '../../contexts/AuthContext';
 
 const PaymentsPage = () => {
+  const { hasPermission } = useAuth();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -25,12 +27,12 @@ const PaymentsPage = () => {
       setLoading(true);
       const [response, mRes] = await Promise.all([
         adminService.getPayments({ page: pageNum, limit: PAGE_SIZE, search }),
-        adminService.getDashboardMetrics()
+        adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
       ]);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
       setPage(pageNum);
-      setMetrics(mRes.data?.metrics || {});
+      setMetrics(mRes.data?.metrics || null);
     } catch (err) {
       toast.error('Failed to load transaction data');
     } finally {
@@ -42,11 +44,11 @@ const PaymentsPage = () => {
     try {
       const [response, mRes] = await Promise.all([
         apiClient.get('/admin/payments', { params: { page: pageNum, limit: PAGE_SIZE, search }, silent: true }),
-        apiClient.get('/admin/analytics/summary', { silent: true })
+        apiClient.get('/admin/analytics/summary', { silent: true }).catch(() => ({ data: { metrics: null } }))
       ]);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
-      setMetrics(mRes.data?.metrics || {});
+      setMetrics(mRes.data?.metrics || null);
     } catch (err) {
       // Ignore background errors
     }
@@ -109,44 +111,46 @@ const PaymentsPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-            <IndianRupee className="w-6 h-6" />
+      {hasPermission('view_analytics') && metrics && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+              <IndianRupee className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Net Settled</div>
+              <div className="text-2xl font-black text-slate-900">₹{stats.total.toLocaleString('en-IN')}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Net Settled</div>
-            <div className="text-2xl font-black text-slate-900">₹{stats.total.toLocaleString('en-IN')}</div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Escrow/Pending</div>
+              <div className="text-2xl font-black text-slate-900">₹{stats.pending.toLocaleString('en-IN')}</div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Success Rate</div>
+              <div className="text-2xl font-black text-slate-900">{Math.round(stats.successRate)}%</div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Failed Events</div>
+              <div className="text-2xl font-black text-slate-900">{stats.failed}</div>
+            </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Escrow/Pending</div>
-            <div className="text-2xl font-black text-slate-900">₹{stats.pending.toLocaleString('en-IN')}</div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-            <CheckCircle2 className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Success Rate</div>
-            <div className="text-2xl font-black text-slate-900">{Math.round(stats.successRate)}%</div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Failed Events</div>
-            <div className="text-2xl font-black text-slate-900">{stats.failed}</div>
-          </div>
-        </div>
-      </div>
+      )}
 
       <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
         {['all', 'completed', 'pending', 'failed'].map(s => (

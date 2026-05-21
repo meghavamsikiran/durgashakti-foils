@@ -408,3 +408,26 @@ def account_deleted_email(name: str) -> tuple[str, str]:
     <p style="color:#374151;font-size:14px;line-height:1.6;">If you ever decide to return, we'll be here with open arms!</p>
     {_cta_button("Visit Website", SITE_URL)}"""
     return "Account Successfully Deleted | DurgaShakti Foils", _base(content, "Account Deleted")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 12. ADMIN ONBOARDING
+# ─────────────────────────────────────────────────────────────────────────────
+def admin_onboarding_email(name: str, email: str, temp_password: str) -> tuple[str, str]:
+    content = f"""
+    <p style="font-size:24px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">Welcome to the Administrative Team! 🚀</p>
+    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Hello <strong>{name}</strong>, you have been provisioned as an administrative user on DurgaShakti Foils Portal.</p>
+    <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:12px;padding:24px;margin-bottom:28px;">
+      <p style="margin:0 0 12px;color:{BRAND_DARK};font-weight:700;font-size:16px;">Your Login Credentials</p>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+        {_info_row("Portal URL", SITE_URL + "/admin/login")}
+        {_info_row("Username / Email", email)}
+        {_info_row("Temporary Password", temp_password)}
+      </table>
+      <p style="margin:12px 0 0;color:#ef4444;font-size:13px;font-weight:600;">⚠️ Security Notice: You will be forced to securely reset your password on your very first login.</p>
+    </div>
+    {_cta_button("Access Admin Portal", SITE_URL + "/admin/login")}
+    <p style="color:#9ca3af;font-size:13px;text-align:center;">Need assistance? Please contact the Super Administrator.</p>
+    """
+    return "Administrative Onboarding - DurgaShakti Foils", _base(content, "Admin Provisioned")
+

@@ -110,7 +110,30 @@ export const AuthProvider = ({ children }) => {
   const hasPermission = useCallback((permission) => {
     if (!user) return false;
     if (user.role === 'SUPER_ADMIN') return true;
-    return !!(user.permissions && user.permissions[permission]);
+    if (user.permissions && user.permissions[permission]) return true;
+
+    const PERMISSION_MAPPING = {
+      'manage_orders': ['view_orders', 'update_order_status', 'cancel_orders', 'view_order_details'],
+      'manage_products': ['view_products', 'create_products', 'edit_products', 'delete_products'],
+      'manage_inventory': ['view_inventory', 'update_stock'],
+      'manage_customers': ['view_customers', 'view_customer_history', 'view_inquiries', 'update_inquiry_status', 'reply_inquiry'],
+      'access_financial_reports': ['view_transactions', 'update_payment_status', 'export_payment_reports', 'view_analytics'],
+      'access_gst_reports': ['view_gst_reports', 'export_gst_reports', 'upload_gst_files', 'import_gst_data'],
+      'manage_admins': ['create_admin', 'edit_admin', 'disable_admin', 'delete_admin', 'assign_permissions', 'view_audit_logs'],
+      'manage_settings': ['manage_settings']
+    };
+
+    if (PERMISSION_MAPPING[permission]) {
+      return PERMISSION_MAPPING[permission].some(p => user.permissions && user.permissions[p]);
+    }
+
+    for (const [legacy, granularList] of Object.entries(PERMISSION_MAPPING)) {
+      if (granularList.includes(permission)) {
+        if (user.permissions && user.permissions[legacy]) return true;
+      }
+    }
+
+    return false;
   }, [user]);
 
   const loginWithGoogle = useCallback(async (accessToken) => {

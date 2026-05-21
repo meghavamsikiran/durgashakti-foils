@@ -478,9 +478,36 @@ def require_permission(permission: str):
     async def permission_checker(admin: UserSchema = Depends(get_admin_user)):
         if admin.role == "SUPER_ADMIN":
             return admin
-        if not admin.permissions or not admin.permissions.get(permission):
+        if not admin.permissions:
             raise HTTPException(status_code=403, detail=f"Permission denied: requires {permission}")
-        return admin
+        
+        # Direct check
+        if admin.permissions.get(permission) is True:
+            return admin
+            
+        # Permission Mapping
+        PERMISSION_MAPPING = {
+            'manage_orders': ['view_orders', 'update_order_status', 'cancel_orders', 'view_order_details'],
+            'manage_products': ['view_products', 'create_products', 'edit_products', 'delete_products'],
+            'manage_inventory': ['view_inventory', 'update_stock'],
+            'manage_customers': ['view_customers', 'view_customer_history', 'view_inquiries', 'update_inquiry_status', 'reply_inquiry'],
+            'access_financial_reports': ['view_transactions', 'update_payment_status', 'export_payment_reports', 'view_analytics'],
+            'access_gst_reports': ['view_gst_reports', 'export_gst_reports', 'upload_gst_files', 'import_gst_data'],
+            'manage_admins': ['create_admin', 'edit_admin', 'disable_admin', 'delete_admin', 'assign_permissions', 'view_audit_logs'],
+            'manage_settings': ['manage_settings']
+        }
+        
+        # Check if legacy permission requested and any granular sub-permission is true
+        if permission in PERMISSION_MAPPING:
+            if any(admin.permissions.get(p) is True for p in PERMISSION_MAPPING[permission]):
+                return admin
+                
+        # Check if granular sub-permission requested and legacy parent permission is true
+        for legacy, granular_list in PERMISSION_MAPPING.items():
+            if permission in granular_list and admin.permissions.get(legacy) is True:
+                return admin
+                
+        raise HTTPException(status_code=403, detail=f"Permission denied: requires {permission}")
     return permission_checker
 
 

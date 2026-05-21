@@ -12,6 +12,8 @@ import {
 import { Button } from '../../components/ui/button';
 import { formatImageUrl } from '../../utils/api';
 import PageLoader from '../../components/ui/PageLoader';
+import { useAuth } from '../../contexts/AuthContext';
+
 
 const STATUS_FLOW = {
   PENDING_PAYMENT: ['CANCELLED'],
@@ -54,6 +56,7 @@ const statusConfigs = {
 const PAGE_SIZE = 15;
 
 const OrdersPage = () => {
+  const { hasPermission } = useAuth();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
@@ -175,44 +178,46 @@ const OrdersPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-            <ShoppingBag className="w-6 h-6" />
+      {hasPermission('view_analytics') && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+              <ShoppingBag className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Orders</div>
+              <div className="text-2xl font-black text-slate-900">{stats.total}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Orders</div>
-            <div className="text-2xl font-black text-slate-900">{stats.total}</div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6 text-indigo-600" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Confirmed</div>
+              <div className="text-2xl font-black text-slate-900">{stats.confirmed}</div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-violet-50 text-violet-600 rounded-xl flex items-center justify-center">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Packaging</div>
+              <div className="text-2xl font-black text-slate-900">{stats.packaging}</div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+              <Truck className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Delivered</div>
+              <div className="text-2xl font-black text-slate-900">{stats.delivered}</div>
+            </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-            <CheckCircle2 className="w-6 h-6 text-indigo-600" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Confirmed</div>
-            <div className="text-2xl font-black text-slate-900">{stats.confirmed}</div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-violet-50 text-violet-600 rounded-xl flex items-center justify-center">
-            <Clock className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Packaging</div>
-            <div className="text-2xl font-black text-slate-900">{stats.packaging}</div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-            <Truck className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Delivered</div>
-            <div className="text-2xl font-black text-slate-900">{stats.delivered}</div>
-          </div>
-        </div>
-      </div>
+      )}
 
       <div className="bg-slate-50 p-1 rounded-2xl flex flex-wrap items-center gap-1 border border-slate-200">
         {['ALL', 'PENDING_PAYMENT', 'CONFIRMED', 'PACKAGING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURN_REQUESTED', 'CANCELLED', 'FAILED'].map((s) => (
@@ -278,68 +283,80 @@ const OrdersPage = () => {
                        </td>
                        <td className="px-8 py-6">
                          <div className="flex items-center justify-center gap-2">
-                           {actions.length > 0 ? actions.map((a) => {
-                             const actionLabels = {
-                               CONFIRMED: 'Confirm',
-                               CANCELLED: 'Cancel',
-                               PACKAGING: 'Package',
-                               PACKED: 'Package',
-                               SHIPPED: 'Ship',
-                               OUT_FOR_DELIVERY: 'Dispatch Out',
-                               DELIVERED: 'Deliver',
-                               FAILED: 'Mark Failed',
-                               RETURN_APPROVED: 'Approve',
-                               RETURN_REJECTED: 'Reject',
-                               REFUNDED: 'Refund'
-                             };
-                             const label = actionLabels[a] || a.replace('_', ' ');
-                              const isDeliverWithCOD = a === 'DELIVERED' && order.payment_method === 'cod' && order.payment_status !== 'Paid' && order.payment_status !== 'completed';
-                              
-                             return (
-                               <button
-                                 key={a}
-                                 onClick={(e) => { 
-                                   e.stopPropagation(); 
-                                   if (a === 'SHIPPED') {
-                                     setTrackingModal({ orderId: order.id, status: a });
-                                     setTrackingForm({
-                                       carrier: order.carrier || '',
-                                       tracking_id: order.tracking_id || '',
-                                       tracking_url: order.tracking_url || ''
-                                     });
-                                   } else if (['RETURN_APPROVED', 'RETURN_REJECTED', 'CANCELLED'].includes(a)) {
-                                     setMessageModal({ orderId: order.id, status: a });
-                                     setAdminMessage('');
-                                   } else {
-                                     updateStatus(order.id, a, '', isDeliverWithCOD ? { mark_paid: true } : {});
-                                   }
-                                 }}
-                                 className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
-                                   a === 'CANCELLED' || a === 'RETURN_REJECTED' || a === 'FAILED'
-                                     ? 'border-rose-100 text-rose-600 hover:bg-rose-50' 
-                                     : a === 'DELIVERED' || a === 'RETURN_APPROVED' || a === 'CONFIRMED'
-                                     ? 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'
-                                     : 'border-indigo-100 text-indigo-600 hover:bg-indigo-50'
-                                 }`}
-                               >
-                                 {isDeliverWithCOD ? 'Deliver & Mark Paid' : label}
-                               </button>
+                           {(() => {
+                             const allowedActions = actions.filter((a) => {
+                               if (a === 'CANCELLED') {
+                                 return hasPermission('cancel_orders');
+                               }
+                               return hasPermission('update_order_status');
+                             });
+                             return allowedActions.length > 0 ? allowedActions.map((a) => {
+                               const actionLabels = {
+                                 CONFIRMED: 'Confirm',
+                                 CANCELLED: 'Cancel',
+                                 PACKAGING: 'Package',
+                                 PACKED: 'Package',
+                                 SHIPPED: 'Ship',
+                                 OUT_FOR_DELIVERY: 'Dispatch Out',
+                                 DELIVERED: 'Deliver',
+                                 FAILED: 'Mark Failed',
+                                 RETURN_APPROVED: 'Approve',
+                                 RETURN_REJECTED: 'Reject',
+                                 REFUNDED: 'Refund'
+                               };
+                               const label = actionLabels[a] || a.replace('_', ' ');
+                               const isDeliverWithCOD = a === 'DELIVERED' && order.payment_method === 'cod' && order.payment_status !== 'Paid' && order.payment_status !== 'completed';
+                                
+                               return (
+                                 <button
+                                   key={a}
+                                   onClick={(e) => { 
+                                     e.stopPropagation(); 
+                                     if (a === 'SHIPPED') {
+                                       setTrackingModal({ orderId: order.id, status: a });
+                                       setTrackingForm({
+                                         carrier: order.carrier || '',
+                                         tracking_id: order.tracking_id || '',
+                                         tracking_url: order.tracking_url || ''
+                                       });
+                                     } else if (['RETURN_APPROVED', 'RETURN_REJECTED', 'CANCELLED'].includes(a)) {
+                                       setMessageModal({ orderId: order.id, status: a });
+                                       setAdminMessage('');
+                                     } else {
+                                       updateStatus(order.id, a, '', isDeliverWithCOD ? { mark_paid: true } : {});
+                                     }
+                                   }}
+                                   className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                     a === 'CANCELLED' || a === 'RETURN_REJECTED' || a === 'FAILED'
+                                       ? 'border-rose-100 text-rose-600 hover:bg-rose-50' 
+                                       : a === 'DELIVERED' || a === 'RETURN_APPROVED' || a === 'CONFIRMED'
+                                       ? 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'
+                                       : 'border-indigo-100 text-indigo-600 hover:bg-indigo-50'
+                                   }`}
+                                 >
+                                   {isDeliverWithCOD ? 'Deliver & Mark Paid' : label}
+                                 </button>
+                               );
+                             }) : (
+                               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500">
+                                 <CheckCircle2 className="w-3.5 h-3.5" />
+                                 <span className="text-[10px] font-black uppercase tracking-widest">{actions.length > 0 ? 'No Permission' : 'Finalized'}</span>
+                               </div>
                              );
-                           }) : (
-                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500">
-                               <CheckCircle2 className="w-3.5 h-3.5" />
-                               <span className="text-[10px] font-black uppercase tracking-widest">Finalized</span>
-                             </div>
-                           )}
+                           })()}
                          </div>
                        </td>
                        <td className="px-8 py-6 text-center">
-                          <button 
-                             onClick={() => setSelectedOrderForModal(order)}
-                             className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-white transition-all shadow-sm"
-                          >
-                             <Eye className="w-4 h-4" />
-                          </button>
+                          {hasPermission('view_order_details') ? (
+                            <button 
+                               onClick={() => setSelectedOrderForModal(order)}
+                               className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-white transition-all shadow-sm"
+                            >
+                               <Eye className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-400">Restricted</span>
+                          )}
                         </td>
                       </tr>
                     </React.Fragment>

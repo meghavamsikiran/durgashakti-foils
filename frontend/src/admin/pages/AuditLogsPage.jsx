@@ -8,29 +8,31 @@ import {
 import { Button } from '../../components/ui/button';
 import TablePagination from '../../components/ui/TablePagination';
 import PageLoader from '../../components/ui/PageLoader';
+import { useAuth } from '../../contexts/AuthContext';
 
 const PAGE_SIZE = 25;
 
 const AuditLogsPage = () => {
+  const { hasPermission } = useAuth();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [expandedRow, setExpandedRow] = useState(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [metrics, setMetrics] = useState({});
+  const [metrics, setMetrics] = useState(null);
 
   const load = useCallback(async (pageNum = 1) => {
     try {
       setLoading(true);
       const [response, mRes] = await Promise.all([
         adminService.getAuditLogs({ page: pageNum, limit: PAGE_SIZE, search }),
-        adminService.getDashboardMetrics()
+        adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
       ]);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
       setPage(pageNum);
-      setMetrics(mRes.data?.metrics || {});
+      setMetrics(mRes.data?.metrics || null);
     } catch {
     } finally {
       setLoading(false);
@@ -93,44 +95,46 @@ const AuditLogsPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-            <Activity className="w-6 h-6" />
+      {hasPermission('view_analytics') && metrics && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+              <Activity className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Logs</div>
+              <div className="text-2xl font-black text-slate-900">{stats.totalEvents}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Logs</div>
-            <div className="text-2xl font-black text-slate-900">{stats.totalEvents}</div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+              <Fingerprint className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Login Events</div>
+              <div className="text-2xl font-black text-slate-900">{stats.securityEvents}</div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Changes</div>
+              <div className="text-2xl font-black text-slate-900">{stats.destructive}</div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+              <Clock className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Recent Logs</div>
+              <div className="text-2xl font-black text-slate-900">{stats.recentRate}</div>
+            </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-            <Fingerprint className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Login Events</div>
-            <div className="text-2xl font-black text-slate-900">{stats.securityEvents}</div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
-            <AlertTriangle className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Changes</div>
-            <div className="text-2xl font-black text-slate-900">{stats.destructive}</div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-            <Clock className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Recent Logs</div>
-            <div className="text-2xl font-black text-slate-900">{stats.recentRate}</div>
-          </div>
-        </div>
-      </div>
+      )}
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">

@@ -15,7 +15,7 @@ import TablePagination from '../../components/ui/TablePagination';
 import PageLoader from '../../components/ui/PageLoader';
 
 const ProductsPage = () => {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, hasPermission } = useAuth();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -75,12 +75,12 @@ const ProductsPage = () => {
       setLoading(true);
       const [response, mRes] = await Promise.all([
         adminService.getProducts({ page: pageNum, limit: ITEMS_PER_PAGE, search }),
-        adminService.getDashboardMetrics()
+        adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
       ]);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
       setPage(pageNum);
-      setMetrics(mRes.data?.metrics || {});
+      setMetrics(mRes.data?.metrics || null);
     } catch (err) {
       toast.error('Failed to load products');
     } finally {
@@ -92,11 +92,11 @@ const ProductsPage = () => {
     try {
       const [response, mRes] = await Promise.all([
         apiClient.get('/admin/products', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true }),
-        apiClient.get('/admin/analytics/summary', { silent: true })
+        apiClient.get('/admin/analytics/summary', { silent: true }).catch(() => ({ data: { metrics: null } }))
       ]);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
-      setMetrics(mRes.data?.metrics || {});
+      setMetrics(mRes.data?.metrics || null);
     } catch (err) {
       // Ignore background errors
     }
@@ -309,48 +309,50 @@ const ProductsPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-            <Zap className="w-6 h-6" />
+      {hasPermission('view_analytics') && metrics && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+              <Zap className="w-6 h-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Fastest Mover</div>
+              <div className="text-xs sm:text-sm lg:text-base font-black text-slate-900 leading-tight" title={stats.fastestMover}>
+                {stats.fastestMover}
+              </div>
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Fastest Mover</div>
-            <div className="text-xs sm:text-sm lg:text-base font-black text-slate-900 leading-tight" title={stats.fastestMover}>
-              {stats.fastestMover}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+              <Trophy className="w-6 h-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Top Performer</div>
+              <div className="text-xs sm:text-sm lg:text-base font-black text-slate-900 leading-tight" title={stats.topPerformer}>
+                {stats.topPerformer}
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+              <IndianRupee className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stock Value</div>
+              <div className="text-2xl font-black text-slate-900">₹{Math.round(stats.value/1000)}k</div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Low Stock</div>
+              <div className="text-2xl font-black text-slate-900">{stats.lowStock}</div>
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
-            <Trophy className="w-6 h-6" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Top Performer</div>
-            <div className="text-xs sm:text-sm lg:text-base font-black text-slate-900 leading-tight" title={stats.topPerformer}>
-              {stats.topPerformer}
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-            <IndianRupee className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stock Value</div>
-            <div className="text-2xl font-black text-slate-900">₹{Math.round(stats.value/1000)}k</div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Low Stock</div>
-            <div className="text-2xl font-black text-slate-900">{stats.lowStock}</div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {showForm && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-8 animate-in slide-in-from-top duration-500 overflow-hidden relative">

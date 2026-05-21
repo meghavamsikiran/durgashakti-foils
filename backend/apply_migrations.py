@@ -81,6 +81,12 @@ async def run_migrations():
         await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_orders_tracking_id ON orders(tracking_id);"))
         logger.info("Order shipment tracking columns checked/added.")
 
+        # Let's check contacts table
+        logger.info("Checking and altering 'contacts' table...")
+        await conn.execute(text("ALTER TABLE contacts ADD COLUMN IF NOT EXISTS reply_message TEXT;"))
+        await conn.execute(text("ALTER TABLE contacts ADD COLUMN IF NOT EXISTS replied_at TIMESTAMPTZ;"))
+        logger.info("Contacts reply columns checked/added.")
+
         # Let's check the current columns in the products table to verify
         result = await conn.execute(text(
             "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'products';"

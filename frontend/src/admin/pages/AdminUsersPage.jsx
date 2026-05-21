@@ -8,8 +8,9 @@ import {
   CheckSquare, Square
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { PERMISSION_GROUPS, getAllPermissionKeys } from '../constants/rbac';
+import { PERMISSION_GROUPS, ROLE_TEMPLATES, getAllPermissionKeys } from '../constants/rbac';
 import PageLoader from '../../components/ui/PageLoader';
+import { useAuth } from '../../contexts/AuthContext';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 
@@ -96,16 +97,78 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
 };
 
 
+const TEMPLATE_COLORS = {
+  OPERATIONS_ADMIN: 'from-violet-500 to-purple-600',
+  ORDER_MANAGER: 'from-blue-500 to-indigo-600',
+  PRODUCT_MANAGER: 'from-emerald-500 to-teal-600',
+  INVENTORY_MANAGER: 'from-amber-500 to-orange-600',
+  CUSTOMER_SUPPORT: 'from-pink-500 to-rose-600',
+  SHIPPING_MANAGER: 'from-cyan-500 to-sky-600',
+  FINANCE_ADMIN: 'from-green-500 to-emerald-600',
+  ANALYTICS_VIEWER: 'from-fuchsia-500 to-purple-600',
+  CUSTOM: 'from-slate-400 to-slate-500'
+};
+
+const RoleTemplateSelector = ({ selectedTemplate, onSelectTemplate }) => {
+  const templates = Object.entries(ROLE_TEMPLATES);
+  return (
+    <div className="space-y-3 mb-6">
+      <div>
+        <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Role Template</h3>
+        <p className="text-xs text-slate-500">Choose a predefined role to auto-assign permissions, or select Custom.</p>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {templates.map(([key, tmpl]) => {
+          const isActive = selectedTemplate === key;
+          const gradientClass = TEMPLATE_COLORS[key] || 'from-slate-400 to-slate-500';
+          const permCount = Object.keys(tmpl.permissions || {}).length;
+          return (
+            <button
+              type="button"
+              key={key}
+              onClick={() => onSelectTemplate(key)}
+              className={`relative overflow-hidden rounded-xl border-2 p-3 text-left transition-all duration-200 ${
+                isActive
+                  ? 'border-indigo-500 ring-2 ring-indigo-200 shadow-lg scale-[1.02]'
+                  : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
+              }`}
+            >
+              <div className={`absolute top-0 right-0 w-16 h-16 rounded-bl-[40px] bg-gradient-to-br ${gradientClass} ${isActive ? 'opacity-20' : 'opacity-10'}`} />
+              <div className="relative z-10">
+                <div className={`text-xs font-black uppercase tracking-wide ${isActive ? 'text-indigo-700' : 'text-slate-700'}`}>
+                  {tmpl.label}
+                </div>
+                <div className="text-[10px] text-slate-400 font-bold mt-0.5">
+                  {key === 'CUSTOM' ? 'Manual selection' : `${permCount} permissions`}
+                </div>
+              </div>
+              {isActive && (
+                <div className="absolute top-2 right-2 w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
+                  <CheckSquare className="w-3 h-3 text-white" />
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+
 const AdminUsersPage = () => {
+  const { hasPermission } = useAuth();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: {} });
+  const [selectedTemplate, setSelectedTemplate] = useState('CUSTOM');
   const [creating, setCreating] = useState(false);
   
   const [editModal, setEditModal] = useState(null);
   const [editForm, setEditForm] = useState({ full_name: '', email: '', phone: '', role: '', permissions: {} });
+  const [editSelectedTemplate, setEditSelectedTemplate] = useState('CUSTOM');
   const [editSaving, setEditSaving] = useState(false);
   
   const [resetModal, setResetModal] = useState(null);
@@ -146,6 +209,7 @@ const AdminUsersPage = () => {
       await adminService.createAdminUser(form);
       toast.success('Admin created successfully');
       setForm({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: {} });
+      setSelectedTemplate('CUSTOM');
       setShowCreate(false);
       load();
     } catch (error) {
@@ -254,51 +318,53 @@ const AdminUsersPage = () => {
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
-          <Button onClick={() => { setShowCreate(true); setForm({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: {} }); }} className="rounded-xl flex items-center gap-2 px-6 shadow-lg shadow-indigo-100 hover:shadow-indigo-200 transition-all">
+          <Button onClick={() => { setShowCreate(true); setForm({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: {} }); setSelectedTemplate('CUSTOM'); }} className="rounded-xl flex items-center gap-2 px-6 shadow-lg shadow-indigo-100 hover:shadow-indigo-200 transition-all">
             <UserPlus className="w-4 h-4" />
             Add New Admin
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-            <Users className="w-6 h-6" />
+      {hasPermission('view_analytics') && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Users</div>
+              <div className="text-2xl font-black text-slate-900">{stats.total}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Users</div>
-            <div className="text-2xl font-black text-slate-900">{stats.total}</div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Super Admins</div>
+              <div className="text-2xl font-black text-slate-900">{stats.super}</div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Status: Active</div>
+              <div className="text-2xl font-black text-slate-900">{stats.active}</div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
+              <XCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Disabled Accounts</div>
+              <div className="text-2xl font-black text-slate-900">{stats.inactive}</div>
+            </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-            <ShieldAlert className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Super Admins</div>
-            <div className="text-2xl font-black text-slate-900">{stats.super}</div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-            <CheckCircle2 className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Status: Active</div>
-            <div className="text-2xl font-black text-slate-900">{stats.active}</div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
-            <XCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Disabled Accounts</div>
-            <div className="text-2xl font-black text-slate-900">{stats.inactive}</div>
-          </div>
-        </div>
-      </div>
+      )}
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -355,7 +421,7 @@ const AdminUsersPage = () => {
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => { setEditModal(user); setEditForm({ full_name: user.full_name, email: user.email, phone: user.phone || '', role: user.role, permissions: user.permissions || {} }); }}
+                      <button onClick={() => { setEditModal(user); setEditForm({ full_name: user.full_name, email: user.email, phone: user.phone || '', role: user.role, permissions: user.permissions || {} }); setEditSelectedTemplate('CUSTOM'); }}
                         className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all" title="Edit Admin">
                         <Edit3 className="w-4 h-4" />
                       </button>
@@ -407,7 +473,7 @@ const AdminUsersPage = () => {
                       <input type="email" required name="email_new" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
                         value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="admin@durgashakti.com" />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Role</label>
                         <div className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm bg-slate-50 font-bold text-slate-500 select-none">
@@ -422,6 +488,10 @@ const AdminUsersPage = () => {
                           value={form.phone}
                           onChange={val => setForm({...form, phone: val || ''})}
                           className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
+                          numberInputProps={{
+                            className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800",
+                            placeholder: "Enter phone number"
+                          }}
                         />
                       </div>
                     </div>
@@ -436,9 +506,17 @@ const AdminUsersPage = () => {
               </div>
 
               <div>
+                <RoleTemplateSelector
+                  selectedTemplate={selectedTemplate}
+                  onSelectTemplate={(key) => {
+                    setSelectedTemplate(key);
+                    const tmpl = ROLE_TEMPLATES[key];
+                    if (tmpl) setForm({...form, permissions: { ...tmpl.permissions }});
+                  }}
+                />
                 <PermissionsSelector 
                   selectedPermissions={form.permissions} 
-                  onChange={(perms) => setForm({...form, permissions: perms})}
+                  onChange={(perms) => { setForm({...form, permissions: perms}); setSelectedTemplate('CUSTOM'); }}
                   role={form.role}
                 />
               </div>
@@ -498,14 +576,28 @@ const AdminUsersPage = () => {
                     value={editForm.phone}
                     onChange={val => setEditForm({...editForm, phone: val || ''})}
                     className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
+                    numberInputProps={{
+                      className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800",
+                      placeholder: "Enter phone number"
+                    }}
                   />
                 </div>
               </div>
 
               <div>
+                {editForm.role !== 'SUPER_ADMIN' && (
+                  <RoleTemplateSelector
+                    selectedTemplate={editSelectedTemplate}
+                    onSelectTemplate={(key) => {
+                      setEditSelectedTemplate(key);
+                      const tmpl = ROLE_TEMPLATES[key];
+                      if (tmpl) setEditForm({...editForm, permissions: { ...tmpl.permissions }});
+                    }}
+                  />
+                )}
                 <PermissionsSelector 
                   selectedPermissions={editForm.permissions} 
-                  onChange={(perms) => setEditForm({...editForm, permissions: perms})}
+                  onChange={(perms) => { setEditForm({...editForm, permissions: perms}); setEditSelectedTemplate('CUSTOM'); }}
                   role={editForm.role}
                 />
               </div>

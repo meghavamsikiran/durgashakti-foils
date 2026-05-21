@@ -107,24 +107,24 @@ function AppRoutes() {
               >
                 <Route index element={<AdminDashboard />} />
                 <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="products" element={<ProtectedAdminRoute permission="manage_products"><ProductsPage /></ProtectedAdminRoute>} />
-                <Route path="stock" element={<ProtectedAdminRoute permission="manage_inventory"><InventoryPage /></ProtectedAdminRoute>} />
-                <Route path="orders" element={<ProtectedAdminRoute permission="manage_orders"><OrdersPage /></ProtectedAdminRoute>} />
-                <Route path="customers" element={<ProtectedAdminRoute permission="manage_customers"><CustomersPage /></ProtectedAdminRoute>} />
-                <Route path="inquiries" element={<ProtectedAdminRoute permission="manage_customers"><InquiriesPage /></ProtectedAdminRoute>} />
+                <Route path="products" element={<ProtectedAdminRoute permission="view_products"><ProductsPage /></ProtectedAdminRoute>} />
+                <Route path="stock" element={<ProtectedAdminRoute permission="view_inventory"><InventoryPage /></ProtectedAdminRoute>} />
+                <Route path="orders" element={<ProtectedAdminRoute permission="view_orders"><OrdersPage /></ProtectedAdminRoute>} />
+                <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
+                <Route path="inquiries" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
                 <Route
                   path="payments"
                   element={
-                    <ProtectedAdminRoute permission="access_financial_reports">
+                    <ProtectedAdminRoute permission="view_transactions">
                       <PaymentsPage />
                     </ProtectedAdminRoute>
                   }
                 />
-                <Route path="analytics" element={<ProtectedAdminRoute permission="access_financial_reports"><AnalyticsPage /></ProtectedAdminRoute>} />
+                <Route path="analytics" element={<ProtectedAdminRoute permission="view_analytics"><AnalyticsPage /></ProtectedAdminRoute>} />
                 <Route
                   path="gst-reports"
                   element={
-                    <ProtectedAdminRoute permission="access_gst_reports">
+                    <ProtectedAdminRoute permission="view_gst_reports">
                       <GstReportsPage />
                     </ProtectedAdminRoute>
                   }
@@ -132,7 +132,7 @@ function AppRoutes() {
                 <Route
                   path="import-gst-data"
                   element={
-                    <ProtectedAdminRoute permission="access_gst_reports">
+                    <ProtectedAdminRoute permission="upload_gst_files">
                       <GstImportPage />
                     </ProtectedAdminRoute>
                   }
@@ -148,7 +148,7 @@ function AppRoutes() {
                 <Route
                   path="audit-logs"
                   element={
-                    <ProtectedAdminRoute permission="manage_admins">
+                    <ProtectedAdminRoute permission="view_audit_logs">
                       <AuditLogsPage />
                     </ProtectedAdminRoute>
                   }

@@ -1,5 +1,5 @@
 """Auth routes: register, login, profile, password management."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from database import get_db
@@ -66,7 +66,7 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/auth/login")
-async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
+async def login(credentials: UserLogin, request: Request, db: AsyncSession = Depends(get_db)):
     if not is_valid_gmail(credentials.email):
         raise HTTPException(
             status_code=400,
@@ -167,17 +167,27 @@ async def get_me(current_user: UserSchema = Depends(get_current_user)):
 
 @router.put("/auth/me")
 async def update_profile(data: UserProfileUpdate, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    if current_user.role == "admin":
+        if (data.email is not None and data.email != current_user.email) or (data.phone is not None and data.phone != current_user.phone):
+            raise HTTPException(status_code=400, detail="Admins are not permitted to change their email or phone number.")
+
     update_data = {}
     if data.full_name is not None:
         update_data['full_name'] = data.full_name
     if data.phone is not None:
         if data.phone != "" and data.phone != current_user.phone:
-            dup_phone = await db.execute(select(UserModel).where(UserModel.phone == data.phone, UserModel.id != current_user.id))
+            dup_phone = await db.execute(select(UserModel).where(
+                UserModel.phone == data.phone,
+                UserModel.id != current_user.id
+            ))
             if dup_phone.scalar_one_or_none():
                 raise HTTPException(status_code=400, detail="Phone number already in use by another account")
         update_data['phone'] = data.phone
     if data.email is not None and data.email != current_user.email:
-        dup = await db.execute(select(UserModel).where(UserModel.email == data.email, UserModel.id != current_user.id))
+        dup = await db.execute(select(UserModel).where(
+            UserModel.email == data.email,
+            UserModel.id != current_user.id
+        ))
         if dup.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Email already in use")
         update_data['email'] = data.email
@@ -226,7 +236,11 @@ async def change_password(data: ChangePasswordRequest, current_user: UserSchema 
     user_row = result.scalar_one()
     if not verify_password(data.current_password, user_row.password):
         raise HTTPException(status_code=400, detail="Invalid current password")
-    await db.execute(update(UserModel).where(UserModel.id == current_user.id).values(password=hash_password(data.new_password)))
+    user_row.password = hash_password(data.new_password)
+    if user_row.permissions and user_row.permissions.get("is_first_login") is True:
+        perms = dict(user_row.permissions)
+        perms.pop("is_first_login", None)
+        user_row.permissions = perms
     await write_audit_log(db, "PASSWORD_CHANGED", current_user.id, "user", current_user.id)
     return {"message": "Password changed successfully"}
 
@@ -234,7 +248,7 @@ async def change_password(data: ChangePasswordRequest, current_user: UserSchema 
 @router.post("/auth/forgot-password")
 async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(UserModel).where(UserModel.email == data.email))
-    user = result.scalar_one_or_none()
+    user = result.scalars().first()
     if not user:
         return {"message": "If an account exists with this email, an OTP has been sent."}
 
@@ -269,7 +283,10 @@ async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depend
     """
     sent, err_msg = await send_email(data.email, "Password Reset OTP - DurgaShakti Foils", email_body)
     if not sent:
-        raise HTTPException(status_code=500, detail=f"SMTP Deliverability Error: {err_msg}")
+        if os.environ.get('ENVIRONMENT') == 'production':
+            raise HTTPException(status_code=500, detail=f"SMTP Deliverability Error: {err_msg}")
+        else:
+            print(f"[WARN] SMTP send failed: {err_msg}")
     return {"message": "If an account exists with this email, an OTP has been sent."}
 
 
@@ -296,6 +313,13 @@ async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(
     if datetime.now(timezone.utc) > expiry:
         raise HTTPException(status_code=400, detail="OTP has expired")
 
-    await db.execute(update(UserModel).where(UserModel.email == data.email).values(password=hash_password(data.new_password)))
+    res_user = await db.execute(select(UserModel).where(UserModel.email == data.email))
+    user_row = res_user.scalar_one_or_none()
+    if user_row:
+        user_row.password = hash_password(data.new_password)
+        if user_row.permissions and user_row.permissions.get("is_first_login") is True:
+            perms = dict(user_row.permissions)
+            perms.pop("is_first_login", None)
+            user_row.permissions = perms
     await db.delete(reset_record)
     return {"message": "Password reset successful. You can now login with your new password."}
