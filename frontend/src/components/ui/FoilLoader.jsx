@@ -1,5 +1,4 @@
 import React from 'react';
-import TrishoolLoader from '../loaders/TrishoolLoader';
 
 /**
  * Premium non-blocking loader for Durga Shakti Foils.

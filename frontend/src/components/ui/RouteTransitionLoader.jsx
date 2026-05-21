@@ -1,39 +1,49 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import TrishoolLoader from '../loaders/TrishoolLoader';
 import DurgaMaaLoader from '../loaders/DurgaMaaLoader';
-import { subscribe, resetLoading } from '../../services/core/loadingState';
 
 /**
- * RouteTransitionLoader — Shows the sacred Trishul loading animation
- * at the top of the page during every route navigation.
- * 
- * It detects location changes and briefly displays the Trishul sweep
- * for a natural, polished transition feel (similar to YouTube/GitHub).
+ * RouteTransitionLoader — Shows BOTH the sacred Trishul top bar AND the
+ * Durga Maa centre animation ONLY in two cases:
+ *   1. Customer/Admin is visiting the website for the first time in this tab.
+ *   2. Customer/Admin hard-refreshes the browser (F5 / Ctrl+F5).
+ *
+ * Normal SPA navigation (clicking links, tabs, etc.) does NOT trigger
+ * these loaders at all.
+ *
+ * Mechanism: sessionStorage is cleared on every fresh page load / refresh,
+ * so the absence of the key 'app_loaded' means this is a fresh load.
  */
 const RouteTransitionLoader = () => {
-  const [networkLoading, setNetworkLoading] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [show, setShow] = useState(() => {
+    // Check synchronously during initial render so first paint includes the loader
+    return !sessionStorage.getItem('app_loaded');
+  });
 
   useEffect(() => {
-    return subscribe(setNetworkLoading);
-  }, []);
+    if (show) {
+      // Mark session so subsequent SPA navigations skip the loader
+      sessionStorage.setItem('app_loaded', '1');
+      // Auto-dismiss after the animation completes (~2.8s)
+      const timer = setTimeout(() => setShow(false), 2800);
+      return () => clearTimeout(timer);
+    }
+  }, [show]);
 
-  useEffect(() => {
-    const checkMobile = () => {
-      const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const mobileWidth = window.innerWidth < 768;
-      setIsMobile(mobileUA || mobileWidth);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  if (!show) return null;
 
   return (
-    <div className={`pointer-events-none transition-opacity duration-300 ${networkLoading ? 'opacity-100' : 'opacity-0'}`}>
+    <>
+      {/* Trishul top progress bar sweep */}
       <TrishoolLoader />
-    </div>
+      {/* Durga Maa centre animation overlay */}
+      <div
+        className="fixed inset-0 z-[99999] flex items-center justify-center pointer-events-none"
+        style={{ backgroundColor: 'rgba(248,250,252,0.6)' }}
+      >
+        <DurgaMaaLoader />
+      </div>
+    </>
   );
 };
 
