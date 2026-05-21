@@ -502,6 +502,118 @@ async def reset_admin_password(user_id: str, req: PasswordResetRequest, admin: U
     return {"message": "Admin password reset successfully"}
 
 
+# ── Legacy aliases for /admin/admin-users (backward-compat with Render) ──
+@router.get("/admin/admin-users")
+async def list_admin_users_legacy(admin: UserSchema = Depends(require_permission("manage_admins")), db: AsyncSession = Depends(get_db)):
+    res = await db.execute(select(UserModel).where(UserModel.role.in_(["admin", "SUPER_ADMIN"])))
+    rows = []
+    for u in res.scalars().all():
+        d = row_to_dict(u)
+        d.pop('password', None)
+        rows.append(d)
+    return rows
+
+
+@router.post("/admin/admin-users")
+async def create_admin_user_legacy(payload: AdminCreateRequest, admin: UserSchema = Depends(require_permission("create_admin")), db: AsyncSession = Depends(get_db)):
+    from deps import hash_password, send_email
+    import asyncio
+    from email_templates import admin_onboarding_email
+    res = await db.execute(select(UserModel).where(UserModel.email == payload.email))
+    if res.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Email already exists")
+    if payload.phone:
+        res_phone = await db.execute(select(UserModel).where(UserModel.phone == payload.phone))
+        if res_phone.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Phone number already registered to another account")
+    if payload.role == "SUPER_ADMIN":
+        raise HTTPException(status_code=400, detail="Only one Super Admin allowed")
+    permissions_dict = payload.permissions or {}
+    permissions_dict["is_first_login"] = True
+    uid = str(uuid.uuid4())
+    u = UserModel(id=uid, email=payload.email, full_name=payload.full_name, phone=payload.phone,
+                  role="admin", is_active=True, password=hash_password(payload.password), permissions=permissions_dict)
+    db.add(u)
+    await db.flush()
+    await write_audit_log(db, "ADMIN_CREATED", admin.id, "user", uid)
+    try:
+        subj, body = admin_onboarding_email(payload.full_name, payload.email, payload.password, payload.role_template)
+        asyncio.create_task(send_email(payload.email, subj, body))
+    except Exception:
+        pass
+    return {"message": "Admin created", "user_id": uid}
+
+
+@router.put("/admin/admin-users/{user_id}/status")
+async def update_admin_status_legacy(user_id: str, data: dict, admin: UserSchema = Depends(require_permission("disable_admin")), db: AsyncSession = Depends(get_db)):
+    validate_uuid(user_id)
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot disable yourself")
+    res = await db.execute(select(UserModel).where(UserModel.id == user_id, UserModel.role.in_(["admin", "SUPER_ADMIN"])))
+    u = res.scalar_one_or_none()
+    if not u:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    u.is_active = bool(data.get("is_active", True))
+    await db.flush()
+    await write_audit_log(db, "ADMIN_STATUS_UPDATED", admin.id, "user", user_id)
+    return {"message": "Admin status updated"}
+
+
+@router.put("/admin/admin-users/{user_id}")
+async def update_admin_user_legacy(user_id: str, data: AdminUpdateRequest, admin: UserSchema = Depends(require_permission("edit_admin")), db: AsyncSession = Depends(get_db)):
+    validate_uuid(user_id)
+    res = await db.execute(select(UserModel).where(UserModel.id == user_id, UserModel.role.in_(["admin", "SUPER_ADMIN"])))
+    u = res.scalar_one_or_none()
+    if not u:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    if data.full_name: u.full_name = data.full_name
+    if data.phone and data.phone != u.phone:
+        dup_phone = await db.execute(select(UserModel).where(UserModel.phone == data.phone, UserModel.id != user_id))
+        if dup_phone.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Phone number already in use by another account")
+        u.phone = data.phone
+    if data.email and data.email != u.email:
+        dup = await db.execute(select(UserModel).where(UserModel.email == data.email, UserModel.id != user_id))
+        if dup.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Email already in use")
+        u.email = data.email
+    if data.permissions is not None:
+        u.permissions = data.permissions
+    await db.flush()
+    return {"message": "Admin updated"}
+
+
+@router.delete("/admin/admin-users/{user_id}")
+async def delete_admin_user_legacy(user_id: str, admin: UserSchema = Depends(require_permission("delete_admin")), db: AsyncSession = Depends(get_db)):
+    validate_uuid(user_id)
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    res = await db.execute(select(UserModel).where(UserModel.id == user_id, UserModel.role.in_(["admin", "SUPER_ADMIN"])))
+    u = res.scalar_one_or_none()
+    if not u:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    if u.role == "SUPER_ADMIN":
+        raise HTTPException(status_code=400, detail="Cannot delete Super Admin")
+    await db.delete(u)
+    await db.flush()
+    await write_audit_log(db, "ADMIN_DELETED", admin.id, "user", user_id)
+    return {"message": "Admin deleted successfully"}
+
+
+@router.put("/admin/admin-users/{user_id}/reset-password")
+async def reset_admin_password_legacy(user_id: str, req: PasswordResetRequest, admin: UserSchema = Depends(require_permission("edit_admin")), db: AsyncSession = Depends(get_db)):
+    validate_uuid(user_id)
+    res = await db.execute(select(UserModel).where(UserModel.id == user_id, UserModel.role.in_(["admin", "SUPER_ADMIN"])))
+    u = res.scalar_one_or_none()
+    if not u:
+        raise HTTPException(status_code=404, detail="Admin not found")
+    from deps import hash_password
+    u.password = hash_password(req.new_password)
+    await db.flush()
+    await write_audit_log(db, "ADMIN_PASSWORD_RESET", admin.id, "user", user_id)
+    return {"message": "Admin password reset successfully"}
+
+
 # ── Inventory (Admin) ────────────────────────────────────────────────────
 @router.post("/admin/products/{product_id}/inventory")
 async def adjust_inventory(product_id: str, data: dict, admin: UserSchema = Depends(require_permission("update_stock")), db: AsyncSession = Depends(get_db)):
