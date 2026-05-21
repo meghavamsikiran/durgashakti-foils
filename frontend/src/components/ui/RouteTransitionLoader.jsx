@@ -42,8 +42,8 @@ const RouteTransitionLoader = () => {
       <TrishoolLoader />
       {/* Durga Maa centre animation overlay */}
       <div
-        className="fixed inset-0 z-[99999] flex items-center justify-center pointer-events-none"
-        style={{ backgroundColor: 'rgba(248,250,252,0.6)' }}
+        className="fixed inset-0 z-[99999] flex items-center justify-center bg-transparent pointer-events-none"
+        style={{ mixBlendMode: 'multiply' }}
       >
         <DurgaMaaLoader />
       </div>
