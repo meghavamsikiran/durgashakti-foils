@@ -167,9 +167,9 @@ async def get_me(current_user: UserSchema = Depends(get_current_user)):
 
 @router.put("/auth/me")
 async def update_profile(data: UserProfileUpdate, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if current_user.role == "admin":
+    if current_user.role in ("admin", "SUPER_ADMIN"):
         if (data.email is not None and data.email != current_user.email) or (data.phone is not None and data.phone != current_user.phone):
-            raise HTTPException(status_code=400, detail="Admins are not permitted to change their email or phone number.")
+            raise HTTPException(status_code=400, detail="Administrators are not permitted to change their email or phone number via profile updates.")
 
     update_data = {}
     if data.full_name is not None:
@@ -184,6 +184,11 @@ async def update_profile(data: UserProfileUpdate, current_user: UserSchema = Dep
                 raise HTTPException(status_code=400, detail="Phone number already in use by another account")
         update_data['phone'] = data.phone
     if data.email is not None and data.email != current_user.email:
+        if not is_valid_gmail(data.email):
+            raise HTTPException(
+                status_code=400,
+                detail="Only valid @gmail.com accounts are permitted as email addresses."
+            )
         dup = await db.execute(select(UserModel).where(
             UserModel.email == data.email,
             UserModel.id != current_user.id
@@ -191,6 +196,7 @@ async def update_profile(data: UserProfileUpdate, current_user: UserSchema = Dep
         if dup.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Email already in use")
         update_data['email'] = data.email
+
     if not update_data:
         return current_user
     await db.execute(update(UserModel).where(UserModel.id == current_user.id).values(**update_data))
