@@ -215,8 +215,9 @@ const SettingsPage = () => {
   };
 
   const { p1, p2, hasEmoji1, hasEmoji2 } = getPreviewTexts();
-  const showFaviconSpacer1 = !hasEmoji1 && (!(bannerText2 || bannerTimerEnabled) || !hasEmoji2);
-  const showFaviconSpacer2 = !hasEmoji1 && !hasEmoji2;
+  const showFaviconSpacer1 = bannerUseFavicon || (!hasEmoji1 && (!(bannerText2 || bannerTimerEnabled) || !hasEmoji2));
+  const showFaviconSpacer2 = bannerUseFavicon || (!hasEmoji1 && !hasEmoji2);
+
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">

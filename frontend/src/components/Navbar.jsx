@@ -118,7 +118,7 @@ const Navbar = () => {
           <div className="flex">
             {bannerItems.map((item, index) => {
               const prevItem = index === 0 ? bannerItems[bannerItems.length - 1] : bannerItems[index - 1];
-              const showFavicon = bannerConfig.use_favicon !== false && !item.hasEmoji && !prevItem.hasEmoji;
+              const showFavicon = bannerConfig.use_favicon !== false;
               return (
                 <span key={item.id} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                   {showFavicon && (
@@ -132,7 +132,7 @@ const Navbar = () => {
           <div className="flex">
             {bannerItems.map((item, index) => {
               const prevItem = index === 0 ? bannerItems[bannerItems.length - 1] : bannerItems[index - 1];
-              const showFavicon = bannerConfig.use_favicon !== false && !item.hasEmoji && !prevItem.hasEmoji;
+              const showFavicon = bannerConfig.use_favicon !== false;
               return (
                 <span key={`dup-${item.id}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                   {showFavicon && (
