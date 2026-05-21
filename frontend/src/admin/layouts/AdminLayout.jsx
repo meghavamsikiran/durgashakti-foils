@@ -48,8 +48,10 @@ const AdminLayout = () => {
         <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1 scrollbar-none">
           {menu.map((item) => {
             const Icon = ICON_MAP[item.label] || LayoutDashboard;
-            const path = `/admin/${item.label.toLowerCase().replace(/\s+/g, '-')}`;
-            const isActive = location.pathname === path || (item.label === 'Dashboard' && location.pathname === '/admin');
+            const isSuper = user?.role === 'SUPER_ADMIN' || location.pathname.startsWith('/superadmin');
+            const prefix = isSuper ? '/superadmin' : '/admin';
+            const path = `${prefix}/${item.label.toLowerCase().replace(/\s+/g, '-')}`;
+            const isActive = location.pathname === path || (item.label === 'Dashboard' && (location.pathname === '/admin' || location.pathname === '/superadmin'));
             
             return (
               <Link

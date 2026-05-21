@@ -240,6 +240,7 @@ class AdminCreateRequest(BaseModel):
     phone: Optional[str] = None
     role: str = "admin"
     permissions: dict = {}
+    role_template: Optional[str] = None
 
     @field_validator("email")
     @classmethod

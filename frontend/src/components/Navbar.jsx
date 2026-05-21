@@ -196,7 +196,7 @@ const Navbar = () => {
                 </Link>
 
                 <Link
-                  to={isAdmin ? "/admin/dashboard" : "/dashboard"}
+                  to={isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard"}
                   title={isAdmin ? (isSuperAdmin ? "Super Admin Panel" : "Admin Panel") : "Customer Dashboard"}
                   className="hover:text-primary transition-colors"
                   data-testid="navbar-dashboard-link"
@@ -250,7 +250,7 @@ const Navbar = () => {
                 {!isAdmin ? (
                   <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Dashboard</Link>
                 ) : (
-                  <Link to="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Admin Panel</Link>
+                  <Link to={isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard"} onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Admin Panel</Link>
                 )}
                 <button 
                   onClick={() => { handleLogout(); setIsMenuOpen(false); }}

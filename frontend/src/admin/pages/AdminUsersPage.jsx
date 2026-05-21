@@ -206,7 +206,10 @@ const AdminUsersPage = () => {
     }
     try {
       setCreating(true);
-      await adminService.createAdminUser(form);
+      await adminService.createAdminUser({
+        ...form,
+        role_template: selectedTemplate
+      });
       toast.success('Admin created successfully');
       setForm({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: {} });
       setSelectedTemplate('CUSTOM');
@@ -429,10 +432,12 @@ const AdminUsersPage = () => {
                         className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-all" title="Reset Password">
                         <Lock className="w-4 h-4" />
                       </button>
-                      <button onClick={() => setDeleteTarget(user)}
-                        className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all" title="Delete Admin">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {user.id !== me?.id && user.role !== 'SUPER_ADMIN' && (
+                        <button onClick={() => setDeleteTarget(user)}
+                          className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all" title="Delete Admin">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

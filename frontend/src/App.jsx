@@ -60,7 +60,7 @@ function ScrollToTop() {
 
 function AppRoutes() {
   const location = useLocation();
-  const isAdminPath = location.pathname.startsWith('/admin');
+  const isAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin');
 
   return (
     <AuthProvider>
@@ -99,6 +99,73 @@ function AppRoutes() {
               {/* Admin Routes */}
               <Route
                 path="/admin/*"
+                element={
+                  <ProtectedAdminRoute>
+                    <AdminLayout />
+                  </ProtectedAdminRoute>
+                }
+              >
+                <Route index element={<AdminDashboard />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="products" element={<ProtectedAdminRoute permission="view_products"><ProductsPage /></ProtectedAdminRoute>} />
+                <Route path="stock" element={<ProtectedAdminRoute permission="view_inventory"><InventoryPage /></ProtectedAdminRoute>} />
+                <Route path="orders" element={<ProtectedAdminRoute permission="view_orders"><OrdersPage /></ProtectedAdminRoute>} />
+                <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
+                <Route path="inquiries" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
+                <Route
+                  path="payments"
+                  element={
+                    <ProtectedAdminRoute permission="view_transactions">
+                      <PaymentsPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route path="analytics" element={<ProtectedAdminRoute permission="view_analytics"><AnalyticsPage /></ProtectedAdminRoute>} />
+                <Route
+                  path="gst-reports"
+                  element={
+                    <ProtectedAdminRoute permission="view_gst_reports">
+                      <GstReportsPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route
+                  path="import-gst-data"
+                  element={
+                    <ProtectedAdminRoute permission="upload_gst_files">
+                      <GstImportPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route
+                  path="admins"
+                  element={
+                    <ProtectedAdminRoute permission="manage_admins">
+                      <AdminUsersPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route
+                  path="audit-logs"
+                  element={
+                    <ProtectedAdminRoute permission="view_audit_logs">
+                      <AuditLogsPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route
+                  path="settings"
+                  element={
+                    <ProtectedAdminRoute permission="manage_settings">
+                      <SettingsPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+              </Route>
+
+              {/* Super Admin Routes */}
+              <Route
+                path="/superadmin/*"
                 element={
                   <ProtectedAdminRoute>
                     <AdminLayout />

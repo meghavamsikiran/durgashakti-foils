@@ -413,21 +413,86 @@ def account_deleted_email(name: str) -> tuple[str, str]:
 # ─────────────────────────────────────────────────────────────────────────────
 # 12. ADMIN ONBOARDING
 # ─────────────────────────────────────────────────────────────────────────────
-def admin_onboarding_email(name: str, email: str, temp_password: str) -> tuple[str, str]:
+def admin_onboarding_email(name: str, email: str, temp_password: str, role_template: str = None) -> tuple[str, str]:
+    role_display = "Administrator"
+    if role_template:
+        role_labels = {
+            "OPERATIONS_ADMIN": "Operations Admin",
+            "ORDER_MANAGER": "Order Manager",
+            "PRODUCT_MANAGER": "Product Manager",
+            "INVENTORY_MANAGER": "Inventory Manager",
+            "CUSTOMER_SUPPORT": "Customer Support Admin",
+            "SHIPPING_MANAGER": "Shipping Manager",
+            "FINANCE_ADMIN": "Finance Admin",
+            "ANALYTICS_VIEWER": "Analytics Viewer",
+            "CUSTOM": "Custom Admin",
+        }
+        role_display = role_labels.get(role_template, role_template.replace("_", " ").title())
+
     content = f"""
     <p style="font-size:24px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">Welcome to the Administrative Team! 🚀</p>
-    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Hello <strong>{name}</strong>, you have been provisioned as an administrative user on DurgaShakti Foils Portal.</p>
+    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Hello <strong>{name}</strong>, you have been provisioned as a(n) <strong>{role_display}</strong> on DurgaShakti Foils Portal.</p>
     <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:12px;padding:24px;margin-bottom:28px;">
       <p style="margin:0 0 12px;color:{BRAND_DARK};font-weight:700;font-size:16px;">Your Login Credentials</p>
       <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
-        {_info_row("Portal URL", SITE_URL + "/admin/login")}
+        {_info_row("Portal URL", SITE_URL + "/login")}
+        {_info_row("Assigned Role", role_display)}
         {_info_row("Username / Email", email)}
         {_info_row("Temporary Password", temp_password)}
       </table>
-      <p style="margin:12px 0 0;color:#ef4444;font-size:13px;font-weight:600;">⚠️ Security Notice: You will be forced to securely reset your password on your very first login.</p>
+      <p style="margin:12px 0 0;color:#ef4444;font-size:13px;font-weight:600;">⚠️ Security Notice: Once you log in, please reset your password using the "forgot password" flow immediately.</p>
     </div>
-    {_cta_button("Access Admin Portal", SITE_URL + "/admin/login")}
+    {_cta_button("Access Admin Portal", SITE_URL + "/login")}
     <p style="color:#9ca3af;font-size:13px;text-align:center;">Need assistance? Please contact the Super Administrator.</p>
     """
     return "Administrative Onboarding - DurgaShakti Foils", _base(content, "Admin Provisioned")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 13. INQUIRIES & CONTACT
+# ─────────────────────────────────────────────────────────────────────────────
+def contact_acknowledgement_email(name: str, message: str) -> tuple[str, str]:
+    content = f"""
+    <p style="font-size:24px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">We've Received Your Inquiry! 🛡️</p>
+    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Hello <strong>{name}</strong>, thank you for reaching out to DurgaShakti Foils.</p>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin-bottom:28px;">
+      <p style="margin:0 0 12px;color:{BRAND_DARK};font-weight:700;font-size:16px;">Inquiry Details</p>
+      <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;font-style:italic;">"{message}"</p>
+    </div>
+    <p style="color:#4b5563;font-size:14px;line-height:1.6;">Our customer support team is currently reviewing your inquiry and will get back to you shortly.</p>
+    """
+    return "We've received your inquiry - DurgaShakti Foils", _base(content, "Inquiry Received")
+
+
+def contact_reply_email(name: str, original_message: str, reply_message: str, date_str: str) -> tuple[str, str]:
+    content = f"""
+    <p style="font-size:24px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">New Response to Your Inquiry ✉️</p>
+    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Dear <strong>{name}</strong>, our support team has responded to your inquiry submitted on {date_str}.</p>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:24px;margin-bottom:20px;border-left:5px solid #2563eb;">
+      <p style="margin:0 0 12px;color:#1e40af;font-weight:700;font-size:16px;">Our Response</p>
+      <p style="margin:0;font-size:14px;color:#1e3a8a;line-height:1.6;white-space:pre-wrap;">{reply_message}</p>
+    </div>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin-bottom:28px;">
+      <p style="margin:0 0 8px;color:#6b7280;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Your Original Inquiry</p>
+      <p style="margin:0;font-size:14px;color:#4b5563;line-height:1.6;font-style:italic;">"{original_message}"</p>
+    </div>
+    <p style="color:#4b5563;font-size:14px;line-height:1.6;">If you have further questions or need additional details, please submit a new contact request or reply to this thread.</p>
+    """
+    return "Reply to your inquiry - DurgaShakti Foils", _base(content, "Inquiry Response")
+
+
+def contact_resolved_email(name: str, original_message: str, date_str: str) -> tuple[str, str]:
+    content = f"""
+    <p style="font-size:24px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">Inquiry Closed Successfully 🛡️</p>
+    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Dear <strong>{name}</strong>, we have closed your inquiry submitted on {date_str}.</p>
+    <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:24px;margin-bottom:20px;border-left:5px solid #059669;">
+      <p style="margin:0;font-size:15px;color:#065f46;line-height:1.6;font-weight:600;">Closed your inquiry. Thank you for reaching us!</p>
+    </div>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin-bottom:28px;">
+      <p style="margin:0 0 8px;color:#6b7280;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Original Inquiry Details</p>
+      <p style="margin:0;font-size:14px;color:#4b5563;line-height:1.6;font-style:italic;">"{original_message}"</p>
+    </div>
+    <p style="color:#4b5563;font-size:14px;line-height:1.6;">We hope we resolved your query. Please don't hesitate to reach back out if you require further assistance.</p>
+    """
+    return "Your inquiry has been resolved - DurgaShakti Foils", _base(content, "Inquiry Resolved")
 

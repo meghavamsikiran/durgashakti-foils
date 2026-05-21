@@ -375,7 +375,7 @@ async def list_customers(
 
 
 # ── Admins (Admin) ───────────────────────────────────────────────────────
-@router.get("/admin/admin-users")
+@router.get("/superadmin/admins")
 async def list_admin_users(admin: UserSchema = Depends(require_permission("manage_admins")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(UserModel).where(UserModel.role.in_(["admin", "SUPER_ADMIN"])))
     rows = []
@@ -386,7 +386,7 @@ async def list_admin_users(admin: UserSchema = Depends(require_permission("manag
     return rows
 
 
-@router.post("/admin/admin-users")
+@router.post("/superadmin/admins")
 async def create_admin_user(payload: AdminCreateRequest, admin: UserSchema = Depends(require_permission("create_admin")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(UserModel).where(UserModel.email == payload.email))
     if res.scalar_one_or_none():
@@ -423,7 +423,7 @@ async def create_admin_user(payload: AdminCreateRequest, admin: UserSchema = Dep
 
     # Dispatch email
     try:
-        subj, body = admin_onboarding_email(payload.full_name, payload.email, payload.password)
+        subj, body = admin_onboarding_email(payload.full_name, payload.email, payload.password, payload.role_template)
         asyncio.create_task(send_email(payload.email, subj, body))
     except Exception as e:
         pass
@@ -431,7 +431,7 @@ async def create_admin_user(payload: AdminCreateRequest, admin: UserSchema = Dep
     return {"message": "Admin created", "user_id": uid}
 
 
-@router.put("/admin/admin-users/{user_id}/status")
+@router.put("/superadmin/admins/{user_id}/status")
 async def update_admin_status(user_id: str, data: dict, admin: UserSchema = Depends(require_permission("disable_admin")), db: AsyncSession = Depends(get_db)):
     validate_uuid(user_id)
     if user_id == admin.id:
@@ -446,7 +446,7 @@ async def update_admin_status(user_id: str, data: dict, admin: UserSchema = Depe
     return {"message": "Admin status updated"}
 
 
-@router.put("/admin/admin-users/{user_id}")
+@router.put("/superadmin/admins/{user_id}")
 async def update_admin_user(user_id: str, data: AdminUpdateRequest, admin: UserSchema = Depends(require_permission("edit_admin")), db: AsyncSession = Depends(get_db)):
     validate_uuid(user_id)
     res = await db.execute(select(UserModel).where(UserModel.id == user_id, UserModel.role.in_(["admin", "SUPER_ADMIN"])))
@@ -471,7 +471,7 @@ async def update_admin_user(user_id: str, data: AdminUpdateRequest, admin: UserS
     return {"message": "Admin updated"}
 
 
-@router.delete("/admin/admin-users/{user_id}")
+@router.delete("/superadmin/admins/{user_id}")
 async def delete_admin_user(user_id: str, admin: UserSchema = Depends(require_permission("delete_admin")), db: AsyncSession = Depends(get_db)):
     validate_uuid(user_id)
     if user_id == admin.id:
@@ -488,7 +488,7 @@ async def delete_admin_user(user_id: str, admin: UserSchema = Depends(require_pe
     return {"message": "Admin deleted successfully"}
 
 
-@router.put("/admin/admin-users/{user_id}/reset-password")
+@router.put("/superadmin/admins/{user_id}/reset-password")
 async def reset_admin_password(user_id: str, req: PasswordResetRequest, admin: UserSchema = Depends(require_permission("edit_admin")), db: AsyncSession = Depends(get_db)):
     validate_uuid(user_id)
     res = await db.execute(select(UserModel).where(UserModel.id == user_id, UserModel.role.in_(["admin", "SUPER_ADMIN"])))

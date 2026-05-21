@@ -86,16 +86,16 @@ const adminService = {
   updateSetting: (payload) => apiClient.post('/admin/settings', payload),
 
   // Admin User Management
-  getAdminUsers: () => apiClient.get('/admin/admin-users'),
-  createAdminUser: (payload) => apiClient.post('/admin/admin-users', payload),
+  getAdminUsers: () => apiClient.get('/superadmin/admins'),
+  createAdminUser: (payload) => apiClient.post('/superadmin/admins', payload),
   updateAdminStatus: (userId, isActive) =>
-    apiClient.put(`/admin/admin-users/${userId}/status`, { is_active: isActive }),
+    apiClient.put(`/superadmin/admins/${userId}/status`, { is_active: isActive }),
   updateAdminUser: (userId, payload) =>
-    apiClient.put(`/admin/admin-users/${userId}`, payload),
+    apiClient.put(`/superadmin/admins/${userId}`, payload),
   deleteAdminUser: (userId) =>
-    apiClient.delete(`/admin/admin-users/${userId}`),
+    apiClient.delete(`/superadmin/admins/${userId}`),
   resetAdminPassword: (userId, newPassword) =>
-    apiClient.put(`/admin/admin-users/${userId}/reset-password`, { new_password: newPassword }),
+    apiClient.put(`/superadmin/admins/${userId}/reset-password`, { new_password: newPassword }),
 
   // Auth
   changePassword: (payload) => apiClient.post('/auth/change-password', payload),

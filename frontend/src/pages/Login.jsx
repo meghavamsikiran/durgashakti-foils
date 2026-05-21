@@ -57,13 +57,21 @@ const Login = () => {
 
     try {
       if (isLogin) {
-        await login(email, password);
+        const res = await login(email, password);
         toast.success('Login successful!');
+        const role = res.user?.role;
+        if (role === 'SUPER_ADMIN') {
+          navigate('/superadmin/dashboard');
+        } else if (role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/shop');
+        }
       } else {
         await register(email, password, fullName, phone);
         toast.success('Registration successful!');
+        navigate('/shop');
       }
-      navigate('/shop');
     } catch (error) {
       toast.error(normalizeAuthError(error));
     } finally {
@@ -90,9 +98,16 @@ const Login = () => {
           if (tokenResponse && tokenResponse.access_token) {
             setLoading(true);
             try {
-              await loginWithGoogle(tokenResponse.access_token);
+              const res = await loginWithGoogle(tokenResponse.access_token);
               toast.success('Successfully authenticated with Google!');
-              navigate('/shop');
+              const role = res.user?.role;
+              if (role === 'SUPER_ADMIN') {
+                navigate('/superadmin/dashboard');
+              } else if (role === 'admin') {
+                navigate('/admin/dashboard');
+              } else {
+                navigate('/shop');
+              }
             } catch (err) {
               toast.error(normalizeAuthError(err));
             } finally {
