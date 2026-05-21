@@ -17,7 +17,7 @@ let isInitialPageLoad = true;
  *
  * Behavior based on device:
  *   - Desktop: Shows BOTH the sacred Trishul top bar AND the Durga Maa centre video loader.
- *   - Mobile: Shows the circular favicon loader (with the trident/W logo in the center and "Loading Session" below it).
+ *   - Mobile: Shows ONLY the circular favicon loader. The Trishul loader is completely disabled on mobile.
  */
 const RouteTransitionLoader = () => {
   const [show, setShow] = useState(() => {
@@ -28,7 +28,15 @@ const RouteTransitionLoader = () => {
     return false;
   });
 
-  const [isMobile, setIsMobile] = useState(false);
+  // Synchronously initialize isMobile to prevent brief UI flashes during hydration
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const mobileWidth = window.innerWidth < 768;
+      return mobileUA || mobileWidth;
+    }
+    return false;
+  });
 
   useEffect(() => {
     const checkMobile = () => {
@@ -50,11 +58,11 @@ const RouteTransitionLoader = () => {
 
   if (!show) return null;
 
-  // Mobile-specific branded loader (circular ring, orange logo center, text below)
+  // Mobile-specific branded loader (circular ring, orange logo center, text below) - completely hidden on desktop
   if (isMobile) {
     return (
       <div 
-        className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-50/95"
+        className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-50/95 md:hidden"
       >
         <div className="flex flex-col items-center justify-center gap-4">
           <div className="relative w-14 h-14">
@@ -77,9 +85,9 @@ const RouteTransitionLoader = () => {
     );
   }
 
-  // Desktop loaders (Trishul top bar + Durga Maa Center video)
+  // Desktop loaders (Trishul top bar + Durga Maa Center video) - completely hidden on mobile viewports
   return (
-    <>
+    <div className="hidden md:block">
       {/* Trishul top progress bar sweep */}
       <TrishoolLoader />
       {/* Durga Maa centre animation overlay */}
@@ -89,7 +97,7 @@ const RouteTransitionLoader = () => {
       >
         <DurgaMaaLoader />
       </div>
-    </>
+    </div>
   );
 };
 
