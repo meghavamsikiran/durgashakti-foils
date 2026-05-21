@@ -151,7 +151,7 @@ export const useGeoLocationAddress = () => {
               console.info(`Pincode validated via India Post (${source} coords → IndiaPost)`);
             }
 
-            toast.success(`Location detected accurately via ${source}!`);
+            toast.success("Location auto-detected successfully!");
             resolve({
               pincode: pin,
               state,
