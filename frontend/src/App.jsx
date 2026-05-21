@@ -27,22 +27,22 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const OrderDetailsPage = lazy(() => import('./pages/OrderDetailsPage'));
 const OrderSuccess = lazy(() => import('./pages/OrderSuccess'));
 
-// Admin (lazy loaded)
+// Admin (eagerly loaded for instant tab switching)
 const AdminLayout = lazy(() => import('./admin/layouts/AdminLayout'));
 const ProtectedAdminRoute = lazy(() => import('./admin/guards/ProtectedAdminRoute'));
-const AdminDashboard = lazy(() => import('./admin/pages/AdminDashboard'));
-const ProductsPage = lazy(() => import('./admin/pages/ProductsPage'));
-const InventoryPage = lazy(() => import('./admin/pages/InventoryPage'));
-const OrdersPage = lazy(() => import('./admin/pages/OrdersPage'));
-const CustomersPage = lazy(() => import('./admin/pages/CustomersPage'));
-const PaymentsPage = lazy(() => import('./admin/pages/PaymentsPage'));
-const GstImportPage = lazy(() => import('./admin/pages/GstImportPage'));
-const GstReportsPage = lazy(() => import('./admin/pages/GstReportsPage'));
-const AuditLogsPage = lazy(() => import('./admin/pages/AuditLogsPage'));
-const SettingsPage = lazy(() => import('./admin/pages/SettingsPage'));
-const AnalyticsPage = lazy(() => import('./admin/pages/AnalyticsPage'));
-const AdminUsersPage = lazy(() => import('./admin/pages/AdminUsersPage'));
-const InquiriesPage = lazy(() => import('./admin/pages/InquiriesPage'));
+import AdminDashboard from './admin/pages/AdminDashboard';
+import ProductsPage from './admin/pages/ProductsPage';
+import InventoryPage from './admin/pages/InventoryPage';
+import OrdersPage from './admin/pages/OrdersPage';
+import CustomersPage from './admin/pages/CustomersPage';
+import PaymentsPage from './admin/pages/PaymentsPage';
+import GstImportPage from './admin/pages/GstImportPage';
+import GstReportsPage from './admin/pages/GstReportsPage';
+import AuditLogsPage from './admin/pages/AuditLogsPage';
+import SettingsPage from './admin/pages/SettingsPage';
+import AnalyticsPage from './admin/pages/AnalyticsPage';
+import AdminUsersPage from './admin/pages/AdminUsersPage';
+import InquiriesPage from './admin/pages/InquiriesPage';
 
 import PageLoader from './components/ui/PageLoader';
 import './App.css';
