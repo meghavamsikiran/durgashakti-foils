@@ -3,28 +3,32 @@ import TrishoolLoader from '../loaders/TrishoolLoader';
 import DurgaMaaLoader from '../loaders/DurgaMaaLoader';
 
 /**
+ * Module-level flag. This variable is true when JavaScript first loads
+ * (i.e. on a fresh page visit or a browser refresh). It stays false
+ * for all subsequent SPA navigations because the module remains in memory.
+ * On refresh → browser re-evaluates the module → resets back to true.
+ */
+let isInitialPageLoad = true;
+
+/**
  * RouteTransitionLoader — Shows BOTH the sacred Trishul top bar AND the
- * Durga Maa centre animation ONLY in two cases:
- *   1. Customer/Admin is visiting the website for the first time in this tab.
- *   2. Customer/Admin hard-refreshes the browser (F5 / Ctrl+F5).
+ * Durga Maa centre animation ONLY when:
+ *   1. Customer/Admin visits the website for the first time.
+ *   2. Customer/Admin refreshes the browser from any page.
  *
- * Normal SPA navigation (clicking links, tabs, etc.) does NOT trigger
- * these loaders at all.
- *
- * Mechanism: sessionStorage is cleared on every fresh page load / refresh,
- * so the absence of the key 'app_loaded' means this is a fresh load.
+ * Normal SPA navigation (clicking links, tabs, etc.) does NOT show them.
  */
 const RouteTransitionLoader = () => {
   const [show, setShow] = useState(() => {
-    // Check synchronously during initial render so first paint includes the loader
-    return !sessionStorage.getItem('app_loaded');
+    if (isInitialPageLoad) {
+      isInitialPageLoad = false;
+      return true;
+    }
+    return false;
   });
 
   useEffect(() => {
     if (show) {
-      // Mark session so subsequent SPA navigations skip the loader
-      sessionStorage.setItem('app_loaded', '1');
-      // Auto-dismiss after the animation completes (~2.8s)
       const timer = setTimeout(() => setShow(false), 2800);
       return () => clearTimeout(timer);
     }
