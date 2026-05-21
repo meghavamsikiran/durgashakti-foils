@@ -300,9 +300,8 @@ const SettingsPage = () => {
              </div>
           </div>
           
-          {me?.role === 'SUPER_ADMIN' ? (
-            <>
-               {/* Payment Control Center */}
+          {/* Payment Control Center — SUPER_ADMIN or manage_settings permission */}
+          {(me?.role === 'SUPER_ADMIN' || me?.permissions?.manage_settings) && (
                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
                      <Settings className="w-32 h-32 text-indigo-950" />
@@ -344,8 +343,10 @@ const SettingsPage = () => {
                      </div>
                   </div>
                </div>
+          )}
 
-               {/* Sacred Banner Management */}
+          {/* Sacred Banner Management — SUPER_ADMIN or manage_banner permission */}
+          {(me?.role === 'SUPER_ADMIN' || me?.permissions?.manage_banner) && (
                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden mt-8">
                   <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12 pointer-events-none">
                      <Megaphone className="w-32 h-32 text-indigo-950" />
@@ -525,12 +526,10 @@ const SettingsPage = () => {
                         {savingBanner ? 'Saving...' : <><Save className="w-4 h-4" /> Save Banner Settings</>}
                      </Button>
                   </div>
-               </div>
-            </>
-          ) : null}
+                </div>
+          )}
 
 
-          
           <div className="bg-indigo-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl mt-8">
              <div className="relative z-10">
                 <h3 className="text-lg font-black uppercase tracking-tighter mb-2">System Status</h3>

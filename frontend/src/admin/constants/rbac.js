@@ -102,6 +102,13 @@ export const PERMISSION_GROUPS = [
     permissions: [
       { id: 'view_dashboard', label: 'View Dashboard', desc: 'Access core business summary overview cards and operations' }
     ]
+  },
+  {
+    title: 'Settings & Configuration',
+    permissions: [
+      { id: 'manage_settings', label: 'Manage Settings', desc: 'Access and modify payment settings (COD toggle, etc.)' },
+      { id: 'manage_banner', label: 'Manage Banner', desc: 'Edit the scrolling announcement banner and countdown timer' }
+    ]
   }
 ];
 
@@ -119,7 +126,9 @@ export const ROLE_TEMPLATES = {
       view_gst_reports: true, export_gst_reports: true,
       upload_gst_files: true, import_gst_data: true,
       view_audit_logs: true,
-      view_dashboard: true
+      view_dashboard: true,
+      manage_settings: true,
+      manage_banner: true
     }
   },
   ORDER_MANAGER: {
@@ -196,7 +205,7 @@ export const superAdminSidebar = [
   { label: 'Import GST Data', permissions: ['upload_gst_files', 'import_gst_data'] },
   { label: 'Admins', permissions: ['create_admin', 'edit_admin', 'disable_admin', 'delete_admin', 'assign_permissions'] },
   { label: 'Audit Logs', permissions: ['view_audit_logs'] },
-  { label: 'Settings', permissions: ['manage_settings'] },
+  { label: 'Settings', permissions: ['manage_settings', 'manage_banner'] },
 ];
 
 export const isAdminRole = (role) => [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role);

@@ -1,22 +1,32 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import TrishoolLoader from '../loaders/TrishoolLoader';
 import DurgaMaaLoader from '../loaders/DurgaMaaLoader';
-import { subscribe, resetLoading } from '../../services/core/loadingState';
 
 /**
- * RouteTransitionLoader — Shows the sacred Trishul loading animation
- * at the top of the page during every route navigation.
- * 
- * It detects location changes and briefly displays the Trishul sweep
- * for a natural, polished transition feel (similar to YouTube/GitHub).
+ * RouteTransitionLoader — Shows the sacred Trishul/DurgaMaa animation
+ * ONLY on the very first page load or a hard refresh (Ctrl+F5 / F5).
+ * It does NOT fire on SPA route changes or API calls.
+ *
+ * Mechanism:
+ *   - sessionStorage key 'app_loaded' is absent on first visit / after refresh.
+ *   - We show the loader briefly, then mark the session as loaded.
+ *   - All subsequent SPA navigations skip the loader entirely.
  */
 const RouteTransitionLoader = () => {
-  const [networkLoading, setNetworkLoading] = useState(false);
+  const [show, setShow] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    return subscribe(setNetworkLoading);
+    const alreadyLoaded = sessionStorage.getItem('app_loaded');
+    if (!alreadyLoaded) {
+      // Fresh page load or hard refresh — show the sacred animation
+      setShow(true);
+      // Mark session so it won't show again until next refresh
+      sessionStorage.setItem('app_loaded', '1');
+      // Auto-dismiss after animation completes (~2.5 s)
+      const timer = setTimeout(() => setShow(false), 2500);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   useEffect(() => {
@@ -30,9 +40,11 @@ const RouteTransitionLoader = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  if (!show) return null;
+
   return (
-    <div className={`pointer-events-none transition-opacity duration-300 ${networkLoading ? 'opacity-100' : 'opacity-0'}`}>
-      <TrishoolLoader />
+    <div className="pointer-events-none">
+      {isMobile ? <DurgaMaaLoader /> : <TrishoolLoader />}
     </div>
   );
 };
