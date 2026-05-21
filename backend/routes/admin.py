@@ -431,38 +431,6 @@ async def create_admin_user(payload: AdminCreateRequest, admin: UserSchema = Dep
     return {"message": "Admin created", "user_id": uid}
 
 
-@router.post("/superadmin/test-email")
-async def test_email_route(data: dict, admin: UserSchema = Depends(require_permission("create_admin"))):
-    from deps import send_email
-    import os
-    import logging
-    target_email = data.get("email")
-    if not target_email:
-        raise HTTPException(status_code=400, detail="email is required")
-        
-    logging.info("Live diagnostic SMTP test to %s", target_email)
-    smtp_host = os.environ.get('SMTP_HOST', '')
-    smtp_port = os.environ.get('SMTP_PORT', '')
-    smtp_user = os.environ.get('SMTP_USER', '')
-    smtp_pass = os.environ.get('SMTP_PASS', '')
-    
-    # Try sending a simple test email
-    success, msg = await send_email(target_email, "DurgaShakti Live SMTP Diagnostic Test", "<p>This is a diagnostic email from the live Render server.</p>")
-    
-    return {
-        "success": success,
-        "msg": msg,
-        "env_diagnostics": {
-            "smtp_host": smtp_host,
-            "smtp_port": smtp_port,
-            "smtp_user": smtp_user,
-            "smtp_pass_len": len(smtp_pass) if smtp_pass else 0,
-            "smtp_pass_preview": smtp_pass[:3] + "..." if smtp_pass else "None"
-        }
-    }
-
-
-
 
 @router.put("/superadmin/admins/{user_id}/status")
 async def update_admin_status(user_id: str, data: dict, admin: UserSchema = Depends(require_permission("disable_admin")), db: AsyncSession = Depends(get_db)):
