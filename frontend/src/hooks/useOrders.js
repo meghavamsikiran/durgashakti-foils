@@ -1,13 +1,24 @@
 import { useState, useCallback, useEffect } from 'react';
 import orderService from '../services/order.service';
+import apiClient from '../services/core/apiClient';
 import { toast } from 'sonner';
 
 export const useOrders = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const getInitialOrders = () => {
+    const cachedResponse = apiClient.getCachedDataSync('/orders');
+    return cachedResponse?.data || [];
+  };
+
+  const initialOrders = getInitialOrders();
+
+  const [orders, setOrders] = useState(initialOrders);
+  const [loading, setLoading] = useState(!initialOrders.length);
 
   const fetchOrders = useCallback(async () => {
-    setLoading(true);
+    const hasCached = !!apiClient.getCachedDataSync('/orders');
+    if (!hasCached) {
+      setLoading(true);
+    }
     try {
       const data = await orderService.getOrders();
       setOrders(data || []);
@@ -20,8 +31,8 @@ export const useOrders = () => {
 
   const fetchOrdersSilent = useCallback(async () => {
     try {
-      const data = await orderService.getOrders();
-      setOrders(data || []);
+      const response = await apiClient.get('/orders', { silent: true });
+      setOrders(response.data || []);
     } catch (err) {
       // Ignore background fetch errors to prevent user distraction
     }

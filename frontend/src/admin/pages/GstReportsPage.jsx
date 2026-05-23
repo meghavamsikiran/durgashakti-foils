@@ -11,13 +11,26 @@ import { useProgress } from '../../components/ui/ProgressToast';
 import PageLoader from '../../components/ui/PageLoader';
 
 const GstReportsPage = () => {
-  const [records, setRecords] = useState([]);
-  const [imports, setImports] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const ITEMS_PER_PAGE = 20;
+  const [records, setRecords] = useState(() => {
+    const cached = adminService.getCached('/admin/gst/reports', { page: 1, limit: 100, search: '' });
+    return cached?.data?.items || [];
+  });
+  const [imports, setImports] = useState(() => {
+    const cached = adminService.getCached('/admin/gst/imports');
+    return cached?.data || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cachedRecords = adminService.getCached('/admin/gst/reports', { page: 1, limit: 100, search: '' });
+    const cachedImports = adminService.getCached('/admin/gst/imports');
+    return !(cachedRecords && cachedImports);
+  });
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const ITEMS_PER_PAGE = 20;
+  const [total, setTotal] = useState(() => {
+    const cached = adminService.getCached('/admin/gst/reports', { page: 1, limit: 100, search: '' });
+    return cached?.data?.total || 0;
+  });
   const { startProgress, updateProgress, finishProgress } = useProgress();
 
   const handleExportGST = () => {
@@ -58,8 +71,12 @@ const GstReportsPage = () => {
   };
 
   const load = useCallback(async (pageNum = 1) => {
-    try {
+    const cachedRecords = adminService.getCached('/admin/gst/reports', { page: pageNum, limit: 100, search });
+    const cachedImports = adminService.getCached('/admin/gst/imports');
+    if (!(cachedRecords && cachedImports)) {
       setLoading(true);
+    }
+    try {
       const [recordsRes, importsRes] = await Promise.all([
         adminService.getGSTRecords({ page: pageNum, limit: 100, search }), 
         adminService.getGSTImports()
@@ -75,10 +92,27 @@ const GstReportsPage = () => {
     }
   }, [search]);
 
+  const loadSilent = useCallback(async (pageNum = 1) => {
+    try {
+      const [recordsRes, importsRes] = await Promise.all([
+        apiClient.get('/admin/gst/reports', { params: { page: pageNum, limit: 100, search }, silent: true }), 
+        apiClient.get('/admin/gst/imports', { silent: true })
+      ]);
+      setRecords(recordsRes.data?.items || []);
+      setTotal(recordsRes.data?.total || 0);
+      setImports(importsRes.data || []);
+    } catch (err) {
+      // Ignore background errors
+    }
+  }, [search]);
+
   useEffect(() => {
-    const timer = setTimeout(() => load(1), 300);
+    const timer = setTimeout(() => {
+      load(1);
+      loadSilent(1);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [search, load]);
+  }, [search, load, loadSilent]);
 
   const formatDate = (d) => {
     if (!d) return '—';

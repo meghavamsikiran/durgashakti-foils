@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
+import apiClient from '../../services/core/apiClient';
 import { 
   Truck, Coins, Clock, MapPin, Sparkles, Save, ShieldAlert,
   Percent, ToggleLeft, ToggleRight, Info, AlertTriangle, Layers, Gift
@@ -9,33 +10,64 @@ import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
 
 const ShippingSettingsPage = () => {
-  const [loaded, setLoaded] = useState(false);
+  const getInitialShippingState = () => {
+    const cachedSettings = adminService.getCached('/admin/settings');
+    const cachedMe = adminService.getCached('/auth/me');
+
+    const data = cachedSettings?.data || {};
+    const config = data.shipping_settings || {};
+
+    return {
+      me: cachedMe?.data || null,
+      enableShipping: config.enableShipping !== false,
+      enableFreeShipping: config.enableFreeShipping !== false,
+      freeShippingThreshold: config.freeShippingThreshold ?? 1099,
+      defaultShippingCharge: config.defaultShippingCharge ?? 70,
+      shippingRuleStatus: config.shippingRuleStatus || 'Active',
+      codEnabled: config.codEnabled !== false,
+      codCharge: config.codCharge ?? config.cod_extra_service_charge ?? config.cod_charge ?? 0,
+      minimumCodAmount: config.minimumCodAmount ?? 300,
+      maximumCodAmount: config.maximumCodAmount ?? 5000,
+      codStatus: config.codStatus || 'Active',
+      standardDeliveryDays: config.standardDeliveryDays || '3–5 Days',
+      expressDeliveryDays: config.expressDeliveryDays || '1–2 Days',
+      packagingTime: config.packagingTime || '1 Day',
+      processingTime: config.processingTime || '1 Day',
+      shippingZonesEnabled: !!config.shippingZonesEnabled,
+      shippingCampaignsEnabled: !!config.shippingCampaignsEnabled,
+      loaded: !!(cachedSettings && cachedMe)
+    };
+  };
+
+  const initialState = getInitialShippingState();
+
+  const [loaded, setLoaded] = useState(initialState.loaded);
   const [saving, setSaving] = useState(false);
-  const [me, setMe] = useState(null);
+  const [me, setMe] = useState(initialState.me);
 
   // General Settings State
-  const [enableShipping, setEnableShipping] = useState(true);
-  const [enableFreeShipping, setEnableFreeShipping] = useState(true);
-  const [freeShippingThreshold, setFreeShippingThreshold] = useState(1099);
-  const [defaultShippingCharge, setDefaultShippingCharge] = useState(70);
-  const [shippingRuleStatus, setShippingRuleStatus] = useState('Active');
+  const [enableShipping, setEnableShipping] = useState(initialState.enableShipping);
+  const [enableFreeShipping, setEnableFreeShipping] = useState(initialState.enableFreeShipping);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(initialState.freeShippingThreshold);
+  const [defaultShippingCharge, setDefaultShippingCharge] = useState(initialState.defaultShippingCharge);
+  const [shippingRuleStatus, setShippingRuleStatus] = useState(initialState.shippingRuleStatus);
 
   // COD Settings State
-  const [codEnabled, setCodEnabled] = useState(true);
-  const [codCharge, setCodCharge] = useState(0);
-  const [minimumCodAmount, setMinimumCodAmount] = useState(300);
-  const [maximumCodAmount, setMaximumCodAmount] = useState(5000);
-  const [codStatus, setCodStatus] = useState('Active');
+  const [codEnabled, setCodEnabled] = useState(initialState.codEnabled);
+  const [codCharge, setCodCharge] = useState(initialState.codCharge);
+  const [minimumCodAmount, setMinimumCodAmount] = useState(initialState.minimumCodAmount);
+  const [maximumCodAmount, setMaximumCodAmount] = useState(initialState.maximumCodAmount);
+  const [codStatus, setCodStatus] = useState(initialState.codStatus);
 
   // Delivery Settings State
-  const [standardDeliveryDays, setStandardDeliveryDays] = useState('3–5 Days');
-  const [expressDeliveryDays, setExpressDeliveryDays] = useState('1–2 Days');
-  const [packagingTime, setPackagingTime] = useState('1 Day');
-  const [processingTime, setProcessingTime] = useState('1 Day');
+  const [standardDeliveryDays, setStandardDeliveryDays] = useState(initialState.standardDeliveryDays);
+  const [expressDeliveryDays, setExpressDeliveryDays] = useState(initialState.expressDeliveryDays);
+  const [packagingTime, setPackagingTime] = useState(initialState.packagingTime);
+  const [processingTime, setProcessingTime] = useState(initialState.processingTime);
 
   // Future Scalability Settings State
-  const [shippingZonesEnabled, setShippingZonesEnabled] = useState(false);
-  const [shippingCampaignsEnabled, setShippingCampaignsEnabled] = useState(false);
+  const [shippingZonesEnabled, setShippingZonesEnabled] = useState(initialState.shippingZonesEnabled);
+  const [shippingCampaignsEnabled, setShippingCampaignsEnabled] = useState(initialState.shippingCampaignsEnabled);
 
   // Mock Future Zones
   const [zones, setZones] = useState([
@@ -50,49 +82,97 @@ const ShippingSettingsPage = () => {
     { id: '2', name: 'Festival Free Shipping', threshold: 499, status: 'Inactive' }
   ]);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [settingsRes, meRes] = await Promise.all([
-          adminService.getSettings(),
-          adminService.getMe()
-        ]);
-        setMe(meRes.data);
+  const loadData = async () => {
+    const cachedSettings = adminService.getCached('/admin/settings');
+    const cachedMe = adminService.getCached('/auth/me');
+    if (!(cachedSettings && cachedMe)) {
+      setLoaded(false);
+    }
+    try {
+      const [settingsRes, meRes] = await Promise.all([
+        adminService.getSettings(),
+        adminService.getMe()
+      ]);
+      setMe(meRes.data);
 
-        const data = settingsRes.data || {};
-        const config = data.shipping_settings || {};
+      const data = settingsRes.data || {};
+      const config = data.shipping_settings || {};
 
-        // General
-        setEnableShipping(config.enableShipping !== false);
-        setEnableFreeShipping(config.enableFreeShipping !== false);
-        setFreeShippingThreshold(config.freeShippingThreshold ?? 1099);
-        setDefaultShippingCharge(config.defaultShippingCharge ?? 70);
-        setShippingRuleStatus(config.shippingRuleStatus || 'Active');
+      // General
+      setEnableShipping(config.enableShipping !== false);
+      setEnableFreeShipping(config.enableFreeShipping !== false);
+      setFreeShippingThreshold(config.freeShippingThreshold ?? 1099);
+      setDefaultShippingCharge(config.defaultShippingCharge ?? 70);
+      setShippingRuleStatus(config.shippingRuleStatus || 'Active');
 
-        // COD
-        setCodEnabled(config.codEnabled !== false);
-        setCodCharge(config.codCharge ?? config.cod_extra_service_charge ?? config.cod_charge ?? 0);
-        setMinimumCodAmount(config.minimumCodAmount ?? 300);
-        setMaximumCodAmount(config.maximumCodAmount ?? 5000);
-        setCodStatus(config.codStatus || 'Active');
+      // COD
+      setCodEnabled(config.codEnabled !== false);
+      setCodCharge(config.codCharge ?? config.cod_extra_service_charge ?? config.cod_charge ?? 0);
+      setMinimumCodAmount(config.minimumCodAmount ?? 300);
+      setMaximumCodAmount(config.maximumCodAmount ?? 5000);
+      setCodStatus(config.codStatus || 'Active');
 
-        // Delivery Estimates
-        setStandardDeliveryDays(config.standardDeliveryDays || '3–5 Days');
-        setExpressDeliveryDays(config.expressDeliveryDays || '1–2 Days');
-        setPackagingTime(config.packagingTime || '1 Day');
-        setProcessingTime(config.processingTime || '1 Day');
+      // Delivery Estimates
+      setStandardDeliveryDays(config.standardDeliveryDays || '3–5 Days');
+      setExpressDeliveryDays(config.expressDeliveryDays || '1–2 Days');
+      setPackagingTime(config.packagingTime || '1 Day');
+      setProcessingTime(config.processingTime || '1 Day');
 
-        // Scalability Flags
-        setShippingZonesEnabled(!!config.shippingZonesEnabled);
-        setShippingCampaignsEnabled(!!config.shippingCampaignsEnabled);
+      // Scalability Flags
+      setShippingZonesEnabled(!!config.shippingZonesEnabled);
+      setShippingCampaignsEnabled(!!config.shippingCampaignsEnabled);
 
-      } catch (error) {
+    } catch (error) {
+      if (!(cachedSettings && cachedMe)) {
         toast.error('Failed to load shipping configurations.');
-      } finally {
-        setLoaded(true);
       }
-    };
+    } finally {
+      setLoaded(true);
+    }
+  };
+
+  const loadSilent = async () => {
+    try {
+      const [settingsRes, meRes] = await Promise.all([
+        apiClient.get('/admin/settings', { silent: true }),
+        apiClient.get('/auth/me', { silent: true })
+      ]);
+      setMe(meRes.data);
+
+      const data = settingsRes.data || {};
+      const config = data.shipping_settings || {};
+
+      // General
+      setEnableShipping(config.enableShipping !== false);
+      setEnableFreeShipping(config.enableFreeShipping !== false);
+      setFreeShippingThreshold(config.freeShippingThreshold ?? 1099);
+      setDefaultShippingCharge(config.defaultShippingCharge ?? 70);
+      setShippingRuleStatus(config.shippingRuleStatus || 'Active');
+
+      // COD
+      setCodEnabled(config.codEnabled !== false);
+      setCodCharge(config.codCharge ?? config.cod_extra_service_charge ?? config.cod_charge ?? 0);
+      setMinimumCodAmount(config.minimumCodAmount ?? 300);
+      setMaximumCodAmount(config.maximumCodAmount ?? 5000);
+      setCodStatus(config.codStatus || 'Active');
+
+      // Delivery Estimates
+      setStandardDeliveryDays(config.standardDeliveryDays || '3–5 Days');
+      setExpressDeliveryDays(config.expressDeliveryDays || '1–2 Days');
+      setPackagingTime(config.packagingTime || '1 Day');
+      setProcessingTime(config.processingTime || '1 Day');
+
+      // Scalability Flags
+      setShippingZonesEnabled(!!config.shippingZonesEnabled);
+      setShippingCampaignsEnabled(!!config.shippingCampaignsEnabled);
+    } catch {
+      // Ignore background errors
+    }
+  };
+
+  useEffect(() => {
     loadData();
+    loadSilent();
   }, []);
 
   const handleSave = async () => {

@@ -15,20 +15,48 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const InventoryPage = () => {
   const { hasPermission } = useAuth();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const ITEMS_PER_PAGE = 15;
+  const [rows, setRows] = useState(() => {
+    const cached = adminService.getCached('/products', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
+    const rawItems = cached?.items || [];
+    return rawItems.map((product) => ({
+      id: product.id,
+      name: product.name,
+      sku: product.batch_no || product.variant_sku || '—',
+      size: product.size || '—',
+      stock_quantity: Number(product.stock_quantity || 0),
+      units_sold: Number(product.units_sold || 0),
+      low_stock_threshold: Number(product.low_stock_threshold || 20),
+      in_stock: product.in_stock,
+      price: product.price,
+      image_url: product.image_url,
+      category: product.category,
+    }));
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = adminService.getCached('/products', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
+    return !cached;
+  });
   const [adjustModal, setAdjustModal] = useState(null);
   const [adjustQty, setAdjustQty] = useState('');
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [metrics, setMetrics] = useState(null);
-  const ITEMS_PER_PAGE = 15;
+  const [total, setTotal] = useState(() => {
+    const cached = adminService.getCached('/products', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
+    return cached?.total || 0;
+  });
+  const [metrics, setMetrics] = useState(() => {
+    const cached = adminService.getCached('/admin/analytics/summary');
+    return cached?.metrics || null;
+  });
 
   const load = useCallback(async (pageNum = 1) => {
-    try {
+    const cached = adminService.getCached('/products', { page: pageNum, limit: ITEMS_PER_PAGE, search });
+    if (!cached) {
       setLoading(true);
+    }
+    try {
       const [response, mRes] = await Promise.all([
         adminService.getInventory({ page: pageNum, limit: ITEMS_PER_PAGE, search }),
         adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
@@ -44,10 +72,42 @@ const InventoryPage = () => {
     }
   }, [search]);
 
+  const loadSilent = useCallback(async (pageNum = 1) => {
+    try {
+      const [response, mRes] = await Promise.all([
+        apiClient.get('/products', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true }),
+        apiClient.get('/admin/analytics/summary', { silent: true }).catch(() => ({ data: { metrics: null } }))
+      ]);
+      const rawItems = response.data?.items || [];
+      const items = rawItems.map((product) => ({
+        id: product.id,
+        name: product.name,
+        sku: product.batch_no || product.variant_sku || '—',
+        size: product.size || '—',
+        stock_quantity: Number(product.stock_quantity || 0),
+        units_sold: Number(product.units_sold || 0),
+        low_stock_threshold: Number(product.low_stock_threshold || 20),
+        in_stock: product.in_stock,
+        price: product.price,
+        image_url: product.image_url,
+        category: product.category,
+      }));
+      setRows(items);
+      setTotal(response.data?.total || 0);
+      setMetrics(mRes.data?.metrics || null);
+    } catch {
+      // Ignore background errors
+    }
+  }, [search]);
+
   useEffect(() => {
-    const timer = setTimeout(() => load(1), 300);
+    const timer = setTimeout(() => {
+      load(1);
+      loadSilent(1);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [search, load]);
+  }, [search, load, loadSilent]);
+
 
   const handleAdjust = async (direction) => {
     const delta = parseInt(adjustQty, 10);
@@ -67,11 +127,6 @@ const InventoryPage = () => {
     }
   };
 
-  // Server-side search logic: we trigger a reload on search change
-  useEffect(() => {
-    const timer = setTimeout(() => load(1), 300);
-    return () => clearTimeout(timer);
-  }, [search, load]);
 
   const stats = {
     totalValue: metrics?.total_inventory_value || 0,

@@ -2,12 +2,10 @@ import apiClient from './core/apiClient';
 
 const settingsService = {
   getPublicSettings: async () => {
-    const response = await apiClient.get('/settings/public', {
-      params: { t: Date.now() },
-      headers: { 'Cache-Control': 'no-cache' },
-    });
+    const response = await apiClient.cachedGet('/settings/public');
     return response.data;
   },
 };
 
 export default settingsService;
+

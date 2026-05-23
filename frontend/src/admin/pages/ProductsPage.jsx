@@ -16,8 +16,14 @@ import PageLoader from '../../components/ui/PageLoader';
 
 const ProductsPage = () => {
   const { isSuperAdmin, hasPermission } = useAuth();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState(() => {
+    const cached = adminService.getCached('/products', { page: 1, limit: 10, search: '' });
+    return cached?.items || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = adminService.getCached('/products', { page: 1, limit: 10, search: '' });
+    return !cached;
+  });
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState(null);
@@ -45,7 +51,10 @@ const ProductsPage = () => {
     badge: '',
     variants: '',
   });
-  const [metrics, setMetrics] = useState(null);
+  const [metrics, setMetrics] = useState(() => {
+    const cached = adminService.getCached('/admin/analytics/summary');
+    return cached?.metrics || null;
+  });
 
   const resetForm = () => {
     setForm({
@@ -68,11 +77,17 @@ const ProductsPage = () => {
     setImageFile(null);
   };
 
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(() => {
+    const cached = adminService.getCached('/products', { page: 1, limit: 10, search: '' });
+    return cached?.total || 0;
+  });
 
   const fetchRows = useCallback(async (pageNum = 1) => {
-    try {
+    const cached = adminService.getCached('/products', { page: pageNum, limit: ITEMS_PER_PAGE, search });
+    if (!cached) {
       setLoading(true);
+    }
+    try {
       const [response, mRes] = await Promise.all([
         adminService.getProducts({ page: pageNum, limit: ITEMS_PER_PAGE, search }),
         adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
@@ -91,7 +106,7 @@ const ProductsPage = () => {
   const fetchRowsSilent = useCallback(async (pageNum = 1) => {
     try {
       const [response, mRes] = await Promise.all([
-        apiClient.get('/admin/products', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true }),
+        apiClient.get('/products', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true }),
         apiClient.get('/admin/analytics/summary', { silent: true }).catch(() => ({ data: { metrics: null } }))
       ]);
       setRows(response.data?.items || []);
@@ -254,9 +269,12 @@ const ProductsPage = () => {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => fetchRows(1), 300);
+    const timer = setTimeout(() => {
+      fetchRows(1);
+      fetchRowsSilent(1);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [search, fetchRows]);
+  }, [search, fetchRows, fetchRowsSilent]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time products & metrics
   useEffect(() => {

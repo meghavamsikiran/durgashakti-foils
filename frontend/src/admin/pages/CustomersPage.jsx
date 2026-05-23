@@ -11,20 +11,36 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const CustomersPage = () => {
   const { hasPermission } = useAuth();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const ITEMS_PER_PAGE = 15;
+  const [rows, setRows] = useState(() => {
+    const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
+    return cached?.data?.items || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
+    return !cached;
+  });
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [metrics, setMetrics] = useState(null);
-  const ITEMS_PER_PAGE = 15;
+  const [metrics, setMetrics] = useState(() => {
+    const cached = adminService.getCached('/admin/analytics/summary');
+    return cached?.metrics || null;
+  });
 
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(() => {
+    const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
+    return cached?.data?.total || 0;
+  });
 
   const load = useCallback(async (pageNum = 1) => {
-    try {
+    const params = { page: pageNum, limit: ITEMS_PER_PAGE, search };
+    const cached = adminService.getCached('/admin/customers', params);
+    if (!cached) {
       setLoading(true);
+    }
+    try {
       const [response, mRes] = await Promise.all([
-        adminService.getCustomers({ page: pageNum, limit: ITEMS_PER_PAGE, search }),
+        adminService.getCustomers(params),
         adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
       ]);
       setRows(response.data?.items || []);
@@ -58,9 +74,12 @@ const CustomersPage = () => {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => load(1), 300);
+    const timer = setTimeout(() => {
+      load(1);
+      loadSilent(1);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [search, load]);
+  }, [search, load, loadSilent]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time customer directory
   useEffect(() => {

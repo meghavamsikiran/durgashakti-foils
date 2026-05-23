@@ -5,17 +5,26 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import ProductCard from '../components/ProductCard';
 import api from '../utils/api';
+import apiClient from '../services/core/apiClient';
 
 const Home = () => {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  const getInitialProducts = () => {
+    const cachedResponse = apiClient.getCachedDataSync('/products');
+    return cachedResponse?.data?.items?.slice(0, 4) || [];
+  };
+
+  const initialProducts = getInitialProducts();
+
+  const [products, setProducts] = useState(initialProducts);
+  const [loading, setLoading] = useState(!initialProducts.length);
 
   const fetchProducts = async () => {
+    const hasCached = !!apiClient.getCachedDataSync('/products');
+    if (!hasCached) {
+      setLoading(true);
+    }
     try {
       const response = await api.getProducts();
       setProducts(response.data.items?.slice(0, 4) || []);
@@ -25,6 +34,20 @@ const Home = () => {
       setLoading(false);
     }
   };
+
+  const fetchProductsSilent = async () => {
+    try {
+      const response = await apiClient.get('/products', { silent: true });
+      setProducts(response.data.items?.slice(0, 4) || []);
+    } catch {
+      // Ignore background errors
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+    fetchProductsSilent();
+  }, []);
 
   return (
     <div className="min-h-screen" data-testid="home-page">

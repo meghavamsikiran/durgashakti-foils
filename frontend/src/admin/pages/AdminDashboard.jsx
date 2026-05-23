@@ -25,16 +25,27 @@ const metricConfigs = {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [metrics, setMetrics] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState(() => {
+    const cached = adminService.getCached('/admin/analytics/summary');
+    return cached?.data?.metrics || {};
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = adminService.getCached('/admin/analytics/summary');
+    return !cached;
+  });
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
+    const cached = adminService.getCached('/admin/analytics/summary');
+    if (!cached) {
+      setLoading(true);
+    }
     try {
       const response = await adminService.getDashboardMetrics();
       setMetrics(response.data?.metrics || {});
+      setError('');
     } catch (err) {
-      setError(err.message);
+      if (!cached) setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -51,7 +62,9 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     load();
-  }, [load]);
+    loadSilent();
+  }, [load, loadSilent]);
+
 
   // Periodic silent polling in the background (every 10 seconds) for real-time overview stats
   useEffect(() => {

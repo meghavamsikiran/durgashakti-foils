@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { useAuth } from '../contexts/AuthContext';
+import apiClient from '../services/core/apiClient';
 
 const Contact = () => {
   const { user } = useAuth();
@@ -19,13 +20,21 @@ const Contact = () => {
   const [submitting, setSubmitting] = React.useState(false);
   const [acceptedTerms, setAcceptedTerms] = React.useState(false);
   const [showTermsModal, setShowTermsModal] = React.useState(false);
-  const [profile, setProfile] = React.useState({
-    companyName: 'Durga Shakti Foils',
-    companyPhone: '+91 83675 42954',
-    companyEmail: '',
-    companyAddress: 'Shop No. 1, Plot No. 54, Road No. 1, Maruthi Nagar, Mallampet, Hyderabad, Telangana 500090',
-    googleMapsLink: 'https://maps.app.goo.gl/FMk4dnhXvGeTrRFM6'
-  });
+  const getInitialProfile = () => {
+    const cachedResponse = apiClient.getCachedDataSync('/settings/public');
+    const cp = cachedResponse?.data?.company_profile || {};
+    return {
+      companyName: cp.companyName || 'Durga Shakti Foils',
+      companyPhone: cp.companyPhone || '+91 83675 42954',
+      companyEmail: cp.companyEmail || '',
+      companyAddress: cp.companyAddress || 'Shop No. 1, Plot No. 54, Road No. 1, Maruthi Nagar, Mallampet, Hyderabad, Telangana 500090',
+      googleMapsLink: cp.googleMapsLink || 'https://maps.app.goo.gl/FMk4dnhXvGeTrRFM6'
+    };
+  };
+
+  const initialProfile = getInitialProfile();
+
+  const [profile, setProfile] = React.useState(initialProfile);
 
   React.useEffect(() => {
     if (user) {
@@ -56,7 +65,27 @@ const Contact = () => {
         console.error('Failed to load settings on Contact Page:', err);
       }
     };
+
+    const loadSettingsSilent = async () => {
+      try {
+        const response = await apiClient.get('/settings/public', { silent: true });
+        if (response.data?.company_profile) {
+          const cp = response.data.company_profile;
+          setProfile({
+            companyName: cp.companyName || 'Durga Shakti Foils',
+            companyPhone: cp.companyPhone || '+91 83675 42954',
+            companyEmail: cp.companyEmail || '',
+            companyAddress: cp.companyAddress || 'Shop No. 1, Plot No. 54, Road No. 1, Maruthi Nagar, Mallampet, Hyderabad, Telangana 500090',
+            googleMapsLink: cp.googleMapsLink || 'https://maps.app.goo.gl/FMk4dnhXvGeTrRFM6'
+          });
+        }
+      } catch {
+        // Ignore background errors
+      }
+    };
+
     loadSettings();
+    loadSettingsSilent();
   }, []);
 
   const handleSubmit = async (e) => {

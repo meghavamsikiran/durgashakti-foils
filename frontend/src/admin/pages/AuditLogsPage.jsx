@@ -14,19 +14,35 @@ const PAGE_SIZE = 25;
 
 const AuditLogsPage = () => {
   const { hasPermission } = useAuth();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState(() => {
+    const cached = adminService.getCached('/admin/audit-logs', { page: 1, limit: PAGE_SIZE, search: '' });
+    return cached?.data?.items || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = adminService.getCached('/admin/audit-logs', { page: 1, limit: PAGE_SIZE, search: '' });
+    return !cached;
+  });
   const [search, setSearch] = useState('');
   const [expandedRow, setExpandedRow] = useState(null);
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [metrics, setMetrics] = useState(null);
+  const [total, setTotal] = useState(() => {
+    const cached = adminService.getCached('/admin/audit-logs', { page: 1, limit: PAGE_SIZE, search: '' });
+    return cached?.data?.total || 0;
+  });
+  const [metrics, setMetrics] = useState(() => {
+    const cached = adminService.getCached('/admin/analytics/summary');
+    return cached?.metrics || null;
+  });
 
   const load = useCallback(async (pageNum = 1) => {
-    try {
+    const params = { page: pageNum, limit: PAGE_SIZE, search };
+    const cached = adminService.getCached('/admin/audit-logs', params);
+    if (!cached) {
       setLoading(true);
+    }
+    try {
       const [response, mRes] = await Promise.all([
-        adminService.getAuditLogs({ page: pageNum, limit: PAGE_SIZE, search }),
+        adminService.getAuditLogs(params),
         adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
       ]);
       setRows(response.data?.items || []);
@@ -36,6 +52,20 @@ const AuditLogsPage = () => {
     } catch {
     } finally {
       setLoading(false);
+    }
+  }, [search]);
+
+  const loadSilent = useCallback(async (pageNum = 1) => {
+    try {
+      const [response, mRes] = await Promise.all([
+        apiClient.get('/admin/audit-logs', { params: { page: pageNum, limit: PAGE_SIZE, search }, silent: true }),
+        apiClient.get('/admin/analytics/summary', { silent: true }).catch(() => ({ data: { metrics: null } }))
+      ]);
+      setRows(response.data?.items || []);
+      setTotal(response.data?.total || 0);
+      setMetrics(mRes.data?.metrics || null);
+    } catch {
+      // Ignore background errors
     }
   }, [search]);
 
@@ -53,9 +83,12 @@ const AuditLogsPage = () => {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => load(1), 300);
+    const timer = setTimeout(() => {
+      load(1);
+      loadSilent(1);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [search, load]);
+  }, [search, load, loadSilent]);
 
   const filtered = rows;
 

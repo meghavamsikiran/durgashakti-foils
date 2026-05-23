@@ -13,9 +13,15 @@ import apiClient from '../../services/core/apiClient';
 import PageLoader from '../../components/ui/PageLoader';
 
 const GstImportPage = () => {
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(() => {
+    const cached = adminService.getCached('/admin/gst/imports');
+    return cached?.data || [];
+  });
   const [dragActive, setDragActive] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    const cached = adminService.getCached('/admin/gst/imports');
+    return !cached;
+  });
 
   // Workflow states
   const [selectedFile, setSelectedFile] = useState(null);
@@ -36,9 +42,12 @@ const GstImportPage = () => {
   const scanInterval = useRef(null);
 
   const loadHistory = async () => {
-    try {
+    const cached = adminService.getCached('/admin/gst/imports');
+    if (!cached) {
       setLoading(true);
-      const response = await apiClient.get('/admin/gst/imports');
+    }
+    try {
+      const response = await adminService.getGSTImports();
       setHistory(response.data || []);
       setPageError(null);
     } catch (err) {
@@ -48,8 +57,18 @@ const GstImportPage = () => {
     }
   };
 
+  const loadHistorySilent = async () => {
+    try {
+      const response = await apiClient.get('/admin/gst/imports', { silent: true });
+      setHistory(response.data || []);
+    } catch (err) {
+      // Ignore background errors
+    }
+  };
+
   useEffect(() => {
     loadHistory();
+    loadHistorySilent();
     return () => {
       if (scanInterval.current) clearInterval(scanInterval.current);
     };

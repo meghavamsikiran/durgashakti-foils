@@ -12,21 +12,37 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const PaymentsPage = () => {
   const { hasPermission } = useAuth();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const PAGE_SIZE = 15;
+  const [rows, setRows] = useState(() => {
+    const cached = adminService.getCached('/admin/payments', { page: 1, limit: PAGE_SIZE, search: '' });
+    return cached?.data?.items || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = adminService.getCached('/admin/payments', { page: 1, limit: PAGE_SIZE, search: '' });
+    return !cached;
+  });
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const [metrics, setMetrics] = useState(null);
+  const [metrics, setMetrics] = useState(() => {
+    const cached = adminService.getCached('/admin/analytics/summary');
+    return cached?.metrics || null;
+  });
 
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(() => {
+    const cached = adminService.getCached('/admin/payments', { page: 1, limit: PAGE_SIZE, search: '' });
+    return cached?.data?.total || 0;
+  });
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 15;
 
   const load = useCallback(async (pageNum = 1) => {
-    try {
+    const params = { page: pageNum, limit: PAGE_SIZE, search };
+    const cached = adminService.getCached('/admin/payments', params);
+    if (!cached) {
       setLoading(true);
+    }
+    try {
       const [response, mRes] = await Promise.all([
-        adminService.getPayments({ page: pageNum, limit: PAGE_SIZE, search }),
+        adminService.getPayments(params),
         adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
       ]);
       setRows(response.data?.items || []);
@@ -61,9 +77,12 @@ const PaymentsPage = () => {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => load(1), 300);
+    const timer = setTimeout(() => {
+      load(1);
+      loadSilent(1);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [search, load]);
+  }, [search, load, loadSilent]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time payments list
   useEffect(() => {

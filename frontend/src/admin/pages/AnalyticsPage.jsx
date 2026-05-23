@@ -32,14 +32,24 @@ const metricConfigs = {
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
 const AnalyticsPage = () => {
-  const [summary, setSummary] = useState({ metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
-  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState(() => {
+    const cached = adminService.getCached('/admin/analytics/summary', { timeframe: 'All Time' });
+    return cached?.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] };
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = adminService.getCached('/admin/analytics/summary', { timeframe: 'All Time' });
+    return !cached;
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [topLimit, setTopLimit] = useState(10);
   const [timeframe, setTimeframe] = useState('All Time');
   const { startProgress, updateProgress, finishProgress } = useProgress();
 
   const load = useCallback(async () => {
+    const cached = adminService.getCached('/admin/analytics/summary', { timeframe });
+    if (!cached) {
+      setLoading(true);
+    }
     try {
       const response = await adminService.getDashboardMetrics(timeframe);
       setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
@@ -60,9 +70,9 @@ const AnalyticsPage = () => {
   }, [timeframe]);
 
   useEffect(() => {
-    setLoading(true);
     load();
-  }, [load]);
+    loadSilent();
+  }, [load, loadSilent]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time charts & inventory
   useEffect(() => {

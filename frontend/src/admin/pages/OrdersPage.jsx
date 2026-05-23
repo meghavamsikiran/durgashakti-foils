@@ -57,12 +57,25 @@ const PAGE_SIZE = 15;
 
 const OrdersPage = () => {
   const { hasPermission } = useAuth();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState(() => {
+    const cached = adminService.getCached('/admin/orders', { page: 1, limit: PAGE_SIZE, search: '' });
+    const items = (cached?.data?.items || []).map((order) => ({
+      ...order,
+      status: (order.order_status || '').toUpperCase(),
+    }));
+    return items;
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = adminService.getCached('/admin/orders', { page: 1, limit: PAGE_SIZE, search: '' });
+    return !cached;
+  });
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(() => {
+    const cached = adminService.getCached('/admin/orders', { page: 1, limit: PAGE_SIZE, search: '' });
+    return cached?.data?.total || 0;
+  });
   const [page, setPage] = useState(1);
   const [messageModal, setMessageModal] = useState(null);
   const [trackingModal, setTrackingModal] = useState(null);
@@ -72,12 +85,15 @@ const OrdersPage = () => {
   const [selectedOrderForModal, setSelectedOrderForModal] = useState(null);
 
   const load = useCallback(async (p = 1) => {
-    try {
+    const params = { page: p, limit: PAGE_SIZE, search };
+    if (filter !== 'ALL') {
+      params.status_filter = filter;
+    }
+    const cached = adminService.getCached('/admin/orders', params);
+    if (!cached) {
       setLoading(true);
-      const params = { page: p, limit: PAGE_SIZE, search };
-      if (filter !== 'ALL') {
-        params.status_filter = filter;
-      }
+    }
+    try {
       const response = await adminService.getOrders(params);
       setRows(response.data.items || []);
       setTotal(response.data.total || 0);
@@ -96,7 +112,11 @@ const OrdersPage = () => {
         params.status_filter = filter;
       }
       const response = await apiClient.get('/admin/orders', { params, silent: true });
-      setRows(response.data.items || []);
+      const items = (response.data.items || []).map((order) => ({
+        ...order,
+        status: (order.order_status || '').toUpperCase(),
+      }));
+      setRows(items);
       setTotal(response.data.total || 0);
     } catch (err) {
       // Ignore background errors
@@ -104,9 +124,12 @@ const OrdersPage = () => {
   }, [search, filter]);
 
   useEffect(() => {
-    const timer = setTimeout(() => load(1), 300);
+    const timer = setTimeout(() => {
+      load(1);
+      loadSilent(1);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [search, filter, load]);
+  }, [search, filter, load, loadSilent]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time order dashboard
   useEffect(() => {

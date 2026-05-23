@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
+import apiClient from '../../services/core/apiClient';
 import { 
   Settings, Building2, Phone, Mail, MapPin, 
   ShieldCheck, Save, Globe, Lock, Cpu,
@@ -31,23 +32,53 @@ const formatToISO = (localString) => {
 };
 
 const SettingsPage = () => {
-  const [companyName, setCompanyName] = useState('');
-  const [gstNumber, setGstNumber] = useState('');
-  const [companyPhone, setCompanyPhone] = useState('');
-  const [companyEmail, setCompanyEmail] = useState('');
-  const [companyAddress, setCompanyAddress] = useState('');
-  const [googleMapsLink, setGoogleMapsLink] = useState('');
+  const getInitialSettingsState = () => {
+    const cachedSettings = adminService.getCached('/admin/settings');
+    const cachedMe = adminService.getCached('/auth/me');
+    
+    const data = cachedSettings?.data || {};
+    const profile = data.company_profile || {};
+    const shippingSettings = data.shipping_settings || {};
+    const paymentSettings = data.payment_settings || {};
+    const bannerSettings = data.scrolling_banner || {};
+
+    return {
+      companyName: profile.companyName || '',
+      gstNumber: profile.gstNumber || '',
+      companyPhone: profile.companyPhone || '',
+      companyEmail: profile.companyEmail || '',
+      companyAddress: profile.companyAddress || '',
+      googleMapsLink: profile.googleMapsLink || '',
+      codEnabled: shippingSettings.codEnabled !== false && shippingSettings.codStatus !== 'Inactive' && paymentSettings.cod_enabled !== false,
+      bannerText1: bannerSettings.text1 || '',
+      bannerText2: bannerSettings.text2 || '',
+      bannerTimerEnabled: !!bannerSettings.timer_enabled,
+      bannerTimerTarget: formatToLocalInput(bannerSettings.timer_target || ''),
+      bannerUseFavicon: bannerSettings.use_favicon !== false,
+      me: cachedMe?.data || null,
+      loaded: !!(cachedSettings && cachedMe)
+    };
+  };
+
+  const initialState = getInitialSettingsState();
+
+  const [companyName, setCompanyName] = useState(initialState.companyName);
+  const [gstNumber, setGstNumber] = useState(initialState.gstNumber);
+  const [companyPhone, setCompanyPhone] = useState(initialState.companyPhone);
+  const [companyEmail, setCompanyEmail] = useState(initialState.companyEmail);
+  const [companyAddress, setCompanyAddress] = useState(initialState.companyAddress);
+  const [googleMapsLink, setGoogleMapsLink] = useState(initialState.googleMapsLink);
   const [saving, setSaving] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const [me, setMe] = useState(null);
-  const [codEnabled, setCodEnabled] = useState(true);
+  const [loaded, setLoaded] = useState(initialState.loaded);
+  const [me, setMe] = useState(initialState.me);
+  const [codEnabled, setCodEnabled] = useState(initialState.codEnabled);
 
   // Scrolling Banner State
-  const [bannerText1, setBannerText1] = useState('');
-  const [bannerText2, setBannerText2] = useState('');
-  const [bannerTimerEnabled, setBannerTimerEnabled] = useState(false);
-  const [bannerTimerTarget, setBannerTimerTarget] = useState('');
-  const [bannerUseFavicon, setBannerUseFavicon] = useState(true);
+  const [bannerText1, setBannerText1] = useState(initialState.bannerText1);
+  const [bannerText2, setBannerText2] = useState(initialState.bannerText2);
+  const [bannerTimerEnabled, setBannerTimerEnabled] = useState(initialState.bannerTimerEnabled);
+  const [bannerTimerTarget, setBannerTimerTarget] = useState(initialState.bannerTimerTarget);
+  const [bannerUseFavicon, setBannerUseFavicon] = useState(initialState.bannerUseFavicon);
   const [savingBanner, setSavingBanner] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -58,15 +89,15 @@ const SettingsPage = () => {
   const premiumThemes1 = [
     "✨ Experience Purity & Perfection with Durga Shakti Premium Foils ✨",
     "🌟 Elevate Your Kitchen Standards with India's #1 Food-Grade Aluminum Foil 🌟",
-    "🕉️ Celebrate the Divine Festivities with Exclusive Offers on Durga Shakti Foils 🕉️",
-    "🛡️ Unmatched Quality & Protection: Discover the Durga Shakti Difference 🛡️",
-    "🍃 100% Recyclable & Eco-Friendly Premium Foils for a Sustainable Future 🍃",
-    "👑 Keep Your Food Fresh, Hot, and Healthy with Royal Standard Foils 👑",
-    "💎 Premium Quality Assured: Trusted by Thousands of Indian Households 💎",
-    "🎉 Welcome to Durga Shakti Foils: Where Quality Meets Tradition 🎉"
+    "🍃 Say Goodbye to Toxins - 100% Endlessly Recyclable & Safe Wrapping 🍃",
+    "💎 Premium Culinary Grade Aluminum Foil - Preferred by Master Chefs 💎",
+    "👑 Elite Heat Retention: Lock in Taste, Aroma & Absolute Freshness 👑",
+    "⚜️ Durga Shakti: The Ultimate Shield of Quality & Strength for Your Food ⚜️",
+    "🌿 Healthy Cooking starts with Pure Protection - Trust the Pioneers 🌿"
   ];
 
   const premiumThemes2 = [
+    "⚡ Limited Time Offer: Premium Packaging at Unbeatable Prices ends in {timer} ⚡",
     "⏳ Hurry! Our Exclusive 50% Off Flash Sale Ends In: {timer} ⏳",
     "🔥 Limited Time Offer: Premium Packaging at Unbeatable Prices ends in {timer} 🔥",
     "⚡ Don't Miss Out! Special Festival Discount expires in {timer} ⚡",
@@ -85,39 +116,77 @@ const SettingsPage = () => {
     });
   };
 
+  const load = async () => {
+    const cachedSettings = adminService.getCached('/admin/settings');
+    const cachedMe = adminService.getCached('/auth/me');
+    if (!(cachedSettings && cachedMe)) {
+      setLoaded(false);
+    }
+    try {
+      const [settingsRes, meRes] = await Promise.all([
+        adminService.getSettings(),
+        adminService.getMe()
+      ]);
+      const data = settingsRes.data || {};
+      const profile = data.company_profile || {};
+      setCompanyName(profile.companyName || '');
+      setGstNumber(profile.gstNumber || '');
+      setCompanyPhone(profile.companyPhone || '');
+      setCompanyEmail(profile.companyEmail || '');
+      setCompanyAddress(profile.companyAddress || '');
+      setGoogleMapsLink(profile.googleMapsLink || '');
+      const shippingSettings = data.shipping_settings || {};
+      const paymentSettings = data.payment_settings || {};
+      setCodEnabled(shippingSettings.codEnabled !== false && shippingSettings.codStatus !== 'Inactive' && paymentSettings.cod_enabled !== false);
+
+      const bannerSettings = data.scrolling_banner || {};
+      setBannerText1(bannerSettings.text1 || '');
+      setBannerText2(bannerSettings.text2 || '');
+      setBannerTimerEnabled(!!bannerSettings.timer_enabled);
+      setBannerTimerTarget(formatToLocalInput(bannerSettings.timer_target || ''));
+      setBannerUseFavicon(bannerSettings.use_favicon !== false);
+
+      setMe(meRes.data);
+    } catch {
+    } finally {
+      setLoaded(true);
+    }
+  };
+
+  const loadSilent = async () => {
+    try {
+      const [settingsRes, meRes] = await Promise.all([
+        apiClient.get('/admin/settings', { silent: true }),
+        apiClient.get('/auth/me', { silent: true })
+      ]);
+      const data = settingsRes.data || {};
+      const profile = data.company_profile || {};
+      setCompanyName(profile.companyName || '');
+      setGstNumber(profile.gstNumber || '');
+      setCompanyPhone(profile.companyPhone || '');
+      setCompanyEmail(profile.companyEmail || '');
+      setCompanyAddress(profile.companyAddress || '');
+      setGoogleMapsLink(profile.googleMapsLink || '');
+      const shippingSettings = data.shipping_settings || {};
+      const paymentSettings = data.payment_settings || {};
+      setCodEnabled(shippingSettings.codEnabled !== false && shippingSettings.codStatus !== 'Inactive' && paymentSettings.cod_enabled !== false);
+
+      const bannerSettings = data.scrolling_banner || {};
+      setBannerText1(bannerSettings.text1 || '');
+      setBannerText2(bannerSettings.text2 || '');
+      setBannerTimerEnabled(!!bannerSettings.timer_enabled);
+      setBannerTimerTarget(formatToLocalInput(bannerSettings.timer_target || ''));
+      setBannerUseFavicon(bannerSettings.use_favicon !== false);
+
+      setMe(meRes.data);
+    } catch {
+      // Ignore background errors
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [settingsRes, meRes] = await Promise.all([
-          adminService.getSettings(),
-          adminService.getMe()
-        ]);
-        const data = settingsRes.data || {};
-        const profile = data.company_profile || {};
-        setCompanyName(profile.companyName || '');
-        setGstNumber(profile.gstNumber || '');
-        setCompanyPhone(profile.companyPhone || '');
-        setCompanyEmail(profile.companyEmail || '');
-        setCompanyAddress(profile.companyAddress || '');
-        setGoogleMapsLink(profile.googleMapsLink || '');
-        const shippingSettings = data.shipping_settings || {};
-        const paymentSettings = data.payment_settings || {};
-        setCodEnabled(shippingSettings.codEnabled !== false && shippingSettings.codStatus !== 'Inactive' && paymentSettings.cod_enabled !== false);
-
-        const bannerSettings = data.scrolling_banner || {};
-        setBannerText1(bannerSettings.text1 || '');
-        setBannerText2(bannerSettings.text2 || '');
-        setBannerTimerEnabled(!!bannerSettings.timer_enabled);
-        setBannerTimerTarget(formatToLocalInput(bannerSettings.timer_target || ''));
-        setBannerUseFavicon(bannerSettings.use_favicon !== false);
-
-        setMe(meRes.data);
-      } catch {
-      } finally {
-        setLoaded(true);
-      }
-    };
     load();
+    loadSilent();
   }, []);
 
   const save = async () => {

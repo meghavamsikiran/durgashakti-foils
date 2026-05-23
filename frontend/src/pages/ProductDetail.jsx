@@ -8,12 +8,23 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import api, { formatImageUrl } from '../utils/api';
 import PageLoader from '../components/ui/PageLoader';
+import apiClient from '../services/core/apiClient';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const getInitialProduct = useCallback(() => {
+    const cachedResponse = apiClient.getCachedDataSync(`/products/${id}`);
+    if (cachedResponse?.data) {
+      return cachedResponse.data;
+    }
+    const cachedProductsRes = apiClient.getCachedDataSync('/products');
+    const items = cachedProductsRes?.data?.items || [];
+    return items.find(item => String(item.id) === String(id)) || null;
+  }, [id]);
+
+  const [product, setProduct] = useState(() => getInitialProduct());
+  const [loading, setLoading] = useState(() => !getInitialProduct());
   const [adding, setAdding] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const { cart, addToCart, updateCartItem, removeFromCart, setPendingQty } = useCart();
@@ -66,6 +77,10 @@ const ProductDetail = () => {
   };
 
   const fetchProduct = useCallback(async () => {
+    const hasCached = !!getInitialProduct();
+    if (!hasCached) {
+      setLoading(true);
+    }
     try {
       const response = await api.getProduct(id);
       setProduct(response.data);
@@ -75,11 +90,21 @@ const ProductDetail = () => {
     } finally {
       setLoading(false);
     }
-  }, [id, navigate]);
+  }, [id, navigate, getInitialProduct]);
+
+  const fetchProductSilent = useCallback(async () => {
+    try {
+      const response = await apiClient.get(`/products/${id}`, { silent: true });
+      setProduct(response.data);
+    } catch {
+      // Ignore background errors
+    }
+  }, [id]);
 
   useEffect(() => {
     fetchProduct();
-  }, [fetchProduct]);
+    fetchProductSilent();
+  }, [fetchProduct, fetchProductSilent]);
 
 
 

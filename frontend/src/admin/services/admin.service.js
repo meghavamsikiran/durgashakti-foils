@@ -1,37 +1,7 @@
 import apiClient from '../../services/core/apiClient';
 
-/**
- * Simple in-memory cache for GET requests.
- * - On first call: fetches from server, stores result, returns it.
- * - On subsequent calls within TTL: returns cached data instantly,
- *   then refreshes in the background (stale-while-revalidate).
- */
-const cache = new Map();
-const CACHE_TTL = 60000; // 60 seconds
-
-const cachedGet = async (url, options = {}) => {
-  const key = url + JSON.stringify(options.params || {});
-  const entry = cache.get(key);
-  const now = Date.now();
-
-  if (entry && (now - entry.time < CACHE_TTL)) {
-    // Return cached data immediately, refresh in background
-    apiClient.get(url, { ...options, silent: true })
-      .then(res => cache.set(key, { data: res, time: Date.now() }))
-      .catch(() => {});
-    return entry.data;
-  }
-
-  const res = await apiClient.get(url, options);
-  cache.set(key, { data: res, time: now });
-  return res;
-};
-
-const invalidateCache = (urlPrefix) => {
-  for (const key of cache.keys()) {
-    if (key.startsWith(urlPrefix)) cache.delete(key);
-  }
-};
+const cachedGet = (url, options) => apiClient.cachedGet(url, options);
+const invalidateCache = (urlPrefix) => apiClient.invalidateCache(urlPrefix);
 
 /**
  * Admin API Service — uses centralized apiClient with interceptors.
@@ -39,6 +9,9 @@ const invalidateCache = (urlPrefix) => {
  * GET requests are cached for instant tab switching.
  */
 const adminService = {
+  // Synchronous Cache Lookup
+  getCached: (url, params) => apiClient.getCachedDataSync(url, params),
+
   // Dashboard
   getDashboardMetrics: (timeframe) => cachedGet('/admin/analytics/summary', { params: { timeframe } }),
 

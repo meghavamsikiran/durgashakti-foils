@@ -8,23 +8,42 @@ import { toast } from 'sonner';
 import api, { formatImageUrl } from '../utils/api';
 import PageLoader from '../components/ui/PageLoader';
 import settingsService from '../services/settings.service';
+import apiClient from '../services/core/apiClient';
 
 const Cart = () => {
   const navigate = useNavigate();
   const { cart, updateCartItem, removeFromCart, clearCart, loading } = useCart();
-  const [products, setProducts] = useState({});
-  const [loadingProducts, setLoadingProducts] = useState(true);
-  const [shippingSettings, setShippingSettings] = useState(null);
+
+  const getInitialProductsMap = () => {
+    const cachedResponse = apiClient.getCachedDataSync('/products');
+    const items = cachedResponse?.data?.items || [];
+    const productMap = {};
+    items.forEach(p => {
+      productMap[p.id] = p;
+    });
+    return productMap;
+  };
+
+  const getInitialShipping = () => {
+    const cachedResponse = apiClient.getCachedDataSync('/settings/public');
+    return cachedResponse?.data?.shipping_settings || null;
+  };
+
+  const initialProducts = getInitialProductsMap();
+  const initialShipping = getInitialShipping();
+
+  const [products, setProducts] = useState(initialProducts);
+  const [loadingProducts, setLoadingProducts] = useState(Object.keys(initialProducts).length === 0);
+  const [shippingSettings, setShippingSettings] = useState(initialShipping);
   const [removingProductId, setRemovingProductId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
 
-  useEffect(() => {
-    fetchProducts();
-    fetchShippingSettings();
-  }, []);
-
   const fetchShippingSettings = async () => {
+    const hasCached = !!apiClient.getCachedDataSync('/settings/public');
+    if (!hasCached) {
+      // Don't set any visual loading state here as shipping doesn't block the main products list
+    }
     try {
       const data = await settingsService.getPublicSettings();
       if (data && data.shipping_settings) {
@@ -35,7 +54,22 @@ const Cart = () => {
     }
   };
 
+  const fetchShippingSettingsSilent = async () => {
+    try {
+      const response = await apiClient.get('/settings/public', { silent: true });
+      if (response.data && response.data.shipping_settings) {
+        setShippingSettings(response.data.shipping_settings);
+      }
+    } catch {
+      // Ignore background errors
+    }
+  };
+
   const fetchProducts = async () => {
+    const hasCached = !!apiClient.getCachedDataSync('/products');
+    if (!hasCached) {
+      setLoadingProducts(true);
+    }
     try {
       const response = await api.getProducts();
       const productMap = {};
@@ -49,6 +83,26 @@ const Cart = () => {
       setLoadingProducts(false);
     }
   };
+
+  const fetchProductsSilent = async () => {
+    try {
+      const response = await apiClient.get('/products', { silent: true });
+      const productMap = {};
+      (response.data.items || []).forEach(p => {
+        productMap[p.id] = p;
+      });
+      setProducts(productMap);
+    } catch {
+      // Ignore background errors
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+    fetchProductsSilent();
+    fetchShippingSettings();
+    fetchShippingSettingsSilent();
+  }, []);
 
   const handleUpdateQuantity = async (productId, newQuantity) => {
     if (newQuantity < 1) return;

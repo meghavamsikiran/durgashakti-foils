@@ -158,8 +158,15 @@ const RoleTemplateSelector = ({ selectedTemplate, onSelectTemplate }) => {
 
 const AdminUsersPage = () => {
   const { hasPermission } = useAuth();
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState(() => {
+    const cached = adminService.getCached('/superadmin/admins');
+    return cached?.data || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cachedUsers = adminService.getCached('/superadmin/admins');
+    const cachedMe = adminService.getCached('/auth/me');
+    return !(cachedUsers && cachedMe);
+  });
   
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: {} });
@@ -179,11 +186,18 @@ const AdminUsersPage = () => {
   const [deleteSaving, setDeleteSaving] = useState(false);
   
   const [search, setSearch] = useState('');
-  const [me, setMe] = useState(null);
+  const [me, setMe] = useState(() => {
+    const cached = adminService.getCached('/auth/me');
+    return cached?.data || null;
+  });
 
   const load = useCallback(async () => {
-    try {
+    const cachedUsers = adminService.getCached('/superadmin/admins');
+    const cachedMe = adminService.getCached('/auth/me');
+    if (!(cachedUsers && cachedMe)) {
       setLoading(true);
+    }
+    try {
       const [usersRes, meRes] = await Promise.all([
         adminService.getAdminUsers(),
         adminService.getMe()
@@ -197,7 +211,23 @@ const AdminUsersPage = () => {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadSilent = useCallback(async () => {
+    try {
+      const [usersRes, meRes] = await Promise.all([
+        apiClient.get('/superadmin/admins', { silent: true }),
+        apiClient.get('/auth/me', { silent: true })
+      ]);
+      setRows(usersRes.data || []);
+      setMe(meRes.data);
+    } catch (err) {
+      // Ignore background errors
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+    loadSilent();
+  }, [load, loadSilent]);
 
   const create = async (e) => {
     e.preventDefault();

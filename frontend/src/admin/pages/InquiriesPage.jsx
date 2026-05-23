@@ -7,21 +7,32 @@ import { toast } from 'sonner';
 import PageLoader from '../../components/ui/PageLoader';
 
 const InquiriesPage = () => {
-  const [inquiries, setInquiries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
+  const PAGE_SIZE = 20;
+  const [inquiries, setInquiries] = useState(() => {
+    const cached = apiClient.getCachedDataSync('/admin/contacts', { page: 1, limit: PAGE_SIZE });
+    return cached?.data?.items || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = apiClient.getCachedDataSync('/admin/contacts', { page: 1, limit: PAGE_SIZE });
+    return !cached;
+  });
+  const [total, setTotal] = useState(() => {
+    const cached = apiClient.getCachedDataSync('/admin/contacts', { page: 1, limit: PAGE_SIZE });
+    return cached?.data?.total || 0;
+  });
   const [page, setPage] = useState(1);
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
-  const PAGE_SIZE = 20;
 
   const loadInquiries = async (pageNum = 1) => {
-    try {
+    const params = { page: pageNum, limit: PAGE_SIZE };
+    const cached = apiClient.getCachedDataSync('/admin/contacts', params);
+    if (!cached) {
       setLoading(true);
-      const response = await apiClient.get('/admin/contacts', {
-        params: { page: pageNum, limit: PAGE_SIZE }
-      });
+    }
+    try {
+      const response = await apiClient.cachedGet('/admin/contacts', { params });
       setInquiries(response.data.items || []);
       setTotal(response.data.total || 0);
       setPage(pageNum);
@@ -32,8 +43,22 @@ const InquiriesPage = () => {
     }
   };
 
+  const loadInquiriesSilent = async (pageNum = 1) => {
+    try {
+      const response = await apiClient.get('/admin/contacts', {
+        params: { page: pageNum, limit: PAGE_SIZE },
+        silent: true
+      });
+      setInquiries(response.data.items || []);
+      setTotal(response.data.total || 0);
+    } catch (err) {
+      // Ignore background errors
+    }
+  };
+
   useEffect(() => {
     loadInquiries();
+    loadInquiriesSilent();
   }, []);
 
   const handleUpdateStatus = async (id, newStatus) => {

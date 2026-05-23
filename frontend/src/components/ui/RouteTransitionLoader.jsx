@@ -51,10 +51,11 @@ const RouteTransitionLoader = () => {
 
   useEffect(() => {
     if (show) {
-      const timer = setTimeout(() => setShow(false), 2800);
+      const timer = setTimeout(() => setShow(false), 600);
       return () => clearTimeout(timer);
     }
   }, [show]);
+
 
   if (!show) return null;
 

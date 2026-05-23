@@ -3,19 +3,31 @@ import { motion } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
 import TablePagination from '../components/ui/TablePagination';
 import api from '../utils/api';
+import apiClient from '../services/core/apiClient';
 import { SlidersHorizontal } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
 
 const Shop = () => {
-  const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const getInitialProducts = () => {
+    const cachedResponse = apiClient.getCachedDataSync('/products');
+    return cachedResponse?.data?.items || [];
+  };
+
+  const initialProducts = getInitialProducts();
+
+  const [products, setProducts] = useState(initialProducts);
+  const [filteredProducts, setFilteredProducts] = useState(initialProducts);
+  const [loading, setLoading] = useState(!initialProducts.length);
   const [priceFilter, setPriceFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 9;
 
   const fetchProducts = useCallback(async () => {
+    const hasCached = !!apiClient.getCachedDataSync('/products');
+    if (!hasCached) {
+      setLoading(true);
+    }
     try {
       const response = await api.getProducts();
       const items = response.data.items || [];
@@ -25,6 +37,17 @@ const Shop = () => {
       console.error('Error fetching products:', error);
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const fetchProductsSilent = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/products', { silent: true });
+      const items = response.data.items || [];
+      setProducts(items);
+      setFilteredProducts(items);
+    } catch (error) {
+      console.error('Error in background products fetch:', error);
     }
   }, []);
 
@@ -55,7 +78,8 @@ const Shop = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
+    fetchProductsSilent();
+  }, [fetchProducts, fetchProductsSilent]);
 
   useEffect(() => {
     applyFilters();
