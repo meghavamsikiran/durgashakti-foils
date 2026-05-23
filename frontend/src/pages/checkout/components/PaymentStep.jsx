@@ -2,21 +2,16 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { QrCode, CreditCard, Landmark, Truck, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import { normalizeShippingSettings } from '../../../utils/checkoutPricing';
 
 const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codEnabled = true, shippingSettings, subtotal = 0, onBack }) => {
   const selectPaymentMethod = onSetPaymentMethod || setPaymentMethod;
-
-  let minCod = 300;
-  let maxCod = 5000;
-  let codCharge = 40;
+  const config = normalizeShippingSettings(shippingSettings);
+  const minCod = config.minimumCodAmount;
+  const maxCod = config.maximumCodAmount;
+  const codCharge = config.codCharge;
   let isCodBelowMinimum = false;
   let isCodLimitExceeded = false;
-
-  if (shippingSettings) {
-    minCod = Number(shippingSettings.minimumCodAmount ?? 300);
-    maxCod = Number(shippingSettings.maximumCodAmount ?? 5000);
-    codCharge = Number(shippingSettings.codCharge ?? 40);
-  }
 
   if (subtotal < minCod) {
     isCodBelowMinimum = true;

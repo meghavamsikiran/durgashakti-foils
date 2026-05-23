@@ -8,6 +8,7 @@ import addressService from '../services/address.service';
 import orderService from '../services/order.service';
 import paymentService from '../services/payment.service';
 import settingsService from '../services/settings.service';
+import { calculateCheckoutPricing, normalizeShippingSettings } from '../utils/checkoutPricing';
 
 const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID;
 
@@ -236,45 +237,20 @@ export const useCheckout = () => {
       });
 
       const subtotal = calculateTotal();
+      const normalizedShippingSettings = normalizeShippingSettings(shippingSettings);
 
-      // Dynamic Shipping and COD calculation
-      let shippingCost = 70.0;
-      let enableFreeShipping = true;
-      let freeShippingThreshold = 1099.0;
-      let enableShipping = true;
-      let codCharge = 40.0;
-
-      if (shippingSettings) {
-        enableShipping = shippingSettings.enableShipping !== false;
-        enableFreeShipping = shippingSettings.enableFreeShipping !== false;
-        freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? 1099);
-        shippingCost = Number(shippingSettings.defaultShippingCharge ?? 70);
-        codCharge = Number(shippingSettings.codCharge ?? 40);
-      }
-
-      let calculatedShipping = 0;
-      if (enableShipping) {
-        if (enableFreeShipping && subtotal >= freeShippingThreshold) {
-          calculatedShipping = 0;
-        } else {
-          calculatedShipping = shippingCost;
-        }
-      }
-
-      let activeCodCharge = 0;
       if (paymentMethod === 'cod') {
-        const minCod = shippingSettings ? Number(shippingSettings.minimumCodAmount ?? 300) : 300;
-        const maxCod = shippingSettings ? Number(shippingSettings.maximumCodAmount ?? 5000) : 5000;
+        const minCod = normalizedShippingSettings.minimumCodAmount;
+        const maxCod = normalizedShippingSettings.maximumCodAmount;
         if (subtotal < minCod) {
           throw new Error(`COD option is only available for orders above ₹${minCod}. Please select a different payment option.`);
         }
         if (subtotal > maxCod) {
           throw new Error(`COD option is only available for orders below ₹${maxCod}. Please select a different payment option.`);
         }
-        activeCodCharge = codCharge;
       }
 
-      const grandTotal = subtotal + calculatedShipping + (subtotal * 0.18) + activeCodCharge;
+      const { grandTotal } = calculateCheckoutPricing(subtotal, normalizedShippingSettings, paymentMethod);
 
       const orderData = {
         items: orderItems,

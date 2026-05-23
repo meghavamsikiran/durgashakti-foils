@@ -8,6 +8,7 @@ import CheckoutStepper from './checkout/components/CheckoutStepper';
 import AddressStep from './checkout/components/AddressStep';
 import PaymentStep from './checkout/components/PaymentStep';
 import OrderSummary from './checkout/components/OrderSummary';
+import { calculateCheckoutPricing } from '../utils/checkoutPricing';
 
 const Checkout = () => {
   const {
@@ -35,36 +36,7 @@ const Checkout = () => {
     }
   };
 
-  // Calculate dynamic totals for the sticky footer and rendering
-  let shippingCost = 70.0;
-  let enableFreeShipping = true;
-  let freeShippingThreshold = 1099.0;
-  let enableShipping = true;
-  let codCharge = 40.0;
-
-  if (shippingSettings) {
-    enableShipping = shippingSettings.enableShipping !== false;
-    enableFreeShipping = shippingSettings.enableFreeShipping !== false;
-    freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? 1099);
-    shippingCost = Number(shippingSettings.defaultShippingCharge ?? 70);
-    codCharge = Number(shippingSettings.codCharge ?? 40);
-  }
-
-  let calculatedShipping = 0;
-  if (enableShipping) {
-    if (enableFreeShipping && total >= freeShippingThreshold) {
-      calculatedShipping = 0;
-    } else {
-      calculatedShipping = shippingCost;
-    }
-  }
-
-  let activeCodCharge = 0;
-  if (paymentMethod === 'cod') {
-    activeCodCharge = codCharge;
-  }
-
-  const grandTotal = total + calculatedShipping + (total * 0.18) + activeCodCharge;
+  const { grandTotal } = calculateCheckoutPricing(total, shippingSettings, paymentMethod);
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-32 lg:pb-12">

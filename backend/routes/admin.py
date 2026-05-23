@@ -661,6 +661,25 @@ async def save_setting(data: dict, admin: UserSchema = Depends(require_permissio
         s.value = val
     else:
         db.add(SettingModel(key=key, value=val))
+    if key == "shipping_settings" and isinstance(val, dict):
+        payment_res = await db.execute(select(SettingModel).where(SettingModel.key == "payment_settings"))
+        payment_setting = payment_res.scalar_one_or_none()
+        payment_value = dict(payment_setting.value or {}) if payment_setting else {}
+        payment_value["cod_enabled"] = val.get("codEnabled", True) is not False and val.get("codStatus", "Active") == "Active"
+        if payment_setting:
+            payment_setting.value = payment_value
+        else:
+            db.add(SettingModel(key="payment_settings", value=payment_value))
+    elif key == "payment_settings" and isinstance(val, dict) and "cod_enabled" in val:
+        shipping_res = await db.execute(select(SettingModel).where(SettingModel.key == "shipping_settings"))
+        shipping_setting = shipping_res.scalar_one_or_none()
+        shipping_value = dict(shipping_setting.value or {}) if shipping_setting else {}
+        shipping_value["codEnabled"] = val.get("cod_enabled") is not False
+        shipping_value["codStatus"] = "Active" if shipping_value["codEnabled"] else "Inactive"
+        if shipping_setting:
+            shipping_setting.value = shipping_value
+        else:
+            db.add(SettingModel(key="shipping_settings", value=shipping_value))
     await db.flush()
     await write_audit_log(db, "SETTING_UPDATED", admin.id, "setting", key)
     return {"message": "Setting saved"}
@@ -685,10 +704,9 @@ async def get_public_settings(db: AsyncSession = Depends(get_db)):
             "enableFreeShipping": True,
             "freeShippingThreshold": 1099.0,
             "defaultShippingCharge": 70.0,
-            "minimumOrderAmount": 0.0,
             "shippingRuleStatus": "Active",
             "codEnabled": True,
-            "codCharge": 40.0,
+            "codCharge": 0.0,
             "minimumCodAmount": 300.0,
             "maximumCodAmount": 5000.0,
             "codStatus": "Active",
@@ -699,6 +717,16 @@ async def get_public_settings(db: AsyncSession = Depends(get_db)):
             "shippingZonesEnabled": False,
             "shippingCampaignsEnabled": False
         }
+    else:
+        shipping = dict(d["shipping_settings"] or {})
+        if shipping.get("codCharge") is None:
+            shipping["codCharge"] = shipping.get("cod_extra_service_charge", shipping.get("cod_charge", 0.0))
+        shipping.pop("minimumOrderAmount", None)
+        d["shipping_settings"] = shipping
+    payment = dict(d.get("payment_settings") or {})
+    shipping = d["shipping_settings"]
+    payment["cod_enabled"] = shipping.get("codEnabled", True) is not False and shipping.get("codStatus", "Active") == "Active"
+    d["payment_settings"] = payment
     return d
 
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
 import { 
@@ -99,8 +100,9 @@ const SettingsPage = () => {
         setCompanyEmail(profile.companyEmail || '');
         setCompanyAddress(profile.companyAddress || '');
         setGoogleMapsLink(profile.googleMapsLink || '');
+        const shippingSettings = data.shipping_settings || {};
         const paymentSettings = data.payment_settings || {};
-        setCodEnabled(paymentSettings.cod_enabled !== false);
+        setCodEnabled(shippingSettings.codEnabled !== false && shippingSettings.codStatus !== 'Inactive' && paymentSettings.cod_enabled !== false);
 
         const bannerSettings = data.scrolling_banner || {};
         setBannerText1(bannerSettings.text1 || '');
@@ -321,7 +323,7 @@ const SettingsPage = () => {
                         </div>
                         <div>
                            <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Cash on Delivery (COD)</h3>
-                           <p className="text-xs text-slate-500 mt-1 max-w-md">Activate or deactivate Cash on Delivery. When disabled, customers will only be allowed to make prepaid transactions during checkout.</p>
+                           <p className="text-xs text-slate-500 mt-1 max-w-md">COD charges and limits are managed from Shipping Settings so admin and customer checkout always use the same values.</p>
                         </div>
                      </div>
                      
@@ -329,18 +331,12 @@ const SettingsPage = () => {
                         <span className={`text-[10px] font-black uppercase tracking-widest ${codEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
                            {codEnabled ? 'Active' : 'Disabled'}
                         </span>
-                        <button 
-                           onClick={() => handleToggleCod(!codEnabled)}
-                           className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-300 ${
-                              codEnabled ? 'bg-indigo-600' : 'bg-slate-300'
-                           }`}
+                        <Link
+                           to={me?.role === 'SUPER_ADMIN' ? '/superadmin/shipping-settings' : '/admin/shipping-settings'}
+                           className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all"
                         >
-                           <div 
-                              className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${
-                                 codEnabled ? 'translate-x-6' : 'translate-x-0'
-                              }`}
-                           />
-                        </button>
+                           Manage
+                        </Link>
                      </div>
                   </div>
                </div>

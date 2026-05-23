@@ -2,42 +2,11 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { useCart } from '../../../contexts/CartContext';
+import { calculateCheckoutPricing } from '../../../utils/checkoutPricing';
 
 const OrderSummary = ({ products, total, checkoutStep, loading, shippingSettings, paymentMethod, onPlaceOrder }) => {
   const { cart } = useCart();
-
-  // Dynamic calculations
-  let shippingCost = 70.0;
-  let enableFreeShipping = true;
-  let freeShippingThreshold = 1099.0;
-  let enableShipping = true;
-  let codCharge = 40.0;
-
-  if (shippingSettings) {
-    enableShipping = shippingSettings.enableShipping !== false;
-    enableFreeShipping = shippingSettings.enableFreeShipping !== false;
-    freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? 1099);
-    shippingCost = Number(shippingSettings.defaultShippingCharge ?? 70);
-    codCharge = Number(shippingSettings.codCharge ?? 40);
-  }
-
-  let calculatedShipping = 0;
-  if (enableShipping) {
-    if (enableFreeShipping && total >= freeShippingThreshold) {
-      calculatedShipping = 0;
-    } else {
-      calculatedShipping = shippingCost;
-    }
-  }
-
-  let activeCodCharge = 0;
-  if (paymentMethod === 'cod') {
-    activeCodCharge = codCharge;
-  }
-
-  const cgst = total * 0.09;
-  const sgst = total * 0.09;
-  const grandTotal = total + calculatedShipping + cgst + sgst + activeCodCharge;
+  const { shipping, codCharge, cgst, sgst, grandTotal } = calculateCheckoutPricing(total, shippingSettings, paymentMethod);
 
   return (
     <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
@@ -70,13 +39,13 @@ const OrderSummary = ({ products, total, checkoutStep, loading, shippingSettings
         <div className="flex justify-between text-sm">
           <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Shipping Charges</span>
           <span className="font-black text-slate-900">
-            {calculatedShipping > 0 ? `₹${calculatedShipping.toFixed(2)}` : 'FREE'}
+            {shipping > 0 ? `₹${shipping.toFixed(2)}` : 'FREE'}
           </span>
         </div>
-        {activeCodCharge > 0 && (
+        {codCharge > 0 && (
           <div className="flex justify-between text-sm">
             <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">COD Handling Fee</span>
-            <span className="font-black text-slate-900">₹{activeCodCharge.toFixed(2)}</span>
+            <span className="font-black text-slate-900">₹{codCharge.toFixed(2)}</span>
           </div>
         )}
         <div className="flex justify-between text-sm">

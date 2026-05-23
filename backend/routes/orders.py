@@ -51,15 +51,6 @@ async def _enrich_order_items(db: AsyncSession, orders_data):
 
 @router.post("/orders")
 async def create_order(order_data: OrderCreate, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if order_data.payment_method == "cod":
-        setting_res = await db.execute(select(SettingModel).where(SettingModel.key == "payment_settings"))
-        setting = setting_res.scalar_one_or_none()
-        cod_enabled = True
-        if setting and setting.value:
-            cod_enabled = setting.value.get("cod_enabled", True)
-        if not cod_enabled:
-            raise HTTPException(status_code=400, detail="Currently we accept only prepaid orders.")
-
     if order_data.idempotency_key:
         existing = await db.execute(select(OrderModel).where(OrderModel.idempotency_key == order_data.idempotency_key))
         row = existing.scalar_one_or_none()
@@ -91,15 +82,19 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         "enableFreeShipping": True,
         "freeShippingThreshold": 1099.0,
         "defaultShippingCharge": 70.0,
-        "minimumOrderAmount": 0.0,
         "codEnabled": True,
-        "codCharge": 40.0,
+        "codCharge": 0.0,
         "minimumCodAmount": 300.0,
         "maximumCodAmount": 5000.0
     }
     if setting_obj and isinstance(setting_obj.value, dict):
         for k, default_val in shipping_config.items():
             shipping_config[k] = setting_obj.value.get(k, default_val)
+        shipping_config["codCharge"] = (
+            setting_obj.value.get("codCharge")
+            if setting_obj.value.get("codCharge") is not None
+            else setting_obj.value.get("cod_extra_service_charge", setting_obj.value.get("cod_charge", shipping_config["codCharge"]))
+        )
             
     # Calculations
     taxable_amount = server_total

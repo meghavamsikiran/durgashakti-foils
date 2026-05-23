@@ -22,7 +22,7 @@ const ShippingSettingsPage = () => {
 
   // COD Settings State
   const [codEnabled, setCodEnabled] = useState(true);
-  const [codCharge, setCodCharge] = useState(40);
+  const [codCharge, setCodCharge] = useState(0);
   const [minimumCodAmount, setMinimumCodAmount] = useState(300);
   const [maximumCodAmount, setMaximumCodAmount] = useState(5000);
   const [codStatus, setCodStatus] = useState('Active');
@@ -71,7 +71,7 @@ const ShippingSettingsPage = () => {
 
         // COD
         setCodEnabled(config.codEnabled !== false);
-        setCodCharge(config.codCharge ?? 40);
+        setCodCharge(config.codCharge ?? config.cod_extra_service_charge ?? config.cod_charge ?? 0);
         setMinimumCodAmount(config.minimumCodAmount ?? 300);
         setMaximumCodAmount(config.maximumCodAmount ?? 5000);
         setCodStatus(config.codStatus || 'Active');
