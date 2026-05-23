@@ -418,21 +418,48 @@ const OrderDetailsPage = () => {
           {/* Column 3: Order Summary */}
           <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Order Summary</h3>
-            <div className="space-y-2 text-xs text-slate-500 font-semibold">
-              <div className="flex justify-between">
-                <span>Item(s) Subtotal:</span>
-                <span className="text-slate-900">₹{(order.total_amount - (order.shipping_cost || 0)).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Shipping:</span>
-                <span className="text-slate-900">₹{(order.shipping_cost || 0).toLocaleString()}</span>
-              </div>
-              <div className="h-px bg-slate-100 my-1" />
-              <div className="flex justify-between font-black text-slate-900 text-sm pt-0.5">
-                <span>Grand Total:</span>
-                <span className="text-indigo-600 text-base">₹{order.total_amount.toLocaleString()}</span>
-              </div>
-            </div>
+            {(() => {
+              const subtotal = order.items?.reduce((acc, item) => acc + (item.price * item.quantity), 0) || 0;
+              const isNewOrderLayout = Number(order.total_amount) > subtotal;
+              const shipping = isNewOrderLayout ? 350.0 : 0.0;
+              const cgst = isNewOrderLayout ? subtotal * 0.09 : 0.0;
+              const sgst = isNewOrderLayout ? subtotal * 0.09 : 0.0;
+
+              return (
+                <div className="space-y-2 text-xs text-slate-500 font-semibold">
+                  <div className="flex justify-between">
+                    <span>Item(s) Subtotal:</span>
+                    <span className="text-slate-900">₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Shipping Charges:</span>
+                    <span className="text-slate-900">
+                      {shipping > 0 
+                        ? `₹${shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                        : "FREE"
+                      }
+                    </span>
+                  </div>
+                  {cgst > 0 && (
+                    <>
+                      <div className="flex justify-between">
+                        <span>SGST (9%):</span>
+                        <span className="text-slate-900">₹{sgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>CGST (9%):</span>
+                        <span className="text-slate-900">₹{cgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="h-px bg-slate-100 my-1" />
+                  <div className="flex justify-between font-black text-slate-900 text-sm pt-0.5">
+                    <span>Grand Total:</span>
+                    <span className="text-indigo-600 text-base">₹{Number(order.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 

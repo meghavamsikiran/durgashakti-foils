@@ -228,9 +228,12 @@ export const useCheckout = () => {
         };
       });
 
+      const subtotal = calculateTotal();
+      const grandTotal = subtotal + 350 + (subtotal * 0.18);
+
       const orderData = {
         items: orderItems,
-        total_amount: calculateTotal(),
+        total_amount: Number(grandTotal.toFixed(2)),
         payment_method: paymentMethod === 'cod' ? 'cod' : 'razorpay',
         shipping_address: shippingInfo,
         idempotency_key: `order_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`

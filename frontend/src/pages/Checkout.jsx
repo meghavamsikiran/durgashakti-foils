@@ -85,7 +85,7 @@ const Checkout = () => {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-50 flex items-center justify-between gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
         <div className="flex flex-col">
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Amount</span>
-          <span className="text-xl font-black text-indigo-600">₹{total.toLocaleString()}</span>
+          <span className="text-xl font-black text-indigo-600">₹{(total + 350 + (total * 0.18)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         {checkoutStep === 'shipping' ? (
           <Button onClick={handleContinueToPayment} className="rounded-xl px-8 h-12 font-black uppercase tracking-widest">Next Step</Button>

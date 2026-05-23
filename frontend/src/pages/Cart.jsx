@@ -262,17 +262,25 @@ const Cart = () => {
 
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-semibold" data-testid="cart-subtotal">₹{total.toFixed(2)}</span>
+                    <span className="text-muted-foreground text-sm font-semibold">Subtotal</span>
+                    <span className="font-bold text-slate-800" data-testid="cart-subtotal">₹{total.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span className="font-semibold">FREE</span>
+                    <span className="text-muted-foreground text-sm font-semibold">Shipping Charges</span>
+                    <span className="font-bold text-slate-800">₹350.00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm font-semibold">SGST (9%)</span>
+                    <span className="font-bold text-slate-800">₹{(total * 0.09).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground text-sm font-semibold">CGST (9%)</span>
+                    <span className="font-bold text-slate-800">₹{(total * 0.09).toFixed(2)}</span>
                   </div>
                   <div className="border-t border-border/50 pt-4 flex justify-between">
-                    <span className="text-lg font-semibold">Total</span>
-                    <span className="text-2xl font-bold" style={{ fontFamily: 'Manrope' }} data-testid="cart-total">
-                      ₹{total.toFixed(2)}
+                    <span className="text-lg font-bold text-slate-900">Total</span>
+                    <span className="text-2xl font-extrabold text-indigo-650" style={{ fontFamily: 'Manrope' }} data-testid="cart-total">
+                      ₹{(total + 350 + (total * 0.18)).toFixed(2)}
                     </span>
                   </div>
                 </div>

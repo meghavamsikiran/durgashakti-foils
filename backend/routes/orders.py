@@ -79,6 +79,13 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         effective_price = float(product.discount_price or product.price or 0)
         server_total += effective_price * item.quantity
     server_total = round(server_total, 2)
+    
+    # GST and Shipping calculations (CGST 9% + SGST 9% + flat ₹350 shipping)
+    taxable_amount = server_total
+    cgst_amount = round(taxable_amount * 0.09, 2)
+    sgst_amount = round(taxable_amount * 0.09, 2)
+    shipping_cost = 350.0
+    grand_total = round(taxable_amount + cgst_amount + sgst_amount + shipping_cost, 2)
 
     enriched_items = []
     for item in order_data.items:
@@ -99,7 +106,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         user_id=current_user.id,
         customer_name=current_user.full_name,
         items=enriched_items,
-        total_amount=server_total,
+        total_amount=grand_total,
         payment_method=order_data.payment_method,
         payment_status=payment_status,
         order_status=order_status,

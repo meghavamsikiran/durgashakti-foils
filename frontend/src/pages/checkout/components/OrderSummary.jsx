@@ -32,15 +32,23 @@ const OrderSummary = ({ products, total, checkoutStep, loading, onPlaceOrder }) 
       <div className="space-y-4 pt-6 border-t border-slate-200">
         <div className="flex justify-between text-sm">
           <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Subtotal</span>
-          <span className="font-black text-slate-900">₹{total.toLocaleString()}</span>
+          <span className="font-black text-slate-900">₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Shipping</span>
-          <span className="font-black text-emerald-500 uppercase tracking-widest text-[10px]">Free</span>
+          <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Shipping Charges</span>
+          <span className="font-black text-slate-900">₹350.00</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">SGST (9%)</span>
+          <span className="font-black text-slate-900">₹{(total * 0.09).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">CGST (9%)</span>
+          <span className="font-black text-slate-900">₹{(total * 0.09).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         <div className="pt-4 flex justify-between items-end">
           <span className="text-slate-900 font-black uppercase tracking-tighter">Total Amount</span>
-          <div className="text-3xl font-black text-indigo-600 tracking-tighter">₹{total.toLocaleString()}</div>
+          <div className="text-3xl font-black text-indigo-600 tracking-tighter">₹{(total + 350 + (total * 0.18)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         </div>
       </div>
 
@@ -50,7 +58,7 @@ const OrderSummary = ({ products, total, checkoutStep, loading, onPlaceOrder }) 
           disabled={loading}
           className="w-full h-16 rounded-2xl mt-8 text-lg font-black uppercase tracking-widest shadow-2xl shadow-indigo-100"
         >
-          {loading ? <Loader2 className="animate-spin w-6 h-6" /> : `Pay ₹${total.toLocaleString()}`}
+          {loading ? <Loader2 className="animate-spin w-6 h-6" /> : `Pay ₹${(total + 350 + (total * 0.18)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
         </Button>
       )}
     </div>

@@ -549,21 +549,48 @@ const OrdersPage = () => {
                 {/* Column 3: Order Summary */}
                 <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Order Summary</h4>
-                  <div className="space-y-1.5 text-xs text-slate-500 font-semibold">
-                    <div className="flex justify-between">
-                      <span>Subtotal:</span>
-                      <span className="text-slate-900">₹{(selectedOrderForModal.total_amount - (selectedOrderForModal.shipping_cost || 0)).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Shipping Cost:</span>
-                      <span className="text-slate-900">₹{(selectedOrderForModal.shipping_cost || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="h-px bg-slate-200/60 my-1" />
-                    <div className="flex justify-between font-black text-slate-900 text-sm">
-                      <span>Grand Total:</span>
-                      <span className="text-indigo-600 text-base">₹{Number(selectedOrderForModal.total_amount).toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
+                  {(() => {
+                    const subtotal = selectedOrderForModal.items?.reduce((acc, item) => acc + (item.price * item.quantity), 0) || 0;
+                    const isNewOrderLayout = Number(selectedOrderForModal.total_amount) > subtotal;
+                    const shipping = isNewOrderLayout ? 350.0 : 0.0;
+                    const cgst = isNewOrderLayout ? subtotal * 0.09 : 0.0;
+                    const sgst = isNewOrderLayout ? subtotal * 0.09 : 0.0;
+
+                    return (
+                      <div className="space-y-1.5 text-xs text-slate-500 font-semibold">
+                        <div className="flex justify-between">
+                          <span>Subtotal:</span>
+                          <span className="text-slate-900">₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Shipping Cost:</span>
+                          <span className="text-slate-900">
+                            {shipping > 0 
+                              ? `₹${shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                              : "FREE"
+                            }
+                          </span>
+                        </div>
+                        {cgst > 0 && (
+                          <>
+                            <div className="flex justify-between">
+                              <span>SGST (9%):</span>
+                              <span className="text-slate-900">₹{sgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>CGST (9%):</span>
+                              <span className="text-slate-900">₹{cgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                          </>
+                        )}
+                        <div className="h-px bg-slate-200/60 my-1" />
+                        <div className="flex justify-between font-black text-slate-900 text-sm">
+                          <span>Grand Total:</span>
+                          <span className="text-indigo-600 text-base">₹{Number(selectedOrderForModal.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
