@@ -474,9 +474,10 @@ const OrdersPage = () => {
 
       {selectedOrderForModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-[2.5rem] p-8 max-w-4xl w-full border border-slate-100 shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+          <div className="bg-white rounded-[2.5rem] p-8 max-w-5xl w-full border border-slate-100 shadow-2xl flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-300">
+            
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-6 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-5 border-b border-slate-100">
               <div>
                 <div className="flex items-center gap-3 mb-1">
                   <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center">
@@ -485,7 +486,7 @@ const OrdersPage = () => {
                   <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Order Details</h2>
                 </div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">
-                  Order #{selectedOrderForModal.order_number} • {new Date(selectedOrderForModal.created_at).toLocaleString()}
+                  Order #{selectedOrderForModal.order_number} • Placed {new Date(selectedOrderForModal.created_at).toLocaleString('en-IN')}
                 </p>
               </div>
               <button 
@@ -497,124 +498,309 @@ const OrdersPage = () => {
             </div>
 
             {/* Modal Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto py-8 space-y-8 pr-2">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Order Items */}
-                <div className="space-y-4">
-                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                    <ShoppingBag className="w-4 h-4 text-indigo-500" />
-                    Order Items
-                  </h4>
-                  <div className="bg-slate-50/50 rounded-3xl border border-slate-200/60 overflow-hidden shadow-sm">
-                    <table className="min-w-full">
-                      <thead className="bg-slate-100/50 border-b border-slate-200">
-                        <tr>
-                          <th className="px-5 py-3 text-left text-[9px] font-black text-slate-500 uppercase tracking-widest">Product</th>
-                          <th className="px-5 py-3 text-center text-[9px] font-black text-slate-500 uppercase tracking-widest">Qty</th>
-                          <th className="px-5 py-3 text-right text-[9px] font-black text-slate-500 uppercase tracking-widest">Price</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {selectedOrderForModal.items?.map((item, idx) => (
-                          <tr key={idx} className="bg-white/50">
-                            <td className="px-5 py-4 text-xs font-bold text-slate-700">{item.product_name}</td>
-                            <td className="px-5 py-4 text-xs text-center font-black text-slate-500">{item.quantity}</td>
-                            <td className="px-5 py-4 text-xs text-right font-black text-slate-900">₹{Number(item.price * item.quantity).toLocaleString('en-IN')}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+            <div className="flex-1 overflow-y-auto py-6 space-y-6 pr-2">
+              
+              {/* 3-Column Info Card (Ship to | Payment Details | Order Summary) */}
+              <div className="bg-slate-50/50 rounded-3xl border border-slate-200/60 p-6 grid grid-cols-1 md:grid-cols-3 gap-6 divide-y md:divide-y-0 md:divide-x divide-slate-200/60 shadow-sm">
+                
+                {/* Column 1: Ship to */}
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Shipping Address</h4>
+                  <div className="text-xs text-slate-600 leading-relaxed space-y-0.5 font-semibold">
+                    <p className="font-extrabold text-slate-900">{selectedOrderForModal.shipping_address?.full_name || 'Guest User'}</p>
+                    <p>{selectedOrderForModal.shipping_address?.address_line1 || 'N/A'}</p>
+                    {selectedOrderForModal.shipping_address?.address_line2 && <p>{selectedOrderForModal.shipping_address.address_line2}</p>}
+                    <p>{selectedOrderForModal.shipping_address?.city}, {selectedOrderForModal.shipping_address?.state} - {selectedOrderForModal.shipping_address?.pincode}</p>
+                    <p className="text-slate-500 font-extrabold mt-2.5 flex items-center gap-1">
+                      <PhoneIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      {selectedOrderForModal.customer_phone || selectedOrderForModal.shipping_address?.phone || 'N/A'}
+                    </p>
                   </div>
                 </div>
 
-                {/* Shipping details */}
-                <div className="space-y-4">
-                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-rose-500" />
-                    Shipping Details
-                  </h4>
-                  <div className="bg-slate-50/50 rounded-3xl border border-slate-200/60 p-6 shadow-sm space-y-4">
-                    <div className="flex items-start gap-3">
-                      <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                      <div>
-                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Address</div>
-                        <div className="text-xs font-bold text-slate-600 leading-relaxed">
-                          {selectedOrderForModal.shipping_address?.address_line1 || 'N/A'}<br />
-                          {selectedOrderForModal.shipping_address?.address_line2 && <>{selectedOrderForModal.shipping_address.address_line2}<br /></>}
-                          {selectedOrderForModal.shipping_address?.city}, {selectedOrderForModal.shipping_address?.state}<br />
-                          PIN: {selectedOrderForModal.shipping_address?.pincode}
-                        </div>
+                {/* Column 2: Payment Details */}
+                <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment Method</h4>
+                  <div className="text-xs text-slate-655 space-y-2 font-semibold">
+                    <p className="font-extrabold text-slate-900 uppercase tracking-wider">{selectedOrderForModal.payment_method || 'Razorpay'}</p>
+                    {selectedOrderForModal.payment_status === 'Paid' || selectedOrderForModal.payment_status === 'completed' ? (
+                      <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1">
+                        <p className="font-extrabold flex items-center gap-1 text-emerald-700">
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Paid
+                        </p>
+                        {selectedOrderForModal.transaction_id && (
+                          <p className="font-mono text-slate-500 break-all select-all">Txn: {selectedOrderForModal.transaction_id}</p>
+                        )}
+                        {selectedOrderForModal.transaction_date && (
+                          <p className="text-slate-550">Date: {new Date(selectedOrderForModal.transaction_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                        )}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <PhoneIcon className="w-4 h-4 text-slate-400 shrink-0" />
-                      <div>
-                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Phone Number</div>
-                        <div className="text-xs font-bold text-slate-600">{selectedOrderForModal.customer_phone || selectedOrderForModal.shipping_address?.phone || 'N/A'}</div>
-                      </div>
-                    </div>
-                    {selectedOrderForModal.tracking_id && (
-                      <div className="flex items-start gap-3">
-                        <Truck className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                        <div>
-                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tracking</div>
-                          <div className="text-xs font-bold text-slate-600">
-                            {selectedOrderForModal.carrier || 'Courier'} - {selectedOrderForModal.tracking_id}
-                          </div>
-                          {selectedOrderForModal.tracking_url && (
-                            <a href={selectedOrderForModal.tracking_url} target="_blank" rel="noreferrer" className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">
-                              Open tracking link
-                            </a>
-                          )}
-                        </div>
+                    ) : (
+                      <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-150/60 space-y-1">
+                        <p className="font-extrabold flex items-center gap-1.5 text-amber-700">
+                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Pending Payment
+                        </p>
+                        <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">Status: {selectedOrderForModal.payment_status || 'Unpaid'}</p>
                       </div>
                     )}
                   </div>
                 </div>
+
+                {/* Column 3: Order Summary */}
+                <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Order Summary</h4>
+                  <div className="space-y-1.5 text-xs text-slate-655 font-semibold">
+                    <div className="flex justify-between">
+                      <span>Subtotal:</span>
+                      <span className="text-slate-900">₹{(selectedOrderForModal.total_amount - (selectedOrderForModal.shipping_cost || 0)).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Shipping Cost:</span>
+                      <span className="text-slate-900">₹{(selectedOrderForModal.shipping_cost || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="h-px bg-slate-200/60 my-1" />
+                    <div className="flex justify-between font-black text-slate-900 text-sm">
+                      <span>Grand Total:</span>
+                      <span className="text-indigo-650 text-base">₹{Number(selectedOrderForModal.total_amount).toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Return details card inside popup */}
-              {selectedOrderForModal.return_reason && (
-                <div className="bg-orange-50/70 border border-orange-100 rounded-[2rem] p-6 shadow-sm flex flex-col md:flex-row gap-6 items-start">
-                  <div className="flex-1 space-y-4">
-                    <h4 className="text-[10px] font-black text-orange-600 uppercase tracking-widest flex items-center gap-2">
-                      <RefreshCcw className="w-4 h-4" />
-                      Return Request Details
-                    </h4>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Customer Return Reason</div>
-                        <div className="text-xs font-bold text-slate-800 bg-white p-3 rounded-xl border border-slate-100">{selectedOrderForModal.return_reason}</div>
-                      </div>
-                      
-                      {selectedOrderForModal.admin_message && (
+              {/* Shipment Timeline Progress */}
+              <div className="bg-white rounded-3xl border border-slate-200/60 p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-50">
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Order Shipment Timeline</h4>
+                  <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                    selectedOrderForModal.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800' :
+                    selectedOrderForModal.status === 'CANCELLED' ? 'bg-rose-100 text-rose-800' :
+                    'bg-indigo-100 text-indigo-800'
+                  }`}>
+                    {(selectedOrderForModal.status || selectedOrderForModal.order_status || 'PENDING').replace('_', ' ')}
+                  </span>
+                </div>
+
+                {(() => {
+                  const status = (selectedOrderForModal.status || selectedOrderForModal.order_status || '').toLowerCase();
+                  const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                  const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                  const isDelivered = ['delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+
+                  const steps = [
+                    { label: 'Placed', active: true, date: selectedOrderForModal.created_at },
+                    { label: 'Confirmed', active: isConfirmed, date: isConfirmed ? selectedOrderForModal.created_at : null },
+                    { label: 'Shipped', active: isShipped, date: isShipped ? (selectedOrderForModal.shipped_at || selectedOrderForModal.updated_at) : null },
+                    { label: 'Delivered', active: isDelivered, date: isDelivered ? (selectedOrderForModal.delivered_at || selectedOrderForModal.updated_at) : null },
+                  ];
+
+                  if (status === 'cancelled') {
+                    return (
+                      <div className="flex items-center gap-3 bg-rose-50 border border-rose-100 rounded-xl p-3 text-rose-800 font-semibold text-xs">
+                        <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
                         <div>
-                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Admin Response Message</div>
-                          <div className="text-xs font-bold text-slate-800 bg-white p-3 rounded-xl border border-slate-100">{selectedOrderForModal.admin_message}</div>
+                          <p className="font-extrabold text-rose-900">Order Cancelled</p>
+                          <p className="text-rose-600 mt-0.5">This order was marked as cancelled on {new Date(selectedOrderForModal.updated_at || selectedOrderForModal.created_at).toLocaleString('en-IN')}</p>
                         </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="relative pt-4 pb-2">
+                      {/* Line Background */}
+                      <div className="absolute top-[28px] left-[10%] right-[10%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
+                      {/* Active Line */}
+                      <div 
+                        className="absolute top-[28px] left-[10%] h-1 bg-indigo-655 -translate-y-1/2 rounded-full transition-all duration-700" 
+                        style={{ 
+                          width: isDelivered ? '80%' : isShipped ? '53.33%' : isConfirmed ? '26.66%' : '0%' 
+                        }} 
+                      />
+
+                      {/* Dots */}
+                      <div className="relative flex justify-between">
+                        {steps.map((step, idx) => (
+                          <div key={idx} className="flex flex-col items-center w-[25%] text-center">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all ${
+                              step.active ? 'bg-indigo-650 text-white ring-4 ring-indigo-500/10' : 'bg-slate-200 text-slate-400'
+                            }`}>
+                              {step.active ? <Check className="w-3 h-3 stroke-[3px]" /> : <span className="text-[9px] font-bold">{idx + 1}</span>}
+                            </div>
+                            <p className={`text-[11px] mt-2 ${step.active ? 'text-indigo-650 font-extrabold' : 'text-slate-400 font-bold'}`}>
+                              {step.label}
+                            </p>
+                            {step.date && (
+                              <p className="text-[9px] font-bold text-slate-400 mt-0.5">
+                                {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Order Items Table Redesign */}
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-indigo-500" />
+                  Order Items ({selectedOrderForModal.items?.length || 0})
+                </h4>
+                
+                <div className="bg-white rounded-3xl border border-slate-200/60 overflow-hidden shadow-sm">
+                  <table className="min-w-full">
+                    <thead className="bg-slate-50/70 border-b border-slate-200">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-500 uppercase tracking-widest">Item Description</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">Qty</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">Unit Price</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Price</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-700 font-bold">
+                      {selectedOrderForModal.items?.map((item, idx) => (
+                        <tr key={idx} className="bg-white hover:bg-slate-50/40 transition-colors">
+                          <td className="px-6 py-4 text-xs font-extrabold text-slate-900 flex items-center gap-3">
+                            {item.image_url ? (
+                              <img 
+                                src={formatImageUrl(item.image_url)} 
+                                alt="" 
+                                className="w-12 h-12 rounded-lg object-cover bg-slate-50 border border-slate-100 shrink-0 shadow-sm"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                                <ShoppingBag className="w-5 h-5 text-indigo-500" />
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-extrabold text-slate-900">{item.product_name}</p>
+                              <p className="text-[9px] text-slate-400 uppercase tracking-wider font-bold">Sold by: DurgaShakti Foils</p>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-xs text-center font-black text-slate-550">{item.quantity}</td>
+                          <td className="px-6 py-4 text-xs text-right font-black text-slate-700">₹{Number(item.price).toLocaleString('en-IN')}</td>
+                          <td className="px-6 py-4 text-xs text-right font-black text-indigo-650">₹{Number(item.price * item.quantity).toLocaleString('en-IN')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Shipment Courier Info (If shipped) */}
+              {selectedOrderForModal.tracking_id && (
+                <div className="bg-sky-50/60 border border-sky-100/80 rounded-3xl p-5 shadow-sm flex items-start gap-4 animate-in fade-in duration-300">
+                  <Truck className="w-6 h-6 text-sky-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-[10px] font-black text-sky-700 uppercase tracking-widest mb-1.5">Courier & Tracking details</h4>
+                    <div className="text-xs text-slate-650 leading-relaxed font-semibold">
+                      <p>Carrier Name: <span className="font-extrabold text-slate-900">{selectedOrderForModal.carrier || 'Courier'}</span></p>
+                      <p>Tracking Number: <span className="font-mono text-slate-900 select-all font-extrabold">{selectedOrderForModal.tracking_id}</span></p>
+                      {selectedOrderForModal.tracking_url && (
+                        <a 
+                          href={selectedOrderForModal.tracking_url} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="text-[10px] font-black text-indigo-655 uppercase tracking-widest hover:underline mt-2 inline-block"
+                        >
+                          Launch Tracking URL &rsaquo;
+                        </a>
                       )}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Return Details Panel inside modal */}
+              {selectedOrderForModal.return_reason && (
+                <div className="bg-amber-50/70 border border-amber-100 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row gap-6 items-start animate-in slide-in-from-bottom-2 duration-300">
+                  <div className="flex-1 space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-amber-100/50">
+                      <h4 className="text-[10px] font-black text-amber-700 uppercase tracking-widest flex items-center gap-2">
+                        <RefreshCcw className="w-4 h-4 shrink-0" />
+                        Return Request Details
+                      </h4>
+                      <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
+                        selectedOrderForModal.status === 'RETURN_APPROVED' ? 'bg-emerald-100 text-emerald-800' :
+                        selectedOrderForModal.status === 'RETURN_REJECTED' ? 'bg-rose-100 text-rose-800' :
+                        'bg-amber-100 text-amber-800'
+                      }`}>
+                        {selectedOrderForModal.status?.replace('_', ' ')}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Customer Return Reason</div>
+                        <div className="text-xs font-bold text-slate-800 bg-white p-3 rounded-xl border border-slate-100/60 leading-relaxed shadow-sm">{selectedOrderForModal.return_reason}</div>
+                      </div>
+                      
+                      {selectedOrderForModal.admin_message && (
+                        <div className="space-y-1">
+                          <div className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Admin Resolution Remarks</div>
+                          <div className="text-xs font-bold text-slate-800 bg-white p-3 rounded-xl border border-slate-100/60 leading-relaxed shadow-sm">{selectedOrderForModal.admin_message}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Quick Approve / Reject action shortcuts for admin directly inside details modal! */}
+                    {selectedOrderForModal.status === 'RETURN_REQUESTED' && (
+                      <div className="pt-2 flex flex-wrap gap-2.5">
+                        <button
+                          onClick={() => {
+                            setMessageModal({ orderId: selectedOrderForModal.id, status: 'RETURN_APPROVED' });
+                            setAdminMessage('');
+                            setSelectedOrderForModal(null); // Close order details modal so they focus on confirmation message modal
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[9px] px-4 py-2.5 rounded-xl shadow-md transition-all shadow-emerald-50 hover:scale-102 transform active:scale-98"
+                        >
+                          Approve Return Request
+                        </button>
+                        <button
+                          onClick={() => {
+                            setMessageModal({ orderId: selectedOrderForModal.id, status: 'RETURN_REJECTED' });
+                            setAdminMessage('');
+                            setSelectedOrderForModal(null);
+                          }}
+                          className="bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest text-[9px] px-4 py-2.5 rounded-xl shadow-md transition-all shadow-rose-50 hover:scale-102 transform active:scale-98"
+                        >
+                          Reject Return Request
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   {selectedOrderForModal.return_image_url && (
-                    <div className="w-full md:w-36 shrink-0 space-y-1.5">
-                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Uploaded Proof Photo</div>
-                      <a
-                        href={formatImageUrl(selectedOrderForModal.return_image_url)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all group"
-                      >
-                        <img 
-                          src={formatImageUrl(selectedOrderForModal.return_image_url)} 
-                          alt="Proof" 
-                          className="w-full h-24 object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                          <Eye className="w-5 h-5 text-white" />
-                        </div>
-                      </a>
+                    <div className="w-full md:w-44 shrink-0 space-y-2">
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Uploaded Return Proof</div>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedOrderForModal.return_image_url.split(',').map((url, idx) => {
+                          const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
+                          const fullUrl = formatImageUrl(url);
+                          return (
+                            <div key={idx} className="relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all w-20 h-20 flex items-center justify-center group cursor-pointer">
+                              {isVideo ? (
+                                <video src={fullUrl} controls className="w-full h-full object-cover" />
+                              ) : (
+                                <a 
+                                  href={fullUrl} 
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  className="w-full h-full block"
+                                >
+                                  <img 
+                                    src={fullUrl} 
+                                    alt="Proof" 
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                                  />
+                                </a>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -622,14 +808,15 @@ const OrdersPage = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="pt-6 border-t border-slate-100 flex justify-end">
+            <div className="pt-5 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setSelectedOrderForModal(null)}
-                className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all"
+                className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all hover:scale-[1.02] transform active:scale-[0.98]"
               >
                 Close
               </button>
             </div>
+
           </div>
         </div>
       )}

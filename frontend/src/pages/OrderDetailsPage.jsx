@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X } from 'lucide-react';
+import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight } from 'lucide-react';
 import { Button } from './../components/ui/button';
 import { formatImageUrl } from './../utils/api';
 import { useProgress } from './../components/ui/ProgressToast';
@@ -8,11 +8,13 @@ import paymentService from './../services/payment.service';
 import apiClient from './../services/core/apiClient';
 import { toast } from 'sonner';
 import PageLoader from './../components/ui/PageLoader';
+import { useCart } from './../contexts/CartContext';
 
 const OrderDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { startProgress, updateProgress, finishProgress } = useProgress();
+  const { addToCart } = useCart();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isReturning, setIsReturning] = useState(false);
@@ -166,6 +168,16 @@ const OrderDetailsPage = () => {
     return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
+  const handleBuyItAgain = async (item) => {
+    try {
+      await addToCart(item.product_id, 1);
+      toast.success(`${item.product_name} added to cart`);
+      navigate('/cart');
+    } catch (err) {
+      toast.error('Failed to add item to cart');
+    }
+  };
+
   const generateInvoiceHtml = (orderData) => {
     const itemsHtml = orderData.items.map(item => `
       <tr class="item">
@@ -314,391 +326,499 @@ const OrderDetailsPage = () => {
     <div className="min-h-screen bg-slate-50/50 pb-20 pt-8 mt-16">
       <div className="max-w-4xl mx-auto px-6">
         
-        <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors mb-6 font-bold text-sm">
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-        </button>
+        {/* Amazon-style Breadcrumbs */}
+        <div className="flex items-center gap-2 text-xs text-slate-500 mb-6 font-semibold">
+          <span className="hover:text-indigo-600 cursor-pointer transition-colors" onClick={() => navigate('/dashboard')}>Your Account</span>
+          <span className="text-slate-400 font-normal">&rsaquo;</span>
+          <span className="hover:text-indigo-600 cursor-pointer transition-colors" onClick={() => navigate('/dashboard')}>Your Orders</span>
+          <span className="text-slate-400 font-normal">&rsaquo;</span>
+          <span className="text-slate-800 font-bold">Order Details</span>
+        </div>
 
-        <div className="bg-white rounded-[3rem] shadow-xl overflow-hidden flex flex-col border border-slate-200">
-          {/* Header */}
-          <div className="p-8 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        {/* Title and Subtitle Block */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Order Details</h1>
+            <p className="text-xs font-semibold text-slate-500 mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span>Order placed {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+              <span className="text-slate-300 font-normal">|</span>
+              <span>Order number {order.order_number}</span>
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            {(order.payment_status === 'Paid' || order.payment_status === 'completed') && (
+              <button
+                onClick={handleDownloadInvoice}
+                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-650 hover:text-indigo-600 border border-slate-300 rounded-xl px-4 py-2.5 bg-white transition-all shadow-sm hover:bg-slate-50"
+              >
+                <ExternalLink className="w-3.5 h-3.5" /> Invoice
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Admin Store Message Alert Banner */}
+        {order.admin_message && !isReturning && (
+          <div className="mb-6 p-4 rounded-2xl bg-indigo-50 border border-indigo-100 flex gap-3.5 items-start shadow-sm animate-in fade-in duration-300">
+            <Info className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center">
-                  <Package className="w-5 h-5" />
-                </div>
-                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Order Details</h2>
-              </div>
-              <p className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Order #{order.order_number}</p>
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Update from Store</h4>
+              <p className="text-xs font-semibold text-slate-700 mt-0.5 leading-relaxed">{order.admin_message}</p>
+            </div>
+          </div>
+        )}
+
+        {/* 3-Column Info Card (Ship to | Payment Method | Order Summary) */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6 grid grid-cols-1 md:grid-cols-3 gap-6 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+          
+          {/* Column 1: Ship to */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Shipping Address</h3>
+            <div className="text-xs text-slate-600 leading-relaxed space-y-0.5">
+              <p className="font-extrabold text-slate-900">{order.shipping_address?.full_name}</p>
+              <p>{order.shipping_address?.address_line1}</p>
+              {order.shipping_address?.address_line2 && <p>{order.shipping_address.address_line2}</p>}
+              <p>{order.shipping_address?.city}, {order.shipping_address?.state} - {order.shipping_address?.pincode}</p>
+              <p className="text-slate-500 font-bold mt-2.5 flex items-center gap-1">
+                <Phone className="w-3 h-3 text-slate-400" />
+                {order.shipping_address?.phone}
+              </p>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-8">
-            {order.admin_message && (
-              <div className="mb-8 p-6 rounded-[2rem] bg-indigo-50 border border-indigo-100 flex gap-4 items-start shadow-sm">
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
-                  <Info className="w-5 h-5" />
+          {/* Column 2: Payment Method */}
+          <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Payment Method</h3>
+            <div className="text-xs text-slate-600 space-y-2.5">
+              <p className="font-extrabold text-slate-900 uppercase tracking-wider">{order.payment_method || 'Razorpay'}</p>
+              {order.payment_status === 'Paid' || order.payment_status === 'completed' ? (
+                <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1 font-semibold">
+                  <p className="font-extrabold flex items-center gap-1.5 text-emerald-700">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Paid
+                  </p>
+                  {order.transaction_id && (
+                    <p className="font-mono text-slate-500 break-all select-all">ID: {order.transaction_id}</p>
+                  )}
+                  {order.transaction_date && (
+                    <p className="text-slate-500">Date: {new Date(order.transaction_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Update from Store</h4>
-                  <p className="text-sm font-semibold text-slate-850 leading-relaxed">{order.admin_message}</p>
+              ) : (
+                <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-150/60 space-y-1 font-semibold">
+                  <p className="font-extrabold flex items-center gap-1.5 text-amber-700">
+                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Pending Payment
+                  </p>
+                  <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">Status: {order.payment_status || 'Unpaid'}</p>
                 </div>
+              )}
+            </div>
+          </div>
+
+          {/* Column 3: Order Summary */}
+          <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Order Summary</h3>
+            <div className="space-y-2 text-xs text-slate-655 font-semibold">
+              <div className="flex justify-between">
+                <span>Item(s) Subtotal:</span>
+                <span className="text-slate-900">₹{(order.total_amount - (order.shipping_cost || 0)).toLocaleString()}</span>
               </div>
-            )}
+              <div className="flex justify-between">
+                <span>Shipping:</span>
+                <span className="text-slate-900">₹{(order.shipping_cost || 0).toLocaleString()}</span>
+              </div>
+              <div className="h-px bg-slate-100 my-1" />
+              <div className="flex justify-between font-black text-slate-900 text-sm pt-0.5">
+                <span>Grand Total:</span>
+                <span className="text-indigo-650 text-base">₹{order.total_amount.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-              
-              {/* Left Side: Items & Summary */}
-              <div className="lg:col-span-7 space-y-8">
-                <div className="space-y-4">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Order Items</h3>
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="flex gap-4 p-4 rounded-3xl border border-slate-50 bg-slate-50/30">
-                      <img src={formatImageUrl(item.image_url)} alt="" className="w-20 h-20 rounded-2xl object-cover bg-white" />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-black text-slate-900 truncate">{item.product_name}</h4>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase mt-1">QTY: {item.quantity} × ₹{item.price}</p>
-                        <p className="text-lg font-black text-indigo-600 mt-1">₹{(item.quantity * item.price).toLocaleString()}</p>
-                      </div>
-                    </div>
-                  ))}
+        {/* Inline Return Form Box */}
+        {isReturning && (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6 animate-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-6">
+              <h3 className="text-base font-bold text-slate-900">Request Return</h3>
+              <button 
+                onClick={() => {
+                  setIsReturning(false);
+                  setReason('');
+                  setOtherDetails('');
+                  setReturnFiles([]);
+                  setReturnPreviews([]);
+                }}
+                className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitReturn} className="space-y-5">
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Reason for Return</label>
+                <select
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  required
+                  className="w-full h-12 px-4 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="Damaged/Defective Product">Damaged or Defective Product</option>
+                  <option value="Incorrect Item Received">Incorrect Item Received</option>
+                  <option value="Poor Quality/Not as Expected">Poor Quality / Not as Expected</option>
+                  <option value="Other">Other (Specify below)</option>
+                </select>
+              </div>
+
+              {reason === 'Other' && (
+                <div className="space-y-2 animate-fade-in">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Details</label>
+                  <textarea
+                    placeholder="Please provide details about the return reason..."
+                    value={otherDetails}
+                    onChange={(e) => setOtherDetails(e.target.value)}
+                    required
+                    className="w-full p-4 min-h-[100px] rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"
+                  />
                 </div>
+              )}
 
-                <div className="p-6 rounded-3xl bg-slate-900 text-white">
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm font-bold text-slate-500">
-                      <span>Subtotal</span>
-                      <span className="text-white">₹{(order.total_amount - (order.shipping_cost || 0)).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm font-bold text-slate-500">
-                      <span>Shipping</span>
-                      <span className="text-white">₹{(order.shipping_cost || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="h-px bg-white/10 my-2" />
-                    <div className="flex justify-between items-end">
-                      <span className="text-xs font-black uppercase tracking-widest text-indigo-400">Total Amount</span>
-                      <span className="text-3xl font-black">₹{order.total_amount.toLocaleString()}</span>
-                    </div>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Upload Proof (Images/Videos) *</label>
+                <div className="relative group border-2 border-dashed border-slate-200 hover:border-indigo-500 transition-all duration-300 rounded-2xl p-6 flex flex-col items-center justify-center bg-white hover:bg-indigo-50/10 cursor-pointer min-h-[140px]">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={handleFilesChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="text-center flex flex-col items-center justify-center pointer-events-none">
+                    <Upload className="w-8 h-8 text-slate-400 group-hover:text-indigo-500 transition-colors mb-2" />
+                    <span className="text-xs font-bold text-slate-700 group-hover:text-indigo-650">Select Images / Videos</span>
+                    <span className="text-[10px] text-slate-400 mt-1">Upload multiple files up to 20MB each</span>
                   </div>
                 </div>
-              </div>
 
-              {/* Right Side: Status & Shipping OR Return Form */}
-              <div className="lg:col-span-5 space-y-8">
-                {isReturning ? (
-                  <form onSubmit={handleSubmitReturn} className="p-6 rounded-[2rem] border border-slate-200 bg-slate-50/20 space-y-6">
-                    <div>
-                      <h3 className="text-sm font-black text-slate-900 mb-2 uppercase tracking-tight">Return Request</h3>
-                      <p className="text-xs text-slate-500 leading-relaxed">Please select a reason and optional proof image to submit a return request for this order.</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Reason for Return</label>
-                      <select
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                        required
-                        className="w-full h-12 px-4 rounded-2xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                      >
-                        <option value="">Select a reason...</option>
-                        <option value="Damaged/Defective Product">Damaged or Defective Product</option>
-                        <option value="Incorrect Item Received">Incorrect Item Received</option>
-                        <option value="Poor Quality/Not as Expected">Poor Quality / Not as Expected</option>
-                        <option value="Other">Other (Specify below)</option>
-                      </select>
-                    </div>
-
-                    {reason === 'Other' && (
-                      <div className="space-y-2 animate-fade-in">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Details</label>
-                        <textarea
-                          placeholder="Please provide details about the return reason..."
-                          value={otherDetails}
-                          onChange={(e) => setOtherDetails(e.target.value)}
-                          required
-                          className="w-full p-4 min-h-[80px] rounded-2xl border border-slate-200 text-xs font-medium bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"
-                        />
+                {returnPreviews.length > 0 && (
+                  <div className="grid grid-cols-3 gap-3 pt-2">
+                    {returnPreviews.map((preview, index) => (
+                      <div key={index} className="relative w-full h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
+                        {preview.type === 'video' ? (
+                          <video src={preview.url} className="w-full h-full object-cover" />
+                        ) : (
+                          <img src={preview.url} alt="Preview" className="w-full h-full object-cover" />
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleRemoveFile(index);
+                          }}
+                          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/70 text-white flex items-center justify-center hover:bg-slate-900 transition-colors z-20"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Upload Proof (Images/Videos) *</label>
-                      <div className="relative group border-2 border-dashed border-slate-200 hover:border-indigo-500 transition-all duration-300 rounded-[2rem] p-6 flex flex-col items-center justify-center bg-white hover:bg-indigo-50/10 cursor-pointer min-h-[140px]">
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*,video/*"
-                          onChange={handleFilesChange}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        />
-                        <div className="text-center flex flex-col items-center justify-center pointer-events-none">
-                          <Upload className="w-8 h-8 text-slate-400 group-hover:text-indigo-500 transition-colors mb-2" />
-                          <span className="text-xs font-bold text-slate-500 group-hover:text-indigo-600">Select Images / Videos</span>
-                          <span className="text-[10px] text-slate-400 mt-1">Upload multiple files up to 20MB each</span>
-                        </div>
-                      </div>
-
-                      {returnPreviews.length > 0 && (
-                        <div className="grid grid-cols-3 gap-3 pt-2">
-                          {returnPreviews.map((preview, index) => (
-                            <div key={index} className="relative w-full h-24 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
-                              {preview.type === 'video' ? (
-                                <video src={preview.url} className="w-full h-full object-cover" />
-                              ) : (
-                                <img src={preview.url} alt="Preview" className="w-full h-full object-cover" />
-                              )}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  handleRemoveFile(index);
-                                }}
-                                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/70 text-white flex items-center justify-center hover:bg-slate-900 transition-colors z-20"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex gap-3 pt-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          setIsReturning(false);
-                          setReason('');
-                          setOtherDetails('');
-                          setReturnFiles([]);
-                          setReturnPreviews([]);
-                        }}
-                        className="flex-1 h-12 rounded-xl font-black uppercase tracking-widest border border-slate-200 text-xs text-slate-600 hover:bg-slate-100"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={submittingReturn || !reason}
-                        className="flex-1 h-12 rounded-xl font-black uppercase tracking-widest text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100"
-                      >
-                        {submittingReturn ? 'Submitting...' : 'Submit'}
-                      </Button>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4 ml-1">Timeline</h3>
-                      <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-slate-100">
-                        {(() => {
-                          const status = (order.order_status || '').toLowerCase();
-                          const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
-                          const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
-                          const isDelivered = ['delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
-
-                          const steps = [
-                            { label: 'Placed', date: order.created_at, status: 'completed' }
-                          ];
-
-                          if (status === 'cancelled') {
-                            steps.push({ label: 'Cancelled', date: order.updated_at || order.created_at, status: 'completed' });
-                          } else {
-                            steps.push({ label: 'Confirmed', date: isConfirmed ? order.created_at : null, status: isConfirmed ? 'completed' : 'pending' });
-                            steps.push({ label: 'Shipped', date: isShipped ? (order.shipped_at || order.updated_at) : null, status: isShipped ? 'completed' : 'pending' });
-                            steps.push({ label: 'Delivered', date: isDelivered ? (order.delivered_at || order.updated_at) : null, status: isDelivered ? 'completed' : 'pending' });
-
-                            if (status === 'return_requested') {
-                              steps.push({ label: 'Return Requested', date: order.updated_at, status: 'completed' });
-                            } else if (status === 'return_approved' || status === 'refunded') {
-                              steps.push({ label: 'Return Approved & Refunded', date: order.updated_at, status: 'completed' });
-                            } else if (status === 'return_rejected') {
-                              steps.push({ label: 'Return Rejected', date: order.updated_at, status: 'completed' });
-                            }
-                          }
-                          return steps;
-                        })().map((step, idx) => (
-                          <div key={idx} className="flex gap-4 relative z-10">
-                            <div className={`w-6 h-6 rounded-full border-4 border-white flex-shrink-0 shadow-sm ${
-                              step.status === 'completed'
-                                ? step.label.includes('Cancel') || step.label.includes('Rejected')
-                                  ? 'bg-rose-600'
-                                  : step.label.includes('Request')
-                                    ? 'bg-amber-500'
-                                    : step.label.includes('Refund') || step.label.includes('Approved')
-                                      ? 'bg-emerald-600'
-                                      : 'bg-indigo-600'
-                                : 'bg-slate-200'
-                            }`} />
-                            <div>
-                              <p className={`text-xs font-black uppercase tracking-tight ${
-                                step.status === 'completed'
-                                  ? step.label.includes('Cancel') || step.label.includes('Rejected')
-                                    ? 'text-rose-600'
-                                    : step.label.includes('Request')
-                                      ? 'text-amber-600'
-                                      : step.label.includes('Refund') || step.label.includes('Approved')
-                                        ? 'text-emerald-600'
-                                        : 'text-slate-900'
-                                  : 'text-slate-500'
-                              }`}>{step.label}</p>
-                              {step.date && <p className="text-[10px] font-bold text-slate-500">{new Date(step.date).toLocaleString()}</p>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="p-6 rounded-[2rem] border border-slate-200 space-y-4">
-                      <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Shipping Address</h3>
-                      <div className="flex gap-3">
-                        <MapPin className="w-5 h-5 text-indigo-600 flex-shrink-0" />
-                        <div className="text-sm font-medium text-slate-600 leading-relaxed">
-                          <p className="font-black text-slate-900">{order.shipping_address?.full_name}</p>
-                          <p>{order.shipping_address?.address_line1}</p>
-                          <p>{order.shipping_address?.city}, {order.shipping_address?.state} - {order.shipping_address?.pincode}</p>
-                          <div className="flex items-center gap-2 mt-2 font-bold text-slate-900">
-                            <Phone className="w-3.5 h-3.5" />
-                            {order.shipping_address?.phone}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-6 rounded-[2rem] bg-indigo-50 border border-indigo-100 flex items-center justify-between">
-                      <div>
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1">Expected Delivery</h3>
-                        <p className="font-black text-slate-900 uppercase tracking-tight">
-                          {order.order_status === 'delivered' ? 'Delivered' : getExpectedDeliveryDate(order.created_at)}
-                        </p>
-                      </div>
-                      <Calendar className="w-8 h-8 text-indigo-200" />
-                    </div>
-
-                    {order.tracking_id && (
-                      <div className="p-6 rounded-[2rem] bg-sky-50 border border-sky-100 flex items-center justify-between gap-4">
-                        <div>
-                          <h3 className="text-[10px] font-black uppercase tracking-widest text-sky-600 mb-1">Shipment Tracking</h3>
-                          <p className="font-black text-slate-900 uppercase tracking-tight">{order.carrier || 'Courier'}</p>
-                          <p className="text-xs font-bold text-slate-600 mt-1">{order.tracking_id}</p>
-                          {order.tracking_url && (
-                            <a href={order.tracking_url} target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase tracking-widest text-sky-700 hover:underline mt-2 inline-block">
-                              Track package
-                            </a>
-                          )}
-                        </div>
-                        <Truck className="w-8 h-8 text-sky-200 shrink-0" />
-                      </div>
-                    )}
-
-                    <div className="p-6 rounded-[2rem] bg-indigo-50 border border-indigo-100 flex items-center justify-between">
-                      <div>
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 mb-1">Payment Method</h3>
-                        <p className="font-black text-slate-900 uppercase tracking-tight">{order.payment_method || 'Razorpay'}</p>
-                      </div>
-                      <CreditCard className="w-8 h-8 text-indigo-200" />
-                    </div>
-
-                    {order.return_reason && (
-                      <div className="p-6 rounded-[2rem] bg-amber-50 border border-amber-100/70 space-y-4">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-amber-600">Return Request Details</h3>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status</span>
-                            <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
-                              order.order_status === 'return_approved' ? 'bg-emerald-100 text-emerald-700' :
-                              order.order_status === 'return_rejected' ? 'bg-rose-100 text-rose-700' :
-                              'bg-orange-100 text-orange-700'
-                            }`}>
-                              {order.order_status?.replace('_', ' ')}
-                            </span>
-                          </div>
-                          
-                          <div>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Reason</span>
-                            <p className="text-xs font-bold text-slate-700 mt-0.5">{order.return_reason}</p>
-                          </div>
-
-                          {order.admin_message && (
-                            <div className="bg-white p-3 rounded-xl border border-amber-100/50">
-                              <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 block mb-0.5">
-                                {order.order_status === 'return_approved' 
-                                  ? 'Approval Remarks' 
-                                  : order.order_status === 'return_rejected' 
-                                    ? 'Rejection Reason' 
-                                    : 'Store Remarks'}
-                              </span>
-                              <p className="text-xs font-semibold text-slate-700 leading-relaxed">{order.admin_message}</p>
-                            </div>
-                          )}
-
-                          {order.return_image_url && (
-                            <div>
-                              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-2">Uploaded Proof</span>
-                              <div className="flex flex-wrap gap-3">
-                                {order.return_image_url.split(',').map((url, index) => {
-                                  const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
-                                  const fullUrl = formatImageUrl(url);
-                                  return (
-                                    <div key={index} className="relative rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm w-20 h-20 hover:ring-2 hover:ring-indigo-500 transition-all flex items-center justify-center">
-                                      {isVideo ? (
-                                        <video src={fullUrl} controls className="w-full h-full object-cover" />
-                                      ) : (
-                                        <a href={fullUrl} target="_blank" rel="noreferrer" className="w-full h-full">
-                                          <img src={fullUrl} alt="Proof" className="w-full h-full object-cover" />
-                                        </a>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
 
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsReturning(false);
+                    setReason('');
+                    setOtherDetails('');
+                    setReturnFiles([]);
+                    setReturnPreviews([]);
+                  }}
+                  className="flex-1 h-12 rounded-xl font-black uppercase tracking-widest border border-slate-200 text-[10px] text-slate-600 hover:bg-slate-100"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submittingReturn || !reason}
+                  className="flex-1 h-12 rounded-xl font-black uppercase tracking-widest text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 animate-pulse-subtle"
+                >
+                  {submittingReturn ? 'Submitting...' : 'Submit Request'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Retry Payment Warning Card */}
+        {order.payment_status !== 'Paid' && 
+         order.payment_status !== 'completed' && 
+         !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase()) && (
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm animate-in slide-in-from-top-2 duration-300">
+            <div className="space-y-1">
+              <h3 className="font-extrabold text-amber-900 text-sm flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-amber-700" />
+                Payment Retry Option Available
+              </h3>
+              <p className="text-xs text-amber-700 font-semibold leading-relaxed">Your payment has not been completed. You can safely complete the payment online using Razorpay to process this order.</p>
             </div>
+            <button 
+              onClick={handlePayOnline}
+              disabled={payingOnline}
+              className="bg-indigo-650 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[10px] px-6 py-3.5 rounded-xl shadow-md shadow-indigo-100 transition-all whitespace-nowrap"
+            >
+              {payingOnline ? 'Processing...' : 'Pay Online Now'}
+            </button>
+          </div>
+        )}
+
+        {/* Elegant Horizontal Timeline / Progress Stepper Card */}
+        {!isReturning && (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-50">
+              <h3 className="text-xs font-black text-slate-550 uppercase tracking-widest">Shipment Progress</h3>
+              <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                order.order_status === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
+                order.order_status === 'cancelled' ? 'bg-rose-100 text-rose-800' :
+                'bg-indigo-100 text-indigo-800'
+              }`}>
+                {order.order_status?.replace('_', ' ')}
+              </span>
+            </div>
+
+            {(() => {
+              const status = (order.order_status || '').toLowerCase();
+              const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+              const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+              const isDelivered = ['delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+
+              const steps = [
+                { label: 'Ordered', active: true, date: order.created_at },
+                { label: 'Confirmed', active: isConfirmed, date: isConfirmed ? order.created_at : null },
+                { label: 'Shipped', active: isShipped, date: isShipped ? (order.shipped_at || order.updated_at) : null },
+                { label: 'Delivered', active: isDelivered, date: isDelivered ? (order.delivered_at || order.updated_at) : null },
+              ];
+
+              if (status === 'cancelled') {
+                return (
+                  <div className="flex items-center gap-3 bg-rose-50 border border-rose-100 rounded-xl p-4 text-rose-800 font-semibold text-xs">
+                    <X className="w-5 h-5 text-rose-600 shrink-0" />
+                    <div>
+                      <p className="font-extrabold text-rose-900">Order Cancelled</p>
+                      <p className="text-rose-600 mt-0.5">This order was cancelled on {new Date(order.updated_at || order.created_at).toLocaleString('en-IN')}</p>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="relative pt-6 pb-2">
+                  {/* Progress Line Background */}
+                  <div className="absolute top-[32px] left-[10%] right-[10%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
+                  {/* Active Progress Line */}
+                  <div 
+                    className="absolute top-[32px] left-[10%] h-1 bg-indigo-600 -translate-y-1/2 rounded-full transition-all duration-700 ease-out" 
+                    style={{ 
+                      width: isDelivered ? '80%' : isShipped ? '53.33%' : isConfirmed ? '26.66%' : '0%' 
+                    }} 
+                  />
+
+                  {/* Stepper Dots */}
+                  <div className="relative flex justify-between">
+                    {steps.map((step, idx) => (
+                      <div key={idx} className="flex flex-col items-center w-[25%] text-center">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all duration-300 ${
+                          step.active 
+                            ? 'bg-indigo-650 text-white ring-4 ring-indigo-500/10' 
+                            : 'bg-slate-200 text-slate-400'
+                        }`}>
+                          {step.active ? <Check className="w-3.5 h-3.5 stroke-[3px]" /> : <span className="text-[10px] font-bold">{idx + 1}</span>}
+                        </div>
+                        <p className={`text-xs mt-2.5 ${step.active ? 'text-indigo-650 font-black' : 'text-slate-450 font-semibold'}`}>
+                          {step.label}
+                        </p>
+                        {step.date && (
+                          <p className="text-[9px] font-bold text-slate-400 mt-1">
+                            {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* Main Amazon-Style Order Items Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+          
+          {/* Status Header Bar inside Items Card */}
+          <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex flex-wrap justify-between items-center gap-4 font-semibold">
+            <div>
+              <h2 className="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                {order.order_status === 'delivered' 
+                  ? 'Delivered' 
+                  : order.order_status === 'cancelled'
+                  ? 'Cancelled'
+                  : order.order_status === 'return_requested'
+                  ? 'Return Pending Approval'
+                  : order.order_status === 'return_approved'
+                  ? 'Return complete'
+                  : order.order_status === 'return_rejected'
+                  ? 'Return Request Declined'
+                  : `Preparing shipment • Est. Delivery ${getExpectedDeliveryDate(order.created_at)}`
+                }
+              </h2>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                {order.order_status === 'delivered' 
+                  ? `Your package was delivered on ${new Date(order.delivered_at || order.updated_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`
+                  : order.order_status === 'cancelled'
+                  ? 'This order has been cancelled and will not be shipped.'
+                  : order.order_status === 'return_requested'
+                  ? 'Our team is reviewing your return request and proof media.'
+                  : order.order_status === 'return_approved' || order.order_status === 'refunded'
+                  ? 'Your return was accepted and a refund has been initiated.'
+                  : 'We are packaging and preparing your items for courier pickup.'
+                }
+              </p>
+            </div>
+            
+            {order.tracking_id && (
+              <div className="text-xs text-slate-700 bg-white border border-slate-200 rounded-xl px-3 py-1.5 font-bold flex items-center gap-1.5 shadow-sm">
+                <Truck className="w-3.5 h-3.5 text-slate-400" />
+                <span>{order.carrier || 'Courier'}: {order.tracking_id}</span>
+                {order.tracking_url && (
+                  <a 
+                    href={order.tracking_url} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="text-[9px] font-black text-indigo-650 hover:underline uppercase tracking-wider pl-1.5 border-l border-slate-200"
+                  >
+                    Track Package
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Footer */}
-          {!isReturning && (
-            <div className="p-8 border-t border-slate-200 flex gap-4">
-              {(order.payment_status === 'Paid' || order.payment_status === 'completed') && (
-                <Button
-                  className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-indigo-100"
-                  onClick={handleDownloadInvoice}
-                >
-                   <ExternalLink className="w-4 h-4 mr-2" /> Download Invoice
-                </Button>
-              )}
-              {order.payment_status !== 'Paid' && 
-               order.payment_status !== 'completed' && 
-               !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase()) && (
-                <Button
-                  onClick={handlePayOnline}
-                  disabled={payingOnline}
-                  className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-100"
-                >
-                  <Wallet className="w-4 h-4 mr-2" /> {payingOnline ? 'Processing...' : order.payment_method === 'cod' ? 'Pay Online' : 'Pay Now'}
-                </Button>
-              )}
-              {order.order_status === 'delivered' && (
-                <Button
-                  variant="ghost"
-                  onClick={() => setIsReturning(true)}
-                  className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest border border-slate-200"
-                >
-                  Return Items
-                </Button>
+          {/* Items Row list */}
+          <div className="p-6 divide-y divide-slate-100">
+            {order.items.map((item, idx) => (
+              <div key={idx} className="py-6 first:pt-0 last:pb-0 flex flex-col md:flex-row gap-6 items-start justify-between">
+                
+                {/* Product Detail Left Section */}
+                <div className="flex gap-5 flex-1 min-w-0">
+                  <img 
+                    src={formatImageUrl(item.image_url)} 
+                    alt={item.product_name} 
+                    className="w-24 h-24 rounded-xl object-cover bg-slate-50 border border-slate-150 shrink-0 shadow-sm" 
+                  />
+                  <div className="space-y-1.5 min-w-0">
+                    <h4 className="font-extrabold text-slate-900 text-sm hover:text-indigo-650 transition-colors cursor-pointer leading-snug">
+                      {item.product_name}
+                    </h4>
+                    <p className="text-xs text-slate-400 font-bold">Sold by: <span className="text-indigo-600 font-black">DurgaShakti Foils</span></p>
+                    <p className="text-sm font-black text-slate-900 mt-1">
+                      ₹{item.price.toLocaleString('en-IN')} 
+                      <span className="text-slate-400 font-bold text-xs pl-2">Quantity: {item.quantity}</span>
+                    </p>
+                    
+                    <div className="pt-2 flex flex-wrap gap-2">
+                      <button 
+                        onClick={() => handleBuyItAgain(item)}
+                        className="bg-[#FFD814] hover:bg-[#F7CA00] text-slate-950 font-extrabold text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-full shadow-sm border border-[#F2C200] transition-colors flex items-center gap-1.5 hover:scale-102 transform active:scale-98"
+                      >
+                        <Wallet className="w-3.5 h-3.5 text-slate-950" /> Buy it again
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* E-Commerce Buttons Stack Right Section */}
+                <div className="w-full md:w-48 flex flex-col gap-2 pt-2 md:pt-0 shrink-0">
+                  <button 
+                    onClick={() => navigate(`/product/${item.product_id}`)}
+                    className="w-full bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 font-bold text-slate-700 text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all text-center uppercase tracking-widest text-[9px]"
+                  >
+                    View your item
+                  </button>
+                  
+                  {order.order_status === 'delivered' && (
+                    <button 
+                      onClick={() => setIsReturning(true)}
+                      className="w-full bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 font-bold text-slate-750 text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all text-center uppercase tracking-widest text-[9px]"
+                    >
+                      Return items
+                    </button>
+                  )}
+
+                  <button 
+                    className="w-full bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 font-bold text-slate-700 text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all text-center uppercase tracking-widest text-[9px]"
+                    onClick={() => navigate('/inquiries')}
+                  >
+                    Ask product question
+                  </button>
+                </div>
+
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Return Details Card (If request has already been submitted in the past) */}
+        {order.return_reason && !isReturning && (
+          <div className="bg-amber-50/50 border border-amber-200 rounded-2xl p-6 shadow-sm space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-amber-700 flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Return Request History
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Return Reason</span>
+                <p className="text-xs font-bold text-slate-700 bg-white p-3 rounded-xl border border-slate-100">{order.return_reason}</p>
+              </div>
+
+              {order.admin_message && (
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500">Store Response Remarks</span>
+                  <p className="text-xs font-bold text-slate-700 bg-white p-3 rounded-xl border border-slate-100">{order.admin_message}</p>
+                </div>
               )}
             </div>
-          )}
-        </div>
+
+            {order.return_image_url && (
+              <div className="space-y-2">
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block">Uploaded Proof Material</span>
+                <div className="flex flex-wrap gap-3">
+                  {order.return_image_url.split(',').map((url, index) => {
+                    const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
+                    const fullUrl = formatImageUrl(url);
+                    return (
+                      <div key={index} className="relative rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm w-20 h-20 hover:ring-2 hover:ring-indigo-550 transition-all flex items-center justify-center group cursor-pointer">
+                        {isVideo ? (
+                          <video src={fullUrl} controls className="w-full h-full object-cover" />
+                        ) : (
+                          <a href={fullUrl} target="_blank" rel="noreferrer" className="w-full h-full">
+                            <img src={fullUrl} alt="Proof" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );
