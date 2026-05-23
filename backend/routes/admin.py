@@ -668,7 +668,7 @@ async def save_setting(data: dict, admin: UserSchema = Depends(require_permissio
 
 @router.get("/settings/public")
 async def get_public_settings(db: AsyncSession = Depends(get_db)):
-    res = await db.execute(select(SettingModel).where(SettingModel.key.in_(["company_profile", "payment_settings", "scrolling_banner"])))
+    res = await db.execute(select(SettingModel).where(SettingModel.key.in_(["company_profile", "payment_settings", "scrolling_banner", "shipping_settings"])))
     d = {s.key: s.value for s in res.scalars().all()}
     if "payment_settings" not in d:
         d["payment_settings"] = {"cod_enabled": True}
@@ -678,6 +678,26 @@ async def get_public_settings(db: AsyncSession = Depends(get_db)):
             "text2": "50% off discount sale ends in {timer}",
             "timer_enabled": True,
             "timer_target": "2026-05-20T12:00:00Z"
+        }
+    if "shipping_settings" not in d:
+        d["shipping_settings"] = {
+            "enableShipping": True,
+            "enableFreeShipping": True,
+            "freeShippingThreshold": 1099.0,
+            "defaultShippingCharge": 70.0,
+            "minimumOrderAmount": 0.0,
+            "shippingRuleStatus": "Active",
+            "codEnabled": True,
+            "codCharge": 40.0,
+            "minimumCodAmount": 300.0,
+            "maximumCodAmount": 5000.0,
+            "codStatus": "Active",
+            "standardDeliveryDays": "3–5 Days",
+            "expressDeliveryDays": "1–2 Days",
+            "packagingTime": "1 Day",
+            "processingTime": "1 Day",
+            "shippingZonesEnabled": False,
+            "shippingCampaignsEnabled": False
         }
     return d
 

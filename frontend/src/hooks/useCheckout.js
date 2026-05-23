@@ -24,6 +24,7 @@ export const useCheckout = () => {
   const [checkoutStep, setCheckoutStep] = useState('shipping');
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [codEnabled, setCodEnabled] = useState(true);
+  const [shippingSettings, setShippingSettings] = useState(null);
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [shippingInfo, setShippingInfo] = useState({
@@ -74,8 +75,14 @@ export const useCheckout = () => {
   const fetchSettings = useCallback(async () => {
     try {
       const data = await settingsService.getPublicSettings();
-      const codState = data.payment_settings?.cod_enabled !== false;
-      setCodEnabled(codState);
+      if (data && data.shipping_settings) {
+        setShippingSettings(data.shipping_settings);
+        const isCodActive = data.shipping_settings.codEnabled !== false && data.shipping_settings.codStatus === 'Active';
+        setCodEnabled(isCodActive);
+      } else {
+        const codState = data.payment_settings?.cod_enabled !== false;
+        setCodEnabled(codState);
+      }
     } catch (err) {
       // Safe fallback
     }
@@ -229,7 +236,45 @@ export const useCheckout = () => {
       });
 
       const subtotal = calculateTotal();
-      const grandTotal = subtotal + 350 + (subtotal * 0.18);
+
+      // Dynamic Shipping and COD calculation
+      let shippingCost = 70.0;
+      let enableFreeShipping = true;
+      let freeShippingThreshold = 1099.0;
+      let enableShipping = true;
+      let codCharge = 40.0;
+
+      if (shippingSettings) {
+        enableShipping = shippingSettings.enableShipping !== false;
+        enableFreeShipping = shippingSettings.enableFreeShipping !== false;
+        freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? 1099);
+        shippingCost = Number(shippingSettings.defaultShippingCharge ?? 70);
+        codCharge = Number(shippingSettings.codCharge ?? 40);
+      }
+
+      let calculatedShipping = 0;
+      if (enableShipping) {
+        if (enableFreeShipping && subtotal >= freeShippingThreshold) {
+          calculatedShipping = 0;
+        } else {
+          calculatedShipping = shippingCost;
+        }
+      }
+
+      let activeCodCharge = 0;
+      if (paymentMethod === 'cod') {
+        const minCod = shippingSettings ? Number(shippingSettings.minimumCodAmount ?? 300) : 300;
+        const maxCod = shippingSettings ? Number(shippingSettings.maximumCodAmount ?? 5000) : 5000;
+        if (subtotal < minCod) {
+          throw new Error(`COD option is only available for orders above ₹${minCod}. Please select a different payment option.`);
+        }
+        if (subtotal > maxCod) {
+          throw new Error(`COD option is only available for orders below ₹${maxCod}. Please select a different payment option.`);
+        }
+        activeCodCharge = codCharge;
+      }
+
+      const grandTotal = subtotal + calculatedShipping + (subtotal * 0.18) + activeCodCharge;
 
       const orderData = {
         items: orderItems,
@@ -278,6 +323,7 @@ export const useCheckout = () => {
     paymentMethod,
     setPaymentMethod,
     codEnabled,
+    shippingSettings,
     savedAddresses,
     selectedAddressId,
     shippingInfo,

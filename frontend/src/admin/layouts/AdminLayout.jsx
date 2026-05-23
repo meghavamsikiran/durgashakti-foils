@@ -24,6 +24,7 @@ const ICON_MAP = {
   'Admins': UserCog,
   'Audit Logs': ShieldAlert,
   'Settings': Settings,
+  'Shipping Settings': Package2,
 };
 
 const AdminLayout = () => {

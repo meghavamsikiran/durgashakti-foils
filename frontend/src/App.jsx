@@ -40,6 +40,7 @@ import GstImportPage from './admin/pages/GstImportPage';
 import GstReportsPage from './admin/pages/GstReportsPage';
 import AuditLogsPage from './admin/pages/AuditLogsPage';
 import SettingsPage from './admin/pages/SettingsPage';
+import ShippingSettingsPage from './admin/pages/ShippingSettingsPage';
 import AnalyticsPage from './admin/pages/AnalyticsPage';
 import AdminUsersPage from './admin/pages/AdminUsersPage';
 import InquiriesPage from './admin/pages/InquiriesPage';
@@ -161,6 +162,14 @@ function AppRoutes() {
                     </ProtectedAdminRoute>
                   }
                 />
+                <Route
+                  path="shipping-settings"
+                  element={
+                    <ProtectedAdminRoute permission="manage_settings">
+                      <ShippingSettingsPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
               </Route>
 
               {/* Super Admin Routes */}
@@ -225,6 +234,14 @@ function AppRoutes() {
                   element={
                     <ProtectedAdminRoute permission="manage_settings">
                       <SettingsPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route
+                  path="shipping-settings"
+                  element={
+                    <ProtectedAdminRoute permission="manage_settings">
+                      <ShippingSettingsPage />
                     </ProtectedAdminRoute>
                   }
                 />

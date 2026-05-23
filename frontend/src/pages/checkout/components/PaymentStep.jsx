@@ -1,9 +1,33 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { QrCode, CreditCard, Landmark, Truck, Shield } from 'lucide-react';
+import { QrCode, CreditCard, Landmark, Truck, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 
-const PaymentStep = ({ paymentMethod, onSetPaymentMethod, codEnabled = true, onBack }) => {
+const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codEnabled = true, shippingSettings, subtotal = 0, onBack }) => {
+  const selectPaymentMethod = onSetPaymentMethod || setPaymentMethod;
+
+  let minCod = 300;
+  let maxCod = 5000;
+  let codCharge = 40;
+  let isCodBelowMinimum = false;
+  let isCodLimitExceeded = false;
+
+  if (shippingSettings) {
+    minCod = Number(shippingSettings.minimumCodAmount ?? 300);
+    maxCod = Number(shippingSettings.maximumCodAmount ?? 5000);
+    codCharge = Number(shippingSettings.codCharge ?? 40);
+  }
+
+  if (subtotal < minCod) {
+    isCodBelowMinimum = true;
+  }
+  if (subtotal > maxCod) {
+    isCodLimitExceeded = true;
+  }
+
+  const codDisabledByLimits = isCodBelowMinimum || isCodLimitExceeded;
+  const isCodOptionDisabled = !codEnabled || codDisabledByLimits;
+
   const paymentMethods = [
     {
       id: 'upi',
@@ -27,7 +51,13 @@ const PaymentStep = ({ paymentMethod, onSetPaymentMethod, codEnabled = true, onB
       id: 'cod',
       name: 'Cash on Delivery',
       icon: Truck,
-      description: 'Pay with cash when your order arrives'
+      description: isCodOptionDisabled
+        ? !codEnabled
+          ? 'COD is temporarily disabled by admin.'
+          : isCodBelowMinimum
+          ? `COD is only available for orders above ₹${minCod}.`
+          : `COD is only available for orders below ₹${maxCod}.`
+        : `Pay with cash (plus ₹${codCharge} COD service charge) when your order arrives`
     }
   ];
 
@@ -46,7 +76,7 @@ const PaymentStep = ({ paymentMethod, onSetPaymentMethod, codEnabled = true, onB
 
       <div className="space-y-4">
         {paymentMethods.map((method) => {
-          const isDisabled = method.id === 'cod' && !codEnabled;
+          const isDisabled = method.id === 'cod' && isCodOptionDisabled;
           return (
             <label
               key={method.id}
@@ -64,7 +94,7 @@ const PaymentStep = ({ paymentMethod, onSetPaymentMethod, codEnabled = true, onB
                 value={method.id}
                 disabled={isDisabled}
                 checked={paymentMethod === method.id}
-                onChange={(e) => onSetPaymentMethod(e.target.value)}
+                onChange={(e) => selectPaymentMethod && selectPaymentMethod(e.target.value)}
                 className={`w-5 h-5 border-slate-300 focus:ring-indigo-600 ${isDisabled ? 'text-slate-300 cursor-not-allowed' : 'text-indigo-600 cursor-pointer'}`}
               />
               <div className={`p-3 rounded-2xl ${isDisabled ? 'bg-slate-200 text-slate-400' : paymentMethod === method.id ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>
@@ -86,6 +116,20 @@ const PaymentStep = ({ paymentMethod, onSetPaymentMethod, codEnabled = true, onB
         })}
       </div>
 
+      {codDisabledByLimits && (
+        <div className="p-5 rounded-3xl bg-amber-50 border border-amber-200/60 flex items-start gap-4 mt-6">
+          <div className="p-2 rounded-xl bg-amber-100 text-amber-800 flex-shrink-0">
+            <AlertTriangle className="w-5 h-5 animate-bounce" />
+          </div>
+          <div className="text-xs text-amber-800 font-medium leading-relaxed">
+            <span className="font-extrabold uppercase tracking-tight block mb-0.5">COD Limit Restriction</span>
+            {isCodBelowMinimum
+              ? `Your cart subtotal (₹${subtotal.toLocaleString()}) is below the minimum Cash on Delivery limit of ₹${minCod}. Please add more items or choose UPI/Card payment.`
+              : `Your cart subtotal (₹${subtotal.toLocaleString()}) exceeds the maximum Cash on Delivery limit of ₹${maxCod}. Please select card/UPI payment.`}
+          </div>
+        </div>
+      )}
+
       {!codEnabled && (
         <div className="p-5 rounded-3xl bg-amber-50 border border-amber-200/60 flex items-start gap-4 mt-6">
           <div className="p-2 rounded-xl bg-amber-100 text-amber-800 flex-shrink-0">
@@ -93,7 +137,7 @@ const PaymentStep = ({ paymentMethod, onSetPaymentMethod, codEnabled = true, onB
           </div>
           <div className="text-xs text-amber-800 font-medium leading-relaxed">
             <span className="font-extrabold uppercase tracking-tight block mb-0.5">Prepaid Orders Only</span>
-            Currently, we accept only prepaid orders. Cash on Delivery (COD) is temporarily disabled.
+            Currently, we accept only prepaid orders. Cash on Delivery (COD) is temporarily disabled by management.
           </div>
         </div>
       )}

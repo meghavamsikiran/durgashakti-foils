@@ -18,6 +18,7 @@ const Checkout = () => {
     paymentMethod,
     setPaymentMethod,
     codEnabled,
+    shippingSettings,
     savedAddresses,
     selectedAddressId,
     shippingInfo,
@@ -34,6 +35,37 @@ const Checkout = () => {
     }
   };
 
+  // Calculate dynamic totals for the sticky footer and rendering
+  let shippingCost = 70.0;
+  let enableFreeShipping = true;
+  let freeShippingThreshold = 1099.0;
+  let enableShipping = true;
+  let codCharge = 40.0;
+
+  if (shippingSettings) {
+    enableShipping = shippingSettings.enableShipping !== false;
+    enableFreeShipping = shippingSettings.enableFreeShipping !== false;
+    freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? 1099);
+    shippingCost = Number(shippingSettings.defaultShippingCharge ?? 70);
+    codCharge = Number(shippingSettings.codCharge ?? 40);
+  }
+
+  let calculatedShipping = 0;
+  if (enableShipping) {
+    if (enableFreeShipping && total >= freeShippingThreshold) {
+      calculatedShipping = 0;
+    } else {
+      calculatedShipping = shippingCost;
+    }
+  }
+
+  let activeCodCharge = 0;
+  if (paymentMethod === 'cod') {
+    activeCodCharge = codCharge;
+  }
+
+  const grandTotal = total + calculatedShipping + (total * 0.18) + activeCodCharge;
+
   return (
     <div className="min-h-screen bg-slate-50/50 pb-32 lg:pb-12">
       <CheckoutStepper step={checkoutStep} />
@@ -44,23 +76,23 @@ const Checkout = () => {
           <div className="lg:col-span-8 space-y-8">
             <AnimatePresence mode="wait">
               {checkoutStep === 'shipping' ? (
-                <AddressStep 
+                <AddressStep
+                  key="shipping"
                   savedAddresses={savedAddresses}
                   selectedAddressId={selectedAddressId}
                   shippingInfo={shippingInfo}
+                  setShippingInfo={setShippingInfo}
                   onSelectAddress={handleSelectAddress}
-                  onInputChange={(e) => {
-                    const { name, value } = e.target;
-                    setShippingInfo(prev => ({ ...prev, [name]: value }));
-                  }}
-                  onSetShippingInfo={setShippingInfo}
                   onContinue={handleContinueToPayment}
                 />
               ) : (
-                <PaymentStep 
+                <PaymentStep
+                  key="payment"
                   paymentMethod={paymentMethod}
-                  onSetPaymentMethod={setPaymentMethod}
+                  setPaymentMethod={setPaymentMethod}
                   codEnabled={codEnabled}
+                  shippingSettings={shippingSettings}
+                  subtotal={total}
                   onBack={() => setCheckoutStep('shipping')}
                 />
               )}
@@ -74,6 +106,8 @@ const Checkout = () => {
                 total={total}
                 checkoutStep={checkoutStep}
                 loading={loading}
+                shippingSettings={shippingSettings}
+                paymentMethod={paymentMethod}
                 onPlaceOrder={handlePlaceOrder}
               />
             </div>
@@ -85,7 +119,7 @@ const Checkout = () => {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-50 flex items-center justify-between gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
         <div className="flex flex-col">
           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Amount</span>
-          <span className="text-xl font-black text-indigo-600">₹{(total + 350 + (total * 0.18)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span className="text-xl font-black text-indigo-600">₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         {checkoutStep === 'shipping' ? (
           <Button onClick={handleContinueToPayment} className="rounded-xl px-8 h-12 font-black uppercase tracking-widest">Next Step</Button>

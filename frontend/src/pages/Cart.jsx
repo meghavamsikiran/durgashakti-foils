@@ -1,25 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Plus, Minus, ShoppingBag, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useCart } from '../contexts/CartContext';
 import { toast } from 'sonner';
 import api, { formatImageUrl } from '../utils/api';
 import PageLoader from '../components/ui/PageLoader';
+import settingsService from '../services/settings.service';
 
 const Cart = () => {
   const navigate = useNavigate();
   const { cart, updateCartItem, removeFromCart, clearCart, loading } = useCart();
   const [products, setProducts] = useState({});
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [shippingSettings, setShippingSettings] = useState(null);
   const [removingProductId, setRemovingProductId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
 
   useEffect(() => {
     fetchProducts();
+    fetchShippingSettings();
   }, []);
+
+  const fetchShippingSettings = async () => {
+    try {
+      const data = await settingsService.getPublicSettings();
+      if (data && data.shipping_settings) {
+        setShippingSettings(data.shipping_settings);
+      }
+    } catch (error) {
+      console.error('Error fetching shipping settings:', error);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -258,32 +272,70 @@ const Cart = () => {
               >
                 <h2 className="text-2xl font-bold mb-6" style={{ fontFamily: 'Manrope' }}>
                   Order Summary
-                </h2>
+                </h2>                {(() => {
+                  let shippingCost = 70.0;
+                  let enableFreeShipping = true;
+                  let freeShippingThreshold = 1099.0;
+                  let enableShipping = true;
 
-                <div className="space-y-4 mb-6">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground text-sm font-semibold">Subtotal</span>
-                    <span className="font-bold text-slate-800" data-testid="cart-subtotal">₹{total.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground text-sm font-semibold">Shipping Charges</span>
-                    <span className="font-bold text-slate-800">₹350.00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground text-sm font-semibold">SGST (9%)</span>
-                    <span className="font-bold text-slate-800">₹{(total * 0.09).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground text-sm font-semibold">CGST (9%)</span>
-                    <span className="font-bold text-slate-800">₹{(total * 0.09).toFixed(2)}</span>
-                  </div>
-                  <div className="border-t border-border/50 pt-4 flex justify-between">
-                    <span className="text-lg font-bold text-slate-900">Total</span>
-                    <span className="text-2xl font-extrabold text-indigo-650" style={{ fontFamily: 'Manrope' }} data-testid="cart-total">
-                      ₹{(total + 350 + (total * 0.18)).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
+                  if (shippingSettings) {
+                    enableShipping = shippingSettings.enableShipping !== false;
+                    enableFreeShipping = shippingSettings.enableFreeShipping !== false;
+                    freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? 1099);
+                    shippingCost = Number(shippingSettings.defaultShippingCharge ?? 70);
+                  }
+
+                  let calculatedShipping = 0;
+                  if (enableShipping) {
+                    if (enableFreeShipping && total >= freeShippingThreshold) {
+                      calculatedShipping = 0;
+                    } else {
+                      calculatedShipping = shippingCost;
+                    }
+                  }
+
+                  const cgst = total * 0.09;
+                  const sgst = total * 0.09;
+                  const grandTotal = total + calculatedShipping + cgst + sgst;
+
+                  return (
+                    <>
+                      {enableFreeShipping && total < freeShippingThreshold && (
+                        <div className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs rounded-sm p-3.5 mb-5 font-bold flex items-center gap-2 animate-pulse">
+                          <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                          <span>Add ₹{(freeShippingThreshold - total).toFixed(2)} more for <span className="underline uppercase tracking-wide">FREE SHIPPING</span>!</span>
+                        </div>
+                      )}
+
+                      <div className="space-y-4 mb-6">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground text-sm font-semibold">Subtotal</span>
+                          <span className="font-bold text-slate-800" data-testid="cart-subtotal">₹{total.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground text-sm font-semibold">Shipping Charges</span>
+                          <span className="font-bold text-slate-800">
+                            {calculatedShipping > 0 ? `₹${calculatedShipping.toFixed(2)}` : 'FREE'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground text-sm font-semibold">SGST (9%)</span>
+                          <span className="font-bold text-slate-800">₹{sgst.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground text-sm font-semibold">CGST (9%)</span>
+                          <span className="font-bold text-slate-800">₹{cgst.toFixed(2)}</span>
+                        </div>
+                        <div className="border-t border-border/50 pt-4 flex justify-between">
+                          <span className="text-lg font-bold text-slate-900">Total</span>
+                          <span className="text-2xl font-extrabold text-indigo-650" style={{ fontFamily: 'Manrope' }} data-testid="cart-total">
+                            ₹{grandTotal.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
 
                 <Button
                   onClick={() => navigate('/checkout')}

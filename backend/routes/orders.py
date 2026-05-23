@@ -80,12 +80,52 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         server_total += effective_price * item.quantity
     server_total = round(server_total, 2)
     
-    # GST and Shipping calculations (CGST 9% + SGST 9% + flat ₹350 shipping)
+    # Dynamic Shipping and COD Settings calculation from Database
+    from models import SettingModel
+    setting_res = await db.execute(select(SettingModel).where(SettingModel.key == "shipping_settings"))
+    setting_obj = setting_res.scalar_one_or_none()
+    
+    # Enterprise Fallback Defaults
+    shipping_config = {
+        "enableShipping": True,
+        "enableFreeShipping": True,
+        "freeShippingThreshold": 1099.0,
+        "defaultShippingCharge": 70.0,
+        "minimumOrderAmount": 0.0,
+        "codEnabled": True,
+        "codCharge": 40.0,
+        "minimumCodAmount": 300.0,
+        "maximumCodAmount": 5000.0
+    }
+    if setting_obj and isinstance(setting_obj.value, dict):
+        for k, default_val in shipping_config.items():
+            shipping_config[k] = setting_obj.value.get(k, default_val)
+            
+    # Calculations
     taxable_amount = server_total
     cgst_amount = round(taxable_amount * 0.09, 2)
     sgst_amount = round(taxable_amount * 0.09, 2)
-    shipping_cost = 350.0
-    grand_total = round(taxable_amount + cgst_amount + sgst_amount + shipping_cost, 2)
+    
+    # Calculate Shipping dynamically
+    shipping_cost = 0.0
+    if shipping_config["enableShipping"]:
+        if shipping_config["enableFreeShipping"] and taxable_amount >= float(shipping_config["freeShippingThreshold"]):
+            shipping_cost = 0.0
+        else:
+            shipping_cost = float(shipping_config["defaultShippingCharge"])
+            
+    # Calculate COD dynamically with limits validation
+    cod_charge = 0.0
+    if order_data.payment_method == "cod":
+        if not shipping_config["codEnabled"]:
+            raise HTTPException(status_code=400, detail="Cash on Delivery is currently disabled.")
+        if taxable_amount < float(shipping_config["minimumCodAmount"]):
+            raise HTTPException(status_code=400, detail=f"Order amount is below the minimum Cash on Delivery limit of ₹{shipping_config['minimumCodAmount']}.")
+        if taxable_amount > float(shipping_config["maximumCodAmount"]):
+            raise HTTPException(status_code=400, detail=f"Order amount exceeds the maximum Cash on Delivery limit of ₹{shipping_config['maximumCodAmount']}.")
+        cod_charge = float(shipping_config["codCharge"])
+        
+    grand_total = round(taxable_amount + cgst_amount + sgst_amount + shipping_cost + cod_charge, 2)
 
     enriched_items = []
     for item in order_data.items:
@@ -101,6 +141,17 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
     payment_status = "Cash On Delivery" if order_data.payment_method == "cod" else "pending"
     stock_applied = True if order_data.payment_method == "cod" else False
 
+    # Store shipping breakdown inside shipping_address metadata
+    shipping_address_dict = order_data.shipping_address.model_dump()
+    shipping_address_dict["shipping_metadata"] = {
+        "subtotal": server_total,
+        "shipping_cost": shipping_cost,
+        "cgst_amount": cgst_amount,
+        "sgst_amount": sgst_amount,
+        "cod_charge": cod_charge,
+        "grand_total": grand_total
+    }
+
     order = OrderModel(
         order_number=order_number,
         user_id=current_user.id,
@@ -111,7 +162,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         payment_status=payment_status,
         order_status=order_status,
         stock_applied=stock_applied,
-        shipping_address=order_data.shipping_address.model_dump(),
+        shipping_address=shipping_address_dict,
         idempotency_key=order_data.idempotency_key,
         created_at=now,
         updated_at=now,

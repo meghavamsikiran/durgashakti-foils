@@ -419,11 +419,12 @@ const OrderDetailsPage = () => {
           <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Order Summary</h3>
             {(() => {
-              const subtotal = order.items?.reduce((acc, item) => acc + (item.price * item.quantity), 0) || 0;
-              const isNewOrderLayout = Number(order.total_amount) > subtotal;
-              const shipping = isNewOrderLayout ? 350.0 : 0.0;
-              const cgst = isNewOrderLayout ? subtotal * 0.09 : 0.0;
-              const sgst = isNewOrderLayout ? subtotal * 0.09 : 0.0;
+              const metadata = order.shipping_address?.shipping_metadata;
+              const subtotal = metadata?.subtotal ?? (order.items?.reduce((acc, item) => acc + (item.price * item.quantity), 0) || 0);
+              const shipping = metadata?.shipping_cost ?? (Number(order.total_amount) > subtotal ? 350.0 : 0.0);
+              const cgst = metadata?.cgst_amount ?? (Number(order.total_amount) > subtotal ? subtotal * 0.09 : 0.0);
+              const sgst = metadata?.sgst_amount ?? (Number(order.total_amount) > subtotal ? subtotal * 0.09 : 0.0);
+              const codCharge = metadata?.cod_charge ?? 0.0;
 
               return (
                 <div className="space-y-2 text-xs text-slate-500 font-semibold">
@@ -440,6 +441,12 @@ const OrderDetailsPage = () => {
                       }
                     </span>
                   </div>
+                  {codCharge > 0 && (
+                    <div className="flex justify-between">
+                      <span>COD Handling Fee:</span>
+                      <span className="text-slate-900">₹{codCharge.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
                   {cgst > 0 && (
                     <>
                       <div className="flex justify-between">
