@@ -350,7 +350,7 @@ const OrderDetailsPage = () => {
             {(order.payment_status === 'Paid' || order.payment_status === 'completed') && (
               <button
                 onClick={handleDownloadInvoice}
-                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-650 hover:text-indigo-600 border border-slate-300 rounded-xl px-4 py-2.5 bg-white transition-all shadow-sm hover:bg-slate-50"
+                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-indigo-600 border border-slate-300 rounded-xl px-4 py-2.5 bg-white transition-all shadow-sm hover:bg-slate-50"
               >
                 <ExternalLink className="w-3.5 h-3.5" /> Invoice
               </button>
@@ -405,7 +405,7 @@ const OrderDetailsPage = () => {
                   )}
                 </div>
               ) : (
-                <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-150/60 space-y-1 font-semibold">
+                <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-100/60 space-y-1 font-semibold">
                   <p className="font-extrabold flex items-center gap-1.5 text-amber-700">
                     <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Pending Payment
                   </p>
@@ -418,7 +418,7 @@ const OrderDetailsPage = () => {
           {/* Column 3: Order Summary */}
           <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Order Summary</h3>
-            <div className="space-y-2 text-xs text-slate-655 font-semibold">
+            <div className="space-y-2 text-xs text-slate-500 font-semibold">
               <div className="flex justify-between">
                 <span>Item(s) Subtotal:</span>
                 <span className="text-slate-900">₹{(order.total_amount - (order.shipping_cost || 0)).toLocaleString()}</span>
@@ -430,7 +430,7 @@ const OrderDetailsPage = () => {
               <div className="h-px bg-slate-100 my-1" />
               <div className="flex justify-between font-black text-slate-900 text-sm pt-0.5">
                 <span>Grand Total:</span>
-                <span className="text-indigo-650 text-base">₹{order.total_amount.toLocaleString()}</span>
+                <span className="text-indigo-600 text-base">₹{order.total_amount.toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -497,7 +497,7 @@ const OrderDetailsPage = () => {
                   />
                   <div className="text-center flex flex-col items-center justify-center pointer-events-none">
                     <Upload className="w-8 h-8 text-slate-400 group-hover:text-indigo-500 transition-colors mb-2" />
-                    <span className="text-xs font-bold text-slate-700 group-hover:text-indigo-650">Select Images / Videos</span>
+                    <span className="text-xs font-bold text-slate-700 group-hover:text-indigo-600">Select Images / Videos</span>
                     <span className="text-[10px] text-slate-400 mt-1">Upload multiple files up to 20MB each</span>
                   </div>
                 </div>
@@ -570,7 +570,7 @@ const OrderDetailsPage = () => {
             <button 
               onClick={handlePayOnline}
               disabled={payingOnline}
-              className="bg-indigo-650 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[10px] px-6 py-3.5 rounded-xl shadow-md shadow-indigo-100 transition-all whitespace-nowrap"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[10px] px-6 py-3.5 rounded-xl shadow-md shadow-indigo-100 transition-all whitespace-nowrap"
             >
               {payingOnline ? 'Processing...' : 'Pay Online Now'}
             </button>
@@ -581,7 +581,7 @@ const OrderDetailsPage = () => {
         {!isReturning && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-50">
-              <h3 className="text-xs font-black text-slate-550 uppercase tracking-widest">Shipment Progress</h3>
+              <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Shipment Progress</h3>
               <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                 order.order_status === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
                 order.order_status === 'cancelled' ? 'bg-rose-100 text-rose-800' :
@@ -634,12 +634,12 @@ const OrderDetailsPage = () => {
                       <div key={idx} className="flex flex-col items-center w-[25%] text-center">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all duration-300 ${
                           step.active 
-                            ? 'bg-indigo-650 text-white ring-4 ring-indigo-500/10' 
+                            ? 'bg-indigo-600 text-white ring-4 ring-indigo-500/10' 
                             : 'bg-slate-200 text-slate-400'
                         }`}>
                           {step.active ? <Check className="w-3.5 h-3.5 stroke-[3px]" /> : <span className="text-[10px] font-bold">{idx + 1}</span>}
                         </div>
-                        <p className={`text-xs mt-2.5 ${step.active ? 'text-indigo-650 font-black' : 'text-slate-450 font-semibold'}`}>
+                        <p className={`text-xs mt-2.5 ${step.active ? 'text-indigo-600 font-black' : 'text-slate-400 font-semibold'}`}>
                           {step.label}
                         </p>
                         {step.date && (
@@ -699,7 +699,7 @@ const OrderDetailsPage = () => {
                     href={order.tracking_url} 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="text-[9px] font-black text-indigo-650 hover:underline uppercase tracking-wider pl-1.5 border-l border-slate-200"
+                    className="text-[9px] font-black text-indigo-600 hover:underline uppercase tracking-wider pl-1.5 border-l border-slate-200"
                   >
                     Track Package
                   </a>
@@ -718,10 +718,10 @@ const OrderDetailsPage = () => {
                   <img 
                     src={formatImageUrl(item.image_url)} 
                     alt={item.product_name} 
-                    className="w-24 h-24 rounded-xl object-cover bg-slate-50 border border-slate-150 shrink-0 shadow-sm" 
+                    className="w-24 h-24 rounded-xl object-cover bg-slate-50 border border-slate-200 shrink-0 shadow-sm" 
                   />
                   <div className="space-y-1.5 min-w-0">
-                    <h4 className="font-extrabold text-slate-900 text-sm hover:text-indigo-650 transition-colors cursor-pointer leading-snug">
+                    <h4 className="font-extrabold text-slate-900 text-sm hover:text-indigo-600 transition-colors cursor-pointer leading-snug">
                       {item.product_name}
                     </h4>
                     <p className="text-xs text-slate-400 font-bold">Sold by: <span className="text-indigo-600 font-black">DurgaShakti Foils</span></p>

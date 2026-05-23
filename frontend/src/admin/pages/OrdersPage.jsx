@@ -7,7 +7,7 @@ import {
   ShoppingBag, Clock, CheckCircle2, Truck, AlertCircle, 
   Search, Filter, ChevronRight, XCircle, RefreshCcw, 
   IndianRupee, Calendar, MoreHorizontal, Eye, PackageCheck,
-  MapPin, Phone as PhoneIcon, ChevronDown, ChevronUp
+  MapPin, Phone as PhoneIcon, ChevronDown, ChevronUp, Check
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { formatImageUrl } from '../../utils/api';
@@ -521,7 +521,7 @@ const OrdersPage = () => {
                 {/* Column 2: Payment Details */}
                 <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment Method</h4>
-                  <div className="text-xs text-slate-655 space-y-2 font-semibold">
+                  <div className="text-xs text-slate-500 space-y-2 font-semibold">
                     <p className="font-extrabold text-slate-900 uppercase tracking-wider">{selectedOrderForModal.payment_method || 'Razorpay'}</p>
                     {selectedOrderForModal.payment_status === 'Paid' || selectedOrderForModal.payment_status === 'completed' ? (
                       <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1">
@@ -532,11 +532,11 @@ const OrdersPage = () => {
                           <p className="font-mono text-slate-500 break-all select-all">Txn: {selectedOrderForModal.transaction_id}</p>
                         )}
                         {selectedOrderForModal.transaction_date && (
-                          <p className="text-slate-550">Date: {new Date(selectedOrderForModal.transaction_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                          <p className="text-slate-500">Date: {new Date(selectedOrderForModal.transaction_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                         )}
                       </div>
                     ) : (
-                      <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-150/60 space-y-1">
+                      <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-100/60 space-y-1">
                         <p className="font-extrabold flex items-center gap-1.5 text-amber-700">
                           <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Pending Payment
                         </p>
@@ -549,7 +549,7 @@ const OrdersPage = () => {
                 {/* Column 3: Order Summary */}
                 <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Order Summary</h4>
-                  <div className="space-y-1.5 text-xs text-slate-655 font-semibold">
+                  <div className="space-y-1.5 text-xs text-slate-500 font-semibold">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
                       <span className="text-slate-900">₹{(selectedOrderForModal.total_amount - (selectedOrderForModal.shipping_cost || 0)).toLocaleString()}</span>
@@ -561,7 +561,7 @@ const OrdersPage = () => {
                     <div className="h-px bg-slate-200/60 my-1" />
                     <div className="flex justify-between font-black text-slate-900 text-sm">
                       <span>Grand Total:</span>
-                      <span className="text-indigo-650 text-base">₹{Number(selectedOrderForModal.total_amount).toLocaleString('en-IN')}</span>
+                      <span className="text-indigo-600 text-base">₹{Number(selectedOrderForModal.total_amount).toLocaleString('en-IN')}</span>
                     </div>
                   </div>
                 </div>
@@ -611,7 +611,7 @@ const OrdersPage = () => {
                       <div className="absolute top-[28px] left-[10%] right-[10%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
                       {/* Active Line */}
                       <div 
-                        className="absolute top-[28px] left-[10%] h-1 bg-indigo-655 -translate-y-1/2 rounded-full transition-all duration-700" 
+                        className="absolute top-[28px] left-[10%] h-1 bg-indigo-600 -translate-y-1/2 rounded-full transition-all duration-700" 
                         style={{ 
                           width: isDelivered ? '80%' : isShipped ? '53.33%' : isConfirmed ? '26.66%' : '0%' 
                         }} 
@@ -622,11 +622,11 @@ const OrdersPage = () => {
                         {steps.map((step, idx) => (
                           <div key={idx} className="flex flex-col items-center w-[25%] text-center">
                             <div className={`w-7 h-7 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all ${
-                              step.active ? 'bg-indigo-650 text-white ring-4 ring-indigo-500/10' : 'bg-slate-200 text-slate-400'
+                              step.active ? 'bg-indigo-600 text-white ring-4 ring-indigo-500/10' : 'bg-slate-200 text-slate-400'
                             }`}>
                               {step.active ? <Check className="w-3 h-3 stroke-[3px]" /> : <span className="text-[9px] font-bold">{idx + 1}</span>}
                             </div>
-                            <p className={`text-[11px] mt-2 ${step.active ? 'text-indigo-650 font-extrabold' : 'text-slate-400 font-bold'}`}>
+                            <p className={`text-[11px] mt-2 ${step.active ? 'text-indigo-600 font-extrabold' : 'text-slate-400 font-bold'}`}>
                               {step.label}
                             </p>
                             {step.date && (
@@ -679,9 +679,9 @@ const OrdersPage = () => {
                               <p className="text-[9px] text-slate-400 uppercase tracking-wider font-bold">Sold by: DurgaShakti Foils</p>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-xs text-center font-black text-slate-550">{item.quantity}</td>
+                          <td className="px-6 py-4 text-xs text-center font-black text-slate-500">{item.quantity}</td>
                           <td className="px-6 py-4 text-xs text-right font-black text-slate-700">₹{Number(item.price).toLocaleString('en-IN')}</td>
-                          <td className="px-6 py-4 text-xs text-right font-black text-indigo-650">₹{Number(item.price * item.quantity).toLocaleString('en-IN')}</td>
+                          <td className="px-6 py-4 text-xs text-right font-black text-indigo-600">₹{Number(item.price * item.quantity).toLocaleString('en-IN')}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -695,15 +695,15 @@ const OrdersPage = () => {
                   <Truck className="w-6 h-6 text-sky-600 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-[10px] font-black text-sky-700 uppercase tracking-widest mb-1.5">Courier & Tracking details</h4>
-                    <div className="text-xs text-slate-650 leading-relaxed font-semibold">
+                    <div className="text-xs text-slate-600 leading-relaxed font-semibold">
                       <p>Carrier Name: <span className="font-extrabold text-slate-900">{selectedOrderForModal.carrier || 'Courier'}</span></p>
-                      <p>Tracking Number: <span className="font-mono text-slate-900 select-all font-extrabold">{selectedOrderForModal.tracking_id}</span></p>
+                      <p className="mt-0.5">Tracking Number: <span className="font-mono text-slate-900 select-all font-extrabold">{selectedOrderForModal.tracking_id}</span></p>
                       {selectedOrderForModal.tracking_url && (
                         <a 
                           href={selectedOrderForModal.tracking_url} 
                           target="_blank" 
                           rel="noreferrer" 
-                          className="text-[10px] font-black text-indigo-655 uppercase tracking-widest hover:underline mt-2 inline-block"
+                          className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline mt-2 inline-block"
                         >
                           Launch Tracking URL &rsaquo;
                         </a>
