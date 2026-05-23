@@ -99,15 +99,15 @@ const ShippingSettingsPage = () => {
 
   const handleSave = async () => {
     // Validations
-    if (freeShippingThreshold < 0 || defaultShippingCharge < 0 || minimumOrderAmount < 0) {
+    if (Number(freeShippingThreshold) < 0 || Number(defaultShippingCharge) < 0 || Number(minimumOrderAmount) < 0) {
       toast.error('Shipping settings cannot contain negative values.');
       return;
     }
-    if (codCharge < 0 || minimumCodAmount < 0 || maximumCodAmount < 0) {
+    if (Number(codCharge) < 0 || Number(minimumCodAmount) < 0 || Number(maximumCodAmount) < 0) {
       toast.error('COD configurations cannot contain negative values.');
       return;
     }
-    if (minimumCodAmount >= maximumCodAmount) {
+    if (Number(minimumCodAmount) >= Number(maximumCodAmount)) {
       toast.error('Minimum COD limit must be strictly less than maximum COD limit.');
       return;
     }
@@ -235,7 +235,7 @@ const ShippingSettingsPage = () => {
                     disabled={!isEditable || !enableFreeShipping}
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
                     value={freeShippingThreshold}
-                    onChange={(e) => setFreeShippingThreshold(e.target.value)}
+                    onChange={(e) => setFreeShippingThreshold(e.target.value === '' ? '' : Number(e.target.value))}
                   />
                 </div>
 
@@ -246,7 +246,7 @@ const ShippingSettingsPage = () => {
                     disabled={!isEditable || !enableShipping}
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
                     value={defaultShippingCharge}
-                    onChange={(e) => setDefaultShippingCharge(e.target.value)}
+                    onChange={(e) => setDefaultShippingCharge(e.target.value === '' ? '' : Number(e.target.value))}
                   />
                 </div>
 
@@ -257,7 +257,7 @@ const ShippingSettingsPage = () => {
                     disabled={!isEditable}
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800"
                     value={minimumOrderAmount}
-                    onChange={(e) => setMinimumOrderAmount(e.target.value)}
+                    onChange={(e) => setMinimumOrderAmount(e.target.value === '' ? '' : Number(e.target.value))}
                   />
                 </div>
 
@@ -316,7 +316,7 @@ const ShippingSettingsPage = () => {
                     disabled={!isEditable || !codEnabled}
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
                     value={codCharge}
-                    onChange={(e) => setCodCharge(e.target.value)}
+                    onChange={(e) => setCodCharge(e.target.value === '' ? '' : Number(e.target.value))}
                   />
                 </div>
 
@@ -327,7 +327,7 @@ const ShippingSettingsPage = () => {
                     disabled={!isEditable || !codEnabled}
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
                     value={minimumCodAmount}
-                    onChange={(e) => setMinimumCodAmount(e.target.value)}
+                    onChange={(e) => setMinimumCodAmount(e.target.value === '' ? '' : Number(e.target.value))}
                   />
                 </div>
 
@@ -338,7 +338,7 @@ const ShippingSettingsPage = () => {
                     disabled={!isEditable || !codEnabled}
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
                     value={maximumCodAmount}
-                    onChange={(e) => setMaximumCodAmount(e.target.value)}
+                    onChange={(e) => setMaximumCodAmount(e.target.value === '' ? '' : Number(e.target.value))}
                   />
                 </div>
 

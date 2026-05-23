@@ -194,9 +194,21 @@ const Cart = () => {
                           <p className="text-sm text-muted-foreground mb-3">
                             {product.size} • {product.thickness}
                           </p>
-                          <p className="text-xl font-bold" style={{ fontFamily: 'Manrope' }}>
-                            ₹{product.price}
-                          </p>
+                          <div className="flex items-baseline gap-2 flex-wrap">
+                            <p className="text-xl font-bold" style={{ fontFamily: 'Manrope' }}>
+                              ₹{product.discount_price || product.price}
+                            </p>
+                            {product.discount_price && product.discount_price < product.price && (
+                              <>
+                                <span className="text-sm text-muted-foreground line-through">
+                                  M.R.P.: ₹{product.price}
+                                </span>
+                                <span className="text-xs font-semibold text-green-600">
+                                  ({Math.round(((product.price - product.discount_price) / product.price) * 100)}% off)
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex flex-col items-end justify-center h-full">
