@@ -59,6 +59,7 @@ const Login = () => {
       if (isLogin) {
         const res = await login(email, password);
         toast.success('Login successful!');
+        window.dispatchEvent(new Event('triggerLoginLoader'));
         const role = res.user?.role;
         if (role === 'SUPER_ADMIN') {
           navigate('/superadmin/dashboard');
@@ -70,6 +71,7 @@ const Login = () => {
       } else {
         await register(email, password, fullName, phone);
         toast.success('Registration successful!');
+        window.dispatchEvent(new Event('triggerLoginLoader'));
         navigate('/shop');
       }
     } catch (error) {
@@ -100,6 +102,7 @@ const Login = () => {
             try {
               const res = await loginWithGoogle(tokenResponse.access_token);
               toast.success('Successfully authenticated with Google!');
+              window.dispatchEvent(new Event('triggerLoginLoader'));
               const role = res.user?.role;
               if (role === 'SUPER_ADMIN') {
                 navigate('/superadmin/dashboard');

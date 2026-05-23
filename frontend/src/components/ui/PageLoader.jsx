@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
  * Features a circular track, a spinning indigo progress arc, the central branded 
  * orange trident icon, and customized uppercase labels.
  * 
- * Centered relative to the entire screen using a fixed blurred backdrop.
+ * Fully transparent background — no blur, no overlay tint.
  * Suppressed completely during page transition, browser refresh, or initial load 
  * to prevent overlapping or consecutive loader flashes.
  */
@@ -38,11 +38,11 @@ const PageLoader = ({ text }) => {
   const displayText = text || defaultText;
 
   return (
-    <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center bg-slate-50/60 backdrop-blur-[2px] animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center pointer-events-none">
       <div className="flex flex-col items-center justify-center gap-5">
         <div className="relative w-16 h-16 flex items-center justify-center">
           {/* Circular track */}
-          <div className="absolute inset-0 rounded-full border-[3.5px] border-slate-100" />
+          <div className="absolute inset-0 rounded-full border-[3.5px] border-slate-200/60" />
           {/* Spinning indicator */}
           <div className="absolute inset-0 rounded-full border-[3.5px] border-transparent border-t-indigo-600 animate-spin" />
           {/* Branded orange logo in center */}

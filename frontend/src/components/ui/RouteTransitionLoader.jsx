@@ -53,6 +53,19 @@ const RouteTransitionLoader = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Listen for login-triggered loader event
+  useEffect(() => {
+    const handleLoginLoader = () => {
+      if (typeof window !== 'undefined') {
+        window.__routeTransitionActive = true;
+        window.__initialPageLoadActive = true;
+      }
+      setShow(true);
+    };
+    window.addEventListener('triggerLoginLoader', handleLoginLoader);
+    return () => window.removeEventListener('triggerLoginLoader', handleLoginLoader);
+  }, []);
+
   useEffect(() => {
     if (show) {
       const timer = setTimeout(() => {
