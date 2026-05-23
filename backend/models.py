@@ -79,6 +79,7 @@ class ProductModel(Base):
     width = Column(String(50), default="295mm")
     base_name = Column(String(255), nullable=True)
     variant_sku = Column(String(100), nullable=True, index=True)
+    is_active = Column(Boolean, default=True, nullable=False, server_default=text("'true'"))
     created_by = Column(UUID(as_uuid=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     updated_at = Column(DateTime(timezone=True), nullable=True, onupdate=utcnow)
@@ -86,6 +87,17 @@ class ProductModel(Base):
     __table_args__ = (
         Index("ix_products_stock", "stock_quantity"),
     )
+
+
+# ── Categories ───────────────────────────────────────────────────────────
+class CategoryModel(Base):
+    __tablename__ = "categories"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), unique=True, nullable=False, index=True)
+    is_active = Column(Boolean, default=True, nullable=False, server_default=text("'true'"))
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=True, onupdate=utcnow)
 
 
 # ── Orders ───────────────────────────────────────────────────────────────

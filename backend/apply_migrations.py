@@ -73,6 +73,37 @@ async def run_migrations():
         ))
         logger.info("Other columns (width, base_name, variant_sku, created_by, updated_at) checked/added.")
 
+        # 3. Add product activation toggles
+        await conn.execute(text(
+            "ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;"
+        ))
+        logger.info("Column 'is_active' checked/added to 'products' table.")
+
+        # 4. Create Categories table and index
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS categories (
+                id UUID PRIMARY KEY,
+                name VARCHAR(255) UNIQUE NOT NULL,
+                is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ
+            );
+        """))
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_categories_name ON categories(name);"))
+        logger.info("Table 'categories' and index checked/created.")
+
+        # Seed categories if empty
+        cat_count_res = await conn.execute(text("SELECT COUNT(*) FROM categories;"))
+        cat_count = cat_count_res.scalar()
+        if cat_count == 0:
+            import uuid
+            default_categories = ['Aluminum Foil', 'Catering Foil', 'Kitchen Foil']
+            for name in default_categories:
+                await conn.execute(text(
+                    "INSERT INTO categories (id, name, is_active, created_at) VALUES (:id, :name, TRUE, NOW());"
+                ), {"id": str(uuid.uuid4()), "name": name})
+            logger.info("Default categories seeded successfully.")
+
         logger.info("Checking and altering 'orders' table...")
         await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS carrier VARCHAR(120);"))
         await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_id VARCHAR(255);"))

@@ -112,6 +112,22 @@ const AnalyticsPage = () => {
     .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
     .slice(0, topLimit);
   const totalStockLeft = inventory.reduce((s, r) => s + (r.stock_left || 0), 0);
+  const categoryAnalytics = (summary.category_analytics || [])
+    .filter(c => (c.category || '').toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => (b.revenue || 0) - (a.revenue || 0));
+  const categoryChartData = categoryAnalytics
+    .slice(0, topLimit)
+    .map(c => ({
+      name: c.category || 'Uncategorized',
+      revenue: Number(c.revenue || 0),
+      stockValue: Number(c.stock_value || 0),
+      unitsSold: Number(c.units_sold || 0),
+    }));
+  const categoryTotals = categoryAnalytics.reduce((acc, c) => ({
+    revenue: acc.revenue + Number(c.revenue || 0),
+    stockValue: acc.stockValue + Number(c.stock_value || 0),
+    unitsSold: acc.unitsSold + Number(c.units_sold || 0),
+  }), { revenue: 0, stockValue: 0, unitsSold: 0 });
 
   const formatValue = (key, value) => {
     if (key === 'total_revenue' || key === 'total_inventory_value') return `₹${Number(value).toLocaleString('en-IN')}`;
@@ -290,6 +306,95 @@ const AnalyticsPage = () => {
               </PieChart>
             </ResponsiveContainer>
           )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+        <div className="xl:col-span-3 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+              <div className="w-1.5 h-6 bg-cyan-500 rounded-full"></div>
+              Category Performance
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest">
+                Revenue Rs.{Math.round(categoryTotals.revenue).toLocaleString('en-IN')}
+              </span>
+              <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest">
+                Stock Rs.{Math.round(categoryTotals.stockValue).toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
+          {(!categoryChartData || categoryChartData.length === 0) ? renderEmptyState() : (
+            <ResponsiveContainer width="100%" height={340}>
+              <BarChart data={categoryChartData} margin={{ top: 10, right: 20, left: 10, bottom: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }}
+                  angle={-18}
+                  textAnchor="end"
+                  height={70}
+                  tickFormatter={(name) => (name || '').length > 16 ? `${(name || '').substring(0, 14)}...` : name}
+                />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `Rs.${Math.round(val / 1000)}k`} />
+                <Tooltip
+                  cursor={{ fill: '#f8fafc' }}
+                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                  formatter={(value, name) => [
+                    name === 'unitsSold' ? Number(value).toLocaleString('en-IN') : `Rs.${Number(value).toLocaleString('en-IN')}`,
+                    name === 'stockValue' ? 'Stock Value' : name === 'unitsSold' ? 'Units Sold' : 'Revenue'
+                  ]}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
+                <Bar dataKey="revenue" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="stockValue" fill="#10b981" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="xl:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-8 py-6 bg-slate-50/50 border-b border-slate-200 flex items-center justify-between">
+            <h3 className="font-bold text-slate-800">Category Breakdown</h3>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white px-3 py-1 rounded-full border">
+              {categoryAnalytics.length} Groups
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-slate-50/30">
+                <tr>
+                  <th className="px-6 py-4 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-4 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Sold</th>
+                  <th className="px-6 py-4 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Revenue</th>
+                  <th className="px-6 py-4 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Stock Value</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {categoryAnalytics.slice(0, topLimit).map((cat) => (
+                  <tr key={cat.category} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-slate-800">{cat.category || 'Uncategorized'}</div>
+                      <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                        {cat.product_count || 0} Products | {cat.stock_quantity || 0} In Stock
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right font-black text-indigo-600">{cat.units_sold || 0}</td>
+                    <td className="px-6 py-4 text-right font-bold text-slate-800">Rs.{Number(cat.revenue || 0).toLocaleString('en-IN')}</td>
+                    <td className="px-6 py-4 text-right font-bold text-slate-800">Rs.{Number(cat.stock_value || 0).toLocaleString('en-IN')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {categoryAnalytics.length === 0 && (
+              <div className="p-10 text-center text-slate-500 font-medium italic">
+                No category analytics available.
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

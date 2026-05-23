@@ -12,11 +12,18 @@ const Shop = () => {
     const cachedResponse = apiClient.getCachedDataSync('/products');
     return cachedResponse?.data?.items || [];
   };
+  const getInitialCategories = () => {
+    const cachedResponse = apiClient.getCachedDataSync('/categories');
+    return cachedResponse?.data || [];
+  };
 
   const initialProducts = getInitialProducts();
+  const initialCategories = getInitialCategories();
 
   const [products, setProducts] = useState(initialProducts);
   const [filteredProducts, setFilteredProducts] = useState(initialProducts);
+  const [categories, setCategories] = useState(initialCategories);
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [loading, setLoading] = useState(!initialProducts.length);
   const [priceFilter, setPriceFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
@@ -51,8 +58,21 @@ const Shop = () => {
     }
   }, []);
 
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await apiClient.cachedGet('/categories');
+      setCategories(response.data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  }, []);
+
   const applyFilters = useCallback(() => {
     let filtered = [...products];
+
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter(p => p.category === categoryFilter);
+    }
 
     // Price filter
     if (priceFilter === 'under200') {
@@ -74,12 +94,13 @@ const Shop = () => {
 
     setFilteredProducts(filtered);
     setPage(1); // Reset to first page when filters change
-  }, [products, priceFilter, sortBy]);
+  }, [products, categoryFilter, priceFilter, sortBy]);
 
   useEffect(() => {
     fetchProducts();
     fetchProductsSilent();
-  }, [fetchProducts, fetchProductsSilent]);
+    fetchCategories();
+  }, [fetchProducts, fetchProductsSilent, fetchCategories]);
 
   useEffect(() => {
     applyFilters();
@@ -109,6 +130,38 @@ const Shop = () => {
               </div>
 
               <div className="space-y-6">
+                <div>
+                  <label className="text-sm font-semibold mb-3 block">Category</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="category"
+                        value="all"
+                        checked={categoryFilter === 'all'}
+                        onChange={(e) => setCategoryFilter(e.target.value)}
+                        className="w-4 h-4 text-primary"
+                        data-testid="filter-category-all"
+                      />
+                      <span className="text-sm">All Categories</span>
+                    </label>
+                    {categories.map(category => (
+                      <label key={category.id || category.name} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="category"
+                          value={category.name}
+                          checked={categoryFilter === category.name}
+                          onChange={(e) => setCategoryFilter(e.target.value)}
+                          className="w-4 h-4 text-primary"
+                          data-testid={`filter-category-${category.name}`}
+                        />
+                        <span className="text-sm">{category.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-sm font-semibold mb-3 block">Price Range</label>
                   <div className="space-y-2">

@@ -6,7 +6,7 @@ from sqlalchemy import select, func, or_, case
 from typing import Optional
 import database
 from database import get_db
-from models import OrderModel, ProductModel, UserModel, AuditLogModel
+from models import OrderModel, ProductModel, UserModel, AuditLogModel, CategoryModel
 from deps import UserSchema, require_permission, sanitize_search_term, row_to_dict, get_admin_user
 from datetime import datetime, timezone, timedelta
 
@@ -394,10 +394,68 @@ async def get_analytics_summary(
         metrics["security_events_count"] = security_events_count
         metrics["destructive_actions_count"] = destructive_actions_count
 
+    category_analytics = []
+    if has_products:
+        async with database.async_session_factory() as session:
+            prod_res = await session.execute(select(ProductModel.id, ProductModel.name, ProductModel.category, ProductModel.price, ProductModel.discount_price, ProductModel.stock_quantity))
+            products_info = prod_res.all()
+            prod_map = {str(p[0]): {"name": p[1], "category": p[2] or "Uncategorized", "price": float(p[4] or p[3] or 0), "stock": p[5]} for p in products_info}
+            
+            category_stats = {}
+            for pid, info in prod_map.items():
+                cat = info["category"]
+                if cat not in category_stats:
+                    category_stats[cat] = {
+                        "category": cat,
+                        "units_sold": 0,
+                        "revenue": 0.0,
+                        "stock_quantity": 0,
+                        "product_count": 0,
+                        "stock_value": 0.0
+                    }
+                category_stats[cat]["product_count"] += 1
+                category_stats[cat]["stock_quantity"] += info["stock"] or 0
+                category_stats[cat]["stock_value"] += (info["stock"] or 0) * info["price"]
+                
+            best_prods_items = results.get("best_sellers") or []
+            for items_json in best_prods_items:
+                for item in (items_json or []):
+                    pid = item.get("product_id")
+                    qty = int(item.get("quantity", 0))
+                    price = float(item.get("price") or 0.0)
+                    cat = "Uncategorized"
+                    if pid and str(pid) in prod_map:
+                        cat = prod_map[str(pid)]["category"]
+                    elif item.get("product_name"):
+                        name = item.get("product_name")
+                        for p_id, p_info in prod_map.items():
+                            if p_info["name"] == name:
+                                cat = p_info["category"]
+                                break
+                    
+                    if cat not in category_stats:
+                        category_stats[cat] = {
+                            "category": cat,
+                            "units_sold": 0,
+                            "revenue": 0.0,
+                            "stock_quantity": 0,
+                            "product_count": 0,
+                            "stock_value": 0.0
+                        }
+                    category_stats[cat]["units_sold"] += qty
+                    category_stats[cat]["revenue"] += qty * price
+            
+            for cat in category_stats:
+                category_stats[cat]["revenue"] = round(category_stats[cat]["revenue"], 2)
+                category_stats[cat]["stock_value"] = round(category_stats[cat]["stock_value"], 2)
+                
+            category_analytics = list(category_stats.values())
+
     return {
         "metrics": metrics,
         "order_status_counts": status_counts,
         "best_products": best_products,
         "inventory": inventory_summary,
-        "revenue_trend": revenue_trend
+        "revenue_trend": revenue_trend,
+        "category_analytics": category_analytics
     }

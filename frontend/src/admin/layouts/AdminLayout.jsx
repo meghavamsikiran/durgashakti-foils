@@ -12,6 +12,7 @@ import {
 const ICON_MAP = {
   'Dashboard': LayoutDashboard,
   'Products': Package,
+  'Categories': Layers,
   'Stock': Boxes,
   'Orders': ShoppingCart,
   'Customers': Users,

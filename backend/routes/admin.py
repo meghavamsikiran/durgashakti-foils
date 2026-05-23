@@ -6,7 +6,8 @@ from typing import Optional, List
 from database import get_db
 from models import (
     ProductModel, OrderModel, UserModel, SettingModel,
-    StockHistoryModel, GstRecordModel, GstImportModel, AuditLogModel
+    StockHistoryModel, GstRecordModel, GstImportModel, AuditLogModel,
+    CategoryModel
 )
 from deps import (
     UserSchema, ProductSchema, ProductBulkCreateRequest,
@@ -23,6 +24,47 @@ from io import BytesIO
 import os
 
 router = APIRouter(prefix="/api")
+
+
+@router.get("/admin/products")
+async def get_admin_products(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    admin: UserSchema = Depends(require_permission("view_products")),
+    db: AsyncSession = Depends(get_db)
+):
+    search = sanitize_search_term(search)
+    q = select(ProductModel, func.count(ProductModel.id).over().label('total_count'))
+
+    filter_clause = None
+    if search:
+        like_term = f"%{search}%"
+        filter_clause = or_(
+            ProductModel.name.ilike(like_term),
+            ProductModel.batch_no.ilike(like_term),
+            ProductModel.variant_sku.ilike(like_term),
+            ProductModel.category.ilike(like_term),
+        )
+        q = q.where(filter_clause)
+
+    offset = (page - 1) * limit
+    result = await db.execute(
+        q.order_by(ProductModel.created_at.desc()).offset(offset).limit(limit)
+    )
+    rows = result.all()
+
+    total = 0
+    if rows:
+        total = rows[0][1]
+    elif page > 1:
+        fallback_q = select(func.count(ProductModel.id))
+        if filter_clause is not None:
+            fallback_q = fallback_q.where(filter_clause)
+        total = (await db.execute(fallback_q)).scalar() or 0
+
+    products = [row_to_dict(row[0]) for row in rows]
+    return {"items": products, "total": total, "page": page, "limit": limit}
 
 # ── Products (Admin) ─────────────────────────────────────────────────────
 @router.post("/admin/products")
@@ -44,6 +86,7 @@ async def create_product(product: ProductSchema, admin: UserSchema = Depends(req
         category=product.category,
         batch_no=product.batch_no,
         width=product.width,
+        is_active=product.is_active,
         variant_sku=product.batch_no,
         created_by=admin.id,
     )
@@ -85,6 +128,7 @@ async def create_product_bulk(payload: ProductBulkCreateRequest, admin: UserSche
             category=payload.category,
             batch_no=v.sku,
             width=payload.width,
+            is_active=payload.is_active,
             base_name=payload.name,
             variant_sku=v.sku,
             created_by=admin.id,
@@ -99,7 +143,7 @@ async def create_product_bulk(payload: ProductBulkCreateRequest, admin: UserSche
 @router.put("/admin/products/{product_id}")
 async def update_product(product_id: str, product_data: dict, admin: UserSchema = Depends(require_permission("edit_products")), db: AsyncSession = Depends(get_db)):
     validate_uuid(product_id)
-    allowed = {'name', 'description', 'size', 'thickness', 'price', 'discount_price', 'badge', 'image_url', 'media_urls', 'features', 'in_stock', 'stock_quantity', 'category', 'batch_no', 'width', 'low_stock_threshold'}
+    allowed = {'name', 'description', 'size', 'thickness', 'price', 'discount_price', 'badge', 'image_url', 'media_urls', 'features', 'in_stock', 'stock_quantity', 'category', 'batch_no', 'width', 'low_stock_threshold', 'is_active'}
     safe_data = {k: v for k, v in product_data.items() if k in allowed}
     if not safe_data:
         raise HTTPException(status_code=400, detail="No valid fields")
@@ -133,6 +177,96 @@ async def delete_product(product_id: str, admin: UserSchema = Depends(require_pe
         await db.flush()
         await write_audit_log(db, "PRODUCT_DELETED", admin.id, "product", product_id)
     return {"message": "Product deleted"}
+
+
+# ── Categories (Admin) ───────────────────────────────────────────────────
+@router.get("/admin/categories")
+async def get_all_categories(admin: UserSchema = Depends(require_permission("view_products")), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(CategoryModel).order_by(CategoryModel.name.asc()))
+    categories = result.scalars().all()
+    return [row_to_dict(c) for c in categories]
+
+
+@router.post("/admin/categories")
+async def create_category(payload: dict, admin: UserSchema = Depends(require_permission("create_products")), db: AsyncSession = Depends(get_db)):
+    name = payload.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Category name is required")
+        
+    existing = await db.execute(select(CategoryModel).where(CategoryModel.name == name))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Category already exists")
+        
+    cat = CategoryModel(
+        id=str(uuid.uuid4()),
+        name=name,
+        is_active=True
+    )
+    db.add(cat)
+    await db.flush()
+    await write_audit_log(db, "CATEGORY_CREATED", admin.id, "category", cat.id, {"name": name})
+    return row_to_dict(cat)
+
+
+@router.put("/admin/categories/{category_id}")
+async def update_category(category_id: str, payload: dict, admin: UserSchema = Depends(require_permission("edit_products")), db: AsyncSession = Depends(get_db)):
+    validate_uuid(category_id)
+    res = await db.execute(select(CategoryModel).where(CategoryModel.id == category_id))
+    cat = res.scalar_one_or_none()
+    if not cat:
+        raise HTTPException(status_code=404, detail="Category not found")
+        
+    name = payload.get("name", "").strip()
+    if "name" in payload:
+        if not name:
+            raise HTTPException(status_code=400, detail="Category name cannot be empty")
+        
+        if name != cat.name:
+            existing = await db.execute(select(CategoryModel).where(CategoryModel.name == name))
+            if existing.scalar_one_or_none():
+                raise HTTPException(status_code=400, detail="Another category with this name already exists")
+        cat.name = name
+        
+    if "is_active" in payload:
+        cat.is_active = bool(payload["is_active"])
+        
+    cat.updated_at = datetime.now(timezone.utc)
+    await db.flush()
+    await write_audit_log(db, "CATEGORY_UPDATED", admin.id, "category", category_id, {"name": cat.name, "is_active": cat.is_active})
+    return row_to_dict(cat)
+
+
+@router.delete("/admin/categories/{category_id}")
+async def delete_category(category_id: str, admin: UserSchema = Depends(require_permission("delete_products")), db: AsyncSession = Depends(get_db)):
+    validate_uuid(category_id)
+    res = await db.execute(select(CategoryModel).where(CategoryModel.id == category_id))
+    cat = res.scalar_one_or_none()
+    if cat:
+        await db.execute(
+            update(ProductModel)
+            .where(ProductModel.category == cat.name)
+            .values(category=None)
+        )
+        await db.delete(cat)
+        await db.flush()
+        await write_audit_log(db, "CATEGORY_DELETED", admin.id, "category", category_id)
+    return {"message": "Category deleted successfully"}
+
+
+@router.put("/admin/products/{product_id}/status")
+async def toggle_product_status(product_id: str, payload: dict, admin: UserSchema = Depends(require_permission("edit_products")), db: AsyncSession = Depends(get_db)):
+    validate_uuid(product_id)
+    res = await db.execute(select(ProductModel).where(ProductModel.id == product_id))
+    product = res.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+        
+    is_active = bool(payload.get("is_active", True))
+    product.is_active = is_active
+    product.updated_at = datetime.now(timezone.utc)
+    await db.flush()
+    await write_audit_log(db, "PRODUCT_STATUS_TOGGLED", admin.id, "product", product_id, {"is_active": is_active})
+    return {"message": "Product status updated", "is_active": is_active}
 
 
 # ── Orders (Admin) ───────────────────────────────────────────────────────

@@ -8,20 +8,23 @@ import {
   Package, Plus, Search, Tag, Box, 
   IndianRupee, TrendingUp, Filter, Trash2, 
   Upload, CheckCircle2, AlertCircle, X, ChevronRight,
-  Boxes, Edit, Trash, Activity, Trophy, Zap
+  Boxes, Edit, Trash, Activity, Trophy, Zap, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import TablePagination from '../../components/ui/TablePagination';
 import PageLoader from '../../components/ui/PageLoader';
 
+const DEFAULT_CATEGORY = 'Aluminum Foil';
+const ADMIN_PRODUCTS_CACHE_PATH = '/admin/products';
+
 const ProductsPage = () => {
   const { isSuperAdmin, hasPermission } = useAuth();
   const [rows, setRows] = useState(() => {
-    const cached = adminService.getCached('/products', { page: 1, limit: 10, search: '' });
+    const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: 1, limit: 10, search: '' });
     return cached?.items || [];
   });
   const [loading, setLoading] = useState(() => {
-    const cached = adminService.getCached('/products', { page: 1, limit: 10, search: '' });
+    const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: 1, limit: 10, search: '' });
     return !cached;
   });
   const [showForm, setShowForm] = useState(false);
@@ -37,7 +40,7 @@ const ProductsPage = () => {
   const [form, setForm] = useState({
     name: '',
     description: '',
-    category: 'Aluminum Foil',
+    category: DEFAULT_CATEGORY,
     thickness: '',
     width: '',
     image_url: '',
@@ -50,17 +53,20 @@ const ProductsPage = () => {
     size: '',
     badge: '',
     variants: '',
+    is_active: true,
   });
   const [metrics, setMetrics] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary');
     return cached?.metrics || null;
   });
+  const [categories, setCategories] = useState([]);
+  const [statusSavingIds, setStatusSavingIds] = useState(() => new Set());
 
   const resetForm = () => {
     setForm({
       name: '',
       description: '',
-      category: 'Aluminum Foil',
+      category: categories[0]?.name || DEFAULT_CATEGORY,
       thickness: '',
       width: '',
       image_url: '',
@@ -73,17 +79,18 @@ const ProductsPage = () => {
       size: '',
       badge: '',
       variants: '',
+      is_active: true,
     });
     setImageFile(null);
   };
 
   const [total, setTotal] = useState(() => {
-    const cached = adminService.getCached('/products', { page: 1, limit: 10, search: '' });
+    const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: 1, limit: 10, search: '' });
     return cached?.total || 0;
   });
 
   const fetchRows = useCallback(async (pageNum = 1) => {
-    const cached = adminService.getCached('/products', { page: pageNum, limit: ITEMS_PER_PAGE, search });
+    const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: pageNum, limit: ITEMS_PER_PAGE, search });
     if (!cached) {
       setLoading(true);
     }
@@ -106,7 +113,7 @@ const ProductsPage = () => {
   const fetchRowsSilent = useCallback(async (pageNum = 1) => {
     try {
       const [response, mRes] = await Promise.all([
-        apiClient.get('/products', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true }),
+        apiClient.get(ADMIN_PRODUCTS_CACHE_PATH, { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true }),
         apiClient.get('/admin/analytics/summary', { silent: true }).catch(() => ({ data: { metrics: null } }))
       ]);
       setRows(response.data?.items || []);
@@ -117,13 +124,22 @@ const ProductsPage = () => {
     }
   }, [search]);
 
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await adminService.getPublicCategories();
+      setCategories(response.data || []);
+    } catch (err) {
+      toast.error('Failed to load categories');
+    }
+  }, []);
+
   const handleEdit = (product) => {
     setIsEdit(true);
     setCurrentId(product.id);
     setForm({
       name: product.name || '',
       description: product.description || '',
-      category: product.category || 'Aluminum Foil',
+      category: product.category || DEFAULT_CATEGORY,
       thickness: product.thickness || '11 Micron',
       width: product.width || '295mm',
       image_url: product.image_url || '',
@@ -136,8 +152,30 @@ const ProductsPage = () => {
       size: product.size || '',
       badge: product.badge || '',
       variants: '', // Not used in edit mode
+      is_active: product.is_active !== false,
     });
     setShowForm(true);
+  };
+
+  const handleToggleProductStatus = async (product) => {
+    const nextStatus = product.is_active === false;
+    setStatusSavingIds(prev => new Set(prev).add(product.id));
+    setRows(prev => prev.map(row => row.id === product.id ? { ...row, is_active: nextStatus } : row));
+
+    try {
+      await adminService.toggleProductStatus(product.id, nextStatus);
+      toast.success(`Product ${nextStatus ? 'activated' : 'deactivated'}`);
+      fetchRowsSilent(page);
+    } catch (err) {
+      setRows(prev => prev.map(row => row.id === product.id ? { ...row, is_active: product.is_active } : row));
+      toast.error(err.response?.data?.detail || 'Failed to update product status');
+    } finally {
+      setStatusSavingIds(prev => {
+        const next = new Set(prev);
+        next.delete(product.id);
+        return next;
+      });
+    }
   };
 
   const handleDelete = async (productId) => {
@@ -217,8 +255,8 @@ const ProductsPage = () => {
   };
 
   const saveProduct = async () => {
-    if (!form.name.trim() || !form.description.trim()) {
-      toast.error('Name and description are required'); return;
+    if (!form.name.trim() || !form.description.trim() || !form.category) {
+      toast.error('Name, description, and category are required'); return;
     }
     
     try {
@@ -269,6 +307,10 @@ const ProductsPage = () => {
   };
 
   useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       fetchRows(1);
       fetchRowsSilent(1);
@@ -286,6 +328,10 @@ const ProductsPage = () => {
 
   const totalFilteredPages = Math.ceil(total / ITEMS_PER_PAGE);
   const paginatedProducts = rows;
+  const categoryOptions = Array.from(new Set([
+    ...(categories || []).map(category => category.name).filter(Boolean),
+    form.category || DEFAULT_CATEGORY,
+  ]));
 
   const stats = {
     fastestMover: metrics?.fastest_mover?.name || 'N/A',
@@ -293,6 +339,7 @@ const ProductsPage = () => {
     value: metrics?.total_inventory_value || 0,
     lowStock: metrics?.low_stock_count || 0
   };
+  const canEditProducts = isSuperAdmin || hasPermission('edit_products');
 
   if (loading && rows.length === 0) return <PageLoader />;
 
@@ -394,6 +441,18 @@ const ProductsPage = () => {
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Description</label>
                 <textarea rows={4} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
                   placeholder="Technical details..." value={form.description} onChange={e => setForm({...form, description: e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Category</label>
+                <select
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none bg-white"
+                  value={form.category}
+                  onChange={e => setForm({...form, category: e.target.value})}
+                >
+                  {categoryOptions.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1">
@@ -622,11 +681,27 @@ const ProductsPage = () => {
                     </div>
                   </td>
                   <td className="px-8 py-6 text-center">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                      row.stock_quantity > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
-                    }`}>
-                      {row.stock_quantity > 0 ? 'In Stock' : 'Out Stock'}
-                    </span>
+                    <div className="flex flex-col items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={!canEditProducts || statusSavingIds.has(row.id)}
+                        onClick={() => handleToggleProductStatus(row)}
+                        className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                          row.is_active === false
+                            ? 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                            : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                        }`}
+                        title={row.is_active === false ? 'Activate product' : 'Deactivate product'}
+                      >
+                        {row.is_active === false ? <ToggleLeft className="w-4 h-4" /> : <ToggleRight className="w-4 h-4" />}
+                        {row.is_active === false ? 'Inactive' : 'Active'}
+                      </button>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                        row.stock_quantity > 0 ? 'bg-indigo-50 text-indigo-600' : 'bg-rose-50 text-rose-600'
+                      }`}>
+                        {row.stock_quantity > 0 ? 'In Stock' : 'Out Stock'}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex items-center justify-end gap-2">

@@ -16,18 +16,26 @@ const adminService = {
   getDashboardMetrics: (timeframe) => cachedGet('/admin/analytics/summary', { params: { timeframe } }),
 
   // Products
-  getProducts: (params) => cachedGet('/products', { params }),
+  getProducts: (params) => cachedGet('/admin/products', { params }),
   createProduct: (payload) => {
     invalidateCache('/products');
+    invalidateCache('/admin/products');
     return apiClient.post('/admin/products/bulk', payload);
   },
   updateProduct: (productId, payload) => {
     invalidateCache('/products');
+    invalidateCache('/admin/products');
     return apiClient.put(`/admin/products/${productId}`, payload);
   },
   deleteProduct: (productId) => {
     invalidateCache('/products');
+    invalidateCache('/admin/products');
     return apiClient.delete(`/admin/products/${productId}`);
+  },
+  toggleProductStatus: (productId, isActive) => {
+    invalidateCache('/products');
+    invalidateCache('/admin/products');
+    return apiClient.put(`/admin/products/${productId}/status`, { is_active: isActive });
   },
   uploadProductImage: async (file) => {
     const formData = new FormData();
@@ -47,7 +55,7 @@ const adminService = {
   // Inventory
   getInventory: async (params = {}) => {
     const limit = Math.min(params.limit || 20, 100);
-    const response = await cachedGet('/products', { params: { ...params, limit } });
+    const response = await cachedGet('/admin/products', { params: { ...params, limit } });
     const rawItems = response.data.items || [];
     const items = rawItems.map((product) => ({
       id: product.id,
@@ -66,6 +74,7 @@ const adminService = {
   },
   adjustInventory: (productId, payload) => {
     invalidateCache('/products');
+    invalidateCache('/admin/products');
     return apiClient.post(`/admin/products/${productId}/inventory`, { delta: payload.delta_quantity });
   },
 
@@ -133,6 +142,25 @@ const adminService = {
   },
   resetAdminPassword: (userId, newPassword) =>
     apiClient.put(`/superadmin/admins/${userId}/reset-password`, { new_password: newPassword }),
+
+  // Categories
+  getCategories: () => cachedGet('/admin/categories'),
+  createCategory: (payload) => {
+    invalidateCache('/admin/categories');
+    invalidateCache('/categories');
+    return apiClient.post('/admin/categories', payload);
+  },
+  updateCategory: (categoryId, payload) => {
+    invalidateCache('/admin/categories');
+    invalidateCache('/categories');
+    return apiClient.put(`/admin/categories/${categoryId}`, payload);
+  },
+  deleteCategory: (categoryId) => {
+    invalidateCache('/admin/categories');
+    invalidateCache('/categories');
+    return apiClient.delete(`/admin/categories/${categoryId}`);
+  },
+  getPublicCategories: () => cachedGet('/categories'),
 
   // Auth
   changePassword: (payload) => apiClient.post('/auth/change-password', payload),

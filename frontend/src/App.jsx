@@ -32,6 +32,7 @@ const AdminLayout = lazy(() => import('./admin/layouts/AdminLayout'));
 const ProtectedAdminRoute = lazy(() => import('./admin/guards/ProtectedAdminRoute'));
 import AdminDashboard from './admin/pages/AdminDashboard';
 import ProductsPage from './admin/pages/ProductsPage';
+import CategoriesPage from './admin/pages/CategoriesPage';
 import InventoryPage from './admin/pages/InventoryPage';
 import OrdersPage from './admin/pages/OrdersPage';
 import CustomersPage from './admin/pages/CustomersPage';
@@ -109,6 +110,7 @@ function AppRoutes() {
                 <Route index element={<AdminDashboard />} />
                 <Route path="dashboard" element={<AdminDashboard />} />
                 <Route path="products" element={<ProtectedAdminRoute permission="view_products"><ProductsPage /></ProtectedAdminRoute>} />
+                <Route path="categories" element={<ProtectedAdminRoute permission="edit_products"><CategoriesPage /></ProtectedAdminRoute>} />
                 <Route path="stock" element={<ProtectedAdminRoute permission="view_inventory"><InventoryPage /></ProtectedAdminRoute>} />
                 <Route path="orders" element={<ProtectedAdminRoute permission="view_orders"><OrdersPage /></ProtectedAdminRoute>} />
                 <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
@@ -184,6 +186,7 @@ function AppRoutes() {
                 <Route index element={<AdminDashboard />} />
                 <Route path="dashboard" element={<AdminDashboard />} />
                 <Route path="products" element={<ProtectedAdminRoute permission="view_products"><ProductsPage /></ProtectedAdminRoute>} />
+                <Route path="categories" element={<ProtectedAdminRoute permission="edit_products"><CategoriesPage /></ProtectedAdminRoute>} />
                 <Route path="stock" element={<ProtectedAdminRoute permission="view_inventory"><InventoryPage /></ProtectedAdminRoute>} />
                 <Route path="orders" element={<ProtectedAdminRoute permission="view_orders"><OrdersPage /></ProtectedAdminRoute>} />
                 <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />

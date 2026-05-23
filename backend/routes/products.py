@@ -18,7 +18,8 @@ async def get_products(
     db: AsyncSession = Depends(get_db)
 ):
     search = sanitize_search_term(search)
-    q = select(ProductModel, func.count(ProductModel.id).over().label('total_count'))
+    active_clause = ProductModel.is_active == True
+    q = select(ProductModel, func.count(ProductModel.id).over().label('total_count')).where(active_clause)
 
     filter_clause = None
     if search:
@@ -40,7 +41,7 @@ async def get_products(
     if rows:
         total = rows[0][1]
     elif page > 1:
-        fallback_q = select(func.count(ProductModel.id))
+        fallback_q = select(func.count(ProductModel.id)).where(active_clause)
         if filter_clause is not None:
             fallback_q = fallback_q.where(filter_clause)
         total = (await db.execute(fallback_q)).scalar() or 0
@@ -52,8 +53,16 @@ async def get_products(
 @router.get("/products/{product_id}")
 async def get_product(product_id: str, db: AsyncSession = Depends(get_db)):
     validate_uuid(product_id)
-    result = await db.execute(select(ProductModel).where(ProductModel.id == product_id))
+    result = await db.execute(select(ProductModel).where(ProductModel.id == product_id, ProductModel.is_active == True))
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return row_to_dict(product)
+
+
+@router.get("/categories")
+async def get_public_categories(db: AsyncSession = Depends(get_db)):
+    from models import CategoryModel
+    result = await db.execute(select(CategoryModel).where(CategoryModel.is_active == True).order_by(CategoryModel.name.asc()))
+    categories = result.scalars().all()
+    return [row_to_dict(c) for c in categories]

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
+import apiClient from '../../services/core/apiClient';
 import { formatImageUrl } from '../../utils/api';
 import { 
   Boxes, TrendingDown, IndianRupee, BarChart3, 
@@ -13,11 +14,13 @@ import TablePagination from '../../components/ui/TablePagination';
 import PageLoader from '../../components/ui/PageLoader';
 import { useAuth } from '../../contexts/AuthContext';
 
+const ADMIN_PRODUCTS_CACHE_PATH = '/admin/products';
+
 const InventoryPage = () => {
   const { hasPermission } = useAuth();
   const ITEMS_PER_PAGE = 15;
   const [rows, setRows] = useState(() => {
-    const cached = adminService.getCached('/products', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
+    const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: 1, limit: ITEMS_PER_PAGE, search: '' });
     const rawItems = cached?.items || [];
     return rawItems.map((product) => ({
       id: product.id,
@@ -34,7 +37,7 @@ const InventoryPage = () => {
     }));
   });
   const [loading, setLoading] = useState(() => {
-    const cached = adminService.getCached('/products', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
+    const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: 1, limit: ITEMS_PER_PAGE, search: '' });
     return !cached;
   });
   const [adjustModal, setAdjustModal] = useState(null);
@@ -43,7 +46,7 @@ const InventoryPage = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(() => {
-    const cached = adminService.getCached('/products', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
+    const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: 1, limit: ITEMS_PER_PAGE, search: '' });
     return cached?.total || 0;
   });
   const [metrics, setMetrics] = useState(() => {
@@ -52,7 +55,7 @@ const InventoryPage = () => {
   });
 
   const load = useCallback(async (pageNum = 1) => {
-    const cached = adminService.getCached('/products', { page: pageNum, limit: ITEMS_PER_PAGE, search });
+    const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: pageNum, limit: ITEMS_PER_PAGE, search });
     if (!cached) {
       setLoading(true);
     }
@@ -75,7 +78,7 @@ const InventoryPage = () => {
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
       const [response, mRes] = await Promise.all([
-        apiClient.get('/products', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true }),
+        apiClient.get(ADMIN_PRODUCTS_CACHE_PATH, { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true }),
         apiClient.get('/admin/analytics/summary', { silent: true }).catch(() => ({ data: { metrics: null } }))
       ]);
       const rawItems = response.data?.items || [];
