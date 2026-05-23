@@ -183,12 +183,17 @@ const OrderDetailsPage = () => {
       <tr class="item">
         <td>${item.product_name}</td>
         <td style="text-align: center;">${item.quantity}</td>
-        <td style="text-align: right;">₹${item.price.toLocaleString('en-IN')}</td>
-        <td style="text-align: right;">₹${(item.quantity * item.price).toLocaleString('en-IN')}</td>
+        <td style="text-align: right;">₹${item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="text-align: right;">₹${(item.quantity * item.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       </tr>
     `).join('');
 
-    const subtotal = orderData.total_amount - (orderData.shipping_cost || 0);
+    const metadata = orderData.shipping_address?.shipping_metadata;
+    const subtotal = metadata?.subtotal ?? (orderData.items?.reduce((acc, item) => acc + (item.price * item.quantity), 0) || 0);
+    const shipping = metadata?.shipping_cost ?? (Number(orderData.total_amount) > subtotal ? 350.0 : 0.0);
+    const cgst = metadata?.cgst_amount ?? (Number(orderData.total_amount) > subtotal ? subtotal * 0.09 : 0.0);
+    const sgst = metadata?.sgst_amount ?? (Number(orderData.total_amount) > subtotal ? subtotal * 0.09 : 0.0);
+    const codCharge = metadata?.cod_charge ?? 0.0;
 
     return `
 <!DOCTYPE html>
@@ -265,16 +270,32 @@ const OrderDetailsPage = () => {
 
     <div class="totals">
       <div class="total-row">
-        <span>Subtotal</span>
-        <span>₹${subtotal.toLocaleString('en-IN')}</span>
+        <span>Items Subtotal</span>
+        <span>₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
       <div class="total-row">
-        <span>Shipping</span>
-        <span>₹${(orderData.shipping_cost || 0).toLocaleString('en-IN')}</span>
+        <span>Shipping Charges</span>
+        <span>₹${shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
+      ${codCharge > 0 ? `
+      <div class="total-row">
+        <span>COD Handling Fee</span>
+        <span>₹${codCharge.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      </div>
+      ` : ''}
+      ${cgst > 0 ? `
+      <div class="total-row">
+        <span>SGST (9%)</span>
+        <span>₹${sgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      </div>
+      <div class="total-row">
+        <span>CGST (9%)</span>
+        <span>₹${cgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      </div>
+      ` : ''}
       <div class="total-row grand-total">
-        <span>Total Amount</span>
-        <span>₹${orderData.total_amount.toLocaleString('en-IN')}</span>
+        <span>Grand Total</span>
+        <span>₹${Number(orderData.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
     </div>
 

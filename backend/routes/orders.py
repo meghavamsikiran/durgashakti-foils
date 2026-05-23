@@ -58,6 +58,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
             return row_to_dict(row)
 
     server_total = 0.0
+    product_cache = {}
     for item in order_data.items:
         prod_res = await db.execute(select(ProductModel).where(ProductModel.id == item.product_id))
         product = prod_res.scalar_one_or_none()
@@ -67,6 +68,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
             raise HTTPException(status_code=400, detail=f"'{item.product_name}' is out of stock")
         if item.quantity > int(product.stock_quantity or 0):
             raise HTTPException(status_code=400, detail=f"Only {product.stock_quantity} units of '{item.product_name}' available")
+        product_cache[item.product_id] = product
         effective_price = float(product.discount_price or product.price or 0)
         server_total += effective_price * item.quantity
     server_total = round(server_total, 2)
@@ -124,10 +126,13 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
 
     enriched_items = []
     for item in order_data.items:
-        prod_res = await db.execute(select(ProductModel).where(ProductModel.id == item.product_id))
-        product = prod_res.scalar_one_or_none()
+        product = product_cache.get(item.product_id)
         item_dict = item.model_dump()
-        item_dict['image_url'] = product.image_url if product else None
+        if product:
+            item_dict['price'] = float(product.discount_price or product.price or 0.0)
+            item_dict['image_url'] = product.image_url
+        else:
+            item_dict['image_url'] = None
         enriched_items.append(item_dict)
 
     order_number = f"ORD-{int(time.time())}-{uuid.uuid4().hex[:8]}"

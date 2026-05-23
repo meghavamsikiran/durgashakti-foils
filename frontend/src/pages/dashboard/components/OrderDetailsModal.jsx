@@ -126,12 +126,17 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
       <tr class="item">
         <td>${item.product_name}</td>
         <td style="text-align: center;">${item.quantity}</td>
-        <td style="text-align: right;">₹${item.price.toLocaleString('en-IN')}</td>
-        <td style="text-align: right;">₹${(item.quantity * item.price).toLocaleString('en-IN')}</td>
+        <td style="text-align: right;">₹${item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="text-align: right;">₹${(item.quantity * item.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       </tr>
     `).join('');
 
-    const subtotal = orderData.total_amount - (orderData.shipping_cost || 0);
+    const metadata = orderData.shipping_address?.shipping_metadata;
+    const subtotal = metadata?.subtotal ?? (orderData.items?.reduce((acc, item) => acc + (item.price * item.quantity), 0) || 0);
+    const shipping = metadata?.shipping_cost ?? (Number(orderData.total_amount) > subtotal ? 350.0 : 0.0);
+    const cgst = metadata?.cgst_amount ?? (Number(orderData.total_amount) > subtotal ? subtotal * 0.09 : 0.0);
+    const sgst = metadata?.sgst_amount ?? (Number(orderData.total_amount) > subtotal ? subtotal * 0.09 : 0.0);
+    const codCharge = metadata?.cod_charge ?? 0.0;
 
     return `
 <!DOCTYPE html>
@@ -208,16 +213,32 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
 
     <div class="totals">
       <div class="total-row">
-        <span>Subtotal</span>
-        <span>₹${subtotal.toLocaleString('en-IN')}</span>
+        <span>Items Subtotal</span>
+        <span>₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
       <div class="total-row">
-        <span>Shipping</span>
-        <span>₹${(orderData.shipping_cost || 0).toLocaleString('en-IN')}</span>
+        <span>Shipping Charges</span>
+        <span>₹${shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
+      ${codCharge > 0 ? `
+      <div class="total-row">
+        <span>COD Handling Fee</span>
+        <span>₹${codCharge.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      </div>
+      ` : ''}
+      ${cgst > 0 ? `
+      <div class="total-row">
+        <span>SGST (9%)</span>
+        <span>₹${sgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      </div>
+      <div class="total-row">
+        <span>CGST (9%)</span>
+        <span>₹${cgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      </div>
+      ` : ''}
       <div class="total-row grand-total">
-        <span>Total Amount</span>
-        <span>₹${orderData.total_amount.toLocaleString('en-IN')}</span>
+        <span>Grand Total</span>
+        <span>₹${Number(orderData.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
     </div>
 
@@ -329,23 +350,52 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                   ))}
                 </div>
 
-                <div className="p-6 rounded-3xl bg-slate-900 text-white">
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm font-bold text-slate-500">
-                      <span>Subtotal</span>
-                      <span className="text-white">₹{(order.total_amount - (order.shipping_cost || 0)).toLocaleString()}</span>
+                {(() => {
+                  const metadata = order.shipping_address?.shipping_metadata;
+                  const subtotal = metadata?.subtotal ?? (order.items?.reduce((acc, item) => acc + (item.price * item.quantity), 0) || 0);
+                  const shipping = metadata?.shipping_cost ?? (Number(order.total_amount) > subtotal ? 350.0 : 0.0);
+                  const cgst = metadata?.cgst_amount ?? (Number(order.total_amount) > subtotal ? subtotal * 0.09 : 0.0);
+                  const sgst = metadata?.sgst_amount ?? (Number(order.total_amount) > subtotal ? subtotal * 0.09 : 0.0);
+                  const codCharge = metadata?.cod_charge ?? 0.0;
+
+                  return (
+                    <div className="p-6 rounded-3xl bg-slate-900 text-white">
+                      <div className="space-y-3">
+                        <div className="flex justify-between text-sm font-bold text-slate-400">
+                          <span>Subtotal</span>
+                          <span className="text-white">₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between text-sm font-bold text-slate-400">
+                          <span>Shipping</span>
+                          <span className="text-white">{shipping > 0 ? `₹${shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'FREE'}</span>
+                        </div>
+                        {codCharge > 0 && (
+                          <div className="flex justify-between text-sm font-bold text-slate-400">
+                            <span>COD Handling Fee</span>
+                            <span className="text-white">₹{codCharge.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                        )}
+                        {cgst > 0 && (
+                          <>
+                            <div className="flex justify-between text-sm font-bold text-slate-400">
+                              <span>SGST (9%)</span>
+                              <span className="text-white">₹{sgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between text-sm font-bold text-slate-400">
+                              <span>CGST (9%)</span>
+                              <span className="text-white">₹{cgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                          </>
+                        )}
+                        <div className="h-px bg-white/10 my-2" />
+                        <div className="flex justify-between items-end">
+                          <span className="text-xs font-black uppercase tracking-widest text-indigo-400">Total Amount</span>
+                          <span className="text-3xl font-black">₹{Number(order.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-sm font-bold text-slate-500">
-                      <span>Shipping</span>
-                      <span className="text-white">₹{(order.shipping_cost || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="h-px bg-white/10 my-2" />
-                    <div className="flex justify-between items-end">
-                      <span className="text-xs font-black uppercase tracking-widest text-indigo-400">Total Amount</span>
-                      <span className="text-3xl font-black">₹{order.total_amount.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
 
               {/* Right Side: Status & Shipping OR Return Form */}
