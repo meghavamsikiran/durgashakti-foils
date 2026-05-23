@@ -592,6 +592,7 @@ const OrderDetailsPage = () => {
         {/* Retry Payment Warning Card */}
         {order.payment_status !== 'Paid' && 
          order.payment_status !== 'completed' && 
+         (order.payment_method || '').toLowerCase() !== 'cod' &&
          !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase()) && (
           <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm animate-in slide-in-from-top-2 duration-300">
             <div className="space-y-1">
