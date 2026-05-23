@@ -2,7 +2,7 @@ import apiClient from './core/apiClient';
 
 let cachedPublicSettings = null;
 let cacheTimestamp = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+const CACHE_DURATION = 10 * 1000; // 10 seconds cache
 
 const settingsService = {
   getPublicSettings: async () => {

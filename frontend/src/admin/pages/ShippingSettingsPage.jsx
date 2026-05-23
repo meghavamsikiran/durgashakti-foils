@@ -18,7 +18,6 @@ const ShippingSettingsPage = () => {
   const [enableFreeShipping, setEnableFreeShipping] = useState(true);
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(1099);
   const [defaultShippingCharge, setDefaultShippingCharge] = useState(70);
-  const [minimumOrderAmount, setMinimumOrderAmount] = useState(0);
   const [shippingRuleStatus, setShippingRuleStatus] = useState('Active');
 
   // COD Settings State
@@ -68,7 +67,6 @@ const ShippingSettingsPage = () => {
         setEnableFreeShipping(config.enableFreeShipping !== false);
         setFreeShippingThreshold(config.freeShippingThreshold ?? 1099);
         setDefaultShippingCharge(config.defaultShippingCharge ?? 70);
-        setMinimumOrderAmount(config.minimumOrderAmount ?? 0);
         setShippingRuleStatus(config.shippingRuleStatus || 'Active');
 
         // COD
@@ -99,7 +97,7 @@ const ShippingSettingsPage = () => {
 
   const handleSave = async () => {
     // Validations
-    if (Number(freeShippingThreshold) < 0 || Number(defaultShippingCharge) < 0 || Number(minimumOrderAmount) < 0) {
+    if (Number(freeShippingThreshold) < 0 || Number(defaultShippingCharge) < 0) {
       toast.error('Shipping settings cannot contain negative values.');
       return;
     }
@@ -121,7 +119,6 @@ const ShippingSettingsPage = () => {
           enableFreeShipping,
           freeShippingThreshold: Number(freeShippingThreshold),
           defaultShippingCharge: Number(defaultShippingCharge),
-          minimumOrderAmount: Number(minimumOrderAmount),
           shippingRuleStatus,
           codEnabled,
           codCharge: Number(codCharge),
@@ -250,16 +247,6 @@ const ShippingSettingsPage = () => {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Minimum Order Amount (₹)</label>
-                  <input
-                    type="number"
-                    disabled={!isEditable}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800"
-                    value={minimumOrderAmount}
-                    onChange={(e) => setMinimumOrderAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                  />
-                </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Shipping Rule Status</label>
