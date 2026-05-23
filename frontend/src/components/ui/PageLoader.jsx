@@ -39,7 +39,7 @@ const PageLoader = ({ text }) => {
 
   return (
     <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center bg-slate-50/60 backdrop-blur-[2px] animate-in fade-in duration-300">
-      <div className="bg-white border border-slate-200/80 shadow-2xl rounded-3xl p-10 flex flex-col items-center justify-center gap-5 max-w-sm w-full mx-4">
+      <div className="flex flex-col items-center justify-center gap-5">
         <div className="relative w-16 h-16 flex items-center justify-center">
           {/* Circular track */}
           <div className="absolute inset-0 rounded-full border-[3.5px] border-slate-100" />
