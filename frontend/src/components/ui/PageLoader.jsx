@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
  * Suppressed completely during page transition, browser refresh, or initial load 
  * to prevent overlapping or consecutive loader flashes.
  */
-const PageLoader = ({ text, message }) => {
+const PageLoader = ({ text }) => {
   const [suppressed, setSuppressed] = useState(() => {
     if (typeof window !== 'undefined') {
       return !!(window.__routeTransitionActive || window.__initialPageLoadActive);
@@ -32,10 +32,10 @@ const PageLoader = ({ text, message }) => {
   if (suppressed) return null;
 
   const defaultText = typeof window !== 'undefined' && (window.location.pathname.includes('/admin') || window.location.pathname.includes('/superadmin'))
-    ? 'Admin Session Loading'
-    : 'Loading Session';
+    ? 'LOADING ADMIN SESSION'
+    : 'LOADING SESSION';
 
-  const displayText = text || message || defaultText;
+  const displayText = text || defaultText;
 
   return (
     <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center pointer-events-none">
