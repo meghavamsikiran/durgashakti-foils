@@ -23,6 +23,9 @@ const RouteTransitionLoader = () => {
   const [show, setShow] = useState(() => {
     if (isInitialPageLoad) {
       isInitialPageLoad = false;
+      if (typeof window !== 'undefined') {
+        window.__routeTransitionActive = true;
+      }
       return true;
     }
     return false;
@@ -51,7 +54,12 @@ const RouteTransitionLoader = () => {
 
   useEffect(() => {
     if (show) {
-      const timer = setTimeout(() => setShow(false), 600);
+      const timer = setTimeout(() => {
+        setShow(false);
+        if (typeof window !== 'undefined') {
+          window.__routeTransitionActive = false;
+        }
+      }, 600);
       return () => clearTimeout(timer);
     }
   }, [show]);
