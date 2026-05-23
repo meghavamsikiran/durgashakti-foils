@@ -40,12 +40,18 @@ async def list_contacts(
     admin: UserSchema = Depends(require_permission("view_inquiries")),
     db: AsyncSession = Depends(get_db)
 ):
-    base_q = select(ContactModel)
-    count_q = select(func.count(ContactModel.id))
+    q = select(ContactModel, func.count(ContactModel.id).over().label('total_count'))
 
-    total = (await db.execute(count_q)).scalar() or 0
     offset = (page - 1) * limit
-    res = await db.execute(base_q.order_by(ContactModel.created_at.desc()).offset(offset).limit(limit))
+    res = await db.execute(q.order_by(ContactModel.created_at.desc()).offset(offset).limit(limit))
+    rows = res.all()
+    
+    total = 0
+    if rows:
+        total = rows[0][1]
+    elif page > 1:
+        total = (await db.execute(select(func.count(ContactModel.id)))).scalar() or 0
+
     items = [
         {
             "id": str(c.id),
@@ -58,7 +64,7 @@ async def list_contacts(
             "replied_at": c.replied_at.isoformat() if c.replied_at else None,
             "created_at": c.created_at.isoformat()
         }
-        for c in res.scalars().all()
+        for c, _ in rows
     ]
     return {"items": items, "total": total, "page": page, "limit": limit}
 

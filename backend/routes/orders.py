@@ -59,9 +59,14 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
 
     server_total = 0.0
     product_cache = {}
+    prod_ids = [item.product_id for item in order_data.items if is_valid_uuid(item.product_id)]
+    products_map = {}
+    if prod_ids:
+        prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)))
+        products_map = {str(p.id): p for p in prod_res.scalars().all()}
+
     for item in order_data.items:
-        prod_res = await db.execute(select(ProductModel).where(ProductModel.id == item.product_id))
-        product = prod_res.scalar_one_or_none()
+        product = products_map.get(str(item.product_id))
         if not product:
             raise HTTPException(status_code=400, detail=f"Product '{item.product_name}' not found")
         if int(product.stock_quantity or 0) <= 0 or not product.in_stock:
@@ -174,9 +179,14 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
     if order_data.payment_method == "cod":
         deducted = []
         try:
+            prod_ids = [item.product_id for item in order_data.items if is_valid_uuid(item.product_id)]
+            prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+            locked_products = {str(p.id): p for p in prod_res.scalars().all()}
+            
             for item in order_data.items:
-                prod_res = await db.execute(select(ProductModel).where(ProductModel.id == item.product_id).with_for_update())
-                product = prod_res.scalar_one()
+                product = locked_products.get(str(item.product_id))
+                if not product:
+                    raise HTTPException(status_code=400, detail=f"Product '{item.product_name}' not found")
                 if int(product.stock_quantity or 0) < item.quantity:
                     raise HTTPException(status_code=400, detail=f"Insufficient stock for '{item.product_name}'")
                 product.stock_quantity = max(0, int(product.stock_quantity) - item.quantity)
@@ -186,14 +196,17 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
                     product.in_stock = False
                 deducted.append(item)
         except HTTPException:
-            for d_item in deducted:
-                prod_res = await db.execute(select(ProductModel).where(ProductModel.id == d_item.product_id))
-                p = prod_res.scalar_one_or_none()
-                if p:
-                    p.stock_quantity = int(p.stock_quantity or 0) + d_item.quantity
-                    p.units_sold = max(0, int(p.units_sold or 0) - d_item.quantity)
-                    p.in_stock = True
-                    p.updated_at = now
+            if deducted:
+                deducted_ids = [d_item.product_id for d_item in deducted]
+                restore_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(deducted_ids)))
+                restore_map = {str(p.id): p for p in restore_res.scalars().all()}
+                for d_item in deducted:
+                    p = restore_map.get(str(d_item.product_id))
+                    if p:
+                        p.stock_quantity = int(p.stock_quantity or 0) + d_item.quantity
+                        p.units_sold = max(0, int(p.units_sold or 0) - d_item.quantity)
+                        p.in_stock = True
+                        p.updated_at = now
             order.order_status = "cancelled"
             order.stock_applied = False
             raise
@@ -242,18 +255,20 @@ async def cancel_order(order_id: str, current_user: UserSchema = Depends(get_cur
 
     now = datetime.now(timezone.utc)
     if order.stock_applied:
-        for item in (order.items or []):
-            pid = item.get("product_id")
-            qty = int(item.get("quantity", 0))
-            if not pid or not is_valid_uuid(pid) or qty <= 0:
-                continue
-            prod_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
-            product = prod_res.scalar_one_or_none()
-            if product:
-                product.stock_quantity = int(product.stock_quantity or 0) + qty
-                product.units_sold = max(0, int(product.units_sold or 0) - qty)
-                product.in_stock = True
-                product.updated_at = now
+        items_to_release = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
+        if items_to_release:
+            prod_ids = [item.get("product_id") for item in items_to_release]
+            prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+            locked_products = {str(p.id): p for p in prod_res.scalars().all()}
+            for item in items_to_release:
+                pid = item.get("product_id")
+                qty = int(item.get("quantity", 0))
+                product = locked_products.get(str(pid))
+                if product:
+                    product.stock_quantity = int(product.stock_quantity or 0) + qty
+                    product.units_sold = max(0, int(product.units_sold or 0) - qty)
+                    product.in_stock = True
+                    product.updated_at = now
 
     order.order_status = "cancelled"
     order.stock_applied = False
@@ -395,12 +410,15 @@ async def verify_razorpay_payment(payment_data: dict, current_user: UserSchema =
     if not order.stock_applied:
         deducted = []
         try:
-            for item in (order.items or []):
-                pid = item.get("product_id")
-                qty = int(item.get("quantity", 0))
-                if pid and is_valid_uuid(pid) and qty > 0:
-                    prod_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
-                    product = prod_res.scalar_one_or_none()
+            items_to_deduct = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
+            if items_to_deduct:
+                prod_ids = [item.get("product_id") for item in items_to_deduct]
+                prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+                locked_products = {str(p.id): p for p in prod_res.scalars().all()}
+                for item in items_to_deduct:
+                    pid = item.get("product_id")
+                    qty = int(item.get("quantity", 0))
+                    product = locked_products.get(str(pid))
                     if not product:
                         raise HTTPException(status_code=400, detail="Product not found")
                     if int(product.stock_quantity or 0) < qty:
@@ -565,12 +583,15 @@ async def razorpay_webhook(request: Request, db: AsyncSession = Depends(get_db))
                 if not order.stock_applied:
                     deducted = []
                     try:
-                        for item in (order.items or []):
-                            pid = item.get("product_id")
-                            qty = int(item.get("quantity", 0))
-                            if pid and is_valid_uuid(pid) and qty > 0:
-                                prod_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
-                                product = prod_res.scalar_one_or_none()
+                        items_to_deduct = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
+                        if items_to_deduct:
+                            prod_ids = [item.get("product_id") for item in items_to_deduct]
+                            prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+                            locked_products = {str(p.id): p for p in prod_res.scalars().all()}
+                            for item in items_to_deduct:
+                                pid = item.get("product_id")
+                                qty = int(item.get("quantity", 0))
+                                product = locked_products.get(str(pid))
                                 if not product or int(product.stock_quantity or 0) < qty:
                                     raise Exception("Insufficient stock")
                                 product.stock_quantity = max(0, int(product.stock_quantity) - qty)
@@ -618,12 +639,15 @@ async def razorpay_webhook(request: Request, db: AsyncSession = Depends(get_db))
 
                 # Release stock if stock was somehow applied
                 if order.stock_applied:
-                    for item in (order.items or []):
-                        pid = item.get("product_id")
-                        qty = int(item.get("quantity", 0))
-                        if pid and is_valid_uuid(pid) and qty > 0:
-                            prod_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
-                            product = prod_res.scalar_one_or_none()
+                    items_to_release = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
+                    if items_to_release:
+                        prod_ids = [item.get("product_id") for item in items_to_release]
+                        prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+                        locked_products = {str(p.id): p for p in prod_res.scalars().all()}
+                        for item in items_to_release:
+                            pid = item.get("product_id")
+                            qty = int(item.get("quantity", 0))
+                            product = locked_products.get(str(pid))
                             if product:
                                 product.stock_quantity = int(product.stock_quantity or 0) + qty
                                 product.units_sold = max(0, int(product.units_sold or 0) - qty)
@@ -649,12 +673,15 @@ async def razorpay_webhook(request: Request, db: AsyncSession = Depends(get_db))
 
                 # Release stock if not already released
                 if order.stock_applied:
-                    for item in (order.items or []):
-                        pid = item.get("product_id")
-                        qty = int(item.get("quantity", 0))
-                        if pid and is_valid_uuid(pid) and qty > 0:
-                            prod_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
-                            product = prod_res.scalar_one_or_none()
+                    items_to_release = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
+                    if items_to_release:
+                        prod_ids = [item.get("product_id") for item in items_to_release]
+                        prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+                        locked_products = {str(p.id): p for p in prod_res.scalars().all()}
+                        for item in items_to_release:
+                            pid = item.get("product_id")
+                            qty = int(item.get("quantity", 0))
+                            product = locked_products.get(str(pid))
                             if product:
                                 product.stock_quantity = int(product.stock_quantity or 0) + qty
                                 product.units_sold = max(0, int(product.units_sold or 0) - qty)

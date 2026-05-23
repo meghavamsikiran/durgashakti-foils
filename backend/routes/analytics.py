@@ -1,8 +1,10 @@
 """Analytics + Financial Reports routes."""
+import asyncio
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_
+from sqlalchemy import select, func, or_, case
 from typing import Optional
+import database
 from database import get_db
 from models import OrderModel, ProductModel, UserModel, AuditLogModel
 from deps import UserSchema, require_permission, sanitize_search_term, row_to_dict, get_admin_user
@@ -26,9 +28,9 @@ async def list_payments(
     db: AsyncSession = Depends(get_db)
 ):
     search = sanitize_search_term(search)
-    base_q = select(OrderModel)
-    count_q = select(func.count(OrderModel.id))
+    q = select(OrderModel, func.count(OrderModel.id).over().label('total_count'))
 
+    clause = None
     if search:
         like_term = f"%{search}%"
         clause = or_(
@@ -36,14 +38,24 @@ async def list_payments(
             OrderModel.razorpay_payment_id.ilike(like_term),
             OrderModel.razorpay_order_id.ilike(like_term)
         )
-        base_q = base_q.where(clause)
-        count_q = count_q.where(clause)
+        q = q.where(clause)
 
-    total = (await db.execute(count_q)).scalar() or 0
     offset = (page - 1) * limit
-    res = await db.execute(base_q.order_by(OrderModel.created_at.desc()).offset(offset).limit(limit))
+    res = await db.execute(q.order_by(OrderModel.created_at.desc()).offset(offset).limit(limit))
+    rows = res.all()
+    
+    total = 0
+    if rows:
+        total = rows[0][1]
+    elif page > 1:
+        fallback_q = select(func.count(OrderModel.id))
+        if clause is not None:
+            fallback_q = fallback_q.where(clause)
+        total = (await db.execute(fallback_q)).scalar() or 0
+
     items = []
-    for o in res.scalars().all():
+    for row in rows:
+        o = row[0]
         items.append({
             "id": str(o.id),
             "order_number": o.order_number,
@@ -127,169 +139,187 @@ async def get_analytics_summary(
     elif timeframe == "All Time":
         date_filter = None
 
-    # 1. Revenue
-    revenue = 0.0
-    if has_financial:
-        rev_q = select(func.sum(OrderModel.total_amount)).where(
-            OrderModel.order_status.in_(REVENUE_ORDER_STATUSES),
-            OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES)
-        )
-        if date_filter:
-            rev_q = rev_q.where(OrderModel.created_at >= date_filter)
-        rev_val = (await db.execute(rev_q)).scalar() or 0.0
-        revenue = round(float(rev_val), 2)
+    tasks = {}
 
-    # Inventory Value
-    total_inventory_value = 0.0
-    if has_financial:
-        inv_val_q = select(func.sum(ProductModel.price * ProductModel.stock_quantity))
-        inv_val = (await db.execute(inv_val_q)).scalar() or 0.0
-        total_inventory_value = round(float(inv_val), 2)
+    if has_orders or has_financial:
+        async def fetch_orders_metrics():
+            async with database.async_session_factory() as session:
+                today_iso = now.replace(hour=0, minute=0, second=0, microsecond=0)
+                selects = []
+                selects.append(func.sum(case(((OrderModel.created_at >= today_iso), 1), else_=0)))
+                selects.append(func.sum(case(((OrderModel.created_at >= date_filter) if date_filter else (OrderModel.id.isnot(None)), 1), else_=0)))
+                selects.append(func.sum(case((
+                    (OrderModel.order_status.in_(REVENUE_ORDER_STATUSES)) &
+                    (OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES)) &
+                    ((OrderModel.created_at >= date_filter) if date_filter else True),
+                    OrderModel.total_amount
+                ), else_=0.0)))
+                
+                q = select(*selects)
+                res = await session.execute(q)
+                return res.tuples().first()
+        tasks["orders_metrics"] = fetch_orders_metrics()
 
-    # Units sold
-    total_units_sold = 0
-    if has_financial:
-        units_sold_val = (await db.execute(select(func.sum(ProductModel.units_sold)))).scalar() or 0
-        total_units_sold = int(units_sold_val)
+    if has_orders:
+        async def fetch_status_counts():
+            async with database.async_session_factory() as session:
+                st_q = select(OrderModel.order_status, func.count(OrderModel.id)).group_by(OrderModel.order_status)
+                if date_filter:
+                    st_q = st_q.where(OrderModel.created_at >= date_filter)
+                st_res = await session.execute(st_q)
+                return {r[0]: r[1] for r in st_res.all()}
+        tasks["status_counts"] = fetch_status_counts()
 
-    # Stock alerts
-    out_of_stock_count = 0
-    low_stock_count = 0
-    total_prods = 0
-    in_stock_count = 0
-    stock_health = 100.0
+    if has_products or has_financial:
+        async def fetch_product_metrics():
+            async with database.async_session_factory() as session:
+                selects = []
+                selects.append(func.sum(ProductModel.price * ProductModel.stock_quantity))
+                selects.append(func.sum(ProductModel.units_sold))
+                selects.append(func.sum(case((ProductModel.stock_quantity <= 0, 1), else_=0)))
+                selects.append(func.sum(case(((ProductModel.stock_quantity > 0) & (ProductModel.stock_quantity <= ProductModel.low_stock_threshold), 1), else_=0)))
+                selects.append(func.count(ProductModel.id))
+                selects.append(func.sum(case((ProductModel.stock_quantity > 0, 1), else_=0)))
+                
+                q = select(*selects)
+                res = await session.execute(q)
+                return res.tuples().first()
+        tasks["product_metrics"] = fetch_product_metrics()
+
+    if has_financial and has_products:
+        async def fetch_top_product():
+            async with database.async_session_factory() as session:
+                top_p_res = await session.execute(select(ProductModel).order_by(ProductModel.units_sold.desc()).limit(1))
+                return top_p_res.scalar_one_or_none()
+        tasks["top_product"] = fetch_top_product()
+
+    if has_customers:
+        async def fetch_customer_count():
+            async with database.async_session_factory() as session:
+                return (await session.execute(select(func.count(UserModel.id)).where(UserModel.role == "customer"))).scalar() or 0
+        tasks["customer_count"] = fetch_customer_count()
+
     if has_products:
-        out_of_stock_count = (await db.execute(
-            select(func.count(ProductModel.id))
-            .where(ProductModel.stock_quantity.isnot(None), ProductModel.stock_quantity <= 0)
-        )).scalar() or 0
-        
-        low_stock_count = (await db.execute(
-            select(func.count(ProductModel.id))
-            .where(
-                ProductModel.stock_quantity.isnot(None),
-                ProductModel.stock_quantity > 0,
-                ProductModel.stock_quantity <= ProductModel.low_stock_threshold
-            )
-        )).scalar() or 0
+        async def fetch_inventory():
+            async with database.async_session_factory() as session:
+                inv_res = await session.execute(select(ProductModel).order_by(ProductModel.stock_quantity.asc()).limit(50))
+                return inv_res.scalars().all()
+        tasks["inventory"] = fetch_inventory()
 
-        total_prods = (await db.execute(
-            select(func.count(ProductModel.id))
-            .where(ProductModel.stock_quantity.isnot(None))
-        )).scalar() or 0
-        
-        in_stock_count = (await db.execute(
-            select(func.count(ProductModel.id))
-            .where(ProductModel.stock_quantity.isnot(None), ProductModel.stock_quantity > 0)
-        )).scalar() or 0
-        
+    if has_audit:
+        async def fetch_audit_metrics():
+            async with database.async_session_factory() as session:
+                audit_q = select(
+                    func.sum(case((AuditLogModel.action.in_(["ADMIN_CREATED", "ADMIN_PASSWORD_RESET"]), 1), else_=0)),
+                    func.sum(case((AuditLogModel.action.ilike("%DELETE%"), 1), else_=0))
+                )
+                res = await session.execute(audit_q)
+                return res.tuples().first()
+        tasks["audit_metrics"] = fetch_audit_metrics()
+
+    if has_financial:
+        async def fetch_best_sellers():
+            async with database.async_session_factory() as session:
+                best_prods_q = select(OrderModel.items).where(
+                    OrderModel.order_status.in_(REVENUE_ORDER_STATUSES),
+                    OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES)
+                )
+                if date_filter:
+                    best_prods_q = best_prods_q.where(OrderModel.created_at >= date_filter)
+                best_prods_res = await session.execute(best_prods_q)
+                return best_prods_res.scalars().all()
+        tasks["best_sellers"] = fetch_best_sellers()
+
+        async def fetch_revenue_trend():
+            async with database.async_session_factory() as session:
+                trend_q = select(OrderModel.created_at, OrderModel.total_amount).where(
+                    OrderModel.order_status.in_(REVENUE_ORDER_STATUSES),
+                    OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES)
+                )
+                if date_filter:
+                    trend_q = trend_q.where(OrderModel.created_at >= date_filter)
+                trend_res = await session.execute(trend_q)
+                return trend_res.all()
+        tasks["revenue_trend"] = fetch_revenue_trend()
+
+    task_keys = list(tasks.keys())
+    task_futures = list(tasks.values())
+    results = {}
+    if task_futures:
+        raw_results = await asyncio.gather(*task_futures)
+        for k, val in zip(task_keys, raw_results):
+            results[k] = val
+
+    orders_val = results.get("orders_metrics")
+    orders_today_count = int(orders_val[0]) if (orders_val and orders_val[0] is not None) else 0
+    total_orders = int(orders_val[1]) if (orders_val and orders_val[1] is not None) else 0
+    revenue = round(float(orders_val[2]), 2) if (orders_val and orders_val[2] is not None) else 0.0
+
+    prod_val = results.get("product_metrics")
+    if prod_val:
+        total_inventory_value = round(float(prod_val[0]), 2) if prod_val[0] is not None else 0.0
+        total_units_sold = int(prod_val[1]) if prod_val[1] is not None else 0
+        out_of_stock_count = int(prod_val[2]) if prod_val[2] is not None else 0
+        low_stock_count = int(prod_val[3]) if prod_val[3] is not None else 0
+        total_prods = int(prod_val[4]) if prod_val[4] is not None else 0
+        in_stock_count = int(prod_val[5]) if prod_val[5] is not None else 0
         stock_health = round((in_stock_count / total_prods * 100), 1) if total_prods > 0 else 100.0
+    else:
+        total_inventory_value = 0.0
+        total_units_sold = 0
+        out_of_stock_count = 0
+        low_stock_count = 0
+        total_prods = 0
+        in_stock_count = 0
+        stock_health = 100.0
 
-    # Top Performer / Fastest Mover
     top_performer = None
     fastest_mover = None
     sales_velocity = 0.0
-    if has_financial and has_products:
-        top_p_res = await db.execute(select(ProductModel).order_by(ProductModel.units_sold.desc()).limit(1))
-        top_p = top_p_res.scalar_one_or_none()
-        top_performer = {"name": top_p.name if top_p else "N/A", "revenue": float((top_p.units_sold * (top_p.discount_price or top_p.price)) if top_p else 0)}
-        fastest_mover = {"name": top_p.name if top_p else "N/A", "units_sold": int(top_p.units_sold if top_p else 0)}
+    top_p = results.get("top_product")
+    if top_p:
+        top_performer = {"name": top_p.name, "revenue": float((top_p.units_sold * (top_p.discount_price or top_p.price)))}
+        fastest_mover = {"name": top_p.name, "units_sold": int(top_p.units_sold)}
         sales_velocity = round(total_units_sold / 30.0, 2)
 
-    # Today's orders
-    orders_today_count = 0
-    if has_orders:
-        today_iso = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        orders_today_count = (await db.execute(select(func.count(OrderModel.id)).where(OrderModel.created_at >= today_iso))).scalar() or 0
+    status_counts = results.get("status_counts", {})
 
-    # Status counts
-    status_counts = {}
-    if has_orders:
-        st_q = select(OrderModel.order_status, func.count(OrderModel.id)).group_by(OrderModel.order_status)
-        if date_filter:
-            st_q = st_q.where(OrderModel.created_at >= date_filter)
-        st_res = await db.execute(st_q)
-        status_counts = {r[0]: r[1] for r in st_res.all()}
-
-    # Inventory summary
     inventory_summary = []
-    if has_products:
-        inv_res = await db.execute(select(ProductModel).order_by(ProductModel.stock_quantity.asc()).limit(50))
+    inv_scalars = results.get("inventory")
+    if inv_scalars:
         inventory_summary = [{
             "id": str(p.id), "name": p.name, "sku": p.batch_no or p.variant_sku, "stock_left": p.stock_quantity, "units_sold": p.units_sold
-        } for p in inv_res.scalars().all()]
+        } for p in inv_scalars]
 
-    total_orders = 0
-    if has_orders:
-        total_orders_q = select(func.count(OrderModel.id))
-        if date_filter:
-            total_orders_q = total_orders_q.where(OrderModel.created_at >= date_filter)
-        total_orders = (await db.execute(total_orders_q)).scalar() or 0
+    total_customers = results.get("customer_count", 0)
 
-    metrics = {}
-    if has_orders:
-        metrics["total_orders"] = total_orders
-        metrics["orders_today"] = orders_today_count
-    if has_financial:
-        metrics["total_revenue"] = revenue
-    if has_products:
-        metrics["total_products"] = total_prods
-    if has_customers:
-        metrics["total_customers"] = (await db.execute(select(func.count(UserModel.id)).where(UserModel.role == "customer"))).scalar() or 0
-    if has_financial:
-        metrics["total_inventory_value"] = total_inventory_value
-        metrics["total_units_sold"] = total_units_sold
-    if has_products:
-        metrics["out_of_stock_count"] = out_of_stock_count
-        metrics["low_stock_count"] = low_stock_count
-        metrics["stock_health"] = stock_health
-    if has_financial and has_products:
-        metrics["top_performer"] = top_performer
-        metrics["fastest_mover"] = fastest_mover
-        metrics["sales_velocity"] = sales_velocity
-    if has_audit:
-        metrics["security_events_count"] = (await db.execute(select(func.count(AuditLogModel.id)).where(AuditLogModel.action.in_(["ADMIN_CREATED", "ADMIN_PASSWORD_RESET"])))).scalar() or 0
-        metrics["destructive_actions_count"] = (await db.execute(select(func.count(AuditLogModel.id)).where(AuditLogModel.action.ilike("%DELETE%")))).scalar() or 0
+    audit_val = results.get("audit_metrics")
+    if audit_val:
+        security_events_count = int(audit_val[0]) if audit_val[0] is not None else 0
+        destructive_actions_count = int(audit_val[1]) if audit_val[1] is not None else 0
+    else:
+        security_events_count = 0
+        destructive_actions_count = 0
 
-    # 2. Best Sellers calculation
     best_products = []
-    if has_financial:
-        best_prods_q = select(OrderModel.items).where(
-            OrderModel.order_status.in_(REVENUE_ORDER_STATUSES),
-            OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES)
-        )
-        if date_filter:
-            best_prods_q = best_prods_q.where(OrderModel.created_at >= date_filter)
-        
-        best_prods_res = await db.execute(best_prods_q)
+    best_prods_items = results.get("best_sellers")
+    if best_prods_items is not None:
         product_counts = {}
-        for items_json in best_prods_res.scalars().all():
+        for items_json in best_prods_items:
             for item in (items_json or []):
                 name = item.get("product_name") or item.get("name") or "Unknown Product"
                 qty = int(item.get("quantity", 0))
                 if name:
                     product_counts[name] = product_counts.get(name, 0) + qty
-                    
         best_products = [
             {"name": k, "quantity": v}
             for k, v in sorted(product_counts.items(), key=lambda x: x[1], reverse=True)[:10]
         ]
 
-    # 3. Revenue Trend calculation
     revenue_trend = []
-    if has_financial:
-        trend_q = select(OrderModel.created_at, OrderModel.total_amount).where(
-            OrderModel.order_status.in_(REVENUE_ORDER_STATUSES),
-            OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES)
-        )
-        if date_filter:
-            trend_q = trend_q.where(OrderModel.created_at >= date_filter)
-        
-        trend_res = await db.execute(trend_q)
-        orders_trend = trend_res.all()
-        
+    orders_trend = results.get("revenue_trend")
+    if orders_trend is not None:
         trend_map = {}
-        
         if timeframe == "Today":
             for dt, amt in orders_trend:
                 if dt:
@@ -338,6 +368,31 @@ async def get_analytics_summary(
                         trend_map[d_str] = trend_map.get(d_str, 0.0) + float(amt)
             sorted_keys = sorted(trend_map.keys(), key=lambda x: datetime.strptime(x, "%b %d"))
             revenue_trend = [{"name": k, "value": round(trend_map[k], 2)} for k in sorted_keys]
+
+    metrics = {}
+    if has_orders:
+        metrics["total_orders"] = total_orders
+        metrics["orders_today"] = orders_today_count
+    if has_financial:
+        metrics["total_revenue"] = revenue
+    if has_products:
+        metrics["total_products"] = total_prods
+    if has_customers:
+        metrics["total_customers"] = total_customers
+    if has_financial:
+        metrics["total_inventory_value"] = total_inventory_value
+        metrics["total_units_sold"] = total_units_sold
+    if has_products:
+        metrics["out_of_stock_count"] = out_of_stock_count
+        metrics["low_stock_count"] = low_stock_count
+        metrics["stock_health"] = stock_health
+    if has_financial and has_products:
+        metrics["top_performer"] = top_performer
+        metrics["fastest_mover"] = fastest_mover
+        metrics["sales_velocity"] = sales_velocity
+    if has_audit:
+        metrics["security_events_count"] = security_events_count
+        metrics["destructive_actions_count"] = destructive_actions_count
 
     return {
         "metrics": metrics,

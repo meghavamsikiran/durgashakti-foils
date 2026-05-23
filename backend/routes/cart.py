@@ -22,12 +22,19 @@ async def get_cart(current_user: UserSchema = Depends(get_current_user), db: Asy
 
     valid_items = []
     items_modified = False
+    
+    product_ids = [item.get('product_id') for item in (cart.items or []) if is_valid_uuid(item.get('product_id'))]
+    if len(product_ids) != len(cart.items or []):
+        items_modified = True
+
+    existing_ids = set()
+    if product_ids:
+        res = await db.execute(select(ProductModel.id).where(ProductModel.id.in_(product_ids)))
+        existing_ids = {str(val) for val in res.scalars().all()}
+
     for item in (cart.items or []):
-        if not is_valid_uuid(item.get('product_id')):
-            items_modified = True
-            continue
-        prod = await db.execute(select(ProductModel.id).where(ProductModel.id == item['product_id']))
-        if prod.scalar_one_or_none():
+        pid = item.get('product_id')
+        if is_valid_uuid(pid) and str(pid) in existing_ids:
             valid_items.append(item)
         else:
             items_modified = True
@@ -141,11 +148,16 @@ async def bulk_sync_cart(items: List[CartItem], current_user: UserSchema = Depen
     cart = cart_res.scalar_one_or_none()
     current_items = list(cart.items or []) if cart else []
 
+    prod_ids = [i.product_id for i in items if is_valid_uuid(i.product_id)]
+    products_map = {}
+    if prod_ids:
+        prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)))
+        products_map = {str(p.id): p for p in prod_res.scalars().all()}
+
     for new_item in items:
         if not is_valid_uuid(new_item.product_id):
             continue
-        prod_res = await db.execute(select(ProductModel).where(ProductModel.id == new_item.product_id))
-        product = prod_res.scalar_one_or_none()
+        product = products_map.get(str(new_item.product_id))
         if not product or int(product.stock_quantity or 0) <= 0:
             continue
         existing = next((i for i in current_items if i['product_id'] == new_item.product_id), None)

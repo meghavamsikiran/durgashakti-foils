@@ -146,12 +146,11 @@ async def get_all_orders(
     db: AsyncSession = Depends(get_db)
 ):
     search = sanitize_search_term(search)
-    base_q = select(OrderModel)
-    count_q = select(func.count(OrderModel.id))
+    q = select(OrderModel, func.count(OrderModel.id).over().label('total_count'))
 
+    clause = None
     if status and status.upper() != "ALL":
-        base_q = base_q.where(func.lower(OrderModel.order_status) == status.lower())
-        count_q = count_q.where(func.lower(OrderModel.order_status) == status.lower())
+        q = q.where(func.lower(OrderModel.order_status) == status.lower())
     if search:
         like_term = f"%{search}%"
         clause = or_(
@@ -159,13 +158,24 @@ async def get_all_orders(
             OrderModel.customer_name.ilike(like_term),
             func.cast(OrderModel.user_id, String).ilike(like_term),
         )
-        base_q = base_q.where(clause)
-        count_q = count_q.where(clause)
+        q = q.where(clause)
 
-    total = (await db.execute(count_q)).scalar() or 0
     offset = (page - 1) * limit
-    res = await db.execute(base_q.order_by(OrderModel.updated_at.desc()).offset(offset).limit(limit))
-    items = [row_to_dict(o) for o in res.scalars().all()]
+    res = await db.execute(q.order_by(OrderModel.updated_at.desc()).offset(offset).limit(limit))
+    rows = res.all()
+    
+    total = 0
+    if rows:
+        total = rows[0][1]
+    elif page > 1:
+        fallback_q = select(func.count(OrderModel.id))
+        if status and status.upper() != "ALL":
+            fallback_q = fallback_q.where(func.lower(OrderModel.order_status) == status.lower())
+        if clause is not None:
+            fallback_q = fallback_q.where(clause)
+        total = (await db.execute(fallback_q)).scalar() or 0
+
+    items = [row_to_dict(row[0]) for row in rows]
     return {"items": items, "total": total, "page": page, "limit": limit}
 
 
@@ -193,12 +203,15 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
 
     applied = bool(order.stock_applied)
     if new_status == "confirmed" and not applied:
-        for item in (order.items or []):
-            pid = item.get("product_id")
-            qty = int(item.get("quantity", 0))
-            if pid and is_valid_uuid(pid) and qty > 0:
-                p_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
-                p = p_res.scalar_one_or_none()
+        items_to_deduct = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
+        if items_to_deduct:
+            prod_ids = [item.get("product_id") for item in items_to_deduct]
+            p_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+            locked_products = {str(p.id): p for p in p_res.scalars().all()}
+            for item in items_to_deduct:
+                pid = item.get("product_id")
+                qty = int(item.get("quantity", 0))
+                p = locked_products.get(str(pid))
                 if p:
                     if int(p.stock_quantity or 0) < qty:
                         raise HTTPException(status_code=400, detail=f"Insufficient stock for {p.name}")
@@ -210,12 +223,15 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
         order.stock_applied = True
 
     if new_status in {"cancelled", "refunded", "return_approved"} and applied:
-        for item in (order.items or []):
-            pid = item.get("product_id")
-            qty = int(item.get("quantity", 0))
-            if pid and is_valid_uuid(pid) and qty > 0:
-                p_res = await db.execute(select(ProductModel).where(ProductModel.id == pid).with_for_update())
-                p = p_res.scalar_one_or_none()
+        items_to_release = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
+        if items_to_release:
+            prod_ids = [item.get("product_id") for item in items_to_release]
+            p_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+            locked_products = {str(p.id): p for p in p_res.scalars().all()}
+            for item in items_to_release:
+                pid = item.get("product_id")
+                qty = int(item.get("quantity", 0))
+                p = locked_products.get(str(pid))
                 if p:
                     p.stock_quantity = int(p.stock_quantity or 0) + qty
                     p.units_sold = max(0, int(p.units_sold or 0) - qty)
@@ -329,9 +345,9 @@ async def list_customers(
     db: AsyncSession = Depends(get_db)
 ):
     search = sanitize_search_term(search)
-    base_q = select(UserModel).where(UserModel.role == "customer")
-    count_q = select(func.count(UserModel.id)).where(UserModel.role == "customer")
+    q = select(UserModel, func.count(UserModel.id).over().label('total_count')).where(UserModel.role == "customer")
 
+    clause = None
     if search:
         like_term = f"%{search}%"
         clause = or_(
@@ -339,13 +355,22 @@ async def list_customers(
             UserModel.email.ilike(like_term),
             UserModel.phone.ilike(like_term)
         )
-        base_q = base_q.where(clause)
-        count_q = count_q.where(clause)
+        q = q.where(clause)
 
-    total = (await db.execute(count_q)).scalar() or 0
     offset = (page - 1) * limit
-    res = await db.execute(base_q.order_by(UserModel.created_at.desc()).offset(offset).limit(limit))
-    users = res.scalars().all()
+    res = await db.execute(q.order_by(UserModel.created_at.desc()).offset(offset).limit(limit))
+    rows = res.all()
+    
+    total = 0
+    if rows:
+        total = rows[0][1]
+    elif page > 1:
+        fallback_q = select(func.count(UserModel.id)).where(UserModel.role == "customer")
+        if clause is not None:
+            fallback_q = fallback_q.where(clause)
+        total = (await db.execute(fallback_q)).scalar() or 0
+
+    users = [row[0] for row in rows]
 
     # Aggregate order counts
     user_ids = [u.id for u in users]
@@ -359,10 +384,10 @@ async def list_customers(
         for row in stat_res.all():
             order_stats[row.user_id] = {"orders_count": row.cnt, "total_spent": float(row.tot or 0)}
 
-    rows = []
+    rows_data = []
     for u in users:
         st = order_stats.get(u.id, {"orders_count": 0, "total_spent": 0.0})
-        rows.append({
+        rows_data.append({
             "id": str(u.id),
             "name": u.full_name or "Anonymous",
             "email": u.email,
@@ -371,7 +396,7 @@ async def list_customers(
             "orders_count": st["orders_count"],
             "total_spent": round(st["total_spent"], 2)
         })
-    return {"items": rows, "total": total, "page": page, "limit": limit}
+    return {"items": rows_data, "total": total, "page": page, "limit": limit}
 
 
 # ── Admins (Admin) ───────────────────────────────────────────────────────
@@ -786,13 +811,17 @@ async def import_gst_file(file: UploadFile = File(...), admin: UserSchema = Depe
     import_id = str(uuid.uuid4())
     inserted = 0
     failed = 0
+
+    invoice_numbers = [str(r.get("invoice_number", "")).strip() for _, r in df.iterrows() if str(r.get("invoice_number", "")).strip()]
+    existing_invoices = set()
+    if invoice_numbers:
+        existing_res = await db.execute(select(GstRecordModel.invoice_number).where(GstRecordModel.invoice_number.in_(invoice_numbers)))
+        existing_invoices = {str(val) for val in existing_res.scalars().all()}
+
     for _, r in df.iterrows():
         try:
             inv = str(r.get("invoice_number", "")).strip()
-            if not inv:
-                failed += 1; continue
-            existing = await db.execute(select(GstRecordModel).where(GstRecordModel.invoice_number == inv))
-            if existing.scalar_one_or_none():
+            if not inv or inv in existing_invoices:
                 failed += 1; continue
             g = GstRecordModel(
                 id=str(uuid.uuid4()),
@@ -821,16 +850,26 @@ async def import_gst_file(file: UploadFile = File(...), admin: UserSchema = Depe
 @router.get("/admin/gst/reports")
 async def get_gst_reports(page: int = Query(1), limit: int = Query(50), search: Optional[str] = None, admin: UserSchema = Depends(require_permission("view_gst_reports")), db: AsyncSession = Depends(get_db)):
     search = sanitize_search_term(search)
-    base_q = select(GstRecordModel)
-    count_q = select(func.count(GstRecordModel.id))
+    q = select(GstRecordModel, func.count(GstRecordModel.id).over().label('total_count'))
+    clause = None
     if search:
         clause = or_(GstRecordModel.invoice_number.ilike(f"%{search}%"), GstRecordModel.customer_name.ilike(f"%{search}%"))
-        base_q = base_q.where(clause)
-        count_q = count_q.where(clause)
+        q = q.where(clause)
 
-    total = (await db.execute(count_q)).scalar() or 0
-    res = await db.execute(base_q.order_by(GstRecordModel.invoice_date.desc()).offset((page-1)*limit).limit(limit))
-    return {"items": [row_to_dict(g) for g in res.scalars().all()], "total": total, "page": page, "limit": limit}
+    offset = (page - 1) * limit
+    res = await db.execute(q.order_by(GstRecordModel.invoice_date.desc()).offset(offset).limit(limit))
+    rows = res.all()
+    
+    total = 0
+    if rows:
+        total = rows[0][1]
+    elif page > 1:
+        fallback_q = select(func.count(GstRecordModel.id))
+        if clause is not None:
+            fallback_q = fallback_q.where(clause)
+        total = (await db.execute(fallback_q)).scalar() or 0
+
+    return {"items": [row_to_dict(row[0]) for row in rows], "total": total, "page": page, "limit": limit}
 
 
 @router.get("/admin/gst/imports")
@@ -881,9 +920,12 @@ async def seed_sample_gst(admin: UserSchema = Depends(require_permission("import
     
     inserted = 0
     failed = 0
+    inv_nums = [s["invoice_number"] for s in samples]
+    existing_res = await db.execute(select(GstRecordModel.invoice_number).where(GstRecordModel.invoice_number.in_(inv_nums)))
+    existing_invoices = {str(val) for val in existing_res.scalars().all()}
+
     for s in samples:
-        existing = await db.execute(select(GstRecordModel).where(GstRecordModel.invoice_number == s["invoice_number"]))
-        if existing.scalar_one_or_none():
+        if s["invoice_number"] in existing_invoices:
             failed += 1
             continue
             
@@ -919,13 +961,23 @@ async def seed_sample_gst(admin: UserSchema = Depends(require_permission("import
 @router.get("/admin/audit-logs")
 async def get_audit_logs(page: int = Query(1), limit: int = Query(50), search: Optional[str] = None, admin: UserSchema = Depends(require_permission("view_audit_logs")), db: AsyncSession = Depends(get_db)):
     search = sanitize_search_term(search)
-    base_q = select(AuditLogModel)
-    count_q = select(func.count(AuditLogModel.id))
+    q = select(AuditLogModel, func.count(AuditLogModel.id).over().label('total_count'))
+    clause = None
     if search:
         clause = or_(AuditLogModel.action.ilike(f"%{search}%"), AuditLogModel.actor_id.ilike(f"%{search}%"), AuditLogModel.target_id.ilike(f"%{search}%"))
-        base_q = base_q.where(clause)
-        count_q = count_q.where(clause)
+        q = q.where(clause)
 
-    total = (await db.execute(count_q)).scalar() or 0
-    res = await db.execute(base_q.order_by(AuditLogModel.created_at.desc()).offset((page-1)*limit).limit(limit))
-    return {"items": [row_to_dict(a) for a in res.scalars().all()], "total": total, "page": page, "limit": limit}
+    offset = (page - 1) * limit
+    res = await db.execute(q.order_by(AuditLogModel.created_at.desc()).offset(offset).limit(limit))
+    rows = res.all()
+    
+    total = 0
+    if rows:
+        total = rows[0][1]
+    elif page > 1:
+        fallback_q = select(func.count(AuditLogModel.id))
+        if clause is not None:
+            fallback_q = fallback_q.where(clause)
+        total = (await db.execute(fallback_q)).scalar() or 0
+
+    return {"items": [row_to_dict(row[0]) for row in rows], "total": total, "page": page, "limit": limit}

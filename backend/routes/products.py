@@ -18,9 +18,9 @@ async def get_products(
     db: AsyncSession = Depends(get_db)
 ):
     search = sanitize_search_term(search)
-    base_q = select(ProductModel)
-    count_q = select(func.count(ProductModel.id))
+    q = select(ProductModel, func.count(ProductModel.id).over().label('total_count'))
 
+    filter_clause = None
     if search:
         like_term = f"%{search}%"
         filter_clause = or_(
@@ -28,17 +28,24 @@ async def get_products(
             ProductModel.batch_no.ilike(like_term),
             ProductModel.variant_sku.ilike(like_term),
         )
-        base_q = base_q.where(filter_clause)
-        count_q = count_q.where(filter_clause)
-
-    total_result = await db.execute(count_q)
-    total = total_result.scalar() or 0
+        q = q.where(filter_clause)
 
     offset = (page - 1) * limit
     result = await db.execute(
-        base_q.order_by(ProductModel.created_at.desc()).offset(offset).limit(limit)
+        q.order_by(ProductModel.created_at.desc()).offset(offset).limit(limit)
     )
-    products = [row_to_dict(p) for p in result.scalars().all()]
+    rows = result.all()
+    
+    total = 0
+    if rows:
+        total = rows[0][1]
+    elif page > 1:
+        fallback_q = select(func.count(ProductModel.id))
+        if filter_clause is not None:
+            fallback_q = fallback_q.where(filter_clause)
+        total = (await db.execute(fallback_q)).scalar() or 0
+
+    products = [row_to_dict(row[0]) for row in rows]
     return {"items": products, "total": total, "page": page, "limit": limit}
 
 
