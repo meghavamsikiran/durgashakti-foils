@@ -25,6 +25,7 @@ const RouteTransitionLoader = () => {
       isInitialPageLoad = false;
       if (typeof window !== 'undefined') {
         window.__routeTransitionActive = true;
+        window.__initialPageLoadActive = true;
       }
       return true;
     }
@@ -59,6 +60,12 @@ const RouteTransitionLoader = () => {
         if (typeof window !== 'undefined') {
           window.__routeTransitionActive = false;
         }
+        // Keep initialPageLoadActive true for another 2.5 seconds to suppress any PageLoader flashes
+        setTimeout(() => {
+          if (typeof window !== 'undefined') {
+            window.__initialPageLoadActive = false;
+          }
+        }, 2500);
       }, 600);
       return () => clearTimeout(timer);
     }

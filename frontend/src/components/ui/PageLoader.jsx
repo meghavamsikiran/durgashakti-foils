@@ -1,27 +1,35 @@
 import React, { useState, useEffect } from 'react';
 
 /**
- * PageLoader — A premium, highly responsive CSS-based spinner loader.
+ * PageLoader — A premium, full-screen centered circular spinner loader.
  * Features a circular track, a spinning indigo progress arc, the central branded 
  * orange trident icon, and customized uppercase labels.
  * 
- * Automatically detects whether it is rendered in an admin context or a public 
- * customer context to select the appropriate text, and respects the initial 
- * RouteTransitionLoader duration to prevent layout double-loading.
+ * Centered relative to the entire screen using a fixed blurred backdrop.
+ * Suppressed completely during page transition, browser refresh, or initial load 
+ * to prevent overlapping or consecutive loader flashes.
  */
 const PageLoader = ({ text }) => {
-  const [transitionActive, setTransitionActive] = useState(() => {
-    return typeof window !== 'undefined' && !!window.__routeTransitionActive;
+  const [suppressed, setSuppressed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!(window.__routeTransitionActive || window.__initialPageLoadActive);
+    }
+    return false;
   });
 
   useEffect(() => {
-    if (transitionActive) {
-      const timer = setTimeout(() => setTransitionActive(false), 600);
-      return () => clearTimeout(timer);
+    if (suppressed) {
+      const interval = setInterval(() => {
+        if (typeof window !== 'undefined' && !window.__routeTransitionActive && !window.__initialPageLoadActive) {
+          setSuppressed(false);
+          clearInterval(interval);
+        }
+      }, 100);
+      return () => clearInterval(interval);
     }
-  }, [transitionActive]);
+  }, [suppressed]);
 
-  if (transitionActive) return null;
+  if (suppressed) return null;
 
   const defaultText = typeof window !== 'undefined' && (window.location.pathname.includes('/admin') || window.location.pathname.includes('/superadmin'))
     ? 'LOADING ADMIN SESSION'
@@ -30,11 +38,11 @@ const PageLoader = ({ text }) => {
   const displayText = text || defaultText;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] w-full p-8 animate-in fade-in duration-300">
-      <div className="flex flex-col items-center justify-center gap-5">
+    <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center bg-slate-50/60 backdrop-blur-[2px] animate-in fade-in duration-300">
+      <div className="bg-white border border-slate-200/80 shadow-2xl rounded-3xl p-10 flex flex-col items-center justify-center gap-5 max-w-sm w-full mx-4">
         <div className="relative w-16 h-16 flex items-center justify-center">
           {/* Circular track */}
-          <div className="absolute inset-0 rounded-full border-[3.5px] border-slate-100/80" />
+          <div className="absolute inset-0 rounded-full border-[3.5px] border-slate-100" />
           {/* Spinning indicator */}
           <div className="absolute inset-0 rounded-full border-[3.5px] border-transparent border-t-indigo-600 animate-spin" />
           {/* Branded orange logo in center */}
