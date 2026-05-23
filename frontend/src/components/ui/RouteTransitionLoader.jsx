@@ -32,6 +32,8 @@ const RouteTransitionLoader = () => {
     return false;
   });
 
+  const [duration, setDuration] = useState(600);
+
   // Synchronously initialize isMobile to prevent brief UI flashes during hydration
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -55,7 +57,9 @@ const RouteTransitionLoader = () => {
 
   // Listen for login-triggered loader event
   useEffect(() => {
-    const handleLoginLoader = () => {
+    const handleLoginLoader = (e) => {
+      const customDuration = e?.detail?.duration || 3000;
+      setDuration(customDuration);
       if (typeof window !== 'undefined') {
         window.__routeTransitionActive = true;
         window.__initialPageLoadActive = true;
@@ -79,10 +83,10 @@ const RouteTransitionLoader = () => {
             window.__initialPageLoadActive = false;
           }
         }, 2500);
-      }, 600);
+      }, duration);
       return () => clearTimeout(timer);
     }
-  }, [show]);
+  }, [show, duration]);
 
 
   if (!show) return null;
