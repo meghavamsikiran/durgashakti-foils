@@ -4,6 +4,7 @@ import { Toaster } from './components/ui/sonner';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import Navbar from './components/Navbar';
+import PopupBanner from './components/PopupBanner';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -75,6 +76,7 @@ function AppRoutes() {
           <ScrollToTop />
           <RouteTransitionLoader />
           {!isAdminPath && <Navbar />}
+          {!isAdminPath && <PopupBanner />}
           <Suspense fallback={<SuspenseTrigger />}>
             <Routes>
               {/* Public Routes */}

@@ -273,3 +273,20 @@ h1, h2, h3, h4, h5, h6 {
   background: #16E34A;
 }
 
+/* Popup Banner Animations */
+@keyframes shrink-width {
+  0% { width: 100%; }
+  100% { width: 0%; }
+}
+.animate-shrink-width {
+  animation: shrink-width 5s linear forwards;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

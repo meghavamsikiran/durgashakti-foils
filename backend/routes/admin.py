@@ -904,10 +904,12 @@ async def save_setting(data: dict, admin: UserSchema = Depends(require_permissio
 
 @router.get("/settings/public")
 async def get_public_settings(db: AsyncSession = Depends(get_db)):
-    res = await db.execute(select(SettingModel).where(SettingModel.key.in_(["company_profile", "payment_settings", "scrolling_banner", "shipping_settings"])))
+    res = await db.execute(select(SettingModel).where(SettingModel.key.in_(["company_profile", "payment_settings", "scrolling_banner", "shipping_settings", "popup_banner"])))
     d = {s.key: s.value for s in res.scalars().all()}
     if "payment_settings" not in d:
         d["payment_settings"] = {"cod_enabled": True}
+    if "popup_banner" not in d:
+        d["popup_banner"] = {"promoted_coupons": []}
     if "scrolling_banner" not in d:
         d["scrolling_banner"] = {
             "text1": "Durga Shakti Foils: Premium Packing Solutions",

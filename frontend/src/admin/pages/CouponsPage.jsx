@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Ticket, Plus, Search, Edit2, Trash2, Settings, 
-  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone
+  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import couponService from '../../services/coupon.service';
@@ -20,6 +20,9 @@ const CouponsPage = () => {
   const [savingSettings, setSavingSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [promotingId, setPromotingId] = useState(null);
+  const [scrollingBanner, setScrollingBanner] = useState({ text1: '', text2: '', timer_enabled: false, timer_target: '', use_favicon: true });
+  const [popupBanner, setPopupBanner] = useState({ promoted_coupons: [] });
+  const [togglingPopupId, setTogglingPopupId] = useState(null);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,12 +46,16 @@ const CouponsPage = () => {
   const fetchCouponsAndSettings = async () => {
     setLoading(true);
     try {
-      const [couponsData, settingsData] = await Promise.all([
+      const [couponsData, settingsData, adminSettingsRes] = await Promise.all([
         couponService.getCoupons(),
-        couponService.getSettings()
+        couponService.getSettings(),
+        adminService.getSettings()
       ]);
       setCoupons(couponsData);
       setSettings(settingsData);
+      const adminSettings = adminSettingsRes.data || {};
+      setScrollingBanner(adminSettings.scrolling_banner || { text1: '', text2: '', timer_enabled: false, timer_target: '', use_favicon: true });
+      setPopupBanner(adminSettings.popup_banner || { promoted_coupons: [] });
     } catch (error) {
       toast.error('Failed to load coupon data');
     } finally {
@@ -185,23 +192,81 @@ const CouponsPage = () => {
         }
       }
 
+      const updatedBannerValue = {
+        text1: currentBanner.text1 || '✨ Experience Purity & Perfection with Durga Shakti Premium Foils ✨',
+        text2: text2,
+        timer_enabled: timerEnabled,
+        timer_target: timerTarget,
+        use_favicon: currentBanner.use_favicon !== false
+      };
+
       // 4. Update the settings via API
       await adminService.updateSetting({
         key: 'scrolling_banner',
-        value: {
-          text1: currentBanner.text1 || '✨ Experience Purity & Perfection with Durga Shakti Premium Foils ✨',
-          text2: text2,
-          timer_enabled: timerEnabled,
-          timer_target: timerTarget,
-          use_favicon: currentBanner.use_favicon !== false
-        }
+        value: updatedBannerValue
       });
+
+      // Update local state
+      setScrollingBanner(updatedBannerValue);
 
       toast.success(`✨ Coupon ${coupon.code} is now active in the scrolling banner!`);
     } catch (error) {
       toast.error(error.message || 'Failed to update scrolling banner');
     } finally {
       setPromotingId(null);
+    }
+  };
+
+  const handleTogglePopupBannerPromotion = async (coupon) => {
+    setTogglingPopupId(coupon.id);
+    try {
+      // 1. Fetch current settings to get existing popup_banner
+      const settingsRes = await adminService.getSettings();
+      const currentSettings = settingsRes.data || {};
+      const currentPopupBanner = currentSettings.popup_banner || { promoted_coupons: [] };
+      const currentList = currentPopupBanner.promoted_coupons || [];
+
+      // 2. Check if already promoted
+      const isPromoted = currentList.some(c => c.code === coupon.code);
+      let updatedList = [];
+
+      if (isPromoted) {
+        // Demote (remove)
+        updatedList = currentList.filter(c => c.code !== coupon.code);
+      } else {
+        // Promote (add)
+        const couponDetail = {
+          id: coupon.id,
+          code: coupon.code,
+          discount_type: coupon.discount_type,
+          discount_value: Number(coupon.discount_value),
+          expiry_date: coupon.expiry_date
+        };
+        updatedList = [...currentList, couponDetail];
+      }
+
+      const newPopupBannerValue = {
+        promoted_coupons: updatedList
+      };
+
+      // 3. Update setting in backend
+      await adminService.updateSetting({
+        key: 'popup_banner',
+        value: newPopupBannerValue
+      });
+
+      // Update local state
+      setPopupBanner(newPopupBannerValue);
+      
+      if (isPromoted) {
+        toast.success(`Removed coupon ${coupon.code} from the pop-up banner`);
+      } else {
+        toast.success(`Added coupon ${coupon.code} to the pop-up banner!`);
+      }
+    } catch (error) {
+      toast.error(error.message || 'Failed to update pop-up banner settings');
+    } finally {
+      setTogglingPopupId(null);
     }
   };
 
@@ -480,18 +545,48 @@ const CouponsPage = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <button 
-                            onClick={() => handlePromoteToBanner(coupon)}
-                            disabled={promotingId === coupon.id}
-                            className="p-2 text-slate-500 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all disabled:opacity-50"
-                            title="Promote in Banner"
-                          >
-                            {promotingId === coupon.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Megaphone className="w-4 h-4" />
-                            )}
-                          </button>
+                          {(() => {
+                            const isScrollingPromoted = scrollingBanner && scrollingBanner.text2 && scrollingBanner.text2.includes(coupon.code);
+                            const isPopupPromoted = popupBanner && popupBanner.promoted_coupons && popupBanner.promoted_coupons.some(c => c.code === coupon.code);
+
+                            return (
+                              <>
+                                <button 
+                                  onClick={() => handlePromoteToBanner(coupon)}
+                                  disabled={promotingId === coupon.id}
+                                  className={`p-2 rounded-xl transition-all disabled:opacity-50 ${
+                                    isScrollingPromoted 
+                                      ? 'text-amber-600 bg-amber-50 hover:bg-amber-100' 
+                                      : 'text-slate-400 hover:text-amber-500 hover:bg-slate-100'
+                                  }`}
+                                  title={isScrollingPromoted ? "Promoted in Top Banner" : "Promote in Top Banner"}
+                                >
+                                  {promotingId === coupon.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Megaphone className={`w-4 h-4 ${isScrollingPromoted ? 'fill-amber-600' : ''}`} />
+                                  )}
+                                </button>
+                                
+                                <button 
+                                  onClick={() => handleTogglePopupBannerPromotion(coupon)}
+                                  disabled={togglingPopupId === coupon.id}
+                                  className={`p-2 rounded-xl transition-all disabled:opacity-50 ${
+                                    isPopupPromoted 
+                                      ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 animate-pulse' 
+                                      : 'text-slate-400 hover:text-emerald-600 hover:bg-slate-100'
+                                  }`}
+                                  title={isPopupPromoted ? "Promoted in Popup Banner" : "Promote in Popup Banner"}
+                                >
+                                  {togglingPopupId === coupon.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Sparkles className={`w-4 h-4 ${isPopupPromoted ? 'fill-emerald-600' : ''}`} />
+                                  )}
+                                </button>
+                              </>
+                            );
+                          })()}
                           <button 
                             onClick={() => handleOpenEditModal(coupon)}
                             className="p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-xl transition-all"
