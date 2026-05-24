@@ -8,6 +8,7 @@ import addressService from '../services/address.service';
 import orderService from '../services/order.service';
 import paymentService from '../services/payment.service';
 import settingsService from '../services/settings.service';
+import couponService from '../services/coupon.service';
 import { calculateCheckoutPricing, normalizeShippingSettings } from '../utils/checkoutPricing';
 import { getProductPricing } from '../utils/productPricing';
 
