@@ -5,6 +5,30 @@ import { useAuth } from '../contexts/AuthContext';
 import settingsService from '../services/settings.service';
 
 const POPUP_VISIBLE_MS = 8000;
+const POPUP_SESSION_PREFIX = 'ds_popup_banner_shown';
+
+const getBannerPlacement = (path, user) => {
+  if (path === '/checkout') return 'checkout';
+  if (path === '/shop' && user) return 'shop';
+  if (path === '/' && !user) return 'landing';
+  return null;
+};
+
+const isBannerEnabledForPlacement = (banner, placement) => {
+  if (!banner || !placement) return false;
+
+  if (placement === 'landing') return banner.show_on_landing !== false;
+  if (placement === 'shop') return banner.show_on_shop !== false;
+  if (placement === 'checkout') return banner.show_on_checkout !== false;
+
+  return false;
+};
+
+const getBannerSessionKey = (banner, placement, user) => {
+  const bannerId = banner?.id || 'default';
+  const audience = placement === 'shop' ? (user?.id || user?.email || 'customer') : 'guest';
+  return `${POPUP_SESSION_PREFIX}:${bannerId}:${placement}:${audience}`;
+};
 
 // Helper to parse coupon from scrolling banner text if needed
 const parseCouponFromScrollingText = (bannerText, timerEnabled, timerTarget) => {
@@ -40,6 +64,7 @@ const PopupBanner = () => {
   const checkoutShownRef = useRef(false);
   const prevUserRef = useRef(user);
   const timerTriggerTypeRef = useRef(null);
+  const loggedOutRef = useRef(false);
 
   // Load public settings to fetch promoted coupons and custom themes
   useEffect(() => {
@@ -52,11 +77,16 @@ const PopupBanner = () => {
 
         const customBanners = (data.popup_banner?.custom_banners || []).filter(b => b !== null && b !== undefined);
         const activeTheme = customBanners.find(theme => theme.is_active);
+        const placement = getBannerPlacement(location.pathname, user);
+        const activeThemeForPage = activeTheme && isBannerEnabledForPlacement(activeTheme, placement)
+          ? activeTheme
+          : null;
 
         let selectedCoupons = [];
-        if (activeTheme) {
-          selectedCoupons = activeTheme.linked_coupons || [];
-        } else {
+        if (activeThemeForPage) {
+          selectedCoupons = activeThemeForPage.linked_coupons || [];
+        } else if (!activeTheme) {
+          // Preserve the older promoted-coupon popup behavior when no custom template is active.
           selectedCoupons = data.popup_banner?.promoted_coupons || [];
         }
 
@@ -69,9 +99,9 @@ const PopupBanner = () => {
         });
 
         setCoupons(validCoupons);
-        setActiveTheme(activeTheme || null);
+        setActiveTheme(activeThemeForPage || null);
 
-        if (validCoupons.length === 0 && attempt < 5) {
+        if (validCoupons.length === 0 && attempt < 5 && (activeThemeForPage || !activeTheme)) {
           settingsRetryRef.current = setTimeout(() => fetchPromotedCoupons(attempt + 1), 12000);
         }
       } catch (err) {
@@ -88,7 +118,7 @@ const PopupBanner = () => {
       active = false;
       if (settingsRetryRef.current) clearTimeout(settingsRetryRef.current);
     };
-  }, [location.pathname]);
+  }, [location.pathname, user]);
 
   // Clean up timers ONLY on actual component unmount (not on path/dependency changes)
   useEffect(() => {
@@ -122,13 +152,27 @@ const PopupBanner = () => {
         hideTimerRef.current = null;
       }
       timerTriggerTypeRef.current = null;
+      loggedOutRef.current = true;
       setShow(false);
+      return;
     }
 
     const isCheckoutPath = path === '/checkout';
     const isLoginTimerRunning = timerTriggerTypeRef.current === 'login';
+    const placement = getBannerPlacement(path, user);
+    const sessionKey = placement ? getBannerSessionKey(activeTheme, placement, user) : null;
+    const alreadyShownThisSession = placement !== 'checkout' && sessionKey
+      ? sessionStorage.getItem(sessionKey) === 'true'
+      : false;
 
-    // Clear timers on route change, EXCEPT when a global login timer is running and we are not on checkout
+    if (timerRef.current && isLoginTimerRunning && placement !== 'shop') {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+      timerTriggerTypeRef.current = null;
+      loginShownRef.current = false;
+    }
+
+    // Keep the shop timer stable on same-page re-renders, but stop it when the user leaves shop.
     if (timerRef.current && (!isLoginTimerRunning || isCheckoutPath)) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
@@ -136,18 +180,23 @@ const PopupBanner = () => {
     }
 
     // Reset showing banner on route change only if it is path-specific or navigating to checkout
-    if (hideTimerRef.current && (isCheckoutPath || timerTriggerTypeRef.current === 'guest')) {
+    if (hideTimerRef.current && (
+      isCheckoutPath ||
+      timerTriggerTypeRef.current === 'guest' ||
+      (timerTriggerTypeRef.current === 'login' && placement !== 'shop')
+    )) {
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
       setShow(false);
     }
 
-    // Rule 1: Any logged in user session should see the banner once.
-    if (user && !loginShownRef.current) {
+    // Rule 1: Logged-in shop page -> show once per session.
+    if (placement === 'shop' && !loginShownRef.current && !alreadyShownThisSession) {
       loginShownRef.current = 'pending';
       timerTriggerTypeRef.current = 'login';
       timerRef.current = setTimeout(() => {
         setShow(true);
+        if (sessionKey) sessionStorage.setItem(sessionKey, 'true');
         loginShownRef.current = 'shown';
         hideTimerRef.current = setTimeout(() => {
           setShow(false);
@@ -155,10 +204,11 @@ const PopupBanner = () => {
       }, 5000);
     }
 
-    // Rule 2: Logged-out home/login screen -> Show immediately for 8s
-    else if ((path === '/' || path === '/login') && !user && (!guestHomeShownRef.current || justLoggedOut)) {
+    // Rule 2: Logged-out landing page -> show once per session, but never immediately after logout.
+    else if (placement === 'landing' && !loggedOutRef.current && !guestHomeShownRef.current && !alreadyShownThisSession) {
       guestHomeShownRef.current = true;
       setShow(true);
+      if (sessionKey) sessionStorage.setItem(sessionKey, 'true');
       timerTriggerTypeRef.current = 'guest';
       
       hideTimerRef.current = setTimeout(() => {
@@ -166,8 +216,8 @@ const PopupBanner = () => {
       }, POPUP_VISIBLE_MS);
     }
 
-    // Rule 3: Checkout Page (/checkout) -> Wait 1s, then show for 8s (remind one more time)
-    else if (path === '/checkout' && !checkoutShownRef.current) {
+    // Rule 3: Checkout page -> show once per visit; refresh is allowed to show it again.
+    else if (placement === 'checkout' && !checkoutShownRef.current) {
       checkoutShownRef.current = true;
       timerTriggerTypeRef.current = 'checkout';
       
@@ -181,13 +231,13 @@ const PopupBanner = () => {
     }
 
     return () => {
-      // Do not clear login timer on effect cleanup (path change)
+      // Do not clear the shop timer on same-page effect cleanup.
       if (timerRef.current && timerTriggerTypeRef.current !== 'login') {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
     };
-  }, [coupons, user, location.pathname]);
+  }, [coupons, user, location.pathname, activeTheme]);
 
   const handleCopy = (code) => {
     navigator.clipboard.writeText(code);

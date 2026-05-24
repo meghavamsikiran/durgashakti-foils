@@ -513,6 +513,9 @@ const CouponsPage = () => {
     title: '',
     subtitle: '',
     is_active: true,
+    show_on_landing: true,
+    show_on_shop: true,
+    show_on_checkout: true,
     coupon_codes: [],
     theme_config: {
       background_gradient: 'from-[#4d0b5a] via-[#2f0438] to-[#1a0120]',
@@ -966,6 +969,9 @@ const CouponsPage = () => {
         title: bannerForm.title.trim(),
         subtitle: bannerForm.subtitle.trim(),
         is_active: bannerForm.is_active,
+        show_on_landing: bannerForm.show_on_landing !== false,
+        show_on_shop: bannerForm.show_on_shop !== false,
+        show_on_checkout: bannerForm.show_on_checkout !== false,
         coupon_codes: currentCodes,
         linked_coupons: linkedCoupons,
         theme_config: bannerForm.theme_config
@@ -1586,6 +1592,53 @@ const CouponsPage = () => {
 
 
 
+                {/* Banner Display Pages */}
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400">
+                    Banner Display Pages
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary"
+                        checked={bannerForm.show_on_landing !== false}
+                        onChange={(e) => setBannerForm(prev => ({ ...prev, show_on_landing: e.target.checked }))}
+                      />
+                      <div>
+                        <p className="text-xs font-bold text-ink-slate">Landing Page (Before Customer Login)</p>
+                        <p className="text-[10px] text-text-muted mt-0.5">https://durgashakti-foils.vercel.app/</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary"
+                        checked={bannerForm.show_on_shop !== false}
+                        onChange={(e) => setBannerForm(prev => ({ ...prev, show_on_shop: e.target.checked }))}
+                      />
+                      <div>
+                        <p className="text-xs font-bold text-ink-slate">After Customer Logged In (Shop Page)</p>
+                        <p className="text-[10px] text-text-muted mt-0.5">https://durgashakti-foils.vercel.app/shop</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary"
+                        checked={bannerForm.show_on_checkout !== false}
+                        onChange={(e) => setBannerForm(prev => ({ ...prev, show_on_checkout: e.target.checked }))}
+                      />
+                      <div>
+                        <p className="text-xs font-bold text-ink-slate">Checkout Page</p>
+                        <p className="text-[10px] text-text-muted mt-0.5">https://durgashakti-foils.vercel.app/checkout</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
                 {/* Active Toggle */}
                 <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                   <input
@@ -1808,6 +1861,9 @@ const CouponsPage = () => {
                               setBannerForm({
                                 ...theme,
                                 coupon_codes: theme.coupon_codes || [],
+                                show_on_landing: theme.show_on_landing !== undefined ? theme.show_on_landing : true,
+                                show_on_shop: theme.show_on_shop !== undefined ? theme.show_on_shop : true,
+                                show_on_checkout: theme.show_on_checkout !== undefined ? theme.show_on_checkout : true,
                                 theme_config: {
                                   background_gradient: theme.theme_config?.background_gradient || 'from-[#4d0b5a] via-[#2f0438] to-[#1a0120]',
                                   emoji_pattern: theme.theme_config?.emoji_pattern || '⚡🎁🔥',
