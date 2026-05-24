@@ -77,8 +77,11 @@ const CustomerDetailPage = () => {
   }
 
   const { customer, addresses, orders, reviews } = data;
-  const totalVolume = orders.length;
-  const lifetimeSpend = orders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+  const paidOrders = orders.filter(o => 
+    ['completed', 'paid'].includes((o.payment_status || '').toLowerCase())
+  );
+  const totalVolume = paidOrders.length;
+  const lifetimeSpend = paidOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

@@ -186,9 +186,7 @@ const OrderDetailsPage = () => {
 
   const canReviewOrder = () => {
     const status = (order.order_status || '').toLowerCase();
-    const payment = (order.payment_status || '').toLowerCase();
-    return !['cancelled', 'failed', 'pending_payment'].includes(status)
-      && (['completed', 'paid', 'cash on delivery'].includes(payment) || order.stock_applied === true);
+    return ['delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
   };
 
   const generateInvoiceHtml = (orderData) => {
@@ -802,9 +800,9 @@ const OrderDetailsPage = () => {
                     <div className="pt-2 flex flex-wrap gap-2">
                       <button 
                         onClick={() => handleBuyItAgain(item)}
-                        className="bg-[#FFD814] hover:bg-[#F7CA00] text-slate-950 font-extrabold text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-full shadow-sm border border-[#F2C200] transition-colors flex items-center gap-1.5 hover:scale-102 transform active:scale-98"
+                        className="bg-primary hover:bg-emerald-hover text-white font-extrabold text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-full shadow-sm border border-primary/20 transition-all flex items-center gap-1.5 hover:scale-102 transform active:scale-98 hover:shadow-emerald-glow"
                       >
-                        <Wallet className="w-3.5 h-3.5 text-slate-950" /> Buy it again
+                        <Wallet className="w-3.5 h-3.5 text-white" /> Buy it again
                       </button>
                     </div>
                   </div>
@@ -837,10 +835,10 @@ const OrderDetailsPage = () => {
 
                   {canReviewOrder() && (
                     <button
-                      className="w-full bg-[#FFD814] hover:bg-[#F7CA00] border border-[#F2C200] font-black text-slate-950 text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all text-center uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5"
+                      className="w-full bg-primary hover:bg-emerald-hover border border-primary/20 font-black text-white text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all text-center uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5 hover:shadow-emerald-glow"
                       onClick={() => navigate(`/review/${order.id}/${item.product_id}`)}
                     >
-                      <Star className="w-3.5 h-3.5 fill-slate-950" />
+                      <Star className="w-3.5 h-3.5 fill-white text-white" />
                       Write product review
                     </button>
                   )}
