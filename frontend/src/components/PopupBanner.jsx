@@ -4,6 +4,8 @@ import { X, Copy, Check, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import settingsService from '../services/settings.service';
 
+const POPUP_VISIBLE_MS = 7000;
+
 const getPromotedCouponsFromSettings = (settings = {}) => {
   const scrollingBanner = settings.scrolling_banner || {};
   const promotedCoupons =
@@ -45,7 +47,6 @@ const PopupBanner = () => {
   const hideTimerRef = useRef(null);
   const settingsRetryRef = useRef(null);
   const guestHomeShownRef = useRef(false);
-  const customerHomeShownRef = useRef(false);
   const loginShownRef = useRef(false);
   const checkoutShownRef = useRef(false);
   const prevUserRef = useRef(user);
@@ -96,50 +97,34 @@ const PopupBanner = () => {
     }
 
     const path = location.pathname;
-    const justLoggedIn = !prevUserRef.current && user;
+    const justLoggedOut = prevUserRef.current && !user;
     prevUserRef.current = user;
     
     // Clear any pending timers when path changes or login state changes
     if (timerRef.current) clearTimeout(timerRef.current);
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
 
-    // Rule 1: Landing Page (/) & Customer NOT logged in -> Show immediately for 5s
-    if (path === '/' && !user && !guestHomeShownRef.current) {
+    // Rule 1: Any customer session should see the banner once after login.
+    if (user && !loginShownRef.current) {
+      loginShownRef.current = true;
+      setShow(true);
+
+      hideTimerRef.current = setTimeout(() => {
+        setShow(false);
+      }, POPUP_VISIBLE_MS);
+    }
+
+    // Rule 2: Logged-out home/login screen -> Show immediately for 7s
+    else if ((path === '/' || path === '/login') && !user && (!guestHomeShownRef.current || justLoggedOut)) {
       guestHomeShownRef.current = true;
       setShow(true);
       
       hideTimerRef.current = setTimeout(() => {
         setShow(false);
-      }, 5000);
-    }
-    
-    // Rule 2: Customer lands on home while logged in -> Wait 5s, then show for 5s
-    else if (path === '/' && user && !customerHomeShownRef.current) {
-      customerHomeShownRef.current = true;
-
-      timerRef.current = setTimeout(() => {
-        setShow(true);
-
-        hideTimerRef.current = setTimeout(() => {
-          setShow(false);
-        }, 5000);
-      }, 5000);
+      }, POPUP_VISIBLE_MS);
     }
 
-    // Rule 3: Customer just logged in on any non-admin page -> Wait 5s, then show for 5s
-    else if (justLoggedIn && !loginShownRef.current) {
-      loginShownRef.current = true;
-      
-      timerRef.current = setTimeout(() => {
-        setShow(true);
-        
-        hideTimerRef.current = setTimeout(() => {
-          setShow(false);
-        }, 5000);
-      }, 5000);
-    }
-
-    // Rule 4: Checkout Page (/checkout) -> Wait 1s, then show for 5s (remind one more time)
+    // Rule 3: Checkout Page (/checkout) -> Wait 1s, then show for 7s
     else if (path === '/checkout' && !checkoutShownRef.current) {
       checkoutShownRef.current = true;
       
@@ -148,7 +133,7 @@ const PopupBanner = () => {
         
         hideTimerRef.current = setTimeout(() => {
           setShow(false);
-        }, 5000);
+        }, POPUP_VISIBLE_MS);
       }, 1000);
     }
 
@@ -173,8 +158,8 @@ const PopupBanner = () => {
   if (!show || coupons.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in font-manrope">
-      <div className="relative w-full max-w-lg bg-gradient-to-br from-[#4d0b5a] via-[#2f0438] to-[#1a0120] rounded-3xl border-4 border-amber-400 p-8 text-white shadow-2xl overflow-hidden shadow-amber-400/20 max-h-[85vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fade-in font-manrope">
+      <div className="relative w-full max-w-3xl bg-gradient-to-br from-[#4d0b5a] via-[#2f0438] to-[#1a0120] rounded-3xl border-4 border-amber-400 p-5 sm:p-7 md:p-8 text-white shadow-2xl overflow-hidden shadow-amber-400/20">
         
         {/* Dynamic Abstract Art Accents matching Image2 */}
         <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full blur-3xl opacity-20 -translate-x-12 -translate-y-12"></div>
@@ -193,14 +178,14 @@ const PopupBanner = () => {
         </button>
 
         {/* Banner Content */}
-        <div className="text-center relative z-10 space-y-6">
+        <div className="text-center relative z-10 space-y-5">
           <div className="flex justify-center">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400/20 border border-amber-400/30 text-amber-300 rounded-full text-xs font-bold uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5" /> Limited Time Offers
             </span>
           </div>
 
-          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-yellow-200 uppercase select-none animate-pulse">
+          <h2 className="text-4xl md:text-5xl font-extrabold tracking-normal text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-yellow-200 uppercase select-none animate-pulse">
             Flash Sale
           </h2>
           
@@ -209,7 +194,7 @@ const PopupBanner = () => {
           </p>
 
           {/* List of Promoted Coupons */}
-          <div className="space-y-4 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
             {coupons.map((coupon) => {
               const hasExpiry = !!coupon.expiry_date;
               const isPercentage = coupon.discount_type === 'percentage';
@@ -224,13 +209,13 @@ const PopupBanner = () => {
               return (
                 <div 
                   key={coupon.id || coupon.code}
-                  className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:border-amber-400/50 transition-all flex flex-col sm:flex-row items-center justify-between gap-4"
+                  className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:border-amber-400/50 transition-all flex flex-col items-center justify-between gap-4 min-h-[150px]"
                 >
-                  <div className="text-left space-y-1 w-full sm:w-auto">
+                  <div className="text-center space-y-2 w-full">
                     <p className="text-xs font-bold text-pink-400 uppercase tracking-widest">
                       {discVal}
                     </p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-2">
                       <span className="font-mono text-xl font-black text-white bg-white/10 px-3 py-1 rounded-lg border border-white/20 select-all">
                         {coupon.code}
                       </span>
@@ -248,7 +233,7 @@ const PopupBanner = () => {
                     </div>
                   </div>
 
-                  <div className="text-center sm:text-right w-full sm:w-auto flex flex-col justify-center sm:items-end">
+                  <div className="text-center w-full flex flex-col justify-center items-center">
                     {hasExpiry ? (
                       <>
                         <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Offer Expires</p>
@@ -274,7 +259,7 @@ const PopupBanner = () => {
           </div>
         </div>
 
-        {/* 5-second animated countdown progress bar at bottom */}
+        {/* 7-second animated countdown progress bar at bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-purple-950">
           <div className="h-full bg-gradient-to-r from-amber-400 to-orange-500 animate-shrink-width"></div>
         </div>
