@@ -104,7 +104,23 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         )
             
     # Calculations
-    taxable_amount = server_total
+    coupon_codes_list = order_data.coupon_codes or []
+    discount_amount = 0.0
+    free_shipping = False
+
+    if coupon_codes_list:
+        from routes.coupons import validate_coupons_logic
+        val_res = await validate_coupons_logic(db, str(current_user.id), coupon_codes_list, server_total)
+        if not val_res.get("valid", True) and val_res.get("error"):
+            raise HTTPException(status_code=400, detail=val_res.get("error"))
+        if val_res.get("errors"):
+            err_msg = list(val_res["errors"].values())[0]
+            raise HTTPException(status_code=400, detail=err_msg)
+        
+        discount_amount = float(val_res.get("discount_amount", 0.0))
+        free_shipping = bool(val_res.get("free_shipping", False))
+
+    taxable_amount = round(max(0.0, server_total - discount_amount), 2)
     cgst_amount = round(taxable_amount * 0.09, 2)
     sgst_amount = round(taxable_amount * 0.09, 2)
     
@@ -115,7 +131,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         if setting_obj.value.get("shippingRuleStatus") == "Inactive":
             enable_shipping = False
 
-    if enable_shipping:
+    if enable_shipping and not free_shipping:
         if shipping_config["enableFreeShipping"] and taxable_amount >= float(shipping_config["freeShippingThreshold"]):
             shipping_cost = 0.0
         else:
@@ -160,6 +176,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
     shipping_address_dict = order_data.shipping_address.model_dump()
     shipping_address_dict["shipping_metadata"] = {
         "subtotal": server_total,
+        "discount_amount": discount_amount,
         "shipping_cost": shipping_cost,
         "cgst_amount": cgst_amount,
         "sgst_amount": sgst_amount,
@@ -173,6 +190,8 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         customer_name=current_user.full_name,
         items=enriched_items,
         total_amount=grand_total,
+        coupon_codes=coupon_codes_list,
+        discount_amount=discount_amount,
         payment_method=order_data.payment_method,
         payment_status=payment_status,
         order_status=order_status,
@@ -184,6 +203,27 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
     )
     db.add(order)
     await db.flush()
+
+    # Increment coupon analytics
+    if coupon_codes_list:
+        from models import CouponModel
+        for code in coupon_codes_list:
+            code_upper = code.strip().upper()
+            c_res = await db.execute(select(CouponModel).where(CouponModel.code == code_upper).with_for_update())
+            coupon_to_update = c_res.scalar_one_or_none()
+            if coupon_to_update:
+                coupon_to_update.total_uses = coupon_to_update.total_uses + 1
+                c_discount = 0.0
+                if coupon_to_update.discount_type == "percentage":
+                    c_discount = float(server_total) * (float(coupon_to_update.discount_value) / 100.0)
+                    if coupon_to_update.max_discount_limit is not None:
+                        c_discount = min(c_discount, float(coupon_to_update.max_discount_limit))
+                elif coupon_to_update.discount_type == "flat":
+                    c_discount = float(coupon_to_update.discount_value)
+                c_discount = min(c_discount, server_total)
+                coupon_to_update.total_discount_given = float(coupon_to_update.total_discount_given) + c_discount
+                coupon_to_update.revenue_generated = float(coupon_to_update.revenue_generated) + grand_total
+
     await create_notification(
         db,
         str(current_user.id),

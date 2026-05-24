@@ -210,6 +210,7 @@ class OrderCreate(BaseModel):
     payment_method: str
     shipping_address: ShippingAddress
     idempotency_key: Optional[str] = None
+    coupon_codes: Optional[List[str]] = None
 
 class ChangePasswordRequest(BaseModel):
     current_password: str

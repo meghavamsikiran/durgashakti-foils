@@ -1,0 +1,50 @@
+import apiClient from './core/apiClient';
+
+const cachedGet = (url, options) => apiClient.cachedGet(url, options);
+const invalidateCache = (urlPrefix) => apiClient.invalidateCache(urlPrefix);
+
+const couponService = {
+  // Customer Side
+  validateCoupons: async (codes, subtotal) => {
+    const response = await apiClient.post('/coupons/validate', {
+      codes,
+      cart_subtotal: subtotal
+    });
+    return response.data;
+  },
+
+  // Admin CRUD
+  getCoupons: () => cachedGet('/admin/coupons'),
+  
+  getCoupon: (couponId) => cachedGet(`/admin/coupons/${couponId}`),
+  
+  createCoupon: async (payload) => {
+    invalidateCache('/admin/coupons');
+    const response = await apiClient.post('/admin/coupons', payload);
+    return response.data;
+  },
+  
+  updateCoupon: async (couponId, payload) => {
+    invalidateCache('/admin/coupons');
+    const response = await apiClient.put(`/admin/coupons/${couponId}`, payload);
+    return response.data;
+  },
+  
+  deleteCoupon: async (couponId) => {
+    invalidateCache('/admin/coupons');
+    const response = await apiClient.delete(`/admin/coupons/${couponId}`);
+    return response.data;
+  },
+
+  // Global Settings
+  getSettings: () => cachedGet('/admin/coupons/settings'),
+  
+  updateSettings: async (payload) => {
+    invalidateCache('/admin/coupons/settings');
+    invalidateCache('/settings/public'); // invalidate public settings as well if they include coupons
+    const response = await apiClient.post('/admin/coupons/settings', payload);
+    return response.data;
+  }
+};
+
+export default couponService;

@@ -5,9 +5,31 @@ import { useCart } from '../../../contexts/CartContext';
 import { calculateCheckoutPricing } from '../../../utils/checkoutPricing';
 import { getProductPricing } from '../../../utils/productPricing';
 
-const OrderSummary = ({ products, total, checkoutStep, loading, shippingSettings, paymentMethod, onPlaceOrder }) => {
+const OrderSummary = ({ 
+  products, 
+  total, 
+  checkoutStep, 
+  loading, 
+  shippingSettings, 
+  paymentMethod, 
+  onPlaceOrder,
+  appliedCoupons = [],
+  couponInput = '',
+  setCouponInput,
+  validatingCoupon = false,
+  onApplyCoupon,
+  onRemoveCoupon
+}) => {
   const { cart } = useCart();
-  const { shipping, codCharge, cgst, sgst, grandTotal } = calculateCheckoutPricing(total, shippingSettings, paymentMethod);
+  const { 
+    shipping, 
+    codCharge, 
+    cgst, 
+    sgst, 
+    grandTotal, 
+    discountAmount, 
+    freeShippingApplied 
+  } = calculateCheckoutPricing(total, shippingSettings, paymentMethod, appliedCoupons);
 
   return (
     <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
@@ -33,11 +55,65 @@ const OrderSummary = ({ products, total, checkoutStep, loading, shippingSettings
         })}
       </div>
 
+      {/* Promo Code Input & Badges */}
+      <div className="py-5 border-t border-slate-200">
+        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Promo Code</h4>
+        <div className="flex gap-2">
+          <input 
+            type="text" 
+            placeholder="ENTER PROMO CODE"
+            value={couponInput}
+            onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+            className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-slate-350 bg-slate-50/50"
+            disabled={validatingCoupon}
+          />
+          <Button 
+            onClick={() => onApplyCoupon(couponInput)}
+            disabled={validatingCoupon}
+            className="bg-primary hover:bg-[#005a14] text-white px-5 rounded-xl text-xs font-black uppercase tracking-wider h-10 transition-all flex items-center justify-center gap-1.5"
+          >
+            {validatingCoupon ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Apply'}
+          </Button>
+        </div>
+
+        {/* Applied Coupon Badges */}
+        {appliedCoupons.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-4">
+            {appliedCoupons.map((coupon) => (
+              <span 
+                key={coupon.id || coupon.code}
+                className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl text-xs font-bold font-mono tracking-wider shadow-sm"
+              >
+                {coupon.code}
+                <button 
+                  type="button"
+                  onClick={() => onRemoveCoupon(coupon.code)}
+                  className="p-0.5 hover:bg-emerald-100 rounded-full transition-colors text-emerald-600 hover:text-emerald-800"
+                  title="Remove coupon"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="space-y-4 pt-6 border-t border-slate-200">
         <div className="flex justify-between text-sm">
           <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Subtotal</span>
           <span className="font-black text-slate-900">₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
+        
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-sm text-emerald-600 bg-emerald-50/50 border border-emerald-100/50 p-3 rounded-2xl font-bold transition-all">
+            <span className="uppercase tracking-widest text-[10px]">Coupon Discount</span>
+            <span className="font-black font-mono">-₹{discountAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        )}
+
         <div className="flex justify-between text-sm">
           <span className="text-slate-500 font-bold uppercase tracking-widest text-[10px]">Shipping Charges</span>
           <span className="font-black text-slate-900">

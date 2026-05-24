@@ -134,6 +134,8 @@ class OrderModel(Base):
     customer_name = Column(String(255), default="Guest User")
     items = Column(JSONB, nullable=False)  # Snapshot of order items
     total_amount = Column(Numeric(12, 2), nullable=False)
+    coupon_codes = Column(JSONB, default=list, nullable=False, server_default=text("'[]'::jsonb"))
+    discount_amount = Column(Numeric(12, 2), default=0.0, nullable=False, server_default=text("'0.0'"))
     payment_method = Column(String(50), nullable=False)
     payment_status = Column(String(50), default="pending", nullable=False)
     order_status = Column(String(50), default="processing", nullable=False, index=True)
@@ -270,3 +272,24 @@ class ContactModel(Base):
     reply_message = Column(Text, nullable=True)
     replied_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False, index=True)
+
+
+# ── Coupons ──────────────────────────────────────────────────────────────
+class CouponModel(Base):
+    __tablename__ = "coupons"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    code = Column(String(100), unique=True, nullable=False, index=True)
+    discount_type = Column(String(50), nullable=False)  # percentage, flat, free_shipping
+    discount_value = Column(Numeric(12, 2), nullable=False)
+    expiry_date = Column(DateTime(timezone=True), nullable=True)
+    min_cart_value = Column(Numeric(12, 2), default=0.0, nullable=False, server_default=text("'0.0'"))
+    max_discount_limit = Column(Numeric(12, 2), nullable=True)
+    max_usage_count = Column(Integer, nullable=True)
+    per_customer_usage_limit = Column(Integer, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False, server_default=text("'true'"))
+    total_uses = Column(Integer, default=0, nullable=False, server_default=text("'0'"))
+    total_discount_given = Column(Numeric(12, 2), default=0.0, nullable=False, server_default=text("'0.0'"))
+    revenue_generated = Column(Numeric(12, 2), default=0.0, nullable=False, server_default=text("'0.0'"))
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at = Column(DateTime(timezone=True), nullable=True, onupdate=utcnow)

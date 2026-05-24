@@ -27,7 +27,13 @@ const Checkout = () => {
     handleSelectAddress,
     validateShipping,
     handlePlaceOrder,
-    total
+    total,
+    appliedCoupons,
+    couponInput,
+    setCouponInput,
+    validatingCoupon,
+    handleApplyCoupon,
+    handleRemoveCoupon
   } = useCheckout();
 
   const handleContinueToPayment = async () => {
@@ -36,7 +42,7 @@ const Checkout = () => {
     }
   };
 
-  const { grandTotal } = calculateCheckoutPricing(total, shippingSettings, paymentMethod);
+  const { grandTotal } = calculateCheckoutPricing(total, shippingSettings, paymentMethod, appliedCoupons);
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-32 lg:pb-12">
@@ -81,6 +87,12 @@ const Checkout = () => {
                 shippingSettings={shippingSettings}
                 paymentMethod={paymentMethod}
                 onPlaceOrder={handlePlaceOrder}
+                appliedCoupons={appliedCoupons}
+                couponInput={couponInput}
+                setCouponInput={setCouponInput}
+                validatingCoupon={validatingCoupon}
+                onApplyCoupon={handleApplyCoupon}
+                onRemoveCoupon={handleRemoveCoupon}
               />
             </div>
           </div>

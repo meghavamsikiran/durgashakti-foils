@@ -37,6 +37,7 @@ from routes.analytics import router as analytics_router
 from routes.geolocation import router as geolocation_router
 from routes.contact import router as contact_router
 from routes.reviews import router as reviews_router
+from routes.coupons import router as coupons_router
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +166,7 @@ app.include_router(analytics_router)
 app.include_router(geolocation_router)
 app.include_router(contact_router)
 app.include_router(reviews_router)
+app.include_router(coupons_router)
 
 # Mount Uploads directory
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")

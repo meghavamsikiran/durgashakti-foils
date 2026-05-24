@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Package, Boxes, ShoppingCart, 
   Users, CreditCard, BarChart3, FileText, Upload, 
   UserCog, ShieldAlert, Settings, LogOut, Package2, Layers,
-  MessageSquare, Menu, X
+  MessageSquare, Menu, X, Ticket
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -26,6 +26,7 @@ const ICON_MAP = {
   'Audit Logs': ShieldAlert,
   'Settings': Settings,
   'Shipping Settings': Package2,
+  'Coupons': Ticket,
 };
 
 const AdminLayout = () => {

@@ -32,10 +32,31 @@ export const normalizeShippingSettings = (settings = {}) => {
   };
 };
 
-export const calculateCheckoutPricing = (subtotal, settings = {}, paymentMethod = 'upi') => {
+export const calculateCheckoutPricing = (subtotal, settings = {}, paymentMethod = 'upi', appliedCoupons = []) => {
   const config = normalizeShippingSettings(settings);
-  const taxableAmount = toNumber(subtotal, 0);
-  const shipping = config.enableShipping && !(config.enableFreeShipping && taxableAmount >= config.freeShippingThreshold)
+  
+  let discountAmount = 0;
+  let freeShippingApplied = false;
+  
+  const coupons = appliedCoupons || [];
+  for (const coupon of coupons) {
+    if (coupon.discount_type === 'percentage') {
+      let disc = subtotal * (toNumber(coupon.discount_value) / 100);
+      if (coupon.max_discount_limit) {
+        disc = Math.min(disc, toNumber(coupon.max_discount_limit));
+      }
+      discountAmount += disc;
+    } else if (coupon.discount_type === 'flat') {
+      discountAmount += toNumber(coupon.discount_value);
+    } else if (coupon.discount_type === 'free_shipping') {
+      freeShippingApplied = true;
+    }
+  }
+  
+  discountAmount = Math.min(discountAmount, subtotal);
+  
+  const taxableAmount = Math.max(0, subtotal - discountAmount);
+  const shipping = config.enableShipping && !freeShippingApplied && !(config.enableFreeShipping && taxableAmount >= config.freeShippingThreshold)
     ? config.defaultShippingCharge
     : 0;
   const codCharge = paymentMethod === 'cod' ? config.codCharge : 0;
@@ -43,5 +64,5 @@ export const calculateCheckoutPricing = (subtotal, settings = {}, paymentMethod 
   const sgst = taxableAmount * 0.09;
   const grandTotal = taxableAmount + shipping + cgst + sgst + codCharge;
 
-  return { config, shipping, codCharge, cgst, sgst, grandTotal };
+  return { config, shipping, codCharge, cgst, sgst, grandTotal, discountAmount, freeShippingApplied };
 };

@@ -39,6 +39,10 @@ export const useCheckout = () => {
     pincode: ''
   });
 
+  const [appliedCoupons, setAppliedCoupons] = useState([]);
+  const [couponInput, setCouponInput] = useState('');
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+
   const fetchAddresses = useCallback(async () => {
     try {
       const data = await addressService.getAddresses();
@@ -216,6 +220,73 @@ export const useCheckout = () => {
     });
   };
 
+  const handleApplyCoupon = async (codeToApply) => {
+    if (!codeToApply?.trim()) {
+      toast.error('Please enter a coupon code.');
+      return;
+    }
+    const cleanCode = codeToApply.trim().toUpperCase();
+    
+    if (appliedCoupons.some(c => c.code.toUpperCase() === cleanCode)) {
+      toast.error('This coupon is already applied.');
+      return;
+    }
+    
+    setValidatingCoupon(true);
+    try {
+      const subtotal = calculateTotal();
+      const currentCodes = [...appliedCoupons.map(c => c.code), cleanCode];
+      const res = await couponService.validateCoupons(currentCodes, subtotal);
+      
+      if (res.valid) {
+        if (res.errors && res.errors[cleanCode]) {
+          toast.error(res.errors[cleanCode]);
+          return;
+        }
+        setAppliedCoupons(res.applied_coupons || []);
+        setCouponInput('');
+        toast.success(`Coupon "${cleanCode}" applied successfully!`);
+      } else {
+        toast.error(res.error || 'Invalid coupon code.');
+      }
+    } catch (error) {
+      const detail = error.response?.data?.detail || 'Failed to validate coupon.';
+      toast.error(detail);
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = async (codeToRemove) => {
+    const remainingCoupons = appliedCoupons.filter(c => c.code.toUpperCase() !== codeToRemove.toUpperCase());
+    
+    if (remainingCoupons.length === 0) {
+      setAppliedCoupons([]);
+      toast.info('Coupon removed.');
+      return;
+    }
+    
+    setValidatingCoupon(true);
+    try {
+      const subtotal = calculateTotal();
+      const remainingCodes = remainingCoupons.map(c => c.code);
+      const res = await couponService.validateCoupons(remainingCodes, subtotal);
+      
+      if (res.valid) {
+        setAppliedCoupons(res.applied_coupons || []);
+        toast.info(`Coupon removed.`);
+      } else {
+        setAppliedCoupons([]);
+        toast.error('Remaining coupons became invalid and were removed.');
+      }
+    } catch (error) {
+      setAppliedCoupons([]);
+      toast.error('Failed to validate remaining coupons.');
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
   const handlePlaceOrder = async () => {
     // Prevent duplicate submissions
     if (orderInProgress.current) return;
@@ -254,14 +325,15 @@ export const useCheckout = () => {
         }
       }
 
-      const { grandTotal } = calculateCheckoutPricing(subtotal, normalizedShippingSettings, paymentMethod);
+      const { grandTotal } = calculateCheckoutPricing(subtotal, normalizedShippingSettings, paymentMethod, appliedCoupons);
 
       const orderData = {
         items: orderItems,
         total_amount: Number(grandTotal.toFixed(2)),
         payment_method: paymentMethod === 'cod' ? 'cod' : 'razorpay',
         shipping_address: shippingInfo,
-        idempotency_key: `order_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+        idempotency_key: `order_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+        coupon_codes: appliedCoupons.map(c => c.code)
       };
 
       const response = await orderService.createOrder(orderData);
@@ -311,6 +383,12 @@ export const useCheckout = () => {
     handleSelectAddress,
     validateShipping,
     handlePlaceOrder,
-    total: calculateTotal()
+    total: calculateTotal(),
+    appliedCoupons,
+    couponInput,
+    setCouponInput,
+    validatingCoupon,
+    handleApplyCoupon,
+    handleRemoveCoupon
   };
 };

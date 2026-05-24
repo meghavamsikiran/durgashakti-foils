@@ -7,6 +7,7 @@ import os
 import re as _re
 import logging
 from urllib.parse import unquote
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.engine import URL as _SAURL
@@ -87,4 +88,7 @@ async def create_tables():
         raise RuntimeError("Database engine not initialized.")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Ensure order table coupon alterations are applied
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_codes JSONB DEFAULT '[]'::jsonb;"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12, 2) DEFAULT 0.0 NOT NULL;"))
     logger.info("Database tables created / verified.")

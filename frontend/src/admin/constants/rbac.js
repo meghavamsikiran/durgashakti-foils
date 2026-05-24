@@ -208,6 +208,7 @@ export const superAdminSidebar = [
   { label: 'Audit Logs', permissions: ['view_audit_logs'] },
   { label: 'Settings', permissions: ['manage_settings', 'manage_banner'] },
   { label: 'Shipping Settings', permissions: ['manage_settings'] },
+  { label: 'Coupons', permissions: ['manage_settings'] },
 ];
 
 export const isAdminRole = (role) => [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role);
