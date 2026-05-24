@@ -193,7 +193,7 @@ export const useCheckout = () => {
           },
           prefill: {
             name: shippingInfo.full_name,
-            email: user?.email || '',
+            email: '',
             contact: shippingInfo.phone
           },
           theme: { color: '#1a56db' },
