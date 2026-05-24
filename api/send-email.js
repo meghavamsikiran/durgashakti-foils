@@ -18,22 +18,33 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { to, subject, body, smtp_user, smtp_pass, attachments } = req.body;
+  const { to, subject, body, smtp_user, smtp_pass, attachments = [] } = req.body;
 
   if (!to || !subject || !body || !smtp_user || !smtp_pass) {
     return res.status(400).json({ error: 'Missing required parameters' });
   }
+
+  const normalizedAttachments = Array.isArray(attachments)
+    ? attachments
+        .filter((att) => att && att.content)
+        .map((att) => {
+          const rawContent = String(att.content);
+          const base64Content = rawContent.includes(',') ? rawContent.split(',').pop() : rawContent;
+          return {
+            filename: att.filename || 'attachment.pdf',
+            content: Buffer.from(base64Content, 'base64'),
+            contentType: att.contentType || 'application/pdf',
+          };
+        })
+    : [];
 
   const mailOptions = {
     from: `DurgaShakti Foils <${smtp_user}>`,
     to,
     subject,
     html: body,
+    attachments: normalizedAttachments,
   };
-
-  if (attachments && Array.isArray(attachments)) {
-    mailOptions.attachments = attachments;
-  }
 
   // Try Port 587 (TLS)
   try {

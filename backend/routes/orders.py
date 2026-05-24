@@ -409,6 +409,8 @@ async def verify_razorpay_payment(payment_data: dict, current_user: UserSchema =
         raise HTTPException(status_code=400, detail="Payment order mismatch")
 
     now = datetime.now(timezone.utc)
+    if str(order.payment_status or "").lower() in {"paid", "completed"} and order.razorpay_payment_id:
+        return {"success": True, "message": "Payment already verified"}
 
     if not is_test_mode():
         try:
@@ -466,14 +468,11 @@ async def verify_razorpay_payment(payment_data: dict, current_user: UserSchema =
         cart.updated_at = now
 
     try:
-        from email_templates import payment_success_email, order_confirmation_email
+        from email_templates import payment_success_email
         import asyncio
         order_dict = row_to_dict(order)
         subj, body, attachments = payment_success_email(current_user.full_name or current_user.email, order_dict)
         asyncio.create_task(send_email(current_user.email, subj, body, attachments=attachments))
-        # Also send order confirmation with items
-        subj2, body2 = order_confirmation_email(current_user.full_name or current_user.email, order_dict)
-        asyncio.create_task(send_email(current_user.email, subj2, body2))
     except Exception:
         pass
     return {"success": True, "message": "Payment verified and order confirmed"}
