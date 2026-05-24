@@ -375,7 +375,7 @@ const CouponsPage = () => {
         couponService.getSettings(),
         adminService.getSettings()
       ]);
-      setCoupons(couponsData);
+      setCoupons((couponsData || []).filter(c => c !== null && c !== undefined && c.code));
       setSettings(settingsData);
       const adminSettings = adminSettingsRes.data || {};
       const bannerVal = adminSettings.scrolling_banner || { text1: '', text2: '', timer_enabled: false, timer_target: '', use_favicon: true };
@@ -478,6 +478,41 @@ const CouponsPage = () => {
   };
 
   const handlePromoteToBanner = async (coupon) => {
+    const isScrollingPromoted = scrollingBanner && scrollingBanner.text2 && scrollingBanner.text2.includes(coupon.code);
+
+    if (isScrollingPromoted) {
+      if (!window.confirm(`Are you sure you want to remove coupon ${coupon.code} from the storefront scrolling banner?`)) {
+        return;
+      }
+
+      setPromotingId(coupon.id);
+      try {
+        const settingsRes = await adminService.getSettings();
+        const currentSettings = settingsRes.data || {};
+        const currentBanner = currentSettings.scrolling_banner || {};
+
+        const updatedBannerValue = {
+          ...currentBanner,
+          text2: '',
+          timer_enabled: false,
+          timer_target: ''
+        };
+
+        await adminService.updateSetting({
+          key: 'scrolling_banner',
+          value: updatedBannerValue
+        });
+
+        setScrollingBanner(updatedBannerValue);
+        toast.success(`Removed coupon ${coupon.code} from the scrolling banner`);
+      } catch (error) {
+        toast.error(error.message || 'Failed to update scrolling banner');
+      } finally {
+        setPromotingId(null);
+      }
+      return;
+    }
+
     if (!window.confirm(`Are you sure you want to promote coupon ${coupon.code} in the storefront scrolling banner?`)) {
       return;
     }
@@ -551,25 +586,35 @@ const CouponsPage = () => {
   const handleTogglePopupBannerPromotion = async (coupon) => {
     setTogglingPopupId(coupon.id);
     try {
-      // 1. Fetch current settings to get existing popup_banner & scrolling_banner
+      // 1. Fetch current settings to get existing popup_banner & custom_banners
       const settingsRes = await adminService.getSettings();
       const currentSettings = settingsRes.data || {};
       const currentPopup = currentSettings.popup_banner || {};
-      const currentBanner = currentSettings.scrolling_banner || {};
-      const currentList =
-        currentPopup.promoted_coupons ||
-        currentBanner.popup_promoted_coupons ||
-        [];
+      
+      const currentList = currentPopup.promoted_coupons || [];
+      const currentThemes = (currentPopup.custom_banners || []).filter(b => b !== null && b !== undefined);
 
-      // 2. Check if already promoted
-      const isPromoted = currentList.some(c => c.code === coupon.code);
+      // Check if active in either promoted list or active custom theme
+      const isAlreadyPromoted = currentList.some(c => c && c.code === coupon.code) ||
+                                currentThemes.some(b => b?.is_active && (b.coupon_codes || []).includes(coupon.code));
+
       let updatedList = [];
+      let updatedThemes = [];
 
-      if (isPromoted) {
-        // Demote (remove)
-        updatedList = currentList.filter(c => c.code !== coupon.code);
+      if (isAlreadyPromoted) {
+        // Deactivate/Demote (remove from promoted list AND all themes)
+        updatedList = currentList.filter(c => c && c.code !== coupon.code);
+        updatedThemes = currentThemes.map(theme => {
+          const filteredCodes = (theme.coupon_codes || []).filter(code => code !== coupon.code);
+          const filteredLinkedCoupons = (theme.linked_coupons || []).filter(c => c && c.code !== coupon.code);
+          return {
+            ...theme,
+            coupon_codes: filteredCodes,
+            linked_coupons: filteredLinkedCoupons
+          };
+        });
       } else {
-        // Promote (add)
+        // Activate/Promote (add to promoted list, and if there is an active theme, add it there too)
         const couponDetail = {
           id: coupon.id,
           code: coupon.code,
@@ -578,12 +623,36 @@ const CouponsPage = () => {
           expiry_date: coupon.expiry_date,
           is_active: coupon.is_active
         };
-        updatedList = [...currentList, couponDetail];
+        
+        // Add to promoted list if not already there
+        if (!currentList.some(c => c && c.code === coupon.code)) {
+          updatedList = [...currentList, couponDetail];
+        } else {
+          updatedList = currentList;
+        }
+
+        updatedThemes = currentThemes.map(theme => {
+          if (theme.is_active) {
+            const currentCodes = theme.coupon_codes || [];
+            const currentLinked = theme.linked_coupons || [];
+            
+            const updatedCodes = currentCodes.includes(coupon.code) ? currentCodes : [...currentCodes, coupon.code];
+            const updatedLinked = currentLinked.some(c => c && c.code === coupon.code) ? currentLinked : [...currentLinked, couponDetail];
+            
+            return {
+              ...theme,
+              coupon_codes: updatedCodes,
+              linked_coupons: updatedLinked
+            };
+          }
+          return theme;
+        });
       }
 
       const updatedPopupSetting = {
         ...currentPopup,
-        promoted_coupons: updatedList
+        promoted_coupons: updatedList,
+        custom_banners: updatedThemes
       };
 
       // 3. Update setting in backend under 'popup_banner'
@@ -594,8 +663,9 @@ const CouponsPage = () => {
 
       // Update local states
       setPopupBanner(updatedPopupSetting);
+      setCustomBanners(updatedThemes);
       
-      if (isPromoted) {
+      if (isAlreadyPromoted) {
         toast.success(`Removed coupon ${coupon.code} from the pop-up banner`);
       } else {
         toast.success(`Added coupon ${coupon.code} to the pop-up banner!`);
@@ -741,7 +811,7 @@ const CouponsPage = () => {
       });
 
       // If it is a new banner theme (id is null), append it
-      if (!customBanners.some(b => b.id === currentFormId)) {
+      if (!(customBanners || []).some(b => b && b.id === currentFormId)) {
         updatedBannersList.push(newBannerTheme);
       }
 
@@ -1077,7 +1147,8 @@ const CouponsPage = () => {
                             <div className="flex justify-end items-center gap-2">
                               {(() => {
                                 const isScrollingPromoted = scrollingBanner && scrollingBanner.text2 && scrollingBanner.text2.includes(coupon.code);
-                                const isPopupPromoted = popupBanner && popupBanner.promoted_coupons && popupBanner.promoted_coupons.some(c => c.code === coupon.code);
+                                const isPopupPromoted = (popupBanner?.promoted_coupons || []).some(c => c && c.code === coupon.code) ||
+                                                        (customBanners || []).some(b => b?.is_active && (b.coupon_codes || []).includes(coupon.code));
 
                                 return (
                                   <>
