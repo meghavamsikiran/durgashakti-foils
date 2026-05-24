@@ -8,6 +8,7 @@ from deps import UserSchema, get_current_user, require_permission, row_to_dict, 
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime, timezone
+import uuid
 
 router = APIRouter(prefix="/api")
 
@@ -34,6 +35,13 @@ class CouponValidationRequest(BaseModel):
 
 # ── Shared Validation Logic ──────────────────────────────────────────────
 async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str], subtotal: float):
+    user_uuid = None
+    if user_id:
+        try:
+            user_uuid = uuid.UUID(str(user_id))
+        except (ValueError, TypeError):
+            user_uuid = None
+
     # 1. Load global settings
     settings_res = await db.execute(select(SettingModel).where(SettingModel.key == "coupon_settings"))
     settings_obj = settings_res.scalar_one_or_none()
@@ -69,11 +77,11 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
         normalized_input_codes = [normalized_input_codes[0]]
 
     # If single_use_per_account is True, check if user has ever used any coupon code before
-    if coupon_settings["single_use_per_account"] and user_id:
+    if coupon_settings["single_use_per_account"] and user_uuid:
         orders_res = await db.execute(
             select(OrderModel).where(
                 and_(
-                    OrderModel.user_id == user_id,
+                    OrderModel.user_id == user_uuid,
                     OrderModel.order_status != "cancelled"
                 )
             )
@@ -139,11 +147,11 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
             continue
 
         # 5. Per-customer usage limit
-        if coupon.per_customer_usage_limit is not None and user_id:
+        if coupon.per_customer_usage_limit is not None and user_uuid:
             user_orders_res = await db.execute(
                 select(OrderModel).where(
                     and_(
-                        OrderModel.user_id == user_id,
+                        OrderModel.user_id == user_uuid,
                         OrderModel.order_status != "cancelled"
                     )
                 )
@@ -201,8 +209,13 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
 # ── Customer Validation Route ───────────────────────────────────────────
 @router.post("/coupons/validate")
 async def validate_coupons(data: CouponValidationRequest, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await validate_coupons_logic(db, str(current_user.id), data.codes, data.cart_subtotal)
-    return result
+    try:
+        result = await validate_coupons_logic(db, str(current_user.id), data.codes, data.cart_subtotal)
+        return result
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Unable to validate coupon right now: {exc}")
 
 
 # ── Admin Global Settings Routes ──────────────────────────────────────────

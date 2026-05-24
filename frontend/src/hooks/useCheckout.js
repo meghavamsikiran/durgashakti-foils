@@ -238,19 +238,21 @@ export const useCheckout = () => {
       const currentCodes = [...appliedCoupons.map(c => c.code), cleanCode];
       const res = await couponService.validateCoupons(currentCodes, subtotal);
       
+      if (res.errors && res.errors[cleanCode]) {
+        toast.error(res.errors[cleanCode]);
+        return;
+      }
+
       if (res.valid) {
-        if (res.errors && res.errors[cleanCode]) {
-          toast.error(res.errors[cleanCode]);
-          return;
-        }
         setAppliedCoupons(res.applied_coupons || []);
         setCouponInput('');
         toast.success(`Coupon "${cleanCode}" applied successfully!`);
       } else {
-        toast.error(res.error || 'Invalid coupon code.');
+        const firstError = res.errors ? Object.values(res.errors)[0] : null;
+        toast.error(firstError || res.error || 'Invalid coupon code.');
       }
     } catch (error) {
-      const detail = error.response?.data?.detail || 'Failed to validate coupon.';
+      const detail = error.response?.data?.detail || error.message || 'Failed to validate coupon.';
       toast.error(detail);
     } finally {
       setValidatingCoupon(false);

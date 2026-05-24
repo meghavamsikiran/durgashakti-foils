@@ -169,7 +169,7 @@ const ProductCard = ({ product }) => {
       <motion.div
         whileHover={{ y: -5 }}
         transition={{ duration: 0.2 }}
-        className="group relative overflow-hidden bg-white border border-border-subtle rounded-xl hover:border-primary hover:shadow-emerald-glow transition-all duration-300 cursor-pointer flex flex-col"
+        className="group relative overflow-hidden bg-white border border-border-subtle rounded-xl hover:border-primary hover:shadow-emerald-glow transition-all duration-300 cursor-pointer flex flex-col h-full"
         onClick={() => navigate(`/product/${product.id}`)}
         data-testid={`product-card-${product.id}`}
       >
@@ -214,7 +214,7 @@ const ProductCard = ({ product }) => {
           )}
         </div>
 
-        <div className="p-5 flex flex-col justify-between flex-1 min-h-[245px]">
+        <div className="p-5 flex flex-col justify-between flex-1 min-h-[270px]">
           <div>
             <div className="mb-1.5">
               <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle">

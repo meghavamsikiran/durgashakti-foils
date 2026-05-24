@@ -6,6 +6,7 @@ import {
 import { toast } from 'sonner';
 import couponService from '../../services/coupon.service';
 import { Button } from '../../components/ui/button';
+import PageLoader from '../../components/ui/PageLoader';
 
 const CouponsPage = () => {
   const [coupons, setCoupons] = useState([]);
@@ -189,9 +190,8 @@ const CouponsPage = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[500px]">
-        <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-        <p className="text-slate-500 font-medium">Loading coupon parameters...</p>
+      <div className="min-h-[500px] flex items-center justify-center">
+        <PageLoader />
       </div>
     );
   }
