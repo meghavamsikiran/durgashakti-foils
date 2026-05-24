@@ -6,7 +6,8 @@ import apiClient from '../../services/core/apiClient';
 import { 
   Settings, Building2, Phone, Mail, MapPin, 
   ShieldCheck, Save, Globe, Lock, Cpu,
-  Cloud, Database, RefreshCcw, Timer, Megaphone, Sparkles, Play
+  Cloud, Database, RefreshCcw, Timer, Megaphone, Sparkles, Play,
+  Instagram, Facebook, Youtube
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
@@ -49,6 +50,9 @@ const SettingsPage = () => {
       companyEmail: profile.companyEmail || '',
       companyAddress: profile.companyAddress || '',
       googleMapsLink: profile.googleMapsLink || '',
+      instagramLink: profile.instagramLink || 'https://www.instagram.com/durgashaktifoils_pvt.ltd/',
+      facebookLink: profile.facebookLink || '',
+      youtubeLink: profile.youtubeLink || '',
       codEnabled: shippingSettings.codEnabled !== false && shippingSettings.codStatus !== 'Inactive' && paymentSettings.cod_enabled !== false,
       bannerText1: bannerSettings.text1 || '',
       bannerText2: bannerSettings.text2 || '',
@@ -68,6 +72,9 @@ const SettingsPage = () => {
   const [companyEmail, setCompanyEmail] = useState(initialState.companyEmail);
   const [companyAddress, setCompanyAddress] = useState(initialState.companyAddress);
   const [googleMapsLink, setGoogleMapsLink] = useState(initialState.googleMapsLink);
+  const [instagramLink, setInstagramLink] = useState(initialState.instagramLink);
+  const [facebookLink, setFacebookLink] = useState(initialState.facebookLink);
+  const [youtubeLink, setYoutubeLink] = useState(initialState.youtubeLink);
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(initialState.loaded);
   const [me, setMe] = useState(initialState.me);
@@ -135,6 +142,9 @@ const SettingsPage = () => {
       setCompanyEmail(profile.companyEmail || '');
       setCompanyAddress(profile.companyAddress || '');
       setGoogleMapsLink(profile.googleMapsLink || '');
+      setInstagramLink(profile.instagramLink || 'https://www.instagram.com/durgashaktifoils_pvt.ltd/');
+      setFacebookLink(profile.facebookLink || '');
+      setYoutubeLink(profile.youtubeLink || '');
       const shippingSettings = data.shipping_settings || {};
       const paymentSettings = data.payment_settings || {};
       setCodEnabled(shippingSettings.codEnabled !== false && shippingSettings.codStatus !== 'Inactive' && paymentSettings.cod_enabled !== false);
@@ -167,6 +177,9 @@ const SettingsPage = () => {
       setCompanyEmail(profile.companyEmail || '');
       setCompanyAddress(profile.companyAddress || '');
       setGoogleMapsLink(profile.googleMapsLink || '');
+      setInstagramLink(profile.instagramLink || 'https://www.instagram.com/durgashaktifoils_pvt.ltd/');
+      setFacebookLink(profile.facebookLink || '');
+      setYoutubeLink(profile.youtubeLink || '');
       const shippingSettings = data.shipping_settings || {};
       const paymentSettings = data.payment_settings || {};
       setCodEnabled(shippingSettings.codEnabled !== false && shippingSettings.codStatus !== 'Inactive' && paymentSettings.cod_enabled !== false);
@@ -194,7 +207,7 @@ const SettingsPage = () => {
       setSaving(true);
       await adminService.updateSetting({
         key: 'company_profile',
-        value: { companyName, gstNumber, companyPhone, companyEmail, companyAddress, googleMapsLink }
+        value: { companyName, gstNumber, companyPhone, companyEmail, companyAddress, googleMapsLink, instagramLink, facebookLink, youtubeLink }
       });
       toast.success('Settings saved successfully');
     } catch (error) {
@@ -363,6 +376,36 @@ const SettingsPage = () => {
                        <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
                     </div>
                  </div>
+
+                 <div className="md:col-span-2 mt-6 pt-6 border-t border-slate-100 space-y-4">
+                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Social Media Profile Links</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                       <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Instagram Link</label>
+                          <div className="relative group">
+                             <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                                value={instagramLink} onChange={e => setInstagramLink(e.target.value)} placeholder="https://instagram.com/..." />
+                             <Instagram className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                          </div>
+                       </div>
+                       <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Facebook Link</label>
+                          <div className="relative group">
+                             <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                                value={facebookLink} onChange={e => setFacebookLink(e.target.value)} placeholder="https://facebook.com/..." />
+                             <Facebook className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                          </div>
+                       </div>
+                       <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">YouTube Link</label>
+                          <div className="relative group">
+                             <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                                value={youtubeLink} onChange={e => setYoutubeLink(e.target.value)} placeholder="https://youtube.com/..." />
+                             <Youtube className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                          </div>
+                       </div>
+                    </div>
+                 </div>
              </div>
 
              <div className="mt-8 pt-8 border-t border-slate-200 flex justify-end">
@@ -396,29 +439,15 @@ const SettingsPage = () => {
                         </div>
                      </div>
                      
-                     <div className="flex items-center gap-4 self-end md:self-auto">
-                        <div className="flex items-center gap-2">
-                           <span className={`text-[10px] font-black uppercase tracking-widest ${codEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
-                              {codEnabled ? 'Active' : 'Disabled'}
-                           </span>
-                           <button 
-                              onClick={() => handleToggleCod(!codEnabled)}
-                              className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-300 shadow-inner ${
-                                 codEnabled ? 'bg-indigo-600' : 'bg-slate-300'
-                              }`}
-                           >
-                              <div 
-                                 className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${
-                                    codEnabled ? 'translate-x-6' : 'translate-x-0'
-                                 }`}
-                              />
-                           </button>
-                        </div>
+                     <div className="flex items-center gap-3 self-end md:self-auto">
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${codEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
+                           {codEnabled ? 'Active' : 'Disabled'}
+                        </span>
                         <Link
                            to={me?.role === 'SUPER_ADMIN' ? '/superadmin/shipping-settings' : '/admin/shipping-settings'}
-                           className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-black uppercase tracking-widest shadow-sm transition-all border border-slate-200"
+                           className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all"
                         >
-                           Manage Limits
+                           Manage
                         </Link>
                      </div>
                   </div>

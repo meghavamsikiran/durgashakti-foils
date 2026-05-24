@@ -35,6 +35,8 @@ const ShippingSettingsPage = () => {
       processingTime: config.processingTime || '1 Day',
       shippingZonesEnabled: !!config.shippingZonesEnabled,
       shippingCampaignsEnabled: !!config.shippingCampaignsEnabled,
+      zones: config.zones || null,
+      campaigns: config.campaigns || null,
       loaded: !!(cachedSettings && cachedMe)
     };
   };
@@ -69,15 +71,15 @@ const ShippingSettingsPage = () => {
   const [shippingZonesEnabled, setShippingZonesEnabled] = useState(initialState.shippingZonesEnabled);
   const [shippingCampaignsEnabled, setShippingCampaignsEnabled] = useState(initialState.shippingCampaignsEnabled);
 
-  // Mock Future Zones
-  const [zones, setZones] = useState([
+  // Zones State
+  const [zones, setZones] = useState(initialState.zones || [
     { id: '1', name: 'Telangana', charge: 70, status: 'Active' },
     { id: '2', name: 'South India', charge: 120, status: 'Active' },
     { id: '3', name: 'North India', charge: 180, status: 'Active' }
   ]);
 
-  // Mock Future Campaigns
-  const [campaigns, setCampaigns] = useState([
+  // Campaigns State
+  const [campaigns, setCampaigns] = useState(initialState.campaigns || [
     { id: '1', name: 'Free Shipping Weekend', threshold: 0, status: 'Inactive' },
     { id: '2', name: 'Festival Free Shipping', threshold: 499, status: 'Inactive' }
   ]);
@@ -122,6 +124,13 @@ const ShippingSettingsPage = () => {
       setShippingZonesEnabled(!!config.shippingZonesEnabled);
       setShippingCampaignsEnabled(!!config.shippingCampaignsEnabled);
 
+      if (config.zones && Array.isArray(config.zones)) {
+        setZones(config.zones);
+      }
+      if (config.campaigns && Array.isArray(config.campaigns)) {
+        setCampaigns(config.campaigns);
+      }
+
     } catch (error) {
       if (!(cachedSettings && cachedMe)) {
         toast.error('Failed to load shipping configurations.');
@@ -165,6 +174,13 @@ const ShippingSettingsPage = () => {
       // Scalability Flags
       setShippingZonesEnabled(!!config.shippingZonesEnabled);
       setShippingCampaignsEnabled(!!config.shippingCampaignsEnabled);
+
+      if (config.zones && Array.isArray(config.zones)) {
+        setZones(config.zones);
+      }
+      if (config.campaigns && Array.isArray(config.campaigns)) {
+        setCampaigns(config.campaigns);
+      }
     } catch {
       // Ignore background errors
     }
@@ -210,7 +226,9 @@ const ShippingSettingsPage = () => {
           packagingTime,
           processingTime,
           shippingZonesEnabled,
-          shippingCampaignsEnabled
+          shippingCampaignsEnabled,
+          zones,
+          campaigns
         }
       };
 
@@ -489,10 +507,39 @@ const ShippingSettingsPage = () => {
             <p className="text-[10px] text-slate-500 mb-6 font-medium">Add pincode/state zone overrides. Flat rates are active when this is turned off.</p>
 
             <div className={`space-y-3 transition-opacity ${shippingZonesEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-              {zones.map((zone) => (
-                <div key={zone.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs font-bold">
-                  <span className="text-slate-700">{zone.name}</span>
-                  <span className="text-slate-900">₹{zone.charge}</span>
+              {zones.map((zone, idx) => (
+                <div key={zone.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2 text-xs">
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="text-slate-700">{zone.name}</span>
+                    <button
+                      type="button"
+                      disabled={!isEditable}
+                      onClick={() => {
+                        const newZones = [...zones];
+                        newZones[idx].status = newZones[idx].status === 'Active' ? 'Inactive' : 'Active';
+                        setZones(newZones);
+                      }}
+                      className={`text-[9px] font-black uppercase px-2 py-0.5 rounded transition-all ${
+                        zone.status === 'Active' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'
+                      }`}
+                    >
+                      {zone.status}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-slate-400 font-semibold">Rate (₹)</span>
+                    <input
+                      type="number"
+                      disabled={!isEditable || zone.status !== 'Active'}
+                      className="w-20 rounded border border-slate-200 px-2 py-1 text-xs outline-none transition-all font-bold text-slate-800 focus:ring-1 focus:ring-indigo-500"
+                      value={zone.charge}
+                      onChange={(e) => {
+                        const newZones = [...zones];
+                        newZones[idx].charge = e.target.value === '' ? '' : Number(e.target.value);
+                        setZones(newZones);
+                      }}
+                    />
+                  </div>
                 </div>
               ))}
               <div className="text-[9px] text-center text-indigo-500 font-extrabold uppercase mt-4 flex items-center justify-center gap-1.5">
@@ -525,13 +572,39 @@ const ShippingSettingsPage = () => {
             <p className="text-[10px] text-slate-500 mb-6 font-medium">Activate festive discount rules or limited-time free delivery events.</p>
 
             <div className={`space-y-3 transition-opacity ${shippingCampaignsEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-              {campaigns.map((camp) => (
-                <div key={camp.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-1 text-xs">
+              {campaigns.map((camp, idx) => (
+                <div key={camp.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col gap-2 text-xs">
                   <div className="flex justify-between font-bold">
                     <span className="text-slate-700">{camp.name}</span>
-                    <span className="text-rose-500 font-black text-[9px] uppercase">{camp.status}</span>
+                    <button
+                      type="button"
+                      disabled={!isEditable}
+                      onClick={() => {
+                        const newCamps = [...campaigns];
+                        newCamps[idx].status = newCamps[idx].status === 'Active' ? 'Inactive' : 'Active';
+                        setCampaigns(newCamps);
+                      }}
+                      className={`text-[9px] font-black uppercase px-2 py-0.5 rounded transition-all ${
+                        camp.status === 'Active' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-400'
+                      }`}
+                    >
+                      {camp.status}
+                    </button>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-semibold">Min Cart: ₹{camp.threshold}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-slate-400 font-semibold">Min Cart (₹)</span>
+                    <input
+                      type="number"
+                      disabled={!isEditable || camp.status !== 'Active'}
+                      className="w-20 rounded border border-slate-200 px-2 py-1 text-xs outline-none transition-all font-bold text-slate-800 focus:ring-1 focus:ring-indigo-500"
+                      value={camp.threshold}
+                      onChange={(e) => {
+                        const newCamps = [...campaigns];
+                        newCamps[idx].threshold = e.target.value === '' ? '' : Number(e.target.value);
+                        setCampaigns(newCamps);
+                      }}
+                    />
+                  </div>
                 </div>
               ))}
             </div>

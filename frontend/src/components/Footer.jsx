@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin, Instagram, Facebook, Youtube } from 'lucide-react';
 import settingsService from '../services/settings.service';
 
 const Footer = () => {
@@ -8,7 +8,10 @@ const Footer = () => {
     companyName: 'Durga Shakti Foils',
     companyPhone: '+91 83675 42954',
     companyEmail: '',
-    companyAddress: 'Plot no 1, Road No. 1, Maruthi nagar, Mallampet, Hyderabad, Telangana 500090'
+    companyAddress: 'Plot no 1, Road No. 1, Maruthi nagar, Mallampet, Hyderabad, Telangana 500090',
+    instagramLink: 'https://www.instagram.com/durgashaktifoils_pvt.ltd/',
+    facebookLink: '',
+    youtubeLink: ''
   });
 
   useEffect(() => {
@@ -21,7 +24,10 @@ const Footer = () => {
             companyName: cp.companyName || 'Durga Shakti Foils',
             companyPhone: cp.companyPhone || '+91 83675 42954',
             companyEmail: cp.companyEmail || '',
-            companyAddress: cp.companyAddress || 'Plot no 1, Road No. 1, Maruthi nagar, Mallampet, Hyderabad, Telangana 500090'
+            companyAddress: cp.companyAddress || 'Plot no 1, Road No. 1, Maruthi nagar, Mallampet, Hyderabad, Telangana 500090',
+            instagramLink: cp.instagramLink || 'https://www.instagram.com/durgashaktifoils_pvt.ltd/',
+            facebookLink: cp.facebookLink || '',
+            youtubeLink: cp.youtubeLink || ''
           });
         }
       } catch (err) {
@@ -37,7 +43,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Package className="w-6 h-6 text-primary" />
+              <img src="/favicon.png" alt="DurgaShakti Foils Logo" className="w-6 h-6 object-contain" />
               <span className="font-bold text-xl font-manrope text-ink-slate">
                 {profile.companyName.split(' ')[0]} <span className="text-primary ml-1">{profile.companyName.split(' ').slice(1).join(' ')}</span>
               </span>
@@ -45,6 +51,25 @@ const Footer = () => {
             <p className="text-sm text-on-surface-variant leading-relaxed">
               Premium food-grade aluminum foil manufacturer. ISO certified quality products for your kitchen needs.
             </p>
+            {(profile.instagramLink || profile.facebookLink || profile.youtubeLink) && (
+              <div className="flex gap-4 mt-6">
+                {profile.instagramLink && (
+                  <a href={profile.instagramLink} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-slate-100 hover:bg-primary hover:text-white transition-all text-on-surface-variant">
+                    <Instagram className="w-4 h-4" />
+                  </a>
+                )}
+                {profile.facebookLink && (
+                  <a href={profile.facebookLink} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-slate-100 hover:bg-primary hover:text-white transition-all text-on-surface-variant">
+                    <Facebook className="w-4 h-4" />
+                  </a>
+                )}
+                {profile.youtubeLink && (
+                  <a href={profile.youtubeLink} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-slate-100 hover:bg-primary hover:text-white transition-all text-on-surface-variant">
+                    <Youtube className="w-4 h-4" />
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
