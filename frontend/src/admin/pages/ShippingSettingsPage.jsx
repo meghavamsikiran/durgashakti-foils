@@ -20,7 +20,6 @@ const ShippingSettingsPage = () => {
     return {
       me: cachedMe?.data || null,
       enableShipping: config.enableShipping !== false,
-      enableFreeShipping: config.enableFreeShipping !== false,
       freeShippingThreshold: config.freeShippingThreshold ?? 1099,
       defaultShippingCharge: config.defaultShippingCharge ?? 70,
       shippingRuleStatus: config.shippingRuleStatus || 'Active',
@@ -49,7 +48,6 @@ const ShippingSettingsPage = () => {
 
   // General Settings State
   const [enableShipping, setEnableShipping] = useState(initialState.enableShipping);
-  const [enableFreeShipping, setEnableFreeShipping] = useState(initialState.enableFreeShipping);
   const [freeShippingThreshold, setFreeShippingThreshold] = useState(initialState.freeShippingThreshold);
   const [defaultShippingCharge, setDefaultShippingCharge] = useState(initialState.defaultShippingCharge);
   const [shippingRuleStatus, setShippingRuleStatus] = useState(initialState.shippingRuleStatus);
@@ -102,7 +100,6 @@ const ShippingSettingsPage = () => {
 
       // General
       setEnableShipping(config.enableShipping !== false);
-      setEnableFreeShipping(config.enableFreeShipping !== false);
       setFreeShippingThreshold(config.freeShippingThreshold ?? 1099);
       setDefaultShippingCharge(config.defaultShippingCharge ?? 70);
       setShippingRuleStatus(config.shippingRuleStatus || 'Active');
@@ -153,7 +150,6 @@ const ShippingSettingsPage = () => {
 
       // General
       setEnableShipping(config.enableShipping !== false);
-      setEnableFreeShipping(config.enableFreeShipping !== false);
       setFreeShippingThreshold(config.freeShippingThreshold ?? 1099);
       setDefaultShippingCharge(config.defaultShippingCharge ?? 70);
       setShippingRuleStatus(config.shippingRuleStatus || 'Active');
@@ -212,7 +208,7 @@ const ShippingSettingsPage = () => {
         key: 'shipping_settings',
         value: {
           enableShipping,
-          enableFreeShipping,
+          enableFreeShipping: true,
           freeShippingThreshold: Number(freeShippingThreshold),
           defaultShippingCharge: Number(defaultShippingCharge),
           shippingRuleStatus: enableShipping ? 'Active' : 'Inactive',
@@ -280,15 +276,19 @@ const ShippingSettingsPage = () => {
               <Truck className="w-5 h-5 text-primary" />
               General Shipping Rules
             </h2>
-            <p className="text-xs text-slate-500 mb-8 font-medium">Define rules for when to apply shipping costs and set the free-delivery boundaries.</p>
+            <p className="text-xs text-slate-500 mb-8 font-medium">Use one switch: turn charges on to bill below the threshold, or off to make every order ship free.</p>
 
             <div className="space-y-6">
-              {/* Toggles */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+              {/* Shipping charge switch */}
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-black text-slate-950 uppercase">Enable Shipping Charges</h4>
-                    <p className="text-[10px] text-slate-500">Enable flat rates globally</p>
+                    <p className="text-[10px] text-slate-500">
+                      {enableShipping
+                        ? 'Charge the default rate until the cart reaches the free shipping threshold.'
+                        : 'All orders ship free. Shipping charge fields are paused.'}
+                    </p>
                   </div>
                   <button
                     disabled={!isEditable}
@@ -298,22 +298,6 @@ const ShippingSettingsPage = () => {
                     }`}
                   >
                     <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-all ${enableShipping ? 'translate-x-6' : ''}`} />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between border-t md:border-t-0 md:border-l border-slate-200/60 pt-4 md:pt-0 md:pl-6">
-                  <div>
-                    <h4 className="text-xs font-black text-slate-950 uppercase">Enable Free Shipping</h4>
-                    <p className="text-[10px] text-slate-500">Activate free threshold discounts</p>
-                  </div>
-                  <button
-                    disabled={!isEditable}
-                    onClick={() => setEnableFreeShipping(!enableFreeShipping)}
-                    className={`w-12 h-6 flex items-center rounded-full p-1 transition-all ${
-                      enableFreeShipping ? 'bg-primary' : 'bg-slate-300'
-                    }`}
-                  >
-                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-all ${enableFreeShipping ? 'translate-x-6' : ''}`} />
                   </button>
                 </div>
               </div>
@@ -327,7 +311,7 @@ const ShippingSettingsPage = () => {
                   </label>
                   <input
                     type="number"
-                    disabled={!isEditable || !enableFreeShipping}
+                    disabled={!isEditable || !enableShipping}
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
                     value={freeShippingThreshold}
                     onChange={(e) => setFreeShippingThreshold(e.target.value === '' ? '' : Number(e.target.value))}

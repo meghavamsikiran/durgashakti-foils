@@ -9,6 +9,7 @@ import api, { formatImageUrl } from '../utils/api';
 import PageLoader from '../components/ui/PageLoader';
 import settingsService from '../services/settings.service';
 import apiClient from '../services/core/apiClient';
+import { calculateCheckoutPricing } from '../utils/checkoutPricing';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -351,37 +352,20 @@ const Cart = () => {
                   Order Summary
                 </h2>
                 {(() => {
-                  let shippingCost = 70.0;
-                  let enableFreeShipping = true;
-                  let freeShippingThreshold = 1099.0;
-                  let enableShipping = true;
-
-                  if (shippingSettings) {
-                    enableShipping = shippingSettings.enableShipping !== false && shippingSettings.shippingRuleStatus !== 'Inactive';
-                    enableFreeShipping = shippingSettings.enableFreeShipping !== false;
-                    freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? 1099);
-                    shippingCost = Number(shippingSettings.defaultShippingCharge ?? 70);
-                  }
-
-                  let calculatedShipping = 0;
-                  if (enableShipping) {
-                    if (enableFreeShipping && total >= freeShippingThreshold) {
-                      calculatedShipping = 0;
-                    } else {
-                      calculatedShipping = shippingCost;
-                    }
-                  }
-
-                  const cgst = total * 0.09;
-                  const sgst = total * 0.09;
-                  const grandTotal = total + calculatedShipping + cgst + sgst;
+                  const {
+                    config,
+                    shipping: calculatedShipping,
+                    cgst,
+                    sgst,
+                    grandTotal
+                  } = calculateCheckoutPricing(total, shippingSettings);
 
                   return (
                     <>
-                      {enableFreeShipping && total < freeShippingThreshold && (
+                      {config.enableShipping && config.enableFreeShipping && total < config.freeShippingThreshold && (
                         <div className="bg-primary/5 border border-primary/20 text-primary text-[11px] rounded-lg p-3.5 mb-5 font-bold flex items-center gap-2 animate-pulse font-mono tracking-wide">
                           <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                          <span>ADD ₹{(freeShippingThreshold - total).toFixed(2)} MORE FOR FREE SHIPPING!</span>
+                          <span>ADD ₹{(config.freeShippingThreshold - total).toFixed(2)} MORE FOR FREE SHIPPING!</span>
                         </div>
                       )}
 
