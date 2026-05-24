@@ -205,7 +205,7 @@ const ProductCard = ({ product }) => {
 
           {/* Discount Percentage Tag */}
           {product.discount_price > 0 && product.discount_price < product.price && (
-            <div className="absolute top-3 left-3 bg-rose-650 text-white px-2 py-0.5 text-[9px] font-black rounded-sm z-10" style={{ left: activeTag ? 'auto' : '12px', right: activeTag ? '12px' : 'auto' }}>
+            <div className="absolute top-3 left-3 bg-rose-600 text-white px-2 py-0.5 text-[9px] font-black rounded-sm z-10" style={{ left: activeTag ? 'auto' : '12px', right: activeTag ? '12px' : 'auto' }}>
               -{Math.round(((product.price - product.discount_price) / product.price) * 100)}%
             </div>
           )}
@@ -227,7 +227,7 @@ const ProductCard = ({ product }) => {
                 <div className="flex items-center justify-between border border-border-subtle bg-white rounded-full h-10 w-full px-3.5 shadow-sm hover:border-primary/50 transition-all select-none">
                   <button
                     onClick={handleDecrement}
-                    className="h-full flex items-center justify-center text-slate-400 hover:text-rose-650 transition-colors focus:outline-none cursor-pointer"
+                    className="h-full flex items-center justify-center text-slate-400 hover:text-rose-600 transition-colors focus:outline-none cursor-pointer"
                     title={qty === 1 ? "Remove item" : "Decrease quantity"}
                     data-testid={`decrease-quantity-${product.id}`}
                   >

@@ -218,3 +218,35 @@ h1, h2, h3, h4, h5, h6 {
   transform: translate(50%, -50%) !important;
 }
 
+/* Custom scrollbar alignment with Industrial Artisan themes */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #ebefed; /* --surface-container */
+  border-radius: 100px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #bbcbb5; /* --outline-variant */
+  border-radius: 100px;
+  border: 2px solid #ebefed; /* creates margin around thumb */
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #006e1b; /* --primary */
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #16E34A; /* --emerald-hover */
+}
+
+/* Firefox styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #bbcbb5 #ebefed;
+}
+

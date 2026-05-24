@@ -86,16 +86,16 @@ const AddressStep = ({
               <div 
                 key={addr.id} 
                 onClick={() => onSelectAddress(addr)}
-                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative group ${selectedAddressId === addr.id ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-200 bg-white hover:border-indigo-200'}`}
+                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative group ${selectedAddressId === addr.id ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-primary/20'}`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className={`p-2 rounded-lg ${selectedAddressId === addr.id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    <div className={`p-2 rounded-lg ${selectedAddressId === addr.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'}`}>
                       {addr.label === 'Home' ? <Home className="w-3 h-3" /> : addr.label === 'Office' ? <Briefcase className="w-3 h-3" /> : <MapPin className="w-3 h-3" />}
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{addr.label}</span>
                   </div>
-                  {selectedAddressId === addr.id && <CheckCircle2 className="w-5 h-5 text-indigo-600" />}
+                  {selectedAddressId === addr.id && <CheckCircle2 className="w-5 h-5 text-primary" />}
                 </div>
                 <h4 className="font-black text-slate-900 text-sm mb-1">{addr.full_name}</h4>
                 <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
@@ -119,7 +119,7 @@ const AddressStep = ({
                   defaultCountry="IN"
                   value={shippingInfo.phone}
                   onChange={val => onSetShippingInfo(prev => ({ ...prev, phone: val || '' }))}
-                  className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all"
+                  className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all"
                 />
               </div>
             </div>
@@ -129,7 +129,7 @@ const AddressStep = ({
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Pincode</Label>
                 <div className="relative">
                   <Input name="pincode" value={shippingInfo.pincode} onChange={handlePincodeChange} placeholder="6 digits" className="rounded-xl h-12" maxLength={6} />
-                  {checkingPincode && <Loader2 className="absolute right-4 top-3.5 w-5 h-5 animate-spin text-indigo-600" />}
+                  {checkingPincode && <Loader2 className="absolute right-4 top-3.5 w-5 h-5 animate-spin text-primary" />}
                 </div>
               </div>
               <div className="space-y-1.5">
@@ -138,7 +138,7 @@ const AddressStep = ({
                   name="state"
                   value={shippingInfo.state} 
                   onChange={onInputChange}
-                  className="w-full rounded-xl h-12 bg-white border border-input px-4 text-xs font-bold uppercase focus:ring-2 focus:ring-indigo-500 outline-none appearance-none"
+                  className="w-full rounded-xl h-12 bg-white border border-input px-4 text-xs font-bold uppercase focus:ring-2 focus:ring-primary/20 outline-none appearance-none"
                 >
                   <option value="">Select</option>
                   {INDIAN_STATES.map(state => (
@@ -164,7 +164,7 @@ const AddressStep = ({
                   type="button" 
                   onClick={handleDetectLocation} 
                   disabled={detectingLocation}
-                  className="text-indigo-600 font-black uppercase tracking-widest text-[8px] flex items-center gap-1 hover:text-indigo-700 transition-colors"
+                  className="text-primary font-black uppercase tracking-widest text-[8px] flex items-center gap-1 hover:text-emerald-hover transition-colors"
                 >
                   {detectingLocation ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <LocateFixed className="w-2.5 h-2.5" />}
                   {detectingLocation ? "Detecting..." : "Use current location"}
@@ -181,7 +181,7 @@ const AddressStep = ({
         <div className="pt-2">
           <Button 
             onClick={onContinue} 
-            className="w-full h-14 md:h-16 rounded-2xl text-base md:text-lg font-black uppercase tracking-widest shadow-xl shadow-indigo-100 bg-indigo-600 hover:bg-indigo-700 transition-all"
+            className="w-full h-14 md:h-16 rounded-2xl text-base md:text-lg font-black uppercase tracking-widest shadow-xl shadow-emerald-glow bg-primary hover:bg-emerald-hover transition-all"
           >
             Continue to Payment <ArrowRight className="ml-2 w-5 h-5" />
           </Button>

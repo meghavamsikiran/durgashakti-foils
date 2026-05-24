@@ -58,7 +58,7 @@ const OrderSummary = ({ products, total, checkoutStep, loading, shippingSettings
         </div>
         <div className="pt-4 flex justify-between items-end">
           <span className="text-slate-900 font-black uppercase tracking-tighter">Total Amount</span>
-          <div className="text-3xl font-black text-indigo-600 tracking-tighter">
+          <div className="text-3xl font-black text-primary tracking-tighter">
             ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
@@ -68,7 +68,7 @@ const OrderSummary = ({ products, total, checkoutStep, loading, shippingSettings
         <Button 
           onClick={onPlaceOrder}
           disabled={loading}
-          className="w-full h-16 rounded-2xl mt-8 text-lg font-black uppercase tracking-widest shadow-2xl shadow-indigo-100"
+          className="w-full h-16 rounded-2xl mt-8 text-lg font-black uppercase tracking-widest shadow-2xl shadow-emerald-glow"
         >
           {loading ? <Loader2 className="animate-spin w-6 h-6" /> : `Pay ₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
         </Button>

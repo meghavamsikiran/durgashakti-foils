@@ -17,7 +17,7 @@ const OrdersTab = ({ orders, loading, onCancelOrder }) => {
     const config = {
       pending: { bg: 'bg-blue-50 text-blue-600', label: 'Placed' },
       pending_payment: { bg: 'bg-rose-50 text-rose-600', label: 'Payment Pending' },
-      processing: { bg: 'bg-indigo-50 text-indigo-600', label: 'Processing' },
+      processing: { bg: 'bg-primary/10 text-primary', label: 'Processing' },
       confirmed: { bg: 'bg-purple-50 text-purple-600', label: 'Confirmed' },
       packaging: { bg: 'bg-cyan-50 text-cyan-600', label: 'Packaging' },
       packed: { bg: 'bg-cyan-50 text-cyan-600', label: 'Packaging' },

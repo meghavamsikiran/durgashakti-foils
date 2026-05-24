@@ -349,9 +349,9 @@ const OrderDetailsPage = () => {
         
         {/* Amazon-style Breadcrumbs */}
         <div className="flex items-center gap-2 text-xs text-slate-500 mb-6 font-semibold">
-          <span className="hover:text-indigo-600 cursor-pointer transition-colors" onClick={() => navigate('/dashboard')}>Your Account</span>
+          <span className="hover:text-primary cursor-pointer transition-colors" onClick={() => navigate('/dashboard')}>Your Account</span>
           <span className="text-slate-400 font-normal">&rsaquo;</span>
-          <span className="hover:text-indigo-600 cursor-pointer transition-colors" onClick={() => navigate('/dashboard')}>Your Orders</span>
+          <span className="hover:text-primary cursor-pointer transition-colors" onClick={() => navigate('/dashboard')}>Your Orders</span>
           <span className="text-slate-400 font-normal">&rsaquo;</span>
           <span className="text-slate-800 font-bold">Order Details</span>
         </div>
@@ -371,7 +371,7 @@ const OrderDetailsPage = () => {
             {(order.payment_status === 'Paid' || order.payment_status === 'completed') && (
               <button
                 onClick={handleDownloadInvoice}
-                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-indigo-600 border border-slate-300 rounded-xl px-4 py-2.5 bg-white transition-all shadow-sm hover:bg-slate-50"
+                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-primary border border-slate-300 rounded-xl px-4 py-2.5 bg-white transition-all shadow-sm hover:bg-slate-50"
               >
                 <ExternalLink className="w-3.5 h-3.5" /> Invoice
               </button>
@@ -381,10 +381,10 @@ const OrderDetailsPage = () => {
 
         {/* Admin Store Message Alert Banner */}
         {order.admin_message && !isReturning && (
-          <div className="mb-6 p-4 rounded-2xl bg-indigo-50 border border-indigo-100 flex gap-3.5 items-start shadow-sm animate-in fade-in duration-300">
-            <Info className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+          <div className="mb-6 p-4 rounded-2xl bg-primary/5 border border-primary/10 flex gap-3.5 items-start shadow-sm animate-in fade-in duration-300">
+            <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Update from Store</h4>
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Update from Store</h4>
               <p className="text-xs font-semibold text-slate-700 mt-0.5 leading-relaxed">{order.admin_message}</p>
             </div>
           </div>
@@ -483,7 +483,7 @@ const OrderDetailsPage = () => {
                   <div className="h-px bg-slate-100 my-1" />
                   <div className="flex justify-between font-black text-slate-900 text-sm pt-0.5">
                     <span>Grand Total:</span>
-                    <span className="text-indigo-600 text-base">₹{Number(order.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="text-primary text-base font-extrabold">₹{Number(order.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               );
@@ -517,7 +517,7 @@ const OrderDetailsPage = () => {
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   required
-                  className="w-full h-12 px-4 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  className="w-full h-12 px-4 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                 >
                   <option value="">Select a reason...</option>
                   <option value="Damaged/Defective Product">Damaged or Defective Product</option>
@@ -535,14 +535,14 @@ const OrderDetailsPage = () => {
                     value={otherDetails}
                     onChange={(e) => setOtherDetails(e.target.value)}
                     required
-                    className="w-full p-4 min-h-[100px] rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"
+                    className="w-full p-4 min-h-[100px] rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none resize-none"
                   />
                 </div>
               )}
 
               <div className="space-y-2">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Upload Proof (Images/Videos) *</label>
-                <div className="relative group border-2 border-dashed border-slate-200 hover:border-indigo-500 transition-all duration-300 rounded-2xl p-6 flex flex-col items-center justify-center bg-white hover:bg-indigo-50/10 cursor-pointer min-h-[140px]">
+                <div className="relative group border-2 border-dashed border-slate-200 hover:border-primary transition-all duration-300 rounded-2xl p-6 flex flex-col items-center justify-center bg-white hover:bg-primary/5 cursor-pointer min-h-[140px]">
                   <input
                     type="file"
                     multiple
@@ -551,8 +551,8 @@ const OrderDetailsPage = () => {
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
                   <div className="text-center flex flex-col items-center justify-center pointer-events-none">
-                    <Upload className="w-8 h-8 text-slate-400 group-hover:text-indigo-500 transition-colors mb-2" />
-                    <span className="text-xs font-bold text-slate-700 group-hover:text-indigo-600">Select Images / Videos</span>
+                    <Upload className="w-8 h-8 text-slate-400 group-hover:text-primary transition-colors mb-2" />
+                    <span className="text-xs font-bold text-slate-700 group-hover:text-primary">Select Images / Videos</span>
                     <span className="text-[10px] text-slate-400 mt-1">Upload multiple files up to 20MB each</span>
                   </div>
                 </div>
@@ -601,7 +601,7 @@ const OrderDetailsPage = () => {
                 <Button
                   type="submit"
                   disabled={submittingReturn || !reason}
-                  className="flex-1 h-12 rounded-xl font-black uppercase tracking-widest text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 animate-pulse-subtle"
+                  className="flex-1 h-12 rounded-xl font-black uppercase tracking-widest text-[10px] bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow animate-pulse-subtle"
                 >
                   {submittingReturn ? 'Submitting...' : 'Submit Request'}
                 </Button>
@@ -626,7 +626,7 @@ const OrderDetailsPage = () => {
             <button 
               onClick={handlePayOnline}
               disabled={payingOnline}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[10px] px-6 py-3.5 rounded-xl shadow-md shadow-indigo-100 transition-all whitespace-nowrap"
+              className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[10px] px-6 py-3.5 rounded-xl shadow-md shadow-emerald-glow transition-all whitespace-nowrap"
             >
               {payingOnline ? 'Processing...' : 'Pay Online Now'}
             </button>
@@ -641,7 +641,7 @@ const OrderDetailsPage = () => {
               <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                 order.order_status === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
                 order.order_status === 'cancelled' ? 'bg-rose-100 text-rose-800' :
-                'bg-indigo-100 text-indigo-800'
+                'bg-primary/10 text-primary'
               }`}>
                 {order.order_status?.replace('_', ' ')}
               </span>
@@ -678,7 +678,7 @@ const OrderDetailsPage = () => {
                   <div className="absolute top-[32px] left-[10%] right-[10%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
                   {/* Active Progress Line */}
                   <div 
-                    className="absolute top-[32px] left-[10%] h-1 bg-indigo-600 -translate-y-1/2 rounded-full transition-all duration-700 ease-out" 
+                    className="absolute top-[32px] left-[10%] h-1 bg-primary -translate-y-1/2 rounded-full transition-all duration-700 ease-out" 
                     style={{ 
                       width: isDelivered ? '80%' : isShipped ? '53.33%' : isConfirmed ? '26.66%' : '0%' 
                     }} 
@@ -690,12 +690,12 @@ const OrderDetailsPage = () => {
                       <div key={idx} className="flex flex-col items-center w-[25%] text-center">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all duration-300 ${
                           step.active 
-                            ? 'bg-indigo-600 text-white ring-4 ring-indigo-500/10' 
+                            ? 'bg-primary text-white ring-4 ring-primary/10' 
                             : 'bg-slate-200 text-slate-400'
                         }`}>
                           {step.active ? <Check className="w-3.5 h-3.5 stroke-[3px]" /> : <span className="text-[10px] font-bold">{idx + 1}</span>}
                         </div>
-                        <p className={`text-xs mt-2.5 ${step.active ? 'text-indigo-600 font-black' : 'text-slate-400 font-semibold'}`}>
+                        <p className={`text-xs mt-2.5 ${step.active ? 'text-primary font-black' : 'text-slate-400 font-semibold'}`}>
                           {step.label}
                         </p>
                         {step.date && (
@@ -755,7 +755,7 @@ const OrderDetailsPage = () => {
                     href={order.tracking_url} 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="text-[9px] font-black text-indigo-600 hover:underline uppercase tracking-wider pl-1.5 border-l border-slate-200"
+                    className="text-[9px] font-black text-primary hover:underline uppercase tracking-wider pl-1.5 border-l border-slate-200"
                   >
                     Track Package
                   </a>
@@ -777,10 +777,10 @@ const OrderDetailsPage = () => {
                     className="w-24 h-24 rounded-xl object-cover bg-slate-50 border border-slate-200 shrink-0 shadow-sm" 
                   />
                   <div className="space-y-1.5 min-w-0">
-                    <h4 className="font-extrabold text-slate-900 text-sm hover:text-indigo-600 transition-colors cursor-pointer leading-snug">
+                    <h4 className="font-extrabold text-slate-900 text-sm hover:text-primary transition-colors cursor-pointer leading-snug">
                       {item.product_name}
                     </h4>
-                    <p className="text-xs text-slate-400 font-bold">Sold by: <span className="text-indigo-600 font-black">DurgaShakti Foils</span></p>
+                    <p className="text-xs text-slate-400 font-bold">Sold by: <span className="text-primary font-black">DurgaShakti Foils</span></p>
                     <p className="text-sm font-black text-slate-900 mt-1">
                       ₹{item.price.toLocaleString('en-IN')} 
                       <span className="text-slate-400 font-bold text-xs pl-2">Quantity: {item.quantity}</span>
@@ -844,7 +844,7 @@ const OrderDetailsPage = () => {
 
               {order.admin_message && (
                 <div className="space-y-1">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500">Store Response Remarks</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-primary">Store Response Remarks</span>
                   <p className="text-xs font-bold text-slate-700 bg-white p-3 rounded-xl border border-slate-100">{order.admin_message}</p>
                 </div>
               )}
@@ -858,7 +858,7 @@ const OrderDetailsPage = () => {
                     const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
                     const fullUrl = formatImageUrl(url);
                     return (
-                      <div key={index} className="relative rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm w-20 h-20 hover:ring-2 hover:ring-indigo-550 transition-all flex items-center justify-center group cursor-pointer">
+                      <div key={index} className="relative rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm w-20 h-20 hover:ring-2 hover:ring-primary transition-all flex items-center justify-center group cursor-pointer">
                         {isVideo ? (
                           <video src={fullUrl} controls className="w-full h-full object-cover" />
                         ) : (

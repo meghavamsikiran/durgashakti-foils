@@ -117,7 +117,7 @@ const RoleTemplateSelector = ({ selectedTemplate, onSelectTemplate }) => {
         <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Role Template</h3>
         <p className="text-xs text-slate-500">Choose a predefined role to auto-assign permissions, or select Custom.</p>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
         {templates.map(([key, tmpl]) => {
           const isActive = selectedTemplate === key;
           const gradientClass = TEMPLATE_COLORS[key] || 'from-slate-400 to-slate-500';

@@ -151,15 +151,15 @@ const ProductDetail = () => {
                   onClick={() => setActiveMediaIndex(idx)}
                   className={`w-16 h-16 rounded-lg overflow-hidden border-2 bg-secondary/20 transition-all flex-shrink-0 flex items-center justify-center relative ${
                     activeMediaIndex === idx 
-                      ? 'border-indigo-600 shadow-md ring-2 ring-indigo-600/10' 
-                      : 'border-slate-200 hover:border-indigo-300'
+                      ? 'border-primary shadow-md ring-2 ring-primary/10' 
+                      : 'border-slate-200 hover:border-primary/30'
                   }`}
                 >
                   {item.type === 'video' ? (
                     <div className="w-full h-full relative flex items-center justify-center bg-slate-950 text-white">
                       <video src={formatImageUrl(item.url)} className="w-full h-full object-cover opacity-60" muted playsInline />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center shadow-sm">
+                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-sm">
                           <svg className="w-3.5 h-3.5 text-white fill-current translate-x-[1px]" viewBox="0 0 24 24">
                             <path d="M8 5v14l11-7z" />
                           </svg>
@@ -229,7 +229,7 @@ const ProductDetail = () => {
                       onClick={() => setActiveMediaIndex(idx)}
                       className={`w-3 h-3 rounded-full transition-all border ${
                         activeMediaIndex === idx 
-                          ? 'bg-indigo-600 w-6 border-indigo-600' 
+                          ? 'bg-primary w-6 border-primary' 
                           : 'bg-slate-300 border-transparent hover:bg-slate-400'
                       }`}
                     />

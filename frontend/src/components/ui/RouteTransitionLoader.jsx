@@ -110,9 +110,6 @@ const RouteTransitionLoader = () => {
               className="absolute inset-0 m-auto w-6 h-6 object-contain"
             />
           </div>
-          <span className="text-xs font-black tracking-widest text-slate-400 uppercase animate-pulse">
-            Loading Session
-          </span>
         </div>
       </div>
     );

@@ -13,12 +13,12 @@ const CheckoutStepper = ({ step }) => {
           <span className="font-bold text-lg">Checkout</span>
         </div>
         <div className="flex items-center gap-8">
-          <div className={`flex items-center gap-2 text-sm font-bold ${step === 'shipping' ? 'text-indigo-600' : 'text-slate-500'}`}>
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${step === 'shipping' ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'}`}>1</div>
+          <div className={`flex items-center gap-2 text-sm font-bold ${step === 'shipping' ? 'text-primary' : 'text-slate-500'}`}>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${step === 'shipping' ? 'border-primary bg-primary text-white' : 'border-slate-300'}`}>1</div>
             <span className="hidden md:inline">Address</span>
           </div>
-          <div className={`flex items-center gap-2 text-sm font-bold ${step === 'payment' ? 'text-indigo-600' : 'text-slate-500'}`}>
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${step === 'payment' ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300'}`}>2</div>
+          <div className={`flex items-center gap-2 text-sm font-bold ${step === 'payment' ? 'text-primary' : 'text-slate-500'}`}>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${step === 'payment' ? 'border-primary bg-primary text-white' : 'border-slate-300'}`}>2</div>
             <span className="hidden md:inline">Payment</span>
           </div>
         </div>

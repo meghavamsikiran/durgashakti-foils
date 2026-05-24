@@ -66,7 +66,7 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
     >
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Payment Selection</h2>
-        <Button variant="ghost" onClick={onBack} className="text-indigo-600 font-bold">Edit Address</Button>
+        <Button variant="ghost" onClick={onBack} className="text-primary font-bold">Edit Address</Button>
       </div>
 
       <div className="space-y-4">
@@ -79,7 +79,7 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
                 isDisabled
                   ? 'opacity-40 cursor-not-allowed border-slate-100 bg-slate-50/50'
                   : paymentMethod === method.id
-                  ? 'border-indigo-600 bg-indigo-50/30 cursor-pointer'
+                  ? 'border-primary bg-primary/5 cursor-pointer'
                   : 'border-slate-200 hover:border-slate-300 bg-slate-50/50 cursor-pointer'
               }`}
             >
@@ -90,9 +90,9 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
                 disabled={isDisabled}
                 checked={paymentMethod === method.id}
                 onChange={(e) => selectPaymentMethod && selectPaymentMethod(e.target.value)}
-                className={`w-5 h-5 border-slate-300 focus:ring-indigo-600 ${isDisabled ? 'text-slate-300 cursor-not-allowed' : 'text-indigo-600 cursor-pointer'}`}
+                className={`w-5 h-5 border-slate-300 focus:ring-primary ${isDisabled ? 'text-slate-300 cursor-not-allowed' : 'text-primary cursor-pointer'}`}
               />
-              <div className={`p-3 rounded-2xl ${isDisabled ? 'bg-slate-200 text-slate-400' : paymentMethod === method.id ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>
+              <div className={`p-3 rounded-2xl ${isDisabled ? 'bg-slate-200 text-slate-400' : paymentMethod === method.id ? 'bg-primary text-white' : 'bg-white text-slate-500 border border-slate-200'}`}>
                 <method.icon className="w-6 h-6" />
               </div>
               <div className="flex-1">
@@ -139,7 +139,7 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
 
       <div className="mt-12 p-6 bg-slate-900 rounded-[2rem] text-white">
         <div className="flex items-center gap-3 mb-4">
-          <Shield className="w-6 h-6 text-indigo-400" />
+          <Shield className="w-6 h-6 text-primary/70" />
           <span className="font-bold uppercase tracking-widest text-xs">Secure Transaction</span>
         </div>
         <p className="text-sm text-slate-500 leading-relaxed">Your payment information is encrypted and processed securely by Razorpay. We do not store your full card details.</p>

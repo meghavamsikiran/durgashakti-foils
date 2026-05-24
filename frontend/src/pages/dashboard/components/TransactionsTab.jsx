@@ -54,7 +54,7 @@ const TransactionsTab = ({ orders }) => {
                     </td>
                     <td className="px-8 py-6 text-sm font-bold text-foreground uppercase tracking-tight">{tx.method}</td>
                     <td className="px-8 py-6">
-                      <span className={`px-2.5 py-1 rounded-sm text-[10px] font-mono tracking-wider font-semibold ${tx.status === 'completed' ? 'bg-primary/10 text-primary' : 'bg-amber-50 text-amber-600'}`}>
+                      <span className={`px-2.5 py-1 rounded-sm text-[10px] font-mono tracking-wider font-semibold ${['completed', 'paid'].includes(tx.status?.toLowerCase()) ? 'bg-primary/10 text-primary' : 'bg-amber-50 text-amber-600'}`}>
                         {tx.status}
                       </span>
                     </td>

@@ -544,7 +544,7 @@ const ProductsPage = () => {
                 </div>
 
                 {(form.media_urls || []).length > 0 && (
-                  <div className="grid grid-cols-5 gap-3 mt-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-4">
                     {(form.media_urls || []).map((item, idx) => (
                       <div key={idx} className="aspect-square relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group hover:border-indigo-300 transition-colors shadow-sm">
                         {item.type === 'video' ? (

@@ -237,48 +237,52 @@ const Cart = () => {
                       className="bg-white border border-border-subtle rounded-xl p-6 shadow-sm hover:shadow-emerald-glow/5 transition-all duration-300"
                       data-testid={`cart-item-${product.id}`}
                     >
-                      <div className="flex gap-6">
-                        <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-surface-container-low border border-border-subtle">
-                          <img
-                            src={formatImageUrl(product.image_url)}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
+                      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                        <div className="flex gap-4 items-start flex-1">
+                          <div className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-lg overflow-hidden bg-surface-container-low border border-border-subtle">
+                            <img
+                              src={formatImageUrl(product.image_url)}
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-base sm:text-lg font-manrope text-ink-slate mb-1 truncate">
+                              {product.name}
+                            </h3>
+                            <div className="mb-2">
+                              <span className="text-[10px] font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle">
+                                {product.size} • {product.thickness}
+                              </span>
+                            </div>
+                            <div className="flex items-baseline gap-2 flex-wrap">
+                              <p className="text-base sm:text-lg font-extrabold text-ink-slate font-manrope">
+                                ₹{product.discount_price || product.price}
+                              </p>
+                              {product.discount_price && product.discount_price < product.price && (
+                                <>
+                                  <span className="text-xs text-text-muted line-through">
+                                    M.R.P.: ₹{product.price}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-emerald-600 bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+                                    ({Math.round(((product.price - product.discount_price) / product.price) * 100)}% off)
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg font-manrope text-ink-slate mb-1">
-                            {product.name}
-                          </h3>
-                          <div className="mb-2">
-                            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle">
-                              {product.size} • {product.thickness}
-                            </span>
-                          </div>
-                          <div className="flex items-baseline gap-2 flex-wrap">
-                            <p className="text-lg font-extrabold text-ink-slate font-manrope">
-                              ₹{product.discount_price || product.price}
-                            </p>
-                            {product.discount_price && product.discount_price < product.price && (
-                              <>
-                                <span className="text-xs text-text-muted line-through">
-                                  M.R.P.: ₹{product.price}
-                                </span>
-                                <span className="text-[10px] font-bold text-emerald-600 bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
-                                  ({Math.round(((product.price - product.discount_price) / product.price) * 100)}% off)
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-end justify-center h-full">
+                        <div className="flex sm:flex-col items-center justify-between sm:justify-center gap-3 pt-3 sm:pt-0 border-t border-slate-100 sm:border-t-0">
+                          <span className="sm:hidden text-xs font-bold text-slate-500 uppercase">Quantity</span>
+                          
                           {/* Premium Capsule Quantity Selector */}
                           <div className="flex items-center justify-between border border-border-subtle bg-white rounded-full h-10 w-[115px] px-3 shadow-sm hover:border-primary/30 transition-all select-none">
                             <button
                               onClick={(e) => {
-                                e.stopPropagation();
-                                handleDecrement(item.product_id, item.quantity);
+                                  e.stopPropagation();
+                                  handleDecrement(item.product_id, item.quantity);
                               }}
                               className="h-full flex items-center justify-center text-slate-400 hover:text-rose-650 transition-colors focus:outline-none cursor-pointer"
                               title={item.quantity === 1 ? "Remove item" : "Decrease quantity"}

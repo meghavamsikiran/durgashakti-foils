@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Package, Boxes, ShoppingCart, 
   Users, CreditCard, BarChart3, FileText, Upload, 
   UserCog, ShieldAlert, Settings, LogOut, Package2, Layers,
-  MessageSquare
+  MessageSquare, Menu, X
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -31,6 +31,12 @@ const ICON_MAP = {
 const AdminLayout = () => {
   const { user, logout, hasPermission } = useAuth();
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+
+  // Close sidebar on route change
+  React.useEffect(() => {
+    setSidebarOpen(false);
+  }, [location]);
   
   // Filter menu based on dynamic permissions
   const menu = superAdminSidebar.filter(item => {
@@ -39,12 +45,47 @@ const AdminLayout = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#f7faf8] flex text-on-surface">
+    <div className="min-h-screen bg-[#f7faf8] flex flex-col md:flex-row text-on-surface">
+      {/* Mobile Header */}
+      <header className="flex md:hidden items-center justify-between px-6 py-4 bg-white border-b border-border-subtle sticky top-0 z-30 shadow-sm">
+        <button 
+          onClick={() => setSidebarOpen(true)}
+          className="p-2 -ml-2 text-slate-600 hover:text-slate-900 focus:outline-none"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+        <div className="flex items-center gap-2">
+          <img src="/favicon.png" alt="Durga Maa" className="w-6 h-6 object-contain" />
+          <span className="font-bold text-base tracking-tight text-ink-slate">Durga Shakti</span>
+        </div>
+        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black text-xs">
+          {user?.full_name?.charAt(0) || 'A'}
+        </div>
+      </header>
+
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 md:hidden transition-opacity"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-[#0B1220] text-slate-350 flex flex-col fixed inset-y-0 shadow-2xl z-20 border-r border-border-subtle/10 font-inter">
-        <div className="p-6 flex items-center gap-3 border-b border-border-subtle/10 bg-[#0B1220]">
-          <img src="/favicon.png" alt="Durga Maa" className="w-8 h-8 object-contain drop-shadow-md" />
-          <span className="font-black text-lg tracking-tighter text-white uppercase">Durga Shakti<span className="text-primary ml-1 font-extrabold">Foils</span></span>
+      <aside className={`w-64 bg-[#0B1220] text-slate-350 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-50 border-r border-border-subtle/10 font-inter transition-transform duration-300 md:translate-x-0 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="p-6 flex items-center justify-between border-b border-border-subtle/10 bg-[#0B1220]">
+          <div className="flex items-center gap-3">
+            <img src="/favicon.png" alt="Durga Maa" className="w-8 h-8 object-contain drop-shadow-md" />
+            <span className="font-black text-lg tracking-tighter text-white uppercase">Durga Shakti<span className="text-primary ml-1 font-extrabold">Foils</span></span>
+          </div>
+          <button 
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden p-1 text-slate-400 hover:text-white"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1 scrollbar-none bg-[#0B1220]">
@@ -94,8 +135,8 @@ const AdminLayout = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-64 min-h-screen bg-[#f7faf8]">
-        <div className="max-w-7xl mx-auto p-8">
+      <main className="flex-1 md:ml-64 min-h-screen bg-[#f7faf8]">
+        <div className="max-w-7xl mx-auto p-4 md:p-8">
           <Outlet />
         </div>
       </main>

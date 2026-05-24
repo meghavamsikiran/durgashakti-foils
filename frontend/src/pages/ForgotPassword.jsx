@@ -131,7 +131,7 @@ const ForgotPassword = () => {
                     className={`text-[11px] font-bold transition-all ${
                       resendTimer > 0 
                         ? 'text-slate-400 cursor-not-allowed' 
-                        : 'text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer'
+                        : 'text-primary hover:text-emerald-hover hover:underline cursor-pointer'
                     }`}
                   >
                     {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
