@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Camera, ShieldCheck } from 'lucide-react';
+import { Camera, ShieldCheck, Edit2, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import reviewService from '../../services/review.service';
 import { formatImageUrl } from '../../utils/api';
 import StarRating from './StarRating';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ProductReviews = ({ productId, summary }) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [ratingSummary, setRatingSummary] = useState(summary || {});
   const [loading, setLoading] = useState(false);
@@ -30,6 +35,22 @@ const ProductReviews = ({ productId, summary }) => {
       active = false;
     };
   }, [productId]);
+
+  const handleDelete = async (reviewId) => {
+    if (window.confirm('Are you sure you want to delete this review?')) {
+      try {
+        await reviewService.deleteReview(reviewId);
+        toast.success('Review deleted successfully');
+        // Refresh reviews list locally
+        setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+        // Refresh summary
+        const data = await reviewService.getProductReviews(productId);
+        setRatingSummary(data);
+      } catch {
+        toast.error('Failed to delete review');
+      }
+    }
+  };
 
   const average = ratingSummary.rating_average ?? summary?.rating_average ?? 0;
   const count = ratingSummary.review_count ?? summary?.review_count ?? 0;
@@ -59,7 +80,7 @@ const ProductReviews = ({ productId, summary }) => {
                 <div key={rating} className="flex items-center gap-2 text-xs font-bold text-slate-500">
                   <span className="w-8">{rating} star</span>
                   <div className="h-2 flex-1 rounded-full bg-slate-100 overflow-hidden">
-                    <div className="h-full bg-amber-400" style={{ width: `${percent}%` }} />
+                    <div className="h-full bg-primary" style={{ width: `${percent}%` }} />
                   </div>
                   <span className="w-9 text-right">{percent}%</span>
                 </div>
@@ -78,25 +99,55 @@ const ProductReviews = ({ productId, summary }) => {
                       By {review.public_name} on {new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" />
-                    Verified
-                  </span>
+                  <div className="flex items-center gap-3">
+                    {user && (user.id === review.user_id || user.role === 'admin' || user.role === 'SUPER_ADMIN') && (
+                      <div className="flex items-center gap-1.5 mr-1">
+                        {user.id === review.user_id && (
+                          <button
+                            onClick={() => navigate(`/review/${review.order_id}/${productId}`)}
+                            className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-lg transition-all"
+                            title="Edit Review"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(review.id)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                          title="Delete Review"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" />
+                      Verified
+                    </span>
+                  </div>
                 </div>
                 {review.comment && <p className="text-sm text-slate-700 leading-relaxed mt-4">{review.comment}</p>}
-                {review.media_urls?.length > 0 && (
-                  <div className="flex gap-3 overflow-x-auto mt-4">
-                    {review.media_urls.map((media, idx) => (
-                      <div key={`${review.id}-${idx}`} className="w-24 h-24 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
-                        {media.type === 'video' ? (
-                          <video src={formatImageUrl(media.url)} className="w-full h-full object-cover" controls />
-                        ) : (
-                          <img src={formatImageUrl(media.url)} alt="" className="w-full h-full object-cover" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {(() => {
+                  let mediaUrls = [];
+                  try {
+                    mediaUrls = typeof review.media_urls === 'string' ? JSON.parse(review.media_urls) : (review.media_urls || []);
+                  } catch {
+                    mediaUrls = [];
+                  }
+                  return Array.isArray(mediaUrls) && mediaUrls.length > 0 && (
+                    <div className="flex gap-3 overflow-x-auto mt-4">
+                      {mediaUrls.map((media, idx) => (
+                        <div key={`${review.id}-${idx}`} className="w-24 h-24 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
+                          {media.type === 'video' ? (
+                            <video src={formatImageUrl(media.url)} className="w-full h-full object-cover" controls />
+                          ) : (
+                            <img src={formatImageUrl(media.url)} alt="" className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </article>
             ))}
           </div>

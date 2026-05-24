@@ -7,7 +7,7 @@ from database import get_db
 from models import (
     ProductModel, OrderModel, UserModel, SettingModel,
     StockHistoryModel, GstRecordModel, GstImportModel, AuditLogModel,
-    CategoryModel
+    CategoryModel, AddressModel, ProductReviewModel
 )
 from deps import (
     UserSchema, ProductSchema, ProductBulkCreateRequest,
@@ -540,6 +540,55 @@ async def list_customers(
             "total_spent": round(st["total_spent"], 2)
         })
     return {"items": rows_data, "total": total, "page": page, "limit": limit}
+
+
+@router.get("/admin/customers/{customer_id}")
+async def get_customer_details(
+    customer_id: str,
+    admin: UserSchema = Depends(require_permission("manage_customers")),
+    db: AsyncSession = Depends(get_db)
+):
+    validate_uuid(customer_id)
+    user_res = await db.execute(select(UserModel).where(UserModel.id == customer_id))
+    user = user_res.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
+    addr_res = await db.execute(select(AddressModel).where(AddressModel.user_id == user.id))
+    addresses = [row_to_dict(addr) for addr in addr_res.scalars().all()]
+
+    order_res = await db.execute(
+        select(OrderModel).where(OrderModel.user_id == user.id).order_by(OrderModel.created_at.desc())
+    )
+    orders = [row_to_dict(order) for order in order_res.scalars().all()]
+
+    review_res = await db.execute(
+        select(ProductReviewModel, ProductModel.name.label("product_name"), ProductModel.image_url.label("product_image"))
+        .join(ProductModel, ProductReviewModel.product_id == ProductModel.id)
+        .where(ProductReviewModel.user_id == user.id)
+        .order_by(ProductReviewModel.created_at.desc())
+    )
+    reviews = []
+    for row in review_res.all():
+        review_data = row_to_dict(row[0])
+        review_data["product_name"] = row.product_name
+        review_data["product_image"] = row.product_image
+        reviews.append(review_data)
+
+    return {
+        "customer": {
+            "id": str(user.id),
+            "name": user.full_name,
+            "email": user.email,
+            "phone": user.phone,
+            "status": user.status,
+            "is_active": user.is_active,
+            "created_at": user.created_at.isoformat(),
+        },
+        "addresses": addresses,
+        "orders": orders,
+        "reviews": reviews,
+    }
 
 
 # ── Admins (Admin) ───────────────────────────────────────────────────────

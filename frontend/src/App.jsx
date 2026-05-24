@@ -37,6 +37,7 @@ import CategoriesPage from './admin/pages/CategoriesPage';
 import InventoryPage from './admin/pages/InventoryPage';
 import OrdersPage from './admin/pages/OrdersPage';
 import CustomersPage from './admin/pages/CustomersPage';
+import CustomerDetailPage from './admin/pages/CustomerDetailPage';
 import PaymentsPage from './admin/pages/PaymentsPage';
 import GstImportPage from './admin/pages/GstImportPage';
 import GstReportsPage from './admin/pages/GstReportsPage';
@@ -118,6 +119,7 @@ function AppRoutes() {
                 <Route path="stock" element={<ProtectedAdminRoute permission="view_inventory"><InventoryPage /></ProtectedAdminRoute>} />
                 <Route path="orders" element={<ProtectedAdminRoute permission="view_orders"><OrdersPage /></ProtectedAdminRoute>} />
                 <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
+                <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
                 <Route path="inquiries" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
                 <Route
                   path="payments"
@@ -194,6 +196,7 @@ function AppRoutes() {
                 <Route path="stock" element={<ProtectedAdminRoute permission="view_inventory"><InventoryPage /></ProtectedAdminRoute>} />
                 <Route path="orders" element={<ProtectedAdminRoute permission="view_orders"><OrdersPage /></ProtectedAdminRoute>} />
                 <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
+                <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
                 <Route path="inquiries" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
                 <Route
                   path="payments"

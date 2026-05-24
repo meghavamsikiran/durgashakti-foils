@@ -94,6 +94,7 @@ const adminService = {
 
   // Customers
   getCustomers: (params) => cachedGet('/admin/customers', { params }),
+  getCustomerDetails: (customerId) => cachedGet(`/admin/customers/${customerId}`),
 
   // Payments
   getPayments: (params) => cachedGet('/admin/payments', { params }),

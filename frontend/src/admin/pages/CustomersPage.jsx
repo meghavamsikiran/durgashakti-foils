@@ -169,6 +169,7 @@ const CustomersPage = () => {
                 <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Total Volume</th>
                 <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Lifetime Spend</th>
                 <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Joined Date</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -206,6 +207,14 @@ const CustomersPage = () => {
                       <Calendar className="w-3 h-3" />
                       {formatDate(row.created_at)}
                     </div>
+                  </td>
+                  <td className="px-8 py-6 text-right">
+                    <button
+                      onClick={() => window.open(`${window.location.pathname.startsWith('/superadmin') ? '/superadmin' : '/admin'}/customers/${row.id}`, '_blank')}
+                      className="px-3 py-1.5 rounded-lg bg-primary hover:bg-emerald-hover text-white text-[10px] font-black uppercase tracking-wider shadow-sm hover:shadow-emerald-glow transition-all"
+                    >
+                      View Details
+                    </button>
                   </td>
                 </tr>
               ))}

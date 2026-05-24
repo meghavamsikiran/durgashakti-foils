@@ -187,7 +187,7 @@ const ProductReviewPage = () => {
           <Button type="button" variant="outline" onClick={() => navigate(-1)} className="rounded-lg">
             Cancel
           </Button>
-          <Button type="submit" disabled={submitting} className="rounded-lg bg-[#FFD814] hover:bg-[#F7CA00] text-slate-950 font-black px-8">
+          <Button type="submit" disabled={submitting} className="rounded-lg bg-primary hover:bg-emerald-hover text-white font-black px-8 shadow-sm hover:shadow-emerald-glow transition-all">
             {submitting ? 'Submitting...' : 'Submit'}
           </Button>
         </div>

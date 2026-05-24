@@ -40,12 +40,7 @@ def _order_contains_product(order: OrderModel, product_id: str) -> bool:
 
 def _can_review_order(order: OrderModel) -> bool:
     order_status = (order.order_status or "").lower()
-    payment_status = (order.payment_status or "").lower()
-    if order_status in BLOCKED_ORDER_STATUSES:
-        return False
-    if payment_status in REVIEWABLE_PAYMENT_STATUSES:
-        return True
-    return order.stock_applied is True and order_status not in BLOCKED_ORDER_STATUSES
+    return order_status in {"delivered", "return_requested", "return_approved", "return_rejected", "refunded"}
 
 
 async def _get_purchase_for_review(db: AsyncSession, user_id: str, product_id: str, order_id: str) -> OrderModel:
@@ -110,7 +105,6 @@ async def get_review_eligibility(
     existing_result = await db.execute(
         select(ProductReviewModel).where(
             ProductReviewModel.product_id == product_id,
-            ProductReviewModel.order_id == order_id,
             ProductReviewModel.user_id == current_user.id,
         )
     )
@@ -184,7 +178,6 @@ async def submit_product_review(
     existing_result = await db.execute(
         select(ProductReviewModel).where(
             ProductReviewModel.product_id == product_id,
-            ProductReviewModel.order_id == order_id,
             ProductReviewModel.user_id == current_user.id,
         )
     )
@@ -195,6 +188,7 @@ async def submit_product_review(
         review.title = clean_title[:140]
         review.comment = clean_comment[:2000]
         review.public_name = clean_public_name[:120]
+        review.order_id = order_id  # Update to latest order
         if uploaded_media:
             review.media_urls = uploaded_media
             flag_modified(review, "media_urls")
@@ -217,3 +211,28 @@ async def submit_product_review(
         db.add(review)
     await db.flush()
     return {"message": "Review submitted", "review": await _serialize_review(review)}
+
+
+@router.delete("/reviews/{review_id}")
+async def delete_product_review(
+    review_id: str,
+    current_user: UserSchema = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    validate_uuid(review_id)
+    result = await db.execute(
+        select(ProductReviewModel).where(ProductReviewModel.id == review_id)
+    )
+    review = result.scalar_one_or_none()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    is_owner = str(review.user_id) == str(current_user.id)
+    is_admin = current_user.role in ("admin", "SUPER_ADMIN")
+    if not (is_owner or is_admin):
+        raise HTTPException(status_code=403, detail="You do not have permission to delete this review")
+
+    await db.delete(review)
+    await db.flush()
+    return {"message": "Review deleted successfully"}
+

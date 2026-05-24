@@ -21,6 +21,13 @@ const reviewService = {
     apiClient.invalidateCache('/reviews');
     return response.data;
   },
+
+  deleteReview: async (reviewId) => {
+    const response = await apiClient.delete(`/reviews/${reviewId}`);
+    apiClient.invalidateCache('/products');
+    apiClient.invalidateCache('/reviews');
+    return response.data;
+  },
 };
 
 export default reviewService;

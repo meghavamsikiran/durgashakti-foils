@@ -55,9 +55,7 @@ const OrdersTab = ({ orders, loading, onCancelOrder }) => {
 
   const canReviewOrder = (order) => {
     const status = (order.order_status || '').toLowerCase();
-    const payment = (order.payment_status || '').toLowerCase();
-    return !['cancelled', 'failed', 'pending_payment'].includes(status)
-      && (['completed', 'paid', 'cash on delivery'].includes(payment) || order.stock_applied === true);
+    return ['delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
   };
 
   if (loading) return <PageLoader message="Loading orders..." />;
@@ -133,7 +131,7 @@ const OrdersTab = ({ orders, loading, onCancelOrder }) => {
                             {canReviewOrder(order) && (
                               <Button
                                 onClick={() => navigate(`/review/${order.id}/${item.product_id}`)}
-                                className="h-9 rounded-lg bg-[#FFD814] hover:bg-[#F7CA00] text-slate-950 text-[10px] font-black uppercase tracking-wider"
+                                className="h-9 rounded-lg bg-primary hover:bg-emerald-hover text-white text-[10px] font-black uppercase tracking-wider shadow-sm hover:shadow-emerald-glow transition-all"
                               >
                                 <Star className="w-3.5 h-3.5 mr-1" />
                                 Write review
