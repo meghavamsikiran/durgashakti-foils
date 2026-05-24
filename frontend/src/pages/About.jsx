@@ -1,9 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Flame, Sparkles, Award, Users, Warehouse, HeartHandshake, Compass } from 'lucide-react';
+import { Button } from '../components/ui/button';
 import { reveal, revealSlow, fadeInUp, staggerContainer } from '../animations/variants';
 
 const About = () => {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-surface text-on-surface overflow-x-hidden font-inter">
       

@@ -17,31 +17,25 @@ const ProductCard = ({ product }) => {
   
   // Custom states
   const [showRemoveModal, setShowRemoveModal] = React.useState(false);
-  const [showUpdatedBanner, setShowUpdatedBanner] = React.useState(false);
   
   const cartItem = cart?.items?.find(item => item.product_id === product.id);
   const currentQty = cartItem ? cartItem.quantity : 0;
   
   // Synchronous local state for zero-latency clicks
   const [qty, setQty] = React.useState(0);
-  const bannerTimeoutRef = React.useRef(null);
 
   React.useEffect(() => {
     setQty(currentQty);
   }, [currentQty]);
 
-  React.useEffect(() => {
-    return () => {
-      if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
-    };
-  }, []);
-
   const triggerUpdatedBanner = () => {
-    setShowUpdatedBanner(true);
-    if (bannerTimeoutRef.current) clearTimeout(bannerTimeoutRef.current);
-    bannerTimeoutRef.current = setTimeout(() => {
-      setShowUpdatedBanner(false);
-    }, 4000);
+    toast.success('Quantity updated', {
+      id: `qty-update-${product.id}`,
+      action: {
+        label: 'Go to cart',
+        onClick: () => navigate('/cart')
+      }
+    });
   };
 
   // Dynamic Tag Logic
@@ -267,37 +261,6 @@ const ProductCard = ({ product }) => {
               )}
             </div>
           )}
-
-          {/* Non-blocking Quantity updated absolute overlay */}
-          <AnimatePresence>
-            {showUpdatedBanner && (
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 30 }}
-                className="absolute bottom-0 left-0 right-0 border-t border-border-subtle bg-white/95 backdrop-blur-sm p-3 px-4 flex items-center justify-between shadow-lg z-20"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full border border-primary flex items-center justify-center bg-primary/10 flex-shrink-0">
-                    <Check className="w-2.5 h-2.5 text-primary stroke-[3]" />
-                  </div>
-                  <span className="text-xs font-bold text-ink-slate font-manrope">
-                    Quantity updated
-                  </span>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate('/cart');
-                  }}
-                  className="text-xs font-bold text-primary underline hover:text-emerald-hover transition-colors cursor-pointer"
-                >
-                  Go to cart
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         <div className="p-5 flex flex-col justify-between flex-1 h-[190px]">
