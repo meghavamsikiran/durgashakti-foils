@@ -88,7 +88,7 @@ const AdminLayout = () => {
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1 scrollbar-none bg-[#0B1220]">
+        <nav className="flex-1 overflow-y-auto py-6 pl-3 pr-2 space-y-1 sidebar-scrollbar bg-[#0B1220]">
           {menu.map((item) => {
             const Icon = ICON_MAP[item.label] || LayoutDashboard;
             const isSuper = user?.role === 'SUPER_ADMIN' || location.pathname.startsWith('/superadmin');

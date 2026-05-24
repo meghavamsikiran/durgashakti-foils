@@ -220,8 +220,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Custom scrollbar alignment with Industrial Artisan themes */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -230,9 +230,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #bbcbb5; /* --outline-variant */
+  background: #8faa86;
   border-radius: 100px;
-  border: 2px solid #ebefed; /* creates margin around thumb */
+  border: 1px solid #ebefed;
   transition: all 0.3s ease;
 }
 
@@ -247,6 +247,29 @@ h1, h2, h3, h4, h5, h6 {
 /* Firefox styling */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #bbcbb5 #ebefed;
+  scrollbar-color: #8faa86 #ebefed;
+}
+
+.sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #16E34A transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(22, 227, 74, 0.75);
+  border: 0;
+  border-radius: 999px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #16E34A;
 }
 
