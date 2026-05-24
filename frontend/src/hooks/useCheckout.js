@@ -14,6 +14,33 @@ import { getProductPricing } from '../utils/productPricing';
 
 const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID;
 
+const getCustomerCouponError = (message) => {
+  if (!message) return 'This coupon could not be applied. Please check the code and try again.';
+  const lowerMessage = String(message).toLowerCase();
+  if (lowerMessage.includes('stacking')) {
+    return 'Only one coupon can be used per order. Remove the applied coupon before using another code.';
+  }
+  if (lowerMessage.includes('not found')) {
+    return 'We could not find that coupon code. Please check the code and try again.';
+  }
+  if (lowerMessage.includes('inactive')) {
+    return 'This coupon is not active right now.';
+  }
+  if (lowerMessage.includes('expired')) {
+    return 'This coupon has expired.';
+  }
+  if (lowerMessage.includes('minimum cart value')) {
+    return message.replace('Minimum cart value', 'Minimum order amount');
+  }
+  if (lowerMessage.includes('usage limit reached')) {
+    return 'This coupon has reached its usage limit.';
+  }
+  if (lowerMessage.includes('coupon system is currently disabled')) {
+    return 'Coupons are not available right now.';
+  }
+  return message;
+};
+
 export const useCheckout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -240,7 +267,7 @@ export const useCheckout = () => {
       const res = await couponService.validateCoupons(currentCodes, subtotal);
       
       if (res.errors && res.errors[cleanCode]) {
-        toast.error(res.errors[cleanCode]);
+        toast.error(getCustomerCouponError(res.errors[cleanCode]));
         return;
       }
 
@@ -250,11 +277,11 @@ export const useCheckout = () => {
         toast.success(`Coupon "${cleanCode}" applied successfully!`);
       } else {
         const firstError = res.errors ? Object.values(res.errors)[0] : null;
-        toast.error(firstError || res.error || 'Invalid coupon code.');
+        toast.error(getCustomerCouponError(firstError || res.error || 'Invalid coupon code.'));
       }
     } catch (error) {
       const detail = error.response?.data?.detail || error.message || 'Failed to validate coupon.';
-      toast.error(detail);
+      toast.error(getCustomerCouponError(detail));
     } finally {
       setValidatingCoupon(false);
     }

@@ -31,7 +31,10 @@ const CouponsPage = () => {
     min_cart_value: 0,
     max_discount_limit: '',
     max_usage_count: '',
-    per_customer_usage_limit: 1,
+    per_customer_usage_limit: '',
+    has_max_discount_limit: false,
+    has_total_use_limit: false,
+    has_customer_use_limit: false,
     is_active: true
   });
 
@@ -77,7 +80,10 @@ const CouponsPage = () => {
       min_cart_value: 0,
       max_discount_limit: '',
       max_usage_count: '',
-      per_customer_usage_limit: 1,
+      per_customer_usage_limit: '',
+      has_max_discount_limit: false,
+      has_total_use_limit: false,
+      has_customer_use_limit: false,
       is_active: true
     });
     setIsModalOpen(true);
@@ -103,6 +109,9 @@ const CouponsPage = () => {
       max_discount_limit: coupon.max_discount_limit || '',
       max_usage_count: coupon.max_usage_count || '',
       per_customer_usage_limit: coupon.per_customer_usage_limit || '',
+      has_max_discount_limit: coupon.max_discount_limit !== null && coupon.max_discount_limit !== undefined,
+      has_total_use_limit: coupon.max_usage_count !== null && coupon.max_usage_count !== undefined,
+      has_customer_use_limit: coupon.per_customer_usage_limit !== null && coupon.per_customer_usage_limit !== undefined,
       is_active: coupon.is_active
     });
     setIsModalOpen(true);
@@ -152,9 +161,9 @@ const CouponsPage = () => {
       discount_value: Number(formData.discount_value),
       expiry_date: formData.expiry_date ? new Date(formData.expiry_date).toISOString() : null,
       min_cart_value: Number(formData.min_cart_value),
-      max_discount_limit: formData.max_discount_limit ? Number(formData.max_discount_limit) : null,
-      max_usage_count: formData.max_usage_count ? Number(formData.max_usage_count) : null,
-      per_customer_usage_limit: formData.per_customer_usage_limit ? Number(formData.per_customer_usage_limit) : null,
+      max_discount_limit: formData.has_max_discount_limit && formData.max_discount_limit ? Number(formData.max_discount_limit) : null,
+      max_usage_count: formData.has_total_use_limit && formData.max_usage_count ? Number(formData.max_usage_count) : null,
+      per_customer_usage_limit: formData.has_customer_use_limit && formData.per_customer_usage_limit ? Number(formData.per_customer_usage_limit) : null,
       is_active: formData.is_active
     };
 
@@ -202,12 +211,12 @@ const CouponsPage = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-ink-slate flex items-center gap-3">
-            <Ticket className="w-8 h-8 text-primary" /> Coupon Management
+            <Ticket className="w-8 h-8 text-primary" /> Coupons & Discounts
           </h1>
-          <p className="text-sm text-text-muted mt-1">Configure user eligibility rules, code values, and track usage analytics.</p>
+          <p className="text-sm text-text-muted mt-1">Create discount codes, choose who can use them, and track how often they are used.</p>
         </div>
         <Button onClick={handleOpenCreateModal} className="bg-primary hover:bg-[#005a14] text-white rounded-xl py-3 px-5 flex items-center gap-2 font-bold uppercase tracking-widest text-xs shadow-md transition-all">
-          <Plus className="w-4 h-4" /> Create Coupon
+          <Plus className="w-4 h-4" /> Add Coupon
         </Button>
       </div>
 
@@ -259,7 +268,7 @@ const CouponsPage = () => {
         <h2 className="text-lg font-black text-ink-slate flex items-center gap-2 uppercase tracking-wider">
           <Settings className="w-5 h-5 text-primary" /> Global Settings
         </h2>
-        <p className="text-xs text-text-muted mt-1">Control system-wide coupon visibility and stacking compatibility.</p>
+        <p className="text-xs text-text-muted mt-1">Choose how coupons work for customers during checkout.</p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
           <label className="flex items-start gap-3 p-4 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100/75 transition-all border border-slate-200">
@@ -270,8 +279,8 @@ const CouponsPage = () => {
               onChange={(e) => setSettings(prev => ({ ...prev, system_enabled: e.target.checked }))}
             />
             <div>
-              <p className="text-sm font-bold text-ink-slate">Enable Coupon System</p>
-              <p className="text-xs text-text-muted mt-0.5">Allows customers to apply promo codes at checkout.</p>
+              <p className="text-sm font-bold text-ink-slate">Let customers use coupons</p>
+              <p className="text-xs text-text-muted mt-0.5">Turn this off to temporarily stop all coupon codes at checkout.</p>
             </div>
           </label>
 
@@ -283,8 +292,21 @@ const CouponsPage = () => {
               onChange={(e) => setSettings(prev => ({ ...prev, stacking_enabled: e.target.checked }))}
             />
             <div>
-              <p className="text-sm font-bold text-ink-slate">Allow Coupon Stacking</p>
-              <p className="text-xs text-text-muted mt-0.5">Enables customers to apply multiple codes simultaneously.</p>
+              <p className="text-sm font-bold text-ink-slate">Allow more than one coupon in the same order</p>
+              <p className="text-xs text-text-muted mt-0.5">Keep this off when each order should use only one coupon code.</p>
+            </div>
+          </label>
+
+          <label className="flex items-start gap-3 p-4 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100/75 transition-all border border-slate-200 md:col-span-2">
+            <input
+              type="checkbox"
+              className="mt-1 h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary"
+              checked={settings.single_use_per_account}
+              onChange={(e) => setSettings(prev => ({ ...prev, single_use_per_account: e.target.checked }))}
+            />
+            <div>
+              <p className="text-sm font-bold text-ink-slate">Allow only one coupon order per customer account</p>
+              <p className="text-xs text-text-muted mt-0.5">Use this only for strict one-time campaigns. If on, a customer who used any coupon before cannot use another coupon again.</p>
             </div>
           </label>
         </div>
@@ -295,7 +317,7 @@ const CouponsPage = () => {
             disabled={savingSettings}
             className="bg-primary hover:bg-[#005a14] text-white rounded-xl py-2 px-5 font-bold uppercase tracking-wider text-xs flex items-center gap-2 shadow-sm transition-all"
           >
-            {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Parameters'}
+            {savingSettings ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Coupon Settings'}
           </Button>
         </div>
       </div>
@@ -303,12 +325,12 @@ const CouponsPage = () => {
       {/* Coupons Table List */}
       <div className="bg-white rounded-2xl border border-border-subtle shadow-sm overflow-hidden">
         <div className="p-6 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h2 className="text-lg font-black text-ink-slate uppercase tracking-wider">Configure Coupons</h2>
+          <h2 className="text-lg font-black text-ink-slate uppercase tracking-wider">All Coupon Codes</h2>
           <div className="relative max-w-sm w-full">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
-              placeholder="Search code or type..."
+              placeholder="Search coupon code..."
               className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-slate-400"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -327,14 +349,14 @@ const CouponsPage = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/75 border-b border-border-subtle text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                  <th className="px-6 py-4">Code</th>
-                  <th className="px-6 py-4">Type</th>
-                  <th className="px-6 py-4">Value</th>
-                  <th className="px-6 py-4 text-center">Expiry</th>
-                  <th className="px-6 py-4 text-center">Min Cart</th>
-                  <th className="px-6 py-4 text-center">Stats (Uses / Rem)</th>
+                  <th className="px-6 py-4">Coupon Code</th>
+                  <th className="px-6 py-4">Discount</th>
+                  <th className="px-6 py-4">Amount</th>
+                  <th className="px-6 py-4 text-center">Valid Until</th>
+                  <th className="px-6 py-4 text-center">Minimum Order</th>
+                  <th className="px-6 py-4 text-center">Used / Left</th>
                   <th className="px-6 py-4 text-right">Revenue</th>
-                  <th className="px-6 py-4 text-center">State</th>
+                  <th className="px-6 py-4 text-center">Active</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -354,7 +376,8 @@ const CouponsPage = () => {
                           coupon.discount_type === 'flat' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
                           'bg-emerald-50 text-emerald-600 border border-emerald-100'
                         }`}>
-                          {coupon.discount_type.replace('_', ' ')}
+                          {coupon.discount_type === 'percentage' ? 'Percentage off' :
+                           coupon.discount_type === 'flat' ? 'Rupees off' : 'Free shipping'}
                         </span>
                       </td>
                       <td className="px-6 py-4 font-bold">
@@ -366,7 +389,7 @@ const CouponsPage = () => {
                             <Calendar className="w-3 h-3" />
                             {new Date(coupon.expiry_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                           </span>
-                        ) : 'No expiry'}
+                        ) : 'Never expires'}
                       </td>
                       <td className="px-6 py-4 text-center font-bold">₹{coupon.min_cart_value}</td>
                       <td className="px-6 py-4 text-center">
@@ -418,10 +441,10 @@ const CouponsPage = () => {
       {/* Modal - Create/Edit */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm transition-all duration-300">
-          <div className="bg-white rounded-3xl border border-border-subtle shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto font-inter">
+          <div className="bg-white rounded-3xl border border-border-subtle shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto font-inter">
             <div className="p-6 border-b border-border-subtle flex items-center justify-between">
               <h3 className="text-xl font-black text-ink-slate flex items-center gap-2 uppercase tracking-wide">
-                <Ticket className="w-5 h-5 text-primary" /> {editingCoupon ? 'Edit Coupon' : 'Create Coupon'}
+                <Ticket className="w-5 h-5 text-primary" /> {editingCoupon ? 'Edit Coupon' : 'Add Coupon'}
               </h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -434,7 +457,7 @@ const CouponsPage = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Coupon Code</label>
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Coupon code</label>
                   <input 
                     type="text"
                     required
@@ -443,23 +466,26 @@ const CouponsPage = () => {
                     value={formData.code}
                     onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value.toUpperCase() }))}
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">Customers type this code at checkout.</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Discount Type</label>
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Discount type</label>
                   <select 
                     className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary capitalize font-bold"
                     value={formData.discount_type}
                     onChange={(e) => setFormData(prev => ({ ...prev, discount_type: e.target.value }))}
                   >
-                    <option value="percentage">Percentage Discount</option>
-                    <option value="flat">Flat Cash Discount</option>
+                    <option value="percentage">Percentage off</option>
+                    <option value="flat">Rupees off</option>
                     <option value="free_shipping">Free Shipping</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Discount Value</label>
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">
+                    {formData.discount_type === 'percentage' ? 'Discount percentage' : 'Discount amount'}
+                  </label>
                   <input 
                     type="number"
                     required
@@ -470,13 +496,13 @@ const CouponsPage = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, discount_value: e.target.value }))}
                   />
                   <p className="text-[10px] text-slate-400 mt-1">
-                    {formData.discount_type === 'percentage' ? 'Enter percentage (e.g. 10 for 10% off)' :
-                     formData.discount_type === 'flat' ? 'Enter cash amount in rupees' : 'Value is not applicable for Free Shipping'}
+                    {formData.discount_type === 'percentage' ? 'Example: enter 50 for 50% off.' :
+                     formData.discount_type === 'flat' ? 'Example: enter 100 to reduce the order by ₹100.' : 'No amount is needed for free shipping.'}
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Minimum Cart Value</label>
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Minimum order amount</label>
                   <input 
                     type="number"
                     required
@@ -485,59 +511,110 @@ const CouponsPage = () => {
                     value={formData.min_cart_value}
                     onChange={(e) => setFormData(prev => ({ ...prev, min_cart_value: e.target.value }))}
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">Minimum cart subtotal required to apply this code.</p>
+                  <p className="text-[10px] text-slate-400 mt-1">Set 0 if customers can use it on any order amount.</p>
                 </div>
 
                 {formData.discount_type === 'percentage' && (
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Maximum Discount Limit</label>
-                    <input 
-                      type="number"
-                      min="0"
-                      placeholder="Unlimited"
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-bold"
-                      value={formData.max_discount_limit}
-                      onChange={(e) => setFormData(prev => ({ ...prev, max_discount_limit: e.target.value }))}
-                    />
-                    <p className="text-[10px] text-slate-400 mt-1">Cap the percentage discount at a max rupee amount.</p>
+                  <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary"
+                        checked={formData.has_max_discount_limit}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          has_max_discount_limit: e.target.checked,
+                          max_discount_limit: e.target.checked ? prev.max_discount_limit : ''
+                        }))}
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-ink-slate">Set a maximum discount amount</p>
+                        <p className="text-xs text-text-muted mt-0.5">Example: 50% off, but discount should not be more than ₹200.</p>
+                      </div>
+                    </label>
+                    {formData.has_max_discount_limit && (
+                      <input
+                        type="number"
+                        min="1"
+                        required
+                        placeholder="Maximum rupees off"
+                        className="mt-3 w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-bold bg-white"
+                        value={formData.max_discount_limit}
+                        onChange={(e) => setFormData(prev => ({ ...prev, max_discount_limit: e.target.value }))}
+                      />
+                    )}
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Expiry Date & Time</label>
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Expiry date</label>
                   <input 
                     type="datetime-local"
                     className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-mono"
                     value={formData.expiry_date}
                     onChange={(e) => setFormData(prev => ({ ...prev, expiry_date: e.target.value }))}
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">Optional. Leave empty for infinite validity.</p>
+                  <p className="text-[10px] text-slate-400 mt-1">Leave empty if this coupon should never expire.</p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Max Uses (Total)</label>
-                  <input 
-                    type="number"
-                    min="1"
-                    placeholder="Unlimited"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-bold"
-                    value={formData.max_usage_count}
-                    onChange={(e) => setFormData(prev => ({ ...prev, max_usage_count: e.target.value }))}
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Total uses across the entire website.</p>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary"
+                      checked={formData.has_total_use_limit}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        has_total_use_limit: e.target.checked,
+                        max_usage_count: e.target.checked ? prev.max_usage_count : ''
+                      }))}
+                    />
+                    <div>
+                      <p className="text-sm font-bold text-ink-slate">Limit total orders that can use this coupon</p>
+                      <p className="text-xs text-text-muted mt-0.5">Turn on for limited campaigns. Example: first 10 coupon orders only.</p>
+                    </div>
+                  </label>
+                  {formData.has_total_use_limit && (
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      placeholder="Total order limit"
+                      className="mt-3 w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-bold bg-white"
+                      value={formData.max_usage_count}
+                      onChange={(e) => setFormData(prev => ({ ...prev, max_usage_count: e.target.value }))}
+                    />
+                  )}
                 </div>
 
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Per Customer Limit</label>
-                  <input 
-                    type="number"
-                    min="1"
-                    placeholder="Unlimited"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-bold"
-                    value={formData.per_customer_usage_limit}
-                    onChange={(e) => setFormData(prev => ({ ...prev, per_customer_usage_limit: e.target.value }))}
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Max times a single customer can apply this code.</p>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary"
+                      checked={formData.has_customer_use_limit}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        has_customer_use_limit: e.target.checked,
+                        per_customer_usage_limit: e.target.checked ? (prev.per_customer_usage_limit || 1) : ''
+                      }))}
+                    />
+                    <div>
+                      <p className="text-sm font-bold text-ink-slate">Limit how many times each customer can use it</p>
+                      <p className="text-xs text-text-muted mt-0.5">Turn off if the same customer can use this coupon on many orders.</p>
+                    </div>
+                  </label>
+                  {formData.has_customer_use_limit && (
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      placeholder="Orders per customer"
+                      className="mt-3 w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-bold bg-white"
+                      value={formData.per_customer_usage_limit}
+                      onChange={(e) => setFormData(prev => ({ ...prev, per_customer_usage_limit: e.target.value }))}
+                    />
+                  )}
                 </div>
               </div>
 

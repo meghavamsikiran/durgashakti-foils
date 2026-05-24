@@ -113,7 +113,7 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
         code_upper = raw_code.strip().upper()
         if code_upper not in normalized_input_codes:
             # Code was ignored due to stacking settings
-            errors[raw_code] = "Coupon stacking is disabled. Only one coupon can be applied."
+            errors[raw_code] = "Only one coupon can be used per order. Remove the applied coupon before using another code."
             continue
 
         if code_upper not in coupons_by_code:
