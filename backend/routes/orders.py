@@ -110,7 +110,12 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
     
     # Calculate Shipping dynamically
     shipping_cost = 0.0
-    if shipping_config["enableShipping"]:
+    enable_shipping = shipping_config["enableShipping"]
+    if setting_obj and isinstance(setting_obj.value, dict):
+        if setting_obj.value.get("shippingRuleStatus") == "Inactive":
+            enable_shipping = False
+
+    if enable_shipping:
         if shipping_config["enableFreeShipping"] and taxable_amount >= float(shipping_config["freeShippingThreshold"]):
             shipping_cost = 0.0
         else:
@@ -118,8 +123,13 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
             
     # Calculate COD dynamically with limits validation
     cod_charge = 0.0
+    cod_enabled = shipping_config["codEnabled"]
+    if setting_obj and isinstance(setting_obj.value, dict):
+        if setting_obj.value.get("codStatus") == "Inactive":
+            cod_enabled = False
+
     if order_data.payment_method == "cod":
-        if not shipping_config["codEnabled"]:
+        if not cod_enabled:
             raise HTTPException(status_code=400, detail="Cash on Delivery is currently disabled.")
         if taxable_amount < float(shipping_config["minimumCodAmount"]):
             raise HTTPException(status_code=400, detail=f"Order amount is below the minimum Cash on Delivery limit of ₹{shipping_config['minimumCodAmount']}.")

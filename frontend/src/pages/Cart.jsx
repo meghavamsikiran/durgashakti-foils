@@ -353,7 +353,7 @@ const Cart = () => {
                   let enableShipping = true;
 
                   if (shippingSettings) {
-                    enableShipping = shippingSettings.enableShipping !== false;
+                    enableShipping = shippingSettings.enableShipping !== false && shippingSettings.shippingRuleStatus !== 'Inactive';
                     enableFreeShipping = shippingSettings.enableFreeShipping !== false;
                     freeShippingThreshold = Number(shippingSettings.freeShippingThreshold ?? 1099);
                     shippingCost = Number(shippingSettings.defaultShippingCharge ?? 70);

@@ -199,12 +199,12 @@ const ShippingSettingsPage = () => {
           enableFreeShipping,
           freeShippingThreshold: Number(freeShippingThreshold),
           defaultShippingCharge: Number(defaultShippingCharge),
-          shippingRuleStatus,
+          shippingRuleStatus: enableShipping ? 'Active' : 'Inactive',
           codEnabled,
           codCharge: Number(codCharge),
           minimumCodAmount: Number(minimumCodAmount),
           maximumCodAmount: Number(maximumCodAmount),
-          codStatus,
+          codStatus: codEnabled ? 'Active' : 'Inactive',
           standardDeliveryDays,
           expressDeliveryDays,
           packagingTime,
@@ -326,20 +326,6 @@ const ShippingSettingsPage = () => {
                     onChange={(e) => setDefaultShippingCharge(e.target.value === '' ? '' : Number(e.target.value))}
                   />
                 </div>
-
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Shipping Rule Status</label>
-                  <select
-                    disabled={!isEditable}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800"
-                    value={shippingRuleStatus}
-                    onChange={(e) => setShippingRuleStatus(e.target.value)}
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
               </div>
             </div>
           </div>
@@ -407,19 +393,6 @@ const ShippingSettingsPage = () => {
                     value={maximumCodAmount}
                     onChange={(e) => setMaximumCodAmount(e.target.value === '' ? '' : Number(e.target.value))}
                   />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">COD Status</label>
-                  <select
-                    disabled={!isEditable}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800"
-                    value={codStatus}
-                    onChange={(e) => setCodStatus(e.target.value)}
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
                 </div>
               </div>
             </div>

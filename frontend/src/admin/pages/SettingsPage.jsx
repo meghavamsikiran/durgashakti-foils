@@ -396,15 +396,29 @@ const SettingsPage = () => {
                         </div>
                      </div>
                      
-                     <div className="flex items-center gap-3 self-end md:self-auto">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${codEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
-                           {codEnabled ? 'Active' : 'Disabled'}
-                        </span>
+                     <div className="flex items-center gap-4 self-end md:self-auto">
+                        <div className="flex items-center gap-2">
+                           <span className={`text-[10px] font-black uppercase tracking-widest ${codEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
+                              {codEnabled ? 'Active' : 'Disabled'}
+                           </span>
+                           <button 
+                              onClick={() => handleToggleCod(!codEnabled)}
+                              className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-300 shadow-inner ${
+                                 codEnabled ? 'bg-indigo-600' : 'bg-slate-300'
+                              }`}
+                           >
+                              <div 
+                                 className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${
+                                    codEnabled ? 'translate-x-6' : 'translate-x-0'
+                                 }`}
+                              />
+                           </button>
+                        </div>
                         <Link
                            to={me?.role === 'SUPER_ADMIN' ? '/superadmin/shipping-settings' : '/admin/shipping-settings'}
-                           className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all"
+                           className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-[10px] font-black uppercase tracking-widest shadow-sm transition-all border border-slate-200"
                         >
-                           Manage
+                           Manage Limits
                         </Link>
                      </div>
                   </div>

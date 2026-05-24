@@ -20,11 +20,11 @@ export const normalizeShippingSettings = (settings = {}) => {
   const codCharge = source.codCharge ?? source.cod_extra_service_charge ?? source.cod_charge ?? source.codHandlingFee;
 
   return {
-    enableShipping: source.enableShipping !== false,
+    enableShipping: source.enableShipping !== false && source.shippingRuleStatus !== 'Inactive',
     enableFreeShipping: source.enableFreeShipping !== false,
     freeShippingThreshold: toNumber(source.freeShippingThreshold, DEFAULT_SHIPPING_SETTINGS.freeShippingThreshold),
     defaultShippingCharge: toNumber(source.defaultShippingCharge, DEFAULT_SHIPPING_SETTINGS.defaultShippingCharge),
-    codEnabled: source.codEnabled !== false,
+    codEnabled: source.codEnabled !== false && source.codStatus !== 'Inactive',
     codCharge: toNumber(codCharge, DEFAULT_SHIPPING_SETTINGS.codCharge),
     minimumCodAmount: toNumber(source.minimumCodAmount, DEFAULT_SHIPPING_SETTINGS.minimumCodAmount),
     maximumCodAmount: toNumber(source.maximumCodAmount, DEFAULT_SHIPPING_SETTINGS.maximumCodAmount),
