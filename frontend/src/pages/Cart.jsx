@@ -10,10 +10,11 @@ import PageLoader from '../components/ui/PageLoader';
 import settingsService from '../services/settings.service';
 import apiClient from '../services/core/apiClient';
 import { calculateCheckoutPricing } from '../utils/checkoutPricing';
+import { getProductPricing } from '../utils/productPricing';
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { cart, updateCartItem, removeFromCart, clearCart, loading } = useCart();
+  const { cart, updateCartItem, removeFromCart, clearCart, loading, cartReady } = useCart();
 
   const getInitialProductsMap = () => {
     const cachedResponse = apiClient.getCachedDataSync('/products');
@@ -149,15 +150,18 @@ const Cart = () => {
 
   const calculateTotal = () => {
     return cart.items?.reduce((total, item) => {
-      const product = products[item.product_id];
-      const effectivePrice = product ? (product.discount_price || product.price) : 0;
-      return total + (effectivePrice * item.quantity);
+      const product = products[item.product_id] || item.product;
+      const { displayPrice } = getProductPricing(product);
+      return total + (displayPrice * item.quantity);
     }, 0) || 0;
   };
 
-  if (loadingProducts) {
+  const hasItems = (cart?.items?.length || 0) > 0;
+  const hasMissingProductData = (cart?.items || []).some(item => !products[item.product_id] && !item.product);
+
+  if (!cartReady || (loading && !hasItems) || (loadingProducts && hasMissingProductData)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-[calc(100vh-5rem)] bg-surface flex items-center justify-center">
         <PageLoader />
       </div>
     );
@@ -226,8 +230,9 @@ const Cart = () => {
             <div className="lg:col-span-2">
               <div className="space-y-4">
                 {currentItems.map((item, index) => {
-                  const product = products[item.product_id];
+                  const product = products[item.product_id] || item.product;
                   if (!product) return null;
+                  const { basePrice, displayPrice, hasOffer, discountPercent } = getProductPricing(product);
 
                   return (
                     <motion.div
@@ -259,15 +264,15 @@ const Cart = () => {
                             </div>
                             <div className="flex items-baseline gap-2 flex-wrap">
                               <p className="text-base sm:text-lg font-extrabold text-ink-slate font-manrope">
-                                ₹{product.discount_price || product.price}
+                                ₹{displayPrice}
                               </p>
-                              {product.discount_price && product.discount_price < product.price && (
+                              {hasOffer && (
                                 <>
                                   <span className="text-xs text-text-muted line-through">
-                                    M.R.P.: ₹{product.price}
+                                    M.R.P.: ₹{basePrice}
                                   </span>
                                   <span className="text-[10px] font-bold text-emerald-600 bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
-                                    ({Math.round(((product.price - product.discount_price) / product.price) * 100)}% off)
+                                    ({discountPercent}% off)
                                   </span>
                                 </>
                               )}

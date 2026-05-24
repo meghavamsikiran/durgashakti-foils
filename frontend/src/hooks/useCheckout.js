@@ -9,13 +9,14 @@ import orderService from '../services/order.service';
 import paymentService from '../services/payment.service';
 import settingsService from '../services/settings.service';
 import { calculateCheckoutPricing, normalizeShippingSettings } from '../utils/checkoutPricing';
+import { getProductPricing } from '../utils/productPricing';
 
 const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID;
 
 export const useCheckout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { cart, clearCart } = useCart();
+  const { cart, clearCart, cartReady } = useCart();
   
   // Prevent duplicate order submissions
   const orderInProgress = useRef(false);
@@ -94,6 +95,9 @@ export const useCheckout = () => {
       navigate('/login');
       return;
     }
+    if (!cartReady) {
+      return;
+    }
     if (!cart.items || cart.items.length === 0) {
       navigate('/cart');
       return;
@@ -101,13 +105,13 @@ export const useCheckout = () => {
     fetchProducts();
     fetchAddresses();
     fetchSettings();
-  }, [user, cart.items, navigate, fetchProducts, fetchAddresses, fetchSettings]);
+  }, [user, cartReady, cart.items, navigate, fetchProducts, fetchAddresses, fetchSettings]);
 
   const calculateTotal = useCallback(() => {
     return cart.items?.reduce((total, item) => {
-      const product = products[item.product_id];
-      const effectivePrice = product ? (product.discount_price || product.price) : 0;
-      return total + (effectivePrice * item.quantity);
+      const product = products[item.product_id] || item.product;
+      const { displayPrice } = getProductPricing(product);
+      return total + (displayPrice * item.quantity);
     }, 0) || 0;
   }, [cart.items, products]);
 
@@ -220,11 +224,11 @@ export const useCheckout = () => {
 
     try {
       const orderItems = cart.items.map(item => {
-        const product = products[item.product_id];
+        const product = products[item.product_id] || item.product;
         if (!product) {
           throw new Error(`Product information not loaded. Please refresh and try again.`);
         }
-        const price = product.discount_price || product.price || 0;
+        const { displayPrice: price } = getProductPricing(product);
         if (price <= 0) {
           throw new Error(`Invalid price for "${product.name}". Please contact support.`);
         }

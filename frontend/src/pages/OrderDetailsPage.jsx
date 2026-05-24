@@ -44,7 +44,13 @@ const OrderDetailsPage = () => {
     fetchOrder();
   }, [id, navigate]);
 
-  if (loading) return <PageLoader message="Loading order details..." />;
+  if (loading) {
+    return (
+      <div className="min-h-[calc(100vh-5rem)] bg-surface flex items-center justify-center">
+        <PageLoader />
+      </div>
+    );
+  }
   if (!order) return null;
 
   const handleFilesChange = (e) => {

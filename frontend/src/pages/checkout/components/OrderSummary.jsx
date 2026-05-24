@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { useCart } from '../../../contexts/CartContext';
 import { calculateCheckoutPricing } from '../../../utils/checkoutPricing';
+import { getProductPricing } from '../../../utils/productPricing';
 
 const OrderSummary = ({ products, total, checkoutStep, loading, shippingSettings, paymentMethod, onPlaceOrder }) => {
   const { cart } = useCart();
@@ -13,8 +14,9 @@ const OrderSummary = ({ products, total, checkoutStep, loading, shippingSettings
       <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-tighter">Order Summary</h3>
       <div className="space-y-4 mb-8">
         {cart.items?.map((item) => {
-          const product = products[item.product_id];
+          const product = products[item.product_id] || item.product;
           if (!product) return null;
+          const { displayPrice } = getProductPricing(product);
           return (
             <div key={item.product_id} className="flex justify-between items-center gap-4">
               <div className="flex items-center gap-3">
@@ -24,7 +26,7 @@ const OrderSummary = ({ products, total, checkoutStep, loading, shippingSettings
                 <div className="text-sm font-bold text-slate-700 truncate max-w-[120px]">{product.name}</div>
               </div>
               <div className="font-black text-slate-900">
-                ₹{((product.discount_price || product.price) * item.quantity).toLocaleString()}
+                ₹{(displayPrice * item.quantity).toLocaleString()}
               </div>
             </div>
           );

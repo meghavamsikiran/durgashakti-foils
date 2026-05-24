@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import api, { formatImageUrl } from '../utils/api';
 import PageLoader from '../components/ui/PageLoader';
 import apiClient from '../services/core/apiClient';
+import { getProductPricing } from '../utils/productPricing';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -31,13 +32,13 @@ const ProductDetail = () => {
   const { user, refreshUser } = useAuth();
   const [wishlisting, setWishlisting] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const pricing = getProductPricing(product);
   
   // Dynamic Tag Logic
   const getDynamicTag = () => {
     if (product?.badge) return product.badge;
-    const discountPercent = product?.price > 0 ? ((product.price - (product.discount_price || 0)) / product.price) * 100 : 0;
     if (product?.units_sold >= 50) return "Best Seller";
-    if (discountPercent >= 25) return "Hot Deal";
+    if (pricing.discountPercent >= 25) return "Hot Deal";
     if (product?.units_sold >= 20 && product?.stock_quantity < 10) return "High Demand";
     if (product?.units_sold >= 10) return "Trending";
     return null;
@@ -276,19 +277,19 @@ const ProductDetail = () => {
             </div>
 
             <div className="mb-8 flex items-baseline gap-4">
-              {product.discount_price > 0 && product.discount_price < product.price ? (
+              {pricing.hasOffer ? (
                 <>
                   <span className="text-5xl font-black text-ink-slate font-manrope tracking-tight animate-in fade-in" data-testid="product-detail-price">
-                    ₹{product.discount_price}
+                    ₹{pricing.displayPrice}
                   </span>
-                  <span className="text-xl text-slate-400 line-through font-bold">M.R.P.: ₹{product.price}</span>
+                  <span className="text-xl text-slate-400 line-through font-bold">M.R.P.: ₹{pricing.basePrice}</span>
                   <span className="text-primary font-bold uppercase tracking-wider text-xs font-mono bg-primary/10 px-2 py-1 rounded border border-primary/20">
-                    SAVE {Math.round(((product.price - product.discount_price) / product.price) * 100)}%
+                    SAVE {pricing.discountPercent}%
                   </span>
                 </>
               ) : (
                 <span className="text-5xl font-black text-ink-slate font-manrope tracking-tight" data-testid="product-detail-price">
-                  ₹{product.price}
+                  ₹{pricing.displayPrice}
                 </span>
               )}
             </div>
@@ -313,7 +314,7 @@ const ProductDetail = () => {
 
             {/* Cart Sync Logic */}
             {(() => {
-              const cartItem = cart?.items?.find(item => item.product_id === product?.id);
+              const cartItem = cart?.items?.find(item => String(item.product_id) === String(product?.id));
               const cartQty = cartItem ? cartItem.quantity : 0;
 
               if (cartQty > 0) {
@@ -381,7 +382,7 @@ const ProductDetail = () => {
                       onClick={async () => {
                         try {
                           setAdding(true);
-                          await addToCart(product.id, quantity);
+                          await addToCart(product.id, quantity, product);
                           toast.success('Added to cart!');
                         } catch (error) {
                           toast.error(error.message || 'Failed to add to cart');

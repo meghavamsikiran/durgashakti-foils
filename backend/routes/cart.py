@@ -27,20 +27,23 @@ async def get_cart(current_user: UserSchema = Depends(get_current_user), db: Asy
     if len(product_ids) != len(cart.items or []):
         items_modified = True
 
+    products_by_id = {}
     existing_ids = set()
     if product_ids:
-        res = await db.execute(select(ProductModel.id).where(ProductModel.id.in_(product_ids)))
-        existing_ids = {str(val) for val in res.scalars().all()}
+        res = await db.execute(select(ProductModel).where(ProductModel.id.in_(product_ids)))
+        products = res.scalars().all()
+        products_by_id = {str(product.id): row_to_dict(product) for product in products}
+        existing_ids = set(products_by_id.keys())
 
     for item in (cart.items or []):
         pid = item.get('product_id')
         if is_valid_uuid(pid) and str(pid) in existing_ids:
-            valid_items.append(item)
+            valid_items.append({**item, "product": products_by_id.get(str(pid))})
         else:
             items_modified = True
 
     if items_modified:
-        cart.items = valid_items
+        cart.items = [{k: v for k, v in item.items() if k != "product"} for item in valid_items]
         cart.updated_at = datetime.now(timezone.utc)
         flag_modified(cart, "items")
         await db.flush()

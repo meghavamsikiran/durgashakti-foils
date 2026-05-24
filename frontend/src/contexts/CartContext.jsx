@@ -28,7 +28,8 @@ const saveGuestCart = (cart) => {
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState({ items: [] });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [cartReady, setCartReady] = useState(false);
   const [pendingQty, setPendingQtyState] = useState({}); // productId -> qty preview before add
   const { token, user } = useAuth();
   const activeRequestsCount = useRef(0);
@@ -39,7 +40,12 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   const fetchCart = useCallback(async () => {
-    if (!token) return;
+    if (!token) {
+      setCartReady(true);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     try {
       const response = await apiClient.get('/cart');
       // Ignore background fetch responses if there are active, newer local state updates in progress
@@ -48,6 +54,9 @@ export const CartProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Error fetching cart:', error);
+    } finally {
+      setCartReady(true);
+      setLoading(false);
     }
   }, [token]);
 
@@ -65,32 +74,35 @@ export const CartProvider = ({ children }) => {
   }, [token, fetchCart]);
 
   useEffect(() => {
+    setCartReady(false);
     if (token && user) {
       fetchCart();
       syncGuestCart();
     } else if (!token) {
       setCart(getGuestCart());
+      setCartReady(true);
+      setLoading(false);
     }
   }, [token, user, fetchCart, syncGuestCart]);
 
-  const addToCart = useCallback(async (productId, quantity = 1) => {
+  const addToCart = useCallback(async (productId, quantity = 1, productSnapshot = null) => {
     let rollbackCart = null;
     
     setCart(prev => {
       rollbackCart = prev;
       const items = prev.items || [];
-      const existingIdx = items.findIndex(i => i.product_id === productId);
+      const existingIdx = items.findIndex(i => String(i.product_id) === String(productId));
       let newItems;
       if (existingIdx >= 0) {
         newItems = items.map((item, idx) =>
-          idx === existingIdx ? { ...item, quantity: (item.quantity || 0) + quantity } : item
+          idx === existingIdx ? { ...item, product: item.product || productSnapshot || undefined, quantity: (item.quantity || 0) + quantity } : item
         );
       } else {
-        newItems = [...items, { product_id: productId, quantity }];
+        newItems = [...items, { product_id: productId, quantity, ...(productSnapshot ? { product: productSnapshot } : {}) }];
       }
       const newCart = { ...prev, items: newItems };
       if (!token) {
-        saveGuestCart(newCart);
+        saveGuestCart({ ...newCart, items: newItems.map(({ product, ...item }) => item) });
       }
       return newCart;
     });
@@ -122,11 +134,11 @@ export const CartProvider = ({ children }) => {
     setCart(prev => {
       rollbackCart = prev;
       const newItems = (prev.items || []).map(i =>
-        i.product_id === productId ? { ...i, quantity } : i
+        String(i.product_id) === String(productId) ? { ...i, quantity } : i
       );
       const newCart = { ...prev, items: newItems };
       if (!token) {
-        saveGuestCart(newCart);
+        saveGuestCart({ ...newCart, items: newItems.map(({ product, ...item }) => item) });
       }
       return newCart;
     });
@@ -155,10 +167,10 @@ export const CartProvider = ({ children }) => {
 
     setCart(prev => {
       rollbackCart = prev;
-      const newItems = (prev.items || []).filter(i => i.product_id !== productId);
+      const newItems = (prev.items || []).filter(i => String(i.product_id) !== String(productId));
       const newCart = { ...prev, items: newItems };
       if (!token) {
-        saveGuestCart(newCart);
+        saveGuestCart({ ...newCart, items: newItems.map(({ product, ...item }) => item) });
       }
       return newCart;
     });
@@ -204,7 +216,7 @@ export const CartProvider = ({ children }) => {
     const cartTotal = cart.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0;
     // Add pending previews for products NOT yet in cart
     const pendingTotal = Object.entries(pendingQty).reduce((total, [productId, qty]) => {
-      const alreadyInCart = cart.items?.some(i => i.product_id === Number(productId));
+      const alreadyInCart = cart.items?.some(i => String(i.product_id) === String(productId));
       return alreadyInCart ? total : total + qty;
     }, 0);
     return cartTotal + pendingTotal;
@@ -213,6 +225,7 @@ export const CartProvider = ({ children }) => {
   const value = useMemo(() => ({
     cart,
     loading,
+    cartReady,
     addToCart,
     updateCartItem,
     removeFromCart,
@@ -220,7 +233,7 @@ export const CartProvider = ({ children }) => {
     fetchCart,
     cartItemCount,
     setPendingQty
-  }), [cart, loading, addToCart, updateCartItem, removeFromCart, clearCart, fetchCart, cartItemCount, setPendingQty]);
+  }), [cart, loading, cartReady, addToCart, updateCartItem, removeFromCart, clearCart, fetchCart, cartItemCount, setPendingQty]);
 
   return (
     <CartContext.Provider value={value}>

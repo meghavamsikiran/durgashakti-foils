@@ -7,6 +7,7 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import api, { formatImageUrl } from '../utils/api';
+import { getProductPricing } from '../utils/productPricing';
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
@@ -17,8 +18,9 @@ const ProductCard = ({ product }) => {
   
   // Custom states
   const [showRemoveModal, setShowRemoveModal] = React.useState(false);
+  const { basePrice, displayPrice, hasOffer, discountPercent } = getProductPricing(product);
   
-  const cartItem = cart?.items?.find(item => item.product_id === product.id);
+  const cartItem = cart?.items?.find(item => String(item.product_id) === String(product.id));
   const currentQty = cartItem ? cartItem.quantity : 0;
   
   // Synchronous local state for zero-latency clicks
@@ -41,8 +43,6 @@ const ProductCard = ({ product }) => {
   // Dynamic Tag Logic
   const getDynamicTag = () => {
     if (product.badge) return product.badge; // Admin manual override
-    
-    const discountPercent = product.price > 0 ? ((product.price - product.discount_price) / product.price) * 100 : 0;
     
     if (product.units_sold >= 50) return "Best Seller";
     if (discountPercent >= 25) return "Hot Deal";
@@ -99,7 +99,7 @@ const ProductCard = ({ product }) => {
     triggerUpdatedBanner();
     
     try {
-      await addToCart(product.id, 1);
+      await addToCart(product.id, 1, product);
     } catch (error) {
       setQty(0); // Rollback
       const message = error.response?.data?.detail || 'Failed to add to cart';
@@ -204,9 +204,9 @@ const ProductCard = ({ product }) => {
           )}
 
           {/* Discount Percentage Tag */}
-          {product.discount_price > 0 && product.discount_price < product.price && (
+          {hasOffer && (
             <div className="absolute top-3 left-3 bg-rose-600 text-white px-2 py-0.5 text-[9px] font-black rounded-sm z-10" style={{ left: activeTag ? 'auto' : '12px', right: activeTag ? '12px' : 'auto' }}>
-              -{Math.round(((product.price - product.discount_price) / product.price) * 100)}%
+              -{discountPercent}%
             </div>
           )}
 
@@ -218,9 +218,9 @@ const ProductCard = ({ product }) => {
 
           {/* Slide-Up Quantity Selector / Add to Cart Panel */}
           {!(Number(product.stock_quantity) <= 0 || product.in_stock === false) && (
-            <div 
+            <div
               className={`absolute bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-border-subtle transition-transform duration-300 ease-out z-20 flex items-center justify-center
-                ${qty > 0 ? 'translate-y-0' : 'translate-y-full group-hover:translate-y-0'}`}
+                translate-y-0`}
               onClick={(e) => e.stopPropagation()}
             >
               {qty > 0 ? (
@@ -283,18 +283,18 @@ const ProductCard = ({ product }) => {
           <div>
             <div className="flex items-center justify-between mt-auto">
               <div className="flex flex-col gap-0.5 min-w-0">
-                {product.discount_price > 0 && product.discount_price < product.price ? (
+                {hasOffer ? (
                   <div className="flex items-baseline gap-2">
                     <span className="text-xl font-black text-ink-slate font-manrope leading-none" data-testid="product-price">
-                      ₹{product.discount_price}
+                      ₹{displayPrice}
                     </span>
                     <span className="text-[11px] text-text-muted line-through font-semibold">
-                      ₹{product.price}
+                      ₹{basePrice}
                     </span>
                   </div>
                 ) : (
                   <span className="text-xl font-black text-ink-slate font-manrope leading-none" data-testid="product-price">
-                    ₹{product.price}
+                    ₹{displayPrice}
                   </span>
                 )}
               </div>
