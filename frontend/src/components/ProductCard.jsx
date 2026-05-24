@@ -205,12 +205,7 @@ const ProductCard = ({ product }) => {
             </div>
           )}
 
-          {/* Discount Percentage Tag */}
-          {hasOffer && (
-            <div className="absolute top-3 left-3 bg-rose-600 text-white px-2 py-0.5 text-[9px] font-black rounded-sm z-10" style={{ left: activeTag ? 'auto' : '12px', right: activeTag ? '12px' : 'auto' }}>
-              -{discountPercent}%
-            </div>
-          )}
+          
 
           {isUnavailable && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
@@ -252,6 +247,9 @@ const ProductCard = ({ product }) => {
                     </span>
                     <span className="text-[11px] text-text-muted line-through font-semibold">
                       ₹{basePrice}
+                    </span>
+                    <span className="text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-sm ml-1">
+                      -{discountPercent}%
                     </span>
                   </div>
                 ) : (
