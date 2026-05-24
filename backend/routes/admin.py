@@ -14,7 +14,8 @@ from deps import (
     AdminCreateRequest, AdminUpdateRequest, PasswordResetRequest,
     require_permission, sanitize_search_term, is_super_admin_role,
     write_audit_log, row_to_dict, normalize_order_status,
-    ORDER_STATUS_TRANSITIONS, UPLOADS_DIR, validate_uuid, is_valid_uuid
+    ORDER_STATUS_TRANSITIONS, UPLOADS_DIR, validate_uuid, is_valid_uuid,
+    create_notification
 )
 from storage_service import upload_image, upload_media, delete_asset
 import uuid
@@ -438,6 +439,14 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
         user_res = await db.execute(_sel(_UM).where(_UM.id == order.user_id))
         cust = user_res.scalar_one_or_none()
         if cust:
+            readable_status = effective_status.replace("_", " ").title()
+            await create_notification(
+                db,
+                str(cust.id),
+                f"Order {readable_status}",
+                f"Your order {order.order_number} is now {readable_status}.",
+                "order"
+            )
             import asyncio
             from deps import send_email as _send
             from email_templates import (
@@ -466,7 +475,7 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     except Exception:
         pass
 
-    return {"message": "Order status updated"}
+    return {"message": "Order status updated", "order": row_to_dict(order)}
 
 
 # ── Customers (Admin) ────────────────────────────────────────────────────

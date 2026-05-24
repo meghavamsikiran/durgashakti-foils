@@ -100,7 +100,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
           email: '',
           contact: order.shipping_address?.phone || ''
         },
-        theme: { color: '#4f46e5' },
+        theme: { color: '#006e1b' },
         modal: { ondismiss: () => setPayingOnline(false) }
       };
 
@@ -148,7 +148,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
     body { font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; margin: 0; padding: 40px; background-color: #f8fafc; }
     .invoice-box { max-width: 800px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 24px; background: #ffffff; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05); }
     .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #f1f5f9; padding-bottom: 30px; margin-bottom: 30px; }
-    .logo { font-size: 24px; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: -0.05em; }
+    .logo { font-size: 24px; font-weight: 800; color: #006e1b; text-transform: uppercase; letter-spacing: -0.05em; }
     .invoice-title { text-align: right; }
     .invoice-title h1 { margin: 0; font-size: 28px; font-weight: 900; color: #0f172a; text-transform: uppercase; }
     .invoice-title p { margin: 5px 0 0 0; font-size: 14px; color: #64748b; font-weight: 600; }
@@ -163,9 +163,9 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
     tr.item:hover { background-color: #f8fafc; }
     .totals { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; margin-top: 30px; }
     .total-row { display: flex; justify-content: space-between; width: 300px; font-size: 14px; font-weight: 600; color: #64748b; }
-    .total-row.grand-total { font-size: 20px; font-weight: 900; color: #4f46e5; border-top: 2px solid #f1f5f9; padding-top: 15px; margin-top: 5px; }
+    .total-row.grand-total { font-size: 20px; font-weight: 900; color: #006e1b; border-top: 2px solid #f1f5f9; padding-top: 15px; margin-top: 5px; }
     .total-row span:last-child { font-weight: 800; color: #0f172a; }
-    .total-row.grand-total span:last-child { color: #4f46e5; }
+    .total-row.grand-total span:last-child { color: #006e1b; }
     .footer { text-align: center; border-top: 2px solid #f1f5f9; padding-top: 30px; margin-top: 50px; font-size: 12px; color: #94a3b8; font-weight: 600; }
   </style>
 </head>

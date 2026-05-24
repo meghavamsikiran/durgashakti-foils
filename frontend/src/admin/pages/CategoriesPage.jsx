@@ -104,7 +104,7 @@ const CategoriesPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <Layers className="w-8 h-8 text-indigo-600" />
+            <Layers className="w-8 h-8 text-primary" />
             Product Categories
           </h1>
           <p className="text-slate-500 mt-1 font-medium">Manage product grouping, tags, and visibility rules.</p>
@@ -125,7 +125,7 @@ const CategoriesPage = () => {
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Category Name</label>
               <input 
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                 placeholder="e.g., Heavy Duty Foils" 
                 value={name} 
                 onChange={e => setName(e.target.value)} 
@@ -136,7 +136,7 @@ const CategoriesPage = () => {
             <Button 
               type="submit" 
               disabled={submitting} 
-              className="w-full rounded-xl py-3 font-black uppercase tracking-widest shadow-md shadow-indigo-100 flex items-center justify-center gap-2"
+              className="w-full rounded-xl py-3 font-black uppercase tracking-widest shadow-md shadow-emerald-glow flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
               {submitting ? 'Adding...' : 'Add Category'}
@@ -169,7 +169,7 @@ const CategoriesPage = () => {
                       {editingId === cat.id ? (
                         <div className="flex items-center gap-2">
                           <input 
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none w-64"
+                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none w-64"
                             value={editingName} 
                             onChange={e => setEditingName(e.target.value)} 
                           />
@@ -177,7 +177,7 @@ const CategoriesPage = () => {
                           <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} className="rounded-lg">Cancel</Button>
                         </div>
                       ) : (
-                        <div className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
+                        <div className="font-bold text-slate-800 group-hover:text-primary transition-colors">
                           {cat.name}
                         </div>
                       )}
@@ -209,7 +209,7 @@ const CategoriesPage = () => {
                             setEditingId(cat.id);
                             setEditingName(cat.name);
                           }} 
-                          className="h-8 w-8 p-0 rounded-lg hover:bg-indigo-50 hover:text-indigo-600"
+                          className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>

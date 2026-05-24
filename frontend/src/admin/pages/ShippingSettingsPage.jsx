@@ -253,13 +253,13 @@ const ShippingSettingsPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <Truck className="w-8 h-8 text-indigo-600 animate-pulse" />
+            <Truck className="w-8 h-8 text-primary animate-pulse" />
             Shipping Settings
           </h1>
           <p className="text-slate-500 mt-1 font-medium">Configure delivery costs, Cash on Delivery boundaries, and logistics metrics dynamically.</p>
         </div>
         {isEditable && (
-          <Button disabled={saving} onClick={handleSave} className="rounded-xl px-8 py-6 font-black uppercase tracking-widest shadow-lg shadow-indigo-200 flex items-center gap-2">
+          <Button disabled={saving} onClick={handleSave} className="rounded-xl px-8 py-6 font-black uppercase tracking-widest shadow-lg shadow-emerald-glow flex items-center gap-2">
             {saving ? 'Saving...' : <><Save className="w-5 h-5" /> Save Changes</>}
           </Button>
         )}
@@ -273,11 +273,11 @@ const ShippingSettingsPage = () => {
           {/* Card 1: General Shipping */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-              <Truck className="w-32 h-32 text-indigo-900" />
+              <Truck className="w-32 h-32 text-primary/10" />
             </div>
             
             <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-2 flex items-center gap-2">
-              <Truck className="w-5 h-5 text-indigo-600" />
+              <Truck className="w-5 h-5 text-primary" />
               General Shipping Rules
             </h2>
             <p className="text-xs text-slate-500 mb-8 font-medium">Define rules for when to apply shipping costs and set the free-delivery boundaries.</p>
@@ -294,7 +294,7 @@ const ShippingSettingsPage = () => {
                     disabled={!isEditable}
                     onClick={() => setEnableShipping(!enableShipping)}
                     className={`w-12 h-6 flex items-center rounded-full p-1 transition-all ${
-                      enableShipping ? 'bg-indigo-600' : 'bg-slate-300'
+                      enableShipping ? 'bg-primary' : 'bg-slate-300'
                     }`}
                   >
                     <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-all ${enableShipping ? 'translate-x-6' : ''}`} />
@@ -310,7 +310,7 @@ const ShippingSettingsPage = () => {
                     disabled={!isEditable}
                     onClick={() => setEnableFreeShipping(!enableFreeShipping)}
                     className={`w-12 h-6 flex items-center rounded-full p-1 transition-all ${
-                      enableFreeShipping ? 'bg-indigo-600' : 'bg-slate-300'
+                      enableFreeShipping ? 'bg-primary' : 'bg-slate-300'
                     }`}
                   >
                     <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-all ${enableFreeShipping ? 'translate-x-6' : ''}`} />
@@ -328,7 +328,7 @@ const ShippingSettingsPage = () => {
                   <input
                     type="number"
                     disabled={!isEditable || !enableFreeShipping}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
                     value={freeShippingThreshold}
                     onChange={(e) => setFreeShippingThreshold(e.target.value === '' ? '' : Number(e.target.value))}
                   />
@@ -339,7 +339,7 @@ const ShippingSettingsPage = () => {
                   <input
                     type="number"
                     disabled={!isEditable || !enableShipping}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
                     value={defaultShippingCharge}
                     onChange={(e) => setDefaultShippingCharge(e.target.value === '' ? '' : Number(e.target.value))}
                   />
@@ -351,11 +351,11 @@ const ShippingSettingsPage = () => {
           {/* Card 2: COD Settings */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-              <Coins className="w-32 h-32 text-indigo-900" />
+              <Coins className="w-32 h-32 text-primary/10" />
             </div>
 
             <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-2 flex items-center gap-2">
-              <Coins className="w-5 h-5 text-indigo-600" />
+              <Coins className="w-5 h-5 text-primary" />
               Cash on Delivery (COD) Control Panel
             </h2>
             <p className="text-xs text-slate-500 mb-8 font-medium">Manage payment boundaries, extra service fees, and order caps for cash shipments.</p>
@@ -371,7 +371,7 @@ const ShippingSettingsPage = () => {
                   disabled={!isEditable}
                   onClick={() => setCodEnabled(!codEnabled)}
                   className={`w-12 h-6 flex items-center rounded-full p-1 transition-all ${
-                    codEnabled ? 'bg-indigo-600' : 'bg-slate-300'
+                    codEnabled ? 'bg-primary' : 'bg-slate-300'
                   }`}
                 >
                   <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-all ${codEnabled ? 'translate-x-6' : ''}`} />
@@ -385,7 +385,7 @@ const ShippingSettingsPage = () => {
                   <input
                     type="number"
                     disabled={!isEditable || !codEnabled}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
                     value={codCharge}
                     onChange={(e) => setCodCharge(e.target.value === '' ? '' : Number(e.target.value))}
                   />
@@ -396,7 +396,7 @@ const ShippingSettingsPage = () => {
                   <input
                     type="number"
                     disabled={!isEditable || !codEnabled}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
                     value={minimumCodAmount}
                     onChange={(e) => setMinimumCodAmount(e.target.value === '' ? '' : Number(e.target.value))}
                   />
@@ -407,7 +407,7 @@ const ShippingSettingsPage = () => {
                   <input
                     type="number"
                     disabled={!isEditable || !codEnabled}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-800 disabled:bg-slate-50 disabled:text-slate-400"
                     value={maximumCodAmount}
                     onChange={(e) => setMaximumCodAmount(e.target.value === '' ? '' : Number(e.target.value))}
                   />
@@ -419,11 +419,11 @@ const ShippingSettingsPage = () => {
           {/* Card 3: Delivery Estimates */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-              <Clock className="w-32 h-32 text-indigo-900" />
+              <Clock className="w-32 h-32 text-primary/10" />
             </div>
 
             <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-2 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-indigo-600" />
+              <Clock className="w-5 h-5 text-primary" />
               Delivery & Process Timeframes
             </h2>
             <p className="text-xs text-slate-500 mb-8 font-medium">Specify the estimated delivery dates shown on the product page and checkout screen.</p>
@@ -434,7 +434,7 @@ const ShippingSettingsPage = () => {
                 <input
                   type="text"
                   disabled={!isEditable}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-800"
                   value={standardDeliveryDays}
                   onChange={(e) => setStandardDeliveryDays(e.target.value)}
                   placeholder="e.g. 3–5 Days"
@@ -446,7 +446,7 @@ const ShippingSettingsPage = () => {
                 <input
                   type="text"
                   disabled={!isEditable}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-800"
                   value={expressDeliveryDays}
                   onChange={(e) => setExpressDeliveryDays(e.target.value)}
                   placeholder="e.g. 1–2 Days"
@@ -458,7 +458,7 @@ const ShippingSettingsPage = () => {
                 <input
                   type="text"
                   disabled={!isEditable}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-800"
                   value={packagingTime}
                   onChange={(e) => setPackagingTime(e.target.value)}
                   placeholder="e.g. 1 Day"
@@ -470,7 +470,7 @@ const ShippingSettingsPage = () => {
                 <input
                   type="text"
                   disabled={!isEditable}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-bold text-slate-800"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-800"
                   value={processingTime}
                   onChange={(e) => setProcessingTime(e.target.value)}
                   placeholder="e.g. 1 Day"
@@ -486,19 +486,19 @@ const ShippingSettingsPage = () => {
           {/* Box 1: Future Zones */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-              <MapPin className="w-32 h-32 text-indigo-900" />
+              <MapPin className="w-32 h-32 text-primary/10" />
             </div>
 
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-indigo-600" />
+                <MapPin className="w-4 h-4 text-primary" />
                 Shipping Zones
               </h3>
               <button
                 disabled={!isEditable}
                 onClick={() => setShippingZonesEnabled(!shippingZonesEnabled)}
                 className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-all ${
-                  shippingZonesEnabled ? 'bg-indigo-600' : 'bg-slate-300'
+                  shippingZonesEnabled ? 'bg-primary' : 'bg-slate-300'
                 }`}
               >
                 <div className={`bg-white w-4 h-4 rounded-full shadow transform transition-all ${shippingZonesEnabled ? 'translate-x-5' : ''}`} />
@@ -520,7 +520,7 @@ const ShippingSettingsPage = () => {
                         setZones(newZones);
                       }}
                       className={`text-[9px] font-black uppercase px-2 py-0.5 rounded transition-all ${
-                        zone.status === 'Active' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'
+                        zone.status === 'Active' ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-400'
                       }`}
                     >
                       {zone.status}
@@ -531,7 +531,7 @@ const ShippingSettingsPage = () => {
                     <input
                       type="number"
                       disabled={!isEditable || zone.status !== 'Active'}
-                      className="w-20 rounded border border-slate-200 px-2 py-1 text-xs outline-none transition-all font-bold text-slate-800 focus:ring-1 focus:ring-indigo-500"
+                      className="w-20 rounded border border-slate-200 px-2 py-1 text-xs outline-none transition-all font-bold text-slate-800 focus:ring-1 focus:ring-primary"
                       value={zone.charge}
                       onChange={(e) => {
                         const newZones = [...zones];
@@ -542,7 +542,7 @@ const ShippingSettingsPage = () => {
                   </div>
                 </div>
               ))}
-              <div className="text-[9px] text-center text-indigo-500 font-extrabold uppercase mt-4 flex items-center justify-center gap-1.5">
+              <div className="text-[9px] text-center text-primary font-extrabold uppercase mt-4 flex items-center justify-center gap-1.5">
                 <Sparkles className="w-3 h-3 text-amber-500 animate-spin-slow" /> Future-Ready Zone Module Active
               </div>
             </div>
@@ -551,7 +551,7 @@ const ShippingSettingsPage = () => {
           {/* Box 2: Promotional Campaigns */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-              <Gift className="w-32 h-32 text-indigo-900" />
+              <Gift className="w-32 h-32 text-primary/10" />
             </div>
 
             <div className="flex justify-between items-center mb-4">
@@ -563,7 +563,7 @@ const ShippingSettingsPage = () => {
                 disabled={!isEditable}
                 onClick={() => setShippingCampaignsEnabled(!shippingCampaignsEnabled)}
                 className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-all ${
-                  shippingCampaignsEnabled ? 'bg-indigo-600' : 'bg-slate-300'
+                  shippingCampaignsEnabled ? 'bg-primary' : 'bg-slate-300'
                 }`}
               >
                 <div className={`bg-white w-4 h-4 rounded-full shadow transform transition-all ${shippingCampaignsEnabled ? 'translate-x-5' : ''}`} />
@@ -596,7 +596,7 @@ const ShippingSettingsPage = () => {
                     <input
                       type="number"
                       disabled={!isEditable || camp.status !== 'Active'}
-                      className="w-20 rounded border border-slate-200 px-2 py-1 text-xs outline-none transition-all font-bold text-slate-800 focus:ring-1 focus:ring-indigo-500"
+                      className="w-20 rounded border border-slate-200 px-2 py-1 text-xs outline-none transition-all font-bold text-slate-800 focus:ring-1 focus:ring-primary"
                       value={camp.threshold}
                       onChange={(e) => {
                         const newCamps = [...campaigns];
@@ -618,7 +618,7 @@ const ShippingSettingsPage = () => {
             <h3 className="text-xs font-black uppercase tracking-widest mb-4 text-slate-400 flex items-center gap-1.5">
               <ShieldAlert className="w-4 h-4 text-amber-500" /> Security Check
             </h3>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-semibold">Only authorized roles with the <span className="text-indigo-400">manage_settings</span> permission are permitted to store edits inside the master system ledger.</p>
+            <p className="text-[11px] text-slate-400 leading-relaxed font-semibold">Only authorized roles with the <span className="text-primary">manage_settings</span> permission are permitted to store edits inside the master system ledger.</p>
           </div>
 
         </div>

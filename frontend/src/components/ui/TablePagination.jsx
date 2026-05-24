@@ -41,7 +41,7 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
         <button
           disabled={currentPage === 1}
           onClick={() => onPageChange(1)}
-          className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+          className="p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
           aria-label="First page"
         >
           <ChevronsLeft className="w-4 h-4" />
@@ -51,7 +51,7 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
         <button
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
-          className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+          className="p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
           aria-label="Previous page"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -69,8 +69,8 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
             onClick={() => onPageChange(p)}
             className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
               p === currentPage
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-                : 'text-slate-500 hover:bg-white hover:text-indigo-600'
+                ? 'bg-primary text-white shadow-md shadow-emerald-glow'
+                : 'text-slate-500 hover:bg-white hover:text-primary'
             }`}
           >
             {p}
@@ -86,7 +86,7 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
         <button
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+          className="p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
           aria-label="Next page"
         >
           <ChevronRight className="w-4 h-4" />
@@ -96,7 +96,7 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
         <button
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(totalPages)}
-          className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+          className="p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
           aria-label="Last page"
         >
           <ChevronsRight className="w-4 h-4" />

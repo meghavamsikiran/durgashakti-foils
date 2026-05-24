@@ -190,7 +190,7 @@ const Contact = () => {
                   <motion.div 
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-primary/5 text-primary border border-primary/15 p-6 rounded-lg text-center my-auto font-mono text-xs font-bold tracking-wide"
+                    className="bg-primary/5 text-primary border border-primary/20 p-6 rounded-lg text-center my-auto font-mono text-xs font-bold tracking-wide"
                   >
                     <span className="text-sm font-black block mb-1">🎉 MESSAGE SENT!</span>
                     <span className="leading-relaxed">Thank you. We will get back to you shortly.</span>

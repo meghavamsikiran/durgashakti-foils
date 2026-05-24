@@ -39,14 +39,13 @@ const CustomersPage = () => {
       setLoading(true);
     }
     try {
-      const [response, mRes] = await Promise.all([
-        adminService.getCustomers(params),
-        adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
-      ]);
+      const response = await adminService.getCustomers(params);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
       setPage(pageNum);
-      setMetrics(mRes.data?.metrics || null);
+      adminService.getDashboardMetrics().then((mRes) => {
+        setMetrics(mRes.data?.metrics || null);
+      }).catch(() => {});
     } catch {
     } finally {
       setLoading(false);
@@ -55,13 +54,9 @@ const CustomersPage = () => {
 
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
-      const [response, mRes] = await Promise.all([
-        apiClient.get('/admin/customers', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true }),
-        apiClient.get('/admin/analytics/summary', { silent: true }).catch(() => ({ data: { metrics: null } }))
-      ]);
+      const response = await apiClient.get('/admin/customers', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true });
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
-      setMetrics(mRes.data?.metrics || null);
     } catch {
       // Ignore background errors
     }
@@ -76,10 +71,9 @@ const CustomersPage = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       load(1);
-      loadSilent(1);
-    }, 300);
+    }, 100);
     return () => clearTimeout(timer);
-  }, [search, load, loadSilent]);
+  }, [search, load]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time customer directory
   useEffect(() => {
@@ -106,7 +100,7 @@ const CustomersPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <UserCheck className="w-8 h-8 text-indigo-600" />
+            <UserCheck className="w-8 h-8 text-primary" />
             Customer Intelligence
           </h1>
           <p className="text-slate-500 mt-1 font-medium">Analyze buyer behavior and lifetime value metrics.</p>
@@ -119,7 +113,7 @@ const CustomersPage = () => {
             placeholder="Search Customers..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none w-80 transition-all focus:w-96"
+            className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-80 transition-all focus:w-96"
           />
         </div>
       </div>
@@ -127,7 +121,7 @@ const CustomersPage = () => {
       {hasPermission('view_analytics') && metrics && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
               <Users className="w-6 h-6" />
             </div>
             <div>
@@ -154,7 +148,7 @@ const CustomersPage = () => {
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-secondary-container text-secondary rounded-xl flex items-center justify-center">
               <Star className="w-6 h-6" />
             </div>
             <div>
@@ -181,7 +175,7 @@ const CustomersPage = () => {
               {paginatedCustomers.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-6">
-                    <div className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
+                    <div className="font-bold text-slate-800 group-hover:text-primary transition-colors">
                       {row.full_name || row.name || 'Anonymous'}
                     </div>
                     <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">

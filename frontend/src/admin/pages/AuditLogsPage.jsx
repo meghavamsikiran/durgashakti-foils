@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import adminService from '../services/admin.service';
+import apiClient from '../../services/core/apiClient';
 import { 
   Shield, Activity, Search, ChevronDown, ChevronUp,
   Fingerprint, Clock, User, HardDrive, Filter,
@@ -31,7 +32,7 @@ const AuditLogsPage = () => {
   });
   const [metrics, setMetrics] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary');
-    return cached?.metrics || null;
+    return cached?.data?.metrics || null;
   });
 
   const load = useCallback(async (pageNum = 1) => {
@@ -41,14 +42,13 @@ const AuditLogsPage = () => {
       setLoading(true);
     }
     try {
-      const [response, mRes] = await Promise.all([
-        adminService.getAuditLogs(params),
-        adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
-      ]);
+      const response = await adminService.getAuditLogs(params);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
       setPage(pageNum);
-      setMetrics(mRes.data?.metrics || null);
+      adminService.getDashboardMetrics().then((mRes) => {
+        setMetrics(mRes.data?.metrics || null);
+      }).catch(() => {});
     } catch {
     } finally {
       setLoading(false);
@@ -57,13 +57,9 @@ const AuditLogsPage = () => {
 
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
-      const [response, mRes] = await Promise.all([
-        apiClient.get('/admin/audit-logs', { params: { page: pageNum, limit: PAGE_SIZE, search }, silent: true }),
-        apiClient.get('/admin/analytics/summary', { silent: true }).catch(() => ({ data: { metrics: null } }))
-      ]);
+      const response = await apiClient.get('/admin/audit-logs', { params: { page: pageNum, limit: PAGE_SIZE, search }, silent: true });
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
-      setMetrics(mRes.data?.metrics || null);
     } catch {
       // Ignore background errors
     }
@@ -78,17 +74,16 @@ const AuditLogsPage = () => {
   const actionInfo = (action) => {
     if (action?.includes('DELETE')) return { color: 'text-rose-600 bg-rose-50', icon: AlertTriangle };
     if (action?.includes('CREATE') || action?.includes('SEED')) return { color: 'text-emerald-600 bg-emerald-50', icon: CheckCircle2 };
-    if (action?.includes('UPDATE') || action?.includes('RESET')) return { color: 'text-indigo-600 bg-indigo-50', icon: RefreshCw };
+    if (action?.includes('UPDATE') || action?.includes('RESET')) return { color: 'text-primary bg-primary/10', icon: RefreshCw };
     return { color: 'text-slate-600 bg-slate-50', icon: Activity };
   };
 
   useEffect(() => {
     const timer = setTimeout(() => {
       load(1);
-      loadSilent(1);
-    }, 300);
+    }, 100);
     return () => clearTimeout(timer);
-  }, [search, load, loadSilent]);
+  }, [search, load]);
 
   const filtered = rows;
 
@@ -108,7 +103,7 @@ const AuditLogsPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <Shield className="w-8 h-8 text-indigo-600" />
+            <Shield className="w-8 h-8 text-primary" />
             System Logs
           </h1>
           <p className="text-slate-500 mt-1 font-medium">A record of all changes made in the system.</p>
@@ -122,7 +117,7 @@ const AuditLogsPage = () => {
               placeholder="Search Logs..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none w-64 transition-all focus:w-80"
+              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
         </div>
@@ -131,7 +126,7 @@ const AuditLogsPage = () => {
       {hasPermission('view_analytics') && metrics && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
               <Activity className="w-6 h-6" />
             </div>
             <div>
@@ -158,7 +153,7 @@ const AuditLogsPage = () => {
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-secondary-container text-secondary rounded-xl flex items-center justify-center">
               <Clock className="w-6 h-6" />
             </div>
             <div>
@@ -189,7 +184,7 @@ const AuditLogsPage = () => {
                 
                 return (
                   <React.Fragment key={row.id}>
-                    <tr className={`hover:bg-slate-50/50 transition-colors group ${isExpanded ? 'bg-indigo-50/30' : ''}`}>
+                    <tr className={`hover:bg-slate-50/50 transition-colors group ${isExpanded ? 'bg-primary/5' : ''}`}>
                       <td className="px-8 py-6">
                         <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${info.color}`}>
                           <ActionIcon className="w-3 h-3" />
@@ -213,7 +208,7 @@ const AuditLogsPage = () => {
                       <td className="px-8 py-6 text-right">
                         <button 
                           onClick={() => setExpandedRow(isExpanded ? null : row.id)}
-                          className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-white transition-all shadow-sm"
+                          className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-primary hover:bg-white transition-all shadow-sm"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -225,7 +220,7 @@ const AuditLogsPage = () => {
                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                               <div className="space-y-4">
                                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                    <HardDrive className="w-4 h-4 text-indigo-500" />
+                                    <HardDrive className="w-4 h-4 text-primary" />
                                     Log Details
                                  </h4>
                                  <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
@@ -249,7 +244,7 @@ const AuditLogsPage = () => {
                               </div>
                               <div className="space-y-4">
                                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                    <User className="w-4 h-4 text-purple-500" />
+                                    <User className="w-4 h-4 text-secondary" />
                                     User Details
                                  </h4>
                                  <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
@@ -260,8 +255,8 @@ const AuditLogsPage = () => {
                                        </div>
                                        <div>
                                           <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Updated By Name & Role</div>
-                                          <div className="text-xs font-black text-slate-800 bg-indigo-50/50 border border-indigo-100 p-2.5 rounded-xl truncate flex items-center gap-2">
-                                             <User className="w-3.5 h-3.5 text-indigo-500" />
+                                          <div className="text-xs font-black text-slate-800 bg-primary/5 border border-primary/20 p-2.5 rounded-xl truncate flex items-center gap-2">
+                                             <User className="w-3.5 h-3.5 text-primary" />
                                              {row.actor_name || 'System Process'} ({row.actor_role ? row.actor_role.replace('_', ' ') : 'SYSTEM'})
                                           </div>
                                        </div>

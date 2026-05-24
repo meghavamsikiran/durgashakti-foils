@@ -18,6 +18,7 @@ export const useNotifications = () => {
   }, []);
 
   const markAllAsRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     try {
       await notificationService.markAsRead();
       fetchNotifications();
@@ -28,6 +29,8 @@ export const useNotifications = () => {
 
   useEffect(() => {
     fetchNotifications();
+    const timer = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(timer);
   }, [fetchNotifications]);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;

@@ -40,7 +40,7 @@ const FirstLoginResetScreen = ({ email, logout }) => {
       <button 
         onClick={handleTriggerReset} 
         disabled={loading}
-        className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-200 w-full transition-all disabled:opacity-50"
+        className="px-6 py-3 rounded-xl bg-primary text-white font-black uppercase tracking-widest hover:bg-emerald-hover shadow-lg shadow-emerald-glow w-full transition-all disabled:opacity-50"
       >
         {loading ? 'Sending Code...' : 'Send Code & Reset Password'}
       </button>
@@ -72,7 +72,7 @@ const ProtectedAdminRoute = ({ children, permission = null }) => {
         </div>
         <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-2">Access Denied</h2>
         <p className="text-sm text-slate-500 mb-6">You do not have the required permissions ({permission}) to view this module. Please contact your Super Admin if you need access.</p>
-        <button onClick={() => window.history.back()} className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-200 w-full transition-all">Go Back</button>
+        <button onClick={() => window.history.back()} className="px-6 py-3 rounded-xl bg-primary text-white font-black uppercase tracking-widest hover:bg-emerald-hover shadow-lg shadow-emerald-glow w-full transition-all">Go Back</button>
       </div>
     );
   }

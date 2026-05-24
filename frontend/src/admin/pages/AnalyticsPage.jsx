@@ -16,20 +16,20 @@ import PageLoader from '../../components/ui/PageLoader';
 import { useProgress } from '../../components/ui/ProgressToast';
 
 const metricConfigs = {
-  total_orders: { label: 'Total Orders', icon: ShoppingBag, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  total_orders: { label: 'Total Orders', icon: ShoppingBag, color: 'text-primary', bg: 'bg-primary/10' },
   orders_today: { label: 'Orders Today', icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
   total_products: { label: 'Total Products', icon: Package, color: 'text-amber-600', bg: 'bg-amber-50' },
-  total_customers: { label: 'Total Customers', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+  total_customers: { label: 'Total Customers', icon: Users, color: 'text-secondary', bg: 'bg-secondary-container' },
   total_revenue: { label: 'Total Revenue', icon: IndianRupee, color: 'text-rose-600', bg: 'bg-rose-50' },
   total_inventory_value: { label: 'Stock Value', icon: IndianRupee, color: 'text-rose-600', bg: 'bg-rose-50' },
-  total_units_sold: { label: 'Units Sold', icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  total_units_sold: { label: 'Units Sold', icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' },
   stock_health: { label: 'Stock Health', icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
   sales_velocity: { label: 'Daily Velocity', icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
   top_performer: { label: 'Top Performer', icon: Trophy, color: 'text-amber-600', bg: 'bg-amber-50' },
-  fastest_mover: { label: 'Fastest Mover', icon: Zap, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  fastest_mover: { label: 'Fastest Mover', icon: Zap, color: 'text-primary', bg: 'bg-primary/10' },
 };
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+const COLORS = ['#006e1b', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
 const AnalyticsPage = () => {
   const [summary, setSummary] = useState(() => {
@@ -198,7 +198,7 @@ const AnalyticsPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <TrendingUp className="w-8 h-8 text-indigo-600" />
+            <TrendingUp className="w-8 h-8 text-primary" />
             Sales & Stock
           </h1>
           <p className="text-slate-500 mt-1 font-medium">Track your sales and inventory performance.</p>
@@ -212,7 +212,7 @@ const AnalyticsPage = () => {
               placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none w-56"
+              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-56"
             />
           </div>
           <Button variant="outline" className="rounded-xl" onClick={handleExport}><Download className="w-4 h-4 mr-2" /> Download</Button>
@@ -221,7 +221,7 @@ const AnalyticsPage = () => {
 
       <div className="bg-slate-50 p-2 rounded-2xl flex flex-wrap items-center gap-4 border border-slate-200 shadow-inner">
         <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200">
-          <Calendar className="w-4 h-4 text-indigo-600" />
+          <Calendar className="w-4 h-4 text-primary" />
           <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="text-sm font-bold text-slate-700 outline-none bg-transparent">
             <option>All Time</option>
             <option>Today</option>
@@ -245,7 +245,7 @@ const AnalyticsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
           <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
-            <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+            <div className="w-1.5 h-6 bg-primary rounded-full"></div>
             Revenue Trend
           </h2>
           {(!trendData || trendData.length === 0) ? renderEmptyState() : (
@@ -253,8 +253,8 @@ const AnalyticsPage = () => {
               <AreaChart data={trendData} margin={{ top: 10, right: 30, left: 10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#006e1b" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#006e1b" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -264,7 +264,7 @@ const AnalyticsPage = () => {
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
                   formatter={(value) => [`₹${Number(value).toLocaleString('en-IN')}`, 'Revenue']}
                 />
-                <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                <Area type="monotone" dataKey="value" stroke="#006e1b" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -317,7 +317,7 @@ const AnalyticsPage = () => {
               Category Performance
             </h2>
             <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest">
+              <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest">
                 Revenue Rs.{Math.round(categoryTotals.revenue).toLocaleString('en-IN')}
               </span>
               <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest">
@@ -349,7 +349,7 @@ const AnalyticsPage = () => {
                   ]}
                 />
                 <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 700 }} />
-                <Bar dataKey="revenue" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="revenue" fill="#006e1b" radius={[6, 6, 0, 0]} />
                 <Bar dataKey="stockValue" fill="#10b981" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -382,7 +382,7 @@ const AnalyticsPage = () => {
                         {cat.product_count || 0} Products | {cat.stock_quantity || 0} In Stock
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right font-black text-indigo-600">{cat.units_sold || 0}</td>
+                    <td className="px-6 py-4 text-right font-black text-primary">{cat.units_sold || 0}</td>
                     <td className="px-6 py-4 text-right font-bold text-slate-800">Rs.{Number(cat.revenue || 0).toLocaleString('en-IN')}</td>
                     <td className="px-6 py-4 text-right font-bold text-slate-800">Rs.{Number(cat.stock_value || 0).toLocaleString('en-IN')}</td>
                   </tr>
@@ -495,7 +495,7 @@ const AnalyticsPage = () => {
               {filteredInventory.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-5">
-                    <div className="font-bold text-slate-800 group-hover:text-indigo-600">{p.name}</div>
+                    <div className="font-bold text-slate-800 group-hover:text-primary">{p.name}</div>
                     <div className="text-[10px] text-slate-500 font-mono mt-0.5">{p.sku || 'N/A'}</div>
                   </td>
                   <td className="px-8 py-5">

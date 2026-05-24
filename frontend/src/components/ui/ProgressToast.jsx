@@ -45,7 +45,7 @@ const ProgressToastItem = ({ item, onDismiss }) => {
 
   const FileIcon = item.fileType === 'spreadsheet' ? FileSpreadsheet : FileText;
 
-  const accentColor = isDone ? '#10b981' : isError ? '#ef4444' : '#6366f1';
+  const accentColor = isDone ? '#10b981' : isError ? '#ef4444' : '#006e1b';
 
   return (
     <div
@@ -123,7 +123,7 @@ const ProgressToastItem = ({ item, onDismiss }) => {
                 <div style={{
                   height: '100%',
                   width: `${item.progress}%`,
-                  background: `linear-gradient(90deg, ${accentColor}, #a5b4fc)`,
+                  background: `linear-gradient(90deg, ${accentColor}, #71ff75)`,
                   borderRadius: '4px',
                   transition: 'width 0.3s ease',
                 }} />

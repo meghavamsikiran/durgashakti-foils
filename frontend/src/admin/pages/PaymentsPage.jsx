@@ -41,14 +41,13 @@ const PaymentsPage = () => {
       setLoading(true);
     }
     try {
-      const [response, mRes] = await Promise.all([
-        adminService.getPayments(params),
-        adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
-      ]);
+      const response = await adminService.getPayments(params);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
       setPage(pageNum);
-      setMetrics(mRes.data?.metrics || null);
+      adminService.getDashboardMetrics().then((mRes) => {
+        setMetrics(mRes.data?.metrics || null);
+      }).catch(() => {});
     } catch (err) {
       toast.error('Failed to load transaction data');
     } finally {
@@ -58,13 +57,9 @@ const PaymentsPage = () => {
 
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
-      const [response, mRes] = await Promise.all([
-        apiClient.get('/admin/payments', { params: { page: pageNum, limit: PAGE_SIZE, search }, silent: true }),
-        apiClient.get('/admin/analytics/summary', { silent: true }).catch(() => ({ data: { metrics: null } }))
-      ]);
+      const response = await apiClient.get('/admin/payments', { params: { page: pageNum, limit: PAGE_SIZE, search }, silent: true });
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
-      setMetrics(mRes.data?.metrics || null);
     } catch (err) {
       // Ignore background errors
     }
@@ -79,10 +74,9 @@ const PaymentsPage = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       load(1);
-      loadSilent(1);
-    }, 300);
+    }, 100);
     return () => clearTimeout(timer);
-  }, [search, load, loadSilent]);
+  }, [search, load]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time payments list
   useEffect(() => {
@@ -110,7 +104,7 @@ const PaymentsPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <CreditCard className="w-8 h-8 text-indigo-600" />
+            <CreditCard className="w-8 h-8 text-primary" />
             Financial Audit
           </h1>
           <p className="text-slate-500 mt-1 font-medium">Monitor transactional health and revenue clearance.</p>
@@ -124,7 +118,7 @@ const PaymentsPage = () => {
               placeholder="Order # or Transaction..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none w-64 transition-all focus:w-80"
+              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
         </div>
@@ -151,7 +145,7 @@ const PaymentsPage = () => {
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
@@ -204,7 +198,7 @@ const PaymentsPage = () => {
               {filtered.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-6">
-                    <div className="text-xs font-black text-indigo-600 flex items-center gap-1">
+                    <div className="text-xs font-black text-primary flex items-center gap-1">
                       <ArrowUpRight className="w-3 h-3" />
                       {row.order_number}
                     </div>

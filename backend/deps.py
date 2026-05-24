@@ -530,8 +530,10 @@ async def write_audit_log(db: AsyncSession, action: str, actor_id: str, target_t
         logger.warning('Audit log write failed: %s', exc)
 
 async def create_notification(db: AsyncSession, user_id: str, title: str, message: str, type: str = "info"):
+    import uuid as _uuid
+    notif_user_id = _uuid.UUID(str(user_id))
     notif = NotificationModel(
-        user_id=user_id,
+        user_id=notif_user_id,
         title=title,
         message=message,
         type=type,

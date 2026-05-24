@@ -184,6 +184,13 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
     )
     db.add(order)
     await db.flush()
+    await create_notification(
+        db,
+        str(current_user.id),
+        "Order placed",
+        f"Your order {order.order_number} has been placed successfully.",
+        "order"
+    )
 
     # Atomic stock deduction (Only for COD now!)
     if order_data.payment_method == "cod":
@@ -283,6 +290,13 @@ async def cancel_order(order_id: str, current_user: UserSchema = Depends(get_cur
     order.order_status = "cancelled"
     order.stock_applied = False
     order.updated_at = now
+    await create_notification(
+        db,
+        str(current_user.id),
+        "Order cancelled",
+        f"Your order {order.order_number} has been cancelled.",
+        "order"
+    )
     try:
         from email_templates import order_cancelled_email
         import asyncio
@@ -343,6 +357,13 @@ async def return_order(
     order.return_reason = reason
     order.return_image_url = ",".join(uploaded_urls) if uploaded_urls else None
     order.updated_at = datetime.now(timezone.utc)
+    await create_notification(
+        db,
+        str(current_user.id),
+        "Return requested",
+        f"Your return request for order {order.order_number} has been submitted.",
+        "order"
+    )
     try:
         from email_templates import return_requested_email
         import asyncio
@@ -459,6 +480,13 @@ async def verify_razorpay_payment(payment_data: dict, current_user: UserSchema =
     order.order_status = "confirmed"
     order.razorpay_payment_id = payment_data.get("razorpay_payment_id", "pay_dummy_123")
     order.updated_at = now
+    await create_notification(
+        db,
+        str(current_user.id),
+        "Payment confirmed",
+        f"Payment for order {order.order_number} is confirmed.",
+        "payment"
+    )
 
     # Clear cart
     cart_res = await db.execute(select(CartModel).where(CartModel.user_id == current_user.id))
@@ -489,6 +517,13 @@ async def confirm_cod_payment(order_id: str, current_user: UserSchema = Depends(
     order.payment_status = "Cash On Delivery"
     order.order_status = "confirmed"
     order.updated_at = now
+    await create_notification(
+        db,
+        str(current_user.id),
+        "COD confirmed",
+        f"Cash on Delivery is confirmed for order {order.order_number}.",
+        "payment"
+    )
     cart_res = await db.execute(select(CartModel).where(CartModel.user_id == current_user.id))
     cart = cart_res.scalar_one_or_none()
     if cart:

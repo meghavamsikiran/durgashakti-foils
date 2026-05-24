@@ -109,7 +109,7 @@ const About = () => {
                 title: "Micro-Annealed Hygiene",
                 desc: "Processed at extreme temperatures to clean the aluminum, leaving a pristine antibacterial barrier that blocks light, odor, and moisture completely.",
                 icon: ShieldCheck,
-                color: "from-blue-500 to-indigo-500"
+                color: "from-secondary to-primary"
               },
               {
                 title: "High Heat Retention",

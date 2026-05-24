@@ -15,6 +15,7 @@ setupInterceptors(apiClient);
 
 // Centralized Stale-While-Revalidate (SWR) cache
 const apiCache = new Map();
+const inFlightGets = new Map();
 const DEFAULT_TTL = 60000; // 60 seconds
 
 const getCacheKey = (url, params = {}) => {
@@ -34,16 +35,31 @@ const cachedGet = async (url, options = {}) => {
   const ttl = options.ttl || DEFAULT_TTL;
 
   if (entry && (now - entry.time < ttl)) {
-    // Return stale data immediately, revalidate silently in background
-    apiClient.get(url, { ...options, silent: true })
-      .then(res => apiCache.set(key, { data: res, time: Date.now() }))
-      .catch(() => {});
+    if (!inFlightGets.has(key)) {
+      const refresh = apiClient.get(url, { ...options, silent: true })
+        .then(res => {
+          apiCache.set(key, { data: res, time: Date.now() });
+          return res;
+        })
+        .catch(() => {})
+        .finally(() => inFlightGets.delete(key));
+      inFlightGets.set(key, refresh);
+    }
     return entry.data;
   }
 
-  const res = await apiClient.get(url, options);
-  apiCache.set(key, { data: res, time: now });
-  return res;
+  if (inFlightGets.has(key)) {
+    return inFlightGets.get(key);
+  }
+
+  const request = apiClient.get(url, options)
+    .then(res => {
+      apiCache.set(key, { data: res, time: Date.now() });
+      return res;
+    })
+    .finally(() => inFlightGets.delete(key));
+  inFlightGets.set(key, request);
+  return request;
 };
 
 const getCachedDataSync = (url, params = {}) => {

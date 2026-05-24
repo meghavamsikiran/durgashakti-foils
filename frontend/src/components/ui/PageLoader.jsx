@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 
 /**
  * PageLoader — A premium, full-screen centered circular spinner loader.
- * Features a circular track, a spinning indigo progress arc, the central branded 
+ * Features a circular track, a spinning emerald progress arc, the central branded
  * orange trident icon, and customized uppercase labels.
- * 
+ *
  * Fully transparent background — no blur, no overlay tint.
- * Suppressed completely during page transition, browser refresh, or initial load 
+ * Suppressed completely during page transition, browser refresh, or initial load
  * to prevent overlapping or consecutive loader flashes.
  */
 const PageLoader = () => {
@@ -38,7 +38,7 @@ const PageLoader = () => {
           {/* Circular track */}
           <div className="absolute inset-0 rounded-full border-[3.5px] border-slate-200/60" />
           {/* Spinning indicator */}
-          <div className="absolute inset-0 rounded-full border-[3.5px] border-transparent border-t-indigo-600 animate-spin" />
+          <div className="absolute inset-0 rounded-full border-[3.5px] border-transparent border-t-primary animate-spin" />
           {/* Branded orange logo in center */}
           <img
             src="/favicon.png"

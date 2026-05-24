@@ -51,7 +51,7 @@ const InventoryPage = () => {
   });
   const [metrics, setMetrics] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary');
-    return cached?.metrics || null;
+    return cached?.data?.metrics || null;
   });
 
   const load = useCallback(async (pageNum = 1) => {
@@ -60,14 +60,13 @@ const InventoryPage = () => {
       setLoading(true);
     }
     try {
-      const [response, mRes] = await Promise.all([
-        adminService.getInventory({ page: pageNum, limit: ITEMS_PER_PAGE, search }),
-        adminService.getDashboardMetrics().catch(() => ({ data: { metrics: null } }))
-      ]);
+      const response = await adminService.getInventory({ page: pageNum, limit: ITEMS_PER_PAGE, search });
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
       setPage(pageNum);
-      setMetrics(mRes.data?.metrics || null);
+      adminService.getDashboardMetrics().then((mRes) => {
+        setMetrics(mRes.data?.metrics || null);
+      }).catch(() => {});
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -77,10 +76,7 @@ const InventoryPage = () => {
 
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
-      const [response, mRes] = await Promise.all([
-        apiClient.get(ADMIN_PRODUCTS_CACHE_PATH, { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true }),
-        apiClient.get('/admin/analytics/summary', { silent: true }).catch(() => ({ data: { metrics: null } }))
-      ]);
+      const response = await apiClient.get(ADMIN_PRODUCTS_CACHE_PATH, { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true });
       const rawItems = response.data?.items || [];
       const items = rawItems.map((product) => ({
         id: product.id,
@@ -97,7 +93,6 @@ const InventoryPage = () => {
       }));
       setRows(items);
       setTotal(response.data?.total || 0);
-      setMetrics(mRes.data?.metrics || null);
     } catch {
       // Ignore background errors
     }
@@ -106,10 +101,9 @@ const InventoryPage = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       load(1);
-      loadSilent(1);
-    }, 300);
+    }, 100);
     return () => clearTimeout(timer);
-  }, [search, load, loadSilent]);
+  }, [search, load]);
 
 
   const handleAdjust = async (direction) => {
@@ -146,7 +140,7 @@ const InventoryPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <Boxes className="w-8 h-8 text-indigo-600" />
+            <Boxes className="w-8 h-8 text-primary" />
             Product Stock
           </h1>
           <p className="text-slate-500 mt-1 font-medium">Monitor and update your product stock levels.</p>
@@ -160,7 +154,7 @@ const InventoryPage = () => {
               placeholder="Search Products..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none w-64 transition-all focus:w-80"
+              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
           <Button onClick={load} variant="outline" className="rounded-xl p-2.5 bg-white hover:bg-slate-50 border-slate-200 shadow-sm">
@@ -172,7 +166,7 @@ const InventoryPage = () => {
       {hasPermission('view_analytics') && metrics && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
               <IndianRupee className="w-6 h-6" />
             </div>
             <div>
@@ -199,7 +193,7 @@ const InventoryPage = () => {
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-secondary-container text-secondary rounded-xl flex items-center justify-center">
               <Zap className="w-6 h-6" />
             </div>
             <div>
@@ -269,7 +263,7 @@ const InventoryPage = () => {
                   <td className="px-8 py-6 text-center">
                     <Button 
                       onClick={() => { setAdjustModal(row); setAdjustQty(''); }}
-                      className="rounded-xl h-8 px-4 text-[10px] font-black uppercase tracking-widest shadow-sm shadow-indigo-100 hover:shadow-indigo-200 transition-all"
+                      className="rounded-xl h-8 px-4 text-[10px] font-black uppercase tracking-widest shadow-sm shadow-emerald-glow hover:shadow-emerald-glow transition-all"
                     >
                       Update Stock
                     </Button>
@@ -316,7 +310,7 @@ const InventoryPage = () => {
                 <input 
                   type="number" 
                   autoFocus
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                   placeholder="Enter quantity..." 
                   value={adjustQty} 
                   onChange={(e) => setAdjustQty(e.target.value)}

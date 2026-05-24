@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
 import apiClient from '../../services/core/apiClient';
-import { 
-  Settings, Building2, Phone, Mail, MapPin, 
+import {
+  Settings, Building2, Phone, Mail, MapPin,
   ShieldCheck, Save, Globe, Lock, Cpu,
   Cloud, Database, RefreshCcw, Timer, Megaphone, Sparkles, Play,
   Instagram, Facebook, Youtube
@@ -36,7 +36,7 @@ const SettingsPage = () => {
   const getInitialSettingsState = () => {
     const cachedSettings = adminService.getCached('/admin/settings');
     const cachedMe = adminService.getCached('/auth/me');
-    
+
     const data = cachedSettings?.data || {};
     const profile = data.company_profile || {};
     const shippingSettings = data.shipping_settings || {};
@@ -118,7 +118,7 @@ const SettingsPage = () => {
     let currentIndex = themesArray.indexOf(currentText);
     let nextIndex = (currentIndex + 1) % themesArray.length;
     setText(themesArray[nextIndex]);
-    toast.success('✨ Magic Theme Applied & Grammar Polished!', { 
+    toast.success('✨ Magic Theme Applied & Grammar Polished!', {
       description: 'The banner text has been professionally formatted.'
     });
   };
@@ -308,7 +308,7 @@ const SettingsPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <Settings className="w-8 h-8 text-indigo-600" />
+            <Settings className="w-8 h-8 text-primary" />
             Settings
           </h1>
           <p className="text-slate-500 mt-1 font-medium">Update your business profile and system details.</p>
@@ -319,11 +319,11 @@ const SettingsPage = () => {
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden">
              <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
-                <Building2 className="w-32 h-32 text-indigo-900" />
+                <Building2 className="w-32 h-32 text-primary/20" />
              </div>
-             
+
              <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-8 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-indigo-600" />
+                <Building2 className="w-5 h-5 text-primary" />
                 Business Profile
              </h2>
 
@@ -331,49 +331,49 @@ const SettingsPage = () => {
                 <div className="space-y-1">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Company Name</label>
                    <div className="relative group">
-                      <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                      <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
                          value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="DurgaShakti Foils" />
-                      <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                      <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                    </div>
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">GST Number</label>
                    <div className="relative group">
-                      <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                      <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
                          value={gstNumber} onChange={e => setGstNumber(e.target.value)} placeholder="29XXXXX..." />
-                      <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                      <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                    </div>
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Phone Number</label>
                    <div className="relative group">
-                      <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                      <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
                          value={companyPhone} onChange={e => setCompanyPhone(e.target.value)} placeholder="+91..." />
-                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                    </div>
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Email Address</label>
                    <div className="relative group">
-                      <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                      <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
                          value={companyEmail} onChange={e => setCompanyEmail(e.target.value)} placeholder="ops@durgashakti.com" />
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                    </div>
                 </div>
                 <div className="md:col-span-2 space-y-1">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Office Address</label>
                    <div className="relative group">
-                      <textarea rows={3} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                      <textarea rows={3} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
                          value={companyAddress} onChange={e => setCompanyAddress(e.target.value)} placeholder="Full physical address..." />
-                      <MapPin className="absolute left-3.5 top-4 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                      <MapPin className="absolute left-3.5 top-4 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                    </div>
                 </div>
                  <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Google Maps Share / Embed Link</label>
                     <div className="relative group">
-                       <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                       <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
                           value={googleMapsLink} onChange={e => setGoogleMapsLink(e.target.value)} placeholder="https://maps.app.goo.gl/FMk4dnhXvGeTrRFM6 or search query..." />
-                       <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                       <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                     </div>
                  </div>
 
@@ -383,25 +383,25 @@ const SettingsPage = () => {
                        <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Instagram Link</label>
                           <div className="relative group">
-                             <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                             <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
                                 value={instagramLink} onChange={e => setInstagramLink(e.target.value)} placeholder="https://instagram.com/..." />
-                             <Instagram className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                             <Instagram className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                           </div>
                        </div>
                        <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Facebook Link</label>
                           <div className="relative group">
-                             <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                             <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
                                 value={facebookLink} onChange={e => setFacebookLink(e.target.value)} placeholder="https://facebook.com/..." />
-                             <Facebook className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                             <Facebook className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                           </div>
                        </div>
                        <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">YouTube Link</label>
                           <div className="relative group">
-                             <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all pl-10" 
+                             <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
                                 value={youtubeLink} onChange={e => setYoutubeLink(e.target.value)} placeholder="https://youtube.com/..." />
-                             <Youtube className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                             <Youtube className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                           </div>
                        </div>
                     </div>
@@ -409,23 +409,23 @@ const SettingsPage = () => {
              </div>
 
              <div className="mt-8 pt-8 border-t border-slate-200 flex justify-end">
-                <Button disabled={saving} onClick={save} className="rounded-xl px-12 font-black uppercase tracking-widest shadow-lg shadow-indigo-200 flex items-center gap-2">
+                <Button disabled={saving} onClick={save} className="rounded-xl px-12 font-black uppercase tracking-widest shadow-lg shadow-emerald-glow flex items-center gap-2">
                    {saving ? 'Saving...' : <><Save className="w-4 h-4" /> Save Settings</>}
                 </Button>
              </div>
           </div>
-          
+
 
 
           {/* Sacred Banner Management — SUPER_ADMIN or manage_banner permission */}
           {(me?.role === 'SUPER_ADMIN' || me?.permissions?.manage_banner) && (
                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden mt-8">
                   <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12 pointer-events-none">
-                     <Megaphone className="w-32 h-32 text-indigo-950" />
+                     <Megaphone className="w-32 h-32 text-primary/20" />
                   </div>
-                  
+
                   <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-4 flex items-center gap-2">
-                     <Megaphone className="w-5 h-5 text-indigo-600" />
+                     <Megaphone className="w-5 h-5 text-primary" />
                      Sacred Banner Management
                   </h2>
                   <p className="text-xs text-slate-500 mb-8 font-medium">Customize the scrolling announcement messages. Click the magic wand to auto-generate beautiful, grammar-corrected premium themes.</p>
@@ -433,15 +433,15 @@ const SettingsPage = () => {
                   {/* Live Animated Preview */}
                   <div className="mb-8 p-4 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner">
                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                        <Play className="w-3 h-3 text-indigo-500" /> Live Preview
+                        <Play className="w-3 h-3 text-primary" /> Live Preview
                      </h3>
                      <div className="w-full bg-slate-950 text-white overflow-hidden py-2.5 rounded-xl border border-slate-800 shadow-lg relative flex items-center">
                         <div className="whitespace-nowrap animate-marquee flex items-center">
-                           <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-indigo-200">
+                           <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-primary-fixed">
                               {p1}
                            </span>
                            {(!bannerUseFavicon || showFaviconSpacer1) && (
-                              <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
+                              <span className="mx-4 text-xs font-black text-primary flex items-center gap-2">
                                  {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
                               </span>
                            )}
@@ -451,16 +451,16 @@ const SettingsPage = () => {
                               </span>
                            )}
                            {(bannerText2 || bannerTimerEnabled) && (!bannerUseFavicon || showFaviconSpacer2) && (
-                              <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
+                              <span className="mx-4 text-xs font-black text-primary flex items-center gap-2">
                                  {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
                               </span>
                            )}
                            {/* Duplicate for smooth scrolling illusion */}
-                           <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-indigo-200">
+                            <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-primary-fixed">
                               {p1}
                            </span>
                            {(!bannerUseFavicon || showFaviconSpacer1) && (
-                              <span className="mx-4 text-xs font-black text-indigo-500 flex items-center gap-2">
+                              <span className="mx-4 text-xs font-black text-primary flex items-center gap-2">
                                  {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
                               </span>
                            )}
@@ -480,38 +480,38 @@ const SettingsPage = () => {
                      <div className="space-y-2">
                         <div className="flex items-center justify-between">
                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Primary Announcement (Text 1)</label>
-                           <button 
+                           <button
                               onClick={() => applyMagicTheme(setBannerText1, premiumThemes1, bannerText1)}
-                              className="text-[10px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white px-3 py-1 rounded-full transition-all flex items-center gap-1.5 shadow-sm active:scale-95 border border-indigo-100"
+                              className="text-[10px] font-black uppercase tracking-widest bg-primary/10 text-primary hover:bg-primary hover:text-white px-3 py-1 rounded-full transition-all flex items-center gap-1.5 shadow-sm active:scale-95 border border-primary/20"
                            >
                               <Sparkles className="w-3 h-3" /> Auto-Polish & Theme
                            </button>
                         </div>
-                        <input 
-                           className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-medium text-slate-800" 
-                           value={bannerText1} 
-                           onChange={e => setBannerText1(e.target.value)} 
-                           placeholder="e.g. Durga Shakti Foils: Premium Packing Solutions" 
+                        <input
+                           className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-slate-800"
+                           value={bannerText1}
+                           onChange={e => setBannerText1(e.target.value)}
+                           placeholder="e.g. Durga Shakti Foils: Premium Packing Solutions"
                         />
                      </div>
 
                      <div className="space-y-2">
                         <div className="flex items-center justify-between">
                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Secondary Announcement (Text 2 - Alternate)</label>
-                           <button 
+                           <button
                               onClick={() => applyMagicTheme(setBannerText2, premiumThemes2, bannerText2)}
                               className="text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white px-3 py-1 rounded-full transition-all flex items-center gap-1.5 shadow-sm active:scale-95 border border-rose-100"
                            >
                               <Sparkles className="w-3 h-3" /> Auto-Polish & Theme
                            </button>
                         </div>
-                        <input 
-                           className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all font-medium text-slate-800" 
-                           value={bannerText2} 
-                           onChange={e => setBannerText2(e.target.value)} 
-                           placeholder="e.g. 50% off discount sale starts/ends in {timer}" 
+                        <input
+                           className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-slate-800"
+                           value={bannerText2}
+                           onChange={e => setBannerText2(e.target.value)}
+                           placeholder="e.g. 50% off discount sale starts/ends in {timer}"
                         />
-                        <p className="text-[10px] text-slate-400 mt-1 font-medium">Use <span className="font-mono bg-slate-100 px-1 rounded text-indigo-600 font-bold">{'{timer}'}</span> anywhere in the text to dynamically insert the live countdown clock.</p>
+                        <p className="text-[10px] text-slate-400 mt-1 font-medium">Use <span className="font-mono bg-slate-100 px-1 rounded text-primary font-bold">{'{timer}'}</span> anywhere in the text to dynamically insert the live countdown clock.</p>
                      </div>
 
                      <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-6">
@@ -525,18 +525,18 @@ const SettingsPage = () => {
                                  <p className="text-xs text-slate-500 mt-1 max-w-md">Use the brand Favicon as a beautiful spacer between texts. Disable this if your text templates already use abundant emojis.</p>
                               </div>
                            </div>
-                           
+
                            <div className="flex items-center gap-3 self-end md:self-auto">
                               <span className={`text-[10px] font-black uppercase tracking-widest ${bannerUseFavicon ? 'text-amber-600' : 'text-slate-400'}`}>
                                  {bannerUseFavicon ? 'Visible' : 'Hidden'}
                               </span>
-                              <button 
+                              <button
                                  onClick={() => setBannerUseFavicon(!bannerUseFavicon)}
                                  className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-300 shadow-inner ${
                                     bannerUseFavicon ? 'bg-amber-500' : 'bg-slate-300'
                                  }`}
                               >
-                                 <div 
+                                 <div
                                     className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${
                                        bannerUseFavicon ? 'translate-x-6' : 'translate-x-0'
                                     }`}
@@ -547,7 +547,7 @@ const SettingsPage = () => {
 
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                            <div className="flex items-start gap-4">
-                              <div className="p-3 rounded-xl bg-indigo-100 text-indigo-600 flex-shrink-0 shadow-sm border border-indigo-200">
+                              <div className="p-3 rounded-xl bg-primary/20 text-primary flex-shrink-0 shadow-sm border border-primary/20">
                                  <Timer className="w-6 h-6 animate-pulse" />
                               </div>
                               <div>
@@ -555,18 +555,18 @@ const SettingsPage = () => {
                                  <p className="text-xs text-slate-500 mt-1 max-w-md">Tick this to activate the dynamic live countdown timer replacing the {'{timer}'} tag.</p>
                               </div>
                            </div>
-                           
+
                            <div className="flex items-center gap-3 self-end md:self-auto">
-                              <span className={`text-[10px] font-black uppercase tracking-widest ${bannerTimerEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
+                              <span className={`text-[10px] font-black uppercase tracking-widest ${bannerTimerEnabled ? 'text-primary' : 'text-slate-400'}`}>
                                  {bannerTimerEnabled ? 'Enabled' : 'Disabled'}
                               </span>
-                              <button 
+                              <button
                                  onClick={() => setBannerTimerEnabled(!bannerTimerEnabled)}
                                  className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-all duration-300 shadow-inner ${
-                                    bannerTimerEnabled ? 'bg-indigo-600' : 'bg-slate-300'
+                                    bannerTimerEnabled ? 'bg-primary' : 'bg-slate-300'
                                  }`}
                               >
-                                 <div 
+                                 <div
                                     className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${
                                        bannerTimerEnabled ? 'translate-x-6' : 'translate-x-0'
                                     }`}
@@ -577,15 +577,15 @@ const SettingsPage = () => {
 
                         {bannerTimerEnabled && (
                            <div className="space-y-2 pt-6 border-t border-slate-200/60 animate-in slide-in-from-top duration-350">
-                              <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Countdown Target Date & Time</label>
+                              <label className="text-[10px] font-black text-primary uppercase tracking-widest">Countdown Target Date & Time</label>
                               <div className="relative group">
-                                 <input 
-                                    type="datetime-local" 
-                                    className="w-full rounded-xl border border-indigo-100 px-12 py-4 text-sm font-bold text-slate-800 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all bg-white shadow-sm hover:border-indigo-300 cursor-pointer" 
-                                    value={bannerTimerTarget} 
-                                    onChange={e => setBannerTimerTarget(e.target.value)} 
+                                 <input
+                                    type="datetime-local"
+                                    className="w-full rounded-xl border border-primary/20 px-12 py-4 text-sm font-bold text-slate-800 focus:ring-4 focus:ring-primary/20 outline-none transition-all bg-white shadow-sm hover:border-primary cursor-pointer"
+                                    value={bannerTimerTarget}
+                                    onChange={e => setBannerTimerTarget(e.target.value)}
                                  />
-                                 <Timer className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-indigo-400 group-hover:text-indigo-600 transition-colors pointer-events-none" />
+                                 <Timer className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary group-hover:text-primary transition-colors pointer-events-none" />
                               </div>
                               <p className="text-[10px] text-slate-400 mt-2 font-medium">Select the target date/time in your local system timezone. It will automatically convert to the universal server timezone.</p>
                            </div>
@@ -594,7 +594,7 @@ const SettingsPage = () => {
                   </div>
 
                   <div className="mt-8 pt-8 border-t border-slate-200 flex justify-end">
-                     <Button disabled={savingBanner} onClick={saveBanner} className="rounded-xl px-12 font-black uppercase tracking-widest shadow-lg shadow-indigo-200 flex items-center gap-2">
+                     <Button disabled={savingBanner} onClick={saveBanner} className="rounded-xl px-12 font-black uppercase tracking-widest shadow-lg shadow-emerald-glow flex items-center gap-2">
                         {savingBanner ? 'Saving...' : <><Save className="w-4 h-4" /> Save Banner Settings</>}
                      </Button>
                   </div>
@@ -602,10 +602,10 @@ const SettingsPage = () => {
           )}
 
 
-          <div className="bg-indigo-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl mt-8">
+          <div className="bg-primary rounded-3xl p-8 text-white relative overflow-hidden shadow-xl mt-8">
              <div className="relative z-10">
                 <h3 className="text-lg font-black uppercase tracking-tighter mb-2">System Status</h3>
-                <p className="text-indigo-100 text-sm max-w-md">Your system is secure and running smoothly. All global regions are active.</p>
+                <p className="text-white/75 text-sm max-w-md">Your system is secure and running smoothly. All global regions are active.</p>
                 <div className="mt-6 flex items-center gap-6">
                    <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
@@ -626,7 +626,7 @@ const SettingsPage = () => {
         <div className="space-y-8">
            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
               <h2 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                 <Cpu className="w-4 h-4 text-indigo-500" />
+                 <Cpu className="w-4 h-4 text-primary" />
                  Technical Details
               </h2>
               <div className="space-y-4">
@@ -642,7 +642,7 @@ const SettingsPage = () => {
                        <Lock className="w-4 h-4 text-slate-500" />
                        <span className="text-xs font-bold text-slate-600">Security Level</span>
                     </div>
-                    <span className="text-[10px] font-black text-indigo-600 uppercase">High</span>
+                    <span className="text-[10px] font-black text-primary uppercase">High</span>
                  </div>
                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -652,18 +652,18 @@ const SettingsPage = () => {
                     <span className="text-[10px] font-black text-slate-800 uppercase">Razorpay Live</span>
                  </div>
               </div>
-              
+
               <div className="mt-8 pt-8 border-t border-slate-200">
                  <Button variant="outline" className="w-full rounded-xl text-[10px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 hover:border-rose-100 transition-all">
                     Enable Maintenance Mode
                  </Button>
               </div>
            </div>
-           
+
            <div className="bg-slate-900 rounded-3xl p-8 text-white">
               <div className="flex items-center gap-4 mb-6">
                  <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center">
-                    <ShieldCheck className="w-6 h-6 text-indigo-400" />
+                    <ShieldCheck className="w-6 h-6 text-primary" />
                  </div>
                  <div>
                     <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Security Standard</div>

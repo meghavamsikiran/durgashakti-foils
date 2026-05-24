@@ -3,9 +3,9 @@ import { toast } from 'sonner';
 import adminService from '../services/admin.service';
 import apiClient from '../../services/core/apiClient';
 import TablePagination from '../../components/ui/TablePagination';
-import { 
-  ShoppingBag, Clock, CheckCircle2, Truck, AlertCircle, 
-  Search, Filter, ChevronRight, XCircle, RefreshCcw, 
+import {
+  ShoppingBag, Clock, CheckCircle2, Truck, AlertCircle,
+  Search, Filter, ChevronRight, XCircle, RefreshCcw,
   IndianRupee, Calendar, MoreHorizontal, Eye, PackageCheck,
   MapPin, Phone as PhoneIcon, ChevronDown, ChevronUp, Check
 } from 'lucide-react';
@@ -38,10 +38,10 @@ const STATUS_FLOW = {
 const statusConfigs = {
   PENDING: { color: 'text-amber-600', bg: 'bg-amber-50', icon: Clock },
   PENDING_PAYMENT: { color: 'text-rose-600', bg: 'bg-rose-50', icon: Clock },
-  PLACED: { color: 'text-blue-600', bg: 'bg-blue-50', icon: ShoppingBag },
-  CONFIRMED: { color: 'text-indigo-600', bg: 'bg-indigo-50', icon: CheckCircle2 },
-  PACKAGING: { color: 'text-violet-600', bg: 'bg-violet-50', icon: PackageCheck },
-  PACKED: { color: 'text-violet-600', bg: 'bg-violet-50', icon: PackageCheck },
+  PLACED: { color: 'text-secondary', bg: 'bg-secondary-container', icon: ShoppingBag },
+  CONFIRMED: { color: 'text-primary', bg: 'bg-primary/10', icon: CheckCircle2 },
+  PACKAGING: { color: 'text-secondary', bg: 'bg-secondary-container', icon: PackageCheck },
+  PACKED: { color: 'text-secondary', bg: 'bg-secondary-container', icon: PackageCheck },
   SHIPPED: { color: 'text-sky-600', bg: 'bg-sky-50', icon: Truck },
   OUT_FOR_DELIVERY: { color: 'text-amber-600', bg: 'bg-amber-50', icon: Truck },
   DELIVERED: { color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle2 },
@@ -54,6 +54,27 @@ const statusConfigs = {
 };
 
 const PAGE_SIZE = 15;
+const uiStatus = (status) => (status || '').toUpperCase();
+
+const patchOrderStatus = (order, status, extraData = {}) => {
+  const next = uiStatus(status);
+  const patched = {
+    ...order,
+    ...extraData,
+    status: next,
+    order_status: next.toLowerCase(),
+    updated_at: new Date().toISOString(),
+  };
+  if (next === 'DELIVERED' && order.payment_method === 'cod' && extraData.mark_paid !== false) {
+    patched.payment_status = 'Paid';
+  }
+  if (next === 'RETURN_APPROVED') {
+    patched.status = 'REFUNDED';
+    patched.order_status = 'refunded';
+    patched.payment_status = 'refunded';
+  }
+  return patched;
+};
 
 const OrdersPage = () => {
   const { hasPermission } = useAuth();
@@ -83,6 +104,7 @@ const OrdersPage = () => {
   const [adminMessage, setAdminMessage] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [selectedOrderForModal, setSelectedOrderForModal] = useState(null);
+  const [pendingActionIds, setPendingActionIds] = useState(() => new Set());
 
   const load = useCallback(async (p = 1) => {
     const params = { page: p, limit: PAGE_SIZE, search };
@@ -126,10 +148,9 @@ const OrdersPage = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       load(1);
-      loadSilent(1);
-    }, 300);
+    }, 100);
     return () => clearTimeout(timer);
-  }, [search, filter, load, loadSilent]);
+  }, [search, filter, load]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time order dashboard
   useEffect(() => {
@@ -145,18 +166,33 @@ const OrdersPage = () => {
   };
 
   const updateStatus = async (orderId, newStatus, message = '', extraData = {}) => {
+    const previousRows = rows;
+    const previousModalOrder = selectedOrderForModal;
+    const toastId = toast.loading('Updating order...');
     try {
+      setPendingActionIds(prev => new Set(prev).add(orderId));
       setSubmitting(true);
-      await adminService.updateOrderStatus(orderId, { status: newStatus, admin_message: message, ...extraData });
-      toast.success(`Order status updated to ${newStatus.toLowerCase().replace('_', ' ')}`);
+      const optimisticPatch = { ...extraData };
+      if (message) optimisticPatch.admin_message = message;
+      setRows(prev => prev.map(order => order.id === orderId ? patchOrderStatus(order, newStatus, optimisticPatch) : order));
+      setSelectedOrderForModal(prev => prev?.id === orderId ? patchOrderStatus(prev, newStatus, optimisticPatch) : prev);
       setMessageModal(null);
       setTrackingModal(null);
       setTrackingForm({ carrier: '', tracking_id: '', tracking_url: '' });
       setAdminMessage('');
-      load();
+      await adminService.updateOrderStatus(orderId, { status: newStatus, admin_message: message, ...extraData });
+      toast.success(`Order status updated to ${newStatus.toLowerCase().replace('_', ' ')}`, { id: toastId });
+      loadSilent(page);
     } catch (err) {
-      toast.error(err.message);
+      setRows(previousRows);
+      setSelectedOrderForModal(previousModalOrder);
+      toast.error(err.message, { id: toastId });
     } finally {
+      setPendingActionIds(prev => {
+        const next = new Set(prev);
+        next.delete(orderId);
+        return next;
+      });
       setSubmitting(false);
     }
   };
@@ -181,21 +217,21 @@ const OrdersPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <ShoppingBag className="w-8 h-8 text-indigo-600" />
+            <ShoppingBag className="w-8 h-8 text-primary" />
             Orders
           </h1>
           <p className="text-slate-500 mt-1 font-medium">View and manage customer orders.</p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <input 
+            <input
               type="text"
               placeholder="Order Number..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none w-64"
+              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64"
             />
           </div>
         </div>
@@ -204,7 +240,7 @@ const OrdersPage = () => {
       {hasPermission('view_analytics') && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
               <ShoppingBag className="w-6 h-6" />
             </div>
             <div>
@@ -213,8 +249,8 @@ const OrdersPage = () => {
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-indigo-600" />
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+              <CheckCircle2 className="w-6 h-6 text-primary" />
             </div>
             <div>
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Confirmed</div>
@@ -222,7 +258,7 @@ const OrdersPage = () => {
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-violet-50 text-violet-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-secondary-container text-secondary rounded-xl flex items-center justify-center">
               <Clock className="w-6 h-6" />
             </div>
             <div>
@@ -248,8 +284,8 @@ const OrdersPage = () => {
             key={s}
             onClick={() => setFilter(s)}
             className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-tighter transition-all ${
-              filter === s 
-                ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200' 
+              filter === s
+                ? 'bg-white text-primary shadow-sm ring-1 ring-slate-200'
                 : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'
             }`}
           >
@@ -277,12 +313,13 @@ const OrdersPage = () => {
                 const config = statusConfigs[status] || statusConfigs.PENDING;
                 const StatusIcon = config.icon;
                 const actions = STATUS_FLOW[status] || [];
+                const isOrderPending = pendingActionIds.has(order.id);
 
                 return (
                    <React.Fragment key={order.id}>
-                     <tr className={`hover:bg-slate-50/50 transition-colors group ${expandedOrderId === order.id ? 'bg-indigo-50/30' : ''}`}>
+                     <tr className={`hover:bg-slate-50/50 transition-colors group ${expandedOrderId === order.id ? 'bg-primary/5' : ''}`}>
                        <td className="px-8 py-6">
-                         <div className="font-mono text-xs font-black text-indigo-600 mb-1">{order.order_number}</div>
+                         <div className="font-mono text-xs font-black text-primary mb-1">{order.order_number}</div>
                          <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                            <Calendar className="w-3 h-3" />
                            {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
@@ -329,12 +366,13 @@ const OrdersPage = () => {
                                };
                                const label = actionLabels[a] || a.replace('_', ' ');
                                const isDeliverWithCOD = a === 'DELIVERED' && order.payment_method === 'cod' && order.payment_status !== 'Paid' && order.payment_status !== 'completed';
-                                
+
                                return (
                                  <button
                                    key={a}
-                                   onClick={(e) => { 
-                                     e.stopPropagation(); 
+                                   disabled={isOrderPending || submitting}
+                                   onClick={(e) => {
+                                     e.stopPropagation();
                                      if (a === 'SHIPPED') {
                                        setTrackingModal({ orderId: order.id, status: a });
                                        setTrackingForm({
@@ -350,14 +388,18 @@ const OrdersPage = () => {
                                      }
                                    }}
                                    className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                     isOrderPending
+                                       ? 'opacity-60 cursor-wait'
+                                       : ''
+                                   } ${
                                      a === 'CANCELLED' || a === 'RETURN_REJECTED' || a === 'FAILED'
-                                       ? 'border-rose-100 text-rose-600 hover:bg-rose-50' 
-                                       : a === 'DELIVERED' || a === 'RETURN_APPROVED' || a === 'CONFIRMED'
+                                       ? 'border-rose-100 text-rose-600 hover:bg-rose-50'
+                                     : a === 'DELIVERED' || a === 'RETURN_APPROVED' || a === 'CONFIRMED'
                                        ? 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'
-                                       : 'border-indigo-100 text-indigo-600 hover:bg-indigo-50'
+                                       : 'border-primary/20 text-primary hover:bg-primary/10'
                                    }`}
                                  >
-                                   {isDeliverWithCOD ? 'Deliver & Mark Paid' : label}
+                                   {isOrderPending ? 'Updating' : (isDeliverWithCOD ? 'Deliver & Mark Paid' : label)}
                                  </button>
                                );
                              }) : (
@@ -371,9 +413,9 @@ const OrdersPage = () => {
                        </td>
                        <td className="px-8 py-6 text-center">
                           {hasPermission('view_order_details') ? (
-                            <button 
+                            <button
                                onClick={() => setSelectedOrderForModal(order)}
-                               className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-white transition-all shadow-sm"
+                               className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-primary hover:bg-white transition-all shadow-sm"
                             >
                                <Eye className="w-4 h-4" />
                             </button>
@@ -412,7 +454,7 @@ const OrdersPage = () => {
               </h3>
               <p className="text-xs text-slate-500 mt-1">Provide a custom message or reason to deliver respectively to the customer.</p>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Message to Customer</label>
               <textarea
@@ -426,10 +468,10 @@ const OrdersPage = () => {
                 value={adminMessage}
                 onChange={(e) => setAdminMessage(e.target.value)}
                 required
-                className="w-full p-4 min-h-[100px] rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"
+                className="w-full p-4 min-h-[100px] rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none resize-none"
               />
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={() => setMessageModal(null)}
@@ -440,7 +482,7 @@ const OrdersPage = () => {
               <button
                 onClick={() => updateStatus(messageModal.orderId, messageModal.status, adminMessage)}
                 disabled={!adminMessage.trim()}
-                className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all"
+                className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow disabled:opacity-50 transition-all"
               >
                 Confirm
               </button>
@@ -461,19 +503,19 @@ const OrdersPage = () => {
                 placeholder="Carrier / courier"
                 value={trackingForm.carrier}
                 onChange={(e) => setTrackingForm({ ...trackingForm, carrier: e.target.value })}
-                className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
               />
               <input
                 placeholder="Tracking ID"
                 value={trackingForm.tracking_id}
                 onChange={(e) => setTrackingForm({ ...trackingForm, tracking_id: e.target.value })}
-                className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
               />
               <input
                 placeholder="Tracking URL (optional)"
                 value={trackingForm.tracking_url}
                 onChange={(e) => setTrackingForm({ ...trackingForm, tracking_url: e.target.value })}
-                className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
               />
             </div>
             <div className="flex gap-3">
@@ -486,7 +528,7 @@ const OrdersPage = () => {
               <button
                 onClick={() => updateStatus(trackingModal.orderId, trackingModal.status, '', trackingForm)}
                 disabled={!trackingForm.tracking_id.trim() || submitting}
-                className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all"
+                className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow disabled:opacity-50 transition-all"
               >
                 Ship Order
               </button>
@@ -498,12 +540,12 @@ const OrdersPage = () => {
       {selectedOrderForModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] p-8 max-w-5xl w-full border border-slate-100 shadow-2xl flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-300">
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-5 border-b border-slate-100">
               <div>
                 <div className="flex items-center gap-3 mb-1">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center">
                     <ShoppingBag className="w-5 h-5" />
                   </div>
                   <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Order Details</h2>
@@ -512,8 +554,8 @@ const OrdersPage = () => {
                   Order #{selectedOrderForModal.order_number} • Placed {new Date(selectedOrderForModal.created_at).toLocaleString('en-IN')}
                 </p>
               </div>
-              <button 
-                onClick={() => setSelectedOrderForModal(null)} 
+              <button
+                onClick={() => setSelectedOrderForModal(null)}
                 className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-all hover:scale-105"
               >
                 <XCircle className="w-6 h-6" />
@@ -522,10 +564,10 @@ const OrdersPage = () => {
 
             {/* Modal Content - Scrollable */}
             <div className="flex-1 overflow-y-auto py-6 space-y-6 pr-2">
-              
+
               {/* 3-Column Info Card (Ship to | Payment Details | Order Summary) */}
               <div className="bg-slate-50/50 rounded-3xl border border-slate-200/60 p-6 grid grid-cols-1 md:grid-cols-3 gap-6 divide-y md:divide-y-0 md:divide-x divide-slate-200/60 shadow-sm">
-                
+
                 {/* Column 1: Ship to */}
                 <div className="space-y-2">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Shipping Address</h4>
@@ -589,8 +631,8 @@ const OrdersPage = () => {
                         <div className="flex justify-between">
                           <span>Shipping Cost:</span>
                           <span className="text-slate-900">
-                            {shipping > 0 
-                              ? `₹${shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+                            {shipping > 0
+                              ? `₹${shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                               : "FREE"
                             }
                           </span>
@@ -616,7 +658,7 @@ const OrdersPage = () => {
                         <div className="h-px bg-slate-200/60 my-1" />
                         <div className="flex justify-between font-black text-slate-900 text-sm">
                           <span>Grand Total:</span>
-                          <span className="text-indigo-600 text-base">₹{Number(selectedOrderForModal.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          <span className="text-primary text-base">₹{Number(selectedOrderForModal.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                       </div>
                     );
@@ -631,7 +673,7 @@ const OrdersPage = () => {
                   <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                     selectedOrderForModal.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800' :
                     selectedOrderForModal.status === 'CANCELLED' ? 'bg-rose-100 text-rose-800' :
-                    'bg-indigo-100 text-indigo-800'
+                    'bg-primary/10 text-primary'
                   }`}>
                     {(selectedOrderForModal.status || selectedOrderForModal.order_status || 'PENDING').replace('_', ' ')}
                   </span>
@@ -667,11 +709,11 @@ const OrdersPage = () => {
                       {/* Line Background */}
                       <div className="absolute top-[28px] left-[10%] right-[10%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
                       {/* Active Line */}
-                      <div 
-                        className="absolute top-[28px] left-[10%] h-1 bg-indigo-600 -translate-y-1/2 rounded-full transition-all duration-700" 
-                        style={{ 
-                          width: isDelivered ? '80%' : isShipped ? '53.33%' : isConfirmed ? '26.66%' : '0%' 
-                        }} 
+                      <div
+                        className="absolute top-[28px] left-[10%] h-1 bg-primary -translate-y-1/2 rounded-full transition-all duration-700"
+                        style={{
+                          width: isDelivered ? '80%' : isShipped ? '53.33%' : isConfirmed ? '26.66%' : '0%'
+                        }}
                       />
 
                       {/* Dots */}
@@ -679,11 +721,11 @@ const OrdersPage = () => {
                         {steps.map((step, idx) => (
                           <div key={idx} className="flex flex-col items-center w-[25%] text-center">
                             <div className={`w-7 h-7 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all ${
-                              step.active ? 'bg-indigo-600 text-white ring-4 ring-indigo-500/10' : 'bg-slate-200 text-slate-400'
+                              step.active ? 'bg-primary text-white ring-4 ring-primary/10' : 'bg-slate-200 text-slate-400'
                             }`}>
                               {step.active ? <Check className="w-3 h-3 stroke-[3px]" /> : <span className="text-[9px] font-bold">{idx + 1}</span>}
                             </div>
-                            <p className={`text-[11px] mt-2 ${step.active ? 'text-indigo-600 font-extrabold' : 'text-slate-400 font-bold'}`}>
+                            <p className={`text-[11px] mt-2 ${step.active ? 'text-primary font-extrabold' : 'text-slate-400 font-bold'}`}>
                               {step.label}
                             </p>
                             {step.date && (
@@ -702,10 +744,10 @@ const OrdersPage = () => {
               {/* Order Items Table Redesign */}
               <div className="space-y-3">
                 <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <ShoppingBag className="w-4 h-4 text-indigo-500" />
+                  <ShoppingBag className="w-4 h-4 text-primary" />
                   Order Items ({selectedOrderForModal.items?.length || 0})
                 </h4>
-                
+
                 <div className="bg-white rounded-3xl border border-slate-200/60 overflow-hidden shadow-sm">
                   <table className="min-w-full">
                     <thead className="bg-slate-50/70 border-b border-slate-200">
@@ -721,14 +763,14 @@ const OrdersPage = () => {
                         <tr key={idx} className="bg-white hover:bg-slate-50/40 transition-colors">
                           <td className="px-6 py-4 text-xs font-extrabold text-slate-900 flex items-center gap-3">
                             {item.image_url ? (
-                              <img 
-                                src={formatImageUrl(item.image_url)} 
-                                alt="" 
+                              <img
+                                src={formatImageUrl(item.image_url)}
+                                alt=""
                                 className="w-12 h-12 rounded-lg object-cover bg-slate-50 border border-slate-100 shrink-0 shadow-sm"
                               />
                             ) : (
-                              <div className="w-12 h-12 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
-                                <ShoppingBag className="w-5 h-5 text-indigo-500" />
+                              <div className="w-12 h-12 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                                <ShoppingBag className="w-5 h-5 text-primary" />
                               </div>
                             )}
                             <div>
@@ -738,7 +780,7 @@ const OrdersPage = () => {
                           </td>
                           <td className="px-6 py-4 text-xs text-center font-black text-slate-500">{item.quantity}</td>
                           <td className="px-6 py-4 text-xs text-right font-black text-slate-700">₹{Number(item.price).toLocaleString('en-IN')}</td>
-                          <td className="px-6 py-4 text-xs text-right font-black text-indigo-600">₹{Number(item.price * item.quantity).toLocaleString('en-IN')}</td>
+                          <td className="px-6 py-4 text-xs text-right font-black text-primary">₹{Number(item.price * item.quantity).toLocaleString('en-IN')}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -756,11 +798,11 @@ const OrdersPage = () => {
                       <p>Carrier Name: <span className="font-extrabold text-slate-900">{selectedOrderForModal.carrier || 'Courier'}</span></p>
                       <p className="mt-0.5">Tracking Number: <span className="font-mono text-slate-900 select-all font-extrabold">{selectedOrderForModal.tracking_id}</span></p>
                       {selectedOrderForModal.tracking_url && (
-                        <a 
-                          href={selectedOrderForModal.tracking_url} 
-                          target="_blank" 
-                          rel="noreferrer" 
-                          className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline mt-2 inline-block"
+                        <a
+                          href={selectedOrderForModal.tracking_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline mt-2 inline-block"
                         >
                           Launch Tracking URL &rsaquo;
                         </a>
@@ -787,16 +829,16 @@ const OrdersPage = () => {
                         {selectedOrderForModal.status?.replace('_', ' ')}
                       </span>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Customer Return Reason</div>
                         <div className="text-xs font-bold text-slate-800 bg-white p-3 rounded-xl border border-slate-100/60 leading-relaxed shadow-sm">{selectedOrderForModal.return_reason}</div>
                       </div>
-                      
+
                       {selectedOrderForModal.admin_message && (
                         <div className="space-y-1">
-                          <div className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Admin Resolution Remarks</div>
+                          <div className="text-[9px] font-black text-primary uppercase tracking-widest">Admin Resolution Remarks</div>
                           <div className="text-xs font-bold text-slate-800 bg-white p-3 rounded-xl border border-slate-100/60 leading-relaxed shadow-sm">{selectedOrderForModal.admin_message}</div>
                         </div>
                       )}
@@ -837,20 +879,20 @@ const OrdersPage = () => {
                           const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
                           const fullUrl = formatImageUrl(url);
                           return (
-                            <div key={idx} className="relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-indigo-500 transition-all w-20 h-20 flex items-center justify-center group cursor-pointer">
+                            <div key={idx} className="relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-primary transition-all w-20 h-20 flex items-center justify-center group cursor-pointer">
                               {isVideo ? (
                                 <video src={fullUrl} controls className="w-full h-full object-cover" />
                               ) : (
-                                <a 
-                                  href={fullUrl} 
-                                  target="_blank" 
-                                  rel="noreferrer" 
+                                <a
+                                  href={fullUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
                                   className="w-full h-full block"
                                 >
-                                  <img 
-                                    src={fullUrl} 
-                                    alt="Proof" 
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                                  <img
+                                    src={fullUrl}
+                                    alt="Proof"
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                   />
                                 </a>
                               )}

@@ -15,13 +15,13 @@ const OrdersTab = ({ orders, loading, onCancelOrder }) => {
   const getStatusBadge = (status) => {
     const s = (status || 'pending').toLowerCase();
     const config = {
-      pending: { bg: 'bg-blue-50 text-blue-600', label: 'Placed' },
+      pending: { bg: 'bg-secondary-container text-secondary', label: 'Placed' },
       pending_payment: { bg: 'bg-rose-50 text-rose-600', label: 'Payment Pending' },
       processing: { bg: 'bg-primary/10 text-primary', label: 'Processing' },
-      confirmed: { bg: 'bg-purple-50 text-purple-600', label: 'Confirmed' },
+      confirmed: { bg: 'bg-secondary-container text-secondary', label: 'Confirmed' },
       packaging: { bg: 'bg-cyan-50 text-cyan-600', label: 'Packaging' },
       packed: { bg: 'bg-cyan-50 text-cyan-600', label: 'Packaging' },
-      shipped: { bg: 'bg-violet-50 text-violet-600', label: 'Shipped' },
+      shipped: { bg: 'bg-secondary-container text-secondary', label: 'Shipped' },
       out_for_delivery: { bg: 'bg-amber-50 text-amber-600', label: 'Out For Delivery' },
       delivered: { bg: 'bg-emerald-50 text-emerald-600', label: 'Delivered' },
       failed: { bg: 'bg-rose-50 text-rose-600', label: 'Failed' },

@@ -379,7 +379,7 @@ const Cart = () => {
                   return (
                     <>
                       {enableFreeShipping && total < freeShippingThreshold && (
-                        <div className="bg-primary/5 border border-primary/15 text-primary text-[11px] rounded-lg p-3.5 mb-5 font-bold flex items-center gap-2 animate-pulse font-mono tracking-wide">
+                        <div className="bg-primary/5 border border-primary/20 text-primary text-[11px] rounded-lg p-3.5 mb-5 font-bold flex items-center gap-2 animate-pulse font-mono tracking-wide">
                           <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
                           <span>ADD ₹{(freeShippingThreshold - total).toFixed(2)} MORE FOR FREE SHIPPING!</span>
                         </div>

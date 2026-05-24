@@ -36,11 +36,11 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
 
   if (isSuperAdmin) {
     return (
-      <div className="p-6 rounded-xl bg-purple-50 border border-purple-100 flex items-center gap-4">
-        <ShieldCheck className="w-8 h-8 text-purple-600" />
+      <div className="p-6 rounded-xl bg-secondary-container border border-outline-variant flex items-center gap-4">
+        <ShieldCheck className="w-8 h-8 text-secondary" />
         <div>
-          <h4 className="font-bold text-purple-900">Super Admin Access</h4>
-          <p className="text-sm text-purple-700">Super Admins inherently possess all system permissions. Granular restrictions do not apply.</p>
+          <h4 className="font-bold text-secondary">Super Admin Access</h4>
+          <p className="text-sm text-secondary">Super Admins inherently possess all system permissions. Granular restrictions do not apply.</p>
         </div>
       </div>
     );
@@ -55,7 +55,7 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Access Permissions</h3>
           <p className="text-xs text-slate-500">Configure granular module access for this administrator.</p>
         </div>
-        <button type="button" onClick={handleToggleAll} className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-lg">
+        <button type="button" onClick={handleToggleAll} className="text-xs font-bold text-primary hover:text-primary flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-lg">
           {allSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
           {allSelected ? 'Deselect All' : 'Select All'}
         </button>
@@ -73,16 +73,16 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
                     key={perm.id}
                     onClick={() => handleToggle(perm.id)}
                     className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                      checked ? 'bg-indigo-50/50 border-indigo-200' : 'bg-white border-slate-200 hover:border-slate-300'
+                      checked ? 'bg-primary/5 border-primary/20' : 'bg-white border-slate-200 hover:border-slate-300'
                     }`}
                   >
                     <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center border transition-colors ${
-                      checked ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white'
+                      checked ? 'bg-primary border-primary' : 'border-slate-300 bg-white'
                     }`}>
                       {checked && <CheckSquare className="w-3.5 h-3.5 text-white" />}
                     </div>
                     <div>
-                      <p className={`text-sm font-bold ${checked ? 'text-indigo-900' : 'text-slate-700'}`}>{perm.label}</p>
+                      <p className={`text-sm font-bold ${checked ? 'text-primary' : 'text-slate-700'}`}>{perm.label}</p>
                       <p className="text-xs text-slate-500">{perm.desc}</p>
                     </div>
                   </div>
@@ -98,14 +98,14 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
 
 
 const TEMPLATE_COLORS = {
-  OPERATIONS_ADMIN: 'from-violet-500 to-purple-600',
-  ORDER_MANAGER: 'from-blue-500 to-indigo-600',
+  OPERATIONS_ADMIN: 'from-secondary to-secondary',
+  ORDER_MANAGER: 'from-secondary to-emerald-hover',
   PRODUCT_MANAGER: 'from-emerald-500 to-teal-600',
   INVENTORY_MANAGER: 'from-amber-500 to-orange-600',
   CUSTOMER_SUPPORT: 'from-pink-500 to-rose-600',
   SHIPPING_MANAGER: 'from-cyan-500 to-sky-600',
   FINANCE_ADMIN: 'from-green-500 to-emerald-600',
-  ANALYTICS_VIEWER: 'from-fuchsia-500 to-purple-600',
+  ANALYTICS_VIEWER: 'from-secondary to-secondary',
   CUSTOM: 'from-slate-400 to-slate-500'
 };
 
@@ -129,13 +129,13 @@ const RoleTemplateSelector = ({ selectedTemplate, onSelectTemplate }) => {
               onClick={() => onSelectTemplate(key)}
               className={`relative overflow-hidden rounded-xl border-2 p-3 text-left transition-all duration-200 ${
                 isActive
-                  ? 'border-indigo-500 ring-2 ring-indigo-200 shadow-lg scale-[1.02]'
+                  ? 'border-primary ring-2 ring-primary/20 shadow-lg scale-[1.02]'
                   : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
               }`}
             >
               <div className={`absolute top-0 right-0 w-16 h-16 rounded-bl-[40px] bg-gradient-to-br ${gradientClass} ${isActive ? 'opacity-20' : 'opacity-10'}`} />
               <div className="relative z-10">
-                <div className={`text-xs font-black uppercase tracking-wide ${isActive ? 'text-indigo-700' : 'text-slate-700'}`}>
+                <div className={`text-xs font-black uppercase tracking-wide ${isActive ? 'text-primary' : 'text-slate-700'}`}>
                   {tmpl.label}
                 </div>
                 <div className="text-[10px] text-slate-400 font-bold mt-0.5">
@@ -143,7 +143,7 @@ const RoleTemplateSelector = ({ selectedTemplate, onSelectTemplate }) => {
                 </div>
               </div>
               {isActive && (
-                <div className="absolute top-2 right-2 w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
+                <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                   <CheckSquare className="w-3 h-3 text-white" />
                 </div>
               )}
@@ -334,7 +334,7 @@ const AdminUsersPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <ShieldCheck className="w-8 h-8 text-indigo-600" />
+            <ShieldCheck className="w-8 h-8 text-primary" />
             Admin Management
           </h1>
           <p className="text-slate-500 mt-1 font-medium">Add and manage admin accounts and configure RBAC permissions.</p>
@@ -348,10 +348,10 @@ const AdminUsersPage = () => {
               placeholder="Search Admins..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none w-64 transition-all focus:w-80"
+              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
-          <Button onClick={() => { setShowCreate(true); setForm({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: {} }); setSelectedTemplate('CUSTOM'); }} className="rounded-xl flex items-center gap-2 px-6 shadow-lg shadow-indigo-100 hover:shadow-indigo-200 transition-all">
+          <Button onClick={() => { setShowCreate(true); setForm({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: {} }); setSelectedTemplate('CUSTOM'); }} className="rounded-xl flex items-center gap-2 px-6 shadow-lg shadow-emerald-glow hover:shadow-emerald-glow transition-all">
             <UserPlus className="w-4 h-4" />
             Add New Admin
           </Button>
@@ -361,7 +361,7 @@ const AdminUsersPage = () => {
       {hasPermission('view_analytics') && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
               <Users className="w-6 h-6" />
             </div>
             <div>
@@ -370,7 +370,7 @@ const AdminUsersPage = () => {
             </div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-secondary-container text-secondary rounded-xl flex items-center justify-center">
               <ShieldAlert className="w-6 h-6" />
             </div>
             <div>
@@ -415,7 +415,7 @@ const AdminUsersPage = () => {
               {filtered.map((user) => (
                 <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-6">
-                    <div className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">{user.full_name}</div>
+                    <div className="font-bold text-slate-800 group-hover:text-primary transition-colors">{user.full_name}</div>
                     <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
                       <Mail className="w-3 h-3" />
                       {user.email}
@@ -429,7 +429,7 @@ const AdminUsersPage = () => {
                   </td>
                   <td className="px-8 py-6 text-center">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                      user.role === 'SUPER_ADMIN' ? 'bg-purple-50 text-purple-600' : 'bg-slate-50 text-slate-600'
+                      user.role === 'SUPER_ADMIN' ? 'bg-secondary-container text-secondary' : 'bg-slate-50 text-slate-600'
                     }`}>
                       {user.role?.replace('_', ' ')}
                     </span>
@@ -455,7 +455,7 @@ const AdminUsersPage = () => {
                   <td className="px-8 py-6">
                     <div className="flex items-center justify-center gap-2">
                       <button onClick={() => { setEditModal(user); setEditForm({ full_name: user.full_name, email: user.email, phone: user.phone || '', role: user.role, permissions: user.permissions || {} }); setEditSelectedTemplate('CUSTOM'); }}
-                        className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all" title="Edit Admin">
+                        className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-primary hover:bg-primary/10 transition-all" title="Edit Admin">
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button onClick={() => { setResetModal(user); setNewPassword(''); }}
@@ -500,12 +500,12 @@ const AdminUsersPage = () => {
                   <div className="space-y-4">
                     <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Full Name</label>
-                      <input required name="full_name_new" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      <input required name="full_name_new" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                         value={form.full_name} onChange={e => setForm({...form, full_name: e.target.value})} placeholder="Full name of admin..." />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Email</label>
-                      <input type="email" required name="email_new" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                      <input type="email" required name="email_new" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                         value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="admin@durgashakti.com" />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -522,7 +522,7 @@ const AdminUsersPage = () => {
                           defaultCountry="IN"
                           value={form.phone}
                           onChange={val => setForm({...form, phone: val || ''})}
-                          className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
+                          className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all outline-none"
                           numberInputProps={{
                             className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800",
                             placeholder: "Enter phone number"
@@ -533,7 +533,7 @@ const AdminUsersPage = () => {
                     <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Password</label>
                       <input type="password" required name="password_new" autoComplete="new-password" 
-                        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                         value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="Secure password..." />
                     </div>
                   </div>
@@ -562,7 +562,7 @@ const AdminUsersPage = () => {
                   Discard
                 </button>
                 <button type="submit" disabled={creating}
-                  className="px-8 py-3 rounded-xl bg-indigo-600 text-white text-sm font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-200 disabled:opacity-50 transition-all">
+                  className="px-8 py-3 rounded-xl bg-primary text-white text-sm font-black uppercase tracking-widest hover:bg-emerald-hover shadow-lg shadow-emerald-glow disabled:opacity-50 transition-all">
                   {creating ? 'Creating...' : 'Create Admin'}
                 </button>
               </div>
@@ -587,13 +587,13 @@ const AdminUsersPage = () => {
                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-4">Basic Information</h3>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Full Name</label>
-                  <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                  <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                     value={editForm.full_name} onChange={e => setEditForm({...editForm, full_name: e.target.value})} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Email</label>
-                    <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                    <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                       value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} />
                   </div>
                   <div className="space-y-1">
@@ -610,7 +610,7 @@ const AdminUsersPage = () => {
                     defaultCountry="IN"
                     value={editForm.phone}
                     onChange={val => setEditForm({...editForm, phone: val || ''})}
-                    className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
+                    className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all outline-none"
                     numberInputProps={{
                       className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800",
                       placeholder: "Enter phone number"
@@ -639,7 +639,7 @@ const AdminUsersPage = () => {
               
               <div className="col-span-1 md:col-span-2 flex justify-end gap-4 pt-6 border-t border-slate-100">
                 <button onClick={() => setEditModal(null)} className="px-8 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">Cancel</button>
-                <button onClick={handleEdit} disabled={editSaving} className="px-8 py-3 rounded-xl bg-indigo-600 text-white text-sm font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all">
+                <button onClick={handleEdit} disabled={editSaving} className="px-8 py-3 rounded-xl bg-primary text-white text-sm font-black uppercase tracking-widest hover:bg-emerald-hover shadow-lg shadow-emerald-glow transition-all">
                    {editSaving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
@@ -653,14 +653,14 @@ const AdminUsersPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-2">Reset Password</h2>
-            <p className="text-sm text-slate-500 mb-6">Updating password for <span className="font-bold text-indigo-600">{resetModal.full_name}</span></p>
+            <p className="text-sm text-slate-500 mb-6">Updating password for <span className="font-bold text-primary">{resetModal.full_name}</span></p>
             <div className="space-y-6">
               <input type="password" autoFocus placeholder="New password..." autoComplete="new-password"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
                 value={newPassword} onChange={e => setNewPassword(e.target.value)} />
               <div className="flex gap-4">
                 <button onClick={(e) => { e.stopPropagation(); setResetModal(null); }} className="flex-1 px-6 py-3 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
-                <button onClick={(e) => { e.stopPropagation(); handleResetPassword(); }} disabled={resetSaving} className="flex-1 px-6 py-3 rounded-xl bg-indigo-600 text-white font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-200">
+                <button onClick={(e) => { e.stopPropagation(); handleResetPassword(); }} disabled={resetSaving} className="flex-1 px-6 py-3 rounded-xl bg-primary text-white font-black uppercase tracking-widest hover:bg-emerald-hover shadow-lg shadow-emerald-glow">
                    {resetSaving ? 'Saving...' : 'Save Password'}
                 </button>
               </div>

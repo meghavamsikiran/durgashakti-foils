@@ -110,7 +110,7 @@ const GstReportsPage = () => {
     const timer = setTimeout(() => {
       load(1);
       loadSilent(1);
-    }, 300);
+    }, 100);
     return () => clearTimeout(timer);
   }, [search, load, loadSilent]);
 
@@ -137,7 +137,7 @@ const GstReportsPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <ClipboardCheck className="w-8 h-8 text-indigo-600" />
+            <ClipboardCheck className="w-8 h-8 text-primary" />
             Compliance Ledger
           </h1>
           <p className="text-slate-500 mt-1 font-medium">Verify GST filings and historical invoice reporting.</p>
@@ -151,7 +151,7 @@ const GstReportsPage = () => {
               placeholder="Invoice # or Customer..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none w-64 transition-all focus:w-80"
+              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
           <button onClick={handleExportGST} className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm">
@@ -162,7 +162,7 @@ const GstReportsPage = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
             <Calculator className="w-6 h-6" />
           </div>
           <div>
@@ -180,7 +180,7 @@ const GstReportsPage = () => {
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-secondary-container text-secondary rounded-xl flex items-center justify-center">
             <Scale className="w-6 h-6" />
           </div>
           <div>
@@ -204,7 +204,7 @@ const GstReportsPage = () => {
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-8 py-5 border-b border-slate-50 flex items-center justify-between">
               <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-indigo-500" />
+                <FileText className="w-4 h-4 text-primary" />
                 Active Reporting Records
               </h3>
             </div>
@@ -228,7 +228,7 @@ const GstReportsPage = () => {
                       <td className="px-8 py-5">
                         <div className="text-xs font-bold text-slate-700">{row.customer_name}</div>
                       </td>
-                      <td className="px-8 py-5 text-right font-black text-indigo-600 text-xs">
+                      <td className="px-8 py-5 text-right font-black text-primary text-xs">
                         ₹{(row.gst_amount || 0).toLocaleString()}
                       </td>
                       <td className="px-8 py-5 text-right font-black text-slate-900 text-xs">
@@ -258,7 +258,7 @@ const GstReportsPage = () => {
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
              <div className="px-8 py-5 border-b border-slate-50">
                 <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                  <History className="w-4 h-4 text-indigo-500" />
+                  <History className="w-4 h-4 text-primary" />
                   Import Integrity
                 </h3>
              </div>

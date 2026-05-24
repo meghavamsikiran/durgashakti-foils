@@ -2,12 +2,13 @@ import apiClient from './core/apiClient';
 
 const notificationService = {
   getNotifications: async () => {
-    const response = await apiClient.get('/user/notifications');
+    const response = await apiClient.cachedGet('/user/notifications', { ttl: 10000, silent: true });
     return response.data;
   },
 
   markAsRead: async () => {
-    const response = await apiClient.put('/user/notifications/read-all');
+    const response = await apiClient.put('/user/notifications/read-all', {}, { silent: true });
+    apiClient.invalidateCache('/user/notifications');
     return response.data;
   },
 };

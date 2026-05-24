@@ -258,17 +258,17 @@ const GstImportPage = () => {
           left: 0;
           right: 0;
           height: 3px;
-          background: linear-gradient(90deg, transparent, #6366f1, #a5b4fc, #6366f1, transparent);
-          box-shadow: 0 0 10px #6366f1, 0 0 20px #818cf8;
+          background: linear-gradient(90deg, transparent, #006e1b, #71ff75, #006e1b, transparent);
+          box-shadow: 0 0 10px #006e1b, 0 0 20px #34e44e;
           animation: laser-sweep 2s ease-in-out infinite;
         }
         .flow-dot {
           position: absolute;
           width: 8px;
           height: 8px;
-          background: #6366f1;
+          background: #006e1b;
           border-radius: 50%;
-          box-shadow: 0 0 8px #6366f1;
+          box-shadow: 0 0 8px #006e1b;
           animation: sync-flow 1.5s linear infinite;
         }
       `}</style>
@@ -277,7 +277,7 @@ const GstImportPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <Database className="w-8 h-8 text-indigo-600 animate-pulse" />
+            <Database className="w-8 h-8 text-primary animate-pulse" />
             Import GST Data
           </h1>
           <p className="text-slate-500 mt-1 font-medium">Verify, validate, and sync GST transaction ledgers with live visualization.</p>
@@ -302,7 +302,7 @@ const GstImportPage = () => {
             }
           }}
         >
-          <Sparkles className="w-4 h-4 mr-2 text-indigo-500 animate-spin" style={{ animationDuration: '3s' }} /> Seed Sample Data
+          <Sparkles className="w-4 h-4 mr-2 text-primary animate-spin" style={{ animationDuration: '3s' }} /> Seed Sample Data
         </Button>
       </div>
 
@@ -321,7 +321,7 @@ const GstImportPage = () => {
             </p>
           </div>
           <div className="flex gap-3">
-            <Button onClick={() => { setPageError(null); loadHistory(); }} className="rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 px-6 py-2.5 shadow-lg shadow-indigo-100">
+            <Button onClick={() => { setPageError(null); loadHistory(); }} className="rounded-xl bg-primary text-white font-bold hover:bg-emerald-hover px-6 py-2.5 shadow-lg shadow-emerald-glow">
               Re-establish Connection
             </Button>
             <Button variant="ghost" onClick={handleCancel} className="rounded-xl border border-slate-200 bg-white">
@@ -339,8 +339,8 @@ const GstImportPage = () => {
           onDragLeave={() => setDragActive(false)}
           className={`group relative border-2 border-dashed rounded-3xl p-16 text-center transition-all duration-300 cursor-pointer ${
             dragActive
-              ? 'border-indigo-400 bg-indigo-50/50 scale-[1.01]'
-              : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/20'
+              ? 'border-primary bg-primary/5 scale-[1.01]'
+              : 'border-slate-200 bg-white hover:border-primary hover:bg-primary/5'
           }`}
           onClick={() => document.getElementById('gst-file-input').click()}
         >
@@ -351,7 +351,7 @@ const GstImportPage = () => {
             className="hidden"
             onChange={(e) => handleFileSelect(e.target.files?.[0])}
           />
-          <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-inner transition-transform duration-300 group-hover:scale-110">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-3xl bg-primary/10 text-primary flex items-center justify-center shadow-inner transition-transform duration-300 group-hover:scale-110">
             <Upload className="w-10 h-10" />
           </div>
           <h3 className="text-xl font-bold text-slate-800 mb-2">Drag & Drop Compliance File</h3>
@@ -364,8 +364,8 @@ const GstImportPage = () => {
         <div className="bg-slate-950 text-slate-200 rounded-3xl border border-slate-800 shadow-2xl p-8 overflow-hidden animate-in zoom-in-95 duration-200">
           <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
             <div className="flex items-center gap-2.5">
-              <Cpu className="w-5 h-5 text-indigo-400 animate-spin" />
-              <span className="text-xs font-mono font-bold tracking-widest text-indigo-400 uppercase">GST COMPLIANCE SCANNER v1.2</span>
+              <Cpu className="w-5 h-5 text-primary animate-spin" />
+              <span className="text-xs font-mono font-bold tracking-widest text-primary uppercase">GST COMPLIANCE SCANNER v1.2</span>
             </div>
             <div className="text-[10px] font-mono text-slate-500 bg-slate-900 px-3 py-1 rounded border border-slate-800">
               STATUS: {scanningStatus}
@@ -378,7 +378,7 @@ const GstImportPage = () => {
               <div className="absolute inset-0 bg-[radial-gradient(#1e1b4b_1px,transparent_1px)] [background-size:16px_16px] opacity-35" />
               
               {/* Document Scanning Layout */}
-              <div className="relative w-24 h-32 bg-slate-800/80 rounded-xl border border-indigo-500/30 flex flex-col justify-between p-3 shadow-2xl overflow-hidden">
+              <div className="relative w-24 h-32 bg-slate-800/80 rounded-xl border border-primary/20 flex flex-col justify-between p-3 shadow-2xl overflow-hidden">
                 <div className="laser-line" />
                 <div className="w-1/2 h-2 bg-slate-600 rounded" />
                 <div className="space-y-2 py-4">
@@ -386,8 +386,8 @@ const GstImportPage = () => {
                   <div className="w-5/6 h-1.5 bg-slate-700 rounded" />
                   <div className="w-full h-1.5 bg-slate-700 rounded" />
                 </div>
-                <div className="w-full h-2 bg-indigo-500/20 border border-indigo-500/40 rounded flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-ping" />
+                <div className="w-full h-2 bg-primary/10 border border-primary/30 rounded flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" />
                 </div>
               </div>
               <p className="text-[10px] font-mono text-slate-400 mt-4 tracking-widest uppercase">READING FILE PACKETS...</p>
@@ -402,17 +402,17 @@ const GstImportPage = () => {
                   const isActive = scanStep === idx + 1;
                   return (
                     <div key={col} className={`flex items-center gap-3 px-4 py-3 rounded-xl border font-mono text-xs transition-all duration-300 ${
-                      status === 'matched' ? 'bg-indigo-950/30 border-indigo-500/30 text-indigo-300' :
+                      status === 'matched' ? 'bg-primary/10 border-primary/20 text-primary' :
                       status === 'missing' ? 'bg-rose-950/20 border-rose-900/30 text-rose-300' :
-                      isActive ? 'bg-slate-900 border-indigo-500 text-indigo-400 scale-[1.01] shadow-lg shadow-indigo-500/5' :
+                      isActive ? 'bg-slate-900 border-primary text-primary scale-[1.01] shadow-lg shadow-emerald-glow' :
                       'bg-slate-900/40 border-slate-800 text-slate-600'
                     }`}>
                       {status === 'matched' ? (
-                        <div className="w-5 h-5 rounded-full bg-indigo-500 text-slate-950 flex items-center justify-center"><Check className="w-3 h-3 stroke-[3]" /></div>
+                        <div className="w-5 h-5 rounded-full bg-primary text-slate-950 flex items-center justify-center"><Check className="w-3 h-3 stroke-[3]" /></div>
                       ) : status === 'missing' ? (
                         <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center"><X className="w-3 h-3 stroke-[3]" /></div>
                       ) : isActive ? (
-                        <RefreshCw className="w-4 h-4 text-indigo-400 animate-spin" />
+                        <RefreshCw className="w-4 h-4 text-primary animate-spin" />
                       ) : (
                         <div className="w-4 h-4 rounded-full border border-slate-700" />
                       )}
@@ -428,7 +428,7 @@ const GstImportPage = () => {
               {/* Record counter ticker */}
               <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
                 <span className="text-xs font-mono font-semibold text-slate-400">LEDGER ENTRIES IDENTIFIED:</span>
-                <span className="text-lg font-mono font-black text-indigo-400 tracking-wider">
+                <span className="text-lg font-mono font-black text-primary tracking-wider">
                   {liveRows} <span className="text-[10px] text-slate-500">ROWS</span>
                 </span>
               </div>
@@ -442,7 +442,7 @@ const GstImportPage = () => {
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden animate-in zoom-in-95 duration-200">
           <div className="px-8 py-6 bg-slate-50/50 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                 <FileSpreadsheet className="w-5 h-5 animate-pulse" />
               </div>
               <div>
@@ -501,7 +501,7 @@ const GstImportPage = () => {
             <Button 
               onClick={handleConfirmImport} 
               disabled={!isValidFile}
-              className="rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 px-6 py-2.5"
+              className="rounded-xl bg-primary text-white font-bold hover:bg-emerald-hover shadow-lg shadow-emerald-glow px-6 py-2.5"
             >
               Sync Records with DB <ChevronRight className="w-4 h-4 ml-1.5" />
             </Button>
@@ -516,7 +516,7 @@ const GstImportPage = () => {
           
           {/* Node sync flow graphic */}
           <div className="relative w-full max-w-md h-24 flex items-center justify-between mb-8 px-8">
-            <div className="relative z-10 w-16 h-16 rounded-2xl bg-indigo-600/90 text-white flex items-center justify-center shadow-lg border border-indigo-400/30">
+            <div className="relative z-10 w-16 h-16 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg border border-primary/30">
               <FileSpreadsheet className="w-8 h-8" />
             </div>
             
@@ -527,7 +527,7 @@ const GstImportPage = () => {
               <div className="flow-dot" style={{ animationDelay: '1s' }} />
             </div>
 
-            <div className="relative z-10 w-16 h-16 rounded-2xl bg-indigo-900/80 text-indigo-400 flex items-center justify-center border border-indigo-500/20 shadow-2xl">
+            <div className="relative z-10 w-16 h-16 rounded-2xl bg-primary/20 text-primary flex items-center justify-center border border-primary/20 shadow-2xl">
               <Server className="w-8 h-8 animate-pulse" />
             </div>
           </div>
@@ -584,7 +584,7 @@ const GstImportPage = () => {
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-8 py-6 bg-slate-50/50 border-b border-slate-200 flex items-center justify-between">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-indigo-600" /> Import History
+            <Clock className="w-4 h-4 text-primary" /> Import History
           </h3>
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white px-3 py-1 rounded-full border">
             {history.length} runs

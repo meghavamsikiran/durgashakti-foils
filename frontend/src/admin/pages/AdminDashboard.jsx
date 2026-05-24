@@ -10,17 +10,17 @@ import {
 import PageLoader from '../../components/ui/PageLoader';
 
 const metricConfigs = {
-  total_orders: { label: 'Total Orders', icon: ShoppingBag, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  total_orders: { label: 'Total Orders', icon: ShoppingBag, color: 'text-primary', bg: 'bg-primary/10' },
   orders_today: { label: "Today's Orders", icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
-  total_products: { label: 'Total Products', icon: Package, color: 'text-purple-600', bg: 'bg-purple-50' },
+  total_products: { label: 'Total Products', icon: Package, color: 'text-secondary', bg: 'bg-secondary-container' },
   total_customers: { label: 'Total Customers', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  total_revenue: { label: 'Total Revenue', icon: IndianRupee, color: 'text-blue-600', bg: 'bg-blue-50' },
+  total_revenue: { label: 'Total Revenue', icon: IndianRupee, color: 'text-secondary', bg: 'bg-secondary-container' },
   total_inventory_value: { label: 'Stock Value', icon: IndianRupee, color: 'text-rose-600', bg: 'bg-rose-50' },
-  total_units_sold: { label: 'Units Sold', icon: TrendingUp, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  total_units_sold: { label: 'Units Sold', icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' },
   stock_health: { label: 'Stock Health', icon: Activity, color: 'text-emerald-600', bg: 'bg-emerald-50' },
   sales_velocity: { label: 'Daily Velocity', icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
   top_performer: { label: 'Top Performer', icon: Trophy, color: 'text-amber-600', bg: 'bg-amber-50' },
-  fastest_mover: { label: 'Fastest Mover', icon: Zap, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+  fastest_mover: { label: 'Fastest Mover', icon: Zap, color: 'text-primary', bg: 'bg-primary/10' },
 };
 
 const AdminDashboard = () => {
@@ -95,7 +95,7 @@ const AdminDashboard = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <LayoutDashboard className="w-8 h-8 text-indigo-600" />
+            <LayoutDashboard className="w-8 h-8 text-primary" />
             Business Overview
           </h1>
           <p className="text-slate-500 mt-1 font-medium text-sm">A summary of your business performance at Durga Shakti Foils.</p>
@@ -144,8 +144,8 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
          <div className="lg:col-span-2 bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl">
             <div className="relative z-10 space-y-8">
-               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[10px] font-black uppercase tracking-widest">
-                  {loading ? <div className="w-3 h-3 border-2 border-indigo-300 border-t-transparent rounded-full animate-spin"></div> : <Activity className="w-3 h-3" />}
+               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest">
+                  {loading ? <div className="w-3 h-3 border-2 border-primary/30 border-t-transparent rounded-full animate-spin"></div> : <Activity className="w-3 h-3" />}
                   {loading ? "Checking Status..." : "Live Data Active"}
                </div>
                
@@ -175,13 +175,13 @@ const AdminDashboard = () => {
             </div>
          </div>
 
-          <div className="bg-indigo-600 rounded-[2.5rem] p-10 text-white flex flex-col justify-between shadow-xl shadow-indigo-200 relative overflow-hidden group">
+          <div className="bg-primary rounded-[2.5rem] p-10 text-white flex flex-col justify-between shadow-xl shadow-emerald-glow relative overflow-hidden group">
             <div className="space-y-4 relative z-10">
                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center group-hover:bg-white/20 transition-colors">
                   <TrendingUp className="w-6 h-6 text-white" />
                </div>
                <h3 className="text-xl font-black uppercase tracking-tighter">Velocity Report</h3>
-               <p className="text-indigo-100 text-sm leading-relaxed">System performance is optimal. Total sales velocity is up by 14.2% across all metrics.</p>
+               <p className="text-white/75 text-sm leading-relaxed">System performance is optimal. Total sales velocity is up by 14.2% across all metrics.</p>
             </div>
             
             <div className="mt-8 relative z-10">
@@ -192,7 +192,7 @@ const AdminDashboard = () => {
                </div>
                <button 
                   onClick={() => navigate('/admin/analytics')}
-                  className="w-full py-4 bg-white text-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-all shadow-lg active:scale-95"
+                  className="w-full py-4 bg-white text-primary rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/10 transition-all shadow-lg active:scale-95"
                >
                   Full Insights
                </button>

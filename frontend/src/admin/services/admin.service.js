@@ -89,7 +89,7 @@ const adminService = {
   },
   updateOrderStatus: (orderId, payload) => {
     invalidateCache('/admin/orders');
-    return apiClient.put(`/admin/orders/${orderId}/status`, payload);
+    return apiClient.put(`/admin/orders/${orderId}/status`, payload, { silent: true });
   },
 
   // Customers

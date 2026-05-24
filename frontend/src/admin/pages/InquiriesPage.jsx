@@ -112,7 +112,7 @@ const InquiriesPage = () => {
   const getStatusStyle = (status) => {
     switch (status) {
       case 'resolved': return 'bg-emerald-50 text-emerald-600 border-emerald-200';
-      case 'replied': return 'bg-indigo-50 text-indigo-600 border-indigo-200';
+      case 'replied': return 'bg-primary/10 text-primary border-primary/20';
       case 'in_progress': return 'bg-amber-50 text-amber-600 border-amber-200';
       default: return 'bg-slate-50 text-slate-600 border-slate-200';
     }
@@ -135,7 +135,7 @@ const InquiriesPage = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200/60">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-lg shadow-emerald-glow text-white">
               <MessageSquare className="w-6 h-6" />
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900" style={{ fontFamily: 'Manrope, sans-serif' }}>
@@ -150,9 +150,9 @@ const InquiriesPage = () => {
       <div className="bg-white rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/20 overflow-hidden backdrop-blur-xl">
         <div className="px-8 py-6 bg-slate-50/50 border-b border-slate-200/60 flex items-center justify-between">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-indigo-600" /> Recent Messages
+            <Clock className="w-4 h-4 text-primary" /> Recent Messages
           </h3>
-          <span className="text-xs font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-4 py-1.5 rounded-full border border-indigo-100/50 shadow-sm">
+          <span className="text-xs font-black uppercase tracking-widest text-primary bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20 shadow-sm">
             {total} Total
           </span>
         </div>
@@ -203,7 +203,7 @@ const InquiriesPage = () => {
             actions: (
               <button 
                 onClick={() => setSelectedInquiry(item)}
-                className="bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm active:scale-95"
+                className="bg-slate-100 hover:bg-primary hover:text-white text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm active:scale-95"
               >
                 Review
               </button>
@@ -215,11 +215,11 @@ const InquiriesPage = () => {
       {/* Inquiry Detail Modal */}
       {selectedInquiry && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2rem] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 shadow-2xl shadow-indigo-900/20 border border-white/50 flex flex-col scrollbar-thin">
+          <div className="bg-white rounded-[2rem] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 shadow-2xl shadow-slate-900/10 border border-white/50 flex flex-col scrollbar-thin">
             <div className="flex justify-between items-start mb-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <MessageSquare className="w-5 h-5" />
                   </div>
                   <h3 className="text-2xl font-extrabold text-slate-900" style={{ fontFamily: 'Manrope, sans-serif' }}>
@@ -240,7 +240,7 @@ const InquiriesPage = () => {
               {/* Customer Info Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center gap-4 text-slate-700 bg-slate-50/80 p-4 rounded-2xl border border-slate-100/50">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-indigo-500">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-primary">
                     <User className="w-5 h-5" />
                   </div>
                   <div>
@@ -250,7 +250,7 @@ const InquiriesPage = () => {
                 </div>
 
                 <div className="flex items-center gap-4 text-slate-700 bg-slate-50/80 p-4 rounded-2xl border border-slate-100/50">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-indigo-500">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-primary">
                     <Mail className="w-5 h-5" />
                   </div>
                   <div>
@@ -260,7 +260,7 @@ const InquiriesPage = () => {
                 </div>
 
                 <div className="flex items-center gap-4 text-slate-700 bg-slate-50/80 p-4 rounded-2xl border border-slate-100/50">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-indigo-500">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-primary">
                     <Phone className="w-5 h-5" />
                   </div>
                   <div>
@@ -270,7 +270,7 @@ const InquiriesPage = () => {
                 </div>
 
                 <div className="flex items-center gap-4 text-slate-700 bg-slate-50/80 p-4 rounded-2xl border border-slate-100/50">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-indigo-500">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-primary">
                     <Calendar className="w-5 h-5" />
                   </div>
                   <div>
@@ -283,7 +283,7 @@ const InquiriesPage = () => {
               {/* Message Content */}
               <div className="flex flex-col gap-3 text-slate-700 bg-gradient-to-b from-slate-50/80 to-slate-100/50 p-6 rounded-3xl border border-slate-200/60 shadow-inner">
                 <div className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] tracking-widest">
-                  <FileText className="w-4 h-4 text-indigo-500" /> Full Message
+                  <FileText className="w-4 h-4 text-primary" /> Full Message
                 </div>
                 <p className="text-slate-800 text-sm leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-300 font-medium">
                   {selectedInquiry.message}
@@ -310,8 +310,8 @@ const InquiriesPage = () => {
 
               {/* Reply History */}
               {selectedInquiry.reply_message && (
-                <div className="flex flex-col gap-3 text-slate-700 bg-indigo-50/50 p-6 rounded-3xl border border-indigo-100 shadow-sm">
-                  <div className="flex items-center gap-2 text-indigo-600 font-black uppercase text-[10px] tracking-widest">
+                <div className="flex flex-col gap-3 text-slate-700 bg-primary/5 p-6 rounded-3xl border border-primary/20 shadow-sm">
+                  <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest">
                     <Mail className="w-4 h-4" /> Reply Sent {selectedInquiry.replied_at && `on ${new Date(selectedInquiry.replied_at).toLocaleString()}`}
                   </div>
                   <p className="text-slate-800 text-sm leading-relaxed whitespace-pre-wrap font-medium">
@@ -337,13 +337,13 @@ const InquiriesPage = () => {
                       value={replyMessage}
                       onChange={(e) => setReplyMessage(e.target.value)}
                       placeholder="Type your response email here..."
-                      className="w-full min-h-[100px] rounded-xl border border-slate-200 bg-slate-50/50 p-4 text-sm focus:border-indigo-500 focus:ring-0 transition-all outline-none"
+                      className="w-full min-h-[100px] rounded-xl border border-slate-200 bg-slate-50/50 p-4 text-sm focus:border-primary focus:ring-0 transition-all outline-none"
                     />
                   </div>
                   <Button
                     type="submit"
                     disabled={submittingReply}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest py-3 rounded-xl text-xs transition-all shadow-md disabled:opacity-50"
+                    className="w-full bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest py-3 rounded-xl text-xs transition-all shadow-md disabled:opacity-50"
                   >
                     {submittingReply ? 'Sending Email...' : 'Send Reply Email'}
                   </Button>
@@ -354,7 +354,7 @@ const InquiriesPage = () => {
             <div className="mt-8 flex justify-end">
               <Button 
                 onClick={() => setSelectedInquiry(null)}
-                className="bg-slate-900 text-white font-extrabold text-sm px-8 py-4 rounded-2xl tracking-wide hover:bg-indigo-600 transition-all shadow-lg hover:shadow-indigo-500/25 active:scale-95"
+                className="bg-slate-900 text-white font-extrabold text-sm px-8 py-4 rounded-2xl tracking-wide hover:bg-primary transition-all shadow-lg hover:shadow-emerald-glow active:scale-95"
               >
                 Close Details
               </Button>

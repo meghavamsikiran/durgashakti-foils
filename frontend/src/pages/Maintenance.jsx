@@ -84,7 +84,7 @@ const Maintenance = () => {
           repeat: Infinity,
           ease: "easeInOut"
         }}
-        className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none"
+        className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-primary/10 blur-[120px] pointer-events-none"
       />
       
       {/* ─── Fine Premium Grid Overlay ─── */}
