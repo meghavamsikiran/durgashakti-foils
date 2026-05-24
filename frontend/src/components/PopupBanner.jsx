@@ -15,6 +15,7 @@ const PopupBanner = () => {
   const hideTimerRef = useRef(null);
   const homeShownRef = useRef(false);
   const checkoutShownRef = useRef(false);
+  const prevUserRef = useRef(user);
 
   // Load public settings to fetch promoted coupons
   useEffect(() => {
@@ -40,8 +41,10 @@ const PopupBanner = () => {
     }
 
     const path = location.pathname;
+    const justLoggedIn = !prevUserRef.current && user;
+    prevUserRef.current = user;
     
-    // Clear any pending timers when path changes
+    // Clear any pending timers when path changes or login state changes
     if (timerRef.current) clearTimeout(timerRef.current);
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
 
@@ -55,8 +58,8 @@ const PopupBanner = () => {
       }, 5000);
     }
     
-    // Rule 2: Landing Page (/) & User logged in -> Wait 5s, then show for 5s
-    else if (path === '/' && user && !homeShownRef.current) {
+    // Rule 2: Landing Page (/) or Just Logged In -> Wait 5s, then show for 5s
+    else if (((path === '/' && user) || justLoggedIn) && !homeShownRef.current) {
       homeShownRef.current = true;
       
       timerRef.current = setTimeout(() => {
