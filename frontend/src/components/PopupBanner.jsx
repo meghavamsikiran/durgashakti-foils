@@ -180,7 +180,12 @@ const PopupBanner = () => {
     }
   };
 
-  const { background_gradient, emoji_pattern, animation_style, border_color, text_gradient } = theme.theme_config;
+  const themeConfig = theme.theme_config || {};
+  const background_gradient = themeConfig.background_gradient || 'from-[#4d0b5a] via-[#2f0438] to-[#1a0120]';
+  const emoji_pattern = themeConfig.emoji_pattern || '⚡🎁🔥';
+  const animation_style = themeConfig.animation_style || 'pulse';
+  const border_color = themeConfig.border_color || 'border-amber-400';
+  const text_gradient = themeConfig.text_gradient || 'from-amber-300 via-orange-400 to-yellow-200';
 
   // Grid layout class based on number of coupons to promote centering
   const cardContainerClass = coupons.length === 1

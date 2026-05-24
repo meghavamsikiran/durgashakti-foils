@@ -15,118 +15,281 @@ const generateThemedBanner = (context) => {
   // Default values
   let title = `${ctx} SPECIAL SALE`;
   let subtitle = "Special festive discounts just for you! Apply code at checkout.";
-  let bgGradient = "from-[#4d0b5a] via-[#2f0438] to-[#1a0120]"; // default purple
-  let textGradient = "from-amber-300 via-orange-400 to-yellow-200";
+  let bgGradient = "from-[#2e0854] via-[#1c0336] to-[#0f001f]"; // dark violet default
+  let textGradient = "from-amber-200 via-orange-400 to-yellow-250";
   let borderColor = "border-amber-400";
   let emojiPattern = "⚡🎁🔥";
   let animationStyle = "pulse";
 
   if (ctx.includes("DIWALI") || ctx.includes("DEEPAVALI")) {
-    title = "✨ DIWALI DHAMAKA SALE ✨";
-    subtitle = "Celebrate the Festival of Lights with pure premium packaging. Brighten your festive kitchen with exclusive savings!";
-    bgGradient = "from-[#3b0d11] via-[#1f0206] to-[#000000]";
-    textGradient = "from-amber-200 via-yellow-400 to-amber-500";
-    borderColor = "border-amber-500";
-    emojiPattern = "🪔✨🎇🎉";
+    title = "🪔 FESTIVE DIWALI DHAMAKA SALE 🪔";
+    subtitle = "Celebrate the Festival of Lights with pure premium packaging. Light up your kitchen with golden festive savings!";
+    bgGradient = "from-[#0b0621] via-[#160c40] to-[#04010a]"; // Deep glowing navy/indigo night sky
+    textGradient = "from-[#ffe066] via-[#f59e0b] to-[#ea580c]"; // Glowing saffron gold
+    borderColor = "border-[#f59e0b]";
+    emojiPattern = "🪔✨🎆🎉";
     animationStyle = "sparkle";
-  } else if (ctx.includes("CHRISTMAS") || ctx.includes("XMAS") || ctx.includes("NEW YEAR")) {
-    title = "🎄 MERRY CHRISTMAS & HAPPY NEW YEAR 🎄";
+  } else if (ctx.includes("CHRISTMAS") || ctx.includes("XMAS") || ctx.includes("WINTER")) {
+    title = "🎄 MERRY CHRISTMAS CELEBRATION 🎄";
     subtitle = "Unwrap premium holiday savings! Bring magic and freshness to your festive family meals.";
-    bgGradient = "from-[#022c22] via-[#052e16] to-[#020617]";
-    textGradient = "from-red-400 via-yellow-200 to-emerald-300";
+    bgGradient = "from-[#022c22] via-[#0f172a] to-[#0b0f19]"; // Rich evergreen/teal night
+    textGradient = "from-red-400 via-yellow-100 to-emerald-400";
     borderColor = "border-red-500";
-    emojiPattern = "🎅❄️🎁🦌";
+    emojiPattern = "🎅❄️🎁🎄";
     animationStyle = "snow";
-  } else if (ctx.includes("PONGAL") || ctx.includes("SANKRANTI") || ctx.includes("HARVEST") || ctx.includes("LOHRI") || ctx.includes("ONAM")) {
+  } else if (ctx.includes("PONGAL") || ctx.includes("SANKRANTI") || ctx.includes("HARVEST") || ctx.includes("ONAM") || ctx.includes("VISHU")) {
     title = "🌾 HAPPY PONGAL & SANKRANTI 🌾";
     subtitle = "Bring home the harvest of happiness! Premium quality kitchen foils for your traditional recipes.";
-    bgGradient = "from-[#0f3a20] via-[#081c15] to-[#010a07]";
-    textGradient = "from-yellow-300 via-orange-300 to-yellow-100";
-    borderColor = "border-yellow-400";
+    bgGradient = "from-[#0f3a20] via-[#052e16] to-[#021c0e]"; // Sugarcane harvest green
+    textGradient = "from-[#fed7aa] via-[#f59e0b] to-[#84cc16]"; // Peach to gold to lime
+    borderColor = "border-[#f59e0b]";
     emojiPattern = "🌾🌞🪁🍯";
     animationStyle = "float";
-  } else if (ctx.includes("ANNIVERSARY") || ctx.includes("BIRTHDAY") || ctx.includes("CELEBRATION")) {
-    title = "🎉 ANNIVERSARY CELEBRATION SALE 🎉";
-    subtitle = "Celebrating a milestone of excellence with our beloved customers! Extra discount inside.";
-    bgGradient = "from-[#5b0827] via-[#3b0216] to-[#120005]";
-    textGradient = "from-pink-300 via-amber-300 to-rose-200";
-    borderColor = "border-pink-500";
-    emojiPattern = "💝🎂🎉🎈";
-    animationStyle = "float";
-  } else if (ctx.includes("INDEPENDENCE") || ctx.includes("REPUBLIC") || ctx.includes("INDIA") || ctx.includes("FREEDOM")) {
-    title = "🇮🇳 PATRIOTIC INDEPENDENCE DAY SALE 🇮🇳";
-    subtitle = "Celebrating the spirit of purity, freedom, and strength. Truly Indian premium kitchen foils.";
-    bgGradient = "from-[#090d16] via-[#111827] to-[#020617]";
-    textGradient = "from-[#ff9933] via-white to-[#128807]";
+  } else if (ctx.includes("LOHRI")) {
+    title = "🔥 HAPPY LOHRI CELEBRATION 🔥";
+    subtitle = "Warm wishes and delicious recipes! Premium wraps for the auspicious bonfire festival.";
+    bgGradient = "from-[#2d0f05] via-[#7c2d12] to-[#1c0702]"; // Bonfire orange
+    textGradient = "from-yellow-200 via-amber-300 to-orange-500";
+    borderColor = "border-orange-500";
+    emojiPattern = "🔥🌾🍿🥜";
+    animationStyle = "pulse";
+  } else if (ctx.includes("INDEPENDENCE") || ctx.includes("REPUBLIC") || ctx.includes("INDIA") || ctx.includes("FREEDOM") || ctx.includes("PATRIOTIC")) {
+    title = "🇮🇳 PATRIOTIC CELEBRATION SALE 🇮🇳";
+    subtitle = "Celebrating the spirit of purity, freedom, and strength. Truly Indian premium kitchen wraps.";
+    bgGradient = "from-[#0b0f19] via-[#111827] to-[#030712]"; // Deep navy
+    textGradient = "from-[#ff9933] via-white to-[#128807]"; // Tricolor
     borderColor = "border-[#ff9933]";
     emojiPattern = "🇮🇳🦅⚡🎖️";
     animationStyle = "tricolor";
-  } else if (ctx.includes("SUMMER")) {
-    title = "☀️ HOT SUMMER BLOWOUT ☀️";
-    subtitle = "Beat the heat with coolest deals on premium wraps. Perfect for summer picnics and BBQs!";
-    bgGradient = "from-[#ea580c] via-[#7c2d12] to-[#3f0f00]";
-    textGradient = "from-yellow-200 via-amber-300 to-yellow-100";
-    borderColor = "border-yellow-300";
-    emojiPattern = "☀️🌊🍦⛱️";
-    animationStyle = "pulse";
-  } else if (ctx.includes("MONSOON") || ctx.includes("RAIN")) {
-    title = "⛈️ MONSOON DHAMAKA SPECIAL ⛈️";
-    subtitle = "Keep your food fresh and hot during the rains. Protect your kitchen with Durga Shakti Foils.";
-    bgGradient = "from-[#0f172a] via-[#1e3a8a] to-[#090d16]";
-    textGradient = "from-blue-200 via-sky-300 to-cyan-100";
-    borderColor = "border-sky-400";
-    emojiPattern = "⛈️🌧️☂️☔";
-    animationStyle = "snow";
-  } else if (ctx.includes("EID") || ctx.includes("RAMADAN")) {
-    title = "🌙 EID MUBARAK SPECIAL SALE 🌙";
-    subtitle = "Share the feast of joy and blessings! Premium food wraps for your Eid delicacies.";
-    bgGradient = "from-[#022c22] via-[#044e36] to-[#011c12]";
-    textGradient = "from-yellow-200 via-amber-300 to-emerald-100";
+  } else if (ctx.includes("ANNIVERSARY") || ctx.includes("BIRTHDAY") || ctx.includes("CELEBRATION") || ctx.includes("WEDDING")) {
+    title = "🎉 ANNIVERSARY CELEBRATION 🎉";
+    subtitle = "Celebrating a milestone of excellence with our beloved customers! Extra discount inside.";
+    bgGradient = "from-[#4c0519] via-[#881337] to-[#1e0008]"; // Burgundy
+    textGradient = "from-pink-300 via-amber-250 to-rose-300";
+    borderColor = "border-pink-500";
+    emojiPattern = "🎂🎉🎈🎁";
+    animationStyle = "float";
+  } else if (ctx.includes("VALENTINE") || ctx.includes("LOVE") || ctx.includes("ROSE") || ctx.includes("ROMANCE")) {
+    title = "💖 VALENTINE'S SPECIAL SALE 💖";
+    subtitle = "Made with love, wrapped with care. Treat your loved ones to fresh, delicious home-cooked meals!";
+    bgGradient = "from-[#831843] via-[#4c0519] to-[#1e0008]"; // Deep pink/rose
+    textGradient = "from-pink-200 via-rose-300 to-amber-200";
+    borderColor = "border-pink-400";
+    emojiPattern = "💖🌹🍫🎁";
+    animationStyle = "float";
+  } else if (ctx.includes("EASTER") || ctx.includes("SPRING")) {
+    title = "🐰 HAPPY EASTER SPECIAL 🐰";
+    subtitle = "Hop into fresh spring savings! Beautiful family dinners wrapped in premium quality.";
+    bgGradient = "from-[#1e293b] via-[#0f172a] to-[#020617]"; // Slate/dark night
+    textGradient = "from-pink-300 via-emerald-250 to-sky-300"; // Pastel-ish gradient
+    borderColor = "border-pink-300";
+    emojiPattern = "🐰🐣🌸🥚";
+    animationStyle = "float";
+  } else if (ctx.includes("HALLOWEEN") || ctx.includes("SPOOKY")) {
+    title = "🎃 HALLOWEEN SPOOKY SALE 🎃";
+    subtitle = "Scary good deals on premium food wraps! Keep your treats fresh and delicious.";
+    bgGradient = "from-[#0f0c1b] via-[#241203] to-[#09000a]"; // Dark spooky purple-orange
+    textGradient = "from-[#ea580c] via-[#f59e0b] to-[#ea580c]";
+    borderColor = "border-[#ea580c]";
+    emojiPattern = "🎃👻🦇🍬";
+    animationStyle = "float";
+  } else if (ctx.includes("NEW YEAR") || ctx.includes("EVE")) {
+    title = "🥂 HAPPY NEW YEAR CELEBRATION 🥂";
+    subtitle = "Toast to fresh beginnings and huge savings! Premium quality wraps for the new year.";
+    bgGradient = "from-[#020617] via-[#1e1b4b] to-[#0f172a]"; // Sparkling night
+    textGradient = "from-yellow-250 via-amber-300 to-yellow-100";
+    borderColor = "border-amber-400";
+    emojiPattern = "🥂✨🎉🎆";
+    animationStyle = "sparkle";
+  } else if (ctx.includes("EID") || ctx.includes("RAMADAN") || ctx.includes("IFTAR")) {
+    title = "🌙 BLESSED EID & RAMADAN SPECIAL 🌙";
+    subtitle = "Share the feast of joy and blessings! Premium food wraps for your festive delicacies.";
+    bgGradient = "from-[#012217] via-[#044e36] to-[#00140e]"; // Holy emerald green
+    textGradient = "from-yellow-250 via-amber-300 to-emerald-250";
     borderColor = "border-amber-400";
     emojiPattern = "🌙✨🕌🤝";
     animationStyle = "sparkle";
   } else if (ctx.includes("HOLI")) {
-    title = "🎨 HOLI FESTIVAL OF COLORS SALE 🎨";
+    title = "🎨 HOLI FESTIVAL OF COLORS 🎨";
     subtitle = "Splashes of joy, colors, and huge savings! Keep your festive treats delicious and fresh.";
-    bgGradient = "from-[#3b0764] via-[#5b21b6] to-[#1e1b4b]";
+    bgGradient = "from-[#3b0764] via-[#5b21b6] to-[#1e1b4b]"; // Festive magenta purple
     textGradient = "from-pink-300 via-yellow-200 to-cyan-300";
     borderColor = "border-pink-400";
     emojiPattern = "🎨✨🎉🥳";
     animationStyle = "sparkle";
-  } else {
-    const templates = [
+  } else if (ctx.includes("DURGA") || ctx.includes("SHAKTI") || ctx.includes("NAVRATRI") || ctx.includes("DUSSEHRA") || ctx.includes("PUJA")) {
+    title = "🪔 HAPPY NAVRATRI & DUSSEHRA 🪔";
+    subtitle = "Celebrate the victory of good over evil. Premium food wraps for your traditional home-cooked feasts.";
+    bgGradient = "from-[#450a0a] via-[#7f1d1d] to-[#1a0505]"; // Royal festive red
+    textGradient = "from-yellow-100 via-amber-400 to-orange-500";
+    borderColor = "border-yellow-400";
+    emojiPattern = "🪔🔱🌸🔥";
+    animationStyle = "sparkle";
+  } else if (ctx.includes("SUMMER")) {
+    title = "☀️ HOT SUMMER BLOWOUT ☀️";
+    subtitle = "Beat the heat with coolest deals on premium wraps. Perfect for summer picnics and BBQs!";
+    bgGradient = "from-[#7c2d12] via-[#ea580c] to-[#3f160a]"; // Sunburst orange
+    textGradient = "from-yellow-250 via-amber-300 to-yellow-100";
+    borderColor = "border-yellow-400";
+    emojiPattern = "☀️🌊🍦⛱️";
+    animationStyle = "pulse";
+  } else if (ctx.includes("MONSOON") || ctx.includes("RAIN") || ctx.includes("CLOUDY")) {
+    title = "⛈️ MONSOON SPECIAL SALE ⛈️";
+    subtitle = "Keep your food fresh and hot during the rains. Protect your kitchen with Durga Shakti Foils.";
+    bgGradient = "from-[#0f172a] via-[#1e3a8a] to-[#090d16]"; // Rainy deep blue
+    textGradient = "from-blue-200 via-sky-300 to-cyan-150";
+    borderColor = "border-sky-400";
+    emojiPattern = "⛈️🌧️☂️☔";
+    animationStyle = "snow";
+  }
+  // Color words check
+  else if (ctx.includes("GOLD") || ctx.includes("YELLOW") || ctx.includes("SAFFRON") || ctx.includes("AMBER")) {
+    title = `✨ ${ctx} PREMIUM OFFER ✨`;
+    subtitle = "Luxury packaging solutions with gold-standard savings. Limited time special offer!";
+    bgGradient = "from-[#2e1f02] via-[#453003] to-[#140e01]"; // Dark amber gold
+    textGradient = "from-yellow-100 via-amber-300 to-yellow-400";
+    borderColor = "border-amber-400";
+    emojiPattern = "👑🏆✨💰";
+    animationStyle = "sparkle";
+  } else if (ctx.includes("GREEN") || ctx.includes("MINT") || ctx.includes("ECO") || ctx.includes("NATURE") || ctx.includes("ORGANIC") || ctx.includes("FOREST")) {
+    title = `🌿 ${ctx} ECO-FRIENDLY SPECIAL 🌿`;
+    subtitle = "Go green, stay fresh! Premium sustainable wraps for a healthy, green kitchen.";
+    bgGradient = "from-[#022c22] via-[#064e3b] to-[#012216]"; // Emerald green
+    textGradient = "from-emerald-300 via-green-100 to-yellow-250";
+    borderColor = "border-emerald-500";
+    emojiPattern = "🌿🍀🍃♻️";
+    animationStyle = "float";
+  } else if (ctx.includes("BLUE") || ctx.includes("OCEAN") || ctx.includes("SKY") || ctx.includes("WATER") || ctx.includes("COOL") || ctx.includes("ICE")) {
+    title = `❄️ ${ctx} REFRESHING SPECIAL ❄️`;
+    subtitle = "Lock in extreme freshness and flavor! Cool deals for your storage needs.";
+    bgGradient = "from-[#0c4a6e] via-[#075985] to-[#031d2c]"; // Deep ocean blue
+    textGradient = "from-sky-200 via-cyan-100 to-indigo-300";
+    borderColor = "border-sky-400";
+    emojiPattern = "🌊❄️🧊💧";
+    animationStyle = "snow";
+  } else if (ctx.includes("RED") || ctx.includes("FIRE") || ctx.includes("HOT") || ctx.includes("SPICY") || ctx.includes("RUBY") || ctx.includes("CRIMSON")) {
+    title = `🔥 ${ctx} SIZZLING DEAL 🔥`;
+    subtitle = "Hot deals that won't last! Keep your food sizzling hot and fresh with Durga Shakti.";
+    bgGradient = "from-[#450a0a] via-[#7f1d1d] to-[#180202]"; // Ruby red/crimson
+    textGradient = "from-red-300 via-orange-300 to-yellow-100";
+    borderColor = "border-red-500";
+    emojiPattern = "🔥🌶️⚡💥";
+    animationStyle = "pulse";
+  } else if (ctx.includes("DARK") || ctx.includes("BLACK") || ctx.includes("NIGHT") || ctx.includes("MIDNIGHT") || ctx.includes("ONYX")) {
+    title = `🕶️ ${ctx} EXCLUSIVE ACCESS 🕶️`;
+    subtitle = "Premium dark-themed luxury discounts. Reserved for our most exclusive club members.";
+    bgGradient = "from-[#0f172a] via-[#020617] to-[#000000]"; // Midnight black
+    textGradient = "from-slate-100 via-slate-300 to-slate-500";
+    borderColor = "border-slate-700";
+    emojiPattern = "🕶️🔒🖤🎩";
+    animationStyle = "pulse";
+  } else if (ctx.includes("SILVER") || ctx.includes("GRAY") || ctx.includes("GREY") || ctx.includes("METAL") || ctx.includes("METALLIC") || ctx.includes("FOIL")) {
+    title = `💿 ${ctx} METALLIC SPECIAL 💿`;
+    subtitle = "The ultimate shine of purity and strength! Premium silver foil wraps for your cooking masterpieces.";
+    bgGradient = "from-[#334155] via-[#1e293b] to-[#0f172a]"; // Slate grey/silver
+    textGradient = "from-slate-100 via-white to-slate-300";
+    borderColor = "border-slate-400";
+    emojiPattern = "💿🛡️⚡💎";
+    animationStyle = "float";
+  } else if (ctx.includes("PURPLE") || ctx.includes("VIOLET") || ctx.includes("COSMIC") || ctx.includes("MAGIC") || ctx.includes("NEON") || ctx.includes("SPACE") || ctx.includes("GALAXY")) {
+    title = `🔮 ${ctx} MAGICAL SPECIAL 🔮`;
+    subtitle = "Out of this world discounts! Lock in magic freshness for all your traditional dishes.";
+    bgGradient = "from-[#3b0764] via-[#5b21b6] to-[#1e1b4b]"; // Cosmic purple
+    textGradient = "from-pink-300 via-purple-200 to-cyan-300";
+    borderColor = "border-purple-400";
+    emojiPattern = "🔮🌌🛸🌀";
+    animationStyle = "sparkle";
+  } else if (ctx.includes("CYAN") || ctx.includes("TEAL") || ctx.includes("TURQUOISE") || ctx.includes("AQUA") || ctx.includes("TROPICAL")) {
+    title = `🏝️ ${ctx} TROPICAL SPECIAL 🏝️`;
+    subtitle = "Fresh, vibrant, and cooling deals! Keep your food beach-ready and delicious.";
+    bgGradient = "from-[#042f2e] via-[#0d9488] to-[#021f1d]"; // Deep teal/cyan
+    textGradient = "from-teal-100 via-cyan-200 to-emerald-250";
+    borderColor = "border-teal-400";
+    emojiPattern = "🏝️🐠🌊🍹";
+    animationStyle = "float";
+  } else if (ctx.includes("ORANGE") || ctx.includes("PEACH") || ctx.includes("SUNSET") || ctx.includes("CORAL") || ctx.includes("SALMON")) {
+    title = `🌅 ${ctx} SUNSET BLOWOUT 🌅`;
+    subtitle = "Warm glowing discounts on our premium range! Bring home quality wrapping today.";
+    bgGradient = "from-[#7c2d12] via-[#c2410c] to-[#2d0f05]"; // Coral sunset orange
+    textGradient = "from-orange-200 via-amber-300 to-yellow-100";
+    borderColor = "border-orange-500";
+    emojiPattern = "🌅🍊🍑🍂";
+    animationStyle = "pulse";
+  } else if (ctx.includes("PINK") || ctx.includes("ROSE") || ctx.includes("BLOSSOM")) {
+    title = `🌸 ${ctx} BLOSSOM SPECIAL 🌸`;
+    subtitle = "Delightful deals in full bloom! Keep your spring recipes fresh and colorful.";
+    bgGradient = "from-[#500724] via-[#9d174d] to-[#1c000c]"; // Rose pink
+    textGradient = "from-pink-200 via-rose-350 to-pink-100";
+    borderColor = "border-pink-500";
+    emojiPattern = "🌸🌺🎀🧁";
+    animationStyle = "float";
+  }
+  // Generic Fallback Hash Generator
+  else {
+    let hash = 0;
+    for (let i = 0; i < ctx.length; i++) {
+      hash = ctx.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    // Set of pre-curated gorgeous styles that we map to deterministically
+    const palettes = [
       {
-        title: `⚡ ${ctx} SPECIAL BLITZ ⚡`,
-        bgGradient: "from-[#1e3b8b] via-[#0f172a] to-[#020617]",
-        textGradient: "from-yellow-200 via-amber-400 to-blue-200",
-        borderColor: "border-amber-400",
-        emojiPattern: "✨⚡🔥🎉",
-        animationStyle: "sparkle"
+        bg: "from-[#1e1b4b] via-[#311054] to-[#0f052d]", // Indigo & purple
+        text: "from-amber-200 via-yellow-400 to-orange-400",
+        border: "border-amber-400",
+        emojis: "✨⚡🔥🎉",
+        anim: "sparkle",
+        suffix: "CELEBRATION"
       },
       {
-        title: `🎁 ${ctx} DEALS ZONE 🎁`,
-        bgGradient: "from-[#4d0b5a] via-[#2f0438] to-[#1a0120]",
-        textGradient: "from-amber-200 via-orange-400 to-yellow-200",
-        borderColor: "border-orange-500",
-        emojiPattern: "🎁💥⚡🔥",
-        animationStyle: "pulse"
+        bg: "from-[#450a0a] via-[#2d0614] to-[#120005]", // Royal Crimson
+        text: "from-yellow-100 via-amber-300 to-rose-400",
+        border: "border-rose-500",
+        emojis: "🎁💥⚡🔥",
+        anim: "pulse",
+        suffix: "MEGA SPECIAL"
       },
       {
-        title: `👑 ${ctx} PREMIER OFFER 👑`,
-        bgGradient: "from-[#022c22] via-[#064e3b] to-[#020617]",
-        textGradient: "from-emerald-300 via-yellow-200 to-amber-300",
-        borderColor: "border-emerald-500",
-        emojiPattern: "💎✨👑🏆",
-        animationStyle: "sparkle"
+        bg: "from-[#022c22] via-[#064e3b] to-[#012216]", // Emerald Prestige
+        text: "from-emerald-300 via-yellow-200 to-amber-300",
+        border: "border-emerald-500",
+        emojis: "💎✨🏅🏆",
+        anim: "sparkle",
+        suffix: "EXCLUSIVE DEALS"
+      },
+      {
+        bg: "from-[#3b0764] via-[#1e1b4b] to-[#0f001c]", // Cosmic Violet
+        text: "from-pink-300 via-yellow-100 to-cyan-300",
+        border: "border-purple-400",
+        emojis: "🔮⚡🛸🌀",
+        anim: "float",
+        suffix: "FLASH SALE"
+      },
+      {
+        bg: "from-[#075985] via-[#1e3a8a] to-[#0c1a30]", // Deep Ocean
+        text: "from-cyan-200 via-sky-300 to-indigo-200",
+        border: "border-sky-400",
+        emojis: "🌊☀️🍦⛵",
+        anim: "float",
+        suffix: "REFRESHING BLOWOUT"
+      },
+      {
+        bg: "from-[#7c2d12] via-[#431407] to-[#1c0702]", // Amber Sunset
+        text: "from-yellow-100 via-amber-400 to-orange-500",
+        border: "border-orange-500",
+        emojis: "🍂☀️🍁🔥",
+        anim: "pulse",
+        suffix: "SUNSET SPECIAL"
       }
     ];
-    const picked = templates[Math.floor(Math.random() * templates.length)];
-    title = picked.title;
-    bgGradient = picked.bgGradient;
-    textGradient = picked.textGradient;
-    borderColor = picked.borderColor;
-    emojiPattern = picked.emojiPattern;
-    animationStyle = picked.animationStyle;
+
+    const picked = palettes[Math.abs(hash) % palettes.length];
+    title = `✨ ${ctx} ${picked.suffix} ✨`;
+    bgGradient = picked.bg;
+    textGradient = picked.text;
+    borderColor = picked.border;
+    emojiPattern = picked.emojis;
+    animationStyle = picked.anim;
   }
 
   return {
@@ -183,6 +346,7 @@ const CouponsPage = () => {
   };
 
   const [bannerForm, setBannerForm] = useState(initialBannerForm);
+  const couponCodes = bannerForm?.coupon_codes || [];
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -387,13 +551,14 @@ const CouponsPage = () => {
   const handleTogglePopupBannerPromotion = async (coupon) => {
     setTogglingPopupId(coupon.id);
     try {
-      // 1. Fetch current settings to get existing scrolling_banner
+      // 1. Fetch current settings to get existing popup_banner & scrolling_banner
       const settingsRes = await adminService.getSettings();
       const currentSettings = settingsRes.data || {};
+      const currentPopup = currentSettings.popup_banner || {};
       const currentBanner = currentSettings.scrolling_banner || {};
       const currentList =
+        currentPopup.promoted_coupons ||
         currentBanner.popup_promoted_coupons ||
-        currentSettings.popup_banner?.promoted_coupons ||
         [];
 
       // 2. Check if already promoted
@@ -416,20 +581,19 @@ const CouponsPage = () => {
         updatedList = [...currentList, couponDetail];
       }
 
-      const updatedBannerValue = {
-        ...currentBanner,
-        popup_promoted_coupons: updatedList
+      const updatedPopupSetting = {
+        ...currentPopup,
+        promoted_coupons: updatedList
       };
 
-      // 3. Update setting in backend under 'scrolling_banner'
+      // 3. Update setting in backend under 'popup_banner'
       await adminService.updateSetting({
-        key: 'scrolling_banner',
-        value: updatedBannerValue
+        key: 'popup_banner',
+        value: updatedPopupSetting
       });
 
       // Update local states
-      setScrollingBanner(updatedBannerValue);
-      setPopupBanner({ promoted_coupons: updatedList });
+      setPopupBanner(updatedPopupSetting);
       
       if (isPromoted) {
         toast.success(`Removed coupon ${coupon.code} from the pop-up banner`);
@@ -507,13 +671,11 @@ const CouponsPage = () => {
 
   const handleToggleCouponInBanner = (code) => {
     setBannerForm(prev => {
-      const exists = prev.coupon_codes.includes(code);
-      let updated = [];
-      if (exists) {
-        updated = prev.coupon_codes.filter(c => c !== code);
-      } else {
-        updated = [...prev.coupon_codes, code];
-      }
+      const currentCodes = prev.coupon_codes || [];
+      const exists = currentCodes.includes(code);
+      const updated = exists
+        ? currentCodes.filter(c => c !== code)
+        : [...currentCodes, code];
       return {
         ...prev,
         coupon_codes: updated
@@ -534,9 +696,10 @@ const CouponsPage = () => {
 
     setSavingBanners(true);
     try {
+      const currentCodes = bannerForm.coupon_codes || [];
       // Find full coupon objects for selected codes
       const linkedCoupons = coupons
-        .filter(c => bannerForm.coupon_codes.includes(c.code))
+        .filter(c => currentCodes.includes(c.code))
         .map(c => ({
           id: c.id,
           code: c.code,
@@ -554,7 +717,7 @@ const CouponsPage = () => {
         title: bannerForm.title.trim(),
         subtitle: bannerForm.subtitle.trim(),
         is_active: bannerForm.is_active,
-        coupon_codes: bannerForm.coupon_codes,
+        coupon_codes: currentCodes,
         linked_coupons: linkedCoupons,
         theme_config: bannerForm.theme_config
       };
@@ -566,8 +729,8 @@ const CouponsPage = () => {
         }
 
         // Exclusivity enforcement: remove selected codes from other themes
-        const filteredCodes = b.coupon_codes?.filter(code => !bannerForm.coupon_codes.includes(code)) || [];
-        const filteredLinkedCoupons = b.linked_coupons?.filter(c => !bannerForm.coupon_codes.includes(c.code)) || [];
+        const filteredCodes = (b.coupon_codes || []).filter(code => !currentCodes.includes(code));
+        const filteredLinkedCoupons = (b.linked_coupons || []).filter(c => !currentCodes.includes(c.code));
 
         return {
           ...b,
@@ -911,7 +1074,7 @@ const CouponsPage = () => {
                             </button>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="flex justify-end gap-2">
+                            <div className="flex justify-end items-center gap-2">
                               {(() => {
                                 const isScrollingPromoted = scrollingBanner && scrollingBanner.text2 && scrollingBanner.text2.includes(coupon.code);
                                 const isPopupPromoted = popupBanner && popupBanner.promoted_coupons && popupBanner.promoted_coupons.some(c => c.code === coupon.code);
@@ -921,39 +1084,44 @@ const CouponsPage = () => {
                                     <button 
                                       onClick={() => handlePromoteToBanner(coupon)}
                                       disabled={promotingId === coupon.id}
-                                      className={`p-2 rounded-xl transition-all disabled:opacity-50 ${
+                                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 ${
                                         isScrollingPromoted 
-                                          ? 'text-amber-600 bg-amber-50 hover:bg-amber-100' 
-                                          : 'text-slate-400 hover:text-amber-500 hover:bg-slate-100'
+                                          ? 'text-amber-750 bg-amber-50 hover:bg-amber-100 border border-amber-200' 
+                                          : 'text-slate-500 bg-slate-50 hover:bg-slate-100 hover:text-slate-700 border border-slate-200'
                                       }`}
-                                      title={isScrollingPromoted ? "Promoted in Top Banner" : "Promote in Top Banner"}
+                                      title={isScrollingPromoted ? "Promoted in Top Scrolling Banner" : "Promote in Top Scrolling Banner"}
                                     >
                                       {promotingId === coupon.id ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <Loader2 className="w-3 h-3 animate-spin" />
                                       ) : (
-                                        <Megaphone className={`w-4 h-4 ${isScrollingPromoted ? 'fill-amber-600' : ''}`} />
+                                        <Megaphone className={`w-3.5 h-3.5 ${isScrollingPromoted ? 'fill-amber-600' : ''}`} />
                                       )}
+                                      <span>Top Banner</span>
                                     </button>
                                     
                                     <button 
                                       onClick={() => handleTogglePopupBannerPromotion(coupon)}
                                       disabled={togglingPopupId === coupon.id}
-                                      className={`p-2 rounded-xl transition-all disabled:opacity-50 ${
+                                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 ${
                                         isPopupPromoted 
-                                          ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 animate-pulse' 
-                                          : 'text-slate-400 hover:text-emerald-600 hover:bg-slate-100'
+                                          ? 'text-emerald-750 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200' 
+                                          : 'text-slate-500 bg-slate-50 hover:bg-slate-100 hover:text-slate-700 border border-slate-200'
                                       }`}
                                       title={isPopupPromoted ? "Promoted in Popup Banner" : "Promote in Popup Banner"}
                                     >
                                       {togglingPopupId === coupon.id ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <Loader2 className="w-3 h-3 animate-spin" />
                                       ) : (
-                                        <Sparkles className={`w-4 h-4 ${isPopupPromoted ? 'fill-emerald-600' : ''}`} />
+                                        <Sparkles className={`w-3.5 h-3.5 ${isPopupPromoted ? 'fill-emerald-600' : ''}`} />
                                       )}
+                                      <span>Popup Banner</span>
                                     </button>
                                   </>
                                 );
                               })()}
+                              
+                              <span className="h-4 w-px bg-slate-200 mx-1"></span>
+                              
                               <button 
                                 onClick={() => handleOpenEditModal(coupon)}
                                 className="p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-xl transition-all"
@@ -963,7 +1131,7 @@ const CouponsPage = () => {
                               </button>
                               <button 
                                 onClick={() => handleDeleteCoupon(coupon.id)}
-                                className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                className="p-2 text-slate-500 hover:text-red-55 hover:bg-red-50 rounded-xl transition-all"
                                 title="Delete Coupon"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1049,9 +1217,9 @@ const CouponsPage = () => {
                       className="w-full flex items-center justify-between px-4 py-3 border border-slate-200 rounded-xl text-sm bg-white font-bold text-slate-700 hover:border-slate-350 transition-all text-left"
                     >
                       <span>
-                        {bannerForm.coupon_codes.length === 0 
+                        {couponCodes.length === 0 
                           ? "Select coupon codes..." 
-                          : `Selected ${bannerForm.coupon_codes.length} coupon(s)`}
+                          : `Selected ${couponCodes.length} coupon(s)`}
                       </span>
                       <span className="text-slate-400 text-xs">▼</span>
                     </button>
@@ -1075,11 +1243,11 @@ const CouponsPage = () => {
                               c.discount_type.toLowerCase().includes(bannerSearchText.toLowerCase())
                             )
                             .map(coupon => {
-                              const isChecked = bannerForm.coupon_codes.includes(coupon.code);
+                              const isChecked = couponCodes.includes(coupon.code);
                               
                               // Check if linked to another theme
-                              const linkedTheme = customBanners.find(
-                                b => b.id !== bannerForm.id && b.coupon_codes?.includes(coupon.code)
+                              const linkedTheme = (customBanners || []).find(
+                                b => b.id !== bannerForm.id && (b.coupon_codes || []).includes(coupon.code)
                               );
 
                               return (
@@ -1124,8 +1292,8 @@ const CouponsPage = () => {
 
                   {/* Warning if linked elsewhere is selected */}
                   {coupons.some(c => 
-                    bannerForm.coupon_codes.includes(c.code) && 
-                    customBanners.some(b => b.id !== bannerForm.id && b.coupon_codes?.includes(c.code))
+                    couponCodes.includes(c.code) && 
+                    (customBanners || []).some(b => b.id !== bannerForm.id && (b.coupon_codes || []).includes(c.code))
                   ) && (
                     <p className="text-[11px] text-amber-600 font-semibold mt-1.5 flex items-center gap-1 animate-pulse">
                       ⚠️ Note: Some chosen coupons are already linked to other banner themes. Saving will unlink them from those themes.
@@ -1134,7 +1302,7 @@ const CouponsPage = () => {
 
                   {/* Selected Tag Pills */}
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    {bannerForm.coupon_codes.map(code => (
+                    {couponCodes.map(code => (
                       <span key={code} className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded-xl text-xs font-mono font-bold tracking-wider">
                         {code}
                         <button
@@ -1149,82 +1317,100 @@ const CouponsPage = () => {
                   </div>
                 </div>
 
-                {/* Customizable Theme Variables */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  {/* Animation Style */}
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Animation Style</label>
-                    <select
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary font-bold"
-                      value={bannerForm.theme_config.animation_style}
-                      onChange={(e) => setBannerForm(prev => ({
-                        ...prev,
-                        theme_config: { ...prev.theme_config, animation_style: e.target.value }
-                      }))}
-                    >
-                      <option value="pulse">Pulse (Standard)</option>
-                      <option value="sparkle">Sparkle (Star lights)</option>
-                      <option value="snow">Snow (Holiday Snowfall)</option>
-                      <option value="float">Float (Festive Floating)</option>
-                      <option value="tricolor">Tricolor (Ashoka Chakra)</option>
-                    </select>
-                  </div>
+                {/* Collapsible Advanced Style Customizer */}
+                <details className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 transition-all outline-none">
+                  <summary className="text-xs font-black uppercase tracking-wider text-slate-500 cursor-pointer select-none outline-none flex items-center justify-between">
+                    <span>🔧 Technical Style Settings (Optional - Feel free to skip)</span>
+                    <span className="text-slate-400 text-[10px]">▼ Click to toggle</span>
+                  </summary>
+                  
+                  <div className="mt-4 pt-4 border-t border-slate-200/50 space-y-4">
+                    <div className="p-3.5 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700 space-y-1">
+                      <p className="font-bold flex items-center gap-1.5">
+                        <span>ℹ️</span> You don't need to edit these!
+                      </p>
+                      <p className="font-medium leading-relaxed text-blue-600">
+                        The system automatically designs and writes the CSS style codes for you when you type a context word (like "DIWALI") and click the green <strong>"Generate"</strong> button. You can safely ignore this technical section.
+                      </p>
+                    </div>
 
-                  {/* Emojis */}
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Emojis Pattern</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary text-center text-lg"
-                      value={bannerForm.theme_config.emoji_pattern}
-                      onChange={(e) => setBannerForm(prev => ({
-                        ...prev,
-                        theme_config: { ...prev.theme_config, emoji_pattern: e.target.value }
-                      }))}
-                    />
-                  </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Animation Style */}
+                      <div>
+                        <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Background Animation</label>
+                        <select
+                          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary font-bold"
+                          value={bannerForm.theme_config.animation_style}
+                          onChange={(e) => setBannerForm(prev => ({
+                            ...prev,
+                            theme_config: { ...prev.theme_config, animation_style: e.target.value }
+                          }))}
+                        >
+                          <option value="pulse">Pulse (Standard)</option>
+                          <option value="sparkle">Sparkle (Star lights)</option>
+                          <option value="snow">Snow (Holiday Snowfall)</option>
+                          <option value="float">Float (Festive Floating)</option>
+                          <option value="tricolor">Tricolor (Ashoka Chakra)</option>
+                        </select>
+                      </div>
 
-                  {/* Background Gradient String */}
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Background Gradient</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
-                      value={bannerForm.theme_config.background_gradient}
-                      onChange={(e) => setBannerForm(prev => ({
-                        ...prev,
-                        theme_config: { ...prev.theme_config, background_gradient: e.target.value }
-                      }))}
-                    />
-                  </div>
+                      {/* Emojis */}
+                      <div>
+                        <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Floating Festive Emojis</label>
+                        <input
+                          type="text"
+                          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary text-center text-lg font-bold"
+                          value={bannerForm.theme_config.emoji_pattern}
+                          onChange={(e) => setBannerForm(prev => ({
+                            ...prev,
+                            theme_config: { ...prev.theme_config, emoji_pattern: e.target.value }
+                          }))}
+                        />
+                      </div>
 
-                  {/* Text Gradient String & Border Color */}
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Text Gradient</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
-                      value={bannerForm.theme_config.text_gradient}
-                      onChange={(e) => setBannerForm(prev => ({
-                        ...prev,
-                        theme_config: { ...prev.theme_config, text_gradient: e.target.value }
-                      }))}
-                    />
-                  </div>
+                      {/* Background Gradient String */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Background Gradient (Tailwind CSS Code)</label>
+                        <input
+                          type="text"
+                          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+                          value={bannerForm.theme_config.background_gradient}
+                          onChange={(e) => setBannerForm(prev => ({
+                            ...prev,
+                            theme_config: { ...prev.theme_config, background_gradient: e.target.value }
+                          }))}
+                        />
+                      </div>
 
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Border Color</label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
-                      value={bannerForm.theme_config.border_color}
-                      onChange={(e) => setBannerForm(prev => ({
-                        ...prev,
-                        theme_config: { ...prev.theme_config, border_color: e.target.value }
-                      }))}
-                    />
+                      {/* Text Gradient String & Border Color */}
+                      <div>
+                        <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Text Gradient (Tailwind CSS Code)</label>
+                        <input
+                          type="text"
+                          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+                          value={bannerForm.theme_config.text_gradient}
+                          onChange={(e) => setBannerForm(prev => ({
+                            ...prev,
+                            theme_config: { ...prev.theme_config, text_gradient: e.target.value }
+                          }))}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Border Color (Tailwind CSS Code)</label>
+                        <input
+                          type="text"
+                          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
+                          value={bannerForm.theme_config.border_color}
+                          onChange={(e) => setBannerForm(prev => ({
+                            ...prev,
+                            theme_config: { ...prev.theme_config, border_color: e.target.value }
+                          }))}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </details>
 
                 {/* Active Toggle */}
                 <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -1322,7 +1508,7 @@ const CouponsPage = () => {
 
                       {/* Display Coupons Centered */}
                       <div className="flex flex-col items-center gap-3 w-full pt-1">
-                        {bannerForm.coupon_codes.length === 0 ? (
+                        {couponCodes.length === 0 ? (
                           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 w-full max-w-xs text-center text-xs text-white/50">
                             No coupon codes selected yet.
                           </div>
@@ -1331,17 +1517,17 @@ const CouponsPage = () => {
                             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 text-center space-y-2.5 w-full max-w-xs">
                               <p className="text-[10px] font-bold text-yellow-300 uppercase tracking-widest">
                                 {(() => {
-                                  const matchingC = coupons.find(c => c.code === bannerForm.coupon_codes[0]);
+                                  const matchingC = coupons.find(c => c.code === couponCodes[0]);
                                   if (!matchingC) return "Special Discount";
                                   if (matchingC.discount_type === 'percentage') return `${matchingC.discount_value}% Off`;
                                   if (matchingC.discount_type === 'flat') return `₹${matchingC.discount_value} Off`;
                                   return "Free Shipping";
                                 })()}
-                                {bannerForm.coupon_codes.length > 1 && ` (+${bannerForm.coupon_codes.length - 1} more)`}
+                                {couponCodes.length > 1 && ` (+${couponCodes.length - 1} more)`}
                               </p>
                               <div className="relative flex items-center justify-center w-full px-12">
                                 <span className="font-mono text-base font-black bg-black/20 px-3 py-1 rounded-xl border border-white/20 tracking-wider">
-                                  {bannerForm.coupon_codes[0]}
+                                  {couponCodes[0]}
                                 </span>
                                 <button type="button" className="absolute right-0 p-1.5 bg-white/5 border border-white/10 rounded-lg text-white/80">
                                   <Copy className="w-3.5 h-3.5" />
@@ -1439,7 +1625,17 @@ const CouponsPage = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              setBannerForm(theme);
+                              setBannerForm({
+                                ...theme,
+                                coupon_codes: theme.coupon_codes || [],
+                                theme_config: {
+                                  background_gradient: theme.theme_config?.background_gradient || 'from-[#4d0b5a] via-[#2f0438] to-[#1a0120]',
+                                  emoji_pattern: theme.theme_config?.emoji_pattern || '⚡🎁🔥',
+                                  animation_style: theme.theme_config?.animation_style || 'pulse',
+                                  border_color: theme.theme_config?.border_color || 'border-amber-400',
+                                  text_gradient: theme.theme_config?.text_gradient || 'from-amber-300 via-orange-400 to-yellow-200'
+                                }
+                              });
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
                             className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-all"
