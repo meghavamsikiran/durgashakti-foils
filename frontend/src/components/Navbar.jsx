@@ -131,7 +131,6 @@ const Navbar = () => {
           </div>
           <div className="flex">
             {bannerItems.map((item, index) => {
-              const prevItem = index === 0 ? bannerItems[bannerItems.length - 1] : bannerItems[index - 1];
               const showFavicon = bannerConfig.use_favicon !== false;
               return (
                 <span key={`dup-${item.id}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
@@ -146,33 +145,33 @@ const Navbar = () => {
         </div>
       </div>
       
-      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-white/20">
+      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-border-subtle">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2" data-testid="navbar-logo">
+          <Link to="/" className="flex items-center gap-2 font-manrope" data-testid="navbar-logo">
             <img src="/favicon.png" alt="Durga Maa" className="w-8 h-8 object-contain" />
-            <span className="font-bold text-xl tracking-tight" style={{ fontFamily: 'Manrope' }}>
+            <span className="font-bold text-xl tracking-tight text-ink-slate">
               Durga Shakti<span className="text-primary ml-1">Foils</span>
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-6 font-inter">
             <Link
               to="/shop"
-              className="text-sm font-medium hover:text-primary transition-colors"
+              className="text-sm font-semibold hover:text-primary transition-colors text-ink-slate"
               data-testid="navbar-shop-link"
             >
               Shop
             </Link>
             <Link
               to="/about"
-              className="text-sm font-medium hover:text-primary transition-colors"
+              className="text-sm font-semibold hover:text-primary transition-colors text-ink-slate"
             >
               About Us
             </Link>
             <Link
               to="/contact"
-              className="text-sm font-medium hover:text-primary transition-colors"
+              className="text-sm font-semibold hover:text-primary transition-colors text-ink-slate"
             >
               Contact Us
             </Link>
@@ -181,13 +180,13 @@ const Navbar = () => {
               <>
                 <Link
                   to="/cart"
-                  className="relative mr-2"
+                  className="relative mr-2 text-ink-slate"
                   data-testid="navbar-cart-link"
                 >
                   <ShoppingCart className="w-5 h-5 hover:text-primary transition-colors" />
                   {cartItemCount > 0 && (
                     <span
-                      className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold"
+                      className="absolute -top-2 -right-2 bg-primary text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center font-bold"
                       data-testid="cart-item-count"
                     >
                       {cartItemCount}
@@ -198,7 +197,7 @@ const Navbar = () => {
                 <Link
                   to={isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard"}
                   title={isAdmin ? (isSuperAdmin ? "Super Admin Panel" : "Admin Panel") : "Customer Dashboard"}
-                  className="hover:text-primary transition-colors"
+                  className="hover:text-primary transition-colors text-ink-slate"
                   data-testid="navbar-dashboard-link"
                 >
                   <User className="w-5 h-5" />
@@ -208,7 +207,7 @@ const Navbar = () => {
                   variant="ghost"
                   size="sm"
                   onClick={handleLogout}
-                  className="h-10 px-4"
+                  className="h-10 px-4 rounded-lg text-ink-slate hover:bg-slate-100"
                   data-testid="navbar-logout-button"
                 >
                   <LogOut className="w-4 h-4" />
@@ -217,7 +216,7 @@ const Navbar = () => {
             ) : (
               <Button
                 onClick={() => navigate('/login')}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 rounded-sm font-semibold"
+                className="bg-primary text-primary-foreground hover:bg-primary/95 h-10 px-6 rounded-lg font-semibold"
                 data-testid="navbar-login-button"
               >
                 Login
@@ -227,7 +226,7 @@ const Navbar = () => {
 
           {/* Mobile Toggle */}
           <button 
-            className="md:hidden p-2 text-slate-600"
+            className="md:hidden p-2 text-ink-slate"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -236,21 +235,21 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-6 border-t border-slate-200 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
-            <Link to="/shop" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Shop</Link>
-            <Link to="/about" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">About Us</Link>
-            <Link to="/contact" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Contact Us</Link>
+          <div className="md:hidden py-6 border-t border-border-subtle flex flex-col gap-6 animate-in slide-in-from-top duration-300 font-inter">
+            <Link to="/shop" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-ink-slate px-2">Shop</Link>
+            <Link to="/about" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-ink-slate px-2">About Us</Link>
+            <Link to="/contact" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-ink-slate px-2">Contact Us</Link>
 
             
             {user ? (
               <>
-                <Link to="/cart" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2 flex items-center gap-2">
+                <Link to="/cart" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-ink-slate px-2 flex items-center gap-2">
                   Cart ({cartItemCount})
                 </Link>
                 {!isAdmin ? (
-                  <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Dashboard</Link>
+                  <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-ink-slate px-2">Dashboard</Link>
                 ) : (
-                  <Link to={isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard"} onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-slate-900 px-2">Admin Panel</Link>
+                  <Link to={isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard"} onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-ink-slate px-2">Admin Panel</Link>
                 )}
                 <button 
                   onClick={() => { handleLogout(); setIsMenuOpen(false); }}
@@ -262,7 +261,7 @@ const Navbar = () => {
             ) : (
               <Button
                 onClick={() => { navigate('/login'); setIsMenuOpen(false); }}
-                className="bg-primary text-primary-foreground w-full py-6 text-lg font-bold rounded-xl"
+                className="bg-primary text-primary-foreground w-full py-4 text-base font-bold rounded-lg"
               >
                 Login / Register
               </Button>

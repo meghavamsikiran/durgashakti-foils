@@ -33,13 +33,13 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Wishlist</h2>
+        <h2 className="text-3xl font-black text-foreground uppercase tracking-tighter">Wishlist</h2>
         {wishlist && wishlist.length > 0 && (
           <Button 
             variant="outline" 
             onClick={handleClearWishlist} 
             disabled={clearing}
-            className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 rounded-xl transition-all"
+            className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 rounded-lg transition-all"
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Clear All
@@ -48,9 +48,9 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
       </div>
 
       {!wishlist || wishlist.length === 0 ? (
-        <div className="text-center py-20 bg-slate-50 rounded-3xl">
-          <Heart className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-500 font-bold">Your wishlist is empty</p>
+        <div className="text-center py-20 bg-surface-container-low rounded-xl border border-dashed border-border-subtle">
+          <Heart className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+          <p className="text-muted-foreground font-bold">Your wishlist is empty</p>
         </div>
       ) : (
         <>
@@ -59,19 +59,19 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
               const inCart = cart?.items?.some(i => i.product_id === product.id);
 
               return (
-                <div key={product.id} className="group p-4 rounded-3xl border border-slate-200 bg-white hover:shadow-lg transition-all relative">
-                  <img src={formatImageUrl(product.image_url)} alt="" className="w-full h-40 object-cover rounded-2xl mb-4" />
-                  <h4 className="font-black text-slate-900 truncate">{product.name}</h4>
-                  <p className="text-xl font-black text-indigo-600 mt-1">₹{product.price}</p>
+                <div key={product.id} className="group p-4 rounded-xl border border-border-subtle bg-surface-container-lowest hover:shadow-emerald-glow hover:border-primary/50 transition-all relative">
+                  <img src={formatImageUrl(product.image_url)} alt="" className="w-full h-40 object-cover rounded-lg mb-4" />
+                  <h4 className="font-black text-foreground truncate">{product.name}</h4>
+                  <p className="text-xl font-black text-primary mt-1 font-mono">₹{product.price}</p>
                   <div className="flex gap-2 mt-4">
                     {inCart ? (
-                      <Button disabled className="flex-1 rounded-xl bg-slate-100 text-slate-400 opacity-100 cursor-not-allowed hover:bg-slate-100">
+                      <Button disabled className="flex-1 rounded-lg bg-surface-container-low text-muted-foreground opacity-100 cursor-not-allowed hover:bg-surface-container-low">
                         Item added to Cart
                       </Button>
                     ) : (
-                      <Button onClick={() => addToCart(product.id)} className="flex-1 rounded-xl">Add to Cart</Button>
+                      <Button onClick={() => addToCart(product.id)} className="flex-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground">Add to Cart</Button>
                     )}
-                    <Button variant="ghost" onClick={() => onToggleWishlist(product.id)} className="rounded-xl text-rose-500 hover:bg-rose-50">
+                    <Button variant="ghost" onClick={() => onToggleWishlist(product.id)} className="rounded-lg text-rose-500 hover:bg-rose-50">
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -86,18 +86,18 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
                 variant="outline"
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="w-10 h-10 p-0 rounded-full"
+                className="w-10 h-10 p-0 rounded-lg"
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
-              <span className="text-sm font-semibold text-slate-500">
+              <span className="text-sm font-semibold text-muted-foreground font-mono">
                 Page {currentPage} of {totalPages}
               </span>
               <Button
                 variant="outline"
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="w-10 h-10 p-0 rounded-full"
+                className="w-10 h-10 p-0 rounded-lg"
               >
                 <ChevronRight className="w-5 h-5" />
               </Button>

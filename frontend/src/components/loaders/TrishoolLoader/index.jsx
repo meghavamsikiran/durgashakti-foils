@@ -38,14 +38,16 @@ const TrishoolLoader = ({ isProcessing = false }) => {
           transform: 'translateZ(0)',
         }}
       >
-        {/* Clean, sharp speed trail without heavy blurs */}
+        {/* Glowing metallic gold/orange speed trail with shimmer */}
         <div 
-          className="absolute right-full"
+          className="absolute right-full animate-pulse"
           style={{
-            width: '60vw',
-            height: isMobile ? '1px' : '2px', // 1px on mobile, 2px on desktop
-            background: 'linear-gradient(90deg, transparent, #FF8F00, #FFC107)',
-            marginRight: isMobile ? '-10px' : '-35px', // Scale the overlap spacing
+            width: '70vw',
+            height: isMobile ? '2px' : '4px',
+            background: 'linear-gradient(90deg, transparent, rgba(229, 231, 235, 0.2) 30%, rgba(255, 215, 0, 0.5) 60%, rgba(255, 143, 0, 0.8) 85%, #FFC107 100%)',
+            boxShadow: isMobile ? 'none' : '0 0 8px rgba(255, 193, 7, 0.6), 0 0 15px rgba(255, 215, 0, 0.3)',
+            marginRight: isMobile ? '-5px' : '-20px',
+            filter: 'blur(0.5px)',
           }}
         />
 

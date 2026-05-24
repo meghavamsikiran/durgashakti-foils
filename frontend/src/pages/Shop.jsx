@@ -107,63 +107,66 @@ const Shop = () => {
   }, [applyFilters]);
 
   return (
-    <div className="min-h-screen py-12" data-testid="shop-page">
+    <div className="min-h-screen bg-surface py-12 font-inter text-on-surface" data-testid="shop-page">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
-        <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" style={{ fontFamily: 'Manrope' }} data-testid="shop-title">
+        <div className="mb-12 border-b border-border-subtle pb-8">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-primary bg-primary/10 px-3.5 py-1.5 rounded-full inline-block mb-3 border border-primary/20">
+            CATALOGUE
+          </span>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-ink-slate font-manrope mb-2" data-testid="shop-title">
             Our Products
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Premium food-grade aluminum foil in various sizes
+          <p className="text-sm md:text-base text-on-surface-variant font-medium">
+            Premium food-grade aluminum foil in custom sizes and commercial thicknesses.
           </p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-8">
           {/* Filters Sidebar */}
           <div className="md:w-64 flex-shrink-0">
-            <div className="bg-secondary/30 border border-border/50 p-6 rounded-sm sticky top-24">
-              <div className="flex items-center gap-2 mb-6">
+            <div className="bg-white border border-border-subtle p-6 rounded-xl shadow-sm sticky top-24">
+              <div className="flex items-center gap-2 mb-6 border-b border-border-subtle pb-4">
                 <SlidersHorizontal className="w-5 h-5 text-primary" />
-                <h2 className="font-semibold text-lg" style={{ fontFamily: 'Manrope' }}>
+                <h2 className="font-bold text-base font-manrope text-ink-slate uppercase tracking-wider">
                   Filters
                 </h2>
               </div>
 
               <div className="space-y-6">
                 <div>
-                  <label className="text-sm font-semibold mb-3 block">Category</label>
+                  <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-3 block">Category</label>
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex items-center gap-2.5 cursor-pointer">
                       <input
                         type="radio"
                         name="category"
                         value="all"
                         checked={categoryFilter === 'all'}
                         onChange={(e) => setCategoryFilter(e.target.value)}
-                        className="w-4 h-4 text-primary"
+                        className="w-4 h-4 text-primary focus:ring-primary border-border-subtle bg-white"
                         data-testid="filter-category-all"
                       />
-                      <span className="text-sm">All Categories</span>
+                      <span className="text-sm font-semibold text-slate-700">All Categories</span>
                     </label>
                     {categories.map(category => (
-                      <label key={category.id || category.name} className="flex items-center gap-2 cursor-pointer">
+                      <label key={category.id || category.name} className="flex items-center gap-2.5 cursor-pointer">
                         <input
                           type="radio"
                           name="category"
                           value={category.name}
                           checked={categoryFilter === category.name}
                           onChange={(e) => setCategoryFilter(e.target.value)}
-                          className="w-4 h-4 text-primary"
+                          className="w-4 h-4 text-primary focus:ring-primary border-border-subtle bg-white"
                           data-testid={`filter-category-${category.name}`}
                         />
-                        <span className="text-sm">{category.name}</span>
+                        <span className="text-sm font-semibold text-slate-700">{category.name}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-semibold mb-3 block">Price Range</label>
+                <div className="border-t border-border-subtle pt-6">
+                  <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-3 block">Price Range</label>
                   <div className="space-y-2">
                     {[
                       { value: 'all', label: 'All Prices' },
@@ -171,28 +174,28 @@ const Shop = () => {
                       { value: '200to500', label: '₹200 - ₹500' },
                       { value: 'over500', label: 'Over ₹500' }
                     ].map(option => (
-                      <label key={option.value} className="flex items-center gap-2 cursor-pointer">
+                      <label key={option.value} className="flex items-center gap-2.5 cursor-pointer">
                         <input
                           type="radio"
                           name="price"
                           value={option.value}
                           checked={priceFilter === option.value}
                           onChange={(e) => setPriceFilter(e.target.value)}
-                          className="w-4 h-4 text-primary"
+                          className="w-4 h-4 text-primary focus:ring-primary border-border-subtle bg-white"
                           data-testid={`filter-price-${option.value}`}
                         />
-                        <span className="text-sm">{option.label}</span>
+                        <span className="text-sm font-semibold text-slate-700">{option.label}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-semibold mb-3 block">Sort By</label>
+                <div className="border-t border-border-subtle pt-6">
+                  <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-3 block">Sort By</label>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full h-10 rounded-sm border border-input bg-background px-3 py-1 text-sm"
+                    className="w-full h-11 rounded-lg border border-border-subtle bg-white px-3 py-1 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-slate-700 font-semibold"
                     data-testid="sort-select"
                   >
                     <option value="name">Name</option>
@@ -207,13 +210,13 @@ const Shop = () => {
           {/* Products Grid */}
           <div className="flex-1">
             {loading ? <PageLoader /> : filteredProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No products found</p>
+              <div className="text-center py-12 bg-white rounded-xl border border-border-subtle p-8 shadow-sm">
+                <p className="text-on-surface-variant font-medium">No products found</p>
               </div>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground mb-6" data-testid="product-count">
-                  Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
+                <p className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-6" data-testid="product-count">
+                  SHOWING {filteredProducts.length} PRODUCT{filteredProducts.length !== 1 ? 'S' : ''}
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filteredProducts.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map((product, index) => (

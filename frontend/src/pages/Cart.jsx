@@ -167,12 +167,17 @@ const Cart = () => {
   const currentItems = (cart?.items || []).slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
-    <div className="min-h-screen py-12" data-testid="cart-page">
+    <div className="min-h-screen bg-surface py-12 font-inter text-on-surface" data-testid="cart-page">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight" style={{ fontFamily: 'Manrope' }} data-testid="cart-title">
-            Shopping Cart
-          </h1>
+        <div className="flex items-center justify-between mb-8 border-b border-border-subtle pb-6">
+          <div>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-primary bg-primary/10 px-3.5 py-1.5 rounded-full inline-block mb-3 border border-primary/20">
+              CHECKOUT PREPARATION
+            </span>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-ink-slate font-manrope" data-testid="cart-title">
+              Shopping Cart
+            </h1>
+          </div>
           {cart?.items?.length > 0 && (
             <Button
               variant="outline"
@@ -186,7 +191,7 @@ const Cart = () => {
                   }
                 }
               }}
-              className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 rounded-sm shadow-sm transition-all"
+              className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 rounded-lg shadow-sm h-11 px-4 text-xs font-bold uppercase transition-all tracking-wider"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Clear Cart
@@ -198,18 +203,18 @@ const Cart = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-24"
+            className="text-center py-24 bg-white border border-border-subtle rounded-xl p-12 shadow-sm"
           >
-            <ShoppingBag className="w-24 h-24 text-muted-foreground mx-auto mb-6" />
-            <h2 className="text-2xl font-semibold mb-4" style={{ fontFamily: 'Manrope' }}>
+            <ShoppingBag className="w-16 h-16 text-slate-300 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold mb-3 font-manrope text-ink-slate">
               Your cart is empty
             </h2>
-            <p className="text-muted-foreground mb-8">
-              Add some products to get started
+            <p className="text-sm text-text-muted mb-8 font-medium">
+              Add some premium foils to get started.
             </p>
             <Button
               onClick={() => navigate('/shop')}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 rounded-sm font-semibold"
+              className="bg-primary hover:bg-emerald-hover text-white h-[52px] px-8 rounded-lg font-bold tracking-wider uppercase text-sm"
               data-testid="empty-cart-shop-button"
             >
               Continue Shopping
@@ -229,11 +234,11 @@ const Cart = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="bg-card border border-border/50 rounded-sm p-6"
+                      className="bg-white border border-border-subtle rounded-xl p-6 shadow-sm hover:shadow-emerald-glow/5 transition-all duration-300"
                       data-testid={`cart-item-${product.id}`}
                     >
                       <div className="flex gap-6">
-                        <div className="w-24 h-24 flex-shrink-0 rounded-sm overflow-hidden bg-secondary/30">
+                        <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-surface-container-low border border-border-subtle">
                           <img
                             src={formatImageUrl(product.image_url)}
                             alt={product.name}
@@ -242,22 +247,24 @@ const Cart = () => {
                         </div>
 
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg mb-1" style={{ fontFamily: 'Manrope' }}>
+                          <h3 className="font-bold text-lg font-manrope text-ink-slate mb-1">
                             {product.name}
                           </h3>
-                          <p className="text-sm text-muted-foreground mb-3">
-                            {product.size} • {product.thickness}
-                          </p>
+                          <div className="mb-2">
+                            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle">
+                              {product.size} • {product.thickness}
+                            </span>
+                          </div>
                           <div className="flex items-baseline gap-2 flex-wrap">
-                            <p className="text-xl font-bold" style={{ fontFamily: 'Manrope' }}>
+                            <p className="text-lg font-extrabold text-ink-slate font-manrope">
                               ₹{product.discount_price || product.price}
                             </p>
                             {product.discount_price && product.discount_price < product.price && (
                               <>
-                                <span className="text-sm text-muted-foreground line-through">
+                                <span className="text-xs text-text-muted line-through">
                                   M.R.P.: ₹{product.price}
                                 </span>
-                                <span className="text-xs font-semibold text-green-600">
+                                <span className="text-[10px] font-bold text-emerald-600 bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
                                   ({Math.round(((product.price - product.discount_price) / product.price) * 100)}% off)
                                 </span>
                               </>
@@ -267,13 +274,13 @@ const Cart = () => {
 
                         <div className="flex flex-col items-end justify-center h-full">
                           {/* Premium Capsule Quantity Selector */}
-                          <div className="flex items-center justify-between border border-slate-200 bg-white rounded-full h-10 w-[115px] px-3 shadow-sm hover:border-slate-300 transition-all select-none">
+                          <div className="flex items-center justify-between border border-border-subtle bg-white rounded-full h-10 w-[115px] px-3 shadow-sm hover:border-primary/30 transition-all select-none">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDecrement(item.product_id, item.quantity);
                               }}
-                              className="h-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer disabled:opacity-50"
+                              className="h-full flex items-center justify-center text-slate-400 hover:text-rose-650 transition-colors focus:outline-none cursor-pointer"
                               title={item.quantity === 1 ? "Remove item" : "Decrease quantity"}
                               data-testid={`decrease-quantity-${product.id}`}
                             >
@@ -283,7 +290,7 @@ const Cart = () => {
                                 <Minus className="w-4 h-4 text-slate-400" />
                               )}
                             </button>
-                            <span className="font-bold text-slate-900 text-lg tabular-nums" data-testid={`cart-item-quantity-${product.id}`}>
+                            <span className="font-bold text-slate-900 text-sm font-mono" data-testid={`cart-item-quantity-${product.id}`}>
                               {item.quantity}
                             </span>
                             <button
@@ -291,7 +298,7 @@ const Cart = () => {
                                 e.stopPropagation();
                                 handleIncrement(item.product_id, item.quantity, product.stock_quantity);
                               }}
-                              className="h-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer disabled:opacity-50"
+                              className="h-full flex items-center justify-center text-slate-400 hover:text-primary transition-colors focus:outline-none cursor-pointer"
                               title="Increase quantity"
                               data-testid={`increase-quantity-${product.id}`}
                             >
@@ -311,18 +318,18 @@ const Cart = () => {
                     variant="outline"
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className="w-10 h-10 p-0 rounded-full"
+                    className="w-10 h-10 p-0 rounded-full border border-border-subtle bg-white text-slate-700 hover:border-primary"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </Button>
-                  <span className="text-sm font-semibold text-slate-500">
-                    Page {currentPage} of {totalPages}
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
+                    PAGE {currentPage} OF {totalPages}
                   </span>
                   <Button
                     variant="outline"
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className="w-10 h-10 p-0 rounded-full"
+                    className="w-10 h-10 p-0 rounded-full border border-border-subtle bg-white text-slate-700 hover:border-primary"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </Button>
@@ -334,11 +341,12 @@ const Cart = () => {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-secondary/30 border border-border/50 rounded-sm p-6 sticky top-24"
+                className="bg-white border border-border-subtle rounded-xl p-6 shadow-sm sticky top-24"
               >
-                <h2 className="text-2xl font-bold mb-6" style={{ fontFamily: 'Manrope' }}>
+                <h2 className="text-2xl font-bold mb-6 font-manrope text-ink-slate border-b border-border-subtle pb-4 uppercase tracking-wider text-sm font-label-caps" style={{ letterSpacing: '0.1em' }}>
                   Order Summary
-                </h2>                {(() => {
+                </h2>
+                {(() => {
                   let shippingCost = 70.0;
                   let enableFreeShipping = true;
                   let freeShippingThreshold = 1099.0;
@@ -367,34 +375,34 @@ const Cart = () => {
                   return (
                     <>
                       {enableFreeShipping && total < freeShippingThreshold && (
-                        <div className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs rounded-sm p-3.5 mb-5 font-bold flex items-center gap-2 animate-pulse">
+                        <div className="bg-primary/5 border border-primary/15 text-primary text-[11px] rounded-lg p-3.5 mb-5 font-bold flex items-center gap-2 animate-pulse font-mono tracking-wide">
                           <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                          <span>Add ₹{(freeShippingThreshold - total).toFixed(2)} more for <span className="underline uppercase tracking-wide">FREE SHIPPING</span>!</span>
+                          <span>ADD ₹{(freeShippingThreshold - total).toFixed(2)} MORE FOR FREE SHIPPING!</span>
                         </div>
                       )}
 
-                      <div className="space-y-4 mb-6">
+                      <div className="space-y-4 mb-6 font-inter">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground text-sm font-semibold">Subtotal</span>
-                          <span className="font-bold text-slate-800" data-testid="cart-subtotal">₹{total.toFixed(2)}</span>
+                          <span className="text-on-surface-variant text-sm font-semibold">Subtotal</span>
+                          <span className="font-bold text-slate-800 font-mono" data-testid="cart-subtotal">₹{total.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground text-sm font-semibold">Shipping Charges</span>
-                          <span className="font-bold text-slate-800">
+                          <span className="text-on-surface-variant text-sm font-semibold">Shipping Charges</span>
+                          <span className="font-bold text-slate-800 font-mono">
                             {calculatedShipping > 0 ? `₹${calculatedShipping.toFixed(2)}` : 'FREE'}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground text-sm font-semibold">SGST (9%)</span>
-                          <span className="font-bold text-slate-800">₹{sgst.toFixed(2)}</span>
+                          <span className="text-on-surface-variant text-sm font-semibold">SGST (9%)</span>
+                          <span className="font-bold text-slate-800 font-mono">₹{sgst.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground text-sm font-semibold">CGST (9%)</span>
-                          <span className="font-bold text-slate-800">₹{cgst.toFixed(2)}</span>
+                          <span className="text-on-surface-variant text-sm font-semibold">CGST (9%)</span>
+                          <span className="font-bold text-slate-800 font-mono">₹{cgst.toFixed(2)}</span>
                         </div>
-                        <div className="border-t border-border/50 pt-4 flex justify-between">
-                          <span className="text-lg font-bold text-slate-900">Total</span>
-                          <span className="text-2xl font-extrabold text-indigo-650" style={{ fontFamily: 'Manrope' }} data-testid="cart-total">
+                        <div className="border-t border-border-subtle pt-4 flex justify-between">
+                          <span className="text-base font-bold text-slate-900 uppercase font-manrope">Total</span>
+                          <span className="text-2xl font-extrabold text-primary font-manrope" data-testid="cart-total">
                             ₹{grandTotal.toFixed(2)}
                           </span>
                         </div>
@@ -405,7 +413,7 @@ const Cart = () => {
 
                 <Button
                   onClick={() => navigate('/checkout')}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-sm font-semibold"
+                  className="w-full bg-primary hover:bg-emerald-hover text-white h-[52px] rounded-lg font-bold tracking-wider uppercase text-sm cursor-pointer shadow-sm active:scale-95 transition-transform"
                   data-testid="proceed-to-checkout-button"
                 >
                   Proceed to Checkout
@@ -414,7 +422,7 @@ const Cart = () => {
                 <Button
                   variant="outline"
                   onClick={() => navigate('/shop')}
-                  className="w-full mt-4"
+                  className="w-full mt-4 h-[52px] rounded-lg border border-border-subtle bg-white text-slate-700 font-bold hover:border-primary tracking-wider uppercase text-sm"
                   data-testid="continue-shopping-button"
                 >
                   Continue Shopping
@@ -424,7 +432,6 @@ const Cart = () => {
           </div>
         )}
       </div>
-
       {/* Remove Item Confirmation Modal */}
       <AnimatePresence>
         {removingProductId && (
@@ -433,34 +440,34 @@ const Cart = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white border border-slate-200 max-w-sm w-full p-6 rounded-sm shadow-2xl relative"
+              className="bg-white border border-border-subtle max-w-sm w-full p-6 rounded-xl shadow-2xl relative"
               onClick={(e) => e.stopPropagation()}
             >
               <button 
                 onClick={() => setRemovingProductId(null)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-650 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
               
-              <h3 className="text-slate-900 font-bold text-xl tracking-wide mb-2" style={{ fontFamily: 'Manrope' }}>
+              <h3 className="text-slate-900 font-bold text-xl tracking-wide mb-2 font-manrope">
                 REMOVE ITEM?
               </h3>
               
-              <p className="text-slate-600 text-sm mb-6">
+              <p className="text-slate-600 text-sm mb-6 font-medium">
                 Are you sure you want to remove this item from your cart?
               </p>
               
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => setRemovingProductId(null)}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-sm text-center transition-colors tracking-wide text-sm cursor-pointer"
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg text-center transition-colors tracking-wide text-sm cursor-pointer"
                 >
                   GO BACK
                 </button>
                 <button
                   onClick={handleConfirmRemove}
-                  className="w-full border border-slate-300 bg-rose-50/40 hover:bg-rose-50 text-rose-700 font-bold py-3 rounded-sm text-center transition-colors tracking-wide text-sm cursor-pointer"
+                  className="w-full border border-slate-200 bg-rose-50/45 hover:bg-rose-50 text-rose-700 font-bold py-3 rounded-lg text-center transition-colors tracking-wide text-sm cursor-pointer"
                 >
                   REMOVE ITEM
                 </button>

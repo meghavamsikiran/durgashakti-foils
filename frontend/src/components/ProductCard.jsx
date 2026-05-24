@@ -168,22 +168,20 @@ const ProductCard = ({ product }) => {
   const handleNotifyMe = (e) => {
     e.stopPropagation();
     toast.success(`🔔 We will email you once this item is back in stock!`);
-  };
-
-  return (
+  };  return (
     <>
       <motion.div
         whileHover={{ y: -5 }}
         transition={{ duration: 0.2 }}
-        className="group relative overflow-hidden bg-card border border-border/50 rounded-sm hover:border-primary/50 transition-colors cursor-pointer"
+        className="group relative overflow-hidden bg-white border border-border-subtle rounded-xl hover:border-primary hover:shadow-emerald-glow transition-all duration-300 cursor-pointer flex flex-col"
         onClick={() => navigate(`/product/${product.id}`)}
         data-testid={`product-card-${product.id}`}
       >
-        <div className="aspect-square overflow-hidden bg-secondary/30 relative">
+        <div className="aspect-square overflow-hidden bg-surface-container-low relative">
           <img
             src={formatImageUrl(product.image_url)}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
             data-testid="product-image"
           />
           
@@ -202,10 +200,10 @@ const ProductCard = ({ product }) => {
 
           {/* Active Tag */}
           {activeTag && (
-            <div className={`absolute top-3 left-0 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-lg rounded-r-full z-10
-              ${activeTag === 'Best Seller' ? 'bg-indigo-600' : 
+            <div className={`absolute top-3 left-0 text-white px-3 py-1 text-[9px] font-black uppercase tracking-widest shadow-md rounded-r-full z-10
+              ${activeTag === 'Best Seller' ? 'bg-primary' : 
                 activeTag === 'Hot Deal' ? 'bg-rose-600' : 
-                activeTag === 'High Demand' ? 'bg-orange-500' : 
+                activeTag === 'High Demand' ? 'bg-warning-orange' : 
                 'bg-amber-500'}`}>
               {activeTag}
             </div>
@@ -213,32 +211,78 @@ const ProductCard = ({ product }) => {
 
           {/* Discount Percentage Tag */}
           {product.discount_price > 0 && product.discount_price < product.price && (
-            <div className="absolute bottom-3 right-3 bg-rose-600 text-white px-2 py-0.5 text-[10px] font-black rounded-sm z-10">
+            <div className="absolute top-3 left-3 bg-rose-650 text-white px-2 py-0.5 text-[9px] font-black rounded-sm z-10" style={{ left: activeTag ? 'auto' : '12px', right: activeTag ? '12px' : 'auto' }}>
               -{Math.round(((product.price - product.discount_price) / product.price) * 100)}%
             </div>
           )}
 
           {(Number(product.stock_quantity) <= 0 || product.in_stock === false) && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-              <span className="bg-red-600 text-white px-4 py-2 text-sm font-semibold rounded-sm">Out of Stock</span>
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
+              <span className="bg-destructive text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg">Out of Stock</span>
             </div>
           )}
 
-          {/* Non-blocking Quantity updated absolute overlay inside image container */}
+          {/* Slide-Up Quantity Selector / Add to Cart Panel */}
+          {!(Number(product.stock_quantity) <= 0 || product.in_stock === false) && (
+            <div 
+              className={`absolute bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-border-subtle transition-transform duration-300 ease-out z-20 flex items-center justify-center
+                ${qty > 0 ? 'translate-y-0' : 'translate-y-full group-hover:translate-y-0'}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {qty > 0 ? (
+                <div className="flex items-center justify-between border border-border-subtle bg-white rounded-full h-10 w-full px-3.5 shadow-sm hover:border-primary/50 transition-all select-none">
+                  <button
+                    onClick={handleDecrement}
+                    className="h-full flex items-center justify-center text-slate-400 hover:text-rose-650 transition-colors focus:outline-none cursor-pointer"
+                    title={qty === 1 ? "Remove item" : "Decrease quantity"}
+                    data-testid={`decrease-quantity-${product.id}`}
+                  >
+                    {qty === 1 ? (
+                      <Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-600 transition-colors" />
+                    ) : (
+                      <Minus className="w-4 h-4 text-slate-400" />
+                    )}
+                  </button>
+                  <span className="font-bold text-slate-800 text-xs font-mono tracking-wider">
+                    {qty} IN CART
+                  </span>
+                  <button
+                    onClick={handleIncrement}
+                    className="h-full flex items-center justify-center text-slate-400 hover:text-primary transition-colors focus:outline-none cursor-pointer"
+                    title="Increase quantity"
+                    data-testid={`increase-quantity-${product.id}`}
+                  >
+                    <Plus className="w-4 h-4 text-slate-400" />
+                  </button>
+                </div>
+              ) : (
+                <Button
+                  onClick={handleAddToCart}
+                  className="w-full bg-primary hover:bg-emerald-hover text-white h-10 rounded-lg font-bold transition-all flex items-center justify-center gap-2 shadow-sm text-xs cursor-pointer active:scale-95"
+                  data-testid="add-to-cart-button"
+                >
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  ADD TO CART
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Non-blocking Quantity updated absolute overlay */}
           <AnimatePresence>
             {showUpdatedBanner && (
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 30 }}
-                className="absolute bottom-0 left-0 right-0 border-t border-rose-200 bg-white/95 backdrop-blur-sm p-3 px-4 flex items-center justify-between shadow-lg z-20"
+                className="absolute bottom-0 left-0 right-0 border-t border-border-subtle bg-white/95 backdrop-blur-sm p-3 px-4 flex items-center justify-between shadow-lg z-20"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-4.5 h-4.5 rounded-full border border-rose-400 flex items-center justify-center bg-rose-50 flex-shrink-0">
-                    <Check className="w-2.5 h-2.5 text-rose-500 stroke-[3]" />
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full border border-primary flex items-center justify-center bg-primary/10 flex-shrink-0">
+                    <Check className="w-2.5 h-2.5 text-primary stroke-[3]" />
                   </div>
-                  <span className="text-xs font-semibold text-rose-900 font-manrope">
+                  <span className="text-xs font-bold text-ink-slate font-manrope">
                     Quantity updated
                   </span>
                 </div>
@@ -247,7 +291,7 @@ const ProductCard = ({ product }) => {
                     e.stopPropagation();
                     navigate('/cart');
                   }}
-                  className="text-xs font-bold text-slate-900 underline hover:text-rose-700 transition-colors cursor-pointer"
+                  className="text-xs font-bold text-primary underline hover:text-emerald-hover transition-colors cursor-pointer"
                 >
                   Go to cart
                 </button>
@@ -256,93 +300,54 @@ const ProductCard = ({ product }) => {
           </AnimatePresence>
         </div>
 
-        <div className="p-5 flex flex-col justify-between h-[245px]">
+        <div className="p-5 flex flex-col justify-between flex-1 h-[190px]">
           <div>
-            <div className="mb-2">
-              <span className="text-xs uppercase tracking-widest font-semibold text-muted-foreground">
+            <div className="mb-1.5">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle">
                 {product.size} • {product.thickness}
               </span>
             </div>
             
-            <h3 className="font-semibold text-lg mb-2 line-clamp-2" style={{ fontFamily: 'Manrope' }} data-testid="product-name">
+            <h3 className="font-bold text-base font-manrope text-ink-slate mb-1 line-clamp-2 hover:text-primary transition-colors" data-testid="product-name">
               {product.name}
             </h3>
             
-            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+            <p className="text-xs text-text-muted leading-relaxed line-clamp-2 font-inter mb-4">
               {product.description}
             </p>
           </div>
 
           <div>
             <div className="flex items-center justify-between mt-auto">
-              {/* Amazon styled price */}
               <div className="flex flex-col gap-0.5 min-w-0">
                 {product.discount_price > 0 && product.discount_price < product.price ? (
-                  <div className="flex flex-col">
-                    <span className="text-2xl font-black text-slate-900 leading-none animate-in fade-in" style={{ fontFamily: 'Manrope' }} data-testid="product-price">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-black text-ink-slate font-manrope leading-none" data-testid="product-price">
                       ₹{product.discount_price}
                     </span>
-                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                      <span className="text-[11px] text-slate-500 font-manrope font-semibold">
-                        M.R.P.: <span className="line-through font-bold text-slate-600">₹{product.price}</span>
-                      </span>
-                      <span className="text-[11px] font-black text-rose-600 font-manrope whitespace-nowrap">
-                        ({Math.round(((product.price - product.discount_price) / product.price) * 100)}% off)
-                      </span>
-                    </div>
+                    <span className="text-[11px] text-text-muted line-through font-semibold">
+                      ₹{product.price}
+                    </span>
                   </div>
                 ) : (
-                  <span className="text-2xl font-black text-slate-900 leading-none" style={{ fontFamily: 'Manrope' }} data-testid="product-price">
+                  <span className="text-xl font-black text-ink-slate font-manrope leading-none" data-testid="product-price">
                     ₹{product.price}
                   </span>
                 )}
               </div>
               
-              {/* Premium Capsule Quantity Selector or Notify Me */}
-              <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                {Number(product.stock_quantity) <= 0 || product.in_stock === false ? (
+              {/* Notify Me button when out of stock */}
+              {(Number(product.stock_quantity) <= 0 || product.in_stock === false) && (
+                <div onClick={(e) => e.stopPropagation()}>
                   <Button
                     onClick={handleNotifyMe}
-                    className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-800 h-10 px-4 rounded-full font-bold transition-all shadow-sm text-xs flex items-center gap-2 cursor-pointer"
+                    className="border border-border-subtle bg-white hover:bg-slate-50 text-slate-700 h-9 px-3 rounded-lg font-bold transition-all shadow-sm text-[10px] flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Bell className="w-3.5 h-3.5 text-slate-500" />
-                    NOTIFY ME
+                    <Bell className="w-3 h-3 text-slate-500" />
+                    NOTIFY
                   </Button>
-                ) : qty > 0 ? (
-                  <div className="flex items-center justify-between border border-slate-200 bg-white rounded-full h-10 w-[115px] px-3 shadow-sm hover:border-slate-300 transition-all select-none">
-                    <button
-                      onClick={handleDecrement}
-                      className="h-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer"
-                      title={qty === 1 ? "Remove item" : "Decrease quantity"}
-                    >
-                      {qty === 1 ? (
-                        <Trash2 className="w-4 h-4 text-slate-400 hover:text-rose-600 transition-colors" />
-                      ) : (
-                        <Minus className="w-4 h-4 text-slate-400" />
-                      )}
-                    </button>
-                    <span className="font-bold text-slate-900 text-lg tabular-nums">
-                      {qty}
-                    </span>
-                    <button
-                      onClick={handleIncrement}
-                      className="h-full flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors focus:outline-none cursor-pointer"
-                      title="Increase quantity"
-                    >
-                      <Plus className="w-4 h-4 text-slate-400" />
-                    </button>
-                  </div>
-                ) : (
-                  <Button
-                    onClick={handleAddToCart}
-                    className="bg-slate-900 hover:bg-slate-800 text-white h-10 px-5 rounded-full font-bold transition-transform active:scale-95 flex items-center gap-2 shadow-sm text-sm cursor-pointer"
-                    data-testid="add-to-cart-button"
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                    Add
-                  </Button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

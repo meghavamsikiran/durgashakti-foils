@@ -106,20 +106,20 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
     return (
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => setShowForm(false)} className="rounded-full">
+          <Button variant="ghost" size="icon" onClick={() => setShowForm(false)} className="rounded-lg">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Add Saved Card</h2>
+          <h2 className="text-3xl font-black text-foreground uppercase tracking-tighter">Add Saved Card</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {/* Card Mockup */}
-          <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 text-white shadow-2xl aspect-[1.586/1] w-full max-w-[400px] mx-auto flex flex-col justify-between relative overflow-hidden border border-white/10">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -mr-32 -mt-32"></div>
+          <div className="p-8 rounded-xl bg-gradient-to-br from-[#0f172a] to-[#020617] text-white shadow-emerald-glow aspect-[1.586/1] w-full max-w-[400px] mx-auto flex flex-col justify-between relative overflow-hidden border border-border-subtle/10">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none -mr-32 -mt-32"></div>
             
             <div className="flex justify-between items-start relative z-10">
               <div className="space-y-1">
-                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-indigo-300">SECURE VAULT CARD</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-400">SECURE VAULT CARD</span>
                 <div className="w-10 h-8 bg-amber-400/20 border border-amber-400/30 rounded-lg flex items-center justify-center overflow-hidden">
                   <div className="grid grid-cols-3 gap-[1px] w-6 h-5 opacity-80">
                     <div className="border border-amber-400/50 rounded-sm"></div>
@@ -131,7 +131,7 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
                   </div>
                 </div>
               </div>
-              <span className="text-xs font-black uppercase tracking-widest text-indigo-200">{cardBrand}</span>
+              <span className="text-xs font-black uppercase tracking-widest text-emerald-400">{cardBrand}</span>
             </div>
 
             <div className="space-y-6 relative z-10">
@@ -141,12 +141,12 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
               
               <div className="flex justify-between items-end">
                 <div className="min-w-0 flex-1 pr-4">
-                  <p className="text-[8px] font-black uppercase tracking-widest text-indigo-300">Card Holder</p>
-                  <p className="font-bold text-sm uppercase truncate text-indigo-50">{formData.holderName || 'VALUED CUSTOMER'}</p>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Card Holder</p>
+                  <p className="font-bold text-sm uppercase truncate text-slate-100">{formData.holderName || 'VALUED CUSTOMER'}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-[8px] font-black uppercase tracking-widest text-indigo-300">Expires</p>
-                  <p className="font-bold text-sm text-indigo-50">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Expires</p>
+                  <p className="font-bold text-sm text-slate-100 font-mono">
                     {formData.expiryMonth ? formData.expiryMonth.padStart(2, '0') : 'MM'}/{formData.expiryYear ? formData.expiryYear.padStart(2, '0') : 'YY'}
                   </p>
                 </div>
@@ -155,34 +155,34 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-xl space-y-6">
+          <form onSubmit={handleSubmit} className="bg-surface-container-lowest p-6 rounded-xl border border-border-subtle shadow-sm space-y-6">
             <div className="flex flex-col gap-1.5">
-              <Label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">Card Number</Label>
+              <Label className="text-[10px] text-muted-foreground font-black uppercase tracking-wider ml-1">Card Number</Label>
               <Input
                 required
                 type="text"
                 placeholder="4111 2222 3333 4444"
                 value={formData.cardNumber}
                 onChange={handleCardNumberChange}
-                className="h-12 rounded-xl border-slate-200 bg-slate-50/50 px-4 text-sm focus:border-primary focus:ring-0 transition-all font-mono"
+                className="h-12 rounded-lg border border-border-subtle bg-surface px-4 text-sm focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all font-mono"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">Card Holder Name</Label>
+              <Label className="text-[10px] text-muted-foreground font-black uppercase tracking-wider ml-1">Card Holder Name</Label>
               <Input
                 required
                 type="text"
                 placeholder="JOHN DOE"
                 value={formData.holderName}
                 onChange={(e) => setFormData({ ...formData, holderName: e.target.value })}
-                className="h-12 rounded-xl border-slate-200 bg-slate-50/50 px-4 text-sm focus:border-primary focus:ring-0 transition-all uppercase"
+                className="h-12 rounded-lg border border-border-subtle bg-surface px-4 text-sm focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all uppercase"
               />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col gap-1.5">
-                <Label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">Expiry Month</Label>
+                <Label className="text-[10px] text-muted-foreground font-black uppercase tracking-wider ml-1">Expiry Month</Label>
                 <Input
                   required
                   type="text"
@@ -190,11 +190,11 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
                   maxLength={2}
                   value={formData.expiryMonth}
                   onChange={(e) => setFormData({ ...formData, expiryMonth: e.target.value.replace(/\D/g, '') })}
-                  className="h-12 rounded-xl border-slate-200 bg-slate-50/50 px-4 text-sm text-center focus:border-primary focus:ring-0 transition-all"
+                  className="h-12 rounded-lg border border-border-subtle bg-surface px-4 text-sm text-center focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all font-mono"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">Expiry Year</Label>
+                <Label className="text-[10px] text-muted-foreground font-black uppercase tracking-wider ml-1">Expiry Year</Label>
                 <Input
                   required
                   type="text"
@@ -202,11 +202,11 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
                   maxLength={2}
                   value={formData.expiryYear}
                   onChange={(e) => setFormData({ ...formData, expiryYear: e.target.value.replace(/\D/g, '') })}
-                  className="h-12 rounded-xl border-slate-200 bg-slate-50/50 px-4 text-sm text-center focus:border-primary focus:ring-0 transition-all"
+                  className="h-12 rounded-lg border border-border-subtle bg-surface px-4 text-sm text-center focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all font-mono"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">CVV</Label>
+                <Label className="text-[10px] text-muted-foreground font-black uppercase tracking-wider ml-1">CVV</Label>
                 <Input
                   required
                   type="password"
@@ -214,7 +214,7 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
                   maxLength={3}
                   value={formData.cvv}
                   onChange={(e) => setFormData({ ...formData, cvv: e.target.value.replace(/\D/g, '') })}
-                  className="h-12 rounded-xl border-slate-200 bg-slate-50/50 px-4 text-sm text-center focus:border-primary focus:ring-0 transition-all font-mono"
+                  className="h-12 rounded-lg border border-border-subtle bg-surface px-4 text-sm text-center focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all font-mono"
                 />
               </div>
             </div>
@@ -223,7 +223,7 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-2"
+                className="flex-1 h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-lg text-xs transition-all shadow-sm hover:shadow-emerald-glow flex items-center justify-center gap-2"
               >
                 <Lock className="w-4 h-4" /> {submitting ? 'SAVING...' : 'SAVE SECURELY'}
               </Button>
@@ -231,7 +231,7 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
                 type="button"
                 variant="ghost"
                 onClick={() => setShowForm(false)}
-                className="h-12 rounded-xl border border-slate-200 text-slate-600 font-bold px-6 text-xs uppercase"
+                className="h-12 rounded-lg border border-border-subtle text-muted-foreground font-bold px-6 text-xs uppercase hover:bg-surface-container"
               >
                 Cancel
               </Button>
@@ -245,54 +245,54 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Security Vault</h2>
-        <Button onClick={() => setShowForm(true)} className="rounded-2xl h-14 px-8 gap-2 bg-slate-900 text-white font-black uppercase tracking-widest w-full sm:w-auto justify-center">
+        <h2 className="text-3xl font-black text-foreground uppercase tracking-tighter">Security Vault</h2>
+        <Button onClick={() => setShowForm(true)} className="rounded-lg h-12 px-6 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-emerald-glow font-black uppercase tracking-widest w-full sm:w-auto justify-center">
           <Plus className="w-5 h-5" /> Add Card
         </Button>
       </div>
 
-      <div className="p-8 bg-indigo-600 rounded-[2.5rem] text-white relative overflow-hidden">
+      <div className="p-6 bg-[#0B1220] rounded-xl text-white relative overflow-hidden border border-border-subtle/10">
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-4">
-            <ShieldCheck className="w-6 h-6 text-indigo-300" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200">PCI-DSS Compliant</span>
+            <ShieldCheck className="w-6 h-6 text-primary" />
+            <span className="text-[10px] font-mono tracking-wider font-semibold text-slate-400">PCI-DSS Compliant</span>
           </div>
           <h3 className="text-xl font-black mb-2 uppercase">Safe & Secure</h3>
-          <p className="text-indigo-100 text-sm font-medium leading-relaxed max-w-md">We use industry-standard tokenization to ensure your card details never touch our servers. Your security is our priority.</p>
+          <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-md">We use industry-standard tokenization to ensure your card details never touch our servers. Your security is our priority.</p>
         </div>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {cards.length === 0 ? (
-          <div className="md:col-span-2 p-20 text-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
-            <CreditCard className="w-10 h-10 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500 font-bold">No saved cards found</p>
+          <div className="md:col-span-2 p-16 text-center bg-surface-container-low rounded-xl border border-dashed border-border-subtle">
+            <CreditCard className="w-10 h-10 text-muted-foreground/40 mx-auto mb-4" />
+            <p className="text-muted-foreground font-bold">No saved cards found</p>
           </div>
         ) : cards.map(card => (
-          <div key={card.id} className="p-8 rounded-[2.5rem] bg-white border border-slate-200 shadow-xl relative overflow-hidden group hover:scale-[1.02] transition-all">
+          <div key={card.id} className="p-6 rounded-xl bg-surface-container-lowest border border-border-subtle shadow-sm relative overflow-hidden group hover:shadow-emerald-glow hover:border-primary/50 transition-all">
             <div className="flex justify-between items-start mb-12">
-              <div className="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center">
-                <CreditCard className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 bg-[#0B1220] rounded-lg flex items-center justify-center">
+                <CreditCard className="w-5 h-5 text-white" />
               </div>
               <div className="text-right">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{card.brand || 'Card'}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{card.brand || 'Card'}</span>
               </div>
             </div>
             <div className="space-y-4">
-              <div className="text-2xl font-black text-slate-900 tracking-[0.2em]">•••• •••• •••• {card.last4}</div>
+              <div className="text-2xl font-black text-foreground tracking-[0.2em] font-mono">•••• •••• •••• {card.last4}</div>
               <div className="flex justify-between items-end">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Card Holder</p>
-                  <p className="font-black text-slate-900 uppercase">{card.holder_name || 'Valued Customer'}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Card Holder</p>
+                  <p className="font-black text-foreground uppercase">{card.holder_name || 'Valued Customer'}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Expires</p>
-                  <p className="font-black text-slate-900">{card.expiry_month}/{card.expiry_year}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Expires</p>
+                  <p className="font-black text-foreground font-mono">{card.expiry_month}/{card.expiry_year}</p>
                 </div>
               </div>
             </div>
-            <div className="absolute bottom-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-16 -mb-16 group-hover:bg-indigo-100 transition-colors"></div>
+            <div className="absolute bottom-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mb-16 group-hover:bg-primary/10 transition-colors"></div>
           </div>
         ))}
       </div>

@@ -32,36 +32,36 @@ const Footer = () => {
   }, []);
 
   return (
-    <footer className="bg-secondary/30 border-t border-border/50 mt-24">
+    <footer className="bg-surface-container-low border-t border-border-subtle mt-24 font-inter text-on-surface">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Package className="w-6 h-6 text-primary" />
-              <span className="font-bold text-xl" style={{ fontFamily: 'Manrope' }}>
+              <span className="font-bold text-xl font-manrope text-ink-slate">
                 {profile.companyName.split(' ')[0]} <span className="text-primary ml-1">{profile.companyName.split(' ').slice(1).join(' ')}</span>
               </span>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-on-surface-variant leading-relaxed">
               Premium food-grade aluminum foil manufacturer. ISO certified quality products for your kitchen needs.
             </p>
           </div>
 
           <div>
-            <h3 className="font-semibold mb-4" style={{ fontFamily: 'Manrope' }}>Quick Links</h3>
+            <h3 className="font-bold mb-4 font-manrope text-ink-slate tracking-wide uppercase text-xs font-label-caps">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/shop" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/shop" className="text-sm text-on-surface-variant hover:text-primary transition-colors font-medium">
                   Shop
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/about" className="text-sm text-on-surface-variant hover:text-primary transition-colors font-medium">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/contact" className="text-sm text-on-surface-variant hover:text-primary transition-colors font-medium">
                   Contact Us
                 </Link>
               </li>
@@ -69,15 +69,15 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="font-semibold mb-4" style={{ fontFamily: 'Manrope' }}>Customer Service</h3>
+            <h3 className="font-bold mb-4 font-manrope text-ink-slate tracking-wide uppercase text-xs font-label-caps">Customer Service</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/dashboard" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/dashboard" className="text-sm text-on-surface-variant hover:text-primary transition-colors font-medium">
                   My Orders
                 </Link>
               </li>
               <li>
-                <Link to="/cart" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/cart" className="text-sm text-on-surface-variant hover:text-primary transition-colors font-medium">
                   Shopping Cart
                 </Link>
               </li>
@@ -85,24 +85,24 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="font-semibold mb-4" style={{ fontFamily: 'Manrope' }}>Contact Us</h3>
+            <h3 className="font-bold mb-4 font-manrope text-ink-slate tracking-wide uppercase text-xs font-label-caps">Contact Us</h3>
             <ul className="space-y-3">
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-sm text-on-surface-variant">
                   {profile.companyAddress}
                 </span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-primary flex-shrink-0" />
-                <a href={`tel:${profile.companyPhone}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <a href={`tel:${profile.companyPhone}`} className="text-sm text-on-surface-variant hover:text-primary transition-colors font-medium">
                   {profile.companyPhone}
                 </a>
               </li>
               {profile.companyEmail && (
                 <li className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-primary flex-shrink-0" />
-                  <a href={`mailto:${profile.companyEmail}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href={`mailto:${profile.companyEmail}`} className="text-sm text-on-surface-variant hover:text-primary transition-colors font-medium">
                     {profile.companyEmail}
                   </a>
                 </li>
@@ -111,8 +111,8 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-border/50 mt-12 pt-8 text-center">
-          <p className="text-sm text-muted-foreground">
+        <div className="border-t border-border-subtle mt-12 pt-8 text-center">
+          <p className="text-sm text-on-surface-variant font-medium">
             © {new Date().getFullYear()} {profile.companyName} PVT. LTD. All rights reserved.
           </p>
         </div>

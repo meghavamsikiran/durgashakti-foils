@@ -138,10 +138,10 @@ const Contact = () => {
   const inputClass = "h-11 rounded-xl border-slate-200 bg-slate-50/50 px-4 text-sm focus:border-primary focus:ring-0 transition-all placeholder:text-slate-300";
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 animate-in fade-in duration-500" style={{ fontFamily: 'Outfit, sans-serif' }}>
+    <div className="min-h-screen bg-surface text-on-surface animate-in fade-in duration-500 font-inter" style={{ fontFamily: 'Inter, sans-serif' }}>
       
       {/* ── HERO SECTION ────────────────────────────────────────────────── */}
-      <section className="pt-24 pb-12 md:pt-32 md:pb-16 bg-white relative overflow-hidden border-b border-slate-100">
+      <section className="pt-24 pb-12 md:pt-32 md:pb-16 bg-white relative overflow-hidden border-b border-border-subtle">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] pointer-events-none -mr-32 -mt-32" />
         
         <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
@@ -153,20 +153,19 @@ const Contact = () => {
           >
             <motion.span 
               variants={fadeInUp} 
-              className="text-xs font-black tracking-[0.25em] text-primary bg-primary/5 px-4 py-1.5 rounded-full uppercase mb-4 inline-block"
+              className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-primary bg-primary/5 px-4 py-1.5 rounded-full mb-4 inline-block border border-primary/10"
             >
               Get in Touch
             </motion.span>
             <motion.h1 
               variants={fadeInUp} 
-              className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 mb-4"
-              style={{ fontFamily: 'Manrope, sans-serif' }}
+              className="text-4xl md:text-5xl font-bold tracking-tighter text-ink-slate mb-4 font-manrope"
             >
               Contact Us
             </motion.h1>
             <motion.p 
               variants={fadeInUp} 
-              className="text-sm md:text-base text-slate-500 font-medium max-w-lg mx-auto"
+              className="text-sm md:text-base text-on-surface-variant font-medium max-w-lg mx-auto"
             >
               Have a bulk inquiry, custom sizing request, or need order support? Reach out and we will assist you immediately.
             </motion.p>
@@ -174,16 +173,16 @@ const Contact = () => {
         </div>
       </section>
 
-      {/* ── NICEPAGE VISUAL ARCHITECTURE 3-COLUMN LAYOUT ─────────────────── */}
-      <section className="py-12 md:py-20">
+      {/* ── VISUAL ARCHITECTURE 3-COLUMN LAYOUT ─────────────────── */}
+      <section className="py-12 md:py-20 bg-surface">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 rounded-3xl overflow-hidden shadow-xl border border-slate-200/50 bg-white">
+          <div className="grid grid-cols-1 lg:grid-cols-3 rounded-xl overflow-hidden shadow-sm border border-border-subtle bg-white">
             
             {/* 1. LEFT COLUMN: Contact Form */}
             <div className="p-8 md:p-12 flex flex-col justify-between bg-white">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 mb-6" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                <h2 className="text-2xl font-bold text-ink-slate font-manrope mb-6 uppercase tracking-wider text-sm font-label-caps" style={{ letterSpacing: '0.1em' }}>
                   Contact Form
                 </h2>
                 
@@ -191,55 +190,55 @@ const Contact = () => {
                   <motion.div 
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-primary/5 text-primary border border-primary/10 p-6 rounded-2xl text-center my-auto"
+                    className="bg-primary/5 text-primary border border-primary/15 p-6 rounded-lg text-center my-auto font-mono text-xs font-bold tracking-wide"
                   >
-                    <span className="text-base font-black block mb-1">🎉 Message Sent!</span>
-                    <span className="text-xs font-medium leading-relaxed">Thank you. We will get back to you shortly.</span>
+                    <span className="text-sm font-black block mb-1">🎉 MESSAGE SENT!</span>
+                    <span className="leading-relaxed">Thank you. We will get back to you shortly.</span>
                   </motion.div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="flex flex-col gap-1.5">
-                      <Label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">Name</Label>
+                      <Label className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest ml-1">Name</Label>
                       <Input 
                         required
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder="Enter your Name" 
-                        className={inputClass} 
+                        className="h-12 border-border-subtle text-slate-800" 
                       />
                     </div>
                     
                     <div className="flex flex-col gap-1.5">
-                      <Label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">Email</Label>
+                      <Label className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest ml-1">Email</Label>
                       <Input 
                         required
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="Enter a valid email address" 
-                        className={inputClass} 
+                        className="h-12 border-border-subtle text-slate-800" 
                       />
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <Label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">Phone Number</Label>
+                      <Label className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest ml-1">Phone Number</Label>
                       <PhoneInput 
                         international
                         defaultCountry="IN"
                         value={formData.phone}
                         onChange={(val) => setFormData({ ...formData, phone: val || '' })}
-                        className="flex h-11 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2 text-sm focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 transition-all outline-none" 
+                        className="flex h-12 w-full rounded-lg border border-border-subtle bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none" 
                       />
                     </div>
                     
                     <div className="flex flex-col gap-1.5">
-                      <Label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">Message</Label>
+                      <Label className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest ml-1">Message</Label>
                       <textarea 
                         required
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                         placeholder="Your message here..."
-                        className="w-full min-h-[100px] rounded-xl border border-slate-200 bg-slate-50/50 p-4 text-sm focus:border-primary focus:ring-0 transition-all outline-none"
+                        className="w-full min-h-[100px] rounded-lg border border-border-subtle bg-white p-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none text-slate-800 font-semibold"
                       />
                     </div>
 
@@ -250,17 +249,17 @@ const Contact = () => {
                         id="terms" 
                         checked={acceptedTerms}
                         onChange={(e) => setAcceptedTerms(e.target.checked)}
-                        className="rounded border-slate-300 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                        className="rounded border-slate-350 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
                       />
-                      <label htmlFor="terms" className="text-[11px] text-slate-400 font-semibold cursor-pointer">
-                        I accept the <span onClick={() => setShowTermsModal(true)} className="underline hover:text-primary text-indigo-600 font-bold">Terms of Service</span>
+                      <label htmlFor="terms" className="text-[10px] text-slate-400 font-mono font-bold cursor-pointer uppercase tracking-wider">
+                        I accept the <span onClick={() => setShowTermsModal(true)} className="underline hover:text-emerald-hover text-primary font-bold">Terms of Service</span>
                       </label>
                     </div>
 
                     <Button 
                       type="submit" 
                       disabled={submitting}
-                      className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-xl text-xs transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full h-[52px] bg-primary hover:bg-emerald-hover text-white font-bold uppercase tracking-wider rounded-lg text-xs transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 duration-200"
                     >
                       {submitting ? 'SUBMITTING...' : 'SUBMIT'}
                     </Button>
@@ -268,23 +267,23 @@ const Contact = () => {
                 )}
               </div>
               
-              <div className="mt-8 pt-6 border-t border-slate-100 flex items-center gap-2 text-slate-400">
+              <div className="mt-8 pt-6 border-t border-slate-100 flex items-center gap-2 text-slate-400 font-mono">
                 <Shield className="w-4 h-4 text-primary/50" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">Secure end-to-end processing</span>
+                <span className="text-[9px] font-bold uppercase tracking-widest">Secure end-to-end processing</span>
               </div>
             </div>
 
             {/* 2. MIDDLE COLUMN: Dark Contact Info */}
-            <div className="bg-[#1A252C] text-white p-8 md:p-12 flex flex-col justify-center text-center space-y-10 relative overflow-hidden">
+            <div className="bg-[#0B1220] text-white p-8 md:p-12 flex flex-col justify-center text-center space-y-10 relative overflow-hidden border-l border-r border-border-subtle/10">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
               
               {/* Call Us section */}
               <div className="space-y-3">
-                <span className="text-xs font-black tracking-[0.2em] text-primary uppercase block">
+                <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-primary uppercase block">
                   CALL US
                 </span>
                 <div className="space-y-1">
-                  <a href={`tel:${profile.companyPhone}`} className="text-lg font-bold hover:text-primary transition-colors block">
+                  <a href={`tel:${profile.companyPhone}`} className="text-lg font-bold hover:text-primary transition-colors block font-manrope">
                     {profile.companyPhone}
                   </a>
                 </div>
@@ -292,25 +291,25 @@ const Contact = () => {
 
               {/* Location section */}
               <div className="space-y-3">
-                <span className="text-xs font-black tracking-[0.2em] text-primary uppercase block">
+                <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-primary uppercase block">
                   LOCATION
                 </span>
-                <p className="text-sm font-medium text-slate-300 leading-relaxed whitespace-pre-line max-w-xs mx-auto">
+                <p className="text-xs font-semibold text-slate-305 leading-relaxed whitespace-pre-line max-w-xs mx-auto">
                   {profile.companyAddress}
                 </p>
               </div>
 
               {profile.companyEmail && (
                 <div className="space-y-3">
-                  <span className="text-xs font-black tracking-[0.2em] text-primary uppercase block">
+                  <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-primary uppercase block">
                     OUR SERVICES & CONTACT
                   </span>
-                  <div className="space-y-1 text-slate-300 text-sm">
+                  <div className="space-y-1 text-slate-300 text-xs font-medium">
                     <a href={`mailto:${profile.companyEmail}`} className="font-bold hover:text-primary transition-colors block mb-2">
                       {profile.companyEmail}
                     </a>
-                    <p className="text-xs text-slate-400">Business Hours: Mon - Sat (8am - 8pm)</p>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">ISO 9001:2015 Certified Manufacturing</p>
+                    <p className="text-[10px] text-slate-400 font-mono">Business Hours: Mon - Sat (8am - 8pm)</p>
+                    <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-1 font-mono">ISO 9001:2015 Certified Manufacturing</p>
                   </div>
                 </div>
               )}
@@ -330,12 +329,12 @@ const Contact = () => {
               />
               
               {/* Floating Get Directions CTA overlay */}
-              <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur border border-slate-200/50 p-4 rounded-2xl shadow-lg flex justify-between items-center gap-4">
+              <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur border border-border-subtle p-4 rounded-xl shadow-lg flex justify-between items-center gap-4">
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900 leading-tight" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                  <h4 className="font-bold text-xs text-slate-900 leading-tight font-manrope">
                     {profile.companyName}
                   </h4>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Live Location Pin</p>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5 font-mono tracking-wider">Live Location Pin</p>
                 </div>
                 
                 <motion.a 
@@ -344,9 +343,9 @@ const Contact = () => {
                   href={profile.googleMapsLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 bg-primary hover:bg-primary/95 text-primary-foreground font-black px-4 py-2.5 rounded-xl shadow-md text-[10px] tracking-wide uppercase transition-colors"
+                  className="flex items-center gap-1.5 bg-primary hover:bg-emerald-hover text-white font-bold px-4 py-2.5 rounded-lg shadow-sm text-[10px] tracking-wide uppercase transition-colors"
                 >
-                  <Navigation className="w-3.5 h-3.5 fill-primary-foreground text-primary-foreground" />
+                  <Navigation className="w-3.5 h-3.5 fill-white text-white" />
                   Get Directions
                 </motion.a>
               </div>

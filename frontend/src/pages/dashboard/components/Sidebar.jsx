@@ -16,48 +16,52 @@ const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, wishlistC
   ];
 
   return (
-    <aside className="w-full xl:w-80 flex-shrink-0 xl:sticky xl:top-24 self-start xl:h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide rounded-3xl">
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden min-h-full">
-        <div className="p-6 md:p-8 bg-slate-900 text-white relative overflow-hidden">
+    <aside className="w-full xl:w-80 flex-shrink-0 xl:sticky xl:top-24 self-start xl:h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide rounded-xl">
+      <div className="bg-[#0B1220] rounded-xl border border-slate-800 shadow-xl overflow-hidden min-h-full font-inter">
+        <div className="p-6 md:p-8 bg-[#0B1220] text-white relative overflow-hidden border-b border-slate-800">
           <div className="relative z-10 flex flex-row items-center gap-4 xl:flex-col xl:items-start">
-            <div className="w-12 h-12 xl:w-16 xl:h-16 bg-white/20 rounded-2xl backdrop-blur-xl flex items-center justify-center mb-0 xl:mb-4 flex-shrink-0">
-              <User className="w-6 h-6 xl:w-8 xl:h-8 text-white" />
+            <div className="w-12 h-12 xl:w-16 xl:h-16 bg-white/10 rounded-lg flex items-center justify-center mb-0 xl:mb-4 flex-shrink-0 border border-white/10">
+              <User className="w-6 h-6 xl:w-8 xl:h-8 text-primary" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-lg xl:text-xl font-black truncate">{user?.full_name}</h2>
-              <p className="text-slate-400 text-[10px] xl:text-xs font-bold uppercase tracking-widest truncate">{user?.email}</p>
+              <h2 className="text-base xl:text-lg font-bold truncate font-manrope">{user?.full_name}</h2>
+              <p className="text-slate-500 text-[10px] xl:text-xs font-mono font-bold uppercase tracking-widest truncate">{user?.email}</p>
             </div>
           </div>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
         </div>
         
-        <nav className="p-3 md:p-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-2">
+        <nav className="p-3 md:p-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-1.5 bg-[#0B1220]">
           {menuItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center justify-between p-3 md:p-4 rounded-2xl transition-all ${activeTab === item.id ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}
+              className={`w-full flex items-center justify-between p-3 md:p-3.5 rounded-lg transition-all ${
+                activeTab === item.id 
+                  ? 'bg-[rgba(11,209,61,0.12)] text-[#16E34A] border-l-4 border-[#006e1b] pl-2.5 font-bold' 
+                  : 'text-slate-405 text-slate-400 hover:bg-slate-900/60 hover:text-white font-medium'
+              }`}
             >
               <div className="flex items-center gap-3">
-                <item.icon className="w-5 h-5" />
-                <span className="text-sm font-bold">{item.label}</span>
+                <item.icon className="w-4 h-4" />
+                <span className="text-sm font-semibold">{item.label}</span>
               </div>
               {item.badge > 0 && (
-                <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">{item.badge}</span>
+                <span className="bg-rose-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full font-mono">{item.badge}</span>
               )}
             </button>
           ))}
           
           <div className="hidden xl:block xl:col-span-1 my-2">
-            <hr className="border-slate-200" />
+            <hr className="border-slate-800" />
           </div>
           
           <button 
             onClick={onLogout}
-            className="w-full flex items-center gap-3 p-3 md:p-4 rounded-2xl text-rose-500 hover:bg-rose-50 transition-all sm:col-span-2 xl:col-span-1"
+            className="w-full flex items-center gap-3 p-3 md:p-3.5 rounded-lg text-rose-500 hover:bg-rose-950/20 transition-all sm:col-span-2 xl:col-span-1 font-bold"
           >
-            <LogOut className="w-5 h-5" />
-            <span className="text-sm font-bold">Sign Out</span>
+            <LogOut className="w-4 h-4" />
+            <span className="text-sm">Sign Out</span>
           </button>
         </nav>
       </div>

@@ -249,28 +249,28 @@ const ProductDetail = () => {
             className="flex flex-col"
           >
             <div className="mb-4 flex items-center gap-3">
-              <span className="text-xs uppercase tracking-widest font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-primary bg-primary/10 px-3.5 py-1.5 rounded border border-primary/20">
                 {product.category}
               </span>
               {activeTag && (
-                <span className={`text-xs uppercase tracking-widest font-black px-3 py-1 rounded-full animate-pulse
-                  ${activeTag === 'Best Seller' ? 'text-white bg-indigo-600' : 
-                    activeTag === 'Hot Deal' ? 'text-white bg-rose-600' : 
-                    'text-amber-600 bg-amber-50'}`}>
+                <span className={`text-[10px] font-mono font-bold uppercase tracking-[0.15em] px-3.5 py-1.5 rounded border border-border-subtle animate-pulse
+                  ${activeTag === 'Best Seller' ? 'text-white bg-primary border-primary/30' : 
+                    activeTag === 'Hot Deal' ? 'text-white bg-rose-600 border-rose-700/30' : 
+                    'text-warning-orange bg-warning-orange/10 border-warning-orange/20'}`}>
                   {activeTag}
                 </span>
               )}
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" style={{ fontFamily: 'Manrope' }} data-testid="product-detail-name">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-ink-slate mb-4 font-manrope" data-testid="product-detail-name">
               {product.name}
             </h1>
 
             <div className="flex items-center gap-4 mb-6">
-              <span className="text-xs uppercase tracking-widest font-semibold text-muted-foreground">
+              <span className="text-xs font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant bg-surface-container-low px-2.5 py-1 rounded border border-border-subtle">
                 {product.size}
               </span>
-              <span className="text-xs uppercase tracking-widest font-semibold text-muted-foreground">
+              <span className="text-xs font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant bg-surface-container-low px-2.5 py-1 rounded border border-border-subtle">
                 {product.thickness}
               </span>
             </div>
@@ -278,40 +278,40 @@ const ProductDetail = () => {
             <div className="mb-8 flex items-baseline gap-4">
               {product.discount_price > 0 && product.discount_price < product.price ? (
                 <>
-                  <span className="text-5xl font-black text-slate-900" style={{ fontFamily: 'Manrope' }} data-testid="product-detail-price">
+                  <span className="text-5xl font-black text-ink-slate font-manrope tracking-tight animate-in fade-in" data-testid="product-detail-price">
                     ₹{product.discount_price}
                   </span>
-                  <span className="text-xl text-slate-500 line-through font-bold">₹{product.price}</span>
-                  <span className="text-emerald-600 font-black uppercase tracking-widest text-sm">
-                    Save {Math.round(((product.price - product.discount_price) / product.price) * 100)}%
+                  <span className="text-xl text-slate-400 line-through font-bold">M.R.P.: ₹{product.price}</span>
+                  <span className="text-primary font-bold uppercase tracking-wider text-xs font-mono bg-primary/10 px-2 py-1 rounded border border-primary/20">
+                    SAVE {Math.round(((product.price - product.discount_price) / product.price) * 100)}%
                   </span>
                 </>
               ) : (
-                <span className="text-5xl font-black text-slate-900" style={{ fontFamily: 'Manrope' }} data-testid="product-detail-price">
+                <span className="text-5xl font-black text-ink-slate font-manrope tracking-tight" data-testid="product-detail-price">
                   ₹{product.price}
                 </span>
               )}
             </div>
 
-            <p className="text-lg leading-relaxed text-muted-foreground mb-8">
+            <p className="text-base leading-relaxed text-on-surface-variant mb-8 font-medium">
               {product.description}
             </p>
 
-            <div className="mb-8">
-              <h3 className="font-semibold text-lg mb-4" style={{ fontFamily: 'Manrope' }}>
+            <div className="mb-8 border-t border-border-subtle pt-6">
+              <h3 className="font-bold text-lg font-manrope text-ink-slate mb-4 uppercase tracking-wider text-sm font-label-caps">
                 Key Features
               </h3>
-              <ul className="space-y-2">
+              <ul className="space-y-3 font-inter">
                 {product.features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-2">
+                  <li key={index} className="flex items-start gap-2.5">
                     <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{feature}</span>
+                    <span className="text-sm font-semibold text-slate-700">{feature}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Cart Sync Logic: If item is in cart, show Go to Cart only, otherwise show Add to Cart */}
+            {/* Cart Sync Logic */}
             {(() => {
               const cartItem = cart?.items?.find(item => item.product_id === product?.id);
               const cartQty = cartItem ? cartItem.quantity : 0;
@@ -319,16 +319,16 @@ const ProductDetail = () => {
               if (cartQty > 0) {
                 return (
                   <div className="mb-6 flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-300">
-                    <label className="text-sm font-semibold block text-indigo-900 bg-indigo-50 px-3 py-1 rounded-sm w-max">
-                      Item added to Cart
+                    <label className="text-xs font-mono font-bold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded border border-primary/25 w-max">
+                      Item added to Cart ({cartQty} units)
                     </label>
                     <div className="flex items-center gap-4">
                       <Button
                         onClick={() => navigate('/cart')}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white h-14 px-8 rounded-full font-bold shadow-[0_0_15px_rgba(79,70,229,0.3)] transition-transform active:scale-95 cursor-pointer text-base tracking-wide flex items-center gap-2"
+                        className="bg-primary hover:bg-emerald-hover text-white h-[52px] px-8 rounded-lg font-bold shadow-emerald-glow transition-all duration-200 active:scale-95 cursor-pointer text-base tracking-wide flex items-center gap-2"
                       >
                         <ShoppingCart className="w-5 h-5" />
-                        Go to Cart
+                        GO TO CART
                       </Button>
                     </div>
                   </div>
@@ -337,8 +337,8 @@ const ProductDetail = () => {
 
               return (
                 <>
-                  <div className="mb-6">
-                    <label className="text-sm font-semibold mb-2 block">Quantity</label>
+                  <div className="mb-6 border-t border-border-subtle pt-6">
+                    <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-3 block">Quantity</label>
                     <div className="flex items-center gap-4 flex-wrap">
                       <Button
                         variant="outline"
@@ -348,12 +348,12 @@ const ProductDetail = () => {
                           if (setPendingQty) setPendingQty(product.id, next);
                         }}
                         disabled={quantity <= 0}
-                        className="w-12 h-12 p-0 flex items-center justify-center"
+                        className="w-12 h-12 p-0 rounded-lg flex items-center justify-center border border-border-subtle bg-white text-slate-700 hover:border-primary"
                         data-testid="decrease-quantity"
                       >
                         {quantity <= 1 ? <Trash2 className="w-4 h-4 text-slate-400" /> : <Minus className="w-4 h-4" />}
                       </Button>
-                      <span className="text-xl font-semibold w-12 text-center" data-testid="product-quantity">{quantity}</span>
+                      <span className="text-xl font-bold w-12 text-center font-mono" data-testid="product-quantity">{quantity}</span>
                       <Button
                         variant="outline"
                         onClick={() => {
@@ -362,15 +362,15 @@ const ProductDetail = () => {
                           if (setPendingQty) setPendingQty(product.id, next);
                         }}
                         disabled={quantity >= Number(product.stock_quantity)}
-                        className="w-12 h-12 p-0 flex items-center justify-center"
+                        className="w-12 h-12 p-0 rounded-lg flex items-center justify-center border border-border-subtle bg-white text-slate-700 hover:border-primary"
                         data-testid="increase-quantity"
                       >
                         <Plus className="w-4 h-4" />
                       </Button>
                       {Number(product.stock_quantity) <= 10 && Number(product.stock_quantity) > 0 && (
-                        <span className="flex items-center gap-1 text-sm font-bold text-rose-600 animate-pulse">
+                        <span className="flex items-center gap-1.5 text-xs font-bold text-rose-600 animate-pulse bg-rose-50 px-3 py-1 rounded border border-rose-100 font-mono tracking-wide">
                           <AlertTriangle className="w-4 h-4" />
-                          Only {product.stock_quantity} left! Hurry up
+                          ONLY {product.stock_quantity} LEFT
                         </span>
                       )}
                     </div>
@@ -390,17 +390,17 @@ const ProductDetail = () => {
                         }
                       }}
                       disabled={adding || Number(product.stock_quantity) <= 0 || product.in_stock === false || quantity === 0}
-                      className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 h-12 rounded-sm font-semibold cursor-pointer"
+                      className="flex-1 bg-primary hover:bg-emerald-hover text-white h-[52px] rounded-lg font-bold tracking-wider uppercase text-sm cursor-pointer shadow-sm"
                       data-testid="add-to-cart-detail-button"
                     >
                       {adding ? (
-                        'Adding...'
+                        'ADDING...'
                       ) : (Number(product.stock_quantity) <= 0 || product.in_stock === false) ? (
-                        'Out of Stock'
+                        'OUT OF STOCK'
                       ) : (
                         <>
                           <ShoppingCart className="w-4 h-4 mr-2" />
-                          Add to Cart
+                          ADD TO CART
                         </>
                       )}
                     </Button>
@@ -408,7 +408,7 @@ const ProductDetail = () => {
                       variant="outline"
                       onClick={handleToggleWishlist}
                       disabled={wishlisting}
-                      className={`w-12 h-12 p-0 rounded-sm flex items-center justify-center transition-all cursor-pointer ${isWishlisted ? 'border-rose-500 text-rose-500 bg-rose-50' : 'text-slate-500 hover:text-rose-500'}`}
+                      className={`w-[52px] h-[52px] p-0 rounded-lg flex items-center justify-center border transition-all cursor-pointer ${isWishlisted ? 'border-rose-500 text-rose-500 bg-rose-50' : 'border-border-subtle text-slate-400 hover:text-rose-500 hover:border-rose-300'}`}
                     >
                       <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''} ${wishlisting ? 'animate-pulse' : ''}`} />
                     </Button>
@@ -418,7 +418,7 @@ const ProductDetail = () => {
             })()}
 
             {(Number(product.stock_quantity) <= 0 || product.in_stock === false) && (
-              <p className="text-sm text-destructive mt-4 font-semibold">This product is currently out of stock</p>
+              <p className="text-sm font-bold text-rose-600 mt-4 bg-rose-50 px-4 py-3.5 rounded border border-rose-100 uppercase tracking-wider text-center">This product is currently out of stock</p>
             )}
           </motion.div>
         </div>

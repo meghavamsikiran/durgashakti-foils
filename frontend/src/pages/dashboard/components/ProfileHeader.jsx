@@ -21,22 +21,22 @@ const ProfileHeader = ({ user, activeTab }) => {
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-[#0B1220] text-white flex items-center justify-center">
             <LayoutDashboard className="w-4 h-4" />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Dashboard / {getTabLabel()}</span>
+          <span className="text-[10px] font-mono tracking-wider font-semibold text-muted-foreground">Dashboard / {getTabLabel()}</span>
         </div>
-        <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none">
-          Welcome, <span className="text-indigo-600 italic">{user?.full_name?.split(' ')[0]}</span>
+        <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter uppercase leading-none">
+          Welcome, <span className="text-primary italic">{user?.full_name?.split(' ')[0]}</span>
         </h1>
       </div>
       
       <div className="flex items-center gap-4">
         <div className="hidden md:block text-right">
-          <p className="text-sm font-black text-slate-900">{user?.full_name}</p>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{user?.role || 'Customer'}</p>
+          <p className="text-sm font-black text-foreground">{user?.full_name}</p>
+          <p className="text-[10px] font-mono tracking-wider text-muted-foreground uppercase">{user?.role || 'Customer'}</p>
         </div>
-        <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-black text-xl shadow-xl shadow-indigo-100">
+        <div className="w-12 h-12 rounded-lg bg-primary text-white flex items-center justify-center font-black text-xl shadow-emerald-glow">
           {user?.full_name?.charAt(0) || 'U'}
         </div>
       </div>

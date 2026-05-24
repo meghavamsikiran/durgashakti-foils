@@ -102,7 +102,7 @@ const RouteTransitionLoader = () => {
             {/* Circular track */}
             <div className="absolute inset-0 rounded-full border-[3.5px] border-slate-200" />
             {/* Spinning indicator */}
-            <div className="absolute inset-0 rounded-full border-[3.5px] border-transparent border-t-indigo-600 animate-spin" />
+            <div className="absolute inset-0 rounded-full border-[3.5px] border-transparent border-t-primary animate-spin" />
             {/* Branded orange logo in center */}
             <img
               src="/favicon.png"
