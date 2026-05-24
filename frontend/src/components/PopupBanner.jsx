@@ -1,8 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { X, Copy, Check, Sparkles, AlertCircle } from 'lucide-react';
+import { X, Copy, Check, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import settingsService from '../services/settings.service';
+
+const getPromotedCouponsFromSettings = (settings = {}) => {
+  const scrollingBanner = settings.scrolling_banner || {};
+  const promotedCoupons =
+    scrollingBanner.popup_promoted_coupons ||
+    settings.popup_banner?.promoted_coupons ||
+    [];
+
+  if (promotedCoupons.length > 0) {
+    return promotedCoupons;
+  }
+
+  const bannerText = scrollingBanner.text2 || scrollingBanner.text1 || '';
+  const codeMatch = bannerText.match(/coupon code\s+([A-Z0-9_-]+)/i);
+  if (!codeMatch) {
+    return [];
+  }
+
+  const percentageMatch = bannerText.match(/discount of\s+(\d+(?:\.\d+)?)%/i);
+  const flatMatch = bannerText.match(/discount of\s+(?:₹|Rs\.?\s*)(\d+(?:\.\d+)?)/i);
+  const isFreeShipping = /free shipping/i.test(bannerText);
+
+  return [{
+    code: codeMatch[1].toUpperCase(),
+    discount_type: percentageMatch ? 'percentage' : flatMatch ? 'flat' : isFreeShipping ? 'free_shipping' : 'percentage',
+    discount_value: percentageMatch ? Number(percentageMatch[1]) : flatMatch ? Number(flatMatch[1]) : 0,
+    expiry_date: scrollingBanner.timer_enabled ? scrollingBanner.timer_target : null,
+    is_active: true
+  }];
+};
 
 const PopupBanner = () => {
   const { user } = useAuth();
@@ -13,24 +43,49 @@ const PopupBanner = () => {
   
   const timerRef = useRef(null);
   const hideTimerRef = useRef(null);
-  const homeShownRef = useRef(false);
+  const settingsRetryRef = useRef(null);
+  const guestHomeShownRef = useRef(false);
+  const customerHomeShownRef = useRef(false);
+  const loginShownRef = useRef(false);
   const checkoutShownRef = useRef(false);
   const prevUserRef = useRef(user);
 
   // Load public settings to fetch promoted coupons
   useEffect(() => {
-    const fetchPromotedCoupons = async () => {
+    let active = true;
+
+    const fetchPromotedCoupons = async (attempt = 0) => {
       try {
-        const data = await settingsService.getPublicSettings();
-        if (data && data.popup_banner && data.popup_banner.promoted_coupons) {
-          // Only show active and valid coupons
-          setCoupons(data.popup_banner.promoted_coupons);
+        const data = await settingsService.getPublicSettings({ force: attempt > 0 });
+        if (!active) return;
+        const promotedCoupons = getPromotedCouponsFromSettings(data);
+        const now = Date.now();
+        const validCoupons = promotedCoupons.filter((coupon) => {
+          if (coupon.is_active === false) return false;
+          if (!coupon.expiry_date) return true;
+          return new Date(coupon.expiry_date).getTime() > now;
+        });
+        setCoupons(validCoupons);
+
+        if (validCoupons.length === 0 && attempt < 6) {
+          settingsRetryRef.current = setTimeout(() => fetchPromotedCoupons(attempt + 1), 10000);
         }
       } catch (err) {
         console.error("Failed to load promoted coupons for popup:", err);
+        if (!active) return;
+        setCoupons([]);
+        if (attempt < 6) {
+          settingsRetryRef.current = setTimeout(() => fetchPromotedCoupons(attempt + 1), 10000);
+        }
       }
     };
+
     fetchPromotedCoupons();
+
+    return () => {
+      active = false;
+      if (settingsRetryRef.current) clearTimeout(settingsRetryRef.current);
+    };
   }, [location.pathname]); // Reload when page changes to get fresh settings
 
   // Trigger Logic based on routing and auth state
@@ -49,8 +104,8 @@ const PopupBanner = () => {
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
 
     // Rule 1: Landing Page (/) & Customer NOT logged in -> Show immediately for 5s
-    if (path === '/' && !user && !homeShownRef.current) {
-      homeShownRef.current = true;
+    if (path === '/' && !user && !guestHomeShownRef.current) {
+      guestHomeShownRef.current = true;
       setShow(true);
       
       hideTimerRef.current = setTimeout(() => {
@@ -58,9 +113,22 @@ const PopupBanner = () => {
       }, 5000);
     }
     
-    // Rule 2: Landing Page (/) or Just Logged In -> Wait 5s, then show for 5s
-    else if (((path === '/' && user) || justLoggedIn) && !homeShownRef.current) {
-      homeShownRef.current = true;
+    // Rule 2: Customer lands on home while logged in -> Wait 5s, then show for 5s
+    else if (path === '/' && user && !customerHomeShownRef.current) {
+      customerHomeShownRef.current = true;
+
+      timerRef.current = setTimeout(() => {
+        setShow(true);
+
+        hideTimerRef.current = setTimeout(() => {
+          setShow(false);
+        }, 5000);
+      }, 5000);
+    }
+
+    // Rule 3: Customer just logged in on any non-admin page -> Wait 5s, then show for 5s
+    else if (justLoggedIn && !loginShownRef.current) {
+      loginShownRef.current = true;
       
       timerRef.current = setTimeout(() => {
         setShow(true);
@@ -71,7 +139,7 @@ const PopupBanner = () => {
       }, 5000);
     }
 
-    // Rule 3: Checkout Page (/checkout) -> Wait 1s, then show for 5s (remind one more time)
+    // Rule 4: Checkout Page (/checkout) -> Wait 1s, then show for 5s (remind one more time)
     else if (path === '/checkout' && !checkoutShownRef.current) {
       checkoutShownRef.current = true;
       

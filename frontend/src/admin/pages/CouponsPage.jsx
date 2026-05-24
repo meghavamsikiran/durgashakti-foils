@@ -54,8 +54,13 @@ const CouponsPage = () => {
       setCoupons(couponsData);
       setSettings(settingsData);
       const adminSettings = adminSettingsRes.data || {};
-      setScrollingBanner(adminSettings.scrolling_banner || { text1: '', text2: '', timer_enabled: false, timer_target: '', use_favicon: true });
-      setPopupBanner(adminSettings.popup_banner || { promoted_coupons: [] });
+      const bannerVal = adminSettings.scrolling_banner || { text1: '', text2: '', timer_enabled: false, timer_target: '', use_favicon: true };
+      const popupPromotedCoupons =
+        bannerVal.popup_promoted_coupons ||
+        adminSettings.popup_banner?.promoted_coupons ||
+        [];
+      setScrollingBanner(bannerVal);
+      setPopupBanner({ promoted_coupons: popupPromotedCoupons });
     } catch (error) {
       toast.error('Failed to load coupon data');
     } finally {
@@ -193,6 +198,7 @@ const CouponsPage = () => {
       }
 
       const updatedBannerValue = {
+        ...currentBanner,
         text1: currentBanner.text1 || '✨ Experience Purity & Perfection with Durga Shakti Premium Foils ✨',
         text2: text2,
         timer_enabled: timerEnabled,
@@ -220,11 +226,14 @@ const CouponsPage = () => {
   const handleTogglePopupBannerPromotion = async (coupon) => {
     setTogglingPopupId(coupon.id);
     try {
-      // 1. Fetch current settings to get existing popup_banner
+      // 1. Fetch current settings to get existing scrolling_banner
       const settingsRes = await adminService.getSettings();
       const currentSettings = settingsRes.data || {};
-      const currentPopupBanner = currentSettings.popup_banner || { promoted_coupons: [] };
-      const currentList = currentPopupBanner.promoted_coupons || [];
+      const currentBanner = currentSettings.scrolling_banner || {};
+      const currentList =
+        currentBanner.popup_promoted_coupons ||
+        currentSettings.popup_banner?.promoted_coupons ||
+        [];
 
       // 2. Check if already promoted
       const isPromoted = currentList.some(c => c.code === coupon.code);
@@ -240,23 +249,26 @@ const CouponsPage = () => {
           code: coupon.code,
           discount_type: coupon.discount_type,
           discount_value: Number(coupon.discount_value),
-          expiry_date: coupon.expiry_date
+          expiry_date: coupon.expiry_date,
+          is_active: coupon.is_active
         };
         updatedList = [...currentList, couponDetail];
       }
 
-      const newPopupBannerValue = {
-        promoted_coupons: updatedList
+      const updatedBannerValue = {
+        ...currentBanner,
+        popup_promoted_coupons: updatedList
       };
 
-      // 3. Update setting in backend
+      // 3. Update setting in backend under 'scrolling_banner'
       await adminService.updateSetting({
-        key: 'popup_banner',
-        value: newPopupBannerValue
+        key: 'scrolling_banner',
+        value: updatedBannerValue
       });
 
-      // Update local state
-      setPopupBanner(newPopupBannerValue);
+      // Update local states
+      setScrollingBanner(updatedBannerValue);
+      setPopupBanner({ promoted_coupons: updatedList });
       
       if (isPromoted) {
         toast.success(`Removed coupon ${coupon.code} from the pop-up banner`);
