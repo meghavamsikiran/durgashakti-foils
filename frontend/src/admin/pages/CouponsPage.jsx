@@ -11,6 +11,7 @@ import PageLoader from '../../components/ui/PageLoader';
 
 const generateThemedBanner = (context) => {
   const ctx = context.trim().toUpperCase();
+  const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
   
   // Default values
   let title = `${ctx} SPECIAL SALE`;
@@ -22,219 +23,385 @@ const generateThemedBanner = (context) => {
   let animationStyle = "pulse";
 
   if (ctx.includes("DIWALI") || ctx.includes("DEEPAVALI")) {
-    title = "🪔 FESTIVE DIWALI DHAMAKA SALE 🪔";
-    subtitle = "Celebrate the Festival of Lights with pure premium packaging. Light up your kitchen with golden festive savings!";
-    bgGradient = "from-[#0b0621] via-[#160c40] to-[#04010a]"; // Deep glowing navy/indigo night sky
-    textGradient = "from-[#ffe066] via-[#f59e0b] to-[#ea580c]"; // Glowing saffron gold
-    borderColor = "border-[#f59e0b]";
-    emojiPattern = "🪔✨🎆🎉";
-    animationStyle = "sparkle";
+    title = rand([
+      "🪔 FESTIVE DIWALI DHAMAKA SALE 🪔",
+      "✨ SHUBH DEEPAVALI CELEBRATION ✨",
+      "🌟 DIWALI SHINES: FESTIVE SAVINGS 🌟",
+      "🪔 DURGA SHAKTI DIWALI FESTIVAL 🪔"
+    ]);
+    subtitle = rand([
+      "Celebrate the Festival of Lights with pure premium packaging. Light up your kitchen with golden festive savings!",
+      "Bring home purity, happiness, and light. Special festive discounts on premium kitchen foils.",
+      "Traditional recipes deserve traditional care. Wrap your festive sweets in premium silver shine.",
+      "Celebrate Diwali with fresh, hot delicacies. Up to 50% off on premium food wraps today!"
+    ]);
+    bgGradient = rand([
+      "from-[#0b0621] via-[#160c40] to-[#04010a]",
+      "from-[#1e0a3d] via-[#3d147a] to-[#0f0326]",
+      "from-[#2d0b00] via-[#5e1903] to-[#140500]"
+    ]);
+    textGradient = rand([
+      "from-[#ffe066] via-[#f59e0b] to-[#ea580c]",
+      "from-yellow-100 via-amber-300 to-yellow-400",
+      "from-amber-200 via-orange-400 to-yellow-250"
+    ]);
+    borderColor = rand(["border-[#f59e0b]", "border-amber-400", "border-yellow-500"]);
+    emojiPattern = rand(["🪔✨🎆🎉", "🪔✨🏮🌟", "🪔🔱🌸🔥"]);
+    animationStyle = rand(["sparkle", "pulse", "float"]);
   } else if (ctx.includes("CHRISTMAS") || ctx.includes("XMAS") || ctx.includes("WINTER")) {
-    title = "🎄 MERRY CHRISTMAS CELEBRATION 🎄";
-    subtitle = "Unwrap premium holiday savings! Bring magic and freshness to your festive family meals.";
-    bgGradient = "from-[#022c22] via-[#0f172a] to-[#0b0f19]"; // Rich evergreen/teal night
-    textGradient = "from-red-400 via-yellow-100 to-emerald-400";
-    borderColor = "border-red-500";
-    emojiPattern = "🎅❄️🎁🎄";
-    animationStyle = "snow";
+    title = rand([
+      "🎄 MERRY CHRISTMAS CELEBRATION 🎄",
+      "❄️ WINTER WONDERLAND DISCOUNTS ❄️",
+      "🎁 HOLIDAY CHEER SPECIAL SALE 🎁",
+      "🎅 SANTA'S SECRET FESTIVE DEALS 🎅"
+    ]);
+    subtitle = rand([
+      "Unwrap premium holiday savings! Bring magic and freshness to your festive family meals.",
+      "Premium quality wraps for your cozy winter kitchen. Keep your holiday bakes fresh and warm.",
+      "Wrap up the holiday love and freshness. Special Christmas discounts applied instantly!",
+      "Joy, warmth, and fresh delicious meals. Give your holiday feast the protection it deserves."
+    ]);
+    bgGradient = rand([
+      "from-[#022c22] via-[#0f172a] to-[#0b0f19]",
+      "from-[#0f172a] via-[#1e293b] to-[#090d16]",
+      "from-[#450a0a] via-[#0f172a] to-[#020617]"
+    ]);
+    textGradient = rand([
+      "from-red-400 via-yellow-100 to-emerald-400",
+      "from-sky-200 via-white to-sky-400",
+      "from-red-300 via-rose-200 to-white"
+    ]);
+    borderColor = rand(["border-red-500", "border-emerald-500", "border-sky-300"]);
+    emojiPattern = rand(["🎅❄️🎁🎄", "❄️☃️🧣☕", "🎄🎁🔔✨"]);
+    animationStyle = rand(["snow", "float", "pulse"]);
   } else if (ctx.includes("PONGAL") || ctx.includes("SANKRANTI") || ctx.includes("HARVEST") || ctx.includes("ONAM") || ctx.includes("VISHU")) {
-    title = "🌾 HAPPY PONGAL & SANKRANTI 🌾";
-    subtitle = "Bring home the harvest of happiness! Premium quality kitchen foils for your traditional recipes.";
-    bgGradient = "from-[#0f3a20] via-[#052e16] to-[#021c0e]"; // Sugarcane harvest green
-    textGradient = "from-[#fed7aa] via-[#f59e0b] to-[#84cc16]"; // Peach to gold to lime
-    borderColor = "border-[#f59e0b]";
-    emojiPattern = "🌾🌞🪁🍯";
-    animationStyle = "float";
+    title = rand([
+      "🌾 HAPPY PONGAL & SANKRANTI 🌾",
+      "🪁 FESTIVE SANKRANTI HARVEST SALE 🪁",
+      "🍯 TRADITIONAL HARVEST CELEBRATION 🍯",
+      "🌾 ONAM & VISHU SPECIAL FEAST 🌾"
+    ]);
+    subtitle = rand([
+      "Bring home the harvest of happiness! Premium quality kitchen foils for your traditional recipes.",
+      "Traditional recipes deserve the ultimate freshness. Savor the festive taste of harvest delicacies.",
+      "Warm wishes of Sankranti & Pongal. Keep your sweet pongal hot and flavorful with Durga Shakti.",
+      "Joyous harvest celebrations to you! Fresh food wraps for your grand family feast."
+    ]);
+    bgGradient = rand([
+      "from-[#0f3a20] via-[#052e16] to-[#021c0e]",
+      "from-[#1e3a1e] via-[#2f5e3b] to-[#0c2411]",
+      "from-[#3f2002] via-[#78350f] to-[#1c0d02]"
+    ]);
+    textGradient = rand([
+      "from-[#fed7aa] via-[#f59e0b] to-[#84cc16]",
+      "from-yellow-100 via-amber-300 to-orange-400",
+      "from-emerald-300 via-green-100 to-yellow-250"
+    ]);
+    borderColor = rand(["border-[#f59e0b]", "border-amber-500", "border-emerald-500"]);
+    emojiPattern = rand(["🌾🌞🪁🍯", "🌾🌞🍁🔥", "🌾🌾🍯🥥"]);
+    animationStyle = rand(["float", "pulse", "sparkle"]);
   } else if (ctx.includes("LOHRI")) {
     title = "🔥 HAPPY LOHRI CELEBRATION 🔥";
     subtitle = "Warm wishes and delicious recipes! Premium wraps for the auspicious bonfire festival.";
-    bgGradient = "from-[#2d0f05] via-[#7c2d12] to-[#1c0702]"; // Bonfire orange
-    textGradient = "from-yellow-200 via-amber-300 to-orange-500";
+    bgGradient = rand(["from-[#2d0f05] via-[#7c2d12] to-[#1c0702]", "from-[#3e1402] via-[#5c1c03] to-[#1c0702]"]);
+    textGradient = rand(["from-yellow-200 via-amber-300 to-orange-500", "from-yellow-100 via-orange-400 to-yellow-350"]);
     borderColor = "border-orange-500";
-    emojiPattern = "🔥🌾🍿🥜";
-    animationStyle = "pulse";
+    emojiPattern = rand(["🔥🌾🍿🥜", "🔥✨🍿🎉"]);
+    animationStyle = rand(["pulse", "sparkle"]);
   } else if (ctx.includes("INDEPENDENCE") || ctx.includes("REPUBLIC") || ctx.includes("INDIA") || ctx.includes("FREEDOM") || ctx.includes("PATRIOTIC")) {
-    title = "🇮🇳 PATRIOTIC CELEBRATION SALE 🇮🇳";
-    subtitle = "Celebrating the spirit of purity, freedom, and strength. Truly Indian premium kitchen wraps.";
-    bgGradient = "from-[#0b0f19] via-[#111827] to-[#030712]"; // Deep navy
-    textGradient = "from-[#ff9933] via-white to-[#128807]"; // Tricolor
-    borderColor = "border-[#ff9933]";
-    emojiPattern = "🇮🇳🦅⚡🎖️";
-    animationStyle = "tricolor";
+    title = rand([
+      "🇮🇳 PATRIOTIC CELEBRATION SALE 🇮🇳",
+      "⚡ TRULY INDIAN PREMIUM CELEBRATION ⚡",
+      "🦅 SPIRIT OF FREEDOM FESTIVAL 🦅",
+      "🇮🇳 JAI HIND SPECIAL OFFERS 🇮🇳"
+    ]);
+    subtitle = rand([
+      "Celebrating the spirit of purity, freedom, and strength. Truly Indian premium kitchen wraps.",
+      "Built with strength and purity. Durga Shakti brings you patriotic savings on food protection.",
+      "Honoring our nation with pride. Premium silver foils to keep your family meals fresh.",
+      "The ultimate seal of freshness and trust, made in India. Celebrate with tricolor savings!"
+    ]);
+    bgGradient = rand([
+      "from-[#0b0f19] via-[#111827] to-[#030712]",
+      "from-[#0f172a] via-[#1e3a8a] to-[#090d16]",
+      "from-[#0b2b1d] via-[#1e3a8a] to-[#110f24]"
+    ]);
+    textGradient = rand([
+      "from-[#ff9933] via-white to-[#128807]",
+      "from-orange-400 via-white to-emerald-400",
+      "from-white via-[#ff9933] to-[#128807]"
+    ]);
+    borderColor = rand(["border-[#ff9933]", "border-emerald-500", "border-white"]);
+    emojiPattern = rand(["🇮🇳🦅⚡🎖️", "🇮🇳✨🌟🔥", "🇮🇳🤝⚡🏆"]);
+    animationStyle = rand(["tricolor", "pulse", "sparkle"]);
   } else if (ctx.includes("ANNIVERSARY") || ctx.includes("BIRTHDAY") || ctx.includes("CELEBRATION") || ctx.includes("WEDDING")) {
-    title = "🎉 ANNIVERSARY CELEBRATION 🎉";
-    subtitle = "Celebrating a milestone of excellence with our beloved customers! Extra discount inside.";
-    bgGradient = "from-[#4c0519] via-[#881337] to-[#1e0008]"; // Burgundy
-    textGradient = "from-pink-300 via-amber-250 to-rose-300";
-    borderColor = "border-pink-500";
-    emojiPattern = "🎂🎉🎈🎁";
-    animationStyle = "float";
+    title = rand([
+      "🎉 ANNIVERSARY CELEBRATION 🎉",
+      "🎂 GRAND CELEBRATION SALE 🎂",
+      "🎈 PARTY BLOWOUT OFFERS 🎈",
+      "🥂 MILESTONE FESTIVE SPECIAL 🥂"
+    ]);
+    subtitle = rand([
+      "Celebrating a milestone of excellence with our beloved customers! Extra discount inside.",
+      "Thank you for being part of our journey! Premium quality food wraps with celebration discounts.",
+      "Throwing a party of savings! Wrap your celebration bakes in premium silver wraps.",
+      "Celebrate in style and keep your food incredibly fresh. Up to 50% discount applies today."
+    ]);
+    bgGradient = rand([
+      "from-[#4c0519] via-[#881337] to-[#1e0008]",
+      "from-[#3b0764] via-[#5b21b6] to-[#1e1b4b]",
+      "from-[#500724] via-[#9d174d] to-[#1c000c]"
+    ]);
+    textGradient = rand([
+      "from-pink-300 via-amber-250 to-rose-300",
+      "from-pink-300 via-yellow-200 to-cyan-300",
+      "from-yellow-250 via-amber-300 to-yellow-100"
+    ]);
+    borderColor = rand(["border-pink-500", "border-purple-400", "border-amber-400"]);
+    emojiPattern = rand(["🎂🎉🎈🎁", "🥂✨🎉🎆", "🎈🎁🎀✨"]);
+    animationStyle = rand(["float", "sparkle", "pulse"]);
   } else if (ctx.includes("VALENTINE") || ctx.includes("LOVE") || ctx.includes("ROSE") || ctx.includes("ROMANCE")) {
-    title = "💖 VALENTINE'S SPECIAL SALE 💖";
-    subtitle = "Made with love, wrapped with care. Treat your loved ones to fresh, delicious home-cooked meals!";
-    bgGradient = "from-[#831843] via-[#4c0519] to-[#1e0008]"; // Deep pink/rose
-    textGradient = "from-pink-200 via-rose-300 to-amber-200";
-    borderColor = "border-pink-400";
-    emojiPattern = "💖🌹🍫🎁";
-    animationStyle = "float";
+    title = rand([
+      "💖 VALENTINE'S SPECIAL SALE 💖",
+      "🌹 WRAPPED WITH LOVE SPECIAL 🌹",
+      "🍫 SWEETEST ROMANCE OFFERS 🍫",
+      "💖 VALENTINE'S CELEBRATION 💖"
+    ]);
+    subtitle = rand([
+      "Made with love, wrapped with care. Treat your loved ones to fresh, delicious home-cooked meals!",
+      "Lock in the flavor and warmth of your home-cooked meals. Special Valentine's discounts inside.",
+      "Delicious food wrapped in love and purity. Grab premium kitchen wraps with sweet discounts.",
+      "Keep your valentine's treats fresh and delicious. Durga Shakti brings premium quality wraps."
+    ]);
+    bgGradient = rand([
+      "from-[#831843] via-[#4c0519] to-[#1e0008]",
+      "from-[#500724] via-[#9d174d] to-[#1c000c]",
+      "from-[#2e0854] via-[#5b21b6] to-[#1c000c]"
+    ]);
+    textGradient = rand([
+      "from-pink-200 via-rose-300 to-amber-200",
+      "from-pink-200 via-rose-350 to-pink-100",
+      "from-red-300 via-pink-200 to-white"
+    ]);
+    borderColor = rand(["border-pink-400", "border-pink-500", "border-red-500"]);
+    emojiPattern = rand(["💖🌹🍫🎁", "🌸🌺🎀🧁", "💖✨🌹🍫"]);
+    animationStyle = rand(["float", "pulse", "sparkle"]);
   } else if (ctx.includes("EASTER") || ctx.includes("SPRING")) {
     title = "🐰 HAPPY EASTER SPECIAL 🐰";
     subtitle = "Hop into fresh spring savings! Beautiful family dinners wrapped in premium quality.";
-    bgGradient = "from-[#1e293b] via-[#0f172a] to-[#020617]"; // Slate/dark night
-    textGradient = "from-pink-300 via-emerald-250 to-sky-300"; // Pastel-ish gradient
+    bgGradient = rand(["from-[#1e293b] via-[#0f172a] to-[#020617]", "from-[#0f172a] via-[#1e3a8a] to-[#020617]"]);
+    textGradient = rand(["from-pink-300 via-emerald-250 to-sky-300", "from-sky-200 via-pink-150 to-white"]);
     borderColor = "border-pink-300";
     emojiPattern = "🐰🐣🌸🥚";
     animationStyle = "float";
   } else if (ctx.includes("HALLOWEEN") || ctx.includes("SPOOKY")) {
     title = "🎃 HALLOWEEN SPOOKY SALE 🎃";
     subtitle = "Scary good deals on premium food wraps! Keep your treats fresh and delicious.";
-    bgGradient = "from-[#0f0c1b] via-[#241203] to-[#09000a]"; // Dark spooky purple-orange
+    bgGradient = "from-[#0f0c1b] via-[#241203] to-[#09000a]";
     textGradient = "from-[#ea580c] via-[#f59e0b] to-[#ea580c]";
     borderColor = "border-[#ea580c]";
     emojiPattern = "🎃👻🦇🍬";
     animationStyle = "float";
   } else if (ctx.includes("NEW YEAR") || ctx.includes("EVE")) {
-    title = "🥂 HAPPY NEW YEAR CELEBRATION 🥂";
-    subtitle = "Toast to fresh beginnings and huge savings! Premium quality wraps for the new year.";
-    bgGradient = "from-[#020617] via-[#1e1b4b] to-[#0f172a]"; // Sparkling night
-    textGradient = "from-yellow-250 via-amber-300 to-yellow-100";
-    borderColor = "border-amber-400";
-    emojiPattern = "🥂✨🎉🎆";
-    animationStyle = "sparkle";
+    title = rand([
+      "🥂 HAPPY NEW YEAR CELEBRATION 🥂",
+      "✨ NEW YEAR FRESH START SALE ✨",
+      "🎆 COUNTDOWN PARTY DISCOUNTS 🎆",
+      "🥂 2026 NEW YEAR BONANZA 🥂"
+    ]);
+    subtitle = rand([
+      "Toast to fresh beginnings and huge savings! Premium quality wraps for the new year.",
+      "Start the new year with freshness and purity in your kitchen. Special New Year offers!",
+      "Counting down to massive savings! Keep your holiday leftovers fresh and delicious.",
+      "New year, fresh deals, premium wraps. Up to 50% discount applied immediately!"
+    ]);
+    bgGradient = rand([
+      "from-[#020617] via-[#1e1b4b] to-[#0f172a]",
+      "from-[#0b0621] via-[#160c40] to-[#04010a]",
+      "from-[#0f172a] via-[#1e293b] to-[#090d16]"
+    ]);
+    textGradient = rand([
+      "from-yellow-250 via-amber-300 to-yellow-100",
+      "from-cyan-300 via-yellow-250 to-pink-300",
+      "from-slate-100 via-white to-slate-300"
+    ]);
+    borderColor = rand(["border-amber-400", "border-cyan-400", "border-slate-400"]);
+    emojiPattern = rand(["🥂✨🎉🎆", "🥂✨🌟👑", "🎉✨⏰💥"]);
+    animationStyle = rand(["sparkle", "pulse", "float"]);
   } else if (ctx.includes("EID") || ctx.includes("RAMADAN") || ctx.includes("IFTAR")) {
-    title = "🌙 BLESSED EID & RAMADAN SPECIAL 🌙";
-    subtitle = "Share the feast of joy and blessings! Premium food wraps for your festive delicacies.";
-    bgGradient = "from-[#012217] via-[#044e36] to-[#00140e]"; // Holy emerald green
-    textGradient = "from-yellow-250 via-amber-300 to-emerald-250";
-    borderColor = "border-amber-400";
-    emojiPattern = "🌙✨🕌🤝";
-    animationStyle = "sparkle";
+    title = rand([
+      "🌙 BLESSED EID & RAMADAN SPECIAL 🌙",
+      "🕌 EID FEAST CELEBRATION 🕌",
+      "🤝 BLESSED RAMADAN DEALS 🤝",
+      "🌙 EID MUBARAK CELEBRATION 🌙"
+    ]);
+    subtitle = rand([
+      "Share the feast of joy and blessings! Premium food wraps for your festive delicacies.",
+      "Keep your traditional Iftar meals warm, fresh, and hygienic with Durga Shakti Foils.",
+      "Celebrate Eid with purity and love. Premium quality food wraps with special blessings.",
+      "Bring home the seal of purity and health. Special Eid discounts applied instantly!"
+    ]);
+    bgGradient = rand([
+      "from-[#012217] via-[#044e36] to-[#00140e]",
+      "from-[#022c22] via-[#0f172a] to-[#0b0f19]",
+      "from-[#1e0a3d] via-[#044e36] to-[#031d2c]"
+    ]);
+    textGradient = rand([
+      "from-yellow-250 via-amber-300 to-emerald-250",
+      "from-emerald-300 via-green-100 to-yellow-250",
+      "from-yellow-100 via-amber-300 to-yellow-400"
+    ]);
+    borderColor = rand(["border-amber-400", "border-emerald-500", "border-yellow-500"]);
+    emojiPattern = rand(["🌙✨🕌🤝", "🌙✨🌟🤝", "🌙🕌🥥🍲"]);
+    animationStyle = rand(["sparkle", "float", "pulse"]);
   } else if (ctx.includes("HOLI")) {
-    title = "🎨 HOLI FESTIVAL OF COLORS 🎨";
-    subtitle = "Splashes of joy, colors, and huge savings! Keep your festive treats delicious and fresh.";
-    bgGradient = "from-[#3b0764] via-[#5b21b6] to-[#1e1b4b]"; // Festive magenta purple
-    textGradient = "from-pink-300 via-yellow-200 to-cyan-300";
-    borderColor = "border-pink-400";
-    emojiPattern = "🎨✨🎉🥳";
-    animationStyle = "sparkle";
+    title = rand([
+      "🎨 HOLI FESTIVAL OF COLORS 🎨",
+      "🌈 SPLASH OF COLOR SPECIAL SALE 🌈",
+      "🥳 HAPPY HOLI FESTIVE BONANZA 🥳",
+      "🎨 HOLI CELEBRATION DEALS 🎨"
+    ]);
+    subtitle = rand([
+      "Splashes of joy, colors, and huge savings! Keep your festive treats delicious and fresh.",
+      "Make your kitchen as colorful and pure as the festival. Premium wraps at amazing prices!",
+      "Traditional sweets and snacks stay hot and fresh. Up to 50% discount on premium wraps.",
+      "Celebrate the festival of colors with premium food wrapping solutions from Durga Shakti."
+    ]);
+    bgGradient = rand([
+      "from-[#3b0764] via-[#5b21b6] to-[#1e1b4b]",
+      "from-[#500724] via-[#9d174d] to-[#1c000c]",
+      "from-[#042f2e] via-[#0d9488] to-[#021f1d]"
+    ]);
+    textGradient = rand([
+      "from-pink-300 via-yellow-200 to-cyan-300",
+      "from-pink-300 via-emerald-250 to-sky-300",
+      "from-yellow-250 via-amber-300 to-yellow-100"
+    ]);
+    borderColor = rand(["border-pink-400", "border-purple-400", "border-cyan-400"]);
+    emojiPattern = rand(["🎨✨🎉🥳", "🎨🌈✨🍿", "🎨🥳✨🍡"]);
+    animationStyle = rand(["sparkle", "float", "pulse"]);
   } else if (ctx.includes("DURGA") || ctx.includes("SHAKTI") || ctx.includes("NAVRATRI") || ctx.includes("DUSSEHRA") || ctx.includes("PUJA")) {
-    title = "🪔 HAPPY NAVRATRI & DUSSEHRA 🪔";
-    subtitle = "Celebrate the victory of good over evil. Premium food wraps for your traditional home-cooked feasts.";
-    bgGradient = "from-[#450a0a] via-[#7f1d1d] to-[#1a0505]"; // Royal festive red
-    textGradient = "from-yellow-100 via-amber-400 to-orange-500";
+    title = rand(["🪔 HAPPY NAVRATRI & DUSSEHRA 🪔", "🔱 SHUBH NAVRATRI CELEBRATION 🔱", "🪔 FESTIVE DURGA PUJA SPECIAL 🪔"]);
+    subtitle = rand([
+      "Celebrate the victory of good over evil. Premium food wraps for your traditional home-cooked feasts.",
+      "Auspicious celebrations with purity and strength. Wrap your festive delicacies with Durga Shakti.",
+      "Warm festive wishes! Purity, strength, and freshness locked in for your celebrations."
+    ]);
+    bgGradient = rand(["from-[#450a0a] via-[#7f1d1d] to-[#1a0505]", "from-[#5c0606] via-[#991b1b] to-[#2b0303]"]);
+    textGradient = rand(["from-yellow-100 via-amber-400 to-orange-500", "from-yellow-250 via-yellow-100 to-amber-300"]);
     borderColor = "border-yellow-400";
-    emojiPattern = "🪔🔱🌸🔥";
-    animationStyle = "sparkle";
+    emojiPattern = rand(["🪔🔱🌸🔥", "🔱🪔✨🌸"]);
+    animationStyle = rand(["sparkle", "pulse", "float"]);
   } else if (ctx.includes("SUMMER")) {
-    title = "☀️ HOT SUMMER BLOWOUT ☀️";
-    subtitle = "Beat the heat with coolest deals on premium wraps. Perfect for summer picnics and BBQs!";
-    bgGradient = "from-[#7c2d12] via-[#ea580c] to-[#3f160a]"; // Sunburst orange
-    textGradient = "from-yellow-250 via-amber-300 to-yellow-100";
+    title = rand(["☀️ HOT SUMMER BLOWOUT ☀️", "🌊 SUNNY SUMMER DISCOUNTS 🌊", "☀️ SUMMER REFRESH OFFERS ☀️"]);
+    subtitle = rand([
+      "Beat the heat with coolest deals on premium wraps. Perfect for summer picnics and BBQs!",
+      "Keep your summer fruits and picnic bakes fresh and cool with Durga Shakti.",
+      "Hot summer savings on our entire range of premium kitchen packaging wraps."
+    ]);
+    bgGradient = rand(["from-[#7c2d12] via-[#ea580c] to-[#3f160a]", "from-[#082f49] via-[#0284c7] to-[#0c4a6e]"]);
+    textGradient = rand(["from-yellow-250 via-amber-300 to-yellow-100", "from-cyan-150 via-white to-yellow-100"]);
     borderColor = "border-yellow-400";
-    emojiPattern = "☀️🌊🍦⛱️";
-    animationStyle = "pulse";
+    emojiPattern = rand(["☀️🌊🍦⛱️", "☀️🧊🌴⛱️"]);
+    animationStyle = rand(["pulse", "float"]);
   } else if (ctx.includes("MONSOON") || ctx.includes("RAIN") || ctx.includes("CLOUDY")) {
-    title = "⛈️ MONSOON SPECIAL SALE ⛈️";
-    subtitle = "Keep your food fresh and hot during the rains. Protect your kitchen with Durga Shakti Foils.";
-    bgGradient = "from-[#0f172a] via-[#1e3a8a] to-[#090d16]"; // Rainy deep blue
-    textGradient = "from-blue-200 via-sky-300 to-cyan-150";
+    title = rand(["⛈️ MONSOON SPECIAL SALE ⛈️", "☔ MONSOON SAVINGS EXTRAVAGANZA ☔", "🌧️ RAINY DAY SPECIAL OFFERS 🌧️"]);
+    subtitle = rand([
+      "Keep your food fresh and hot during the rains. Protect your kitchen with Durga Shakti Foils.",
+      "Stay warm, eat fresh! Lock in heat and moisture for your monsoon chai and snacks.",
+      "Raining discounts! Up to 50% off on all premium household foil wraps."
+    ]);
+    bgGradient = rand(["from-[#0f172a] via-[#1e3a8a] to-[#090d16]", "from-[#1e293b] via-[#0f172a] to-[#020617]"]);
+    textGradient = rand(["from-blue-200 via-sky-300 to-cyan-150", "from-slate-100 via-sky-200 to-white"]);
     borderColor = "border-sky-400";
-    emojiPattern = "⛈️🌧️☂️☔";
-    animationStyle = "snow";
-  }
-  // Color words check
-  else if (ctx.includes("GOLD") || ctx.includes("YELLOW") || ctx.includes("SAFFRON") || ctx.includes("AMBER")) {
+    emojiPattern = rand(["⛈️🌧️☂️☔", "🌧️☔☕🍪"]);
+    animationStyle = rand(["snow", "float"]);
+  } else if (ctx.includes("GOLD") || ctx.includes("YELLOW") || ctx.includes("SAFFRON") || ctx.includes("AMBER")) {
     title = `✨ ${ctx} PREMIUM OFFER ✨`;
     subtitle = "Luxury packaging solutions with gold-standard savings. Limited time special offer!";
-    bgGradient = "from-[#2e1f02] via-[#453003] to-[#140e01]"; // Dark amber gold
-    textGradient = "from-yellow-100 via-amber-300 to-yellow-400";
+    bgGradient = rand(["from-[#2e1f02] via-[#453003] to-[#140e01]", "from-[#3a2a07] via-[#5c4611] to-[#1c1402]"]);
+    textGradient = rand(["from-yellow-100 via-amber-300 to-yellow-400", "from-amber-100 via-yellow-250 to-amber-350"]);
     borderColor = "border-amber-400";
     emojiPattern = "👑🏆✨💰";
-    animationStyle = "sparkle";
+    animationStyle = rand(["sparkle", "pulse"]);
   } else if (ctx.includes("GREEN") || ctx.includes("MINT") || ctx.includes("ECO") || ctx.includes("NATURE") || ctx.includes("ORGANIC") || ctx.includes("FOREST")) {
     title = `🌿 ${ctx} ECO-FRIENDLY SPECIAL 🌿`;
     subtitle = "Go green, stay fresh! Premium sustainable wraps for a healthy, green kitchen.";
-    bgGradient = "from-[#022c22] via-[#064e3b] to-[#012216]"; // Emerald green
-    textGradient = "from-emerald-300 via-green-100 to-yellow-250";
+    bgGradient = rand(["from-[#022c22] via-[#064e3b] to-[#012216]", "from-[#064e3b] via-[#14532d] to-[#052e16]"]);
+    textGradient = rand(["from-emerald-300 via-green-100 to-yellow-250", "from-emerald-250 via-teal-150 to-green-100"]);
     borderColor = "border-emerald-500";
-    emojiPattern = "🌿🍀🍃♻️";
-    animationStyle = "float";
+    emojiPattern = rand(["🌿🍀🍃♻️", "🌿🍃🌱♻️"]);
+    animationStyle = rand(["float", "pulse"]);
   } else if (ctx.includes("BLUE") || ctx.includes("OCEAN") || ctx.includes("SKY") || ctx.includes("WATER") || ctx.includes("COOL") || ctx.includes("ICE")) {
     title = `❄️ ${ctx} REFRESHING SPECIAL ❄️`;
     subtitle = "Lock in extreme freshness and flavor! Cool deals for your storage needs.";
-    bgGradient = "from-[#0c4a6e] via-[#075985] to-[#031d2c]"; // Deep ocean blue
-    textGradient = "from-sky-200 via-cyan-100 to-indigo-300";
+    bgGradient = rand(["from-[#0c4a6e] via-[#075985] to-[#031d2c]", "from-[#0c1a30] via-[#082f49] to-[#021424]"]);
+    textGradient = rand(["from-sky-200 via-cyan-100 to-indigo-300", "from-cyan-150 via-sky-200 to-white"]);
     borderColor = "border-sky-400";
-    emojiPattern = "🌊❄️🧊💧";
-    animationStyle = "snow";
+    emojiPattern = rand(["🌊❄️🧊💧", "❄️🧊💧💙"]);
+    animationStyle = rand(["snow", "float"]);
   } else if (ctx.includes("RED") || ctx.includes("FIRE") || ctx.includes("HOT") || ctx.includes("SPICY") || ctx.includes("RUBY") || ctx.includes("CRIMSON")) {
     title = `🔥 ${ctx} SIZZLING DEAL 🔥`;
     subtitle = "Hot deals that won't last! Keep your food sizzling hot and fresh with Durga Shakti.";
-    bgGradient = "from-[#450a0a] via-[#7f1d1d] to-[#180202]"; // Ruby red/crimson
-    textGradient = "from-red-300 via-orange-300 to-yellow-100";
+    bgGradient = rand(["from-[#450a0a] via-[#7f1d1d] to-[#180202]", "from-[#5c0606] via-[#b91c1c] to-[#2d0202]"]);
+    textGradient = rand(["from-red-300 via-orange-300 to-yellow-100", "from-orange-400 via-red-200 to-yellow-200"]);
     borderColor = "border-red-500";
-    emojiPattern = "🔥🌶️⚡💥";
-    animationStyle = "pulse";
+    emojiPattern = rand(["🔥🌶️⚡💥", "🔥💥🌶️🥘"]);
+    animationStyle = rand(["pulse", "sparkle"]);
   } else if (ctx.includes("DARK") || ctx.includes("BLACK") || ctx.includes("NIGHT") || ctx.includes("MIDNIGHT") || ctx.includes("ONYX")) {
     title = `🕶️ ${ctx} EXCLUSIVE ACCESS 🕶️`;
     subtitle = "Premium dark-themed luxury discounts. Reserved for our most exclusive club members.";
-    bgGradient = "from-[#0f172a] via-[#020617] to-[#000000]"; // Midnight black
-    textGradient = "from-slate-100 via-slate-300 to-slate-500";
+    bgGradient = rand(["from-[#0f172a] via-[#020617] to-[#000000]", "from-[#1e293b] via-[#0f172a] to-[#020617]"]);
+    textGradient = rand(["from-slate-100 via-slate-300 to-slate-500", "from-slate-200 via-white to-slate-400"]);
     borderColor = "border-slate-700";
     emojiPattern = "🕶️🔒🖤🎩";
-    animationStyle = "pulse";
+    animationStyle = rand(["pulse", "float"]);
   } else if (ctx.includes("SILVER") || ctx.includes("GRAY") || ctx.includes("GREY") || ctx.includes("METAL") || ctx.includes("METALLIC") || ctx.includes("FOIL")) {
     title = `💿 ${ctx} METALLIC SPECIAL 💿`;
     subtitle = "The ultimate shine of purity and strength! Premium silver foil wraps for your cooking masterpieces.";
-    bgGradient = "from-[#334155] via-[#1e293b] to-[#0f172a]"; // Slate grey/silver
-    textGradient = "from-slate-100 via-white to-slate-300";
+    bgGradient = rand(["from-[#334155] via-[#1e293b] to-[#0f172a]", "from-[#475569] via-[#334155] to-[#1e293b]"]);
+    textGradient = rand(["from-slate-100 via-white to-slate-300", "from-white via-slate-200 to-slate-400"]);
     borderColor = "border-slate-400";
     emojiPattern = "💿🛡️⚡💎";
-    animationStyle = "float";
+    animationStyle = rand(["float", "pulse"]);
   } else if (ctx.includes("PURPLE") || ctx.includes("VIOLET") || ctx.includes("COSMIC") || ctx.includes("MAGIC") || ctx.includes("NEON") || ctx.includes("SPACE") || ctx.includes("GALAXY")) {
     title = `🔮 ${ctx} MAGICAL SPECIAL 🔮`;
     subtitle = "Out of this world discounts! Lock in magic freshness for all your traditional dishes.";
-    bgGradient = "from-[#3b0764] via-[#5b21b6] to-[#1e1b4b]"; // Cosmic purple
-    textGradient = "from-pink-300 via-purple-200 to-cyan-300";
+    bgGradient = rand(["from-[#3b0764] via-[#5b21b6] to-[#1e1b4b]", "from-[#2e0854] via-[#4a044e] to-[#1c0024]"]);
+    textGradient = rand(["from-pink-300 via-purple-200 to-cyan-300", "from-purple-200 via-pink-250 to-white"]);
     borderColor = "border-purple-400";
     emojiPattern = "🔮🌌🛸🌀";
-    animationStyle = "sparkle";
+    animationStyle = rand(["sparkle", "float"]);
   } else if (ctx.includes("CYAN") || ctx.includes("TEAL") || ctx.includes("TURQUOISE") || ctx.includes("AQUA") || ctx.includes("TROPICAL")) {
     title = `🏝️ ${ctx} TROPICAL SPECIAL 🏝️`;
     subtitle = "Fresh, vibrant, and cooling deals! Keep your food beach-ready and delicious.";
-    bgGradient = "from-[#042f2e] via-[#0d9488] to-[#021f1d]"; // Deep teal/cyan
-    textGradient = "from-teal-100 via-cyan-200 to-emerald-250";
+    bgGradient = rand(["from-[#042f2e] via-[#0d9488] to-[#021f1d]", "from-[#0d9488] via-[#0284c7] to-[#075985]"]);
+    textGradient = rand(["from-teal-100 via-cyan-200 to-emerald-250", "from-cyan-100 via-teal-100 to-white"]);
     borderColor = "border-teal-400";
     emojiPattern = "🏝️🐠🌊🍹";
-    animationStyle = "float";
+    animationStyle = rand(["float", "pulse"]);
   } else if (ctx.includes("ORANGE") || ctx.includes("PEACH") || ctx.includes("SUNSET") || ctx.includes("CORAL") || ctx.includes("SALMON")) {
     title = `🌅 ${ctx} SUNSET BLOWOUT 🌅`;
     subtitle = "Warm glowing discounts on our premium range! Bring home quality wrapping today.";
-    bgGradient = "from-[#7c2d12] via-[#c2410c] to-[#2d0f05]"; // Coral sunset orange
-    textGradient = "from-orange-200 via-amber-300 to-yellow-100";
+    bgGradient = rand(["from-[#7c2d12] via-[#c2410c] to-[#2d0f05]", "from-[#c2410c] via-[#ea580c] to-[#431407]"]);
+    textGradient = rand(["from-orange-200 via-amber-300 to-yellow-100", "from-orange-100 via-peach-200 to-white"]);
     borderColor = "border-orange-500";
     emojiPattern = "🌅🍊🍑🍂";
-    animationStyle = "pulse";
+    animationStyle = rand(["pulse", "float"]);
   } else if (ctx.includes("PINK") || ctx.includes("ROSE") || ctx.includes("BLOSSOM")) {
     title = `🌸 ${ctx} BLOSSOM SPECIAL 🌸`;
     subtitle = "Delightful deals in full bloom! Keep your spring recipes fresh and colorful.";
-    bgGradient = "from-[#500724] via-[#9d174d] to-[#1c000c]"; // Rose pink
-    textGradient = "from-pink-200 via-rose-350 to-pink-100";
+    bgGradient = rand(["from-[#500724] via-[#9d174d] to-[#1c000c]", "from-[#831843] via-[#db2777] to-[#4c0519]"]);
+    textGradient = rand(["from-pink-200 via-rose-350 to-pink-100", "from-pink-150 via-rose-200 to-white"]);
     borderColor = "border-pink-500";
     emojiPattern = "🌸🌺🎀🧁";
-    animationStyle = "float";
+    animationStyle = rand(["float", "sparkle"]);
   }
-  // Generic Fallback Hash Generator
+  // Generic Fallback
   else {
-    let hash = 0;
-    for (let i = 0; i < ctx.length; i++) {
-      hash = ctx.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    
-    // Set of pre-curated gorgeous styles that we map to deterministically
     const palettes = [
       {
-        bg: "from-[#1e1b4b] via-[#311054] to-[#0f052d]", // Indigo & purple
+        bg: "from-[#1e1b4b] via-[#311054] to-[#0f052d]",
         text: "from-amber-200 via-yellow-400 to-orange-400",
         border: "border-amber-400",
         emojis: "✨⚡🔥🎉",
@@ -242,7 +409,7 @@ const generateThemedBanner = (context) => {
         suffix: "CELEBRATION"
       },
       {
-        bg: "from-[#450a0a] via-[#2d0614] to-[#120005]", // Royal Crimson
+        bg: "from-[#450a0a] via-[#2d0614] to-[#120005]",
         text: "from-yellow-100 via-amber-300 to-rose-400",
         border: "border-rose-500",
         emojis: "🎁💥⚡🔥",
@@ -250,7 +417,7 @@ const generateThemedBanner = (context) => {
         suffix: "MEGA SPECIAL"
       },
       {
-        bg: "from-[#022c22] via-[#064e3b] to-[#012216]", // Emerald Prestige
+        bg: "from-[#022c22] via-[#064e3b] to-[#012216]",
         text: "from-emerald-300 via-yellow-200 to-amber-300",
         border: "border-emerald-500",
         emojis: "💎✨🏅🏆",
@@ -258,7 +425,7 @@ const generateThemedBanner = (context) => {
         suffix: "EXCLUSIVE DEALS"
       },
       {
-        bg: "from-[#3b0764] via-[#1e1b4b] to-[#0f001c]", // Cosmic Violet
+        bg: "from-[#3b0764] via-[#1e1b4b] to-[#0f001c]",
         text: "from-pink-300 via-yellow-100 to-cyan-300",
         border: "border-purple-400",
         emojis: "🔮⚡🛸🌀",
@@ -266,7 +433,7 @@ const generateThemedBanner = (context) => {
         suffix: "FLASH SALE"
       },
       {
-        bg: "from-[#075985] via-[#1e3a8a] to-[#0c1a30]", // Deep Ocean
+        bg: "from-[#075985] via-[#1e3a8a] to-[#0c1a30]",
         text: "from-cyan-200 via-sky-300 to-indigo-200",
         border: "border-sky-400",
         emojis: "🌊☀️🍦⛵",
@@ -274,7 +441,7 @@ const generateThemedBanner = (context) => {
         suffix: "REFRESHING BLOWOUT"
       },
       {
-        bg: "from-[#7c2d12] via-[#431407] to-[#1c0702]", // Amber Sunset
+        bg: "from-[#7c2d12] via-[#431407] to-[#1c0702]",
         text: "from-yellow-100 via-amber-400 to-orange-500",
         border: "border-orange-500",
         emojis: "🍂☀️🍁🔥",
@@ -283,8 +450,19 @@ const generateThemedBanner = (context) => {
       }
     ];
 
-    const picked = palettes[Math.abs(hash) % palettes.length];
-    title = `✨ ${ctx} ${picked.suffix} ✨`;
+    const picked = rand(palettes);
+    title = rand([
+      `✨ ${ctx} ${picked.suffix} ✨`,
+      `🌟 ${ctx} SPECIAL OFFER 🌟`,
+      `⚡ ${ctx} FLASH SALE ⚡`,
+      `🎉 ${ctx} FESTIVE DEALS 🎉`
+    ]);
+    subtitle = rand([
+      "Special festive discounts just for you! Apply code at checkout.",
+      "Purity, strength, and amazing savings. Lock in food freshness today!",
+      "Upgrade your kitchen packaging and save big. Limited time exclusive offer!",
+      "Delicious meals deserve premium protection. Apply coupon code at checkout."
+    ]);
     bgGradient = picked.bg;
     textGradient = picked.text;
     borderColor = picked.border;
@@ -457,6 +635,8 @@ const CouponsPage = () => {
   };
 
   const handleToggleCouponActive = async (coupon) => {
+    // Optimistically update state
+    setCoupons(prev => prev.map(c => c.id === coupon.id ? { ...c, is_active: !c.is_active } : c));
     try {
       const updatedPayload = {
         code: coupon.code,
@@ -470,9 +650,10 @@ const CouponsPage = () => {
         is_active: !coupon.is_active
       };
       await couponService.updateCoupon(coupon.id, updatedPayload);
-      setCoupons(prev => prev.map(c => c.id === coupon.id ? { ...c, is_active: !c.is_active } : c));
       toast.success(`Coupon ${!coupon.is_active ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
+      // Revert state
+      setCoupons(prev => prev.map(c => c.id === coupon.id ? { ...c, is_active: coupon.is_active } : c));
       toast.error('Failed to toggle status');
     }
   };
@@ -717,18 +898,24 @@ const CouponsPage = () => {
   };
 
   const handleGenerateTheme = () => {
-    if (!bannerForm.theme_context.trim()) {
-      toast.warning("Please enter a theme context keyword first (e.g. Diwali)");
-      return;
+    let context = bannerForm.theme_context.trim();
+    if (!context) {
+      const sampleKeywords = [
+        "DIWALI", "CHRISTMAS", "PONGAL", "HOLI", "NEW YEAR", 
+        "VALENTINE", "EID", "SUMMER SALE", "INDEPENDENCE DAY", 
+        "ANNIVERSARY", "FLASH SALE", "BLACK FRIDAY", "MONSOON"
+      ];
+      context = sampleKeywords[Math.floor(Math.random() * sampleKeywords.length)];
     }
-    const generated = generateThemedBanner(bannerForm.theme_context);
+    const generated = generateThemedBanner(context);
     setBannerForm(prev => ({
       ...prev,
+      theme_context: context,
       title: generated.title,
       subtitle: generated.subtitle,
       theme_config: generated.theme_config
     }));
-    toast.success("Theme generated! You can customize colors and settings below.");
+    toast.success(`Theme "${context}" generated!`);
   };
 
   const handleToggleCouponInBanner = (code) => {
@@ -851,32 +1038,39 @@ const CouponsPage = () => {
   };
 
   const handleToggleThemeActive = async (themeId, currentStatus) => {
+    const originalBannersList = customBanners;
+    const originalPopupSetting = popupBanner;
+
+    const updatedBannersList = (customBanners || []).filter(b => b !== null && b !== undefined).map(b => {
+      if (b.id === themeId) {
+        return { ...b, is_active: !currentStatus };
+      }
+      // Deactivate other banners if this one is being activated
+      if (!currentStatus) {
+        return { ...b, is_active: false };
+      }
+      return b;
+    });
+
+    const updatedPopupSetting = {
+      ...popupBanner,
+      custom_banners: updatedBannersList
+    };
+
+    // Optimistically update
+    setCustomBanners(updatedBannersList);
+    setPopupBanner(updatedPopupSetting);
+
     try {
-      const updatedBannersList = (customBanners || []).filter(b => b !== null && b !== undefined).map(b => {
-        if (b.id === themeId) {
-          return { ...b, is_active: !currentStatus };
-        }
-        // Deactivate other banners if this one is being activated
-        if (!currentStatus) {
-          return { ...b, is_active: false };
-        }
-        return b;
-      });
-
-      const updatedPopupSetting = {
-        ...popupBanner,
-        custom_banners: updatedBannersList
-      };
-
       await adminService.updateSetting({
         key: 'popup_banner',
         value: updatedPopupSetting
       });
-
-      setCustomBanners(updatedBannersList);
-      setPopupBanner(updatedPopupSetting);
       toast.success(`Theme ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
+      // Revert state
+      setCustomBanners(originalBannersList);
+      setPopupBanner(originalPopupSetting);
       toast.error("Failed to toggle theme status");
     }
   };
@@ -1390,100 +1584,7 @@ const CouponsPage = () => {
                   </div>
                 </div>
 
-                {/* Collapsible Advanced Style Customizer */}
-                <details className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 transition-all outline-none">
-                  <summary className="text-xs font-black uppercase tracking-wider text-slate-500 cursor-pointer select-none outline-none flex items-center justify-between">
-                    <span>🔧 Technical Style Settings (Optional - Feel free to skip)</span>
-                    <span className="text-slate-400 text-[10px]">▼ Click to toggle</span>
-                  </summary>
-                  
-                  <div className="mt-4 pt-4 border-t border-slate-200/50 space-y-4">
-                    <div className="p-3.5 bg-blue-50 border border-blue-100 rounded-xl text-xs text-blue-700 space-y-1">
-                      <p className="font-bold flex items-center gap-1.5">
-                        <span>ℹ️</span> You don't need to edit these!
-                      </p>
-                      <p className="font-medium leading-relaxed text-blue-600">
-                        The system automatically designs and writes the CSS style codes for you when you type a context word (like "DIWALI") and click the green <strong>"Generate"</strong> button. You can safely ignore this technical section.
-                      </p>
-                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Animation Style */}
-                      <div>
-                        <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Background Animation</label>
-                        <select
-                          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary font-bold"
-                          value={bannerForm.theme_config.animation_style}
-                          onChange={(e) => setBannerForm(prev => ({
-                            ...prev,
-                            theme_config: { ...prev.theme_config, animation_style: e.target.value }
-                          }))}
-                        >
-                          <option value="pulse">Pulse (Standard)</option>
-                          <option value="sparkle">Sparkle (Star lights)</option>
-                          <option value="snow">Snow (Holiday Snowfall)</option>
-                          <option value="float">Float (Festive Floating)</option>
-                          <option value="tricolor">Tricolor (Ashoka Chakra)</option>
-                        </select>
-                      </div>
-
-                      {/* Emojis */}
-                      <div>
-                        <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Floating Festive Emojis</label>
-                        <input
-                          type="text"
-                          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary text-center text-lg font-bold"
-                          value={bannerForm.theme_config.emoji_pattern}
-                          onChange={(e) => setBannerForm(prev => ({
-                            ...prev,
-                            theme_config: { ...prev.theme_config, emoji_pattern: e.target.value }
-                          }))}
-                        />
-                      </div>
-
-                      {/* Background Gradient String */}
-                      <div className="sm:col-span-2">
-                        <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Background Gradient (Tailwind CSS Code)</label>
-                        <input
-                          type="text"
-                          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
-                          value={bannerForm.theme_config.background_gradient}
-                          onChange={(e) => setBannerForm(prev => ({
-                            ...prev,
-                            theme_config: { ...prev.theme_config, background_gradient: e.target.value }
-                          }))}
-                        />
-                      </div>
-
-                      {/* Text Gradient String & Border Color */}
-                      <div>
-                        <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Text Gradient (Tailwind CSS Code)</label>
-                        <input
-                          type="text"
-                          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
-                          value={bannerForm.theme_config.text_gradient}
-                          onChange={(e) => setBannerForm(prev => ({
-                            ...prev,
-                            theme_config: { ...prev.theme_config, text_gradient: e.target.value }
-                          }))}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Border Color (Tailwind CSS Code)</label>
-                        <input
-                          type="text"
-                          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
-                          value={bannerForm.theme_config.border_color}
-                          onChange={(e) => setBannerForm(prev => ({
-                            ...prev,
-                            theme_config: { ...prev.theme_config, border_color: e.target.value }
-                          }))}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </details>
 
                 {/* Active Toggle */}
                 <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">

@@ -39,6 +39,7 @@ const PopupBanner = () => {
   const loginShownRef = useRef(false);
   const checkoutShownRef = useRef(false);
   const prevUserRef = useRef(user);
+  const timerTriggerTypeRef = useRef(null);
 
   // Load public settings to fetch promoted coupons and custom themes
   useEffect(() => {
@@ -89,6 +90,14 @@ const PopupBanner = () => {
     };
   }, [location.pathname]);
 
+  // Clean up timers ONLY on actual component unmount (not on path/dependency changes)
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, []);
+
   // Trigger Logic based on routing and auth state
   useEffect(() => {
     if (coupons.length === 0) {
@@ -99,15 +108,47 @@ const PopupBanner = () => {
     const path = location.pathname;
     const justLoggedOut = prevUserRef.current && !user;
     prevUserRef.current = user;
-    
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+
+    if (justLoggedOut) {
+      loginShownRef.current = false;
+      checkoutShownRef.current = false;
+      guestHomeShownRef.current = false;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
+      timerTriggerTypeRef.current = null;
+      setShow(false);
+    }
+
+    const isCheckoutPath = path === '/checkout';
+    const isLoginTimerRunning = timerTriggerTypeRef.current === 'login';
+
+    // Clear timers on route change, EXCEPT when a global login timer is running and we are not on checkout
+    if (timerRef.current && (!isLoginTimerRunning || isCheckoutPath)) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+      timerTriggerTypeRef.current = null;
+    }
+
+    // Reset showing banner on route change only if it is path-specific or navigating to checkout
+    if (hideTimerRef.current && (isCheckoutPath || timerTriggerTypeRef.current === 'guest')) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+      setShow(false);
+    }
 
     // Rule 1: Any logged in user session should see the banner once.
     if (user && !loginShownRef.current) {
-      loginShownRef.current = true;
+      loginShownRef.current = 'pending';
+      timerTriggerTypeRef.current = 'login';
       timerRef.current = setTimeout(() => {
         setShow(true);
+        loginShownRef.current = 'shown';
         hideTimerRef.current = setTimeout(() => {
           setShow(false);
         }, POPUP_VISIBLE_MS);
@@ -118,6 +159,7 @@ const PopupBanner = () => {
     else if ((path === '/' || path === '/login') && !user && (!guestHomeShownRef.current || justLoggedOut)) {
       guestHomeShownRef.current = true;
       setShow(true);
+      timerTriggerTypeRef.current = 'guest';
       
       hideTimerRef.current = setTimeout(() => {
         setShow(false);
@@ -127,6 +169,7 @@ const PopupBanner = () => {
     // Rule 3: Checkout Page (/checkout) -> Wait 1s, then show for 8s (remind one more time)
     else if (path === '/checkout' && !checkoutShownRef.current) {
       checkoutShownRef.current = true;
+      timerTriggerTypeRef.current = 'checkout';
       
       timerRef.current = setTimeout(() => {
         setShow(true);
@@ -138,8 +181,11 @@ const PopupBanner = () => {
     }
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      // Do not clear login timer on effect cleanup (path change)
+      if (timerRef.current && timerTriggerTypeRef.current !== 'login') {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
     };
   }, [coupons, user, location.pathname]);
 
@@ -151,8 +197,15 @@ const PopupBanner = () => {
 
   const handleClose = () => {
     setShow(false);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    timerTriggerTypeRef.current = null;
   };
 
   if (!show || coupons.length === 0) return null;
