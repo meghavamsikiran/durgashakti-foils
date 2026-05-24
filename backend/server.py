@@ -23,7 +23,7 @@ load_dotenv(override=True)
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env', override=True)
 
-from database import init_engine
+from database import create_tables, init_engine
 from deps import UPLOADS_DIR
 
 # Import Modular Routers
@@ -36,6 +36,7 @@ from routes.admin import router as admin_router
 from routes.analytics import router as analytics_router
 from routes.geolocation import router as geolocation_router
 from routes.contact import router as contact_router
+from routes.reviews import router as reviews_router
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ async def lifespan(app: FastAPI):
     # Startup: Initialize PostgreSQL Async Engine + Supabase Storage
     logger.info("Starting DurgaShakti Foils Server (Supabase PostgreSQL)...")
     init_engine()
+    await create_tables()
     from storage_service import ensure_bucket_exists
     await ensure_bucket_exists()
     yield
@@ -162,6 +164,7 @@ app.include_router(admin_router)
 app.include_router(analytics_router)
 app.include_router(geolocation_router)
 app.include_router(contact_router)
+app.include_router(reviews_router)
 
 # Mount Uploads directory
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")

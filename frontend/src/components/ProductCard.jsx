@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import api, { formatImageUrl } from '../utils/api';
 import { getProductPricing } from '../utils/productPricing';
+import StarRating from './reviews/StarRating';
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const ProductCard = ({ product }) => {
   // Custom states
   const [showRemoveModal, setShowRemoveModal] = React.useState(false);
   const { basePrice, displayPrice, hasOffer, discountPercent } = getProductPricing(product);
+  const isUnavailable = Number(product.stock_quantity) <= 0 || product.in_stock === false;
   
   const cartItem = cart?.items?.find(item => String(item.product_id) === String(product.id));
   const currentQty = cartItem ? cartItem.quantity : 0;
@@ -210,20 +212,66 @@ const ProductCard = ({ product }) => {
             </div>
           )}
 
-          {(Number(product.stock_quantity) <= 0 || product.in_stock === false) && (
+          {isUnavailable && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
               <span className="bg-destructive text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg">Out of Stock</span>
             </div>
           )}
+        </div>
 
-          {/* Slide-Up Quantity Selector / Add to Cart Panel */}
-          {!(Number(product.stock_quantity) <= 0 || product.in_stock === false) && (
-            <div
-              className={`absolute bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-border-subtle transition-transform duration-300 ease-out z-20 flex items-center justify-center
-                translate-y-0`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {qty > 0 ? (
+        <div className="p-5 flex flex-col justify-between flex-1 min-h-[245px]">
+          <div>
+            <div className="mb-1.5">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle">
+                {product.size} • {product.thickness}
+              </span>
+            </div>
+            
+            <h3 className="font-bold text-base font-manrope text-ink-slate mb-1 line-clamp-2 hover:text-primary transition-colors" data-testid="product-name">
+              {product.name}
+            </h3>
+
+            <StarRating
+              value={product.rating_average}
+              count={product.review_count}
+              className="mb-2"
+            />
+            
+            <p className="text-xs text-text-muted leading-relaxed line-clamp-2 font-inter mb-4">
+              {product.description}
+            </p>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mt-auto">
+              <div className="flex flex-col gap-0.5 min-w-0">
+                {hasOffer ? (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-black text-ink-slate font-manrope leading-none" data-testid="product-price">
+                      ₹{displayPrice}
+                    </span>
+                    <span className="text-[11px] text-text-muted line-through font-semibold">
+                      ₹{basePrice}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-xl font-black text-ink-slate font-manrope leading-none" data-testid="product-price">
+                    ₹{displayPrice}
+                  </span>
+                )}
+              </div>
+              
+            </div>
+            <div className="pt-4" onClick={(e) => e.stopPropagation()}>
+              {isUnavailable ? (
+                <Button
+                  onClick={handleNotifyMe}
+                  className="w-full border border-border-subtle bg-white hover:bg-slate-50 text-slate-700 h-10 rounded-lg font-bold transition-all shadow-sm text-[10px] flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Bell className="w-3 h-3 text-slate-500" />
+                  NOTIFY ME
+                </Button>
+              ) : qty > 0 ? (
                 <div className="flex items-center justify-between border border-border-subtle bg-white rounded-full h-10 w-full px-3.5 shadow-sm hover:border-primary/50 transition-all select-none">
                   <button
                     onClick={handleDecrement}
@@ -258,58 +306,6 @@ const ProductCard = ({ product }) => {
                   <ShoppingCart className="w-3.5 h-3.5" />
                   ADD TO CART
                 </Button>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="p-5 flex flex-col justify-between flex-1 h-[190px]">
-          <div>
-            <div className="mb-1.5">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle">
-                {product.size} • {product.thickness}
-              </span>
-            </div>
-            
-            <h3 className="font-bold text-base font-manrope text-ink-slate mb-1 line-clamp-2 hover:text-primary transition-colors" data-testid="product-name">
-              {product.name}
-            </h3>
-            
-            <p className="text-xs text-text-muted leading-relaxed line-clamp-2 font-inter mb-4">
-              {product.description}
-            </p>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mt-auto">
-              <div className="flex flex-col gap-0.5 min-w-0">
-                {hasOffer ? (
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-black text-ink-slate font-manrope leading-none" data-testid="product-price">
-                      ₹{displayPrice}
-                    </span>
-                    <span className="text-[11px] text-text-muted line-through font-semibold">
-                      ₹{basePrice}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-xl font-black text-ink-slate font-manrope leading-none" data-testid="product-price">
-                    ₹{displayPrice}
-                  </span>
-                )}
-              </div>
-              
-              {/* Notify Me button when out of stock */}
-              {(Number(product.stock_quantity) <= 0 || product.in_stock === false) && (
-                <div onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    onClick={handleNotifyMe}
-                    className="border border-border-subtle bg-white hover:bg-slate-50 text-slate-700 h-9 px-3 rounded-lg font-bold transition-all shadow-sm text-[10px] flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Bell className="w-3 h-3 text-slate-500" />
-                    NOTIFY
-                  </Button>
-                </div>
               )}
             </div>
           </div>

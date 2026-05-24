@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight } from 'lucide-react';
+import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star } from 'lucide-react';
 import { Button } from './../components/ui/button';
 import { formatImageUrl } from './../utils/api';
 import { useProgress } from './../components/ui/ProgressToast';
@@ -182,6 +182,13 @@ const OrderDetailsPage = () => {
     } catch (err) {
       toast.error('Failed to add item to cart');
     }
+  };
+
+  const canReviewOrder = () => {
+    const status = (order.order_status || '').toLowerCase();
+    const payment = (order.payment_status || '').toLowerCase();
+    return !['cancelled', 'failed', 'pending_payment'].includes(status)
+      && (['completed', 'paid', 'cash on delivery'].includes(payment) || order.stock_applied === true);
   };
 
   const generateInvoiceHtml = (orderData) => {
@@ -827,6 +834,16 @@ const OrderDetailsPage = () => {
                   >
                     Ask product question
                   </button>
+
+                  {canReviewOrder() && (
+                    <button
+                      className="w-full bg-[#FFD814] hover:bg-[#F7CA00] border border-[#F2C200] font-black text-slate-950 text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all text-center uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5"
+                      onClick={() => navigate(`/review/${order.id}/${item.product_id}`)}
+                    >
+                      <Star className="w-3.5 h-3.5 fill-slate-950" />
+                      Write product review
+                    </button>
+                  )}
                 </div>
 
               </div>

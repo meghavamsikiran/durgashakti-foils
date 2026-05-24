@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from sqlalchemy import (
     Column, String, Boolean, Integer, Numeric, Text, DateTime,
-    ForeignKey, Index, text
+    ForeignKey, Index, UniqueConstraint, CheckConstraint, text
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from database import Base
@@ -90,6 +90,30 @@ class ProductModel(Base):
 
 
 # ── Categories ───────────────────────────────────────────────────────────
+class ProductReviewModel(Base):
+    __tablename__ = "product_reviews"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, index=True)
+    rating = Column(Integer, nullable=False)
+    title = Column(String(140), nullable=False)
+    comment = Column(Text, nullable=True)
+    public_name = Column(String(120), nullable=False)
+    media_urls = Column(JSONB, default=list, nullable=False, server_default=text("'[]'::jsonb"))
+    status = Column(String(30), default="published", nullable=False, index=True)
+    helpful_count = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False, index=True)
+    updated_at = Column(DateTime(timezone=True), nullable=True, onupdate=utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("product_id", "user_id", "order_id", name="uq_product_review_purchase"),
+        CheckConstraint("rating >= 1 AND rating <= 5", name="ck_product_reviews_rating_range"),
+        Index("ix_product_reviews_product_status", "product_id", "status"),
+    )
+
+
 class CategoryModel(Base):
     __tablename__ = "categories"
 

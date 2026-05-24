@@ -4,10 +4,40 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from typing import Optional
 from database import get_db
-from models import ProductModel
+from models import ProductModel, ProductReviewModel
 from deps import sanitize_search_term, row_to_dict, validate_uuid
 
 router = APIRouter(prefix="/api")
+
+
+async def _review_summaries(db: AsyncSession, product_ids: list[str]) -> dict:
+    if not product_ids:
+        return {}
+    result = await db.execute(
+        select(
+            ProductReviewModel.product_id,
+            func.count(ProductReviewModel.id).label("review_count"),
+            func.coalesce(func.avg(ProductReviewModel.rating), 0).label("rating_average"),
+        )
+        .where(ProductReviewModel.product_id.in_(product_ids), ProductReviewModel.status == "published")
+        .group_by(ProductReviewModel.product_id)
+    )
+    return {
+        str(row.product_id): {
+            "review_count": int(row.review_count or 0),
+            "rating_average": round(float(row.rating_average or 0), 1),
+        }
+        for row in result.all()
+    }
+
+
+async def _attach_review_summaries(db: AsyncSession, products: list[dict]) -> list[dict]:
+    summaries = await _review_summaries(db, [p["id"] for p in products])
+    for product in products:
+        summary = summaries.get(product["id"], {})
+        product["review_count"] = summary.get("review_count", 0)
+        product["rating_average"] = summary.get("rating_average", 0)
+    return products
 
 
 @router.get("/products", response_model=dict)
@@ -46,7 +76,7 @@ async def get_products(
             fallback_q = fallback_q.where(filter_clause)
         total = (await db.execute(fallback_q)).scalar() or 0
 
-    products = [row_to_dict(row[0]) for row in rows]
+    products = await _attach_review_summaries(db, [row_to_dict(row[0]) for row in rows])
     return {"items": products, "total": total, "page": page, "limit": limit}
 
 
@@ -57,7 +87,9 @@ async def get_product(product_id: str, db: AsyncSession = Depends(get_db)):
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    return row_to_dict(product)
+    product_data = row_to_dict(product)
+    await _attach_review_summaries(db, [product_data])
+    return product_data
 
 
 @router.get("/categories")

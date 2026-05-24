@@ -10,6 +10,8 @@ import api, { formatImageUrl } from '../utils/api';
 import PageLoader from '../components/ui/PageLoader';
 import apiClient from '../services/core/apiClient';
 import { getProductPricing } from '../utils/productPricing';
+import ProductReviews from '../components/reviews/ProductReviews';
+import StarRating from '../components/reviews/StarRating';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -267,6 +269,13 @@ const ProductDetail = () => {
               {product.name}
             </h1>
 
+            <StarRating
+              value={product.rating_average}
+              count={product.review_count}
+              size="md"
+              className="mb-5"
+            />
+
             <div className="flex items-center gap-4 mb-6">
               <span className="text-xs font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant bg-surface-container-low px-2.5 py-1 rounded border border-border-subtle">
                 {product.size}
@@ -423,6 +432,13 @@ const ProductDetail = () => {
             )}
           </motion.div>
         </div>
+        <ProductReviews
+          productId={product.id}
+          summary={{
+            rating_average: product.rating_average,
+            review_count: product.review_count,
+          }}
+        />
       </div>
     </div>
   );

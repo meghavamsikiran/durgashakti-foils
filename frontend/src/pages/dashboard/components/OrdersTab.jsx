@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Clock, Package, Wallet, Search } from 'lucide-react';
+import { ShoppingBag, Clock, Package, Wallet, Search, Star } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import TablePagination from '../../../components/ui/TablePagination';
 import { useNavigate } from 'react-router-dom';
@@ -52,6 +52,13 @@ const OrdersTab = ({ orders, loading, onCancelOrder }) => {
     
     return matchesOrderNumber || matchesProducts || matchesStatus;
   });
+
+  const canReviewOrder = (order) => {
+    const status = (order.order_status || '').toLowerCase();
+    const payment = (order.payment_status || '').toLowerCase();
+    return !['cancelled', 'failed', 'pending_payment'].includes(status)
+      && (['completed', 'paid', 'cash on delivery'].includes(payment) || order.stock_applied === true);
+  };
 
   if (loading) return <PageLoader message="Loading orders..." />;
 
@@ -108,6 +115,34 @@ const OrdersTab = ({ orders, loading, onCancelOrder }) => {
                       {(order.items || []).map(item => item.product_name).join(', ')}
                     </h3>
                     <p className="text-xs text-muted-foreground font-mono">Placed on {order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}</p>
+                    <div className="mt-4 space-y-3">
+                      {(order.items || []).map((item, idx) => (
+                        <div key={`${order.id}-${item.product_id}-${idx}`} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-border-subtle bg-white/70 p-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-black text-foreground truncate">{item.product_name}</p>
+                            <p className="text-[11px] font-bold text-muted-foreground">Quantity: {item.quantity}</p>
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <Button
+                              variant="outline"
+                              onClick={() => navigate(`/product/${item.product_id}`)}
+                              className="h-9 rounded-lg text-[10px] font-black uppercase tracking-wider"
+                            >
+                              View item
+                            </Button>
+                            {canReviewOrder(order) && (
+                              <Button
+                                onClick={() => navigate(`/review/${order.id}/${item.product_id}`)}
+                                className="h-9 rounded-lg bg-[#FFD814] hover:bg-[#F7CA00] text-slate-950 text-[10px] font-black uppercase tracking-wider"
+                              >
+                                <Star className="w-3.5 h-3.5 mr-1" />
+                                Write review
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div className="text-left md:text-right flex-shrink-0">
                     <div className="text-2xl font-black text-foreground font-mono mb-4">₹{(order.total_amount || 0).toLocaleString()}</div>
