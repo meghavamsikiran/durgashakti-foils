@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Ticket, Plus, Search, Edit2, Trash2, Settings, 
-  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2
+  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone
 } from 'lucide-react';
 import { toast } from 'sonner';
 import couponService from '../../services/coupon.service';
+import adminService from '../services/admin.service';
 import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
 
@@ -18,6 +19,7 @@ const CouponsPage = () => {
   const [loading, setLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [promotingId, setPromotingId] = useState(null);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -135,6 +137,71 @@ const CouponsPage = () => {
       toast.success(`Coupon ${!coupon.is_active ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
       toast.error('Failed to toggle status');
+    }
+  };
+
+  const handlePromoteToBanner = async (coupon) => {
+    if (!window.confirm(`Are you sure you want to promote coupon ${coupon.code} in the storefront scrolling banner?`)) {
+      return;
+    }
+
+    setPromotingId(coupon.id);
+    try {
+      // 1. Fetch current settings to get existing text1 and use_favicon
+      const settingsRes = await adminService.getSettings();
+      const currentSettings = settingsRes.data || {};
+      const currentBanner = currentSettings.scrolling_banner || {};
+
+      // 2. Format discount text
+      let discountText = '';
+      if (coupon.discount_type === 'percentage') {
+        discountText = `${Number(coupon.discount_value)}%`;
+      } else if (coupon.discount_type === 'flat') {
+        discountText = `₹${Number(coupon.discount_value)}`;
+      } else if (coupon.discount_type === 'free_shipping') {
+        discountText = 'Free Shipping';
+      }
+
+      // 3. Format banner text and timer parameters
+      let text2 = '';
+      let timerEnabled = false;
+      let timerTarget = '';
+
+      if (coupon.expiry_date) {
+        timerEnabled = true;
+        timerTarget = coupon.expiry_date;
+        if (coupon.discount_type === 'free_shipping') {
+          text2 = `⚡ Special ${coupon.code} Offer! Use coupon code ${coupon.code} to get Free Shipping. Offer ends in {timer} ⚡`;
+        } else {
+          text2 = `⚡ Special ${coupon.code} Offer! Use coupon code ${coupon.code} to get a discount of ${discountText}. Offer ends in {timer} ⚡`;
+        }
+      } else {
+        timerEnabled = false;
+        timerTarget = '';
+        if (coupon.discount_type === 'free_shipping') {
+          text2 = `🎁 Special ${coupon.code} Offer! Use coupon code ${coupon.code} to get Free Shipping! 🎁`;
+        } else {
+          text2 = `🎁 Special ${coupon.code} Offer! Use coupon code ${coupon.code} to get a discount of ${discountText}! 🎁`;
+        }
+      }
+
+      // 4. Update the settings via API
+      await adminService.updateSetting({
+        key: 'scrolling_banner',
+        value: {
+          text1: currentBanner.text1 || '✨ Experience Purity & Perfection with Durga Shakti Premium Foils ✨',
+          text2: text2,
+          timer_enabled: timerEnabled,
+          timer_target: timerTarget,
+          use_favicon: currentBanner.use_favicon !== false
+        }
+      });
+
+      toast.success(`✨ Coupon ${coupon.code} is now active in the scrolling banner!`);
+    } catch (error) {
+      toast.error(error.message || 'Failed to update scrolling banner');
+    } finally {
+      setPromotingId(null);
     }
   };
 
@@ -413,6 +480,18 @@ const CouponsPage = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
+                          <button 
+                            onClick={() => handlePromoteToBanner(coupon)}
+                            disabled={promotingId === coupon.id}
+                            className="p-2 text-slate-500 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all disabled:opacity-50"
+                            title="Promote in Banner"
+                          >
+                            {promotingId === coupon.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Megaphone className="w-4 h-4" />
+                            )}
+                          </button>
                           <button 
                             onClick={() => handleOpenEditModal(coupon)}
                             className="p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-xl transition-all"

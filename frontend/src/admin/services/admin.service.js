@@ -120,6 +120,7 @@ const adminService = {
   getSettings: () => cachedGet('/admin/settings'),
   updateSetting: (payload) => {
     invalidateCache('/admin/settings');
+    invalidateCache('/settings/public');
     return apiClient.post('/admin/settings', payload);
   },
 
