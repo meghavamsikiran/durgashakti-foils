@@ -220,9 +220,14 @@ const SettingsPage = () => {
   const saveBanner = async () => {
     try {
       setSavingBanner(true);
+      const settingsRes = await adminService.getSettings();
+      const currentSettings = settingsRes.data || {};
+      const currentBanner = currentSettings.scrolling_banner || {};
+
       await adminService.updateSetting({
         key: 'scrolling_banner',
         value: {
+          ...currentBanner,
           text1: bannerText1,
           text2: bannerText2,
           timer_enabled: bannerTimerEnabled,
