@@ -415,44 +415,7 @@ const SettingsPage = () => {
              </div>
           </div>
           
-          {/* Payment Control Center — SUPER_ADMIN or manage_settings permission */}
-          {(me?.role === 'SUPER_ADMIN' || me?.permissions?.manage_settings) && (
-               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
-                     <Settings className="w-32 h-32 text-indigo-950" />
-                  </div>
-                  
-                  <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-4 flex items-center gap-2">
-                     <Settings className="w-5 h-5 text-indigo-600" />
-                     Payment Control Center
-                  </h2>
-                  <p className="text-xs text-slate-500 mb-8 font-medium">Control checkout payment options for DurgaShakti Foils customers.</p>
 
-                  <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                     <div className="flex items-start gap-4">
-                        <div className="p-3 rounded-xl bg-indigo-100 text-indigo-600 flex-shrink-0">
-                           <RefreshCcw className="w-6 h-6 animate-pulse" />
-                        </div>
-                        <div>
-                           <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Cash on Delivery (COD)</h3>
-                           <p className="text-xs text-slate-500 mt-1 max-w-md">COD charges and limits are managed from Shipping Settings so admin and customer checkout always use the same values.</p>
-                        </div>
-                     </div>
-                     
-                     <div className="flex items-center gap-3 self-end md:self-auto">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${codEnabled ? 'text-indigo-600' : 'text-slate-400'}`}>
-                           {codEnabled ? 'Active' : 'Disabled'}
-                        </span>
-                        <Link
-                           to={me?.role === 'SUPER_ADMIN' ? '/superadmin/shipping-settings' : '/admin/shipping-settings'}
-                           className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all"
-                        >
-                           Manage
-                        </Link>
-                     </div>
-                  </div>
-               </div>
-          )}
 
           {/* Sacred Banner Management — SUPER_ADMIN or manage_banner permission */}
           {(me?.role === 'SUPER_ADMIN' || me?.permissions?.manage_banner) && (
