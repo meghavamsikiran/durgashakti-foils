@@ -261,7 +261,7 @@ const CouponsPage = () => {
         </h2>
         <p className="text-xs text-text-muted mt-1">Control system-wide coupon visibility and stacking compatibility.</p>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
           <label className="flex items-start gap-3 p-4 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100/75 transition-all border border-slate-200">
             <input 
               type="checkbox" 
@@ -285,19 +285,6 @@ const CouponsPage = () => {
             <div>
               <p className="text-sm font-bold text-ink-slate">Allow Coupon Stacking</p>
               <p className="text-xs text-text-muted mt-0.5">Enables customers to apply multiple codes simultaneously.</p>
-            </div>
-          </label>
-
-          <label className="flex items-start gap-3 p-4 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100/75 transition-all border border-slate-200">
-            <input 
-              type="checkbox" 
-              className="mt-1 h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary"
-              checked={settings.single_use_per_account}
-              onChange={(e) => setSettings(prev => ({ ...prev, single_use_per_account: e.target.checked }))}
-            />
-            <div>
-              <p className="text-sm font-bold text-ink-slate">One Coupon Per Lifetime</p>
-              <p className="text-xs text-text-muted mt-0.5">Restricts users to applying only one coupon across account history.</p>
             </div>
           </label>
         </div>
