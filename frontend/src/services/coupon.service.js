@@ -14,9 +14,15 @@ const couponService = {
   },
 
   // Admin CRUD
-  getCoupons: () => cachedGet('/admin/coupons'),
+  getCoupons: async () => {
+    const response = await cachedGet('/admin/coupons');
+    return response.data;
+  },
   
-  getCoupon: (couponId) => cachedGet(`/admin/coupons/${couponId}`),
+  getCoupon: async (couponId) => {
+    const response = await cachedGet(`/admin/coupons/${couponId}`);
+    return response.data;
+  },
   
   createCoupon: async (payload) => {
     invalidateCache('/admin/coupons');
@@ -37,7 +43,10 @@ const couponService = {
   },
 
   // Global Settings
-  getSettings: () => cachedGet('/admin/coupons/settings'),
+  getSettings: async () => {
+    const response = await cachedGet('/admin/coupons/settings');
+    return response.data;
+  },
   
   updateSettings: async (payload) => {
     invalidateCache('/admin/coupons/settings');
