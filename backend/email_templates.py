@@ -2,27 +2,30 @@
 from datetime import datetime, timezone, timedelta
 
 LOGO_URL = "https://durgashakti-foils.vercel.app/logo-orange.png"
-BRAND_COLOR = "#ea580c" # Match logo orange/red
-BRAND_DARK = "#9a3412"
+BRAND_COLOR = "#006e1b"
+BRAND_HOVER = "#16E34A"
+BRAND_DARK = "#181c1b"
+BRAND_SURFACE = "#f7faf8"
+BRAND_BORDER = "#DDE5DF"
 SITE_URL = "https://durgashakti-foils.vercel.app"
 
 def _base(content: str, title: str) -> str:
     return f"""<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title></head>
-<body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:30px 0;">
+<body style="margin:0;padding:0;background:{BRAND_SURFACE};font-family:Inter,'Segoe UI',Arial,sans-serif;color:{BRAND_DARK};">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:{BRAND_SURFACE};padding:30px 0;">
 <tr><td align="center">
-<table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+<table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid {BRAND_BORDER};box-shadow:0 10px 30px -5px rgba(11,209,61,0.12);">
   <!-- Header -->
-  <tr><td style="background:#ffffff;padding:32px 40px;text-align:center;border-bottom:1px solid #f3f4f6;">
+  <tr><td style="background:#0B1220;padding:32px 40px;text-align:center;border-bottom:4px solid {BRAND_COLOR};">
     <img src="{LOGO_URL}" width="280" style="margin:0 auto;object-fit:contain;display:block;" alt="DurgaShakti Foils Logo">
   </td></tr>
   <!-- Body -->
   <tr><td style="padding:36px 40px;">{content}</td></tr>
   <!-- Footer -->
-  <tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:24px 40px;text-align:center;">
-    <p style="margin:0;color:#6b7280;font-size:12px;">© 2025 DurgaShakti Foils. All rights reserved.</p>
+  <tr><td style="background:#f1f4f2;border-top:1px solid {BRAND_BORDER};padding:24px 40px;text-align:center;">
+    <p style="margin:0;color:#6b7280;font-size:12px;">&copy; 2025 DurgaShakti Foils. All rights reserved.</p>
     <p style="margin:6px 0 0;color:#6b7280;font-size:12px;">
       <a href="{SITE_URL}" style="color:{BRAND_COLOR};text-decoration:none;">Visit our website</a> &nbsp;|&nbsp;
       <a href="{SITE_URL}/contact" style="color:{BRAND_COLOR};text-decoration:none;">Contact Support</a>
@@ -74,7 +77,7 @@ def _info_row(label: str, value: str) -> str:
 
 def _cta_button(text: str, url: str) -> str:
     return f"""<div style="text-align:center;margin:28px 0;">
-      <a href="{url}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:linear-gradient(135deg,{BRAND_DARK},{BRAND_COLOR});color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:0.3px;">{text}</a>
+      <a href="{url}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:{BRAND_COLOR};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:0.3px;box-shadow:0 10px 30px -5px rgba(11,209,61,0.18);">{text}</a>
     </div>"""
 
 
@@ -140,7 +143,7 @@ def order_confirmation_email(name: str, order: dict) -> tuple[str, str]:
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. PAYMENT SUCCESS
 # ─────────────────────────────────────────────────────────────────────────────
-def payment_success_email(name: str, order: dict) -> tuple[str, str]:
+def payment_success_email(name: str, order: dict) -> tuple[str, str, list]:
     first = name.split()[0] if name else "Customer"
     order_num = order.get("order_number", "N/A")
     total = float(order.get("total_amount", 0))
@@ -152,7 +155,7 @@ def payment_success_email(name: str, order: dict) -> tuple[str, str]:
       <p style="font-size:22px;font-weight:800;color:{BRAND_DARK};margin:12px 0 4px;">Payment Received, {first}!</p>
       <p style="color:#6b7280;font-size:14px;">Your payment has been processed and your order is confirmed.</p>
     </div>
-    <div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:12px;padding:24px;margin-bottom:24px;">
+    <div style="background:{BRAND_SURFACE};border:1px solid {BRAND_BORDER};border-left:5px solid {BRAND_COLOR};border-radius:12px;padding:24px;margin-bottom:24px;">
       <table width="100%" cellpadding="0" cellspacing="0">
         {_info_row("Order Number", order_num)}
         {_info_row("Amount Paid", f"₹{total:.2f}")}
@@ -160,8 +163,15 @@ def payment_success_email(name: str, order: dict) -> tuple[str, str]:
         {_info_row("Date & Time", datetime.now(timezone.utc).strftime("%d %B %Y, %I:%M %p UTC"))}
       </table>
     </div>
+    <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 18px;text-align:center;">Your GST tax invoice has been attached as a PDF for your records.</p>
     {_cta_button("View Order", f"{SITE_URL}/order/{order_num}")}"""
-    return f"Payment Successful - ₹{total:.2f} | {order_num}", _base(content, "Payment Success")
+    attachments = []
+    try:
+        from invoice_service import build_tax_invoice_attachment
+        attachments.append(build_tax_invoice_attachment(order))
+    except Exception as e:
+        print("Failed to generate tax invoice PDF:", e)
+    return f"Payment Successful - ₹{total:.2f} | {order_num}", _base(content, "Payment Success"), attachments
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -276,21 +286,10 @@ def order_delivered_email(name: str, order: dict) -> tuple[str, str, list]:
     
     attachments = []
     try:
-        from xhtml2pdf import pisa
-        import io, base64
-        pdf_file = io.BytesIO()
-        invoice_html = generate_invoice_html(order)
-        pisa_status = pisa.CreatePDF(io.StringIO(invoice_html), dest=pdf_file)
-        if not pisa_status.err:
-            pdf_bytes = pdf_file.getvalue()
-            b64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
-            attachments.append({
-                "filename": f"Invoice_{order_num}.pdf",
-                "content": f"data:application/pdf;base64,{b64_pdf}"
-            })
+        from invoice_service import build_tax_invoice_attachment
+        attachments.append(build_tax_invoice_attachment(order))
     except Exception as e:
-        print("Failed to generate PDF:", e)
-        pass
+        print("Failed to generate tax invoice PDF:", e)
 
     return f"Delivered! Order {order_num} Receipt | DurgaShakti Foils", _base(content, "Order Delivered"), attachments
 

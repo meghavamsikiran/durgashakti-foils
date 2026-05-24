@@ -18,11 +18,25 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { to, subject, body, smtp_user, smtp_pass } = req.body;
+  const { to, subject, body, smtp_user, smtp_pass, attachments = [] } = req.body;
 
   if (!to || !subject || !body || !smtp_user || !smtp_pass) {
     return res.status(400).json({ error: 'Missing required parameters' });
   }
+
+  const normalizedAttachments = Array.isArray(attachments)
+    ? attachments
+        .filter((att) => att && att.content)
+        .map((att) => {
+          const rawContent = String(att.content);
+          const base64Content = rawContent.includes(',') ? rawContent.split(',').pop() : rawContent;
+          return {
+            filename: att.filename || 'attachment.pdf',
+            content: Buffer.from(base64Content, 'base64'),
+            contentType: att.contentType || 'application/pdf',
+          };
+        })
+    : [];
 
   // Try Port 587 (TLS)
   try {
@@ -44,6 +58,7 @@ module.exports = async (req, res) => {
       to,
       subject,
       html: body,
+      attachments: normalizedAttachments,
     });
 
     console.log(`Vercel Relay: SUCCESS on port 587!`);
@@ -70,6 +85,7 @@ module.exports = async (req, res) => {
         to,
         subject,
         html: body,
+        attachments: normalizedAttachments,
       });
 
       console.log(`Vercel Relay: SUCCESS on fallback port 465!`);
