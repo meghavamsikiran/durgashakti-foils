@@ -385,7 +385,7 @@ const CouponsPage = () => {
         [];
       setScrollingBanner(bannerVal);
       setPopupBanner(adminSettings.popup_banner || { promoted_coupons: popupPromotedCoupons });
-      setCustomBanners(adminSettings.popup_banner?.custom_banners || []);
+      setCustomBanners((adminSettings.popup_banner?.custom_banners || []).filter(b => b !== null && b !== undefined));
     } catch (error) {
       toast.error('Failed to load coupon data');
     } finally {
@@ -723,7 +723,7 @@ const CouponsPage = () => {
       };
 
       // If this theme is active, deactivate all other themes
-      let updatedBannersList = customBanners.map(b => {
+      let updatedBannersList = (customBanners || []).filter(b => b !== null && b !== undefined).map(b => {
         if (b.id === currentFormId) {
           return newBannerTheme;
         }
@@ -771,7 +771,7 @@ const CouponsPage = () => {
       return;
     }
     try {
-      const updatedBannersList = customBanners.filter(b => b.id !== themeId);
+      const updatedBannersList = (customBanners || []).filter(b => b && b.id !== themeId);
       const updatedPopupSetting = {
         ...popupBanner,
         custom_banners: updatedBannersList
@@ -790,7 +790,7 @@ const CouponsPage = () => {
 
   const handleToggleThemeActive = async (themeId, currentStatus) => {
     try {
-      const updatedBannersList = customBanners.map(b => {
+      const updatedBannersList = (customBanners || []).filter(b => b !== null && b !== undefined).map(b => {
         if (b.id === themeId) {
           return { ...b, is_active: !currentStatus };
         }
@@ -1247,7 +1247,7 @@ const CouponsPage = () => {
                               
                               // Check if linked to another theme
                               const linkedTheme = (customBanners || []).find(
-                                b => b.id !== bannerForm.id && (b.coupon_codes || []).includes(coupon.code)
+                                b => b && b.id !== bannerForm.id && (b.coupon_codes || []).includes(coupon.code)
                               );
 
                               return (
@@ -1293,7 +1293,7 @@ const CouponsPage = () => {
                   {/* Warning if linked elsewhere is selected */}
                   {coupons.some(c => 
                     couponCodes.includes(c.code) && 
-                    (customBanners || []).some(b => b.id !== bannerForm.id && (b.coupon_codes || []).includes(c.code))
+                    (customBanners || []).some(b => b && b.id !== bannerForm.id && (b.coupon_codes || []).includes(c.code))
                   ) && (
                     <p className="text-[11px] text-amber-600 font-semibold mt-1.5 flex items-center gap-1 animate-pulse">
                       ⚠️ Note: Some chosen coupons are already linked to other banner themes. Saving will unlink them from those themes.
@@ -1555,14 +1555,18 @@ const CouponsPage = () => {
               </p>
 
               <div className="space-y-4">
-                {customBanners.length === 0 ? (
-                  <div className="p-8 text-center border border-dashed border-slate-200 rounded-2xl text-slate-400 space-y-2">
-                    <Sparkles className="w-8 h-8 mx-auto text-slate-300" />
-                    <p className="text-xs font-bold uppercase tracking-wider">No banner themes created</p>
-                    <p className="text-[10px] text-slate-400">Use the form to generate a theme.</p>
-                  </div>
-                ) : (
-                  customBanners.map(theme => (
+                {(() => {
+                  const activeBanners = (customBanners || []).filter(b => b !== null && b !== undefined);
+                  if (activeBanners.length === 0) {
+                    return (
+                      <div className="p-8 text-center border border-dashed border-slate-200 rounded-2xl text-slate-400 space-y-2">
+                        <Sparkles className="w-8 h-8 mx-auto text-slate-300" />
+                        <p className="text-xs font-bold uppercase tracking-wider">No banner themes created</p>
+                        <p className="text-[10px] text-slate-400">Use the form to generate a theme.</p>
+                      </div>
+                    );
+                  }
+                  return activeBanners.map(theme => (
                     <div 
                       key={theme.id}
                       className={`p-4 border rounded-2xl transition-all space-y-3 relative overflow-hidden ${
@@ -1651,11 +1655,11 @@ const CouponsPage = () => {
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                        </div>
                       </div>
                     </div>
-                  ))
-                )}
+                  </div>
+                ))
+              })()}
               </div>
             </div>
           </div>

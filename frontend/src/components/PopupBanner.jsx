@@ -49,7 +49,7 @@ const PopupBanner = () => {
         const data = await settingsService.getPublicSettings({ force: attempt > 0 });
         if (!active) return;
 
-        const customBanners = data.popup_banner?.custom_banners || [];
+        const customBanners = (data.popup_banner?.custom_banners || []).filter(b => b !== null && b !== undefined);
         const activeTheme = customBanners.find(theme => theme.is_active);
 
         let selectedCoupons = [];
@@ -57,16 +57,6 @@ const PopupBanner = () => {
           selectedCoupons = activeTheme.linked_coupons || [];
         } else {
           selectedCoupons = data.popup_banner?.promoted_coupons || [];
-          
-          // Fallback: Parse from scrolling banner text if popup_banner is empty
-          if (selectedCoupons.length === 0 && data.scrolling_banner) {
-            const parsed = parseCouponFromScrollingText(
-              data.scrolling_banner.text2 || data.scrolling_banner.text1 || '',
-              data.scrolling_banner.timer_enabled,
-              data.scrolling_banner.timer_target
-            );
-            if (parsed) selectedCoupons = [parsed];
-          }
         }
 
         // Filter valid unexpired coupons
