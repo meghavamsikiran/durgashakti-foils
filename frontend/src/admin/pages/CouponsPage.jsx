@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Ticket, Plus, Search, Edit2, Trash2, Settings, 
-  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone, Sparkles
+  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone, Sparkles, Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
 import couponService from '../../services/coupon.service';
@@ -481,10 +481,6 @@ const CouponsPage = () => {
     const isScrollingPromoted = scrollingBanner && scrollingBanner.text2 && scrollingBanner.text2.includes(coupon.code);
 
     if (isScrollingPromoted) {
-      if (!window.confirm(`Are you sure you want to remove coupon ${coupon.code} from the storefront scrolling banner?`)) {
-        return;
-      }
-
       setPromotingId(coupon.id);
       try {
         const settingsRes = await adminService.getSettings();
@@ -510,10 +506,6 @@ const CouponsPage = () => {
       } finally {
         setPromotingId(null);
       }
-      return;
-    }
-
-    if (!window.confirm(`Are you sure you want to promote coupon ${coupon.code} in the storefront scrolling banner?`)) {
       return;
     }
 
@@ -1153,7 +1145,12 @@ const CouponsPage = () => {
                                 return (
                                   <>
                                     <button 
-                                      onClick={() => handlePromoteToBanner(coupon)}
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handlePromoteToBanner(coupon);
+                                      }}
                                       disabled={promotingId === coupon.id}
                                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 ${
                                         isScrollingPromoted 
@@ -1171,7 +1168,12 @@ const CouponsPage = () => {
                                     </button>
                                     
                                     <button 
-                                      onClick={() => handleTogglePopupBannerPromotion(coupon)}
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleTogglePopupBannerPromotion(coupon);
+                                      }}
                                       disabled={togglingPopupId === coupon.id}
                                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 ${
                                         isPopupPromoted 
@@ -1654,13 +1656,6 @@ const CouponsPage = () => {
                             {theme.theme_context} Theme
                           </span>
                         </div>
-                        <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-wider ${
-                          theme.is_active 
-                            ? 'bg-emerald-550 text-emerald-700 font-bold bg-emerald-50' 
-                            : 'bg-slate-100 text-slate-500'
-                        }`}>
-                          {theme.is_active ? 'Active' : 'Inactive'}
-                        </span>
                       </div>
 
                       {/* Title / Subtitle info */}
@@ -1687,13 +1682,22 @@ const CouponsPage = () => {
                         <button
                           type="button"
                           onClick={() => handleToggleThemeActive(theme.id, theme.is_active)}
-                          className={`font-bold uppercase tracking-wider ${
+                          aria-pressed={theme.is_active}
+                          title={theme.is_active ? 'Click to deactivate this theme' : 'Click to activate this theme'}
+                          className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 font-bold uppercase tracking-wider transition-all ${
                             theme.is_active 
-                              ? 'text-amber-600 hover:text-amber-700' 
-                              : 'text-emerald-600 hover:text-emerald-700'
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                              : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
                           }`}
                         >
-                          {theme.is_active ? 'Deactivate' : 'Activate'}
+                          <span className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${
+                            theme.is_active ? 'bg-emerald-600' : 'bg-slate-300'
+                          }`}>
+                            <span className={`inline-block h-3 w-3 rounded-full bg-white shadow-sm transition-transform ${
+                              theme.is_active ? 'translate-x-3.5' : 'translate-x-0.5'
+                            }`} />
+                          </span>
+                          {theme.is_active ? 'Active' : 'Inactive'}
                         </button>
                         
                         <div className="flex gap-2">
