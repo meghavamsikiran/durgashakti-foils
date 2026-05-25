@@ -17,7 +17,7 @@ from deps import (
     require_permission, sanitize_search_term, is_super_admin_role,
     write_audit_log, row_to_dict, normalize_order_status,
     ORDER_STATUS_TRANSITIONS, UPLOADS_DIR, validate_uuid, is_valid_uuid,
-    create_notification
+    create_notification, ensure_category_exists, sync_product_categories
 )
 from storage_service import upload_image, upload_media, delete_asset
 import uuid
@@ -102,11 +102,7 @@ async def get_admin_products(
 # ── Products (Admin) ─────────────────────────────────────────────────────
 @router.post("/admin/products")
 async def create_product(product: ProductSchema, admin: UserSchema = Depends(require_permission("create_products")), db: AsyncSession = Depends(get_db)):
-    if product.category:
-        existing_category = await db.execute(select(CategoryModel).where(CategoryModel.name == product.category))
-        if existing_category.scalar_one_or_none() is None:
-            raise HTTPException(status_code=400, detail="Category must be an existing category")
-
+    await ensure_category_exists(db, product.category)
     p = ProductModel(
         id=product.id,
         name=product.name,
@@ -137,6 +133,7 @@ async def create_product(product: ProductSchema, admin: UserSchema = Depends(req
 async def create_product_bulk(payload: ProductBulkCreateRequest, admin: UserSchema = Depends(require_permission("create_products")), db: AsyncSession = Depends(get_db)):
     if not payload.variants:
         raise HTTPException(status_code=400, detail="At least one variant required")
+    await ensure_category_exists(db, payload.category)
 
     skus = [v.sku for v in payload.variants]
     if len(skus) != len(set(skus)):
@@ -145,11 +142,6 @@ async def create_product_bulk(payload: ProductBulkCreateRequest, admin: UserSche
     existing_res = await db.execute(select(ProductModel).where(or_(ProductModel.batch_no.in_(skus), ProductModel.variant_sku.in_(skus))))
     if existing_res.first():
         raise HTTPException(status_code=400, detail="SKU already exists")
-
-    if payload.category:
-        existing_category = await db.execute(select(CategoryModel).where(CategoryModel.name == payload.category))
-        if existing_category.scalar_one_or_none() is None:
-            raise HTTPException(status_code=400, detail="Category must be an existing category")
 
     count = 0
     for v in payload.variants:
@@ -191,11 +183,6 @@ async def update_product(product_id: str, product_data: dict, admin: UserSchema 
     if not safe_data:
         raise HTTPException(status_code=400, detail="No valid fields")
 
-    if 'category' in safe_data and safe_data['category']:
-        existing_category = await db.execute(select(CategoryModel).where(CategoryModel.name == safe_data['category']))
-        if existing_category.scalar_one_or_none() is None:
-            raise HTTPException(status_code=400, detail="Category must be an existing category")
-
     res = await db.execute(select(ProductModel).where(ProductModel.id == product_id))
     p = res.scalar_one_or_none()
     if not p:
@@ -203,6 +190,8 @@ async def update_product(product_id: str, product_data: dict, admin: UserSchema 
 
     if 'image_url' in safe_data and p.image_url != safe_data['image_url']:
         await delete_asset(p.image_url)
+    if 'category' in safe_data:
+        await ensure_category_exists(db, safe_data['category'])
 
     for k, v in safe_data.items():
         setattr(p, k, v)
@@ -230,6 +219,7 @@ async def delete_product(product_id: str, admin: UserSchema = Depends(require_pe
 # ── Categories (Admin) ───────────────────────────────────────────────────
 @router.get("/admin/categories")
 async def get_all_categories(admin: UserSchema = Depends(require_permission("view_products")), db: AsyncSession = Depends(get_db)):
+    await sync_product_categories(db)
     result = await db.execute(select(CategoryModel).order_by(CategoryModel.name.asc()))
     categories = result.scalars().all()
     return [row_to_dict(c) for c in categories]
@@ -241,14 +231,20 @@ async def create_category(payload: dict, admin: UserSchema = Depends(require_per
     if not name:
         raise HTTPException(status_code=400, detail="Category name is required")
         
-    existing = await db.execute(select(CategoryModel).where(CategoryModel.name == name))
+    existing = await db.execute(select(CategoryModel).where(func.lower(CategoryModel.name) == name.lower()))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Category already exists")
+
+    discount_percent = float(payload.get("global_discount_percent") or 0)
+    if discount_percent < 0 or discount_percent > 100:
+        raise HTTPException(status_code=400, detail="Global discount must be between 0 and 100")
         
     cat = CategoryModel(
         id=str(uuid.uuid4()),
         name=name,
-        is_active=True
+        is_active=True,
+        global_discount_enabled=bool(payload.get("global_discount_enabled", False)),
+        global_discount_percent=discount_percent,
     )
     db.add(cat)
     await db.flush()
@@ -270,17 +266,31 @@ async def update_category(category_id: str, payload: dict, admin: UserSchema = D
             raise HTTPException(status_code=400, detail="Category name cannot be empty")
         
         if name != cat.name:
-            existing = await db.execute(select(CategoryModel).where(CategoryModel.name == name))
-            if existing.scalar_one_or_none():
+            existing = await db.execute(select(CategoryModel).where(func.lower(CategoryModel.name) == name.lower()))
+            existing_cat = existing.scalar_one_or_none()
+            if existing_cat and str(existing_cat.id) != str(cat.id):
                 raise HTTPException(status_code=400, detail="Another category with this name already exists")
+        old_name = cat.name
         cat.name = name
+        await db.execute(
+            update(ProductModel)
+            .where(ProductModel.category == old_name)
+            .values(category=name)
+        )
         
     if "is_active" in payload:
         cat.is_active = bool(payload["is_active"])
+    if "global_discount_enabled" in payload:
+        cat.global_discount_enabled = bool(payload["global_discount_enabled"])
+    if "global_discount_percent" in payload:
+        discount_percent = float(payload.get("global_discount_percent") or 0)
+        if discount_percent < 0 or discount_percent > 100:
+            raise HTTPException(status_code=400, detail="Global discount must be between 0 and 100")
+        cat.global_discount_percent = discount_percent
         
     cat.updated_at = datetime.now(timezone.utc)
     await db.flush()
-    await write_audit_log(db, "CATEGORY_UPDATED", admin.id, "category", category_id, {"name": cat.name, "is_active": cat.is_active})
+    await write_audit_log(db, "CATEGORY_UPDATED", admin.id, "category", category_id, {"name": cat.name, "is_active": cat.is_active, "global_discount_enabled": cat.global_discount_enabled, "global_discount_percent": float(cat.global_discount_percent or 0)})
     return row_to_dict(cat)
 
 

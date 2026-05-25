@@ -88,6 +88,39 @@ async def create_tables():
         raise RuntimeError("Database engine not initialized.")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS categories (
+                id UUID PRIMARY KEY,
+                name VARCHAR(255) UNIQUE NOT NULL,
+                is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                global_discount_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+                global_discount_percent NUMERIC(5, 2) NOT NULL DEFAULT 0.0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                updated_at TIMESTAMPTZ
+            );
+        """))
+        await conn.execute(text("ALTER TABLE categories ADD COLUMN IF NOT EXISTS id UUID;"))
+        await conn.execute(text("UPDATE categories SET id = md5(LOWER(name))::uuid WHERE id IS NULL AND name IS NOT NULL;"))
+        await conn.execute(text("ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;"))
+        await conn.execute(text("ALTER TABLE categories ADD COLUMN IF NOT EXISTS global_discount_enabled BOOLEAN NOT NULL DEFAULT FALSE;"))
+        await conn.execute(text("ALTER TABLE categories ADD COLUMN IF NOT EXISTS global_discount_percent NUMERIC(5, 2) NOT NULL DEFAULT 0.0;"))
+        await conn.execute(text("ALTER TABLE categories ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();"))
+        await conn.execute(text("ALTER TABLE categories ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;"))
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_categories_name ON categories(name);"))
+        await conn.execute(text("""
+            INSERT INTO categories (id, name, is_active, created_at)
+            SELECT md5(LOWER(product_categories.name))::uuid, product_categories.name, TRUE, NOW()
+            FROM (
+                SELECT DISTINCT TRIM(category) AS name
+                FROM products
+                WHERE category IS NOT NULL AND TRIM(category) <> ''
+            ) AS product_categories
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM categories
+                WHERE LOWER(categories.name) = LOWER(product_categories.name)
+            );
+        """))
         # Ensure order table coupon alterations are applied
         await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_codes JSONB DEFAULT '[]'::jsonb;"))
         await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12, 2) DEFAULT 0.0 NOT NULL;"))

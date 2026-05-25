@@ -20,7 +20,7 @@ from fastapi import HTTPException, Depends, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, ConfigDict, EmailStr, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from database import get_db
 from models import UserModel, AuditLogModel, NotificationModel
@@ -449,6 +449,49 @@ def row_to_dict(row) -> dict:
             val = float(val)
         d[col_name] = val
     return d
+
+
+def normalize_category_name(name: str | None) -> str:
+    return str(name or "").strip()
+
+
+async def ensure_category_exists(db: AsyncSession, name: str | None):
+    """Create a saved category row for a product category name if needed."""
+    category_name = normalize_category_name(name)
+    if not category_name:
+        return None
+
+    from models import CategoryModel
+
+    existing = await db.execute(
+        select(CategoryModel).where(func.lower(CategoryModel.name) == category_name.lower())
+    )
+    category = existing.scalar_one_or_none()
+    if category:
+        return category
+
+    category = CategoryModel(
+        id=str(uuid.uuid4()),
+        name=category_name,
+        is_active=True,
+    )
+    db.add(category)
+    await db.flush()
+    return category
+
+
+async def sync_product_categories(db: AsyncSession):
+    """Backfill saved categories from product.category values."""
+    from models import ProductModel
+
+    result = await db.execute(
+        select(func.distinct(ProductModel.category)).where(
+            ProductModel.category.is_not(None),
+            func.trim(ProductModel.category) != "",
+        )
+    )
+    for category_name in result.scalars().all():
+        await ensure_category_exists(db, category_name)
 
 
 

@@ -5,7 +5,7 @@ from sqlalchemy import select, func, or_
 from typing import Optional
 from database import get_db
 from models import ProductModel, ProductReviewModel, SettingModel
-from deps import sanitize_search_term, row_to_dict, validate_uuid
+from deps import sanitize_search_term, row_to_dict, validate_uuid, sync_product_categories
 
 router = APIRouter(prefix="/api")
 
@@ -99,6 +99,7 @@ async def get_product(product_id: str, db: AsyncSession = Depends(get_db)):
 @router.get("/categories")
 async def get_public_categories(db: AsyncSession = Depends(get_db)):
     from models import CategoryModel
+    await sync_product_categories(db)
     result = await db.execute(select(CategoryModel).where(CategoryModel.is_active == True).order_by(CategoryModel.name.asc()))
     categories = result.scalars().all()
     return [row_to_dict(c) for c in categories]
