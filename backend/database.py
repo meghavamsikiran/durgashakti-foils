@@ -94,5 +94,7 @@ async def create_tables():
         await conn.execute(text("ALTER TABLE coupons ADD COLUMN IF NOT EXISTS coupon_type VARCHAR(50) DEFAULT 'standard' NOT NULL;"))
         await conn.execute(text("ALTER TABLE coupons ADD COLUMN IF NOT EXISTS apply_to_all_loyal_customers BOOLEAN DEFAULT false NOT NULL;"))
         await conn.execute(text("ALTER TABLE coupons ADD COLUMN IF NOT EXISTS eligible_customer_ids JSONB DEFAULT '[]'::jsonb NOT NULL;"))
+        await conn.execute(text("ALTER TABLE coupons ADD COLUMN IF NOT EXISTS eligible_product_ids JSONB DEFAULT '[]'::jsonb NOT NULL;"))
+        await conn.execute(text("ALTER TABLE coupons ADD COLUMN IF NOT EXISTS eligible_category_ids JSONB DEFAULT '[]'::jsonb NOT NULL;"))
         await conn.execute(text("ALTER TABLE coupons ADD COLUMN IF NOT EXISTS is_reusable BOOLEAN DEFAULT true NOT NULL;"))
     logger.info("Database tables created / verified.")

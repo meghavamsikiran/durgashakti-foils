@@ -264,30 +264,42 @@ async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depend
     if os.environ.get('ENVIRONMENT') != 'production':
         print(f"\n[DEV] PASSWORD RESET OTP FOR {data.email}: {otp}\n")
 
-    # Upsert password reset
+    # Upsert password reset and prevent duplicate rapid sends
     existing = await db.execute(select(PasswordResetModel).where(PasswordResetModel.email == data.email))
     row = existing.scalar_one_or_none()
+    now = datetime.now(timezone.utc)
     if row:
+        # If an OTP was sent very recently, avoid sending another to prevent duplicates
+        try:
+            last_sent = row.created_at if row.created_at is not None else None
+            if last_sent and (now - last_sent).total_seconds() < 30:
+                # Update OTP record but do not re-send email immediately
+                row.otp = otp
+                row.expiry = expiry
+                row.failed_attempts = 0
+                row.created_at = now
+                await db.flush()
+                return {"message": "If an account exists with this email, an OTP has been sent."}
+        except Exception:
+            # Fallback to normal behaviour if created_at missing
+            pass
         row.otp = otp
         row.expiry = expiry
         row.failed_attempts = 0
+        row.created_at = now
     else:
-        db.add(PasswordResetModel(email=data.email, otp=otp, expiry=expiry))
+        db.add(PasswordResetModel(email=data.email, otp=otp, expiry=expiry, created_at=now))
     await db.flush()
 
-    email_body = f"""
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
-        <h2 style="color: #4f46e5; text-align: center;">DurgaShakti Foils</h2>
-        <hr style="border: 0; border-top: 1px solid #e1e1e1; margin: 20px 0;">
-        <p>Hello,</p>
-        <p>Use the following OTP to reset your password:</p>
-        <div style="text-align: center; margin: 30px 0;">
-            <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e293b; background: #f1f5f9; padding: 10px 20px; border-radius: 5px;">{otp}</span>
-        </div>
-        <p style="color: #64748b; font-size: 14px;">Valid for 15 minutes.</p>
-    </div>
-    """
-    sent, err_msg = await send_email(data.email, "Password Reset OTP - DurgaShakti Foils", email_body)
+    # Use standardized email template
+    try:
+        from email_templates import forgot_password_email
+        subj, email_body = forgot_password_email(otp)
+    except Exception:
+        email_body = f"Your verification code: {otp}"
+        subj = "Password Reset OTP - DurgaShakti Foils"
+
+    sent, err_msg = await send_email(data.email, subj, email_body)
     if not sent:
         if os.environ.get('ENVIRONMENT') == 'production':
             raise HTTPException(status_code=500, detail=f"SMTP Deliverability Error: {err_msg}")

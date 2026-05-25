@@ -447,6 +447,18 @@ def admin_onboarding_email(name: str, email: str, temp_password: str, role_templ
     return "Administrative Onboarding - DurgaShakti Foils", _base(content, "Admin Provisioned")
 
 
+def forgot_password_email(otp: str) -> tuple[str, str]:
+    content = f"""
+    <p style="font-size:18px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">Password Reset Request</p>
+    <p style="color:#6b7280;font-size:14px;margin:8px 0 18px;">We received a request to reset your password. Use the verification code below to continue.</p>
+    <div style="text-align:center;margin:20px 0;">
+      <span style="font-size:36px;font-weight:800;letter-spacing:6px;color:{BRAND_DARK};background:{BRAND_SURFACE};padding:12px 28px;border-radius:8px;display:inline-block;">{otp}</span>
+    </div>
+    <p style="color:#64748b;font-size:13px;">This code is valid for 15 minutes. If you did not request a password reset, please ignore this email or contact support immediately.</p>
+    """
+    return "Password Reset OTP - DurgaShakti Foils", _base(content, "Password Reset")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 13. INQUIRIES & CONTACT
 # ─────────────────────────────────────────────────────────────────────────────

@@ -27,6 +27,8 @@ class CouponCreateUpdate(BaseModel):
     coupon_type: str = "standard"
     apply_to_all_loyal_customers: bool = False
     eligible_customer_ids: List[str] = []
+    eligible_product_ids: List[str] = []
+    eligible_category_ids: List[str] = []
     is_reusable: bool = True
 
 class CouponSettingsUpdate(BaseModel):
@@ -564,6 +566,8 @@ async def create_coupon(data: CouponCreateUpdate, admin: UserSchema = Depends(re
         coupon_type=data.coupon_type,
         apply_to_all_loyal_customers=data.apply_to_all_loyal_customers,
         eligible_customer_ids=[str(cid) for cid in (data.eligible_customer_ids or [])],
+        eligible_product_ids=[str(pid) for pid in (data.eligible_product_ids or [])],
+        eligible_category_ids=[str(cid) for cid in (data.eligible_category_ids or [])],
         is_reusable=data.is_reusable,
         total_uses=0,
         total_discount_given=0.0,
@@ -601,6 +605,8 @@ async def update_coupon(coupon_id: str, data: CouponCreateUpdate, admin: UserSch
     c.coupon_type = data.coupon_type
     c.apply_to_all_loyal_customers = data.apply_to_all_loyal_customers
     c.eligible_customer_ids = [str(cid) for cid in (data.eligible_customer_ids or [])]
+    c.eligible_product_ids = [str(pid) for pid in (data.eligible_product_ids or [])]
+    c.eligible_category_ids = [str(cid) for cid in (data.eligible_category_ids or [])]
     c.is_reusable = data.is_reusable
 
     await db.flush()

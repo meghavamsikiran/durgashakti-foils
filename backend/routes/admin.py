@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 import pandas as pd
 from io import BytesIO
 import os
+import json
 
 router = APIRouter(prefix="/api")
 
@@ -1224,4 +1225,61 @@ async def get_audit_logs(page: int = Query(1), limit: int = Query(50), search: O
             fallback_q = fallback_q.where(clause)
         total = (await db.execute(fallback_q)).scalar() or 0
 
-    return {"items": [row_to_dict(row[0]) for row in rows], "total": total, "page": page, "limit": limit}
+    items = [row_to_dict(row[0]) for row in rows]
+
+    # Enrich actor info by querying users in a single call
+    actor_ids = {it.get('actor_id') for it in items if it.get('actor_id')}
+    if actor_ids:
+        users_q = await db.execute(select(UserModel).where(UserModel.id.in_(list(actor_ids))))
+        users = {u.id: u for u in users_q.scalars().all()}
+        for it in items:
+            aid = it.get('actor_id')
+            if aid and aid in users:
+                u = users[aid]
+                it['actor_name'] = f"{u.full_name or u.email or 'Unknown'}"
+                it['actor_email'] = u.email
+                it['actor_role'] = u.role
+            else:
+                it.setdefault('actor_name', 'System Process')
+                it.setdefault('actor_role', 'SYSTEM')
+
+    return {"items": items, "total": total, "page": page, "limit": limit}
+
+
+@router.get("/admin/audit-logs/export")
+async def export_audit_logs(admin: UserSchema = Depends(require_permission("view_audit_logs")), db: AsyncSession = Depends(get_db)):
+    # Export audit logs (last 6 months) as XLSX
+    cutoff = datetime.now(timezone.utc) - pd.Timedelta(days=180)
+    q = await db.execute(select(AuditLogModel).where(AuditLogModel.created_at >= cutoff).order_by(AuditLogModel.created_at.desc()))
+    rows = q.scalars().all()
+
+    items = [row_to_dict(r) for r in rows]
+    # Enrich actor info
+    actor_ids = {it.get('actor_id') for it in items if it.get('actor_id')}
+    if actor_ids:
+        users_q = await db.execute(select(UserModel).where(UserModel.id.in_(list(actor_ids))))
+        users = {u.id: u for u in users_q.scalars().all()}
+        for it in items:
+            aid = it.get('actor_id')
+            if aid and aid in users:
+                u = users[aid]
+                it['actor_name'] = f"{u.full_name or u.email or 'Unknown'}"
+                it['actor_email'] = u.email
+                it['actor_role'] = u.role
+            else:
+                it.setdefault('actor_name', 'System Process')
+                it.setdefault('actor_role', 'SYSTEM')
+
+    # Build DataFrame
+    df = pd.DataFrame(items)
+    # Normalize metadata column (JSON) to a readable string
+    if 'metadata' in df.columns:
+        df['metadata'] = df['metadata'].apply(lambda m: (pd.json.dumps(m, ensure_ascii=False) if m else ""))
+
+    out = BytesIO()
+    with pd.ExcelWriter(out, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='audit_logs')
+    out.seek(0)
+
+    filename = f"audit_logs_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.xlsx"
+    return StreamingResponse(out, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={"Content-Disposition": f'attachment; filename="{filename}"'})

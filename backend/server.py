@@ -11,12 +11,15 @@ import logging
 import time
 from collections import defaultdict
 import threading
+import asyncio
+from datetime import timedelta
 
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import delete
 
 # Initialize DB engine
 load_dotenv(override=True)
@@ -50,6 +53,25 @@ async def lifespan(app: FastAPI):
     await create_tables()
     from storage_service import ensure_bucket_exists
     await ensure_bucket_exists()
+    # Start background cleanup task for audit logs (delete entries older than 6 months)
+    try:
+        from database import async_session_factory
+        from models import AuditLogModel
+
+        async def _audit_cleanup_loop():
+            while True:
+                try:
+                    cutoff = datetime.now(timezone.utc) - timedelta(days=180)
+                    async with async_session_factory() as session:
+                        await session.execute(delete(AuditLogModel).where(AuditLogModel.created_at < cutoff))
+                        await session.commit()
+                except Exception:
+                    logger.exception('Audit cleanup failed')
+                await asyncio.sleep(24 * 3600)
+
+        asyncio.create_task(_audit_cleanup_loop())
+    except Exception:
+        logger.exception('Failed to start audit cleanup task')
     yield
     # Shutdown
     logger.info("DurgaShakti Foils Server Shutdown.")

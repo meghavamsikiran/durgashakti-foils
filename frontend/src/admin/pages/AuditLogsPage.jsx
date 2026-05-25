@@ -120,6 +120,20 @@ const AuditLogsPage = () => {
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
+          <Button onClick={async () => {
+            try {
+              const res = await adminService.exportAuditLogs();
+              const url = window.URL.createObjectURL(new Blob([res.data]));
+              const link = document.createElement('a');
+              link.href = url;
+              link.setAttribute('download', 'audit_logs.xlsx');
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+            } catch (e) {
+              console.error(e);
+            }
+          }} className="ml-3">Download</Button>
         </div>
       </div>
 

@@ -509,6 +509,8 @@ const CouponsPage = () => {
   const [loyalCustomers, setLoyalCustomers] = useState([]);
   const [loyalCustomerSearch, setLoyalCustomerSearch] = useState('');
   const [loyalCustomerLoading, setLoyalCustomerLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [productSearchResults, setProductSearchResults] = useState([]);
   const [couponAnalytics, setCouponAnalytics] = useState(null);
 
   const initialBannerForm = {
@@ -552,6 +554,9 @@ const CouponsPage = () => {
     coupon_type: 'standard',
     apply_to_all_loyal_customers: false,
     eligible_customer_ids: [],
+    apply_to_all_products: false,
+    eligible_product_ids: [],
+    eligible_category_ids: [],
     is_reusable: true,
     is_active: true
   });
@@ -591,19 +596,28 @@ const CouponsPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!isModalOpen || formData.coupon_type !== 'loyalty' || formData.apply_to_all_loyal_customers) return;
-    const timer = setTimeout(async () => {
-      setLoyalCustomerLoading(true);
-      try {
-        const data = await couponService.getLoyalCustomers({ search: loyalCustomerSearch.trim(), limit: 50 });
-        setLoyalCustomers(data?.items || []);
-      } catch {
-        setLoyalCustomers([]);
-      } finally {
-        setLoyalCustomerLoading(false);
-      }
-    }, 180);
-    return () => clearTimeout(timer);
+    if (!isModalOpen) return;
+    if (formData.coupon_type === 'loyalty' && !formData.apply_to_all_loyal_customers) {
+      const timer = setTimeout(async () => {
+        setLoyalCustomerLoading(true);
+        try {
+          const data = await couponService.getLoyalCustomers({ search: loyalCustomerSearch.trim(), limit: 50 });
+          setLoyalCustomers(data?.items || []);
+        } catch {
+          setLoyalCustomers([]);
+        } finally {
+          setLoyalCustomerLoading(false);
+        }
+      }, 180);
+      return () => clearTimeout(timer);
+    }
+
+    if (formData.coupon_type === 'product') {
+      // Load categories once
+      adminService.getCategories().then(res => {
+        setCategories(res.data || []);
+      }).catch(() => setCategories([]));
+    }
   }, [isModalOpen, formData.coupon_type, formData.apply_to_all_loyal_customers, loyalCustomerSearch]);
 
   const handleSaveSettings = async () => {
@@ -636,6 +650,9 @@ const CouponsPage = () => {
       coupon_type: 'standard',
       apply_to_all_loyal_customers: false,
       eligible_customer_ids: [],
+      apply_to_all_products: false,
+      eligible_product_ids: [],
+      eligible_category_ids: [],
       is_reusable: true,
       is_active: true
     });
@@ -669,6 +686,9 @@ const CouponsPage = () => {
       coupon_type: coupon.coupon_type || 'standard',
       apply_to_all_loyal_customers: coupon.apply_to_all_loyal_customers || false,
       eligible_customer_ids: coupon.eligible_customer_ids || [],
+      apply_to_all_products: coupon.apply_to_all_products || false,
+      eligible_product_ids: coupon.eligible_product_ids || [],
+      eligible_category_ids: coupon.eligible_category_ids || [],
       is_reusable: coupon.is_reusable !== false,
       is_active: coupon.is_active
     });
@@ -691,6 +711,9 @@ const CouponsPage = () => {
         coupon_type: coupon.coupon_type || 'standard',
         apply_to_all_loyal_customers: coupon.apply_to_all_loyal_customers || false,
         eligible_customer_ids: coupon.eligible_customer_ids || [],
+        apply_to_all_products: coupon.apply_to_all_products || false,
+        eligible_product_ids: coupon.eligible_product_ids || [],
+        eligible_category_ids: coupon.eligible_category_ids || [],
         is_reusable: coupon.is_reusable !== false,
         is_active: !coupon.is_active
       };
@@ -924,6 +947,9 @@ const CouponsPage = () => {
       coupon_type: formData.coupon_type,
       apply_to_all_loyal_customers: formData.coupon_type === 'loyalty' && formData.apply_to_all_loyal_customers,
       eligible_customer_ids: formData.coupon_type === 'loyalty' && !formData.apply_to_all_loyal_customers ? formData.eligible_customer_ids : [],
+      apply_to_all_products: formData.coupon_type === 'product' && formData.apply_to_all_products,
+      eligible_product_ids: formData.coupon_type === 'product' && !formData.apply_to_all_products ? formData.eligible_product_ids : [],
+      eligible_category_ids: formData.coupon_type === 'product' && !formData.apply_to_all_products ? formData.eligible_category_ids : [],
       is_reusable: formData.is_reusable,
       is_active: formData.is_active
     };
@@ -2009,8 +2035,9 @@ const CouponsPage = () => {
                   <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Coupon audience</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
-                      { value: 'standard', label: 'Regular Coupon', desc: 'Available to all eligible customers' },
-                      { value: 'loyalty', label: 'Loyal Customer Special Coupon', desc: 'Reserved for loyal customers only' }
+                          { value: 'standard', label: 'Regular Coupon', desc: 'Available to all eligible customers' },
+                          { value: 'loyalty', label: 'Loyal Customer Special Coupon', desc: 'Reserved for loyal customers only' },
+                          { value: 'product', label: 'Product / Category Coupon', desc: 'Restrict coupon to specific products or categories' }
                     ].map((option) => (
                       <button
                         key={option.value}
@@ -2028,6 +2055,91 @@ const CouponsPage = () => {
                     ))}
                   </div>
                 </div>
+
+                {formData.coupon_type === 'product' && (
+                  <div className="sm:col-span-2 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 space-y-4">
+                    <div className="flex items-start gap-3">
+                      <Megaphone className="w-5 h-5 text-emerald-700 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-black text-emerald-900 uppercase tracking-tight">Product / Category assignment</p>
+                        <p className="text-xs text-emerald-800/80 mt-0.5">Choose all products or select specific products and/or categories.</p>
+                      </div>
+                    </div>
+
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="h-4.5 w-4.5 rounded border-emerald-300 text-primary focus:ring-primary"
+                        checked={formData.apply_to_all_products}
+                        onChange={(e) => setFormData(prev => ({ ...prev, apply_to_all_products: e.target.checked }))}
+                      />
+                      <span className="text-sm font-bold text-emerald-950">Apply to all products</span>
+                    </label>
+
+                    {!formData.apply_to_all_products && (
+                      <div className="grid grid-cols-1 gap-3">
+                        <div>
+                          <p className="text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Categories</p>
+                          <div className="flex gap-2 flex-wrap">
+                            {/* Load categories lazily when modal opens */}
+                            {(categories || []).map(cat => {
+                              const sel = formData.eligible_category_ids.includes(cat.id);
+                              return (
+                                <label key={cat.id} className={`px-3 py-2 rounded-lg border ${sel ? 'bg-emerald-100 border-emerald-300' : 'bg-white border-slate-100'} cursor-pointer text-sm` }>
+                                  <input type="checkbox" className="mr-2" checked={sel} onChange={(e) => {
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      eligible_category_ids: e.target.checked ? [...prev.eligible_category_ids, cat.id] : prev.eligible_category_ids.filter(id => id !== cat.id)
+                                    }));
+                                  }} />
+                                  {cat.name}
+                                </label>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Products</p>
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                            <input
+                              type="search"
+                              className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-bold text-slate-900 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                              placeholder="Search products by name or SKU"
+                              onChange={(e) => {
+                                const q = e.target.value.trim();
+                                if (q.length >= 2) {
+                                  adminService.getProducts({ search: q, limit: 50 }).then(res => {
+                                    setProductSearchResults((res.data?.items || []).slice(0, 50));
+                                  }).catch(() => setProductSearchResults([]));
+                                } else {
+                                  setProductSearchResults([]);
+                                }
+                              }}
+                            />
+                            <div className="max-h-40 overflow-y-auto mt-2 bg-white border border-slate-100 rounded-xl divide-y divide-slate-50">
+                              {productSearchResults.length === 0 ? (
+                                <p className="p-3 text-xs text-slate-500">Type 2+ characters to search products</p>
+                              ) : productSearchResults.map(p => {
+                                const selected = formData.eligible_product_ids.includes(p.id);
+                                return (
+                                  <label key={p.id} className="flex items-center gap-3 p-3 hover:bg-emerald-50 cursor-pointer">
+                                    <input type="checkbox" checked={selected} onChange={(e) => setFormData(prev => ({
+                                      ...prev,
+                                      eligible_product_ids: e.target.checked ? [...prev.eligible_product_ids, p.id] : prev.eligible_product_ids.filter(id => id !== p.id)
+                                    }))} />
+                                    <div className="text-sm">{p.name}</div>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">

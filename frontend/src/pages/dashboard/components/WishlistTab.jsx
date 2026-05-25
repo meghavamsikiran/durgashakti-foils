@@ -6,6 +6,7 @@ import { Button } from '../../../components/ui/button';
 import PageLoader from '../../../components/ui/PageLoader';
 import { useCart } from '../../../contexts/CartContext';
 import { formatImageUrl } from '../../../utils/api';
+import { getProductPricing } from '../../../utils/productPricing';
 
 const ITEMS_PER_PAGE = 4;
 
@@ -62,7 +63,25 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
                 <div key={product.id} className="group p-4 rounded-xl border border-border-subtle bg-surface-container-lowest hover:shadow-emerald-glow hover:border-primary/50 transition-all relative">
                   <img src={formatImageUrl(product.image_url)} alt="" className="w-full h-40 object-cover rounded-lg mb-4" />
                   <h4 className="font-black text-foreground truncate">{product.name}</h4>
-                  <p className="text-xl font-black text-primary mt-1 font-mono">₹{product.price}</p>
+                  {(() => {
+                    const { basePrice, displayPrice, hasOffer, discountPercent } = getProductPricing(product);
+                    return (
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant">{product.size} • {product.thickness}</p>
+                          {hasOffer && (
+                            <span className="text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-sm ml-1">
+                              -{discountPercent}%
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1">
+                          <span className="text-xl font-black text-primary mt-1 font-mono">₹{displayPrice}</span>
+                          {hasOffer && <span className="text-[11px] text-text-muted line-through font-semibold ml-2">₹{basePrice}</span>}
+                        </div>
+                      </div>
+                    )
+                  })()}
                   <div className="flex gap-2 mt-4">
                     {inCart ? (
                       <Button disabled className="flex-1 rounded-lg bg-surface-container-low text-muted-foreground opacity-100 cursor-not-allowed hover:bg-surface-container-low">

@@ -164,7 +164,8 @@ const ProductCard = ({ product }) => {
   const handleNotifyMe = (e) => {
     e.stopPropagation();
     toast.success(`🔔 We will email you once this item is back in stock!`);
-  };  return (
+  };
+  return (
     <>
       <motion.div
         whileHover={{ y: -5 }}
@@ -216,10 +217,15 @@ const ProductCard = ({ product }) => {
 
         <div className="p-5 flex flex-col justify-between flex-1 min-h-[270px]">
           <div>
-            <div className="mb-1.5">
+            <div className="mb-1.5 flex items-center justify-between">
               <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle">
                 {product.size} • {product.thickness}
               </span>
+              {hasOffer && (
+                <span className="text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-sm">
+                  -{discountPercent}%
+                </span>
+              )}
             </div>
             
             <h3 className="font-bold text-base font-manrope text-ink-slate mb-1 line-clamp-2 hover:text-primary transition-colors" data-testid="product-name">
@@ -249,9 +255,6 @@ const ProductCard = ({ product }) => {
                     </span>
                     <span className="text-[11px] text-text-muted line-through font-semibold">
                       ₹{basePrice}
-                    </span>
-                    <span className="text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-sm ml-1">
-                      -{discountPercent}%
                     </span>
                   </div>
                 ) : (

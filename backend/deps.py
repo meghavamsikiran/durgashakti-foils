@@ -519,12 +519,26 @@ def require_permission(permission: str):
 # ── Shared DB Helpers ────────────────────────────────────────────────────
 async def write_audit_log(db: AsyncSession, action: str, actor_id: str, target_type: str, target_id: str, metadata: dict | None = None):
     try:
+        meta = (metadata or {}).copy()
+        # Enrich metadata with actor snapshot when possible
+        try:
+            if actor_id and 'actor_name' not in meta:
+                res = await db.execute(select(UserModel).where(UserModel.id == actor_id))
+                u = res.scalar_one_or_none()
+                if u:
+                    meta.setdefault('actor_name', u.full_name or u.email)
+                    meta.setdefault('actor_email', u.email)
+                    meta.setdefault('actor_role', u.role)
+        except Exception:
+            # don't block audit logging on enrichment failure
+            pass
+
         log = AuditLogModel(
             action=action,
             actor_id=actor_id,
             target_type=target_type,
             target_id=target_id,
-            metadata_=metadata or {},
+            metadata_=meta,
         )
         db.add(log)
         await db.flush()

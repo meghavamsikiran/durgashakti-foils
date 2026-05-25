@@ -294,6 +294,8 @@ class CouponModel(Base):
     coupon_type = Column(String(50), default="standard", nullable=False, server_default=text("'standard'"))
     apply_to_all_loyal_customers = Column(Boolean, default=False, nullable=False, server_default=text("'false'"))
     eligible_customer_ids = Column(JSONB, default=list, nullable=False, server_default=text("'[]'::jsonb"))
+    eligible_product_ids = Column(JSONB, default=list, nullable=False, server_default=text("'[]'::jsonb"))
+    eligible_category_ids = Column(JSONB, default=list, nullable=False, server_default=text("'[]'::jsonb"))
     is_reusable = Column(Boolean, default=True, nullable=False, server_default=text("'true'"))
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     updated_at = Column(DateTime(timezone=True), nullable=True, onupdate=utcnow)
