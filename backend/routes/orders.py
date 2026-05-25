@@ -71,14 +71,13 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
 
     def effective_product_price(product):
         base_price = float(product.price or 0)
-        candidates = [base_price]
-        item_discount = float(product.discount_price or 0)
-        if item_discount > 0 and item_discount < base_price:
-            candidates.append(item_discount)
         category_percent = category_discounts.get(str(product.category or "").strip().lower(), 0)
         if category_percent > 0 and base_price > 0:
-            candidates.append(round(base_price * (1 - (category_percent / 100)), 2))
-        return round(min(candidates), 2)
+            return round(base_price * (1 - (category_percent / 100)), 2)
+        item_discount = float(product.discount_price or 0)
+        if item_discount > 0 and item_discount < base_price:
+            return round(item_discount, 2)
+        return round(base_price, 2)
 
     for item in order_data.items:
         product = products_map.get(str(item.product_id))

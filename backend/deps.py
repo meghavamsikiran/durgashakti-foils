@@ -496,14 +496,13 @@ async def sync_product_categories(db: AsyncSession):
 
 def _best_price(base_price, item_discount_price=None, category_discount_percent=0):
     base = float(base_price or 0)
-    candidates = [base]
-    item_discount = float(item_discount_price or 0)
-    if item_discount > 0 and item_discount < base:
-        candidates.append(item_discount)
     category_percent = float(category_discount_percent or 0)
     if category_percent > 0 and base > 0:
-        candidates.append(round(base * (1 - (category_percent / 100)), 2))
-    return round(min(candidates), 2)
+        return round(base * (1 - (category_percent / 100)), 2)
+    item_discount = float(item_discount_price or 0)
+    if item_discount > 0 and item_discount < base:
+        return round(item_discount, 2)
+    return round(base, 2)
 
 
 async def get_category_discount_map(db: AsyncSession, category_names):

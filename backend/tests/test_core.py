@@ -20,7 +20,8 @@ from deps import (
     ShippingAddress,
     CartItem,
     OrderItemSchema,
-    OrderCreate
+    OrderCreate,
+    _best_price
 )
 from pydantic import ValidationError
 
@@ -133,6 +134,11 @@ def test_uuid_validators():
     
     with pytest.raises(HTTPException):
         validate_uuid("None")
+
+
+def test_category_global_discount_overrides_offer_price():
+    assert _best_price(3499, item_discount_price=2999, category_discount_percent=10) == 3149.1
+    assert _best_price(3499, item_discount_price=2999, category_discount_percent=0) == 2999
 
 
 def test_admin_requests_schemas():
