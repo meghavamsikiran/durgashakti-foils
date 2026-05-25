@@ -105,7 +105,7 @@ const PopupBanner = () => {
 
     const fetchPromotedCoupons = async (attempt = 0) => {
       try {
-        const data = await settingsService.getPublicSettings({ force: attempt > 0, ttl: 5000 });
+        const data = await settingsService.getPublicSettings({ force: true, cacheBust: true });
         if (!active) return;
 
         const customBanners = (data.popup_banner?.custom_banners || []).filter(b => b !== null && b !== undefined);
