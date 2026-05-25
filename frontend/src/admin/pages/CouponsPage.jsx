@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Ticket, Plus, Search, Edit2, Trash2, Settings, 
-  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone, Sparkles, Copy, Star, UserCheck
+  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone, Sparkles, Copy, Star, UserCheck, Filter
 } from 'lucide-react';
 import { toast } from 'sonner';
 import couponService from '../../services/coupon.service';
 import adminService from '../services/admin.service';
 import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
+import DateFilterPopover from '../../components/ui/DateFilterPopover';
 
 const generateThemedBanner = (context) => {
   const ctx = context.trim().toUpperCase();
@@ -495,6 +496,8 @@ const CouponsPage = () => {
   const [loading, setLoading] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState(null);
   const [promotingId, setPromotingId] = useState(null);
   const [scrollingBanner, setScrollingBanner] = useState({ text1: '', text2: '', timer_enabled: false, timer_target: '', use_favicon: true });
   const [popupBanner, setPopupBanner] = useState({ promoted_coupons: [] });
@@ -565,7 +568,11 @@ const CouponsPage = () => {
     setLoading(true);
     try {
       const [couponsData, settingsData, adminSettingsRes, loyalCustomerData, analyticsData] = await Promise.all([
-        couponService.getCoupons(),
+        couponService.getCoupons({
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          start_date: dateFilter?.start_date,
+          end_date: dateFilter?.end_date,
+        }),
         couponService.getSettings(),
         adminService.getSettings(),
         couponService.getLoyalCustomers({ limit: 25 }).catch(() => ({ items: [] })),
@@ -591,9 +598,29 @@ const CouponsPage = () => {
     }
   };
 
+  const loadCoupons = async () => {
+    setLoading(true);
+    try {
+      const couponsData = await couponService.getCoupons({
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        start_date: dateFilter?.start_date,
+        end_date: dateFilter?.end_date,
+      });
+      setCoupons((couponsData || []).filter(c => c !== null && c !== undefined && c.code));
+    } catch (error) {
+      toast.error('Failed to load coupons');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchCouponsAndSettings();
   }, []);
+
+  useEffect(() => {
+    loadCoupons();
+  }, [statusFilter, dateFilter]);
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -1332,15 +1359,37 @@ const CouponsPage = () => {
           <div className="bg-white rounded-2xl border border-border-subtle shadow-sm overflow-hidden">
             <div className="p-6 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h2 className="text-lg font-black text-ink-slate uppercase tracking-wider">All Coupon Codes</h2>
-              <div className="relative max-w-sm w-full">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input 
-                  type="text" 
-                  placeholder="Search coupon code..."
-                  className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-slate-400"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+              <div className="flex flex-wrap items-center gap-3 w-full justify-end">
+                <div className="relative max-w-sm w-full sm:w-auto">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input 
+                    type="text" 
+                    placeholder="Search coupon code..."
+                    className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-slate-400"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm">
+                  <Filter className="w-4 h-4 text-slate-500" />
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="bg-transparent outline-none text-sm font-semibold"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <DateFilterPopover onChange={(value) => setDateFilter(value)} initial={dateFilter} />
+                <button
+                  type="button"
+                  onClick={() => { setStatusFilter('all'); setDateFilter(null); }}
+                  className="px-3 py-2 rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 text-xs font-black uppercase tracking-widest"
+                >
+                  Clear Filters
+                </button>
               </div>
             </div>
 

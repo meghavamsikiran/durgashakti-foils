@@ -4,6 +4,7 @@ from sqlalchemy import select, func
 from typing import Optional
 from database import get_db
 from models import ContactModel, utcnow
+from datetime import datetime, timezone
 from deps import require_permission, UserSchema, ContactCreate, send_email
 from email_templates import (
     contact_acknowledgement_email,
@@ -37,10 +38,37 @@ async def submit_contact(payload: ContactCreate, db: AsyncSession = Depends(get_
 async def list_contacts(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
+    status: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     admin: UserSchema = Depends(require_permission("view_inquiries")),
     db: AsyncSession = Depends(get_db)
 ):
     q = select(ContactModel, func.count(ContactModel.id).over().label('total_count'))
+
+    # apply optional filters
+    if status:
+        q = q.where(ContactModel.status == status)
+    if start_date:
+        try:
+            sd = start_date.rstrip('Z')
+            sd_dt = datetime.fromisoformat(sd)
+            if sd_dt.tzinfo is None:
+                sd_dt = sd_dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            sd_dt = None
+        if sd_dt:
+            q = q.where(ContactModel.created_at >= sd_dt)
+    if end_date:
+        try:
+            ed = end_date.rstrip('Z')
+            ed_dt = datetime.fromisoformat(ed)
+            if ed_dt.tzinfo is None:
+                ed_dt = ed_dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            ed_dt = None
+        if ed_dt:
+            q = q.where(ContactModel.created_at <= ed_dt)
 
     offset = (page - 1) * limit
     res = await db.execute(q.order_by(ContactModel.created_at.desc()).offset(offset).limit(limit))

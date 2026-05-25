@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, Filter } from 'lucide-react';
 import AdminTable from '../components/AdminTable';
 import apiClient from '../../services/core/apiClient';
+import DateFilterPopover from '../../components/ui/DateFilterPopover';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
 import PageLoader from '../../components/ui/PageLoader';
@@ -24,9 +25,17 @@ const InquiriesPage = () => {
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState(null);
 
   const loadInquiries = async (pageNum = 1) => {
-    const params = { page: pageNum, limit: PAGE_SIZE };
+    const params = {
+      page: pageNum,
+      limit: PAGE_SIZE,
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      start_date: dateFilter?.start_date,
+      end_date: dateFilter?.end_date,
+    };
     const cached = apiClient.getCachedDataSync('/admin/contacts', params);
     if (!cached) {
       setLoading(true);
@@ -45,8 +54,15 @@ const InquiriesPage = () => {
 
   const loadInquiriesSilent = async (pageNum = 1) => {
     try {
+      const params = {
+        page: pageNum,
+        limit: PAGE_SIZE,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        start_date: dateFilter?.start_date,
+        end_date: dateFilter?.end_date,
+      };
       const response = await apiClient.get('/admin/contacts', {
-        params: { page: pageNum, limit: PAGE_SIZE },
+        params,
         silent: true
       });
       setInquiries(response.data.items || []);
@@ -59,7 +75,7 @@ const InquiriesPage = () => {
   useEffect(() => {
     loadInquiries();
     loadInquiriesSilent();
-  }, []);
+  }, [statusFilter, dateFilter]);
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {
@@ -143,6 +159,30 @@ const InquiriesPage = () => {
             </h1>
           </div>
           <p className="text-slate-500 font-medium">Manage and respond to messages submitted through the Contact Us form.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-500">Status</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-transparent outline-none text-sm font-semibold"
+            >
+              <option value="all">All</option>
+              <option value="pending">Pending</option>
+              <option value="in_progress">In Progress</option>
+              <option value="replied">Replied</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
+          <DateFilterPopover onChange={(value) => setDateFilter(value)} initial={dateFilter} />
+          <button
+            type="button"
+            onClick={() => { setStatusFilter('all'); setDateFilter(null); }}
+            className="px-3 py-2 rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 text-xs font-black uppercase tracking-widest"
+          >
+            Clear Filters
+          </button>
         </div>
       </div>
 

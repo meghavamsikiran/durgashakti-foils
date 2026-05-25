@@ -1,7 +1,7 @@
 """Coupon Router for admin management and checkout validation."""
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, delete, func
+from sqlalchemy import select, and_, delete, func, or_
 from database import get_db
 from models import CouponModel, SettingModel, OrderModel, UserModel
 from deps import UserSchema, get_current_user, require_permission, row_to_dict, write_audit_log, create_notification, send_email
@@ -534,8 +534,42 @@ async def get_coupon_analytics(admin: UserSchema = Depends(require_permission("m
 
 
 @router.get("/admin/coupons")
-async def list_coupons(admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
-    res = await db.execute(select(CouponModel).order_by(CouponModel.created_at.desc()))
+async def list_coupons(
+    search: Optional[str] = Query(None),
+    is_active: Optional[bool] = Query(None),
+    coupon_type: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    admin: UserSchema = Depends(require_permission("manage_coupons")),
+    db: AsyncSession = Depends(get_db)
+):
+    q = select(CouponModel).order_by(CouponModel.created_at.desc())
+    if search:
+        term = f"%{search.strip()}%"
+        q = q.where(or_(CouponModel.code.ilike(term), CouponModel.discount_type.ilike(term), CouponModel.coupon_type.ilike(term)))
+    if is_active is not None:
+        q = q.where(CouponModel.is_active == bool(is_active))
+    if coupon_type:
+        q = q.where(func.lower(CouponModel.coupon_type) == coupon_type.lower())
+    if start_date:
+        try:
+            sd = start_date.rstrip('Z')
+            sd_dt = datetime.fromisoformat(sd)
+            if sd_dt.tzinfo is None:
+                sd_dt = sd_dt.replace(tzinfo=timezone.utc)
+            q = q.where(CouponModel.created_at >= sd_dt)
+        except Exception:
+            pass
+    if end_date:
+        try:
+            ed = end_date.rstrip('Z')
+            ed_dt = datetime.fromisoformat(ed)
+            if ed_dt.tzinfo is None:
+                ed_dt = ed_dt.replace(tzinfo=timezone.utc)
+            q = q.where(CouponModel.created_at <= ed_dt)
+        except Exception:
+            pass
+    res = await db.execute(q)
     return [row_to_dict(c) for c in res.scalars().all()]
 
 @router.get("/admin/coupons/{coupon_id}")

@@ -24,6 +24,8 @@ async def list_payments(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     admin: UserSchema = Depends(require_permission("view_transactions")),
     db: AsyncSession = Depends(get_db)
 ):
@@ -40,6 +42,28 @@ async def list_payments(
         )
         q = q.where(clause)
 
+    # Date range filtering
+    if start_date:
+        try:
+            sd = start_date.rstrip('Z')
+            sd_dt = datetime.fromisoformat(sd)
+            if sd_dt.tzinfo is None:
+                sd_dt = sd_dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            sd_dt = None
+        if sd_dt:
+            q = q.where(OrderModel.created_at >= sd_dt)
+    if end_date:
+        try:
+            ed = end_date.rstrip('Z')
+            ed_dt = datetime.fromisoformat(ed)
+            if ed_dt.tzinfo is None:
+                ed_dt = ed_dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            ed_dt = None
+        if ed_dt:
+            q = q.where(OrderModel.created_at <= ed_dt)
+
     offset = (page - 1) * limit
     res = await db.execute(q.order_by(OrderModel.created_at.desc()).offset(offset).limit(limit))
     rows = res.all()
@@ -51,6 +75,27 @@ async def list_payments(
         fallback_q = select(func.count(OrderModel.id))
         if clause is not None:
             fallback_q = fallback_q.where(clause)
+        # include date filters in fallback count
+        if start_date:
+            try:
+                sd = start_date.rstrip('Z')
+                sd_dt = datetime.fromisoformat(sd)
+                if sd_dt.tzinfo is None:
+                    sd_dt = sd_dt.replace(tzinfo=timezone.utc)
+            except Exception:
+                sd_dt = None
+            if sd_dt:
+                fallback_q = fallback_q.where(OrderModel.created_at >= sd_dt)
+        if end_date:
+            try:
+                ed = end_date.rstrip('Z')
+                ed_dt = datetime.fromisoformat(ed)
+                if ed_dt.tzinfo is None:
+                    ed_dt = ed_dt.replace(tzinfo=timezone.utc)
+            except Exception:
+                ed_dt = None
+            if ed_dt:
+                fallback_q = fallback_q.where(OrderModel.created_at <= ed_dt)
         total = (await db.execute(fallback_q)).scalar() or 0
 
     items = []

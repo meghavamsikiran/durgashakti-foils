@@ -19,8 +19,8 @@ const couponService = {
   },
 
   // Admin CRUD
-  getCoupons: async () => {
-    const response = await cachedGet('/admin/coupons');
+  getCoupons: async (params = {}) => {
+    const response = await cachedGet('/admin/coupons', { params });
     return response.data;
   },
   

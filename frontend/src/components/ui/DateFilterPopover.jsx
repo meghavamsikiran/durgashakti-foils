@@ -10,9 +10,15 @@ const PRESETS = [
   { key: 'custom', label: 'Custom Range' },
 ];
 
-function toISODate(d) {
+function toISODateStart(d) {
   const dt = new Date(d);
   dt.setHours(0, 0, 0, 0);
+  return dt.toISOString();
+}
+
+function toISODateEnd(d) {
+  const dt = new Date(d);
+  dt.setHours(23, 59, 59, 999);
   return dt.toISOString();
 }
 
@@ -22,7 +28,7 @@ function rangeForPreset(key) {
   const end = new Date();
   switch (key) {
     case 'today':
-      return { start: toISODate(now), end: toISODate(now) };
+      return { start: toISODateStart(now), end: toISODateEnd(now) };
     case 'last7':
       start.setDate(now.getDate() - 6);
       return { start: toISODate(start), end: toISODate(now) };
@@ -73,7 +79,7 @@ const DateFilterPopover = ({ onChange, initial }) => {
     const s = new Date(custom.start);
     const e = new Date(custom.end);
     if (s > e) return;
-    if (onChange) onChange({ start_date: toISODate(s), end_date: toISODate(e), label: 'custom' });
+    if (onChange) onChange({ start_date: toISODateStart(s), end_date: toISODateEnd(e), label: 'custom' });
     setActive('custom');
     setOpen(false);
   };

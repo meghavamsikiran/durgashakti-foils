@@ -8,6 +8,7 @@ import {
   ArrowUpRight, Target, Activity, Trophy
 } from 'lucide-react';
 import PageLoader from '../../components/ui/PageLoader';
+import DateFilterPopover from '../../components/ui/DateFilterPopover';
 
 const metricConfigs = {
   total_orders: { label: 'Total Orders', icon: ShoppingBag, color: 'text-primary', bg: 'bg-primary/10' },
@@ -101,11 +102,34 @@ const AdminDashboard = () => {
           <p className="text-slate-500 mt-1 font-medium text-sm">A summary of your business performance at Durga Shakti Foils.</p>
         </div>
         
-        <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-2xl border border-slate-200 shadow-sm">
-          <Calendar className="w-4 h-4 text-slate-500" />
-          <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
-            {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-          </span>
+        <div className="flex items-center gap-3">
+          <DateFilterPopover onChange={(val) => {
+            if (!val || !val.label) {
+              load();
+              return;
+            }
+            // Map our popover keys to analytics timeframe strings
+            const map = {
+              today: 'Today',
+              last7: 'Last 7 Days',
+              thisWeek: 'Last 7 Days',
+              thisMonth: 'This Month',
+              thisYear: 'Fiscal Year',
+              custom: 'Last 7 Days'
+            };
+            const tf = map[val.label] || 'Last 7 Days';
+            (async () => {
+              setLoading(true);
+              try {
+                const resp = await adminService.getDashboardMetrics(tf);
+                setMetrics(resp.data?.metrics || {});
+              } catch (e) {
+                // ignore
+              } finally {
+                setLoading(false);
+              }
+            })();
+          }} />
         </div>
       </div>
 

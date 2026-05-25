@@ -34,6 +34,9 @@ async def get_admin_products(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    is_active: Optional[bool] = Query(None),
+    stock: Optional[str] = Query(None),
     admin: UserSchema = Depends(require_permission("view_products")),
     db: AsyncSession = Depends(get_db)
 ):
@@ -51,6 +54,18 @@ async def get_admin_products(
         )
         q = q.where(filter_clause)
 
+    # Additional admin filters
+    if category:
+        q = q.where(ProductModel.category == category)
+    if is_active is not None:
+        q = q.where(ProductModel.is_active == bool(is_active))
+    if stock:
+        s = stock.lower()
+        if s == 'in':
+            q = q.where(ProductModel.in_stock == True)
+        elif s == 'out':
+            q = q.where(ProductModel.in_stock == False)
+
     offset = (page - 1) * limit
     result = await db.execute(
         q.order_by(ProductModel.created_at.desc()).offset(offset).limit(limit)
@@ -64,6 +79,16 @@ async def get_admin_products(
         fallback_q = select(func.count(ProductModel.id))
         if filter_clause is not None:
             fallback_q = fallback_q.where(filter_clause)
+        if category:
+            fallback_q = fallback_q.where(ProductModel.category == category)
+        if is_active is not None:
+            fallback_q = fallback_q.where(ProductModel.is_active == bool(is_active))
+        if stock:
+            s = stock.lower()
+            if s == 'in':
+                fallback_q = fallback_q.where(ProductModel.in_stock == True)
+            elif s == 'out':
+                fallback_q = fallback_q.where(ProductModel.in_stock == False)
         total = (await db.execute(fallback_q)).scalar() or 0
 
     products = [row_to_dict(row[0]) for row in rows]
@@ -279,6 +304,8 @@ async def get_all_orders(
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
     status: Optional[str] = Query(None, alias="status_filter"),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     admin: UserSchema = Depends(require_permission("view_orders")),
     db: AsyncSession = Depends(get_db)
 ):
@@ -297,6 +324,28 @@ async def get_all_orders(
         )
         q = q.where(clause)
 
+    # Date range filtering (expects ISO date/time or date strings)
+    if start_date:
+        try:
+            sd = start_date.rstrip('Z')
+            sd_dt = datetime.fromisoformat(sd)
+            if sd_dt.tzinfo is None:
+                sd_dt = sd_dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            sd_dt = None
+        if sd_dt:
+            q = q.where(OrderModel.created_at >= sd_dt)
+    if end_date:
+        try:
+            ed = end_date.rstrip('Z')
+            ed_dt = datetime.fromisoformat(ed)
+            if ed_dt.tzinfo is None:
+                ed_dt = ed_dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            ed_dt = None
+        if ed_dt:
+            q = q.where(OrderModel.created_at <= ed_dt)
+
     offset = (page - 1) * limit
     res = await db.execute(q.order_by(OrderModel.updated_at.desc()).offset(offset).limit(limit))
     rows = res.all()
@@ -310,6 +359,27 @@ async def get_all_orders(
             fallback_q = fallback_q.where(func.lower(OrderModel.order_status) == status.lower())
         if clause is not None:
             fallback_q = fallback_q.where(clause)
+        # include date filters in fallback count as well
+        if start_date:
+            try:
+                sd = start_date.rstrip('Z')
+                sd_dt = datetime.fromisoformat(sd)
+                if sd_dt.tzinfo is None:
+                    sd_dt = sd_dt.replace(tzinfo=timezone.utc)
+            except Exception:
+                sd_dt = None
+            if sd_dt:
+                fallback_q = fallback_q.where(OrderModel.created_at >= sd_dt)
+        if end_date:
+            try:
+                ed = end_date.rstrip('Z')
+                ed_dt = datetime.fromisoformat(ed)
+                if ed_dt.tzinfo is None:
+                    ed_dt = ed_dt.replace(tzinfo=timezone.utc)
+            except Exception:
+                ed_dt = None
+            if ed_dt:
+                fallback_q = fallback_q.where(OrderModel.created_at <= ed_dt)
         total = (await db.execute(fallback_q)).scalar() or 0
 
     items = [row_to_dict(row[0]) for row in rows]

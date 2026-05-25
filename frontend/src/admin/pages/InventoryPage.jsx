@@ -7,7 +7,7 @@ import {
   Boxes, TrendingDown, IndianRupee, BarChart3, 
   Search, RefreshCw, PlusCircle, MinusCircle, 
   X, AlertTriangle, ArrowRight, PackageOpen,
-  LayoutGrid, Zap
+  LayoutGrid, Zap, Filter
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import TablePagination from '../../components/ui/TablePagination';
@@ -40,6 +40,11 @@ const InventoryPage = () => {
     const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: 1, limit: ITEMS_PER_PAGE, search: '' });
     return !cached;
   });
+  const [categories, setCategories] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [stockFilter, setStockFilter] = useState('all');
+  const [filterOpen, setFilterOpen] = useState(false);
   const [adjustModal, setAdjustModal] = useState(null);
   const [adjustQty, setAdjustQty] = useState('');
   const [saving, setSaving] = useState(false);
@@ -54,13 +59,21 @@ const InventoryPage = () => {
     return cached?.data?.metrics || null;
   });
 
+  const requestFilters = () => ({
+    search,
+    category: categoryFilter !== 'all' ? categoryFilter : undefined,
+    is_active: activeFilter === 'all' ? undefined : activeFilter === 'active',
+    stock: stockFilter === 'all' ? undefined : stockFilter === 'in' ? 'in' : 'out',
+  });
+
   const load = useCallback(async (pageNum = 1) => {
-    const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: pageNum, limit: ITEMS_PER_PAGE, search });
+    const params = { ...requestFilters(), page: pageNum, limit: ITEMS_PER_PAGE };
+    const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, params);
     if (!cached) {
       setLoading(true);
     }
     try {
-      const response = await adminService.getInventory({ page: pageNum, limit: ITEMS_PER_PAGE, search });
+      const response = await adminService.getInventory(params);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
       setPage(pageNum);
@@ -72,11 +85,12 @@ const InventoryPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, categoryFilter, activeFilter, stockFilter]);
 
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
-      const response = await apiClient.get(ADMIN_PRODUCTS_CACHE_PATH, { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true });
+      const params = { ...requestFilters(), page: pageNum, limit: ITEMS_PER_PAGE };
+      const response = await apiClient.get(ADMIN_PRODUCTS_CACHE_PATH, { params, silent: true });
       const rawItems = response.data?.items || [];
       const items = rawItems.map((product) => ({
         id: product.id,
@@ -96,15 +110,27 @@ const InventoryPage = () => {
     } catch {
       // Ignore background errors
     }
-  }, [search]);
+  }, [search, categoryFilter, activeFilter, stockFilter]);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await adminService.getPublicCategories();
+      setCategories(response.data || []);
+    } catch (err) {
+      toast.error('Failed to load categories');
+    }
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       load(1);
     }, 100);
     return () => clearTimeout(timer);
-  }, [search, load]);
+  }, [search, categoryFilter, activeFilter, stockFilter, load]);
 
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const handleAdjust = async (direction) => {
     const delta = parseInt(adjustQty, 10);
@@ -146,7 +172,7 @@ const InventoryPage = () => {
           <p className="text-slate-500 mt-1 font-medium">Monitor and update your product stock levels.</p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative">
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input 
@@ -157,6 +183,76 @@ const InventoryPage = () => {
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setFilterOpen((prev) => !prev)}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+            >
+              <Filter className="w-4 h-4 text-slate-600" />
+              <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
+            </button>
+            {filterOpen && (
+              <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50">
+                <div className="space-y-3">
+                  <h3 className="text-sm font-black text-slate-900">Stock Filters</h3>
+                  <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Category</label>
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                  >
+                    <option value="all">All Categories</option>
+                    {categories.map(cat => (
+                      <option key={cat.id || cat.name} value={cat.name}>{cat.name}</option>
+                    ))}
+                  </select>
+                  <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Status</label>
+                  <select
+                    value={activeFilter}
+                    onChange={(e) => setActiveFilter(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                  >
+                    <option value="all">All</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                  <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Stock</label>
+                  <select
+                    value={stockFilter}
+                    onChange={(e) => setStockFilter(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                  >
+                    <option value="all">All Stock</option>
+                    <option value="in">In Stock</option>
+                    <option value="out">Out of Stock</option>
+                  </select>
+                  <div className="flex justify-between gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCategoryFilter('all');
+                        setActiveFilter('all');
+                        setStockFilter('all');
+                      }}
+                      className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setFilterOpen(false); load(1); }}
+                      className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           <Button onClick={load} variant="outline" className="rounded-xl p-2.5 bg-white hover:bg-slate-50 border-slate-200 shadow-sm">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>

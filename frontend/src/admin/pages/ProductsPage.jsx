@@ -13,6 +13,7 @@ import {
 import { Button } from '../../components/ui/button';
 import TablePagination from '../../components/ui/TablePagination';
 import PageLoader from '../../components/ui/PageLoader';
+import DateFilterPopover from '../../components/ui/DateFilterPopover';
 
 const DEFAULT_CATEGORY = 'Aluminum Foil';
 const ADMIN_PRODUCTS_CACHE_PATH = '/admin/products';
@@ -33,6 +34,10 @@ const ProductsPage = () => {
   const [imageUploading, setImageUploading] = useState(false);
   const [mediaUploading, setMediaUploading] = useState(false);
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [stockFilter, setStockFilter] = useState('all');
+  const [filterOpen, setFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
   const [isEdit, setIsEdit] = useState(false);
@@ -89,13 +94,23 @@ const ProductsPage = () => {
     return cached?.data?.total || 0;
   });
 
+  const requestFilters = () => ({
+    page: undefined,
+    limit: undefined,
+    search,
+    category: categoryFilter !== 'all' ? categoryFilter : undefined,
+    is_active: activeFilter === 'all' ? undefined : activeFilter === 'active',
+    stock: stockFilter === 'all' ? undefined : stockFilter === 'in' ? 'in' : 'out',
+  });
+
   const fetchRows = useCallback(async (pageNum = 1) => {
-    const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: pageNum, limit: ITEMS_PER_PAGE, search });
+    const params = { ...requestFilters(), page: pageNum, limit: ITEMS_PER_PAGE };
+    const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, params);
     if (!cached) {
       setLoading(true);
     }
     try {
-      const response = await adminService.getProducts({ page: pageNum, limit: ITEMS_PER_PAGE, search });
+      const response = await adminService.getProducts(params);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
       setPage(pageNum);
@@ -107,17 +122,18 @@ const ProductsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, categoryFilter, activeFilter, stockFilter]);
 
   const fetchRowsSilent = useCallback(async (pageNum = 1) => {
     try {
-      const response = await apiClient.get(ADMIN_PRODUCTS_CACHE_PATH, { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true });
+      const params = { ...requestFilters(), page: pageNum, limit: ITEMS_PER_PAGE };
+      const response = await apiClient.get(ADMIN_PRODUCTS_CACHE_PATH, { params, silent: true });
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
     } catch (err) {
       // Ignore background errors
     }
-  }, [search]);
+  }, [search, categoryFilter, activeFilter, stockFilter]);
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -348,7 +364,7 @@ const ProductsPage = () => {
           <p className="text-slate-500 mt-1 font-medium">Manage inventories and item specifications.</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative">
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
@@ -358,6 +374,74 @@ const ProductsPage = () => {
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
+          </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setFilterOpen((prev) => !prev)}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+            >
+              <Filter className="w-4 h-4 text-slate-600" />
+              <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
+            </button>
+            {filterOpen && (
+              <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50">
+                <div className="space-y-3">
+                  <h3 className="text-sm font-black text-slate-900">Product Filters</h3>
+                  <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Category</label>
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                  >
+                    <option value="all">All Categories</option>
+                    {categoryOptions.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Status</label>
+                  <select
+                    value={activeFilter}
+                    onChange={(e) => setActiveFilter(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                  >
+                    <option value="all">All</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                  <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Stock</label>
+                  <select
+                    value={stockFilter}
+                    onChange={(e) => setStockFilter(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                  >
+                    <option value="all">All Stock</option>
+                    <option value="in">In Stock</option>
+                    <option value="out">Out of Stock</option>
+                  </select>
+                  <div className="flex justify-between gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCategoryFilter('all');
+                        setActiveFilter('all');
+                        setStockFilter('all');
+                      }}
+                      className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setFilterOpen(false); fetchRows(1); }}
+                      className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           {isSuperAdmin && !showForm && (
             <Button onClick={() => { resetForm(); setShowForm(true); }} className="rounded-xl flex items-center gap-2 px-6">
