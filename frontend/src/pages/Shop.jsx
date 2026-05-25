@@ -5,7 +5,7 @@ import TablePagination from '../components/ui/TablePagination';
 import api from '../utils/api';
 import apiClient from '../services/core/apiClient';
 import { getProductPricing } from '../utils/productPricing';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, Star } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
 
 const Shop = () => {
@@ -27,6 +27,7 @@ const Shop = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [loading, setLoading] = useState(!initialProducts.length);
   const [priceFilter, setPriceFilter] = useState('all');
+  const [ratingFilter, setRatingFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 9;
@@ -87,18 +88,25 @@ const Shop = () => {
       filtered = filtered.filter(p => getProductPricing(p).displayPrice >= 500);
     }
 
+    if (ratingFilter !== 'all') {
+      const minimumRating = Number(ratingFilter);
+      filtered = filtered.filter(p => Number(p.review_count || 0) > 0 && Number(p.rating_average || 0) >= minimumRating);
+    }
+
     // Sort
     if (sortBy === 'price-low') {
       filtered.sort((a, b) => getProductPricing(a).displayPrice - getProductPricing(b).displayPrice);
     } else if (sortBy === 'price-high') {
       filtered.sort((a, b) => getProductPricing(b).displayPrice - getProductPricing(a).displayPrice);
+    } else if (sortBy === 'rating-high') {
+      filtered.sort((a, b) => Number(b.rating_average || 0) - Number(a.rating_average || 0));
     } else {
       filtered.sort((a, b) => a.name.localeCompare(b.name));
     }
 
     setFilteredProducts(filtered);
     setPage(1); // Reset to first page when filters change
-  }, [products, categoryFilter, priceFilter, sortBy]);
+  }, [products, categoryFilter, priceFilter, ratingFilter, sortBy]);
 
   useEffect(() => {
     fetchProducts();
@@ -195,6 +203,34 @@ const Shop = () => {
                 </div>
 
                 <div className="border-t border-border-subtle pt-6">
+                  <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-3 block">Customer Rating</label>
+                  <div className="space-y-2">
+                    {[
+                      { value: 'all', label: 'All Ratings' },
+                      { value: '4', label: '4 Stars & Up' },
+                      { value: '3', label: '3 Stars & Up' },
+                      { value: '2', label: '2 Stars & Up' }
+                    ].map(option => (
+                      <label key={option.value} className="flex items-center gap-2.5 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="rating"
+                          value={option.value}
+                          checked={ratingFilter === option.value}
+                          onChange={(e) => setRatingFilter(e.target.value)}
+                          className="w-4 h-4 text-primary focus:ring-primary border-border-subtle bg-white"
+                          data-testid={`filter-rating-${option.value}`}
+                        />
+                        <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                          {option.value !== 'all' && <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />}
+                          {option.label}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-border-subtle pt-6">
                   <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-3 block">Sort By</label>
                   <select
                     value={sortBy}
@@ -205,6 +241,7 @@ const Shop = () => {
                     <option value="name">Name</option>
                     <option value="price-low">Price: Low to High</option>
                     <option value="price-high">Price: High to Low</option>
+                    <option value="rating-high">Rating: High to Low</option>
                   </select>
                 </div>
               </div>
