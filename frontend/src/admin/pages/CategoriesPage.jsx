@@ -9,8 +9,12 @@ const CategoriesPage = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
+  const [globalDiscountEnabled, setGlobalDiscountEnabled] = useState(false);
+  const [globalDiscountPercent, setGlobalDiscountPercent] = useState(0);
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
+  const [editingDiscountEnabled, setEditingDiscountEnabled] = useState(false);
+  const [editingDiscountPercent, setEditingDiscountPercent] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchCategories = useCallback(async () => {
@@ -38,9 +42,15 @@ const CategoriesPage = () => {
 
     try {
       setSubmitting(true);
-      await adminService.createCategory({ name: name.trim() });
+      await adminService.createCategory({ 
+        name: name.trim(),
+        global_discount_enabled: globalDiscountEnabled,
+        global_discount_percent: globalDiscountEnabled ? globalDiscountPercent : 0
+      });
       toast.success('Category added successfully');
       setName('');
+      setGlobalDiscountEnabled(false);
+      setGlobalDiscountPercent(0);
       fetchCategories();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to add category');
@@ -70,10 +80,16 @@ const CategoriesPage = () => {
 
     try {
       setSubmitting(true);
-      await adminService.updateCategory(id, { name: editingName.trim() });
+      await adminService.updateCategory(id, { 
+        name: editingName.trim(),
+        global_discount_enabled: editingDiscountEnabled,
+        global_discount_percent: editingDiscountEnabled ? editingDiscountPercent : 0
+      });
       toast.success('Category updated successfully');
       setEditingId(null);
       setEditingName('');
+      setEditingDiscountEnabled(false);
+      setEditingDiscountPercent(0);
       fetchCategories();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to update category');
@@ -133,6 +149,37 @@ const CategoriesPage = () => {
               />
             </div>
 
+            <div className="space-y-3 p-4 bg-emerald-50/40 rounded-xl border border-emerald-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-700">Apply Global Discount</label>
+                  <p className="text-[9px] text-slate-500 mt-0.5">Enable to apply discount % to all products in this category</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setGlobalDiscountEnabled(!globalDiscountEnabled)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${globalDiscountEnabled ? 'bg-primary' : 'bg-slate-300'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${globalDiscountEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+              {globalDiscountEnabled && (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-700">Discount Percent (%)</label>
+                  <input 
+                    type="number" 
+                    min="0" 
+                    max="100" 
+                    step="0.01"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    placeholder="e.g., 10, 15.5" 
+                    value={globalDiscountPercent} 
+                    onChange={e => setGlobalDiscountPercent(Number(e.target.value))}
+                  />
+                </div>
+              )}
+            </div>
+
             <Button 
               type="submit" 
               disabled={submitting} 
@@ -158,6 +205,7 @@ const CategoriesPage = () => {
               <thead className="bg-slate-50/30">
                 <tr>
                   <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Category</th>
+                  <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Global Discount</th>
                   <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Status</th>
                   <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -167,18 +215,48 @@ const CategoriesPage = () => {
                   <tr key={cat.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-8 py-5">
                       {editingId === cat.id ? (
-                        <div className="flex items-center gap-2">
-                          <input 
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none w-64"
-                            value={editingName} 
-                            onChange={e => setEditingName(e.target.value)} 
-                          />
-                          <Button size="sm" onClick={() => handleEditSave(cat.id)} className="rounded-lg px-3">Save</Button>
-                          <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} className="rounded-lg">Cancel</Button>
-                        </div>
+                        <input 
+                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none w-full max-w-xs"
+                          value={editingName} 
+                          onChange={e => setEditingName(e.target.value)} 
+                        />
                       ) : (
                         <div className="font-bold text-slate-800 group-hover:text-primary transition-colors">
                           {cat.name}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-8 py-5 text-center">
+                      {editingId === cat.id ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditingDiscountEnabled(!editingDiscountEnabled)}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${editingDiscountEnabled ? 'bg-primary' : 'bg-slate-300'}`}
+                          >
+                            <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${editingDiscountEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
+                          </button>
+                          {editingDiscountEnabled && (
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              className="w-20 rounded-lg border border-slate-200 px-2 py-1 text-xs focus:ring-2 focus:ring-primary/20 outline-none"
+                              value={editingDiscountPercent}
+                              onChange={e => setEditingDiscountPercent(Number(e.target.value))}
+                            />
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          {cat.global_discount_enabled ? (
+                            <div className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg inline-block">
+                              {cat.global_discount_percent}% OFF
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400 font-medium">No Global</span>
+                          )}
                         </div>
                       )}
                     </td>
@@ -202,25 +280,36 @@ const CategoriesPage = () => {
                     </td>
                     <td className="px-8 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => {
-                            setEditingId(cat.id);
-                            setEditingName(cat.name);
-                          }} 
-                          className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleDelete(cat.id)} 
-                          className="h-8 w-8 p-0 rounded-lg hover:bg-rose-50 hover:text-rose-600 text-rose-500"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {editingId === cat.id ? (
+                          <>
+                            <Button size="sm" onClick={() => handleEditSave(cat.id)} className="rounded-lg px-3 text-xs">Save</Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} className="rounded-lg text-xs">Cancel</Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => {
+                                setEditingId(cat.id);
+                                setEditingName(cat.name);
+                                setEditingDiscountEnabled(cat.global_discount_enabled || false);
+                                setEditingDiscountPercent(cat.global_discount_percent || 0);
+                              }} 
+                              className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleDelete(cat.id)} 
+                              className="h-8 w-8 p-0 rounded-lg hover:bg-rose-50 hover:text-rose-600 text-rose-500"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -228,7 +317,7 @@ const CategoriesPage = () => {
 
                 {categories.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="p-12 text-center text-slate-400 font-medium italic">
+                    <td colSpan={4} className="p-12 text-center text-slate-400 font-medium italic">
                       No categories created yet.
                     </td>
                   </tr>

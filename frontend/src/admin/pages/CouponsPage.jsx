@@ -2144,13 +2144,13 @@ const CouponsPage = () => {
 
                         <div>
                           <p className="text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Products</p>
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                          <div className="relative w-full">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none flex-shrink-0" />
                             <input
                               type="text"
                               value={productSearchQuery}
                               autoComplete="off"
-                              className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-bold text-slate-900 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm font-medium text-slate-900 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 placeholder-slate-400"
                               placeholder="Search products by name or SKU"
                               onChange={(e) => {
                                 const raw = e.target.value;
@@ -2165,18 +2165,18 @@ const CouponsPage = () => {
                                 }
                               }}
                             />
-                            <div className="max-h-40 overflow-y-auto mt-2 bg-white border border-slate-100 rounded-xl divide-y divide-slate-50">
+                            <div className="max-h-44 overflow-y-auto mt-1 bg-white border border-slate-100 rounded-xl divide-y divide-slate-50 shadow-sm">
                               {productSearchResults.length === 0 ? (
                                 <p className="p-3 text-xs text-slate-500">Type 2+ characters to search products</p>
                               ) : productSearchResults.map(p => {
                                 const selected = formData.eligible_product_ids.includes(p.id);
                                 return (
-                                  <label key={p.id} className="flex items-center gap-3 p-3 hover:bg-emerald-50 cursor-pointer">
+                                  <label key={p.id} className="flex items-center gap-3 p-3 hover:bg-emerald-50 cursor-pointer transition-colors">
                                     <input type="checkbox" checked={selected} onChange={(e) => setFormData(prev => ({
                                       ...prev,
                                       eligible_product_ids: e.target.checked ? [...prev.eligible_product_ids, p.id] : prev.eligible_product_ids.filter(id => id !== p.id)
                                     }))} />
-                                    <div className="text-sm">{p.name}</div>
+                                    <div className="text-sm text-slate-800">{p.name}</div>
                                   </label>
                                 )
                               })}

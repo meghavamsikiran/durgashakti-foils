@@ -5,7 +5,7 @@ import {
   Users, ShieldCheck, UserPlus, Search, 
   Mail, Phone, Lock, Edit3, Trash2,
   CheckCircle2, XCircle, ShieldAlert, X,
-  CheckSquare, Square
+  CheckSquare, Square, ChevronDown
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { PERMISSION_GROUPS, ROLE_TEMPLATES, getAllPermissionKeys } from '../constants/rbac';
@@ -17,6 +17,7 @@ import 'react-phone-number-input/style.css';
 const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
   const allKeys = getAllPermissionKeys();
   const isSuperAdmin = role === 'SUPER_ADMIN';
+  const [expandedGroup, setExpandedGroup] = React.useState(null);
   
   const handleToggle = (id) => {
     if (isSuperAdmin) return;
@@ -49,11 +50,11 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
   const allSelected = allKeys.every(k => selectedPermissions[k]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between pb-4 border-b border-slate-100">
         <div>
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Access Permissions</h3>
-          <p className="text-xs text-slate-500">Configure granular module access for this administrator.</p>
+          <p className="text-xs text-slate-500">Configure module access for this administrator. Click group titles to expand.</p>
         </div>
         <button type="button" onClick={handleToggleAll} className="text-xs font-bold text-primary hover:text-primary flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-lg">
           {allSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
@@ -61,36 +62,53 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
         </button>
       </div>
 
-      <div className="space-y-6">
-        {PERMISSION_GROUPS.map(group => (
-          <div key={group.title} className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">{group.title}</h4>
-            <div className="grid grid-cols-1 gap-3">
-              {group.permissions.map(perm => {
-                const checked = !!selectedPermissions[perm.id];
-                return (
-                  <div 
-                    key={perm.id}
-                    onClick={() => handleToggle(perm.id)}
-                    className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
-                      checked ? 'bg-primary/5 border-primary/20' : 'bg-white border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center border transition-colors ${
-                      checked ? 'bg-primary border-primary' : 'border-slate-300 bg-white'
-                    }`}>
-                      {checked && <CheckSquare className="w-3.5 h-3.5 text-white" />}
-                    </div>
-                    <div>
-                      <p className={`text-sm font-bold ${checked ? 'text-primary' : 'text-slate-700'}`}>{perm.label}</p>
-                      <p className="text-xs text-slate-500">{perm.desc}</p>
-                    </div>
-                  </div>
-                );
-              })}
+      <div className="space-y-2 max-h-96 overflow-y-auto">
+        {PERMISSION_GROUPS.map(group => {
+          const groupCount = group.permissions.filter(p => selectedPermissions[p.id]).length;
+          const isExpanded = expandedGroup === group.title;
+          
+          return (
+            <div key={group.title} className="border border-slate-200 rounded-xl overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setExpandedGroup(isExpanded ? null : group.title)}
+                className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors bg-slate-50/50"
+              >
+                <div className="flex items-center gap-3">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-slate-700">{group.title}</h4>
+                  <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{groupCount}/{group.permissions.length}</span>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {isExpanded && (
+                <div className="border-t border-slate-200 p-3 space-y-2 bg-white">
+                  {group.permissions.map(perm => {
+                    const checked = !!selectedPermissions[perm.id];
+                    return (
+                      <div 
+                        key={perm.id}
+                        onClick={() => handleToggle(perm.id)}
+                        className="flex items-start gap-2 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {}}
+                          className="mt-0.5 w-4 h-4 rounded border-slate-300 cursor-pointer"
+                        />
+                        <div className="flex-1">
+                          <p className={`text-xs font-bold ${checked ? 'text-primary' : 'text-slate-700'}`}>{perm.label}</p>
+                          <p className="text-[11px] text-slate-500 line-clamp-1">{perm.desc}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -485,7 +503,7 @@ const AdminUsersPage = () => {
       {/* Add Modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-4xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Add New Admin</h2>
               <button onClick={() => setShowCreate(false)} className="p-2 rounded-full hover:bg-slate-50 transition-colors">
@@ -493,49 +511,39 @@ const AdminUsersPage = () => {
               </button>
             </div>
             
-            <form onSubmit={create} className="grid grid-cols-1 md:grid-cols-2 gap-8" autoComplete="off">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-4">Basic Information</h3>
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Full Name</label>
-                      <input required name="full_name_new" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        value={form.full_name} onChange={e => setForm({...form, full_name: e.target.value})} placeholder="Full name of admin..." />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Email</label>
-                      <input type="email" required name="email_new" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="admin@durgashakti.com" />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Role</label>
-                        <div className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm bg-slate-50 font-bold text-slate-500 select-none">
-                          ADMIN
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Phone Number</label>
-                        <PhoneInput
-                          international
-                          defaultCountry="IN"
-                          value={form.phone}
-                          onChange={val => setForm({...form, phone: val || ''})}
-                          className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all outline-none"
-                          numberInputProps={{
-                            className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800",
-                            placeholder: "Enter phone number"
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Password</label>
-                      <input type="password" required name="password_new" autoComplete="new-password" 
-                        className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="Secure password..." />
-                    </div>
+            <form onSubmit={create} className="space-y-8" autoComplete="off">
+              <div>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-4">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Full Name</label>
+                    <input required name="full_name_new" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      value={form.full_name} onChange={e => setForm({...form, full_name: e.target.value})} placeholder="Full name of admin..." />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Email</label>
+                    <input type="email" required name="email_new" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="admin@durgashakti.com" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Phone Number</label>
+                    <PhoneInput
+                      international
+                      defaultCountry="IN"
+                      value={form.phone}
+                      onChange={val => setForm({...form, phone: val || ''})}
+                      className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all outline-none"
+                      numberInputProps={{
+                        className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800",
+                        placeholder: "Enter phone number"
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Password</label>
+                    <input type="password" required name="password_new" autoComplete="new-password" 
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="Secure password..." />
                   </div>
                 </div>
               </div>
@@ -549,6 +557,9 @@ const AdminUsersPage = () => {
                     if (tmpl) setForm({...form, permissions: { ...tmpl.permissions }});
                   }}
                 />
+              </div>
+              
+              <div>
                 <PermissionsSelector 
                   selectedPermissions={form.permissions} 
                   onChange={(perms) => { setForm({...form, permissions: perms}); setSelectedTemplate('CUSTOM'); }}
@@ -556,7 +567,7 @@ const AdminUsersPage = () => {
                 />
               </div>
               
-              <div className="col-span-1 md:col-span-2 flex justify-end gap-4 pt-6 border-t border-slate-100">
+              <div className="flex justify-end gap-4 pt-6 border-t border-slate-100">
                 <button type="button" onClick={() => setShowCreate(false)}
                   className="px-8 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">
                   Discard
@@ -574,7 +585,7 @@ const AdminUsersPage = () => {
       {/* Edit Modal */}
       {editModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-4xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Edit Admin</h2>
               <button onClick={() => setEditModal(null)} className="p-2 rounded-full hover:bg-slate-50 transition-colors">
@@ -582,19 +593,33 @@ const AdminUsersPage = () => {
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
+            <div className="space-y-8">
+              <div>
                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight mb-4">Basic Information</h3>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Full Name</label>
-                  <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                    value={editForm.full_name} onChange={e => setEditForm({...editForm, full_name: e.target.value})} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Full Name</label>
+                    <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                      value={editForm.full_name} onChange={e => setEditForm({...editForm, full_name: e.target.value})} />
+                  </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Email</label>
                     <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                       value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Phone Number</label>
+                    <PhoneInput
+                      international
+                      defaultCountry="IN"
+                      value={editForm.phone}
+                      onChange={val => setEditForm({...editForm, phone: val || ''})}
+                      className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all outline-none"
+                      numberInputProps={{
+                        className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800",
+                        placeholder: "Enter phone number"
+                      }}
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Role</label>
@@ -603,24 +628,10 @@ const AdminUsersPage = () => {
                     </div>
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Phone Number</label>
-                  <PhoneInput
-                    international
-                    defaultCountry="IN"
-                    value={editForm.phone}
-                    onChange={val => setEditForm({...editForm, phone: val || ''})}
-                    className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all outline-none"
-                    numberInputProps={{
-                      className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800",
-                      placeholder: "Enter phone number"
-                    }}
-                  />
-                </div>
               </div>
 
-              <div>
-                {editForm.role !== 'SUPER_ADMIN' && (
+              {editForm.role !== 'SUPER_ADMIN' && (
+                <div>
                   <RoleTemplateSelector
                     selectedTemplate={editSelectedTemplate}
                     onSelectTemplate={(key) => {
@@ -629,7 +640,10 @@ const AdminUsersPage = () => {
                       if (tmpl) setEditForm({...editForm, permissions: { ...tmpl.permissions }});
                     }}
                   />
-                )}
+                </div>
+              )}
+              
+              <div>
                 <PermissionsSelector 
                   selectedPermissions={editForm.permissions} 
                   onChange={(perms) => { setEditForm({...editForm, permissions: perms}); setEditSelectedTemplate('CUSTOM'); }}
@@ -637,7 +651,7 @@ const AdminUsersPage = () => {
                 />
               </div>
               
-              <div className="col-span-1 md:col-span-2 flex justify-end gap-4 pt-6 border-t border-slate-100">
+              <div className="flex justify-end gap-4 pt-6 border-t border-slate-100">
                 <button onClick={() => setEditModal(null)} className="px-8 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">Cancel</button>
                 <button onClick={handleEdit} disabled={editSaving} className="px-8 py-3 rounded-xl bg-primary text-white text-sm font-black uppercase tracking-widest hover:bg-emerald-hover shadow-lg shadow-emerald-glow transition-all">
                    {editSaving ? 'Saving...' : 'Save Changes'}

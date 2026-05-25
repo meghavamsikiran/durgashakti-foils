@@ -654,25 +654,23 @@ const ProductsPage = () => {
               </div>
 
               {isEdit ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Original Price (₹)</label>
-                      <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none" value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} />
+                      <input type="number" step="0.01" min="0" className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none font-medium" value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Offer Price (₹)</label>
-                      <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none bg-emerald-50/30" value={form.discount_price} onChange={e => setForm({...form, discount_price: Number(e.target.value)})} />
+                      <input type="number" step="0.01" min="0" className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none font-medium bg-emerald-50/30" value={form.discount_price} onChange={e => setForm({...form, discount_price: Number(e.target.value)})} />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stock</label>
-                      <input type="number" className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none" value={form.stock_quantity} onChange={e => setForm({...form, stock_quantity: Number(e.target.value)})} />
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stock Quantity</label>
+                      <input type="number" step="1" min="0" className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none font-medium" value={form.stock_quantity} onChange={e => setForm({...form, stock_quantity: Number(e.target.value)})} />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Marketing Tag / Badge</label>
-                      <select className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none" value={form.badge} onChange={e => setForm({...form, badge: e.target.value})}>
+                      <select className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none font-medium" value={form.badge} onChange={e => setForm({...form, badge: e.target.value})}>
                         <option value="">No Badge</option>
                         <option value="Best Seller">Best Seller</option>
                         <option value="Limited Offer">Limited Offer</option>
