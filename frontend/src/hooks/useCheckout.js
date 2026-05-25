@@ -69,6 +69,7 @@ export const useCheckout = () => {
 
   const [appliedCoupons, setAppliedCoupons] = useState([]);
   const [availableLoyaltyCoupons, setAvailableLoyaltyCoupons] = useState([]);
+  const [autoApplyCouponsDisabled, setAutoApplyCouponsDisabled] = useState(false);
   const [couponInput, setCouponInput] = useState('');
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
@@ -162,7 +163,7 @@ export const useCheckout = () => {
         const eligible = (data.coupons || []).filter(c => subtotal >= Number(c.min_cart_value || 0));
         setAvailableLoyaltyCoupons(eligible);
 
-        if (eligible.length > 0) {
+        if (!autoApplyCouponsDisabled && eligible.length > 0) {
           const bestCoupon = eligible[0];
           const res = await couponService.validateCoupons([bestCoupon.code], subtotal);
           if (active && res.valid && res.applied_coupons?.length) {
@@ -179,7 +180,7 @@ export const useCheckout = () => {
     return () => {
       active = false;
     };
-  }, [user, cartReady, cart.items, products, appliedCoupons.length, calculateTotal]);
+  }, [user, cartReady, cart.items, products, appliedCoupons.length, autoApplyCouponsDisabled, calculateTotal]);
 
   const handleSelectAddress = (addr) => {
     setSelectedAddressId(addr.id);
@@ -307,6 +308,7 @@ export const useCheckout = () => {
 
       if (res.valid) {
         setAppliedCoupons(res.applied_coupons || []);
+        setAutoApplyCouponsDisabled(false);
         setCouponInput('');
         toast.success(`Coupon "${cleanCode}" applied successfully!`);
       } else {
@@ -322,6 +324,7 @@ export const useCheckout = () => {
   };
 
   const handleRemoveCoupon = async (codeToRemove) => {
+    setAutoApplyCouponsDisabled(true);
     const remainingCoupons = appliedCoupons.filter(c => c.code.toUpperCase() !== codeToRemove.toUpperCase());
     
     if (remainingCoupons.length === 0) {
