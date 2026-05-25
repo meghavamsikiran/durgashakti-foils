@@ -131,7 +131,7 @@ const OrdersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, filter]);
+  }, [search, filter, dateFilter]);
 
   const loadSilent = useCallback(async (p = 1) => {
     try {
