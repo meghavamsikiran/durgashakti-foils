@@ -5,7 +5,7 @@ from sqlalchemy import select, func, or_
 from typing import Optional
 from database import get_db
 from models import ProductModel, ProductReviewModel, SettingModel
-from deps import sanitize_search_term, row_to_dict, validate_uuid, sync_product_categories
+from deps import sanitize_search_term, row_to_dict, validate_uuid, sync_product_categories, apply_effective_product_pricing
 
 router = APIRouter(prefix="/api")
 
@@ -80,7 +80,8 @@ async def get_products(
             fallback_q = fallback_q.where(filter_clause)
         total = (await db.execute(fallback_q)).scalar() or 0
 
-    products = await _attach_review_summaries(db, [row_to_dict(row[0]) for row in rows])
+    products = await apply_effective_product_pricing(db, [row_to_dict(row[0]) for row in rows])
+    products = await _attach_review_summaries(db, products)
     return {"items": products, "total": total, "page": page, "limit": limit}
 
 
@@ -92,6 +93,7 @@ async def get_product(product_id: str, db: AsyncSession = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     product_data = row_to_dict(product)
+    await apply_effective_product_pricing(db, [product_data])
     await _attach_review_summaries(db, [product_data])
     return product_data
 

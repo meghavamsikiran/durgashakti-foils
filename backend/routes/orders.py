@@ -10,7 +10,8 @@ from deps import (
     UserSchema, OrderCreate, get_current_user, row_to_dict,
     write_audit_log, send_email, create_notification,
     ORDER_STATUS_TRANSITIONS, normalize_order_status,
-    UPLOADS_DIR, validate_uuid, is_valid_uuid
+    UPLOADS_DIR, validate_uuid, is_valid_uuid,
+    get_category_discount_map
 )
 from storage_service import upload_image
 from datetime import datetime, timezone, timedelta
@@ -66,6 +67,18 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
     if prod_ids:
         prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)))
         products_map = {str(p.id): p for p in prod_res.scalars().all()}
+    category_discounts = await get_category_discount_map(db, [product.category for product in products_map.values()])
+
+    def effective_product_price(product):
+        base_price = float(product.price or 0)
+        candidates = [base_price]
+        item_discount = float(product.discount_price or 0)
+        if item_discount > 0 and item_discount < base_price:
+            candidates.append(item_discount)
+        category_percent = category_discounts.get(str(product.category or "").strip().lower(), 0)
+        if category_percent > 0 and base_price > 0:
+            candidates.append(round(base_price * (1 - (category_percent / 100)), 2))
+        return round(min(candidates), 2)
 
     for item in order_data.items:
         product = products_map.get(str(item.product_id))
@@ -76,7 +89,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         if item.quantity > int(product.stock_quantity or 0):
             raise HTTPException(status_code=400, detail=f"Only {product.stock_quantity} units of '{item.product_name}' available")
         product_cache[item.product_id] = product
-        effective_price = float(product.discount_price or product.price or 0)
+        effective_price = effective_product_price(product)
         server_total += effective_price * item.quantity
     server_total = round(server_total, 2)
     
@@ -162,7 +175,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         product = product_cache.get(item.product_id)
         item_dict = item.model_dump()
         if product:
-            item_dict['price'] = float(product.discount_price or product.price or 0.0)
+            item_dict['price'] = effective_product_price(product)
             item_dict['image_url'] = product.image_url
         else:
             item_dict['image_url'] = None

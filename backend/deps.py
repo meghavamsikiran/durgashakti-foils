@@ -494,6 +494,56 @@ async def sync_product_categories(db: AsyncSession):
         await ensure_category_exists(db, category_name)
 
 
+def _best_price(base_price, item_discount_price=None, category_discount_percent=0):
+    base = float(base_price or 0)
+    candidates = [base]
+    item_discount = float(item_discount_price or 0)
+    if item_discount > 0 and item_discount < base:
+        candidates.append(item_discount)
+    category_percent = float(category_discount_percent or 0)
+    if category_percent > 0 and base > 0:
+        candidates.append(round(base * (1 - (category_percent / 100)), 2))
+    return round(min(candidates), 2)
+
+
+async def get_category_discount_map(db: AsyncSession, category_names):
+    from models import CategoryModel
+
+    names = [normalize_category_name(name) for name in (category_names or [])]
+    names = [name for name in names if name]
+    if not names:
+        return {}
+
+    result = await db.execute(
+        select(CategoryModel).where(func.lower(CategoryModel.name).in_([name.lower() for name in names]))
+    )
+    discounts = {}
+    for category in result.scalars().all():
+        percent = float(category.global_discount_percent or 0)
+        discounts[category.name.lower()] = percent if category.global_discount_enabled and percent > 0 else 0
+    return discounts
+
+
+async def apply_effective_product_pricing(db: AsyncSession, products: list[dict]) -> list[dict]:
+    discounts = await get_category_discount_map(db, [product.get("category") for product in products])
+    for product in products:
+        base_price = float(product.get("price") or 0)
+        category_percent = discounts.get(normalize_category_name(product.get("category")).lower(), 0)
+        effective_price = _best_price(base_price, product.get("discount_price"), category_percent)
+        product["base_price"] = base_price
+        product["effective_price"] = effective_price
+        product["category_global_discount_percent"] = category_percent
+        if effective_price < base_price:
+            product["discount_price"] = effective_price
+    return products
+
+
+async def get_effective_product_price(db: AsyncSession, product) -> float:
+    discounts = await get_category_discount_map(db, [getattr(product, "category", None)])
+    category_percent = discounts.get(normalize_category_name(getattr(product, "category", None)).lower(), 0)
+    return _best_price(getattr(product, "price", 0), getattr(product, "discount_price", 0), category_percent)
+
+
 
 # ── Auth Dependencies ────────────────────────────────────────────────────
 async def get_current_user(

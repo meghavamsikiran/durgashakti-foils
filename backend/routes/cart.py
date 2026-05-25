@@ -6,7 +6,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from typing import List
 from database import get_db
 from models import CartModel, ProductModel
-from deps import UserSchema, CartItem, get_current_user, row_to_dict, validate_uuid, is_valid_uuid
+from deps import UserSchema, CartItem, get_current_user, row_to_dict, validate_uuid, is_valid_uuid, apply_effective_product_pricing
 from datetime import datetime, timezone
 import uuid
 
@@ -32,7 +32,8 @@ async def get_cart(current_user: UserSchema = Depends(get_current_user), db: Asy
     if product_ids:
         res = await db.execute(select(ProductModel).where(ProductModel.id.in_(product_ids)))
         products = res.scalars().all()
-        products_by_id = {str(product.id): row_to_dict(product) for product in products}
+        priced_products = await apply_effective_product_pricing(db, [row_to_dict(product) for product in products])
+        products_by_id = {str(product["id"]): product for product in priced_products}
         existing_ids = set(products_by_id.keys())
 
     for item in (cart.items or []):

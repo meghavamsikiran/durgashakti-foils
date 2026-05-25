@@ -4,6 +4,7 @@ import ProductCard from '../components/ProductCard';
 import TablePagination from '../components/ui/TablePagination';
 import api from '../utils/api';
 import apiClient from '../services/core/apiClient';
+import { getProductPricing } from '../utils/productPricing';
 import { SlidersHorizontal } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
 
@@ -76,18 +77,21 @@ const Shop = () => {
 
     // Price filter
     if (priceFilter === 'under200') {
-      filtered = filtered.filter(p => p.price < 200);
+      filtered = filtered.filter(p => getProductPricing(p).displayPrice < 200);
     } else if (priceFilter === '200to500') {
-      filtered = filtered.filter(p => p.price >= 200 && p.price < 500);
+      filtered = filtered.filter(p => {
+        const price = getProductPricing(p).displayPrice;
+        return price >= 200 && price < 500;
+      });
     } else if (priceFilter === 'over500') {
-      filtered = filtered.filter(p => p.price >= 500);
+      filtered = filtered.filter(p => getProductPricing(p).displayPrice >= 500);
     }
 
     // Sort
     if (sortBy === 'price-low') {
-      filtered.sort((a, b) => a.price - b.price);
+      filtered.sort((a, b) => getProductPricing(a).displayPrice - getProductPricing(b).displayPrice);
     } else if (sortBy === 'price-high') {
-      filtered.sort((a, b) => b.price - a.price);
+      filtered.sort((a, b) => getProductPricing(b).displayPrice - getProductPricing(a).displayPrice);
     } else {
       filtered.sort((a, b) => a.name.localeCompare(b.name));
     }
