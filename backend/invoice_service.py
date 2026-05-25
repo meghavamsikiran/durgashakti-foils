@@ -477,6 +477,9 @@ def _draw_party_blocks(c: canvas.Canvas, order: dict, invoice_no: str, created: 
     for key, line in zip(["y17", "y18"], ship_lines[:2]):
         _draw_text(c, _px("x9"), _py(key), line, FS["fs7"], DARK, FONT, max_width=_sx(360))
 
+    txn_id = _safe_text(order.get("transaction_id") or "N/A (COD)")
+    _draw_text(c, _px("x9"), _py("y11"), f"Transaction ID: {txn_id}", FS["fs7"], DARK, FONT_BOLD, max_width=_sx(360))
+
 
 def _draw_items(c: canvas.Canvas, rows: list[dict], total_qty: int, taxable_total: float, gst_total: float, amount_total: float) -> None:
     headers = [

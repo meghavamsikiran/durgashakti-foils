@@ -193,6 +193,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
         <p><strong>Date:</strong> ${new Date(orderData.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
         <p><strong>Payment Method:</strong> ${orderData.payment_method ? orderData.payment_method.toUpperCase() : 'N/A'}</p>
         <p><strong>Payment Status:</strong> ${orderData.payment_status ? orderData.payment_status.toUpperCase() : 'N/A'}</p>
+        ${orderData.transaction_id ? `<p><strong>Transaction ID:</strong> <span style="font-family: monospace; font-size: 11px;">${orderData.transaction_id}</span></p>` : `<p><strong>Transaction ID:</strong> N/A (COD)</p>`}
       </div>
     </div>
 

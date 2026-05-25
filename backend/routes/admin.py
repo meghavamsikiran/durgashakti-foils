@@ -1145,7 +1145,11 @@ async def export_gstr1(
                 "Order Number": order.get("order_number"),
                 "Customer Name": order.get("customer_name") or addr.get("full_name"),
                 "Seller GSTIN": "36AALCD9777D1Z5",
-                "Transaction ID": str(order.get("transaction_id") or ""),
+                "Transaction ID": str(
+                    order.get("razorpay_payment_id")
+                    or order.get("razorpay_order_id")
+                    or ("COD" if str(order.get("payment_method") or "").lower() in {"cod", "cash on delivery"} else "")
+                ),
                 "Place of Supply": place,
                 "Product": item.get("product_name") or item.get("name"),
                 "HSN": item.get("hsn") or item.get("hsn_code") or "76071991",
