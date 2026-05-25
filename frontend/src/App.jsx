@@ -48,6 +48,7 @@ import CouponsPage from './admin/pages/CouponsPage';
 import AnalyticsPage from './admin/pages/AnalyticsPage';
 import AdminUsersPage from './admin/pages/AdminUsersPage';
 import InquiriesPage from './admin/pages/InquiriesPage';
+import ReviewsPage from './admin/pages/ReviewsPage';
 
 import PageLoader from './components/ui/PageLoader';
 import './App.css';
@@ -123,6 +124,7 @@ function AppRoutes() {
                 <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
                 <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
                 <Route path="inquiries" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
+                <Route path="reviews" element={<ProtectedAdminRoute permission="view_reviews"><ReviewsPage /></ProtectedAdminRoute>} />
                 <Route
                   path="payments"
                   element={
@@ -193,6 +195,7 @@ function AppRoutes() {
                 <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
                 <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
                 <Route path="inquiries" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
+                <Route path="reviews" element={<ProtectedAdminRoute permission="view_reviews"><ReviewsPage /></ProtectedAdminRoute>} />
                 <Route
                   path="payments"
                   element={

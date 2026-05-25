@@ -117,6 +117,7 @@ export const AuthProvider = ({ children }) => {
       'manage_products': ['view_products', 'create_products', 'edit_products', 'delete_products'],
       'manage_inventory': ['view_inventory', 'update_stock'],
       'manage_customers': ['view_customers', 'view_customer_history', 'view_inquiries', 'update_inquiry_status', 'reply_inquiry'],
+      'manage_reviews': ['view_reviews', 'moderate_reviews', 'reply_reviews'],
       'access_financial_reports': ['view_transactions', 'update_payment_status', 'export_payment_reports', 'view_analytics'],
       'access_gst_reports': ['view_gst_reports', 'export_gst_reports'],
       'manage_admins': ['create_admin', 'edit_admin', 'disable_admin', 'delete_admin', 'assign_permissions', 'view_audit_logs'],

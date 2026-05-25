@@ -1,20 +1,30 @@
 """Product review routes."""
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from sqlalchemy import func, select
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from pydantic import BaseModel
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 from typing import List, Optional
 from datetime import datetime, timezone
+import uuid
 
 from database import get_db
-from deps import UserSchema, get_current_user, is_valid_uuid, row_to_dict, validate_uuid
-from models import OrderModel, ProductModel, ProductReviewModel, SettingModel
+from deps import UserSchema, get_current_user, require_permission, row_to_dict, validate_uuid, write_audit_log
+from models import OrderModel, ProductModel, ProductReviewModel, SettingModel, UserModel
 from storage_service import upload_media
 
 router = APIRouter(prefix="/api")
 
 REVIEWABLE_PAYMENT_STATUSES = {"completed", "paid", "cash on delivery"}
 BLOCKED_ORDER_STATUSES = {"cancelled", "failed", "pending_payment"}
+
+
+class ReviewStatusUpdate(BaseModel):
+    status: str
+
+
+class ReviewReplyUpdate(BaseModel):
+    reply: str = ""
 
 
 async def _get_feedback_settings(db: AsyncSession) -> dict:
@@ -72,7 +82,125 @@ async def _get_purchase_for_review(db: AsyncSession, user_id: str, product_id: s
 async def _serialize_review(review: ProductReviewModel) -> dict:
     data = row_to_dict(review)
     data["is_verified_purchase"] = True
+    if data.get("admin_reply"):
+        data["admin_reply_author"] = "durgashaktiofficial"
     return data
+
+
+def _normalize_review_status(status: str) -> str:
+    normalized = (status or "").strip().lower()
+    if normalized not in {"published", "hidden"}:
+        raise HTTPException(status_code=400, detail="Review status must be published or hidden")
+    return normalized
+
+
+async def _serialize_admin_review(review: ProductReviewModel, product: ProductModel | None, user: UserModel | None) -> dict:
+    data = await _serialize_review(review)
+    data.update({
+        "product_name": product.name if product else "Deleted product",
+        "product_image": product.image_url if product else None,
+        "customer_name": user.full_name if user else data.get("public_name"),
+        "customer_email": user.email if user else None,
+    })
+    return data
+
+
+@router.get("/admin/reviews")
+async def list_admin_reviews(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    rating: Optional[int] = Query(None, ge=1, le=5),
+    admin: UserSchema = Depends(require_permission("view_reviews")),
+    db: AsyncSession = Depends(get_db),
+):
+    page = max(page, 1)
+    offset = (page - 1) * limit
+    q = (
+        select(ProductReviewModel, ProductModel, UserModel, func.count(ProductReviewModel.id).over().label("total_count"))
+        .join(ProductModel, ProductModel.id == ProductReviewModel.product_id, isouter=True)
+        .join(UserModel, UserModel.id == ProductReviewModel.user_id, isouter=True)
+    )
+
+    if status:
+        q = q.where(ProductReviewModel.status == _normalize_review_status(status))
+    if rating:
+        q = q.where(ProductReviewModel.rating == rating)
+    if search:
+        term = f"%{search.strip()}%"
+        q = q.where(or_(
+            ProductReviewModel.title.ilike(term),
+            ProductReviewModel.comment.ilike(term),
+            ProductReviewModel.public_name.ilike(term),
+            ProductModel.name.ilike(term),
+            UserModel.email.ilike(term),
+            UserModel.full_name.ilike(term),
+        ))
+
+    result = await db.execute(q.order_by(ProductReviewModel.created_at.desc()).offset(offset).limit(limit))
+    rows = result.all()
+    total = int(rows[0].total_count) if rows else 0
+    items = [await _serialize_admin_review(row[0], row[1], row[2]) for row in rows]
+    return {"items": items, "total": total, "page": page, "limit": limit}
+
+
+@router.put("/admin/reviews/{review_id}/status")
+async def update_admin_review_status(
+    review_id: str,
+    data: ReviewStatusUpdate,
+    admin: UserSchema = Depends(require_permission("moderate_reviews")),
+    db: AsyncSession = Depends(get_db),
+):
+    validate_uuid(review_id)
+    result = await db.execute(select(ProductReviewModel).where(ProductReviewModel.id == review_id))
+    review = result.scalar_one_or_none()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    review.status = _normalize_review_status(data.status)
+    review.updated_at = datetime.now(timezone.utc)
+    await db.flush()
+    await write_audit_log(db, "REVIEW_STATUS_UPDATED", admin.id, "review", review_id, {"status": review.status})
+    return {"message": "Review status updated", "review": await _serialize_review(review)}
+
+
+@router.put("/admin/reviews/{review_id}/reply")
+async def update_admin_review_reply(
+    review_id: str,
+    data: ReviewReplyUpdate,
+    admin: UserSchema = Depends(require_permission("reply_reviews")),
+    db: AsyncSession = Depends(get_db),
+):
+    validate_uuid(review_id)
+    result = await db.execute(select(ProductReviewModel).where(ProductReviewModel.id == review_id))
+    review = result.scalar_one_or_none()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    reply = (data.reply or "").strip()
+    review.admin_reply = reply[:2000] if reply else None
+    review.admin_reply_by = uuid.UUID(str(admin.id)) if reply else None
+    review.admin_reply_at = datetime.now(timezone.utc) if reply else None
+    review.updated_at = datetime.now(timezone.utc)
+    await db.flush()
+    await write_audit_log(db, "REVIEW_REPLY_UPDATED", admin.id, "review", review_id, {"has_reply": bool(reply)})
+    return {"message": "Review reply saved", "review": await _serialize_review(review)}
+
+
+@router.delete("/admin/reviews/{review_id}")
+async def delete_admin_review(
+    review_id: str,
+    admin: UserSchema = Depends(require_permission("moderate_reviews")),
+    db: AsyncSession = Depends(get_db),
+):
+    validate_uuid(review_id)
+    result = await db.execute(select(ProductReviewModel).where(ProductReviewModel.id == review_id))
+    review = result.scalar_one_or_none()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    await db.delete(review)
+    await db.flush()
+    await write_audit_log(db, "REVIEW_DELETED", admin.id, "review", review_id)
+    return {"message": "Review deleted successfully"}
 
 
 @router.get("/products/{product_id}/reviews")

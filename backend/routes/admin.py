@@ -1374,7 +1374,12 @@ async def export_audit_logs(admin: UserSchema = Depends(require_permission("view
     df = pd.DataFrame(items)
     # Normalize metadata column (JSON) to a readable string
     if 'metadata' in df.columns:
-        df['metadata'] = df['metadata'].apply(lambda m: (pd.json.dumps(m, ensure_ascii=False) if m else ""))
+        df['metadata'] = df['metadata'].apply(lambda m: (json.dumps(m, ensure_ascii=False) if m else ""))
+    if df.empty:
+        df = pd.DataFrame(columns=[
+            "id", "action", "actor_id", "actor_name", "actor_email", "actor_role",
+            "target_type", "target_id", "metadata", "created_at",
+        ])
 
     out = BytesIO()
     with pd.ExcelWriter(out, engine='openpyxl') as writer:

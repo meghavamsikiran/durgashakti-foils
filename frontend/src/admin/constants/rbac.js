@@ -54,6 +54,14 @@ export const PERMISSION_GROUPS = [
     ]
   },
   {
+    title: 'Reviews',
+    permissions: [
+      { id: 'view_reviews', label: 'View Reviews', desc: 'Browse customer product reviews and ratings' },
+      { id: 'moderate_reviews', label: 'Moderate Reviews', desc: 'Hide, publish, or delete product reviews' },
+      { id: 'reply_reviews', label: 'Reply to Reviews', desc: 'Post official durgashaktiofficial replies to reviews' }
+    ]
+  },
+  {
     title: 'Payments',
     permissions: [
       { id: 'view_transactions', label: 'View Transactions', desc: 'Inspect financial transactions, receipts, and gateway details' },
@@ -115,6 +123,7 @@ export const ROLE_TEMPLATES = {
       view_inventory: true, update_stock: true,
       view_customers: true, view_customer_history: true,
       view_inquiries: true, update_inquiry_status: true, reply_inquiry: true,
+      view_reviews: true, moderate_reviews: true, reply_reviews: true,
       view_transactions: true, update_payment_status: true, export_payment_reports: true,
       view_analytics: true,
       view_gst_reports: true, export_gst_reports: true,
@@ -150,6 +159,7 @@ export const ROLE_TEMPLATES = {
     label: 'Customer Support Admin',
     permissions: {
       view_customers: true, view_inquiries: true, update_inquiry_status: true, reply_inquiry: true,
+      view_reviews: true, moderate_reviews: true, reply_reviews: true,
       view_dashboard: true
     }
   },
@@ -194,6 +204,7 @@ export const superAdminSidebar = [
   { label: 'Stock', permissions: ['view_inventory', 'update_stock'] },
   { label: 'Customers', permissions: ['view_customers', 'view_customer_history'] },
   { label: 'Inquiries', permissions: ['view_inquiries', 'update_inquiry_status', 'reply_inquiry'] },
+  { label: 'Reviews', permissions: ['view_reviews', 'moderate_reviews', 'reply_reviews'] },
   { label: 'Payments', permissions: ['view_transactions', 'update_payment_status', 'export_payment_reports'] },
   { label: 'Analytics', permissions: ['view_analytics'] },
   { label: 'GSTR1', permissions: ['view_gst_reports', 'export_gst_reports'] },

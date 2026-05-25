@@ -209,7 +209,8 @@ const Shop = () => {
                       { value: 'all', label: 'All Ratings' },
                       { value: '4', label: '4 Stars & Up' },
                       { value: '3', label: '3 Stars & Up' },
-                      { value: '2', label: '2 Stars & Up' }
+                      { value: '2', label: '2 Stars & Up' },
+                      { value: '1', label: '1 Star & Up' }
                     ].map(option => (
                       <label key={option.value} className="flex items-center gap-2.5 cursor-pointer">
                         <input

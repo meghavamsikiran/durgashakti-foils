@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Package, Boxes, ShoppingCart, 
   Users, CreditCard, BarChart3, FileText,
   UserCog, ShieldAlert, Settings, LogOut, Package2, Layers,
-  MessageSquare, Menu, X, Ticket
+  MessageSquare, Menu, X, Ticket, Star
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -17,6 +17,7 @@ const ICON_MAP = {
   'Orders': ShoppingCart,
   'Customers': Users,
   'Inquiries': MessageSquare,
+  'Reviews': Star,
   'Payments': CreditCard,
   'Analytics': BarChart3,
 

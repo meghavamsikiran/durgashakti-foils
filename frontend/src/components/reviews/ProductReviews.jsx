@@ -130,6 +130,14 @@ const ProductReviews = ({ productId, summary }) => {
                   </div>
                 </div>
                 {review.comment && <p className="text-sm text-slate-700 leading-relaxed mt-4">{review.comment}</p>}
+                {review.admin_reply && (
+                  <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-2">
+                      Reply from durgashaktiofficial
+                    </div>
+                    <p className="text-sm text-slate-700 leading-relaxed font-medium">{review.admin_reply}</p>
+                  </div>
+                )}
                 {(() => {
                   let mediaUrls = [];
                   try {
