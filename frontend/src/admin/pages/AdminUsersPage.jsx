@@ -65,21 +65,41 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
       <div className="space-y-2 max-h-96 overflow-y-auto">
         {PERMISSION_GROUPS.map(group => {
           const groupCount = group.permissions.filter(p => selectedPermissions[p.id]).length;
+          const allGroupSelected = group.permissions.every(p => selectedPermissions[p.id]);
           const isExpanded = expandedGroup === group.title;
+          
+          const handleToggleGroup = () => {
+            const next = { ...selectedPermissions };
+            if (allGroupSelected) {
+              group.permissions.forEach(p => next[p.id] = false);
+            } else {
+              group.permissions.forEach(p => next[p.id] = true);
+            }
+            onChange(next);
+          };
           
           return (
             <div key={group.title} className="border border-slate-200 rounded-xl overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setExpandedGroup(isExpanded ? null : group.title)}
-                className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors bg-slate-50/50"
-              >
-                <div className="flex items-center gap-3">
+              <div className="w-full flex items-center justify-between p-3 bg-slate-50/50 border-b border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setExpandedGroup(isExpanded ? null : group.title)}
+                  className="flex-1 flex items-center gap-3 hover:opacity-75 transition-opacity text-left"
+                >
                   <h4 className="text-xs font-black uppercase tracking-widest text-slate-700">{group.title}</h4>
                   <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{groupCount}/{group.permissions.length}</span>
-                </div>
-                <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-              </button>
+                  <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ml-auto ${isExpanded ? 'rotate-180' : ''}`} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleToggleGroup}
+                  className="ml-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/15 transition-all border border-primary/20"
+                  title={allGroupSelected ? 'Deselect all' : 'Select all'}
+                >
+                  {allGroupSelected ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+                  <span className="hidden sm:inline">{allGroupSelected ? 'All' : 'None'}</span>
+                </button>
+              </div>
               
               {isExpanded && (
                 <div className="border-t border-slate-200 p-3 space-y-2 bg-white">
@@ -502,7 +522,7 @@ const AdminUsersPage = () => {
 
       {/* Add Modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Add New Admin</h2>
@@ -584,7 +604,7 @@ const AdminUsersPage = () => {
 
       {/* Edit Modal */}
       {editModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Edit Admin</h2>
@@ -614,9 +634,9 @@ const AdminUsersPage = () => {
                       defaultCountry="IN"
                       value={editForm.phone}
                       onChange={val => setEditForm({...editForm, phone: val || ''})}
-                      className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all outline-none"
+                      className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
                       numberInputProps={{
-                        className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800",
+                        className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800 font-medium",
                         placeholder: "Enter phone number"
                       }}
                     />
@@ -664,7 +684,7 @@ const AdminUsersPage = () => {
 
       {/* Reset Password Modal */}
       {resetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-2">Reset Password</h2>
             <p className="text-sm text-slate-500 mb-6">Updating password for <span className="font-bold text-primary">{resetModal.full_name}</span></p>
