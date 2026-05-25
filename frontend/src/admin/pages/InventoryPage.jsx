@@ -59,12 +59,12 @@ const InventoryPage = () => {
     return cached?.data?.metrics || null;
   });
 
-  const requestFilters = () => ({
+  const requestFilters = useCallback(() => ({
     search,
     category: categoryFilter !== 'all' ? categoryFilter : undefined,
     is_active: activeFilter === 'all' ? undefined : activeFilter === 'active',
     stock: stockFilter === 'all' ? undefined : stockFilter === 'in' ? 'in' : 'out',
-  });
+  }), [search, categoryFilter, activeFilter, stockFilter]);
 
   const load = useCallback(async (pageNum = 1) => {
     const params = { ...requestFilters(), page: pageNum, limit: ITEMS_PER_PAGE };
@@ -85,7 +85,7 @@ const InventoryPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, categoryFilter, activeFilter, stockFilter]);
+  }, [search, categoryFilter, activeFilter, stockFilter, requestFilters]);
 
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
@@ -110,7 +110,7 @@ const InventoryPage = () => {
     } catch {
       // Ignore background errors
     }
-  }, [search, categoryFilter, activeFilter, stockFilter]);
+  }, [search, categoryFilter, activeFilter, stockFilter, requestFilters]);
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -126,7 +126,7 @@ const InventoryPage = () => {
       load(1);
     }, 100);
     return () => clearTimeout(timer);
-  }, [search, categoryFilter, activeFilter, stockFilter, load]);
+  }, [search, categoryFilter, activeFilter, stockFilter, load, requestFilters]);
 
   useEffect(() => {
     fetchCategories();

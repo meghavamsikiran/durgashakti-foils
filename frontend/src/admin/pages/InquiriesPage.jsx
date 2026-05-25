@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, Filter } from 'lucide-react';
 import AdminTable from '../components/AdminTable';
 import apiClient from '../../services/core/apiClient';
@@ -28,7 +28,7 @@ const InquiriesPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState(null);
 
-  const loadInquiries = async (pageNum = 1) => {
+  const loadInquiries = useCallback(async (pageNum = 1) => {
     const params = {
       page: pageNum,
       limit: PAGE_SIZE,
@@ -50,9 +50,9 @@ const InquiriesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, dateFilter]);
 
-  const loadInquiriesSilent = async (pageNum = 1) => {
+  const loadInquiriesSilent = useCallback(async (pageNum = 1) => {
     try {
       const params = {
         page: pageNum,
@@ -70,12 +70,12 @@ const InquiriesPage = () => {
     } catch (err) {
       // Ignore background errors
     }
-  };
+  }, [statusFilter, dateFilter]);
 
   useEffect(() => {
     loadInquiries();
     loadInquiriesSilent();
-  }, [statusFilter, dateFilter]);
+  }, [loadInquiries, loadInquiriesSilent]);
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {

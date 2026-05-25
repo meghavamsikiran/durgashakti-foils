@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Ticket, Plus, Search, Edit2, Trash2, Settings, 
   Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone, Sparkles, Copy, Star, UserCheck, Filter
@@ -564,7 +564,7 @@ const CouponsPage = () => {
     is_active: true
   });
 
-  const fetchCouponsAndSettings = async () => {
+  const fetchCouponsAndSettings = useCallback(async () => {
     setLoading(true);
     try {
       const [couponsData, settingsData, adminSettingsRes, loyalCustomerData, analyticsData] = await Promise.all([
@@ -596,9 +596,9 @@ const CouponsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, dateFilter]);
 
-  const loadCoupons = async () => {
+  const loadCoupons = useCallback(async () => {
     setLoading(true);
     try {
       const couponsData = await couponService.getCoupons({
@@ -612,15 +612,15 @@ const CouponsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, dateFilter]);
 
   useEffect(() => {
     fetchCouponsAndSettings();
-  }, []);
+  }, [fetchCouponsAndSettings]);
 
   useEffect(() => {
     loadCoupons();
-  }, [statusFilter, dateFilter]);
+  }, [loadCoupons]);
 
   useEffect(() => {
     if (!isModalOpen) return;

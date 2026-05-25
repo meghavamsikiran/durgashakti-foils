@@ -94,14 +94,14 @@ const ProductsPage = () => {
     return cached?.data?.total || 0;
   });
 
-  const requestFilters = () => ({
+  const requestFilters = useCallback(() => ({
     page: undefined,
     limit: undefined,
     search,
     category: categoryFilter !== 'all' ? categoryFilter : undefined,
     is_active: activeFilter === 'all' ? undefined : activeFilter === 'active',
     stock: stockFilter === 'all' ? undefined : stockFilter === 'in' ? 'in' : 'out',
-  });
+  }), [search, categoryFilter, activeFilter, stockFilter]);
 
   const fetchRows = useCallback(async (pageNum = 1) => {
     const params = { ...requestFilters(), page: pageNum, limit: ITEMS_PER_PAGE };
@@ -122,7 +122,7 @@ const ProductsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, categoryFilter, activeFilter, stockFilter]);
+  }, [search, categoryFilter, activeFilter, stockFilter, requestFilters]);
 
   const fetchRowsSilent = useCallback(async (pageNum = 1) => {
     try {
@@ -133,7 +133,7 @@ const ProductsPage = () => {
     } catch (err) {
       // Ignore background errors
     }
-  }, [search, categoryFilter, activeFilter, stockFilter]);
+  }, [search, categoryFilter, activeFilter, stockFilter, requestFilters]);
 
   const fetchCategories = useCallback(async () => {
     try {
