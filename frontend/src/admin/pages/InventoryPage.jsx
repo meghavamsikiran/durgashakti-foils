@@ -65,7 +65,7 @@ const InventoryPage = () => {
     search,
     category: categoryFilter !== 'all' ? categoryFilter : undefined,
     is_active: activeFilter === 'all' ? undefined : activeFilter === 'active',
-    stock: stockFilter === 'all' ? undefined : stockFilter === 'in' ? 'in' : 'out',
+    stock: stockFilter === 'all' ? undefined : stockFilter === 'in' ? 'in' : stockFilter === 'out' ? 'out' : stockFilter === 'low' ? 'low' : undefined,
   }), [search, categoryFilter, activeFilter, stockFilter]);
 
   const load = useCallback(async (pageNum = 1) => {
@@ -128,7 +128,9 @@ const InventoryPage = () => {
       load(1);
     }, 100);
     return () => clearTimeout(timer);
-  }, [search, categoryFilter, activeFilter, stockFilter, load, requestFilters]);
+    // Only refresh immediately on search changes; filters apply when the user clicks Apply.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   useEffect(() => {
     fetchCategories();
@@ -229,6 +231,7 @@ const InventoryPage = () => {
                     <option value="all">All Stock</option>
                     <option value="in">In Stock</option>
                     <option value="out">Out of Stock</option>
+                    <option value="low">Low Stock</option>
                   </select>
                   <div className="flex justify-between gap-2 pt-2">
                     <button

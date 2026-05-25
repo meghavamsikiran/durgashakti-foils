@@ -65,6 +65,8 @@ async def get_admin_products(
             q = q.where(ProductModel.in_stock == True)
         elif s == 'out':
             q = q.where(ProductModel.in_stock == False)
+        elif s == 'low':
+            q = q.where(and_(ProductModel.stock_quantity <= ProductModel.low_stock_threshold, ProductModel.stock_quantity > 0))
 
     offset = (page - 1) * limit
     result = await db.execute(
@@ -89,6 +91,8 @@ async def get_admin_products(
                 fallback_q = fallback_q.where(ProductModel.in_stock == True)
             elif s == 'out':
                 fallback_q = fallback_q.where(ProductModel.in_stock == False)
+            elif s == 'low':
+                fallback_q = fallback_q.where(and_(ProductModel.stock_quantity <= ProductModel.low_stock_threshold, ProductModel.stock_quantity > 0))
         total = (await db.execute(fallback_q)).scalar() or 0
 
     products = [row_to_dict(row[0]) for row in rows]

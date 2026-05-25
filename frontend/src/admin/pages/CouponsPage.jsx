@@ -513,6 +513,7 @@ const CouponsPage = () => {
   const [loyalCustomerSearch, setLoyalCustomerSearch] = useState('');
   const [loyalCustomerLoading, setLoyalCustomerLoading] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [productSearchQuery, setProductSearchQuery] = useState('');
   const [productSearchResults, setProductSearchResults] = useState([]);
   const [couponAnalytics, setCouponAnalytics] = useState(null);
 
@@ -2144,13 +2145,17 @@ const CouponsPage = () => {
                         <div>
                           <p className="text-xs font-black text-slate-500 uppercase tracking-wider mb-2">Products</p>
                           <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                             <input
-                              type="search"
+                              type="text"
+                              value={productSearchQuery}
+                              autoComplete="off"
                               className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-bold text-slate-900 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
                               placeholder="Search products by name or SKU"
                               onChange={(e) => {
-                                const q = e.target.value.trim();
+                                const raw = e.target.value;
+                                setProductSearchQuery(raw);
+                                const q = raw.trim();
                                 if (q.length >= 2) {
                                   adminService.getProducts({ search: q, limit: 50 }).then(res => {
                                     setProductSearchResults((res.data?.items || []).slice(0, 50));
