@@ -22,28 +22,33 @@ function toISODateEnd(d) {
   return dt.toISOString();
 }
 
+function toISODate(d) {
+  const dt = new Date(d);
+  dt.setHours(0, 0, 0, 0);
+  return dt.toISOString();
+}
+
 function rangeForPreset(key) {
   const now = new Date();
   const start = new Date();
-  const end = new Date();
   switch (key) {
     case 'today':
       return { start: toISODateStart(now), end: toISODateEnd(now) };
     case 'last7':
       start.setDate(now.getDate() - 6);
-      return { start: toISODate(start), end: toISODate(now) };
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
     case 'thisWeek': {
       const day = now.getDay();
       const diff = now.getDate() - day + (day === 0 ? -6 : 1); // monday as start
       start.setDate(diff);
-      return { start: toISODate(start), end: toISODate(now) };
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
     }
     case 'thisMonth':
       start.setDate(1);
-      return { start: toISODate(start), end: toISODate(now) };
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
     case 'thisYear':
       start.setMonth(0, 1);
-      return { start: toISODate(start), end: toISODate(now) };
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
     default:
       return null;
   }
@@ -52,7 +57,11 @@ function rangeForPreset(key) {
 const DateFilterPopover = ({ onChange, initial }) => {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState((initial && initial.label) || '');
-  const [custom, setCustom] = useState({ start: '', end: '' });
+  const [selected, setSelected] = useState((initial && initial.label) || '');
+  const [custom, setCustom] = useState({
+    start: initial?.label === 'custom' ? (initial.start_date || '').slice(0, 10) : '',
+    end: initial?.label === 'custom' ? (initial.end_date || '').slice(0, 10) : ''
+  });
   const ref = useRef();
 
   useEffect(() => {
@@ -64,28 +73,36 @@ const DateFilterPopover = ({ onChange, initial }) => {
   }, []);
 
   const applyPreset = (key) => {
-    setActive(key);
+    setSelected(key);
     if (key === 'custom') {
       setOpen(true);
       return;
     }
-    const r = rangeForPreset(key);
-    if (r && onChange) onChange({ start_date: r.start, end_date: r.end, label: key });
-    setOpen(false);
+    setOpen(true);
   };
 
-  const applyCustom = () => {
-    if (!custom.start || !custom.end) return;
-    const s = new Date(custom.start);
-    const e = new Date(custom.end);
-    if (s > e) return;
-    if (onChange) onChange({ start_date: toISODateStart(s), end_date: toISODateEnd(e), label: 'custom' });
-    setActive('custom');
+  const applySelected = () => {
+    if (!selected) return;
+    if (selected === 'custom') {
+      if (!custom.start || !custom.end) return;
+      const s = new Date(custom.start);
+      const e = new Date(custom.end);
+      if (s > e) return;
+      if (onChange) onChange({ start_date: toISODateStart(s), end_date: toISODateEnd(e), label: 'custom' });
+      setActive('custom');
+      setOpen(false);
+      return;
+    }
+
+    const r = rangeForPreset(selected);
+    if (r && onChange) onChange({ start_date: r.start, end_date: r.end, label: selected });
+    setActive(selected);
     setOpen(false);
   };
 
   const clear = () => {
     setActive('');
+    setSelected('');
     setCustom({ start: '', end: '' });
     if (onChange) onChange(null);
     setOpen(false);
@@ -111,7 +128,15 @@ const DateFilterPopover = ({ onChange, initial }) => {
               <Calendar className="w-4 h-4 text-primary" />
               <div className="text-sm font-black">Date Range</div>
             </div>
-            <button onClick={clear} className="text-slate-400 hover:text-slate-700"><X className="w-4 h-4" /></button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={clear}
+                className="px-3 py-1 rounded-full border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest hover:bg-slate-50"
+              >
+                Clear
+              </button>
+              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700"><X className="w-4 h-4" /></button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -119,7 +144,7 @@ const DateFilterPopover = ({ onChange, initial }) => {
               <button
                 key={p.key}
                 onClick={() => applyPreset(p.key)}
-                className={`px-3 py-2 rounded-lg text-sm font-semibold text-left ${active === p.key ? 'bg-primary text-white' : 'bg-slate-50 text-slate-700'}`}
+                className={`px-3 py-2 rounded-lg text-sm font-semibold text-left ${selected === p.key ? 'bg-primary text-white' : 'bg-slate-50 text-slate-700'}`}
               >
                 {p.label}
               </button>
@@ -127,13 +152,17 @@ const DateFilterPopover = ({ onChange, initial }) => {
           </div>
 
           <div className="mt-3">
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Start</label>
-            <input type="date" value={custom.start} onChange={(e) => setCustom({ ...custom, start: e.target.value })} className="w-full mt-1 p-2 rounded-lg border border-slate-200" />
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-2 block">End</label>
-            <input type="date" value={custom.end} onChange={(e) => setCustom({ ...custom, end: e.target.value })} className="w-full mt-1 p-2 rounded-lg border border-slate-200" />
+            {selected === 'custom' && (
+              <>
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Start</label>
+                <input type="date" value={custom.start} onChange={(e) => setCustom({ ...custom, start: e.target.value })} className="w-full mt-1 p-2 rounded-lg border border-slate-200" />
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-2 block">End</label>
+                <input type="date" value={custom.end} onChange={(e) => setCustom({ ...custom, end: e.target.value })} className="w-full mt-1 p-2 rounded-lg border border-slate-200" />
+              </>
+            )}
             <div className="flex justify-end gap-2 mt-3">
               <button onClick={() => setOpen(false)} className="px-3 py-2 rounded-lg border border-slate-200">Cancel</button>
-              <button onClick={applyCustom} className="px-3 py-2 rounded-lg bg-primary text-white">Apply</button>
+              <button onClick={applySelected} className="px-3 py-2 rounded-lg bg-primary text-white">Apply</button>
             </div>
           </div>
         </div>
