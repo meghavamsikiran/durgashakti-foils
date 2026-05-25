@@ -7,16 +7,10 @@ import settingsService from '../services/settings.service';
 const POPUP_VISIBLE_MS = 8000;
 const POPUP_SESSION_PREFIX = 'ds_popup_banner_shown';
 
-const isCustomerUser = (user) => {
-  if (!user) return false;
-  return user.role !== 'admin' && user.role !== 'SUPER_ADMIN';
-};
-
-const getBannerPlacement = (path, user) => {
-  const customerLoggedIn = isCustomerUser(user);
+const getBannerPlacement = (path) => {
   if (path === '/checkout') return 'checkout';
-  if (path === '/shop' && customerLoggedIn) return 'shop';
-  if (path === '/' && !customerLoggedIn) return 'landing';
+  if (path === '/shop') return 'shop';
+  if (path === '/') return 'landing';
   return null;
 };
 
@@ -231,7 +225,7 @@ const PopupBanner = () => {
       setShow(false);
     }
 
-    // Rule 1: Logged-in customer shop page -> show once per session.
+    // Rule 1: Shop page -> show once per session.
     if (placement === 'shop' && !loginShownRef.current && !alreadyShownThisSession) {
       loginShownRef.current = 'shown';
       timerTriggerTypeRef.current = 'login';
