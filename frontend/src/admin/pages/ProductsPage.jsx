@@ -137,10 +137,15 @@ const ProductsPage = () => {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await adminService.getPublicCategories();
+      const response = await adminService.getCategories();
       setCategories(response.data || []);
     } catch (err) {
-      toast.error('Failed to load categories');
+      try {
+        const fallback = await adminService.getPublicCategories();
+        setCategories(fallback.data || []);
+      } catch {
+        toast.error('Failed to load categories');
+      }
     }
   }, []);
 
@@ -269,6 +274,10 @@ const ProductsPage = () => {
     if (!form.name.trim() || !form.description.trim() || !form.category) {
       toast.error('Name, description, and category are required'); return;
     }
+    if (categories.length > 0 && !validCategoryNames.has(form.category)) {
+      toast.error('Please select a valid category from the list');
+      return;
+    }
 
     try {
       setSaving(true);
@@ -340,10 +349,12 @@ const ProductsPage = () => {
   const filterCategoryOptions = Array.from(new Set([
     ...(categories || []).map(category => category.name).filter(Boolean),
   ]));
+  const validCategoryNames = new Set((categories || []).map(cat => cat.name).filter(Boolean));
   const categoryOptions = Array.from(new Set([
     ...filterCategoryOptions,
     form.category || DEFAULT_CATEGORY,
   ]));
+  const hasInvalidCategory = form.category && !validCategoryNames.has(form.category);
   const paginatedProducts = rows;
 
   const stats = {
@@ -534,6 +545,11 @@ const ProductsPage = () => {
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
+                {hasInvalidCategory && (
+                  <p className="text-[10px] text-amber-700 mt-1">
+                    Current category is not in the saved categories. Please choose a valid category or add it in Categories.
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1">

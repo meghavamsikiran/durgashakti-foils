@@ -455,7 +455,7 @@ const OrdersPage = () => {
       </div>
 
       {messageModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6">
             <div>
               <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
@@ -501,7 +501,7 @@ const OrdersPage = () => {
       )}
 
       {trackingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6">
             <div>
               <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Shipment Details</h3>
@@ -547,7 +547,7 @@ const OrdersPage = () => {
       )}
 
       {selectedOrderForModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] p-8 max-w-5xl w-full border border-slate-100 shadow-2xl flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-300">
 
             {/* Modal Header */}

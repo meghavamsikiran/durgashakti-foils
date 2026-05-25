@@ -58,7 +58,7 @@ const SettingsTab = ({ user, onUpdateProfile, onChangePassword }) => {
               defaultCountry="IN"
               value={profileForm.phone}
               onChange={val => setProfileForm({...profileForm, phone: val || ''})}
-              className="flex h-12 rounded-xl border border-border-subtle bg-surface focus-within:bg-surface-container-lowest focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 px-4 py-3 text-sm font-medium outline-none"
+              className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
               numberInputProps={{
                 className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
                 placeholder: "Enter phone number"

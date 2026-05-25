@@ -195,11 +195,11 @@ const PaymentsPage = () => {
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-[980px] w-full">
+          <table className="min-w-[1280px] w-full">
             <thead className="bg-slate-50/50 border-b border-slate-200">
               <tr>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider min-w-[180px]">Reference Code</th>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider min-w-[240px]">Transaction ID</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider min-w-[220px]">Reference Code</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider min-w-[320px]">Transaction ID</th>
                 <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Method</th>
                 <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Status</th>
                 <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Net Amount</th>
@@ -215,8 +215,8 @@ const PaymentsPage = () => {
                       {row.order_number}
                     </div>
                   </td>
-                  <td className="px-8 py-6 min-w-[180px]">
-                    <div className="text-xs font-mono font-bold text-slate-700 uppercase tracking-wider bg-slate-100 px-2.5 py-1.5 rounded inline-block">
+                  <td className="px-8 py-6 min-w-[320px]">
+                    <div className="text-sm font-mono font-bold text-slate-700 uppercase tracking-wider bg-slate-100 px-3 py-2 rounded inline-block whitespace-normal break-all max-w-[320px]">
                       {row.transaction_id || 'INTERNAL_RECON'}
                     </div>
                   </td>

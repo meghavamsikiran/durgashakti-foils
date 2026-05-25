@@ -21,16 +21,16 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
   
   const handleToggle = (id) => {
     if (isSuperAdmin) return;
-    const next = { ...selectedPermissions, [id]: !selectedPermissions[id] };
+    const next = { ...selectedPermissions, [id]: !Boolean(selectedPermissions[id]) };
     onChange(next);
   };
 
   const handleToggleAll = () => {
     if (isSuperAdmin) return;
-    const allSelected = allKeys.every(k => selectedPermissions[k]);
+    const allSelected = allKeys.every(k => Boolean(selectedPermissions[k]));
     const next = {};
     if (!allSelected) {
-      allKeys.forEach(k => next[k] = true);
+      allKeys.forEach(k => (next[k] = true));
     }
     onChange(next);
   };
@@ -47,7 +47,7 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
     );
   }
 
-  const allSelected = allKeys.every(k => selectedPermissions[k]);
+  const allSelected = allKeys.every(k => Boolean(selectedPermissions[k]));
 
   return (
     <div className="space-y-4">
@@ -64,8 +64,8 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
 
       <div className="space-y-2 max-h-96 overflow-y-auto">
         {PERMISSION_GROUPS.map(group => {
-          const groupCount = group.permissions.filter(p => selectedPermissions[p.id]).length;
-          const allGroupSelected = group.permissions.every(p => selectedPermissions[p.id]);
+          const groupCount = group.permissions.filter(p => Boolean(selectedPermissions[p.id])).length;
+          const allGroupSelected = group.permissions.every(p => Boolean(selectedPermissions[p.id]));
           const isExpanded = expandedGroup === group.title;
           const permissionButtonText = allGroupSelected ? 'All' : groupCount === 0 ? 'None' : 'Partial';
           const permissionButtonTitle = allGroupSelected ? 'Deselect all' : groupCount === 0 ? 'Select all' : 'Select remaining';
@@ -107,6 +107,7 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
                 <div className="border-t border-slate-200 p-3 space-y-2 bg-white">
                   {group.permissions.map(perm => {
                     const checked = !!selectedPermissions[perm.id];
+                    const isSelected = Boolean(selectedPermissions[perm.id]);
                     return (
                       <div 
                         key={perm.id}
@@ -524,7 +525,7 @@ const AdminUsersPage = () => {
 
       {/* Add Modal */}
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Add New Admin</h2>
@@ -554,7 +555,7 @@ const AdminUsersPage = () => {
                       defaultCountry="IN"
                       value={form.phone}
                       onChange={val => setForm({...form, phone: val || ''})}
-                      className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
+                      className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
                       numberInputProps={{
                         className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800 font-medium",
                         placeholder: "Enter phone number"
@@ -606,7 +607,7 @@ const AdminUsersPage = () => {
 
       {/* Edit Modal */}
       {editModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Edit Admin</h2>
@@ -636,7 +637,7 @@ const AdminUsersPage = () => {
                       defaultCountry="IN"
                       value={editForm.phone}
                       onChange={val => setEditForm({...editForm, phone: val || ''})}
-                      className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
+                      className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
                       numberInputProps={{
                         className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800 font-medium",
                         placeholder: "Enter phone number"
@@ -686,7 +687,7 @@ const AdminUsersPage = () => {
 
       {/* Reset Password Modal */}
       {resetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-2">Reset Password</h2>
             <p className="text-sm text-slate-500 mb-6">Updating password for <span className="font-bold text-primary">{resetModal.full_name}</span></p>
@@ -707,7 +708,7 @@ const AdminUsersPage = () => {
 
       {/* Delete Admin Modal */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-slate-200">
             <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-6">
               <Trash2 className="w-8 h-8" />

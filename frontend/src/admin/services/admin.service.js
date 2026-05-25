@@ -101,7 +101,7 @@ const adminService = {
 
   // Audit Logs
   getAuditLogs: (params) => cachedGet('/admin/audit-logs', { params }),
-  exportAuditLogs: () => apiClient.get('/admin/audit-logs/export', { responseType: 'blob', timeout: 120000, silent: true }),
+  exportAuditLogs: () => apiClient.get('/admin/audit-logs/export', { responseType: 'blob', timeout: 180000, silent: true, headers: { Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' } }),
 
   // Settings
   getSettings: () => cachedGet('/admin/settings'),

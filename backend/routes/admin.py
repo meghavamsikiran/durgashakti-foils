@@ -102,6 +102,11 @@ async def get_admin_products(
 # ── Products (Admin) ─────────────────────────────────────────────────────
 @router.post("/admin/products")
 async def create_product(product: ProductSchema, admin: UserSchema = Depends(require_permission("create_products")), db: AsyncSession = Depends(get_db)):
+    if product.category:
+        existing_category = await db.execute(select(CategoryModel).where(CategoryModel.name == product.category))
+        if existing_category.scalar_one_or_none() is None:
+            raise HTTPException(status_code=400, detail="Category must be an existing category")
+
     p = ProductModel(
         id=product.id,
         name=product.name,
@@ -140,6 +145,11 @@ async def create_product_bulk(payload: ProductBulkCreateRequest, admin: UserSche
     existing_res = await db.execute(select(ProductModel).where(or_(ProductModel.batch_no.in_(skus), ProductModel.variant_sku.in_(skus))))
     if existing_res.first():
         raise HTTPException(status_code=400, detail="SKU already exists")
+
+    if payload.category:
+        existing_category = await db.execute(select(CategoryModel).where(CategoryModel.name == payload.category))
+        if existing_category.scalar_one_or_none() is None:
+            raise HTTPException(status_code=400, detail="Category must be an existing category")
 
     count = 0
     for v in payload.variants:
@@ -180,6 +190,11 @@ async def update_product(product_id: str, product_data: dict, admin: UserSchema 
     safe_data = {k: v for k, v in product_data.items() if k in allowed}
     if not safe_data:
         raise HTTPException(status_code=400, detail="No valid fields")
+
+    if 'category' in safe_data and safe_data['category']:
+        existing_category = await db.execute(select(CategoryModel).where(CategoryModel.name == safe_data['category']))
+        if existing_category.scalar_one_or_none() is None:
+            raise HTTPException(status_code=400, detail="Category must be an existing category")
 
     res = await db.execute(select(ProductModel).where(ProductModel.id == product_id))
     p = res.scalar_one_or_none()

@@ -69,13 +69,16 @@ const AuditLogsPage = () => {
   const handleExport = useCallback(async () => {
     try {
       const res = await adminService.exportAuditLogs();
-      const filename = res.headers?.['content-disposition']?.match(/filename\*=UTF-8''(.+)$|filename="?([^";]+)"?/)?.[1] || 'audit_logs.xlsx';
+      const contentDisposition = res.headers?.['content-disposition'] || res.headers?.['Content-Disposition'] || '';
+      const filenameMatch = contentDisposition.match(/filename\*=UTF-8''([^;\n]+)|filename="?([^";]+)"?/);
+      const filename = filenameMatch?.[1] || filenameMatch?.[2] || 'audit_logs.xlsx';
+      const safeFilename = decodeURIComponent(filename).replace(/^["']|["']$/g, '') || 'audit_logs.xlsx';
       const blob = res.data instanceof Blob ? res.data : new Blob([res.data], { type: res.headers?.['content-type'] || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.style.visibility = 'hidden';
       link.href = url;
-      link.download = filename;
+      link.download = safeFilename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -84,7 +87,7 @@ const AuditLogsPage = () => {
       console.error('Failed to download audit logs', error);
       if (error.message?.includes('timeout') || error.code === 'ECONNABORTED') {
         toast.error('The server is taking longer to respond. Please wait 30 seconds and try again.');
-      } else if (error.message?.includes('Network Error') || !navigator.onLine) {
+      } else if (error.message?.includes('Network Error') || error.message?.includes('Network') || !navigator.onLine) {
         toast.error('🌐 Live server is waking from sleep mode. Please wait 30 seconds and refresh!');
       } else {
         toast.error('Audit log download failed. Please refresh and try again.');

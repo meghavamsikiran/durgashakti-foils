@@ -65,23 +65,27 @@ export const setupInterceptors = (apiClient) => {
         });
       }
 
-      // Handle network errors - only show once per session, not repeatedly
+      // Handle network errors - only show once per page/session and avoid repeated toasts
       if (!error.config?.silent) {
         setLoading(false);
         const now = Date.now();
-        
-        // Only show cold-start warning once per session and throttle subsequent warnings
-        if (error.message === 'Network Error') {
-          // Show warning only if it hasn't been shown yet or if 5+ minutes have passed
-          if (!coldStartWarningShown && (now - lastErrorTime > 300000)) {
+        const networkError = !response && (
+          error.message?.includes('Network Error') ||
+          error.code === 'ERR_NETWORK' ||
+          error.code === 'ENOTFOUND' ||
+          error.code === 'ECONNABORTED' ||
+          !navigator.onLine
+        );
+
+        if (networkError) {
+          if (!coldStartWarningShown || now - lastErrorTime > 300000) {
             coldStartWarningShown = true;
             lastErrorTime = now;
             toast.error('🌐 Live server is waking from sleep mode. Please wait 30 seconds and refresh!', {
               duration: 8000,
             });
           }
-          // Don't spam additional error toasts for network errors
-        } else if (error.message && error.message !== 'Network Error') {
+        } else if (error.message) {
           toast.error(error.message);
         }
       }
