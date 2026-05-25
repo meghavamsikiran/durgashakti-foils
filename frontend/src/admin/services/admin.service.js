@@ -101,7 +101,7 @@ const adminService = {
 
   // Audit Logs
   getAuditLogs: (params) => cachedGet('/admin/audit-logs', { params }),
-  exportAuditLogs: () => apiClient.get('/admin/audit-logs/export', { responseType: 'blob', timeout: 120000 }),
+  exportAuditLogs: () => apiClient.get('/admin/audit-logs/export', { responseType: 'blob', timeout: 120000, silent: true }),
 
   // Settings
   getSettings: () => cachedGet('/admin/settings'),

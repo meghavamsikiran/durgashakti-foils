@@ -67,6 +67,8 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
           const groupCount = group.permissions.filter(p => selectedPermissions[p.id]).length;
           const allGroupSelected = group.permissions.every(p => selectedPermissions[p.id]);
           const isExpanded = expandedGroup === group.title;
+          const permissionButtonText = allGroupSelected ? 'All' : groupCount === 0 ? 'None' : 'Partial';
+          const permissionButtonTitle = allGroupSelected ? 'Deselect all' : groupCount === 0 ? 'Select all' : 'Select remaining';
           
           const handleToggleGroup = () => {
             const next = { ...selectedPermissions };
@@ -94,10 +96,10 @@ const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
                   type="button"
                   onClick={handleToggleGroup}
                   className="ml-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-bold text-primary bg-primary/10 hover:bg-primary/15 transition-all border border-primary/20"
-                  title={allGroupSelected ? 'Deselect all' : 'Select all'}
+                  title={permissionButtonTitle}
                 >
                   {allGroupSelected ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
-                  <span className="hidden sm:inline">{allGroupSelected ? 'All' : 'None'}</span>
+                  <span className="hidden sm:inline">{permissionButtonText}</span>
                 </button>
               </div>
               
@@ -552,9 +554,9 @@ const AdminUsersPage = () => {
                       defaultCountry="IN"
                       value={form.phone}
                       onChange={val => setForm({...form, phone: val || ''})}
-                      className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all outline-none"
+                      className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
                       numberInputProps={{
-                        className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800",
+                        className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800 font-medium",
                         placeholder: "Enter phone number"
                       }}
                     />
@@ -705,7 +707,7 @@ const AdminUsersPage = () => {
 
       {/* Delete Admin Modal */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-slate-200">
             <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-6">
               <Trash2 className="w-8 h-8" />

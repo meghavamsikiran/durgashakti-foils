@@ -119,7 +119,11 @@ const AddressStep = ({
                   defaultCountry="IN"
                   value={shippingInfo.phone}
                   onChange={val => onSetShippingInfo(prev => ({ ...prev, phone: val || '' }))}
-                  className="flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all"
+                  className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none font-medium"
+                  numberInputProps={{
+                    className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
+                    placeholder: "Enter phone number"
+                  }}
                 />
               </div>
             </div>

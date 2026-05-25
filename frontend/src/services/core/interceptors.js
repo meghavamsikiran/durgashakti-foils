@@ -1,6 +1,9 @@
 import { toast } from 'sonner';
 import { setLoading } from './loadingState';
 
+let coldStartWarningShown = false;
+let lastErrorTime = 0;
+
 export const setupInterceptors = (apiClient) => {
   // Request Interceptor
   apiClient.interceptors.request.use(
@@ -21,6 +24,7 @@ export const setupInterceptors = (apiClient) => {
   apiClient.interceptors.response.use(
     (response) => {
       if (!response.config?.silent) setLoading(false);
+      coldStartWarningShown = false;
       return response;
     },
     (error) => {
@@ -33,8 +37,6 @@ export const setupInterceptors = (apiClient) => {
           if (!isAuthPage) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            // We could trigger a redirect here, but better to let the AuthContext handle it
-            // window.location.href = '/login';
           }
         }
 
@@ -63,14 +65,23 @@ export const setupInterceptors = (apiClient) => {
         });
       }
 
-      // Handle network errors
+      // Handle network errors - only show once per session, not repeatedly
       if (!error.config?.silent) {
         setLoading(false);
+        const now = Date.now();
+        
+        // Only show cold-start warning once per session and throttle subsequent warnings
         if (error.message === 'Network Error') {
-          toast.error('🌐 Live server is spin-up waking from sleep mode. Please wait 30 seconds and refresh!', {
-            duration: 12000,
-          });
-        } else {
+          // Show warning only if it hasn't been shown yet or if 5+ minutes have passed
+          if (!coldStartWarningShown && (now - lastErrorTime > 300000)) {
+            coldStartWarningShown = true;
+            lastErrorTime = now;
+            toast.error('🌐 Live server is waking from sleep mode. Please wait 30 seconds and refresh!', {
+              duration: 8000,
+            });
+          }
+          // Don't spam additional error toasts for network errors
+        } else if (error.message && error.message !== 'Network Error') {
           toast.error(error.message);
         }
       }

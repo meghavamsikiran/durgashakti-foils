@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func, or_, and_, String
 from typing import Optional, List
+from urllib.parse import quote
 from database import get_db
 from models import (
     ProductModel, OrderModel, UserModel, SettingModel,
@@ -1356,4 +1357,10 @@ async def export_audit_logs(admin: UserSchema = Depends(require_permission("view
     out.seek(0)
 
     filename = f"audit_logs_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.xlsx"
-    return StreamingResponse(out, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+    headers = {
+        "Content-Disposition": (
+            f'attachment; filename="{filename}"; '
+            f"filename*=UTF-8''{quote(filename)}"
+        )
+    }
+    return StreamingResponse(out, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)

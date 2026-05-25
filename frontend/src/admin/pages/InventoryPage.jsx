@@ -389,7 +389,7 @@ const InventoryPage = () => {
       </div>
 
       {adjustModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200 scale-in-center overflow-hidden">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Update Stock Quantity</h2>

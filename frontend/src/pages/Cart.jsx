@@ -428,7 +428,7 @@ const Cart = () => {
       {/* Remove Item Confirmation Modal */}
       <AnimatePresence>
         {removingProductId && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setRemovingProductId(null)}>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur z-50 flex items-center justify-center p-4" onClick={() => setRemovingProductId(null)}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

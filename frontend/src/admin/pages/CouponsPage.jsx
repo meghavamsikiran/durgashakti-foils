@@ -2032,7 +2032,7 @@ const CouponsPage = () => {
 
       {/* Modal - Create/Edit */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm transition-all duration-300">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black/50 p-4 backdrop-blur transition-all duration-300">
           <div className="bg-white rounded-3xl border border-border-subtle shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto font-inter">
             <div className="p-6 border-b border-border-subtle flex items-center justify-between">
               <h3 className="text-xl font-black text-ink-slate flex items-center gap-2 uppercase tracking-wide">

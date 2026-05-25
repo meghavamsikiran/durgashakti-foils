@@ -182,7 +182,11 @@ const Login = () => {
                     value={phone}
                     onChange={setPhone}
                     data-testid="register-phone-input"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:border-primary transition-all outline-none font-medium"
+                    numberInputProps={{
+                      className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
+                      placeholder: "Enter phone number"
+                    }}
                   />
                 </div>
               </>

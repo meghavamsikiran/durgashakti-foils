@@ -227,7 +227,11 @@ const Contact = () => {
                         defaultCountry="IN"
                         value={formData.phone}
                         onChange={(val) => setFormData({ ...formData, phone: val || '' })}
-                        className="flex h-12 w-full rounded-lg border border-border-subtle bg-white px-4 py-2 text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none" 
+                        className="flex h-12 w-full rounded-xl border border-border-subtle bg-white px-4 py-3 text-sm font-medium focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none" 
+                        numberInputProps={{
+                          className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
+                          placeholder: "Enter phone number"
+                        }}
                       />
                     </div>
                     
@@ -358,7 +362,7 @@ const Contact = () => {
 
       {/* ── TERMS AND CONDITIONS MODAL ───────────────────────────────────── */}
       {showTermsModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-lg w-full max-h-[80vh] overflow-y-auto p-8 shadow-2xl border border-slate-100 flex flex-col space-y-6">
             <div className="flex justify-between items-center border-b pb-4">
               <h3 className="text-xl font-extrabold text-slate-900" style={{ fontFamily: 'Manrope, sans-serif' }}>

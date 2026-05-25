@@ -128,7 +128,11 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
                 value={addressForm.phone}
                 onChange={val => setAddressForm({...addressForm, phone: val || ''})}
                 displayInitialValueAsLocalNumber={false}
-                className="flex h-12 w-full rounded-lg border border-border-subtle bg-surface px-4 py-2 text-sm font-medium placeholder:text-muted-foreground focus-within:bg-surface-container-lowest focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all outline-none"
+                className="flex h-12 w-full rounded-xl border border-border-subtle bg-surface px-4 py-3 text-sm font-medium placeholder:text-muted-foreground focus-within:bg-surface-container-lowest focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all outline-none"
+                numberInputProps={{
+                  className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
+                  placeholder: "Enter phone number"
+                }}
               />
             </div>
           </div>
