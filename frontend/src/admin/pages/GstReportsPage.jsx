@@ -79,7 +79,7 @@ const GstrReportsPage = () => {
       link.href = url;
       
       const dateStr = new Date().toISOString().slice(0, 10);
-      link.download = `GSTR1_${dateStr}.${format}`;
+      link.download = `GSTR1_${dateStr}.${format === 'excel' ? 'xlsx' : format}`;
       
       document.body.appendChild(link);
       updateProgress(pid, { progress: 85, message: 'Downloading file...' });
@@ -280,7 +280,8 @@ const GstrReportsPage = () => {
                   'Taxable Value & HSN Codes',
                   'CGST, SGST, IGST Breakdown',
                   'Customer Name & Invoice Dates',
-                  'Verified Customer GSTIN Column',
+                  'Seller GSTIN Column',
+                  'Transaction ID included per order',
                   'Tax Rate Details (Auto 18%)',
                   'Shipping, COD & Discount Values',
                   'Invoice Totals & Payment Methods',

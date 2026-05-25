@@ -1144,7 +1144,8 @@ async def export_gstr1(
                 "Invoice Date": invoice_date,
                 "Order Number": order.get("order_number"),
                 "Customer Name": order.get("customer_name") or addr.get("full_name"),
-                "Customer GSTIN": addr.get("gstin") or addr.get("gstin_number") or addr.get("gst_number") or "",
+                "Seller GSTIN": "36AALCD9777D1Z5",
+                "Transaction ID": str(order.get("transaction_id") or ""),
                 "Place of Supply": place,
                 "Product": item.get("product_name") or item.get("name"),
                 "HSN": item.get("hsn") or item.get("hsn_code") or "76071991",
@@ -1165,7 +1166,7 @@ async def export_gstr1(
     df = pd.DataFrame(rows)
     if df.empty:
         df = pd.DataFrame(columns=[
-            "Invoice Number", "Invoice Date", "Order Number", "Customer Name", "Customer GSTIN",
+            "Invoice Number", "Invoice Date", "Order Number", "Customer Name", "Seller GSTIN", "Transaction ID",
             "Place of Supply", "Product", "HSN", "Quantity", "Tax Rate", "Taxable Value",
             "CGST", "SGST", "IGST", "Invoice Discount", "Shipping Charges", "COD Charges",
             "Invoice Total", "Payment Mode", "Payment Status"
