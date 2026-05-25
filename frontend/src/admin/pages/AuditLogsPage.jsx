@@ -82,7 +82,13 @@ const AuditLogsPage = () => {
       setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     } catch (error) {
       console.error('Failed to download audit logs', error);
-      toast.error('Audit log download failed. Please refresh and try again.');
+      if (error.message?.includes('timeout') || error.code === 'ECONNABORTED') {
+        toast.error('The server is taking longer to respond. Please wait 30 seconds and try again.');
+      } else if (error.message?.includes('Network Error') || !navigator.onLine) {
+        toast.error('🌐 Live server is waking from sleep mode. Please wait 30 seconds and refresh!');
+      } else {
+        toast.error('Audit log download failed. Please refresh and try again.');
+      }
     }
   }, []);
 
