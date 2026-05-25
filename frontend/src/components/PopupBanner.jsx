@@ -7,10 +7,16 @@ import settingsService from '../services/settings.service';
 const POPUP_VISIBLE_MS = 8000;
 const POPUP_SESSION_PREFIX = 'ds_popup_banner_shown';
 
+const isCustomerUser = (user) => {
+  if (!user) return false;
+  return user.role !== 'admin' && user.role !== 'SUPER_ADMIN';
+};
+
 const getBannerPlacement = (path, user) => {
+  const customerLoggedIn = isCustomerUser(user);
   if (path === '/checkout') return 'checkout';
-  if (path === '/shop' && user) return 'shop';
-  if (path === '/' && !user) return 'landing';
+  if (path === '/shop' && customerLoggedIn) return 'shop';
+  if (path === '/' && !customerLoggedIn) return 'landing';
   return null;
 };
 
@@ -29,6 +35,16 @@ const getBannerSessionKey = (banner, placement, user) => {
   const audience = placement === 'shop' ? (user?.id || user?.email || 'customer') : 'guest';
   return `${POPUP_SESSION_PREFIX}:${bannerId}:${placement}:${audience}`;
 };
+
+const getFallbackCoupons = (banner) => (
+  (banner?.coupon_codes || []).map(code => ({
+    code,
+    is_active: true,
+    discount_type: 'special',
+    discount_value: null,
+    expiry_date: null
+  }))
+);
 
 // Helper to parse coupon from scrolling banner text if needed
 const parseCouponFromScrollingText = (bannerText, timerEnabled, timerTarget) => {
@@ -65,6 +81,29 @@ const PopupBanner = () => {
   const prevUserRef = useRef(user);
   const timerTriggerTypeRef = useRef(null);
   const loggedOutRef = useRef(false);
+  const shownSessionKeysRef = useRef(new Set());
+
+  const hasShownThisSession = (sessionKey) => {
+    if (!sessionKey) return false;
+    if (shownSessionKeysRef.current.has(sessionKey)) return true;
+
+    try {
+      return window.sessionStorage?.getItem(sessionKey) === 'true';
+    } catch {
+      return false;
+    }
+  };
+
+  const markShownThisSession = (sessionKey) => {
+    if (!sessionKey) return;
+    shownSessionKeysRef.current.add(sessionKey);
+
+    try {
+      window.sessionStorage?.setItem(sessionKey, 'true');
+    } catch {
+      // In privacy-restricted or embedded browsers, the in-memory Set still prevents repeats.
+    }
+  };
 
   // Load public settings to fetch promoted coupons and custom themes
   useEffect(() => {
@@ -84,7 +123,9 @@ const PopupBanner = () => {
 
         let selectedCoupons = [];
         if (activeThemeForPage) {
-          selectedCoupons = activeThemeForPage.linked_coupons || [];
+          selectedCoupons = (activeThemeForPage.linked_coupons?.length
+            ? activeThemeForPage.linked_coupons
+            : getFallbackCoupons(activeThemeForPage));
         } else if (!activeTheme) {
           // Preserve the older promoted-coupon popup behavior when no custom template is active.
           selectedCoupons = data.popup_banner?.promoted_coupons || [];
@@ -162,7 +203,7 @@ const PopupBanner = () => {
     const placement = getBannerPlacement(path, user);
     const sessionKey = placement ? getBannerSessionKey(activeTheme, placement, user) : null;
     const alreadyShownThisSession = placement !== 'checkout' && sessionKey
-      ? sessionStorage.getItem(sessionKey) === 'true'
+      ? hasShownThisSession(sessionKey)
       : false;
 
     if (timerRef.current && isLoginTimerRunning && placement !== 'shop') {
@@ -190,25 +231,22 @@ const PopupBanner = () => {
       setShow(false);
     }
 
-    // Rule 1: Logged-in shop page -> show once per session.
+    // Rule 1: Logged-in customer shop page -> show once per session.
     if (placement === 'shop' && !loginShownRef.current && !alreadyShownThisSession) {
-      loginShownRef.current = 'pending';
+      loginShownRef.current = 'shown';
       timerTriggerTypeRef.current = 'login';
-      timerRef.current = setTimeout(() => {
-        setShow(true);
-        if (sessionKey) sessionStorage.setItem(sessionKey, 'true');
-        loginShownRef.current = 'shown';
-        hideTimerRef.current = setTimeout(() => {
-          setShow(false);
-        }, POPUP_VISIBLE_MS);
-      }, 5000);
+      setShow(true);
+      markShownThisSession(sessionKey);
+      hideTimerRef.current = setTimeout(() => {
+        setShow(false);
+      }, POPUP_VISIBLE_MS);
     }
 
     // Rule 2: Logged-out landing page -> show once per session, but never immediately after logout.
     else if (placement === 'landing' && !loggedOutRef.current && !guestHomeShownRef.current && !alreadyShownThisSession) {
       guestHomeShownRef.current = true;
       setShow(true);
-      if (sessionKey) sessionStorage.setItem(sessionKey, 'true');
+      markShownThisSession(sessionKey);
       timerTriggerTypeRef.current = 'guest';
       
       hideTimerRef.current = setTimeout(() => {
@@ -382,6 +420,7 @@ const PopupBanner = () => {
               if (isPercentage) discVal = `${Number(coupon.discount_value)}% Off`;
               else if (isFlat) discVal = `₹${Number(coupon.discount_value)} Off`;
               else if (isFreeShipping) discVal = 'Free Shipping';
+              else discVal = 'Special Offer';
 
               return (
                 <div 
