@@ -85,7 +85,7 @@ const InventoryPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, categoryFilter, activeFilter, stockFilter, requestFilters]);
+  }, [requestFilters]);
 
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
@@ -110,7 +110,7 @@ const InventoryPage = () => {
     } catch {
       // Ignore background errors
     }
-  }, [search, categoryFilter, activeFilter, stockFilter, requestFilters]);
+  }, [requestFilters]);
 
   const fetchCategories = useCallback(async () => {
     try {

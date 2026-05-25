@@ -122,7 +122,7 @@ const ProductsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, categoryFilter, activeFilter, stockFilter, requestFilters]);
+  }, [requestFilters]);
 
   const fetchRowsSilent = useCallback(async (pageNum = 1) => {
     try {
@@ -133,7 +133,7 @@ const ProductsPage = () => {
     } catch (err) {
       // Ignore background errors
     }
-  }, [search, categoryFilter, activeFilter, stockFilter, requestFilters]);
+  }, [requestFilters]);
 
   const fetchCategories = useCallback(async () => {
     try {
