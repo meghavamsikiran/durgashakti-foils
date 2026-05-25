@@ -1383,13 +1383,6 @@ const CouponsPage = () => {
                   </select>
                 </div>
                 <DateFilterPopover onChange={(value) => setDateFilter(value)} initial={dateFilter} />
-                <button
-                  type="button"
-                  onClick={() => { setStatusFilter('all'); setDateFilter(null); }}
-                  className="px-3 py-2 rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 text-xs font-black uppercase tracking-widest"
-                >
-                  Clear Filters
-                </button>
               </div>
             </div>
 

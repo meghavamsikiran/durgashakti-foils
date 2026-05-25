@@ -337,11 +337,14 @@ const ProductsPage = () => {
   }, [fetchRowsSilent, page]);
 
   const totalFilteredPages = Math.ceil(total / ITEMS_PER_PAGE);
-  const paginatedProducts = rows;
-  const categoryOptions = Array.from(new Set([
+  const filterCategoryOptions = Array.from(new Set([
     ...(categories || []).map(category => category.name).filter(Boolean),
+  ]));
+  const categoryOptions = Array.from(new Set([
+    ...filterCategoryOptions,
     form.category || DEFAULT_CATEGORY,
   ]));
+  const paginatedProducts = rows;
 
   const stats = {
     fastestMover: metrics?.fastest_mover?.name || 'N/A',
@@ -395,7 +398,7 @@ const ProductsPage = () => {
                     className="w-full rounded-xl border border-slate-200 p-2 text-sm"
                   >
                     <option value="all">All Categories</option>
-                    {categoryOptions.map((cat) => (
+                    {filterCategoryOptions.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>

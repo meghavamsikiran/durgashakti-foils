@@ -54,6 +54,25 @@ function rangeForPreset(key) {
   }
 }
 
+function labelForPreset(key) {
+  switch (key) {
+    case 'today':
+      return 'Today';
+    case 'last7':
+      return 'Last 7 Days';
+    case 'thisWeek':
+      return 'This Week';
+    case 'thisMonth':
+      return 'This Month';
+    case 'thisYear':
+      return 'This Year';
+    case 'custom':
+      return 'Custom';
+    default:
+      return '';
+  }
+}
+
 const DateFilterPopover = ({ onChange, initial }) => {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState((initial && initial.label) || '');
@@ -65,20 +84,54 @@ const DateFilterPopover = ({ onChange, initial }) => {
   const ref = useRef();
 
   useEffect(() => {
+    setActive((initial && initial.label) || '');
+    setSelected((initial && initial.label) || '');
+    setCustom({
+      start: initial?.label === 'custom' ? (initial.start_date || '').slice(0, 10) : '',
+      end: initial?.label === 'custom' ? (initial.end_date || '').slice(0, 10) : ''
+    });
+  }, [initial]);
+
+  useEffect(() => {
     function onDoc(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+        setSelected(active);
+        setCustom(active === 'custom'
+          ? { start: initial?.start_date?.slice(0, 10) || '', end: initial?.end_date?.slice(0, 10) || '' }
+          : { start: '', end: '' }
+        );
+      }
     }
     document.addEventListener('click', onDoc);
     return () => document.removeEventListener('click', onDoc);
-  }, []);
+  }, [active, initial]);
+
+  useEffect(() => {
+    if (!open) return;
+    setSelected(active);
+    setCustom(active === 'custom'
+      ? { start: initial?.start_date?.slice(0, 10) || '', end: initial?.end_date?.slice(0, 10) || '' }
+      : { start: '', end: '' }
+    );
+  }, [open, active, initial]);
 
   const applyPreset = (key) => {
     setSelected(key);
-    if (key === 'custom') {
-      setOpen(true);
-      return;
-    }
     setOpen(true);
+  };
+
+  const restorePendingSelection = () => {
+    setSelected(active);
+    setCustom(active === 'custom'
+      ? { start: initial?.start_date?.slice(0, 10) || '', end: initial?.end_date?.slice(0, 10) || '' }
+      : { start: '', end: '' }
+    );
+  };
+
+  const closePopover = () => {
+    setOpen(false);
+    restorePendingSelection();
   };
 
   const applySelected = () => {
@@ -111,13 +164,13 @@ const DateFilterPopover = ({ onChange, initial }) => {
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        onClick={(e) => { e.stopPropagation(); if (open) { closePopover(); } else { setOpen(true); } }}
         className="relative inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
       >
         <Filter className="w-4 h-4 text-slate-600" />
         <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
         {active ? (
-          <span className="ml-2 inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-primary text-white text-[11px] font-semibold">{active === 'last7' ? 'Last 7 Days' : active === 'thisWeek' ? 'This Week' : active === 'thisMonth' ? 'This Month' : active === 'thisYear' ? 'This Year' : active === 'today' ? 'Today' : 'Custom'}</span>
+          <span className="ml-2 inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-primary text-white text-[11px] font-semibold">{labelForPreset(active)}</span>
         ) : null}
       </button>
 
@@ -135,7 +188,7 @@ const DateFilterPopover = ({ onChange, initial }) => {
               >
                 Clear
               </button>
-              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700"><X className="w-4 h-4" /></button>
+              <button onClick={closePopover} className="text-slate-400 hover:text-slate-700"><X className="w-4 h-4" /></button>
             </div>
           </div>
 
@@ -161,7 +214,7 @@ const DateFilterPopover = ({ onChange, initial }) => {
               </>
             )}
             <div className="flex justify-end gap-2 mt-3">
-              <button onClick={() => setOpen(false)} className="px-3 py-2 rounded-lg border border-slate-200">Cancel</button>
+              <button onClick={closePopover} className="px-3 py-2 rounded-lg border border-slate-200">Cancel</button>
               <button onClick={applySelected} className="px-3 py-2 rounded-lg bg-primary text-white">Apply</button>
             </div>
           </div>

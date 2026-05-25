@@ -4,7 +4,7 @@ import apiClient from '../../services/core/apiClient';
 import { 
   Shield, Activity, Search, ChevronDown, ChevronUp,
   Fingerprint, Clock, User, HardDrive, Filter,
-  AlertTriangle, CheckCircle2, RefreshCw, Eye
+  AlertTriangle, CheckCircle2, RefreshCw, Eye, Download
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import TablePagination from '../../components/ui/TablePagination';
@@ -65,6 +65,23 @@ const AuditLogsPage = () => {
     }
   }, [search]);
 
+  const handleExport = useCallback(async () => {
+    try {
+      const res = await adminService.exportAuditLogs();
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'audit_logs.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download audit logs', error);
+    }
+  }, []);
+
   const formatDate = (d) => {
     if (!d) return '—';
     try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
@@ -120,20 +137,10 @@ const AuditLogsPage = () => {
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
-          <Button onClick={async () => {
-            try {
-              const res = await adminService.exportAuditLogs();
-              const url = window.URL.createObjectURL(new Blob([res.data]));
-              const link = document.createElement('a');
-              link.href = url;
-              link.setAttribute('download', 'audit_logs.xlsx');
-              document.body.appendChild(link);
-              link.click();
-              link.remove();
-            } catch (e) {
-              console.error(e);
-            }
-          }} className="ml-3">Download</Button>
+          <Button variant="outline" type="button" className="rounded-xl ml-3" onClick={handleExport}>
+            <Download className="w-4 h-4 mr-2" />
+            Download
+          </Button>
         </div>
       </div>
 

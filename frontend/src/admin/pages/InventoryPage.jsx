@@ -59,6 +59,8 @@ const InventoryPage = () => {
     return cached?.data?.metrics || null;
   });
 
+  const categoryOptions = Array.from(new Set((categories || []).map(cat => cat.name).filter(Boolean)));
+
   const requestFilters = useCallback(() => ({
     search,
     category: categoryFilter !== 'all' ? categoryFilter : undefined,
@@ -204,8 +206,8 @@ const InventoryPage = () => {
                     className="w-full rounded-xl border border-slate-200 p-2 text-sm"
                   >
                     <option value="all">All Categories</option>
-                    {categories.map(cat => (
-                      <option key={cat.id || cat.name} value={cat.name}>{cat.name}</option>
+                    {categoryOptions.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
                   <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Status</label>
