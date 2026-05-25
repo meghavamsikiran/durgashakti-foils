@@ -145,6 +145,9 @@ FS = {
 }
 FS = {key: value * 0.375 * PAGE_SCALE for key, value in FS.items()}
 
+# Right column X coordinate (leave safe margin from page edge to avoid clipping in viewers)
+RIGHT_COLUMN_X = PAGE_WIDTH - 44
+
 
 def _register_font() -> tuple[str, str]:
     candidates = [
@@ -490,7 +493,7 @@ def _draw_items(c: canvas.Canvas, rows: list[dict], total_qty: int, taxable_tota
         ("Unit", _sx(474)),
         ("Price/ Unit", _sx(568)),
         ("GST", _sx(692)),
-        ("Amount", _sx(790)),
+        ("Amount", RIGHT_COLUMN_X - _sx(45)),
     ]
     for label, x in headers:
         _draw_text(c, x, _py("y19"), label, FS["fs7"] * 0.92, WHITE, FONT_BOLD, max_width=_sx(112))
@@ -510,12 +513,12 @@ def _draw_items(c: canvas.Canvas, rows: list[dict], total_qty: int, taxable_tota
         _draw_text(c, _sx(633), base_y, _money(row["price"]), FS["fs7"], DARK, FONT, align="right", max_width=_sx(95))
         gst_text = f"{_money(row['gst'])} (18%)" if row["gst"] else _money(0)
         _draw_text(c, _sx(748), base_y, gst_text, FS["fs7"], DARK, FONT, align="right", max_width=_sx(125))
-        _draw_text(c, _sx(845), base_y, _money(row["amount"]), FS["fs7"], DARK, FONT, align="right", max_width=_sx(105))
+        _draw_text(c, RIGHT_COLUMN_X, base_y, _money(row["amount"]), FS["fs7"], DARK, FONT, align="right", max_width=_sx(105))
 
     _draw_text(c, _px("xb"), _py("y21"), "Total", FS["fs7"], WHITE, FONT_BOLD)
     _draw_text(c, _sx(460), _py("y21"), str(total_qty), FS["fs7"], WHITE, FONT_BOLD, align="right")
     _draw_text(c, _sx(748), _py("y21"), _money(gst_total), FS["fs7"], WHITE, FONT_BOLD, align="right", max_width=_sx(125))
-    _draw_text(c, _sx(845), _py("y21"), _money(amount_total), FS["fs7"], WHITE, FONT_BOLD, align="right", max_width=_sx(105))
+    _draw_text(c, RIGHT_COLUMN_X, _py("y21"), _money(amount_total), FS["fs7"], WHITE, FONT_BOLD, align="right", max_width=_sx(105))
 
 
 def _draw_footer(c: canvas.Canvas, order: dict, metadata: dict, taxable_total: float, gst_total: float) -> None:
@@ -588,10 +591,10 @@ def _draw_footer(c: canvas.Canvas, order: dict, metadata: dict, taxable_total: f
         color = WHITE if label == "Total" else DARK
         font = FONT_BOLD if label == "Total" else FONT
         _draw_text(c, _px("xf"), _py(key), label, FS["fs7"], color, font, max_width=_sx(180))
-        _draw_text(c, _sx(845), _py(key), _money(value), FS["fs7"], color, font, align="right", max_width=_sx(130))
+        _draw_text(c, RIGHT_COLUMN_X, _py(key), _money(value), FS["fs7"], color, font, align="right", max_width=_sx(130))
 
     _draw_text(c, _px("xf"), _py("y2a"), "Payment Mode", FS["fs7"], DARK, FONT, max_width=_sx(180))
-    _draw_text(c, _sx(845), _py("y2a"), payment_mode, FS["fs7"], DARK, FONT, align="right", max_width=_sx(130))
+    _draw_text(c, RIGHT_COLUMN_X, _py("y2a"), payment_mode, FS["fs7"], DARK, FONT, align="right", max_width=_sx(130))
 
 
 def build_tax_invoice_pdf(order: dict, copy_label: str = "ORIGINAL FOR RECIPIENT") -> bytes:
@@ -614,8 +617,9 @@ def build_tax_invoice_pdf(order: dict, copy_label: str = "ORIGINAL FOR RECIPIENT
     # right boundary inside the page so browser/PDF viewers do not clip it.
     c.setStrokeColor(colors.Color(128 / 255, 128 / 255, 128 / 255))
     c.setLineWidth(0.55)
-    c.line(PAGE_WIDTH - 7, _py("y19") + _sx(14), PAGE_WIDTH - 7, _py("y21") - _sx(4))
-    c.line(PAGE_WIDTH - 7, _py("y3d") + _sx(10), PAGE_WIDTH - 7, _py("y2a") - _sx(6))
+    right_line_x = RIGHT_COLUMN_X + _sx(12)
+    c.line(right_line_x, _py("y19") + _sx(14), right_line_x, _py("y21") - _sx(4))
+    c.line(right_line_x, _py("y3d") + _sx(10), right_line_x, _py("y2a") - _sx(6))
 
     _draw_header(c, copy_label)
     _draw_party_blocks(c, order, invoice_no, created)

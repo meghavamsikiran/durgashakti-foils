@@ -7,6 +7,7 @@ import {
 import TablePagination from '../../components/ui/TablePagination';
 import { toast } from 'sonner';
 import PageLoader from '../../components/ui/PageLoader';
+import DateFilterPopover from '../../components/ui/DateFilterPopover';
 import apiClient from '../../services/core/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -23,6 +24,7 @@ const PaymentsPage = () => {
   });
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [dateFilter, setDateFilter] = useState(null);
   const [metrics, setMetrics] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary');
     return cached?.metrics || null;
@@ -41,6 +43,10 @@ const PaymentsPage = () => {
       setLoading(true);
     }
     try {
+      if (dateFilter && dateFilter.start_date && dateFilter.end_date) {
+        params.start_date = dateFilter.start_date;
+        params.end_date = dateFilter.end_date;
+      }
       const response = await adminService.getPayments(params);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
@@ -53,17 +59,22 @@ const PaymentsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, dateFilter]);
 
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
-      const response = await apiClient.get('/admin/payments', { params: { page: pageNum, limit: PAGE_SIZE, search }, silent: true });
+      const params = { page: pageNum, limit: PAGE_SIZE, search };
+      if (dateFilter && dateFilter.start_date && dateFilter.end_date) {
+        params.start_date = dateFilter.start_date;
+        params.end_date = dateFilter.end_date;
+      }
+      const response = await apiClient.get('/admin/payments', { params, silent: true });
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
     } catch (err) {
       // Ignore background errors
     }
-  }, [search]);
+  }, [search, dateFilter]);
 
   const formatDate = (d) => {
     if (!d) return '—';
@@ -121,6 +132,7 @@ const PaymentsPage = () => {
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
+          <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} />
         </div>
       </div>
 

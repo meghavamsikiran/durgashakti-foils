@@ -12,6 +12,7 @@ import {
 import { Button } from '../../components/ui/button';
 import { formatImageUrl } from '../../utils/api';
 import PageLoader from '../../components/ui/PageLoader';
+import DateFilterPopover from '../../components/ui/DateFilterPopover';
 import { useAuth } from '../../contexts/AuthContext';
 
 
@@ -92,6 +93,7 @@ const OrdersPage = () => {
   });
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const [dateFilter, setDateFilter] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [total, setTotal] = useState(() => {
     const cached = adminService.getCached('/admin/orders', { page: 1, limit: PAGE_SIZE, search: '' });
@@ -110,6 +112,10 @@ const OrdersPage = () => {
     const params = { page: p, limit: PAGE_SIZE, search };
     if (filter !== 'ALL') {
       params.status_filter = filter;
+    }
+    if (dateFilter && dateFilter.start_date && dateFilter.end_date) {
+      params.start_date = dateFilter.start_date;
+      params.end_date = dateFilter.end_date;
     }
     const cached = adminService.getCached('/admin/orders', params);
     if (!cached) {
@@ -130,8 +136,10 @@ const OrdersPage = () => {
   const loadSilent = useCallback(async (p = 1) => {
     try {
       const params = { page: p, limit: PAGE_SIZE, search };
-      if (filter !== 'ALL') {
-        params.status_filter = filter;
+      if (filter !== 'ALL') params.status_filter = filter;
+      if (dateFilter && dateFilter.start_date && dateFilter.end_date) {
+        params.start_date = dateFilter.start_date;
+        params.end_date = dateFilter.end_date;
       }
       const response = await apiClient.get('/admin/orders', { params, silent: true });
       const items = (response.data.items || []).map((order) => ({
@@ -143,14 +151,14 @@ const OrdersPage = () => {
     } catch (err) {
       // Ignore background errors
     }
-  }, [search, filter]);
+  }, [search, filter, dateFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       load(1);
     }, 100);
     return () => clearTimeout(timer);
-  }, [search, filter, load]);
+  }, [search, filter, load, dateFilter]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time order dashboard
   useEffect(() => {
@@ -224,7 +232,7 @@ const OrdersPage = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="relative group">
+          <div className="relative group flex items-center gap-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
               type="text"
@@ -234,6 +242,7 @@ const OrdersPage = () => {
               className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64"
             />
           </div>
+          <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} />
         </div>
       </div>
 
