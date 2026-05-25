@@ -1,5 +1,5 @@
 """Coupon Router for admin management and checkout validation."""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, delete, func
 from database import get_db
@@ -40,7 +40,8 @@ class CouponValidationRequest(BaseModel):
 
 LOYALTY_DEFAULTS = {
     "minimum_orders": 10,
-    "minimum_spend": 15000.0
+    "minimum_spend": 15000.0,
+    "criteria_mode": "either"
 }
 
 
@@ -50,9 +51,37 @@ async def get_loyalty_settings(db: AsyncSession) -> dict:
     settings = dict(LOYALTY_DEFAULTS)
     if setting and isinstance(setting.value, dict):
         settings.update(setting.value)
-    settings["minimum_orders"] = int(settings.get("minimum_orders") or LOYALTY_DEFAULTS["minimum_orders"])
-    settings["minimum_spend"] = float(settings.get("minimum_spend") or LOYALTY_DEFAULTS["minimum_spend"])
+    settings["minimum_orders"] = int(settings.get("minimum_orders") if settings.get("minimum_orders") is not None else LOYALTY_DEFAULTS["minimum_orders"])
+    settings["minimum_spend"] = float(settings.get("minimum_spend") if settings.get("minimum_spend") is not None else LOYALTY_DEFAULTS["minimum_spend"])
+    if settings.get("criteria_mode") not in {"either", "both", "orders_only", "spend_only"}:
+        settings["criteria_mode"] = "either"
     return settings
+
+
+def is_loyal_by_settings(orders_count: int, total_spent: float, settings: dict) -> bool:
+    mode = settings.get("criteria_mode", "either")
+    orders_ok = orders_count >= settings["minimum_orders"]
+    spend_ok = total_spent >= settings["minimum_spend"]
+    if mode == "orders_only":
+        return orders_ok
+    if mode == "spend_only":
+        return spend_ok
+    if mode == "both":
+        return orders_ok and spend_ok
+    return orders_ok or spend_ok
+
+
+def loyalty_having_clause(orders_expr, spend_expr, settings: dict):
+    orders_ok = orders_expr >= settings["minimum_orders"]
+    spend_ok = spend_expr >= settings["minimum_spend"]
+    mode = settings.get("criteria_mode", "either")
+    if mode == "orders_only":
+        return orders_ok
+    if mode == "spend_only":
+        return spend_ok
+    if mode == "both":
+        return and_(orders_ok, spend_ok)
+    return orders_ok | spend_ok
 
 
 async def get_customer_loyalty_stats(db: AsyncSession, user_id) -> dict:
@@ -74,7 +103,7 @@ async def get_customer_loyalty_stats(db: AsyncSession, user_id) -> dict:
     return {
         "orders_count": orders_count,
         "total_spent": round(total_spent, 2),
-        "is_loyal": orders_count >= settings["minimum_orders"] or total_spent >= settings["minimum_spend"],
+        "is_loyal": is_loyal_by_settings(orders_count, total_spent, settings),
         "criteria": settings,
     }
 
@@ -124,40 +153,46 @@ async def notify_loyalty_coupon_recipients(db: AsyncSession, coupon: CouponModel
         ))
 
 
-async def list_loyal_customer_rows(db: AsyncSession) -> list[dict]:
+async def list_loyal_customer_rows(db: AsyncSession, search: str = "", limit: int | None = None) -> list[dict]:
     settings = await get_loyalty_settings(db)
     eligible_order = and_(
         OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
         OrderModel.order_status != "cancelled",
     )
-    stats_res = await db.execute(
+    orders_expr = func.count(OrderModel.id).filter(eligible_order)
+    spend_expr = func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0)
+    q = (
         select(
             UserModel.id,
             UserModel.full_name,
             UserModel.email,
             UserModel.phone,
-            func.count(OrderModel.id).filter(eligible_order).label("orders_count"),
-            func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0).label("total_spent"),
+            orders_expr.label("orders_count"),
+            spend_expr.label("total_spent"),
         )
         .join(OrderModel, OrderModel.user_id == UserModel.id, isouter=True)
         .where(UserModel.role == "customer")
         .group_by(UserModel.id)
-        .order_by(func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0).desc())
+        .having(loyalty_having_clause(orders_expr, spend_expr, settings))
+        .order_by(spend_expr.desc())
     )
+    if search:
+        like_term = f"%{search.strip()}%"
+        q = q.where((UserModel.full_name.ilike(like_term)) | (UserModel.email.ilike(like_term)) | (UserModel.phone.ilike(like_term)))
+    if limit:
+        q = q.limit(limit)
+    stats_res = await db.execute(q)
 
     customers = []
     for row in stats_res.all():
-        orders_count = int(row.orders_count or 0)
-        total_spent = float(row.total_spent or 0)
-        if orders_count >= settings["minimum_orders"] or total_spent >= settings["minimum_spend"]:
-            customers.append({
-                "id": str(row.id),
-                "name": row.full_name or row.email,
-                "email": row.email,
-                "phone": row.phone,
-                "orders_count": orders_count,
-                "total_spent": round(total_spent, 2),
-            })
+        customers.append({
+            "id": str(row.id),
+            "name": row.full_name or row.email,
+            "email": row.email,
+            "phone": row.phone,
+            "orders_count": int(row.orders_count or 0),
+            "total_spent": round(float(row.total_spent or 0), 2),
+        })
     return customers
 
 # ── Shared Validation Logic ──────────────────────────────────────────────
@@ -435,41 +470,14 @@ async def save_coupon_settings(data: CouponSettingsUpdate, admin: UserSchema = D
 
 # ── Admin CRUD Coupon Routes ──────────────────────────────────────────────
 @router.get("/admin/coupons/loyal-customers")
-async def list_loyal_customers(admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
+async def list_loyal_customers(
+    search: str = Query("", max_length=80),
+    limit: int = Query(25, ge=1, le=100),
+    admin: UserSchema = Depends(require_permission("manage_coupons")),
+    db: AsyncSession = Depends(get_db)
+):
     settings = await get_loyalty_settings(db)
-    eligible_order = and_(
-        OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
-        OrderModel.order_status != "cancelled",
-    )
-    stats_res = await db.execute(
-        select(
-            UserModel.id,
-            UserModel.full_name,
-            UserModel.email,
-            UserModel.phone,
-            func.count(OrderModel.id).filter(eligible_order).label("orders_count"),
-            func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0).label("total_spent"),
-        )
-        .join(OrderModel, OrderModel.user_id == UserModel.id, isouter=True)
-        .where(UserModel.role == "customer")
-        .group_by(UserModel.id)
-        .order_by(func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0).desc())
-    )
-
-    customers = []
-    for row in stats_res.all():
-        orders_count = int(row.orders_count or 0)
-        total_spent = float(row.total_spent or 0)
-        is_loyal = orders_count >= settings["minimum_orders"] or total_spent >= settings["minimum_spend"]
-        if is_loyal:
-            customers.append({
-                "id": str(row.id),
-                "name": row.full_name or row.email,
-                "email": row.email,
-                "phone": row.phone,
-                "orders_count": orders_count,
-                "total_spent": round(total_spent, 2),
-            })
+    customers = await list_loyal_customer_rows(db, search=search, limit=limit)
     return {"items": customers, "criteria": settings, "total": len(customers)}
 
 
@@ -502,7 +510,7 @@ async def get_coupon_analytics(admin: UserSchema = Depends(require_permission("m
     for row in customers_res.all():
         orders_count = int(row.orders_count or 0)
         total_spent = float(row.total_spent or 0)
-        if orders_count >= settings["minimum_orders"] or total_spent >= settings["minimum_spend"]:
+        if is_loyal_by_settings(orders_count, total_spent, settings):
             active_loyal_count += 1
             if len(top_loyal) < 5:
                 top_loyal.append({

@@ -1,7 +1,7 @@
 """Admin management routes."""
 from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func, or_, String
+from sqlalchemy import select, update, delete, func, or_, and_, String
 from typing import Optional, List
 from database import get_db
 from models import (
@@ -489,7 +489,32 @@ async def list_customers(
     db: AsyncSession = Depends(get_db)
 ):
     search = sanitize_search_term(search)
-    q = select(UserModel, func.count(UserModel.id).over().label('total_count')).where(UserModel.role == "customer")
+    loyalty_res = await db.execute(select(SettingModel).where(SettingModel.key == "loyalty_settings"))
+    loyalty_setting = loyalty_res.scalar_one_or_none()
+    loyalty_config = {"minimum_orders": 10, "minimum_spend": 15000.0, "criteria_mode": "either"}
+    if loyalty_setting and isinstance(loyalty_setting.value, dict):
+        loyalty_config.update(loyalty_setting.value)
+    min_orders = int(loyalty_config.get("minimum_orders") if loyalty_config.get("minimum_orders") is not None else 10)
+    min_spend = float(loyalty_config.get("minimum_spend") if loyalty_config.get("minimum_spend") is not None else 15000.0)
+    criteria_mode = loyalty_config.get("criteria_mode") if loyalty_config.get("criteria_mode") in {"either", "both", "orders_only", "spend_only"} else "either"
+
+    eligible_order = and_(
+        OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
+        OrderModel.order_status != "cancelled",
+    )
+    orders_expr = func.count(OrderModel.id).filter(eligible_order)
+    spend_expr = func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0)
+
+    q = (
+        select(
+            UserModel,
+            orders_expr.label("orders_count"),
+            spend_expr.label("total_spent"),
+        )
+        .join(OrderModel, OrderModel.user_id == UserModel.id, isouter=True)
+        .where(UserModel.role == "customer")
+        .group_by(UserModel.id)
+    )
 
     clause = None
     if search:
@@ -502,70 +527,50 @@ async def list_customers(
         q = q.where(clause)
 
     loyal_segment = segment == "loyal"
-    offset = (page - 1) * limit
     if loyal_segment:
-        res = await db.execute(q.order_by(UserModel.created_at.desc()))
-    else:
-        res = await db.execute(q.order_by(UserModel.created_at.desc()).offset(offset).limit(limit))
+        orders_ok = orders_expr >= min_orders
+        spend_ok = spend_expr >= min_spend
+        if criteria_mode == "orders_only":
+            q = q.having(orders_ok)
+        elif criteria_mode == "spend_only":
+            q = q.having(spend_ok)
+        elif criteria_mode == "both":
+            q = q.having(and_(orders_ok, spend_ok))
+        else:
+            q = q.having(orders_ok | spend_ok)
+
+    offset = (page - 1) * limit
+    total = (await db.execute(select(func.count()).select_from(q.order_by(None).subquery()))).scalar() or 0
+    res = await db.execute(q.order_by(UserModel.created_at.desc()).offset(offset).limit(limit))
     rows = res.all()
-    
-    total = 0
-    if rows and not loyal_segment:
-        total = rows[0][1]
-    elif page > 1 and not loyal_segment:
-        fallback_q = select(func.count(UserModel.id)).where(UserModel.role == "customer")
-        if clause is not None:
-            fallback_q = fallback_q.where(clause)
-        total = (await db.execute(fallback_q)).scalar() or 0
-
-    users = [row[0] for row in rows]
-
-    loyalty_res = await db.execute(select(SettingModel).where(SettingModel.key == "loyalty_settings"))
-    loyalty_setting = loyalty_res.scalar_one_or_none()
-    loyalty_config = {"minimum_orders": 10, "minimum_spend": 15000.0}
-    if loyalty_setting and isinstance(loyalty_setting.value, dict):
-        loyalty_config.update(loyalty_setting.value)
-    min_orders = int(loyalty_config.get("minimum_orders") or 10)
-    min_spend = float(loyalty_config.get("minimum_spend") or 15000.0)
-
-    # Aggregate order counts
-    user_ids = [u.id for u in users]
-    order_stats = {}
-    if user_ids:
-        stat_res = await db.execute(
-            select(OrderModel.user_id, func.count(OrderModel.id).label('cnt'), func.sum(OrderModel.total_amount).label('tot'))
-            .where(
-                OrderModel.user_id.in_(user_ids),
-                OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
-                OrderModel.order_status != "cancelled",
-            )
-            .group_by(OrderModel.user_id)
-        )
-        for row in stat_res.all():
-            order_stats[row.user_id] = {"orders_count": row.cnt, "total_spent": float(row.tot or 0)}
 
     rows_data = []
-    for u in users:
-        st = order_stats.get(u.id, {"orders_count": 0, "total_spent": 0.0})
-        is_loyal = st["orders_count"] >= min_orders or st["total_spent"] >= min_spend
-        if segment == "loyal" and not is_loyal:
-            continue
+    for u, orders_count, total_spent in rows:
+        orders_count = int(orders_count or 0)
+        total_spent = float(total_spent or 0)
+        orders_ok = orders_count >= min_orders
+        spend_ok = total_spent >= min_spend
+        if criteria_mode == "orders_only":
+            is_loyal = orders_ok
+        elif criteria_mode == "spend_only":
+            is_loyal = spend_ok
+        elif criteria_mode == "both":
+            is_loyal = orders_ok and spend_ok
+        else:
+            is_loyal = orders_ok or spend_ok
         rows_data.append({
             "id": str(u.id),
             "name": u.full_name or "Anonymous",
             "email": u.email,
             "phone": u.phone,
             "created_at": u.created_at.isoformat(),
-            "orders_count": st["orders_count"],
-            "total_spent": round(st["total_spent"], 2),
+            "orders_count": orders_count,
+            "total_spent": round(total_spent, 2),
             "is_loyal": is_loyal,
-            "loyalty_criteria": {"minimum_orders": min_orders, "minimum_spend": min_spend}
+            "loyalty_criteria": {"minimum_orders": min_orders, "minimum_spend": min_spend, "criteria_mode": criteria_mode}
         })
-    if loyal_segment:
-        total = len(rows_data)
-        rows_data = rows_data[offset:offset + limit]
 
-    return {"items": rows_data, "total": total if not loyal_segment else total, "page": page, "limit": limit}
+    return {"items": rows_data, "total": total, "page": page, "limit": limit}
 
 
 @router.get("/admin/customers/{customer_id}")
@@ -888,7 +893,19 @@ async def adjust_inventory(product_id: str, data: dict, admin: UserSchema = Depe
 @router.get("/admin/settings")
 async def get_settings(admin: UserSchema = Depends(require_permission("manage_settings")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(SettingModel))
-    return {s.key: s.value for s in res.scalars().all()}
+    data = {s.key: s.value for s in res.scalars().all()}
+    loyalty = dict(data.get("loyalty_settings") or {})
+    data["loyalty_settings"] = {
+        "minimum_orders": int(loyalty.get("minimum_orders") if loyalty.get("minimum_orders") is not None else 10),
+        "minimum_spend": float(loyalty.get("minimum_spend") if loyalty.get("minimum_spend") is not None else 15000.0),
+        "criteria_mode": loyalty.get("criteria_mode") if loyalty.get("criteria_mode") in {"either", "both", "orders_only", "spend_only"} else "either",
+    }
+    feedback = dict(data.get("feedback_settings") or {})
+    data["feedback_settings"] = {
+        "ratings_enabled": feedback.get("ratings_enabled", True) is not False,
+        "comments_enabled": feedback.get("comments_enabled", True) is not False,
+    }
+    return data
 
 
 @router.post("/admin/settings")
@@ -945,7 +962,14 @@ async def get_public_settings(db: AsyncSession = Depends(get_db)):
             "comments_enabled": feedback.get("comments_enabled", True) is not False
         }
     if "loyalty_settings" not in d:
-        d["loyalty_settings"] = {"minimum_orders": 10, "minimum_spend": 15000.0}
+        d["loyalty_settings"] = {"minimum_orders": 10, "minimum_spend": 15000.0, "criteria_mode": "either"}
+    else:
+        loyalty = dict(d["loyalty_settings"] or {})
+        d["loyalty_settings"] = {
+            "minimum_orders": int(loyalty.get("minimum_orders") if loyalty.get("minimum_orders") is not None else 10),
+            "minimum_spend": float(loyalty.get("minimum_spend") if loyalty.get("minimum_spend") is not None else 15000.0),
+            "criteria_mode": loyalty.get("criteria_mode") if loyalty.get("criteria_mode") in {"either", "both", "orders_only", "spend_only"} else "either",
+        }
     if "scrolling_banner" not in d:
         d["scrolling_banner"] = {
             "text1": "Durga Shakti Foils: Premium Packing Solutions",

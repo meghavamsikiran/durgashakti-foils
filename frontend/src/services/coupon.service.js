@@ -47,8 +47,8 @@ const couponService = {
     return response.data;
   },
 
-  getLoyalCustomers: async () => {
-    const response = await cachedGet('/admin/coupons/loyal-customers', { ttl: 30000 });
+  getLoyalCustomers: async (params = {}) => {
+    const response = await cachedGet('/admin/coupons/loyal-customers', { params, ttl: 15000, silent: true });
     return response.data;
   },
 

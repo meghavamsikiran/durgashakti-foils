@@ -507,6 +507,8 @@ const CouponsPage = () => {
   const [bannerSearchText, setBannerSearchText] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loyalCustomers, setLoyalCustomers] = useState([]);
+  const [loyalCustomerSearch, setLoyalCustomerSearch] = useState('');
+  const [loyalCustomerLoading, setLoyalCustomerLoading] = useState(false);
   const [couponAnalytics, setCouponAnalytics] = useState(null);
 
   const initialBannerForm = {
@@ -561,7 +563,7 @@ const CouponsPage = () => {
         couponService.getCoupons(),
         couponService.getSettings(),
         adminService.getSettings(),
-        couponService.getLoyalCustomers().catch(() => ({ items: [] })),
+        couponService.getLoyalCustomers({ limit: 25 }).catch(() => ({ items: [] })),
         couponService.getAnalytics().catch(() => null)
       ]);
       setCoupons((couponsData || []).filter(c => c !== null && c !== undefined && c.code));
@@ -588,6 +590,22 @@ const CouponsPage = () => {
     fetchCouponsAndSettings();
   }, []);
 
+  useEffect(() => {
+    if (!isModalOpen || formData.coupon_type !== 'loyalty' || formData.apply_to_all_loyal_customers) return;
+    const timer = setTimeout(async () => {
+      setLoyalCustomerLoading(true);
+      try {
+        const data = await couponService.getLoyalCustomers({ search: loyalCustomerSearch.trim(), limit: 50 });
+        setLoyalCustomers(data?.items || []);
+      } catch {
+        setLoyalCustomers([]);
+      } finally {
+        setLoyalCustomerLoading(false);
+      }
+    }, 180);
+    return () => clearTimeout(timer);
+  }, [isModalOpen, formData.coupon_type, formData.apply_to_all_loyal_customers, loyalCustomerSearch]);
+
   const handleSaveSettings = async () => {
     setSavingSettings(true);
     try {
@@ -602,6 +620,7 @@ const CouponsPage = () => {
 
   const handleOpenCreateModal = () => {
     setEditingCoupon(null);
+    setLoyalCustomerSearch('');
     setFormData({
       code: '',
       discount_type: 'percentage',
@@ -625,6 +644,7 @@ const CouponsPage = () => {
 
   const handleOpenEditModal = (coupon) => {
     setEditingCoupon(coupon);
+    setLoyalCustomerSearch('');
     
     // Format date for input datetime-local type (YYYY-MM-DDTHH:mm)
     let formattedDate = '';
@@ -2062,8 +2082,21 @@ const CouponsPage = () => {
                     </label>
 
                     {!formData.apply_to_all_loyal_customers && (
-                      <div className="max-h-52 overflow-y-auto bg-white border border-amber-100 rounded-xl divide-y divide-amber-50">
-                        {loyalCustomers.length === 0 ? (
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-700" />
+                          <input
+                            type="search"
+                            className="w-full rounded-xl border border-amber-100 bg-white py-3 pl-10 pr-4 text-sm font-bold text-slate-900 outline-none focus:border-amber-300 focus:ring-2 focus:ring-amber-100"
+                            placeholder="Search loyal customers by name, email, or phone"
+                            value={loyalCustomerSearch}
+                            onChange={(e) => setLoyalCustomerSearch(e.target.value)}
+                          />
+                        </div>
+                        <div className="max-h-52 overflow-y-auto bg-white border border-amber-100 rounded-xl divide-y divide-amber-50">
+                        {loyalCustomerLoading ? (
+                          <p className="p-4 text-xs font-bold text-amber-800">Searching loyal customers...</p>
+                        ) : loyalCustomers.length === 0 ? (
                           <p className="p-4 text-xs font-bold text-amber-800">No loyal customers match the current criteria yet.</p>
                         ) : loyalCustomers.map(customer => {
                           const selected = formData.eligible_customer_ids.includes(customer.id);
@@ -2087,6 +2120,7 @@ const CouponsPage = () => {
                             </label>
                           );
                         })}
+                        </div>
                       </div>
                     )}
                   </div>

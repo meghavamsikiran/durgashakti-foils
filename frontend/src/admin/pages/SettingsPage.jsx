@@ -65,6 +65,7 @@ const SettingsPage = () => {
       commentsEnabled: feedbackSettings.comments_enabled !== false,
       loyaltyMinimumOrders: loyaltySettings.minimum_orders || 10,
       loyaltyMinimumSpend: loyaltySettings.minimum_spend || 15000,
+      loyaltyCriteriaMode: loyaltySettings.criteria_mode || 'either',
       me: cachedMe?.data || null,
       loaded: !!(cachedSettings && cachedMe)
     };
@@ -97,6 +98,7 @@ const SettingsPage = () => {
   const [commentsEnabled, setCommentsEnabled] = useState(initialState.commentsEnabled);
   const [loyaltyMinimumOrders, setLoyaltyMinimumOrders] = useState(initialState.loyaltyMinimumOrders);
   const [loyaltyMinimumSpend, setLoyaltyMinimumSpend] = useState(initialState.loyaltyMinimumSpend);
+  const [loyaltyCriteriaMode, setLoyaltyCriteriaMode] = useState(initialState.loyaltyCriteriaMode);
   const [savingExperience, setSavingExperience] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -172,6 +174,7 @@ const SettingsPage = () => {
       setCommentsEnabled(feedbackSettings.comments_enabled !== false);
       setLoyaltyMinimumOrders(loyaltySettings.minimum_orders || 10);
       setLoyaltyMinimumSpend(loyaltySettings.minimum_spend || 15000);
+      setLoyaltyCriteriaMode(loyaltySettings.criteria_mode || 'either');
 
       setMe(meRes.data);
     } catch {
@@ -213,6 +216,7 @@ const SettingsPage = () => {
       setCommentsEnabled(feedbackSettings.comments_enabled !== false);
       setLoyaltyMinimumOrders(loyaltySettings.minimum_orders || 10);
       setLoyaltyMinimumSpend(loyaltySettings.minimum_spend || 15000);
+      setLoyaltyCriteriaMode(loyaltySettings.criteria_mode || 'either');
 
       setMe(meRes.data);
     } catch {
@@ -316,8 +320,9 @@ const SettingsPage = () => {
         adminService.updateSetting({
           key: 'loyalty_settings',
           value: {
-            minimum_orders: Number(loyaltyMinimumOrders) || 10,
-            minimum_spend: Number(loyaltyMinimumSpend) || 15000
+            minimum_orders: loyaltyMinimumOrders === '' ? 10 : Math.max(0, Number(loyaltyMinimumOrders)),
+            minimum_spend: loyaltyMinimumSpend === '' ? 15000 : Math.max(0, Number(loyaltyMinimumSpend)),
+            criteria_mode: loyaltyCriteriaMode
           }
         })
       ]);
@@ -735,6 +740,31 @@ const SettingsPage = () => {
                     value={loyaltyMinimumSpend}
                     onChange={e => setLoyaltyMinimumSpend(e.target.value)}
                   />
+                </div>
+
+                <div className="md:col-span-2 p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Loyalty Qualification Rule</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mt-3">
+                    {[
+                      { value: 'either', label: 'Orders OR Spend' },
+                      { value: 'both', label: 'Orders AND Spend' },
+                      { value: 'orders_only', label: 'Orders Only' },
+                      { value: 'spend_only', label: 'Spend Only' }
+                    ].map(option => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setLoyaltyCriteriaMode(option.value)}
+                        className={`px-3 py-3 rounded-xl text-xs font-black uppercase tracking-wider border transition-all ${
+                          loyaltyCriteriaMode === option.value
+                            ? 'bg-primary text-white border-primary shadow-md shadow-emerald-glow'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-primary/40'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
