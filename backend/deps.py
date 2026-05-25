@@ -538,6 +538,84 @@ async def apply_effective_product_pricing(db: AsyncSession, products: list[dict]
     return products
 
 
+def _coupon_is_current(coupon) -> bool:
+    now = datetime.now(timezone.utc)
+    expiry = getattr(coupon, "expiry_date", None)
+    if expiry and expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=timezone.utc)
+    usage_cap = getattr(coupon, "max_usage_count", None)
+    return (
+        bool(getattr(coupon, "is_active", False))
+        and (not expiry or expiry >= now)
+        and (usage_cap is None or int(getattr(coupon, "total_uses", 0) or 0) < int(usage_cap))
+    )
+
+
+def _coupon_display_payload(coupon) -> dict:
+    return {
+        "id": str(coupon.id),
+        "code": coupon.code,
+        "coupon_type": coupon.coupon_type or "product",
+        "discount_type": coupon.discount_type,
+        "discount_value": float(coupon.discount_value or 0),
+        "min_cart_value": float(coupon.min_cart_value or 0),
+        "max_discount_limit": float(coupon.max_discount_limit) if coupon.max_discount_limit is not None else None,
+        "expiry_date": coupon.expiry_date.isoformat() if coupon.expiry_date else None,
+    }
+
+
+async def attach_applicable_product_coupons(db: AsyncSession, products: list[dict]) -> list[dict]:
+    """Attach active product/category coupon codes to public product payloads."""
+    if not products:
+        return products
+
+    from models import CategoryModel, CouponModel
+
+    result = await db.execute(
+        select(CouponModel)
+        .where(CouponModel.coupon_type == "product")
+        .order_by(CouponModel.created_at.desc())
+    )
+    coupons = [coupon for coupon in result.scalars().all() if _coupon_is_current(coupon)]
+    if not coupons:
+        for product in products:
+            product["applicable_coupons"] = []
+        return products
+
+    category_names = [normalize_category_name(product.get("category")) for product in products]
+    category_names = [name for name in category_names if name]
+    category_ids_by_name = {}
+    if category_names:
+        category_result = await db.execute(
+            select(CategoryModel).where(func.lower(CategoryModel.name).in_([name.lower() for name in category_names]))
+        )
+        category_ids_by_name = {
+            category.name.lower(): str(category.id)
+            for category in category_result.scalars().all()
+        }
+
+    for product in products:
+        product_id = str(product.get("id") or "")
+        category_id = category_ids_by_name.get(normalize_category_name(product.get("category")).lower())
+        product_coupons = []
+        for coupon in coupons:
+            eligible_product_ids = [str(pid) for pid in (coupon.eligible_product_ids or [])]
+            eligible_category_ids = [str(cid) for cid in (coupon.eligible_category_ids or [])]
+            applies_to_all_products = bool(getattr(coupon, "apply_to_all_products", False))
+            # Older product coupons were saved before apply_to_all_products existed.
+            if not applies_to_all_products and not eligible_product_ids and not eligible_category_ids:
+                applies_to_all_products = True
+
+            if (
+                applies_to_all_products
+                or product_id in eligible_product_ids
+                or (category_id and category_id in eligible_category_ids)
+            ):
+                product_coupons.append(_coupon_display_payload(coupon))
+        product["applicable_coupons"] = product_coupons[:3]
+    return products
+
+
 async def get_effective_product_price(db: AsyncSession, product) -> float:
     discounts = await get_category_discount_map(db, [getattr(product, "category", None)])
     category_percent = discounts.get(normalize_category_name(getattr(product, "category", None)).lower(), 0)

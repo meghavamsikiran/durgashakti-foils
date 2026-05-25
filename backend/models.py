@@ -295,6 +295,7 @@ class CouponModel(Base):
     revenue_generated = Column(Numeric(12, 2), default=0.0, nullable=False, server_default=text("'0.0'"))
     coupon_type = Column(String(50), default="standard", nullable=False, server_default=text("'standard'"))
     apply_to_all_loyal_customers = Column(Boolean, default=False, nullable=False, server_default=text("'false'"))
+    apply_to_all_products = Column(Boolean, default=False, nullable=False, server_default=text("'false'"))
     eligible_customer_ids = Column(JSONB, default=list, nullable=False, server_default=text("'[]'::jsonb"))
     eligible_product_ids = Column(JSONB, default=list, nullable=False, server_default=text("'[]'::jsonb"))
     eligible_category_ids = Column(JSONB, default=list, nullable=False, server_default=text("'[]'::jsonb"))

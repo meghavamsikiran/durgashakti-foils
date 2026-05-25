@@ -21,6 +21,9 @@ const ProductCard = ({ product }) => {
   const [showRemoveModal, setShowRemoveModal] = React.useState(false);
   const { basePrice, displayPrice, hasOffer, discountPercent } = getProductPricing(product);
   const isUnavailable = Number(product.stock_quantity) <= 0 || product.in_stock === false;
+  const applicableCoupons = Array.isArray(product.applicable_coupons)
+    ? product.applicable_coupons.slice(0, 2)
+    : [];
   
   const cartItem = cart?.items?.find(item => String(item.product_id) === String(product.id));
   const currentQty = cartItem ? cartItem.quantity : 0;
@@ -57,6 +60,12 @@ const ProductCard = ({ product }) => {
   const activeTag = getDynamicTag();
   const actualWishlisted = user?.wishlist?.some(item => item.product_id === product.id);
   const [optimisticWishlist, setOptimisticWishlist] = React.useState(null);
+
+  const formatCouponValue = (coupon) => {
+    if (coupon.discount_type === 'percentage') return `${Number(coupon.discount_value || 0)}% OFF`;
+    if (coupon.discount_type === 'flat') return `SAVE Rs ${Number(coupon.discount_value || 0)}`;
+    return 'FREE SHIPPING';
+  };
 
   React.useEffect(() => {
     setOptimisticWishlist(actualWishlisted);
@@ -243,6 +252,25 @@ const ProductCard = ({ product }) => {
             <p className="text-xs text-text-muted leading-relaxed line-clamp-2 font-inter mb-4">
               {product.description}
             </p>
+
+            {applicableCoupons.length > 0 && (
+              <div className="mb-4 space-y-1.5">
+                {applicableCoupons.map((coupon) => (
+                  <div
+                    key={coupon.code}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-1.5"
+                    data-testid="product-coupon-badge"
+                  >
+                    <span className="min-w-0 truncate text-[10px] font-black uppercase tracking-wider text-emerald-800">
+                      Use {coupon.code}
+                    </span>
+                    <span className="shrink-0 text-[9px] font-black uppercase tracking-wider text-emerald-700">
+                      {formatCouponValue(coupon)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>

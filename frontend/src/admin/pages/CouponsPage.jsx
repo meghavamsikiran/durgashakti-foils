@@ -1425,6 +1425,11 @@ const CouponsPage = () => {
                                 Loyal Customer
                               </span>
                             )}
+                            {(coupon.coupon_type || 'standard') === 'product' && (
+                              <span className="inline-flex mt-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-black uppercase tracking-wider">
+                                Product Coupon
+                              </span>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold capitalize ${

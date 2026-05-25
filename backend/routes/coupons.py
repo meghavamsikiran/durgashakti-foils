@@ -26,6 +26,7 @@ class CouponCreateUpdate(BaseModel):
     is_active: bool = True
     coupon_type: str = "standard"
     apply_to_all_loyal_customers: bool = False
+    apply_to_all_products: bool = False
     eligible_customer_ids: List[str] = []
     eligible_product_ids: List[str] = []
     eligible_category_ids: List[str] = []
@@ -599,6 +600,7 @@ async def create_coupon(data: CouponCreateUpdate, admin: UserSchema = Depends(re
         is_active=data.is_active,
         coupon_type=data.coupon_type,
         apply_to_all_loyal_customers=data.apply_to_all_loyal_customers,
+        apply_to_all_products=data.apply_to_all_products,
         eligible_customer_ids=[str(cid) for cid in (data.eligible_customer_ids or [])],
         eligible_product_ids=[str(pid) for pid in (data.eligible_product_ids or [])],
         eligible_category_ids=[str(cid) for cid in (data.eligible_category_ids or [])],
@@ -638,6 +640,7 @@ async def update_coupon(coupon_id: str, data: CouponCreateUpdate, admin: UserSch
     c.is_active = data.is_active
     c.coupon_type = data.coupon_type
     c.apply_to_all_loyal_customers = data.apply_to_all_loyal_customers
+    c.apply_to_all_products = data.apply_to_all_products
     c.eligible_customer_ids = [str(cid) for cid in (data.eligible_customer_ids or [])]
     c.eligible_product_ids = [str(pid) for pid in (data.eligible_product_ids or [])]
     c.eligible_category_ids = [str(cid) for cid in (data.eligible_category_ids or [])]
