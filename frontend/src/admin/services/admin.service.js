@@ -99,20 +99,6 @@ const adminService = {
   // Payments
   getPayments: (params) => cachedGet('/admin/payments', { params }),
 
-  // GST
-  importGST: (formData) => {
-    invalidateCache('/admin/gst');
-    return apiClient.post('/admin/gst/import', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-  },
-  getGSTImports: () => cachedGet('/admin/gst/imports'),
-  getGSTRecords: (params) => cachedGet('/admin/gst/reports', { params }),
-  seedSampleGST: () => {
-    invalidateCache('/admin/gst');
-    return apiClient.post('/admin/gst/seed-sample');
-  },
-
   // Audit Logs
   getAuditLogs: (params) => cachedGet('/admin/audit-logs', { params }),
 

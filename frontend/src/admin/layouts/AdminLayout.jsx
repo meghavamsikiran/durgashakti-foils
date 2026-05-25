@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { adminSidebar, isSuperAdminRole, superAdminSidebar } from '../constants/rbac';
 import { 
   LayoutDashboard, Package, Boxes, ShoppingCart, 
-  Users, CreditCard, BarChart3, FileText, Upload, 
+  Users, CreditCard, BarChart3, FileText,
   UserCog, ShieldAlert, Settings, LogOut, Package2, Layers,
   MessageSquare, Menu, X, Ticket
 } from 'lucide-react';
@@ -20,8 +20,7 @@ const ICON_MAP = {
   'Payments': CreditCard,
   'Analytics': BarChart3,
 
-  'GST Reports': FileText,
-  'Import GST Data': Upload,
+  'GSTR1': FileText,
   'Admins': UserCog,
   'Audit Logs': ShieldAlert,
   'Settings': Settings,

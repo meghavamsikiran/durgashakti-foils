@@ -5,6 +5,7 @@ import { Button } from '../../../components/ui/button';
 import { formatImageUrl } from '../../../utils/api';
 import { useProgress } from '../../../components/ui/ProgressToast';
 import paymentService from '../../../services/payment.service';
+import apiClient from '../../../services/core/apiClient';
 import { toast } from 'sonner';
 
 const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
@@ -252,38 +253,31 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
     `;
   };
 
-  const handleDownloadInvoice = () => {
+  const handleDownloadInvoice = async () => {
     const progressId = startProgress({
-      label: `Invoice_${order.order_number}.html`,
+      label: `Tax_Invoice_${order.order_number}.pdf`,
       type: 'download',
       fileType: 'file',
       message: 'Generating invoice...',
     });
 
-    setTimeout(() => {
-      updateProgress(progressId, { progress: 50, message: 'Building HTML Invoice...' });
-      setTimeout(() => {
-        updateProgress(progressId, { progress: 85, message: 'Preparing download...' });
-        setTimeout(() => {
-          try {
-            const htmlContent = generateInvoiceHtml(order);
-            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `Invoice_${order.order_number}.html`;
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            finishProgress(progressId, { message: 'Invoice ready!' });
-          } catch (err) {
-            finishProgress(progressId, { message: 'Failed to download invoice', isError: true });
-          }
-        }, 600);
-      }, 800);
-    }, 500);
+    try {
+      updateProgress(progressId, { progress: 45, message: 'Building tax invoice PDF...' });
+      const response = await apiClient.get(`/orders/${order.id}/invoice`, { responseType: 'blob', timeout: 120000 });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Tax_Invoice_${order.order_number}.pdf`;
+      document.body.appendChild(link);
+      updateProgress(progressId, { progress: 85, message: 'Downloading invoice...' });
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      finishProgress(progressId, { message: 'Invoice ready!' });
+    } catch (err) {
+      finishProgress(progressId, { message: 'Failed to download invoice', isError: true });
+    }
   };
 
   return (

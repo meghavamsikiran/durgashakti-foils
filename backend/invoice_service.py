@@ -361,8 +361,8 @@ def _address_lines(addr: dict, order: dict) -> tuple[str, list[str], str, str, s
 def _order_rows(order: dict, metadata: dict) -> tuple[list[dict], int, float, float, float]:
     rows: list[dict] = []
     total_qty = 0
-    taxable_total = 0.0
-    gst_total = 0.0
+    items_taxable_total = 0.0
+    items_gst_total = 0.0
     amount_total = 0.0
 
     for item in order.get("items") or []:
@@ -372,8 +372,8 @@ def _order_rows(order: dict, metadata: dict) -> tuple[list[dict], int, float, fl
         gst = round(taxable * 0.18, 2)
         amount = round(taxable + gst, 2)
         total_qty += qty
-        taxable_total += taxable
-        gst_total += gst
+        items_taxable_total += taxable
+        items_gst_total += gst
         amount_total += amount
         rows.append({
             "item": _safe_text(item.get("product_name") or item.get("name"), "Product"),
@@ -385,6 +385,21 @@ def _order_rows(order: dict, metadata: dict) -> tuple[list[dict], int, float, fl
             "gst": gst,
             "amount": amount,
         })
+
+    discount = float(metadata.get("discount_amount") or order.get("discount_amount") or 0)
+    if discount > 0:
+        discount_gst = round(discount * 0.18, 2)
+        rows.append({
+            "item": "Coupon Discount",
+            "description": ", ".join(order.get("coupon_codes") or []),
+            "hsn": "",
+            "qty": 1,
+            "unit": "Disc",
+            "price": -discount,
+            "gst": -discount_gst,
+            "amount": round(-(discount + discount_gst), 2),
+        })
+        amount_total -= round(discount + discount_gst, 2)
 
     shipping = float(metadata.get("shipping_cost") or 0)
     cod = float(metadata.get("cod_charge") or 0)
@@ -413,6 +428,8 @@ def _order_rows(order: dict, metadata: dict) -> tuple[list[dict], int, float, fl
         })
         amount_total += cod
 
+    taxable_total = float(metadata.get("taxable_amount") or max(0.0, items_taxable_total - discount))
+    gst_total = float((metadata.get("cgst_amount") or 0) + (metadata.get("sgst_amount") or 0) or round(taxable_total * 0.18, 2))
     return rows, total_qty, taxable_total, gst_total, amount_total
 
 
@@ -510,6 +527,7 @@ def _draw_footer(c: canvas.Canvas, order: dict, metadata: dict, taxable_total: f
     received = grand_total if is_received else 0.0
     balance = 0.0 if is_received else grand_total
     payment_mode = _safe_text(order.get("payment_method"), "Online").upper()
+    discount = float(metadata.get("discount_amount") or order.get("discount_amount") or 0)
 
     _draw_text(c, _px("x7"), _py("y22"), "Pay To:", FS["fs5"], GREEN, FONT_BOLD)
     _draw_text(c, _px("x7"), _py("y23"), f"Bank Name : {BANK_NAME}", FS["fs7"], DARK, FONT)
@@ -552,21 +570,25 @@ def _draw_footer(c: canvas.Canvas, order: dict, metadata: dict, taxable_total: f
 
     summary = [
         ("Sub Total", taxable_total),
+        ("Coupon Discount", -discount),
+        ("Shipping Charges", shipping),
+        ("COD Charges", cod),
         ("SGST@9%", sgst),
         ("CGST@9%", cgst),
         ("Total", grand_total),
         ("Received", received),
         ("Balance", balance),
     ]
-    y_keys = ["y3d", "y3e", "y3f", "y40", "y41", "y42"]
-    for key, (label, value) in zip(y_keys, summary):
+    y_keys = ["y3d", "y3e", "y3f", "y40", "y41", "y42", "y27", "y28", "y29"]
+    visible_summary = [(label, value) for label, value in summary if value != 0 or label in {"Sub Total", "Total", "Received", "Balance"}]
+    for key, (label, value) in zip(y_keys, visible_summary):
         color = WHITE if label == "Total" else DARK
         font = FONT_BOLD if label == "Total" else FONT
         _draw_text(c, _px("xf"), _py(key), label, FS["fs7"], color, font, max_width=_sx(180))
         _draw_text(c, _sx(845), _py(key), _money(value), FS["fs7"], color, font, align="right", max_width=_sx(130))
 
-    _draw_text(c, _px("xf"), _py("y27"), "Payment Mode", FS["fs7"], DARK, FONT, max_width=_sx(180))
-    _draw_text(c, _sx(845), _py("y27"), payment_mode, FS["fs7"], DARK, FONT, align="right", max_width=_sx(130))
+    _draw_text(c, _px("xf"), _py("y2a"), "Payment Mode", FS["fs7"], DARK, FONT, max_width=_sx(180))
+    _draw_text(c, _sx(845), _py("y2a"), payment_mode, FS["fs7"], DARK, FONT, align="right", max_width=_sx(130))
 
 
 def build_tax_invoice_pdf(order: dict, copy_label: str = "ORIGINAL FOR RECIPIENT") -> bytes:
@@ -584,6 +606,13 @@ def build_tax_invoice_pdf(order: dict, copy_label: str = "ORIGINAL FOR RECIPIENT
     invoice_no = _safe_text(order.get("invoice_number"), _invoice_number(order))
     metadata = (order.get("shipping_address") or {}).get("shipping_metadata") or {}
     rows, total_qty, taxable_total, gst_total, amount_total = _order_rows(order, metadata)
+
+    # The source background sits very close to the right PDF edge; redraw a clean
+    # right boundary inside the page so browser/PDF viewers do not clip it.
+    c.setStrokeColor(colors.Color(128 / 255, 128 / 255, 128 / 255))
+    c.setLineWidth(0.55)
+    c.line(PAGE_WIDTH - 7, _py("y19") + _sx(14), PAGE_WIDTH - 7, _py("y21") - _sx(4))
+    c.line(PAGE_WIDTH - 7, _py("y3d") + _sx(10), PAGE_WIDTH - 7, _py("y2a") - _sx(6))
 
     _draw_header(c, copy_label)
     _draw_party_blocks(c, order, invoice_no, created)

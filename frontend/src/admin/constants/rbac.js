@@ -68,17 +68,10 @@ export const PERMISSION_GROUPS = [
     ]
   },
   {
-    title: 'GST Reports',
+    title: 'GSTR1',
     permissions: [
-      { id: 'view_gst_reports', label: 'View GST Reports', desc: 'Generate and review GSTR-1, GSTR-3B audit summaries' },
-      { id: 'export_gst_reports', label: 'Export GST Reports', desc: 'Download GST CSV spreadsheets and government files' }
-    ]
-  },
-  {
-    title: 'Import GST Data',
-    permissions: [
-      { id: 'upload_gst_files', label: 'Upload GST Files', desc: 'Upload raw state or national government GSTR spreadsheets' },
-      { id: 'import_gst_data', label: 'Import GST Data', desc: 'Commit and synchronize parsed tax records to system ledger' }
+      { id: 'view_gst_reports', label: 'View GSTR1', desc: 'Access invoice-based GSTR1 export filters' },
+      { id: 'export_gst_reports', label: 'Export GSTR1', desc: 'Download audited GSTR1 Excel workbooks' }
     ]
   },
   {
@@ -125,7 +118,6 @@ export const ROLE_TEMPLATES = {
       view_transactions: true, update_payment_status: true, export_payment_reports: true,
       view_analytics: true,
       view_gst_reports: true, export_gst_reports: true,
-      upload_gst_files: true, import_gst_data: true,
       view_audit_logs: true,
       view_dashboard: true,
       manage_settings: true,
@@ -204,8 +196,7 @@ export const superAdminSidebar = [
   { label: 'Inquiries', permissions: ['view_inquiries', 'update_inquiry_status', 'reply_inquiry'] },
   { label: 'Payments', permissions: ['view_transactions', 'update_payment_status', 'export_payment_reports'] },
   { label: 'Analytics', permissions: ['view_analytics'] },
-  { label: 'GST Reports', permissions: ['view_gst_reports', 'export_gst_reports'] },
-  { label: 'Import GST Data', permissions: ['upload_gst_files', 'import_gst_data'] },
+  { label: 'GSTR1', permissions: ['view_gst_reports', 'export_gst_reports'] },
   { label: 'Admins', permissions: ['create_admin', 'edit_admin', 'disable_admin', 'delete_admin', 'assign_permissions'] },
   { label: 'Audit Logs', permissions: ['view_audit_logs'] },
   { label: 'Settings', permissions: ['manage_settings', 'manage_banner'] },

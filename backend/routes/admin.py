@@ -1,12 +1,13 @@
 """Admin management routes."""
 from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func, or_, and_, String
 from typing import Optional, List
 from database import get_db
 from models import (
     ProductModel, OrderModel, UserModel, SettingModel,
-    StockHistoryModel, GstRecordModel, GstImportModel, AuditLogModel,
+    StockHistoryModel, AuditLogModel,
     CategoryModel, AddressModel, ProductReviewModel
 )
 from deps import (
@@ -1051,165 +1052,137 @@ async def upload_media_endpoint(file: UploadFile = File(...), admin: UserSchema 
     return {"url": url, "type": media_type, "file_name": file.filename or url.split("/")[-1]}
 
 
-@router.post("/admin/gst/import")
-async def import_gst_file(file: UploadFile = File(...), admin: UserSchema = Depends(require_permission("upload_gst_files")), db: AsyncSession = Depends(get_db)):
-    fn = (file.filename or "").lower()
-    if not fn.endswith((".csv", ".xlsx", ".xls")):
-        raise HTTPException(status_code=400, detail="Unsupported format")
-    raw = await file.read()
-    if len(raw) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Max 10MB")
-    df = pd.read_csv(BytesIO(raw)) if fn.endswith(".csv") else pd.read_excel(BytesIO(raw))
-    df.columns = [str(c).strip().lower() for c in df.columns]
-
-    import_id = str(uuid.uuid4())
-    inserted = 0
-    failed = 0
-
-    invoice_numbers = [str(r.get("invoice_number", "")).strip() for _, r in df.iterrows() if str(r.get("invoice_number", "")).strip()]
-    existing_invoices = set()
-    if invoice_numbers:
-        existing_res = await db.execute(select(GstRecordModel.invoice_number).where(GstRecordModel.invoice_number.in_(invoice_numbers)))
-        existing_invoices = {str(val) for val in existing_res.scalars().all()}
-
-    for _, r in df.iterrows():
-        try:
-            inv = str(r.get("invoice_number", "")).strip()
-            if not inv or inv in existing_invoices:
-                failed += 1; continue
-            g = GstRecordModel(
-                id=str(uuid.uuid4()),
-                import_id=import_id,
-                invoice_number=inv,
-                invoice_date=str(pd.to_datetime(r.get("invoice_date")).date()),
-                customer_name=str(r.get("customer_name", "")).strip(),
-                taxable_amount=float(r.get("taxable_amount", r.get("total_amount", 0))),
-                gst_amount=float(r.get("gst_amount", 0)),
-                cgst_amount=float(r.get("cgst_amount", 0)),
-                sgst_amount=float(r.get("sgst_amount", 0)),
-                igst_amount=float(r.get("igst_amount", 0)),
-                total_amount=float(r.get("total_amount", 0)),
-            )
-            db.add(g)
-            inserted += 1
-        except Exception as e:
-            import logging
-            logging.error(f"Failed to import GST record: {e}")
-            failed += 1
-    db.add(GstImportModel(id=import_id, file_name=file.filename, uploaded_by=admin.id, record_count=inserted, error_count=failed))
-    await db.flush()
-    return {"import_id": import_id, "record_count": inserted, "error_count": failed}
+def _parse_gstr1_range(filter_type: str, day: Optional[str], month: Optional[str], year: Optional[int], start_date: Optional[str], end_date: Optional[str]):
+    now = datetime.now(timezone.utc)
+    if filter_type == "day" and day:
+        start = datetime.fromisoformat(day).replace(tzinfo=timezone.utc)
+        end = start + pd.Timedelta(days=1)
+    elif filter_type == "month" and month:
+        start = datetime.fromisoformat(f"{month}-01").replace(tzinfo=timezone.utc)
+        end = (start + pd.DateOffset(months=1)).to_pydatetime()
+    elif filter_type == "year" and year:
+        start = datetime(int(year), 1, 1, tzinfo=timezone.utc)
+        end = datetime(int(year) + 1, 1, 1, tzinfo=timezone.utc)
+    elif filter_type == "range" and start_date and end_date:
+        start = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        end = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
+        start = start.astimezone(timezone.utc) if start.tzinfo else start.replace(tzinfo=timezone.utc)
+        end = end.astimezone(timezone.utc) if end.tzinfo else end.replace(tzinfo=timezone.utc)
+    else:
+        start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+        end = (start + pd.DateOffset(months=1)).to_pydatetime()
+    return start, end
 
 
-@router.get("/admin/gst/reports")
-async def get_gst_reports(page: int = Query(1), limit: int = Query(50), search: Optional[str] = None, admin: UserSchema = Depends(require_permission("view_gst_reports")), db: AsyncSession = Depends(get_db)):
-    search = sanitize_search_term(search)
-    q = select(GstRecordModel, func.count(GstRecordModel.id).over().label('total_count'))
-    clause = None
-    if search:
-        clause = or_(GstRecordModel.invoice_number.ilike(f"%{search}%"), GstRecordModel.customer_name.ilike(f"%{search}%"))
-        q = q.where(clause)
-
-    offset = (page - 1) * limit
-    res = await db.execute(q.order_by(GstRecordModel.invoice_date.desc()).offset(offset).limit(limit))
-    rows = res.all()
-    
-    total = 0
-    if rows:
-        total = rows[0][1]
-    elif page > 1:
-        fallback_q = select(func.count(GstRecordModel.id))
-        if clause is not None:
-            fallback_q = fallback_q.where(clause)
-        total = (await db.execute(fallback_q)).scalar() or 0
-
-    return {"items": [row_to_dict(row[0]) for row in rows], "total": total, "page": page, "limit": limit}
-
-
-@router.get("/admin/gst/imports")
-async def get_gst_imports(admin: UserSchema = Depends(require_permission("view_gst_reports")), db: AsyncSession = Depends(get_db)):
-    res = await db.execute(select(GstImportModel).order_by(GstImportModel.upload_date.desc()).limit(100))
-    return [row_to_dict(i) for i in res.scalars().all()]
-
-
-@router.post("/admin/gst/seed-sample")
-async def seed_sample_gst(admin: UserSchema = Depends(require_permission("import_gst_data")), db: AsyncSession = Depends(get_db)):
-    
-    import_id = str(uuid.uuid4())
-    samples = [
-        {
-            "invoice_number": "INV-2026-003",
-            "invoice_date": "2026-05-10",
-            "customer_name": "Aman Packaging Industries",
-            "taxable_amount": 45000.0,
-            "gst_amount": 8100.0,
-            "cgst_amount": 4050.0,
-            "sgst_amount": 4050.0,
-            "igst_amount": 0.0,
-            "total_amount": 53100.0
-        },
-        {
-            "invoice_number": "INV-2026-004",
-            "invoice_date": "2026-05-12",
-            "customer_name": "Balaji Retail Distributors",
-            "taxable_amount": 12500.0,
-            "gst_amount": 2250.0,
-            "cgst_amount": 1125.0,
-            "sgst_amount": 1125.0,
-            "igst_amount": 0.0,
-            "total_amount": 14750.0
-        },
-        {
-            "invoice_number": "INV-2026-005",
-            "invoice_date": "2026-05-15",
-            "customer_name": "Apex Food Packagers LLC",
-            "taxable_amount": 85000.0,
-            "gst_amount": 15300.0,
-            "cgst_amount": 0.0,
-            "sgst_amount": 0.0,
-            "igst_amount": 15300.0,
-            "total_amount": 100300.0
-        }
-    ]
-    
-    inserted = 0
-    failed = 0
-    inv_nums = [s["invoice_number"] for s in samples]
-    existing_res = await db.execute(select(GstRecordModel.invoice_number).where(GstRecordModel.invoice_number.in_(inv_nums)))
-    existing_invoices = {str(val) for val in existing_res.scalars().all()}
-
-    for s in samples:
-        if s["invoice_number"] in existing_invoices:
-            failed += 1
-            continue
-            
-        g = GstRecordModel(
-            id=str(uuid.uuid4()),
-            import_id=import_id,
-            invoice_number=s["invoice_number"],
-            invoice_date=s["invoice_date"],
-            customer_name=s["customer_name"],
-            taxable_amount=s["taxable_amount"],
-            gst_amount=s["gst_amount"],
-            cgst_amount=s["cgst_amount"],
-            sgst_amount=s["sgst_amount"],
-            igst_amount=s["igst_amount"],
-            total_amount=s["total_amount"],
+@router.get("/admin/gstr1/export")
+async def export_gstr1(
+    filter_type: str = Query("month", pattern="^(day|month|year|range)$"),
+    day: Optional[str] = Query(None),
+    month: Optional[str] = Query(None),
+    year: Optional[int] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    admin: UserSchema = Depends(require_permission("export_gst_reports")),
+    db: AsyncSession = Depends(get_db)
+):
+    start, end = _parse_gstr1_range(filter_type, day, month, year, start_date, end_date)
+    res = await db.execute(
+        select(OrderModel)
+        .where(
+            OrderModel.created_at >= start,
+            OrderModel.created_at < end,
+            OrderModel.order_status != "cancelled",
         )
-        db.add(g)
-        inserted += 1
-        
-    if inserted > 0:
-        db.add(GstImportModel(
-            id=import_id, 
-            file_name="seed_sample.csv", 
-            uploaded_by=admin.id, 
-            record_count=inserted, 
-            error_count=failed
-        ))
-        await db.flush()
-        
-    return {"import_id": import_id, "record_count": inserted, "error_count": failed}
+        .order_by(OrderModel.created_at.asc())
+    )
+    orders = [row_to_dict(o) for o in res.scalars().all()]
+
+    from invoice_service import _invoice_number
+    rows = []
+    for order in orders:
+        addr = order.get("shipping_address") or {}
+        metadata = addr.get("shipping_metadata") or {}
+        items = order.get("items") or []
+        subtotal = float(metadata.get("subtotal") or sum(float(i.get("price") or 0) * int(i.get("quantity") or 0) for i in items))
+        discount = float(metadata.get("discount_amount") or order.get("discount_amount") or 0)
+        taxable_invoice = round(float(metadata.get("taxable_amount") or max(0, subtotal - discount)), 2)
+        cgst_invoice = round(float(metadata.get("cgst_amount") or taxable_invoice * 0.09), 2)
+        sgst_invoice = round(float(metadata.get("sgst_amount") or taxable_invoice * 0.09), 2)
+        tax_invoice = round(cgst_invoice + sgst_invoice, 2)
+        shipping = round(float(metadata.get("shipping_cost") or 0), 2)
+        cod = round(float(metadata.get("cod_charge") or 0), 2)
+        invoice_no = str(order.get("invoice_number") or _invoice_number(order))
+        invoice_date = datetime.fromisoformat(str(order.get("created_at")).replace("Z", "+00:00")).date().isoformat()
+        place = str(addr.get("state") or "")
+        same_state = place.strip().lower() in {"telangana", "36-telangana", "36"} or place.strip().lower().startswith("36")
+        remaining_taxable = taxable_invoice
+        remaining_cgst = cgst_invoice
+        remaining_sgst = sgst_invoice
+        remaining_igst = tax_invoice
+        valid_items = [i for i in items if int(i.get("quantity") or 0) > 0]
+        for idx, item in enumerate(valid_items):
+            qty = int(item.get("quantity") or 0)
+            gross_line = round(float(item.get("price") or 0) * qty, 2)
+            if idx == len(valid_items) - 1:
+                taxable = remaining_taxable
+                cgst = remaining_cgst if same_state else 0
+                sgst = remaining_sgst if same_state else 0
+                igst = 0 if same_state else remaining_igst
+            else:
+                ratio = (gross_line / subtotal) if subtotal else 0
+                taxable = round(taxable_invoice * ratio, 2)
+                cgst = round(cgst_invoice * ratio, 2) if same_state else 0
+                sgst = round(sgst_invoice * ratio, 2) if same_state else 0
+                igst = 0 if same_state else round(tax_invoice * ratio, 2)
+                remaining_taxable = round(remaining_taxable - taxable, 2)
+                remaining_cgst = round(remaining_cgst - cgst, 2)
+                remaining_sgst = round(remaining_sgst - sgst, 2)
+                remaining_igst = round(remaining_igst - igst, 2)
+            rows.append({
+                "Invoice Number": invoice_no,
+                "Invoice Date": invoice_date,
+                "Order Number": order.get("order_number"),
+                "Customer Name": order.get("customer_name") or addr.get("full_name"),
+                "Customer GSTIN": addr.get("gstin") or addr.get("gstin_number") or addr.get("gst_number") or "",
+                "Place of Supply": place,
+                "Product": item.get("product_name") or item.get("name"),
+                "HSN": item.get("hsn") or item.get("hsn_code") or "76071991",
+                "Quantity": qty,
+                "Tax Rate": "18%",
+                "Taxable Value": taxable,
+                "CGST": cgst,
+                "SGST": sgst,
+                "IGST": igst,
+                "Invoice Discount": discount if idx == 0 else 0,
+                "Shipping Charges": shipping if idx == 0 else 0,
+                "COD Charges": cod if idx == 0 else 0,
+                "Invoice Total": float(order.get("total_amount") or 0) if idx == 0 else "",
+                "Payment Mode": str(order.get("payment_method") or "").upper(),
+                "Payment Status": order.get("payment_status"),
+            })
+
+    df = pd.DataFrame(rows)
+    if df.empty:
+        df = pd.DataFrame(columns=[
+            "Invoice Number", "Invoice Date", "Order Number", "Customer Name", "Customer GSTIN",
+            "Place of Supply", "Product", "HSN", "Quantity", "Tax Rate", "Taxable Value",
+            "CGST", "SGST", "IGST", "Invoice Discount", "Shipping Charges", "COD Charges",
+            "Invoice Total", "Payment Mode", "Payment Status"
+        ])
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="GSTR1")
+        ws = writer.book["GSTR1"]
+        for col in ws.columns:
+            max_len = max(len(str(cell.value or "")) for cell in col)
+            ws.column_dimensions[col[0].column_letter].width = min(max(max_len + 2, 12), 42)
+    output.seek(0)
+    filename = f"GSTR1_{start.date()}_to_{(end - pd.Timedelta(days=1)).date()}.xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
 
 
 @router.get("/admin/audit-logs")

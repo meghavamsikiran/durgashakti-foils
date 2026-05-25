@@ -1,5 +1,6 @@
 """Order + Payment routes."""
 from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from typing import Optional, List
@@ -13,6 +14,7 @@ from deps import (
 )
 from storage_service import upload_image
 from datetime import datetime, timezone, timedelta
+from io import BytesIO
 import os, uuid, time, logging, razorpay
 
 logger = logging.getLogger(__name__)
@@ -298,6 +300,24 @@ async def get_order(order_id: str, current_user: UserSchema = Depends(get_curren
         raise HTTPException(status_code=404, detail="Order not found")
     d = row_to_dict(order)
     return await _enrich_order_items(db, d)
+
+
+@router.get("/orders/{order_id}/invoice")
+async def download_order_invoice(order_id: str, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    validate_uuid(order_id)
+    result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id))
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    order_dict = await _enrich_order_items(db, row_to_dict(order))
+    from invoice_service import build_tax_invoice_pdf
+    pdf_bytes = build_tax_invoice_pdf(order_dict)
+    invoice_name = str(order_dict.get("invoice_number") or order_dict.get("order_number") or order_id).replace("/", "-")
+    return StreamingResponse(
+        BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="Tax_Invoice_{invoice_name}.pdf"'}
+    )
 
 
 @router.post("/orders/{order_id}/cancel")

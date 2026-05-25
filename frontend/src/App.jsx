@@ -40,7 +40,6 @@ import OrdersPage from './admin/pages/OrdersPage';
 import CustomersPage from './admin/pages/CustomersPage';
 import CustomerDetailPage from './admin/pages/CustomerDetailPage';
 import PaymentsPage from './admin/pages/PaymentsPage';
-import GstImportPage from './admin/pages/GstImportPage';
 import GstReportsPage from './admin/pages/GstReportsPage';
 import AuditLogsPage from './admin/pages/AuditLogsPage';
 import SettingsPage from './admin/pages/SettingsPage';
@@ -133,22 +132,7 @@ function AppRoutes() {
                   }
                 />
                 <Route path="analytics" element={<ProtectedAdminRoute permission="view_analytics"><AnalyticsPage /></ProtectedAdminRoute>} />
-                <Route
-                  path="gst-reports"
-                  element={
-                    <ProtectedAdminRoute permission="view_gst_reports">
-                      <GstReportsPage />
-                    </ProtectedAdminRoute>
-                  }
-                />
-                <Route
-                  path="import-gst-data"
-                  element={
-                    <ProtectedAdminRoute permission="upload_gst_files">
-                      <GstImportPage />
-                    </ProtectedAdminRoute>
-                  }
-                />
+                <Route path="gstr1" element={<ProtectedAdminRoute permission="view_gst_reports"><GstReportsPage /></ProtectedAdminRoute>} />
                 <Route
                   path="admins"
                   element={
@@ -218,22 +202,7 @@ function AppRoutes() {
                   }
                 />
                 <Route path="analytics" element={<ProtectedAdminRoute permission="view_analytics"><AnalyticsPage /></ProtectedAdminRoute>} />
-                <Route
-                  path="gst-reports"
-                  element={
-                    <ProtectedAdminRoute permission="view_gst_reports">
-                      <GstReportsPage />
-                    </ProtectedAdminRoute>
-                  }
-                />
-                <Route
-                  path="import-gst-data"
-                  element={
-                    <ProtectedAdminRoute permission="upload_gst_files">
-                      <GstImportPage />
-                    </ProtectedAdminRoute>
-                  }
-                />
+                <Route path="gstr1" element={<ProtectedAdminRoute permission="view_gst_reports"><GstReportsPage /></ProtectedAdminRoute>} />
                 <Route
                   path="admins"
                   element={
