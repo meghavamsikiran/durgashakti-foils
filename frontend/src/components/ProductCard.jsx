@@ -21,9 +21,7 @@ const ProductCard = ({ product }) => {
   const [showRemoveModal, setShowRemoveModal] = React.useState(false);
   const { basePrice, displayPrice, hasOffer, discountPercent } = getProductPricing(product);
   const isUnavailable = Number(product.stock_quantity) <= 0 || product.in_stock === false;
-  const applicableCoupons = Array.isArray(product.applicable_coupons)
-    ? product.applicable_coupons.slice(0, 2)
-    : [];
+  const primaryCoupon = Array.isArray(product.applicable_coupons) ? product.applicable_coupons[0] : null;
   
   const cartItem = cart?.items?.find(item => String(item.product_id) === String(product.id));
   const currentQty = cartItem ? cartItem.quantity : 0;
@@ -179,7 +177,7 @@ const ProductCard = ({ product }) => {
       <motion.div
         whileHover={{ y: -5 }}
         transition={{ duration: 0.2 }}
-        className="group relative overflow-hidden bg-white border border-border-subtle rounded-xl hover:border-primary hover:shadow-emerald-glow transition-all duration-300 cursor-pointer flex flex-col h-full"
+        className="group relative overflow-hidden bg-white border border-border-subtle rounded-xl hover:border-primary hover:shadow-emerald-glow transition-all duration-300 cursor-pointer flex flex-col h-full min-h-[548px]"
         onClick={() => navigate(`/product/${product.id}`)}
         data-testid={`product-card-${product.id}`}
       >
@@ -215,7 +213,15 @@ const ProductCard = ({ product }) => {
             </div>
           )}
 
-          
+          {primaryCoupon && (
+            <div
+              className="absolute bottom-3 left-3 right-3 z-10 flex items-center justify-between gap-2 rounded-md border border-white/60 bg-white/95 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wider text-emerald-800 shadow-sm backdrop-blur-md"
+              data-testid="product-coupon-badge"
+            >
+              <span className="min-w-0 truncate">Coupon {primaryCoupon.code}</span>
+              <span className="shrink-0 text-emerald-700">{formatCouponValue(primaryCoupon)}</span>
+            </div>
+          )}
 
           {isUnavailable && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
@@ -224,7 +230,7 @@ const ProductCard = ({ product }) => {
           )}
         </div>
 
-        <div className="p-5 flex flex-col justify-between flex-1 min-h-[270px]">
+        <div className="p-5 flex flex-col justify-between flex-1 min-h-[292px]">
           <div>
             <div className="mb-1.5 flex items-center justify-between">
               <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle">
@@ -252,25 +258,6 @@ const ProductCard = ({ product }) => {
             <p className="text-xs text-text-muted leading-relaxed line-clamp-2 font-inter mb-4">
               {product.description}
             </p>
-
-            {applicableCoupons.length > 0 && (
-              <div className="mb-4 space-y-1.5">
-                {applicableCoupons.map((coupon) => (
-                  <div
-                    key={coupon.code}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 py-1.5"
-                    data-testid="product-coupon-badge"
-                  >
-                    <span className="min-w-0 truncate text-[10px] font-black uppercase tracking-wider text-emerald-800">
-                      Use {coupon.code}
-                    </span>
-                    <span className="shrink-0 text-[9px] font-black uppercase tracking-wider text-emerald-700">
-                      {formatCouponValue(coupon)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           <div>

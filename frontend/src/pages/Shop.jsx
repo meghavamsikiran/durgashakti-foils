@@ -259,7 +259,7 @@ const Shop = () => {
                 <p className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-6" data-testid="product-count">
                   SHOWING {filteredProducts.length} PRODUCT{filteredProducts.length !== 1 ? 'S' : ''}
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-fr gap-8">
                   {filteredProducts.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map((product, index) => (
                     <motion.div
                       key={product.id}
