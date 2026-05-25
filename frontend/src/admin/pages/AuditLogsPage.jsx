@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import adminService from '../services/admin.service';
 import apiClient from '../../services/core/apiClient';
 import { 
@@ -68,17 +69,20 @@ const AuditLogsPage = () => {
   const handleExport = useCallback(async () => {
     try {
       const res = await adminService.exportAuditLogs();
-      const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+      const filename = res.headers?.['content-disposition']?.match(/filename\*=UTF-8''(.+)$|filename="?([^";]+)"?/)?.[1] || 'audit_logs.xlsx';
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data], { type: res.headers?.['content-type'] || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
+      link.style.visibility = 'hidden';
       link.href = url;
-      link.setAttribute('download', 'audit_logs.xlsx');
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     } catch (error) {
       console.error('Failed to download audit logs', error);
+      toast.error('Audit log download failed. Please refresh and try again.');
     }
   }, []);
 
