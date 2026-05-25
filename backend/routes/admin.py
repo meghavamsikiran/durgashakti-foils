@@ -1082,6 +1082,7 @@ async def export_gstr1(
     year: Optional[int] = Query(None),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
+    format: str = Query("excel", pattern="^(excel|csv)$"),
     admin: UserSchema = Depends(require_permission("export_gst_reports")),
     db: AsyncSession = Depends(get_db)
 ):
@@ -1169,6 +1170,17 @@ async def export_gstr1(
             "CGST", "SGST", "IGST", "Invoice Discount", "Shipping Charges", "COD Charges",
             "Invoice Total", "Payment Mode", "Payment Status"
         ])
+
+    if format == "csv":
+        csv_data = df.to_csv(index=False)
+        filename = f"GSTR1_{start.date()}_to_{(end - pd.Timedelta(days=1)).date()}.csv"
+        output = BytesIO(csv_data.encode("utf-8"))
+        return StreamingResponse(
+            output,
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+
     output = BytesIO()
     with pd.ExcelWriter(output, engine="openpyxl") as writer:
         df.to_excel(writer, index=False, sheet_name="GSTR1")
