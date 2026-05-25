@@ -21,6 +21,7 @@ const CustomersPage = () => {
     return !cached;
   });
   const [search, setSearch] = useState('');
+  const [segment, setSegment] = useState('all');
   const [page, setPage] = useState(1);
   const [metrics, setMetrics] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary');
@@ -33,7 +34,7 @@ const CustomersPage = () => {
   });
 
   const load = useCallback(async (pageNum = 1) => {
-    const params = { page: pageNum, limit: ITEMS_PER_PAGE, search };
+    const params = { page: pageNum, limit: ITEMS_PER_PAGE, search, ...(segment === 'loyal' ? { segment: 'loyal' } : {}) };
     const cached = adminService.getCached('/admin/customers', params);
     if (!cached) {
       setLoading(true);
@@ -50,17 +51,17 @@ const CustomersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, segment]);
 
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
-      const response = await apiClient.get('/admin/customers', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true });
+      const response = await apiClient.get('/admin/customers', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search, ...(segment === 'loyal' ? { segment: 'loyal' } : {}) }, silent: true });
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
     } catch {
       // Ignore background errors
     }
-  }, [search]);
+  }, [search, segment]);
 
   const formatDate = (d) => {
     if (!d) return '—';
@@ -88,7 +89,7 @@ const CustomersPage = () => {
 
   const stats = {
     total: metrics?.total_customers || total,
-    loyal: rows.filter(r => (r.orders_count || 0) > 1).length, // Filtered on page
+    loyal: rows.filter(r => r.is_loyal).length,
     revenue: metrics?.total_revenue || 0,
     avg: (metrics?.total_revenue && metrics?.total_customers) ? (metrics.total_revenue / metrics.total_customers) : 0
   };
@@ -106,15 +107,31 @@ const CustomersPage = () => {
           <p className="text-slate-500 mt-1 font-medium">Analyze buyer behavior and lifetime value metrics.</p>
         </div>
         
-        <div className="relative group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-          <input 
-            type="text"
-            placeholder="Search Customers..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-80 transition-all focus:w-96"
-          />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'loyal', label: 'Loyal Customers' }
+            ].map(item => (
+              <button
+                key={item.id}
+                onClick={() => { setSegment(item.id); setPage(1); }}
+                className={`px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${segment === item.id ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <div className="relative group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input 
+              type="text"
+              placeholder="Search Customers..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-80 transition-all focus:w-96"
+            />
+          </div>
         </div>
       </div>
 
@@ -179,6 +196,11 @@ const CustomersPage = () => {
                     <div className="font-bold text-slate-800 group-hover:text-primary transition-colors">
                       {row.full_name || row.name || 'Anonymous'}
                     </div>
+                    {row.is_loyal && (
+                      <span className="inline-flex mt-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-black uppercase tracking-wider">
+                        Loyal Customer
+                      </span>
+                    )}
                     <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
                       <Mail className="w-3 h-3" />
                       {row.email}

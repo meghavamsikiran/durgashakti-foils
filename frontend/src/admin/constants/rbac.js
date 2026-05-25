@@ -107,7 +107,8 @@ export const PERMISSION_GROUPS = [
     title: 'Settings & Configuration',
     permissions: [
       { id: 'manage_settings', label: 'Manage Settings', desc: 'Access and modify payment settings (COD toggle, etc.)' },
-      { id: 'manage_banner', label: 'Manage Banner', desc: 'Edit the scrolling announcement banner and countdown timer' }
+      { id: 'manage_banner', label: 'Manage Banner', desc: 'Edit the scrolling announcement banner and countdown timer' },
+      { id: 'manage_coupons', label: 'Manage Coupons', desc: 'Create, edit, assign, and analyze coupon campaigns' }
     ]
   }
 ];
@@ -128,7 +129,8 @@ export const ROLE_TEMPLATES = {
       view_audit_logs: true,
       view_dashboard: true,
       manage_settings: true,
-      manage_banner: true
+      manage_banner: true,
+      manage_coupons: true
     }
   },
   ORDER_MANAGER: {
@@ -208,7 +210,7 @@ export const superAdminSidebar = [
   { label: 'Audit Logs', permissions: ['view_audit_logs'] },
   { label: 'Settings', permissions: ['manage_settings', 'manage_banner'] },
   { label: 'Shipping Settings', permissions: ['manage_settings'] },
-  { label: 'Coupons', permissions: ['manage_settings'] },
+  { label: 'Coupons', permissions: ['manage_coupons', 'manage_settings'] },
 ];
 
 export const isAdminRole = (role) => [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(role);

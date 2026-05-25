@@ -128,17 +128,19 @@ const ProductReviewPage = () => {
           <StarRating value={rating} interactive onChange={setRating} size="lg" />
         </div>
 
-        <div>
-          <label className="block text-sm font-black text-slate-900 mb-2">Write a review</label>
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={5}
-            maxLength={2000}
-            placeholder="What should other customers know?"
-            className="w-full rounded-lg border border-border-subtle px-4 py-3 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 resize-y"
-          />
-        </div>
+        {eligibility?.settings?.comments_enabled !== false && (
+          <div>
+            <label className="block text-sm font-black text-slate-900 mb-2">Write a review</label>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={5}
+              maxLength={2000}
+              placeholder="What should other customers know?"
+              className="w-full rounded-lg border border-border-subtle px-4 py-3 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 resize-y"
+            />
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-black text-slate-900 mb-2">Share a video or photo</label>

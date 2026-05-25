@@ -184,7 +184,7 @@ function AppRoutes() {
                 <Route
                   path="coupons"
                   element={
-                    <ProtectedAdminRoute permission="manage_settings">
+                    <ProtectedAdminRoute permission="manage_coupons">
                       <CouponsPage />
                     </ProtectedAdminRoute>
                   }
@@ -269,7 +269,7 @@ function AppRoutes() {
                 <Route
                   path="coupons"
                   element={
-                    <ProtectedAdminRoute permission="manage_settings">
+                    <ProtectedAdminRoute permission="manage_coupons">
                       <CouponsPage />
                     </ProtectedAdminRoute>
                   }

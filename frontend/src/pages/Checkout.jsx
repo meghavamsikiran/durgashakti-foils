@@ -29,6 +29,7 @@ const Checkout = () => {
     handlePlaceOrder,
     total,
     appliedCoupons,
+    availableLoyaltyCoupons,
     couponInput,
     setCouponInput,
     validatingCoupon,
@@ -88,6 +89,7 @@ const Checkout = () => {
                 paymentMethod={paymentMethod}
                 onPlaceOrder={handlePlaceOrder}
                 appliedCoupons={appliedCoupons}
+                availableLoyaltyCoupons={availableLoyaltyCoupons}
                 couponInput={couponInput}
                 setCouponInput={setCouponInput}
                 validatingCoupon={validatingCoupon}

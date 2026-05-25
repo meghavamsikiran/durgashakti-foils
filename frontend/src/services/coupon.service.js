@@ -13,6 +13,11 @@ const couponService = {
     return response.data;
   },
 
+  getEligibleCoupons: async () => {
+    const response = await apiClient.get('/coupons/eligible', { silent: true });
+    return response.data;
+  },
+
   // Admin CRUD
   getCoupons: async () => {
     const response = await cachedGet('/admin/coupons');
@@ -39,6 +44,16 @@ const couponService = {
   deleteCoupon: async (couponId) => {
     invalidateCache('/admin/coupons');
     const response = await apiClient.delete(`/admin/coupons/${couponId}`);
+    return response.data;
+  },
+
+  getLoyalCustomers: async () => {
+    const response = await cachedGet('/admin/coupons/loyal-customers', { ttl: 30000 });
+    return response.data;
+  },
+
+  getAnalytics: async () => {
+    const response = await cachedGet('/admin/coupons/analytics', { ttl: 30000 });
     return response.data;
   },
 

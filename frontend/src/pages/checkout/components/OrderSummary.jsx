@@ -14,6 +14,7 @@ const OrderSummary = ({
   paymentMethod, 
   onPlaceOrder,
   appliedCoupons = [],
+  availableLoyaltyCoupons = [],
   couponInput = '',
   setCouponInput,
   validatingCoupon = false,
@@ -77,6 +78,24 @@ const OrderSummary = ({
         </div>
 
         {/* Applied Coupon Badges */}
+        {availableLoyaltyCoupons.length > 0 && appliedCoupons.length === 0 && (
+          <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 mb-2">Loyal customer offers</p>
+            <div className="flex flex-wrap gap-2">
+              {availableLoyaltyCoupons.map((coupon) => (
+                <button
+                  key={coupon.id || coupon.code}
+                  type="button"
+                  onClick={() => onApplyCoupon(coupon.code)}
+                  className="px-3 py-1.5 rounded-xl bg-white border border-amber-200 text-amber-800 text-xs font-black font-mono tracking-wider hover:bg-amber-100 transition-colors"
+                >
+                  {coupon.code}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {appliedCoupons.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-4">
             {appliedCoupons.map((coupon) => (

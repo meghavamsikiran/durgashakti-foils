@@ -68,6 +68,7 @@ export const useCheckout = () => {
   });
 
   const [appliedCoupons, setAppliedCoupons] = useState([]);
+  const [availableLoyaltyCoupons, setAvailableLoyaltyCoupons] = useState([]);
   const [couponInput, setCouponInput] = useState('');
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
@@ -146,6 +147,39 @@ export const useCheckout = () => {
       return total + (displayPrice * item.quantity);
     }, 0) || 0;
   }, [cart.items, products]);
+
+  useEffect(() => {
+    if (!user || !cartReady || !cart.items?.length || Object.keys(products).length === 0 || appliedCoupons.length > 0) {
+      return;
+    }
+
+    let active = true;
+    const loadLoyaltyCoupons = async () => {
+      try {
+        const data = await couponService.getEligibleCoupons();
+        if (!active) return;
+        const subtotal = calculateTotal();
+        const eligible = (data.coupons || []).filter(c => subtotal >= Number(c.min_cart_value || 0));
+        setAvailableLoyaltyCoupons(eligible);
+
+        if (eligible.length > 0) {
+          const bestCoupon = eligible[0];
+          const res = await couponService.validateCoupons([bestCoupon.code], subtotal);
+          if (active && res.valid && res.applied_coupons?.length) {
+            setAppliedCoupons(res.applied_coupons);
+            toast.success(`Loyalty coupon "${bestCoupon.code}" applied automatically.`);
+          }
+        }
+      } catch {
+        if (active) setAvailableLoyaltyCoupons([]);
+      }
+    };
+
+    loadLoyaltyCoupons();
+    return () => {
+      active = false;
+    };
+  }, [user, cartReady, cart.items, products, appliedCoupons.length, calculateTotal]);
 
   const handleSelectAddress = (addr) => {
     setSelectedAddressId(addr.id);
@@ -415,6 +449,7 @@ export const useCheckout = () => {
     handlePlaceOrder,
     total: calculateTotal(),
     appliedCoupons,
+    availableLoyaltyCoupons,
     couponInput,
     setCouponInput,
     validatingCoupon,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Ticket, Plus, Search, Edit2, Trash2, Settings, 
-  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone, Sparkles, Copy
+  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone, Sparkles, Copy, Star, UserCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
 import couponService from '../../services/coupon.service';
@@ -506,6 +506,8 @@ const CouponsPage = () => {
   const [savingBanners, setSavingBanners] = useState(false);
   const [bannerSearchText, setBannerSearchText] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [loyalCustomers, setLoyalCustomers] = useState([]);
+  const [couponAnalytics, setCouponAnalytics] = useState(null);
 
   const initialBannerForm = {
     id: null,
@@ -545,16 +547,22 @@ const CouponsPage = () => {
     has_max_discount_limit: false,
     has_total_use_limit: false,
     has_customer_use_limit: false,
+    coupon_type: 'standard',
+    apply_to_all_loyal_customers: false,
+    eligible_customer_ids: [],
+    is_reusable: true,
     is_active: true
   });
 
   const fetchCouponsAndSettings = async () => {
     setLoading(true);
     try {
-      const [couponsData, settingsData, adminSettingsRes] = await Promise.all([
+      const [couponsData, settingsData, adminSettingsRes, loyalCustomerData, analyticsData] = await Promise.all([
         couponService.getCoupons(),
         couponService.getSettings(),
-        adminService.getSettings()
+        adminService.getSettings(),
+        couponService.getLoyalCustomers().catch(() => ({ items: [] })),
+        couponService.getAnalytics().catch(() => null)
       ]);
       setCoupons((couponsData || []).filter(c => c !== null && c !== undefined && c.code));
       setSettings(settingsData);
@@ -567,6 +575,8 @@ const CouponsPage = () => {
       setScrollingBanner(bannerVal);
       setPopupBanner(adminSettings.popup_banner || { promoted_coupons: popupPromotedCoupons });
       setCustomBanners((adminSettings.popup_banner?.custom_banners || []).filter(b => b !== null && b !== undefined));
+      setLoyalCustomers(loyalCustomerData?.items || []);
+      setCouponAnalytics(analyticsData);
     } catch (error) {
       toast.error('Failed to load coupon data');
     } finally {
@@ -604,6 +614,10 @@ const CouponsPage = () => {
       has_max_discount_limit: false,
       has_total_use_limit: false,
       has_customer_use_limit: false,
+      coupon_type: 'standard',
+      apply_to_all_loyal_customers: false,
+      eligible_customer_ids: [],
+      is_reusable: true,
       is_active: true
     });
     setIsModalOpen(true);
@@ -632,6 +646,10 @@ const CouponsPage = () => {
       has_max_discount_limit: coupon.max_discount_limit !== null && coupon.max_discount_limit !== undefined,
       has_total_use_limit: coupon.max_usage_count !== null && coupon.max_usage_count !== undefined,
       has_customer_use_limit: coupon.per_customer_usage_limit !== null && coupon.per_customer_usage_limit !== undefined,
+      coupon_type: coupon.coupon_type || 'standard',
+      apply_to_all_loyal_customers: coupon.apply_to_all_loyal_customers || false,
+      eligible_customer_ids: coupon.eligible_customer_ids || [],
+      is_reusable: coupon.is_reusable !== false,
       is_active: coupon.is_active
     });
     setIsModalOpen(true);
@@ -650,6 +668,10 @@ const CouponsPage = () => {
         max_discount_limit: coupon.max_discount_limit,
         max_usage_count: coupon.max_usage_count,
         per_customer_usage_limit: coupon.per_customer_usage_limit,
+        coupon_type: coupon.coupon_type || 'standard',
+        apply_to_all_loyal_customers: coupon.apply_to_all_loyal_customers || false,
+        eligible_customer_ids: coupon.eligible_customer_ids || [],
+        is_reusable: coupon.is_reusable !== false,
         is_active: !coupon.is_active
       };
       await couponService.updateCoupon(coupon.id, updatedPayload);
@@ -879,6 +901,10 @@ const CouponsPage = () => {
       max_discount_limit: formData.has_max_discount_limit && formData.max_discount_limit ? Number(formData.max_discount_limit) : null,
       max_usage_count: formData.has_total_use_limit && formData.max_usage_count ? Number(formData.max_usage_count) : null,
       per_customer_usage_limit: formData.has_customer_use_limit && formData.per_customer_usage_limit ? Number(formData.per_customer_usage_limit) : null,
+      coupon_type: formData.coupon_type,
+      apply_to_all_loyal_customers: formData.coupon_type === 'loyalty' && formData.apply_to_all_loyal_customers,
+      eligible_customer_ids: formData.coupon_type === 'loyalty' && !formData.apply_to_all_loyal_customers ? formData.eligible_customer_ids : [],
+      is_reusable: formData.is_reusable,
       is_active: formData.is_active
     };
 
@@ -1145,7 +1171,7 @@ const CouponsPage = () => {
       {activeTab === 'coupons' ? (
         <>
           {/* Analytics Summary */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             <div className="bg-white p-6 rounded-2xl border border-border-subtle shadow-sm flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                 <Ticket className="w-6 h-6" />
@@ -1183,6 +1209,16 @@ const CouponsPage = () => {
               <div>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Generated Revenue</p>
                 <p className="text-2xl font-black text-ink-slate mt-0.5">₹{couponDrivenRevenue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-border-subtle shadow-sm flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-600">
+                <Star className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Active Loyal Customers</p>
+                <p className="text-2xl font-black text-ink-slate mt-0.5">{couponAnalytics?.active_loyal_customer_count ?? loyalCustomers.length}</p>
               </div>
             </div>
           </div>
@@ -1293,7 +1329,14 @@ const CouponsPage = () => {
 
                       return (
                         <tr key={coupon.id} className="hover:bg-slate-50/50 transition-all">
-                          <td className="px-6 py-4 font-mono font-bold text-primary tracking-wider">{coupon.code}</td>
+                          <td className="px-6 py-4">
+                            <div className="font-mono font-bold text-primary tracking-wider">{coupon.code}</div>
+                            {(coupon.coupon_type || 'standard') === 'loyalty' && (
+                              <span className="inline-flex mt-1 px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-100 text-[10px] font-black uppercase tracking-wider">
+                                Loyal Customer
+                              </span>
+                            )}
+                          </td>
                           <td className="px-6 py-4">
                             <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold capitalize ${
                               coupon.discount_type === 'percentage' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' :
@@ -1942,6 +1985,30 @@ const CouponsPage = () => {
                   </select>
                 </div>
 
+                <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Coupon audience</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { value: 'standard', label: 'Regular Coupon', desc: 'Available to all eligible customers' },
+                      { value: 'loyalty', label: 'Loyal Customer Special Coupon', desc: 'Reserved for loyal customers only' }
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, coupon_type: option.value }))}
+                        className={`text-left p-4 rounded-xl border transition-all ${
+                          formData.coupon_type === option.value
+                            ? 'bg-primary/10 border-primary text-primary'
+                            : 'bg-white border-slate-200 text-slate-600 hover:border-primary/40'
+                        }`}
+                      >
+                        <p className="text-sm font-black uppercase tracking-tight">{option.label}</p>
+                        <p className="text-xs mt-1 font-medium opacity-75">{option.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">
                     {formData.discount_type === 'percentage' ? 'Discount percentage' : 'Discount amount'}
@@ -1973,6 +2040,57 @@ const CouponsPage = () => {
                   />
                   <p className="text-[10px] text-slate-400 mt-1">Set 0 if customers can use it on any order amount.</p>
                 </div>
+
+                {formData.coupon_type === 'loyalty' && (
+                  <div className="sm:col-span-2 rounded-xl border border-amber-200 bg-amber-50/70 p-4 space-y-4">
+                    <div className="flex items-start gap-3">
+                      <UserCheck className="w-5 h-5 text-amber-700 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-black text-amber-900 uppercase tracking-tight">Loyal customer assignment</p>
+                        <p className="text-xs text-amber-800/80 mt-0.5">Choose all loyal customers or select specific loyal customer accounts.</p>
+                      </div>
+                    </div>
+
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="h-4.5 w-4.5 rounded border-amber-300 text-primary focus:ring-primary"
+                        checked={formData.apply_to_all_loyal_customers}
+                        onChange={(e) => setFormData(prev => ({ ...prev, apply_to_all_loyal_customers: e.target.checked }))}
+                      />
+                      <span className="text-sm font-bold text-amber-950">Apply to all loyal customers</span>
+                    </label>
+
+                    {!formData.apply_to_all_loyal_customers && (
+                      <div className="max-h-52 overflow-y-auto bg-white border border-amber-100 rounded-xl divide-y divide-amber-50">
+                        {loyalCustomers.length === 0 ? (
+                          <p className="p-4 text-xs font-bold text-amber-800">No loyal customers match the current criteria yet.</p>
+                        ) : loyalCustomers.map(customer => {
+                          const selected = formData.eligible_customer_ids.includes(customer.id);
+                          return (
+                            <label key={customer.id} className="flex items-center gap-3 p-3 cursor-pointer hover:bg-amber-50/60">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-amber-300 text-primary focus:ring-primary"
+                                checked={selected}
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  eligible_customer_ids: e.target.checked
+                                    ? [...prev.eligible_customer_ids, customer.id]
+                                    : prev.eligible_customer_ids.filter(id => id !== customer.id)
+                                }))}
+                              />
+                              <span className="min-w-0">
+                                <span className="block text-sm font-black text-slate-900 truncate">{customer.name}</span>
+                                <span className="block text-[10px] font-bold text-slate-500 truncate">{customer.email} • {customer.orders_count} orders • ₹{Number(customer.total_spent || 0).toLocaleString('en-IN')}</span>
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {formData.discount_type === 'percentage' && (
                   <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -2075,6 +2193,21 @@ const CouponsPage = () => {
                       onChange={(e) => setFormData(prev => ({ ...prev, per_customer_usage_limit: e.target.value }))}
                     />
                   )}
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4.5 w-4.5 rounded border-slate-300 text-primary focus:ring-primary"
+                      checked={formData.is_reusable}
+                      onChange={(e) => setFormData(prev => ({ ...prev, is_reusable: e.target.checked }))}
+                    />
+                    <div>
+                      <p className="text-sm font-bold text-ink-slate">Reusable coupon</p>
+                      <p className="text-xs text-text-muted mt-0.5">Turn off to make this a one-time coupon per customer account.</p>
+                    </div>
+                  </label>
                 </div>
               </div>
 

@@ -55,6 +55,9 @@ const ProductReviews = ({ productId, summary }) => {
   const average = ratingSummary.rating_average ?? summary?.rating_average ?? 0;
   const count = ratingSummary.review_count ?? summary?.review_count ?? 0;
   const distribution = ratingSummary.rating_distribution || {};
+  const ratingsEnabled = ratingSummary.settings?.ratings_enabled !== false;
+
+  if (!ratingsEnabled) return null;
 
   return (
     <section className="mt-14 border-t border-border-subtle pt-10">

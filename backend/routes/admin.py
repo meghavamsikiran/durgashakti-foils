@@ -484,6 +484,7 @@ async def list_customers(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
+    segment: Optional[str] = Query(None),
     admin: UserSchema = Depends(require_permission("manage_customers")),
     db: AsyncSession = Depends(get_db)
 ):
@@ -500,14 +501,18 @@ async def list_customers(
         )
         q = q.where(clause)
 
+    loyal_segment = segment == "loyal"
     offset = (page - 1) * limit
-    res = await db.execute(q.order_by(UserModel.created_at.desc()).offset(offset).limit(limit))
+    if loyal_segment:
+        res = await db.execute(q.order_by(UserModel.created_at.desc()))
+    else:
+        res = await db.execute(q.order_by(UserModel.created_at.desc()).offset(offset).limit(limit))
     rows = res.all()
     
     total = 0
-    if rows:
+    if rows and not loyal_segment:
         total = rows[0][1]
-    elif page > 1:
+    elif page > 1 and not loyal_segment:
         fallback_q = select(func.count(UserModel.id)).where(UserModel.role == "customer")
         if clause is not None:
             fallback_q = fallback_q.where(clause)
@@ -515,13 +520,25 @@ async def list_customers(
 
     users = [row[0] for row in rows]
 
+    loyalty_res = await db.execute(select(SettingModel).where(SettingModel.key == "loyalty_settings"))
+    loyalty_setting = loyalty_res.scalar_one_or_none()
+    loyalty_config = {"minimum_orders": 10, "minimum_spend": 15000.0}
+    if loyalty_setting and isinstance(loyalty_setting.value, dict):
+        loyalty_config.update(loyalty_setting.value)
+    min_orders = int(loyalty_config.get("minimum_orders") or 10)
+    min_spend = float(loyalty_config.get("minimum_spend") or 15000.0)
+
     # Aggregate order counts
     user_ids = [u.id for u in users]
     order_stats = {}
     if user_ids:
         stat_res = await db.execute(
             select(OrderModel.user_id, func.count(OrderModel.id).label('cnt'), func.sum(OrderModel.total_amount).label('tot'))
-            .where(OrderModel.user_id.in_(user_ids), OrderModel.payment_status.in_(["completed", "Paid"]))
+            .where(
+                OrderModel.user_id.in_(user_ids),
+                OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
+                OrderModel.order_status != "cancelled",
+            )
             .group_by(OrderModel.user_id)
         )
         for row in stat_res.all():
@@ -530,6 +547,9 @@ async def list_customers(
     rows_data = []
     for u in users:
         st = order_stats.get(u.id, {"orders_count": 0, "total_spent": 0.0})
+        is_loyal = st["orders_count"] >= min_orders or st["total_spent"] >= min_spend
+        if segment == "loyal" and not is_loyal:
+            continue
         rows_data.append({
             "id": str(u.id),
             "name": u.full_name or "Anonymous",
@@ -537,9 +557,15 @@ async def list_customers(
             "phone": u.phone,
             "created_at": u.created_at.isoformat(),
             "orders_count": st["orders_count"],
-            "total_spent": round(st["total_spent"], 2)
+            "total_spent": round(st["total_spent"], 2),
+            "is_loyal": is_loyal,
+            "loyalty_criteria": {"minimum_orders": min_orders, "minimum_spend": min_spend}
         })
-    return {"items": rows_data, "total": total, "page": page, "limit": limit}
+    if loyal_segment:
+        total = len(rows_data)
+        rows_data = rows_data[offset:offset + limit]
+
+    return {"items": rows_data, "total": total if not loyal_segment else total, "page": page, "limit": limit}
 
 
 @router.get("/admin/customers/{customer_id}")
@@ -904,12 +930,22 @@ async def save_setting(data: dict, admin: UserSchema = Depends(require_permissio
 
 @router.get("/settings/public")
 async def get_public_settings(db: AsyncSession = Depends(get_db)):
-    res = await db.execute(select(SettingModel).where(SettingModel.key.in_(["company_profile", "payment_settings", "scrolling_banner", "shipping_settings", "popup_banner"])))
+    res = await db.execute(select(SettingModel).where(SettingModel.key.in_(["company_profile", "payment_settings", "scrolling_banner", "shipping_settings", "popup_banner", "feedback_settings", "loyalty_settings"])))
     d = {s.key: s.value for s in res.scalars().all()}
     if "payment_settings" not in d:
         d["payment_settings"] = {"cod_enabled": True}
     if "popup_banner" not in d:
         d["popup_banner"] = {"promoted_coupons": []}
+    if "feedback_settings" not in d:
+        d["feedback_settings"] = {"ratings_enabled": True, "comments_enabled": True}
+    else:
+        feedback = dict(d["feedback_settings"] or {})
+        d["feedback_settings"] = {
+            "ratings_enabled": feedback.get("ratings_enabled", True) is not False,
+            "comments_enabled": feedback.get("comments_enabled", True) is not False
+        }
+    if "loyalty_settings" not in d:
+        d["loyalty_settings"] = {"minimum_orders": 10, "minimum_spend": 15000.0}
     if "scrolling_banner" not in d:
         d["scrolling_banner"] = {
             "text1": "Durga Shakti Foils: Premium Packing Solutions",

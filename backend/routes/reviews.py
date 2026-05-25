@@ -8,13 +8,25 @@ from datetime import datetime, timezone
 
 from database import get_db
 from deps import UserSchema, get_current_user, is_valid_uuid, row_to_dict, validate_uuid
-from models import OrderModel, ProductModel, ProductReviewModel
+from models import OrderModel, ProductModel, ProductReviewModel, SettingModel
 from storage_service import upload_media
 
 router = APIRouter(prefix="/api")
 
 REVIEWABLE_PAYMENT_STATUSES = {"completed", "paid", "cash on delivery"}
 BLOCKED_ORDER_STATUSES = {"cancelled", "failed", "pending_payment"}
+
+
+async def _get_feedback_settings(db: AsyncSession) -> dict:
+    res = await db.execute(select(SettingModel).where(SettingModel.key == "feedback_settings"))
+    setting = res.scalar_one_or_none()
+    settings = {"ratings_enabled": True, "comments_enabled": True}
+    if setting and isinstance(setting.value, dict):
+        settings.update(setting.value)
+    return {
+        "ratings_enabled": settings.get("ratings_enabled", True) is not False,
+        "comments_enabled": settings.get("comments_enabled", True) is not False,
+    }
 
 
 def _review_summary_rows(rows) -> dict:
@@ -74,6 +86,17 @@ async def get_product_reviews(
     page = max(page, 1)
     limit = min(max(limit, 1), 50)
     offset = (page - 1) * limit
+    feedback_settings = await _get_feedback_settings(db)
+    if not feedback_settings["ratings_enabled"]:
+        return {
+            "review_count": 0,
+            "rating_average": 0,
+            "rating_distribution": {str(i): 0 for i in range(1, 6)},
+            "items": [],
+            "page": page,
+            "limit": limit,
+            "settings": feedback_settings,
+        }
 
     summary_result = await db.execute(
         select(ProductReviewModel.rating, func.count(ProductReviewModel.id))
@@ -90,7 +113,10 @@ async def get_product_reviews(
         .limit(limit)
     )
     reviews = [await _serialize_review(review) for review in reviews_result.scalars().all()]
-    return {**summary, "items": reviews, "page": page, "limit": limit}
+    if not feedback_settings["comments_enabled"]:
+        for review in reviews:
+            review["comment"] = ""
+    return {**summary, "items": reviews, "page": page, "limit": limit, "settings": feedback_settings}
 
 
 @router.get("/reviews/eligibility")
@@ -102,6 +128,9 @@ async def get_review_eligibility(
 ):
     validate_uuid(product_id)
     validate_uuid(order_id)
+    feedback_settings = await _get_feedback_settings(db)
+    if not feedback_settings["ratings_enabled"]:
+        return {"can_review": False, "reason": "Ratings are currently disabled", "existing_review": None}
     existing_result = await db.execute(
         select(ProductReviewModel).where(
             ProductReviewModel.product_id == product_id,
@@ -124,6 +153,7 @@ async def get_review_eligibility(
         "can_review": True,
         "reason": None,
         "existing_review": await _serialize_review(existing_review) if existing_review else None,
+        "settings": feedback_settings,
         "product": {
             "id": str(product.id),
             "name": product.name,
@@ -146,10 +176,13 @@ async def submit_product_review(
 ):
     validate_uuid(product_id)
     validate_uuid(order_id)
+    feedback_settings = await _get_feedback_settings(db)
+    if not feedback_settings["ratings_enabled"]:
+        raise HTTPException(status_code=403, detail="Ratings are currently disabled")
     if rating < 1 or rating > 5:
         raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
     clean_title = title.strip()
-    clean_comment = comment.strip()
+    clean_comment = comment.strip() if feedback_settings["comments_enabled"] else ""
     clean_public_name = public_name.strip()
     if not clean_title:
         raise HTTPException(status_code=400, detail="Review title is required")
@@ -235,4 +268,3 @@ async def delete_product_review(
     await db.delete(review)
     await db.flush()
     return {"message": "Review deleted successfully"}
-

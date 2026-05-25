@@ -226,11 +226,13 @@ const ProductCard = ({ product }) => {
               {product.name}
             </h3>
 
-            <StarRating
-              value={product.rating_average}
-              count={product.review_count}
-              className="mb-2"
-            />
+            {Number(product.review_count || 0) > 0 && (
+              <StarRating
+                value={product.rating_average}
+                count={product.review_count}
+                className="mb-2"
+              />
+            )}
             
             <p className="text-xs text-text-muted leading-relaxed line-clamp-2 font-inter mb-4">
               {product.description}

@@ -1,14 +1,15 @@
 """Coupon Router for admin management and checkout validation."""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, delete
+from sqlalchemy import select, and_, delete, func
 from database import get_db
-from models import CouponModel, SettingModel, OrderModel
-from deps import UserSchema, get_current_user, require_permission, row_to_dict, write_audit_log
+from models import CouponModel, SettingModel, OrderModel, UserModel
+from deps import UserSchema, get_current_user, require_permission, row_to_dict, write_audit_log, create_notification, send_email
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime, timezone
 import uuid
+import asyncio
 
 router = APIRouter(prefix="/api")
 
@@ -23,6 +24,10 @@ class CouponCreateUpdate(BaseModel):
     max_usage_count: Optional[int] = None
     per_customer_usage_limit: Optional[int] = None
     is_active: bool = True
+    coupon_type: str = "standard"
+    apply_to_all_loyal_customers: bool = False
+    eligible_customer_ids: List[str] = []
+    is_reusable: bool = True
 
 class CouponSettingsUpdate(BaseModel):
     system_enabled: bool
@@ -32,6 +37,128 @@ class CouponSettingsUpdate(BaseModel):
 class CouponValidationRequest(BaseModel):
     codes: List[str]
     cart_subtotal: float
+
+LOYALTY_DEFAULTS = {
+    "minimum_orders": 10,
+    "minimum_spend": 15000.0
+}
+
+
+async def get_loyalty_settings(db: AsyncSession) -> dict:
+    res = await db.execute(select(SettingModel).where(SettingModel.key == "loyalty_settings"))
+    setting = res.scalar_one_or_none()
+    settings = dict(LOYALTY_DEFAULTS)
+    if setting and isinstance(setting.value, dict):
+        settings.update(setting.value)
+    settings["minimum_orders"] = int(settings.get("minimum_orders") or LOYALTY_DEFAULTS["minimum_orders"])
+    settings["minimum_spend"] = float(settings.get("minimum_spend") or LOYALTY_DEFAULTS["minimum_spend"])
+    return settings
+
+
+async def get_customer_loyalty_stats(db: AsyncSession, user_id) -> dict:
+    settings = await get_loyalty_settings(db)
+    user_uuid = uuid.UUID(str(user_id))
+    stats_res = await db.execute(
+        select(
+            func.count(OrderModel.id).label("orders_count"),
+            func.coalesce(func.sum(OrderModel.total_amount), 0).label("total_spent"),
+        ).where(
+            OrderModel.user_id == user_uuid,
+            OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
+            OrderModel.order_status != "cancelled",
+        )
+    )
+    stats = stats_res.first()
+    orders_count = int(stats.orders_count or 0) if stats else 0
+    total_spent = float(stats.total_spent or 0) if stats else 0.0
+    return {
+        "orders_count": orders_count,
+        "total_spent": round(total_spent, 2),
+        "is_loyal": orders_count >= settings["minimum_orders"] or total_spent >= settings["minimum_spend"],
+        "criteria": settings,
+    }
+
+
+def coupon_is_loyalty(coupon: CouponModel) -> bool:
+    return (coupon.coupon_type or "standard") == "loyalty"
+
+
+def customer_allowed_for_loyalty_coupon(coupon: CouponModel, user_id: str) -> bool:
+    if coupon.apply_to_all_loyal_customers:
+        return True
+    eligible_ids = [str(cid) for cid in (coupon.eligible_customer_ids or [])]
+    return str(user_id) in eligible_ids
+
+
+async def notify_loyalty_coupon_recipients(db: AsyncSession, coupon: CouponModel):
+    if not coupon_is_loyalty(coupon) or not coupon.is_active:
+        return
+
+    recipients = []
+    if coupon.apply_to_all_loyal_customers:
+        stats = await list_loyal_customer_rows(db)
+        recipients = [{"id": row["id"], "email": row["email"], "name": row["name"]} for row in stats]
+    elif coupon.eligible_customer_ids:
+        ids = []
+        for raw_id in coupon.eligible_customer_ids:
+            try:
+                ids.append(uuid.UUID(str(raw_id)))
+            except (ValueError, TypeError):
+                continue
+        if ids:
+            users_res = await db.execute(select(UserModel).where(UserModel.id.in_(ids)))
+            recipients = [{"id": str(u.id), "email": u.email, "name": u.full_name or u.email} for u in users_res.scalars().all()]
+
+    for recipient in recipients[:200]:
+        await create_notification(
+            db,
+            recipient["id"],
+            "Loyal customer coupon unlocked",
+            f"Your loyalty coupon {coupon.code} is available at checkout.",
+            "coupon"
+        )
+        asyncio.create_task(send_email(
+            recipient["email"],
+            f"Your loyalty coupon {coupon.code} is ready",
+            f"Hi {recipient['name']},<br/><br/>Your loyalty coupon <strong>{coupon.code}</strong> is available for your next Durga Shakti Foils order."
+        ))
+
+
+async def list_loyal_customer_rows(db: AsyncSession) -> list[dict]:
+    settings = await get_loyalty_settings(db)
+    eligible_order = and_(
+        OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
+        OrderModel.order_status != "cancelled",
+    )
+    stats_res = await db.execute(
+        select(
+            UserModel.id,
+            UserModel.full_name,
+            UserModel.email,
+            UserModel.phone,
+            func.count(OrderModel.id).filter(eligible_order).label("orders_count"),
+            func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0).label("total_spent"),
+        )
+        .join(OrderModel, OrderModel.user_id == UserModel.id, isouter=True)
+        .where(UserModel.role == "customer")
+        .group_by(UserModel.id)
+        .order_by(func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0).desc())
+    )
+
+    customers = []
+    for row in stats_res.all():
+        orders_count = int(row.orders_count or 0)
+        total_spent = float(row.total_spent or 0)
+        if orders_count >= settings["minimum_orders"] or total_spent >= settings["minimum_spend"]:
+            customers.append({
+                "id": str(row.id),
+                "name": row.full_name or row.email,
+                "email": row.email,
+                "phone": row.phone,
+                "orders_count": orders_count,
+                "total_spent": round(total_spent, 2),
+            })
+    return customers
 
 # ── Shared Validation Logic ──────────────────────────────────────────────
 async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str], subtotal: float):
@@ -104,6 +231,9 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
     applied_coupons = []
     errors = {}
     now = datetime.now(timezone.utc)
+    loyalty_stats = None
+    if user_uuid:
+        loyalty_stats = await get_customer_loyalty_stats(db, user_uuid)
 
     # Fetch all requested coupon codes from the DB
     coupons_res = await db.execute(select(CouponModel).where(CouponModel.code.in_(normalized_input_codes)))
@@ -146,8 +276,20 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
             errors[raw_code] = "Coupon usage limit reached"
             continue
 
-        # 5. Per-customer usage limit
-        if coupon.per_customer_usage_limit is not None and user_uuid:
+        # 5. Loyal-customer-only eligibility
+        if coupon_is_loyalty(coupon):
+            if not user_uuid:
+                errors[raw_code] = "Please login to use this loyal customer coupon"
+                continue
+            if not loyalty_stats or not loyalty_stats["is_loyal"]:
+                errors[raw_code] = "This coupon is reserved for loyal customers"
+                continue
+            if not customer_allowed_for_loyalty_coupon(coupon, str(user_uuid)):
+                errors[raw_code] = "This loyal customer coupon is not assigned to your account"
+                continue
+
+        # 6. Reusable / per-customer usage limit
+        if user_uuid:
             user_orders_res = await db.execute(
                 select(OrderModel).where(
                     and_(
@@ -161,9 +303,13 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
                 applied_list = order.coupon_codes or []
                 if any(c.strip().upper() == code_upper for c in applied_list):
                     usage_count += 1
-            
-            if usage_count >= coupon.per_customer_usage_limit:
-                errors[raw_code] = f"You have used this coupon {usage_count}/{coupon.per_customer_usage_limit} times"
+
+            effective_customer_limit = coupon.per_customer_usage_limit
+            if coupon.is_reusable is False:
+                effective_customer_limit = 1
+
+            if effective_customer_limit is not None and usage_count >= effective_customer_limit:
+                errors[raw_code] = f"You have used this coupon {usage_count}/{effective_customer_limit} times"
                 continue
 
         # If we passed all checks, apply this coupon!
@@ -199,6 +345,7 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
                 "discount_value": float(c.discount_value),
                 "min_cart_value": float(c.min_cart_value or 0),
                 "max_discount_limit": float(c.max_discount_limit) if c.max_discount_limit else None,
+                "coupon_type": c.coupon_type or "standard",
             }
             for c in applied_coupons
         ],
@@ -219,8 +366,48 @@ async def validate_coupons(data: CouponValidationRequest, current_user: UserSche
 
 
 # ── Admin Global Settings Routes ──────────────────────────────────────────
+@router.get("/coupons/eligible")
+async def get_eligible_coupons(current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    loyalty_stats = await get_customer_loyalty_stats(db, current_user.id)
+    if not loyalty_stats["is_loyal"]:
+        return {"is_loyal": False, "criteria": loyalty_stats["criteria"], "stats": loyalty_stats, "coupons": []}
+
+    now = datetime.now(timezone.utc)
+    coupons_res = await db.execute(
+        select(CouponModel).where(
+            CouponModel.is_active == True,
+            CouponModel.coupon_type == "loyalty",
+        ).order_by(CouponModel.created_at.desc())
+    )
+
+    eligible = []
+    for coupon in coupons_res.scalars().all():
+        expiry = coupon.expiry_date
+        if expiry:
+            if expiry.tzinfo is None:
+                expiry = expiry.replace(tzinfo=timezone.utc)
+            if now > expiry:
+                continue
+        if coupon.max_usage_count is not None and coupon.total_uses >= coupon.max_usage_count:
+            continue
+        if not customer_allowed_for_loyalty_coupon(coupon, str(current_user.id)):
+            continue
+        eligible.append({
+            "id": str(coupon.id),
+            "code": coupon.code,
+            "discount_type": coupon.discount_type,
+            "discount_value": float(coupon.discount_value),
+            "min_cart_value": float(coupon.min_cart_value or 0),
+            "max_discount_limit": float(coupon.max_discount_limit) if coupon.max_discount_limit else None,
+            "expiry_date": coupon.expiry_date.isoformat() if coupon.expiry_date else None,
+            "coupon_type": coupon.coupon_type or "loyalty",
+        })
+
+    return {"is_loyal": True, "criteria": loyalty_stats["criteria"], "stats": loyalty_stats, "coupons": eligible}
+
+
 @router.get("/admin/coupons/settings")
-async def get_coupon_settings(admin: UserSchema = Depends(require_permission("manage_settings")), db: AsyncSession = Depends(get_db)):
+async def get_coupon_settings(admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(SettingModel).where(SettingModel.key == "coupon_settings"))
     s = res.scalar_one_or_none()
     default_settings = {
@@ -233,7 +420,7 @@ async def get_coupon_settings(admin: UserSchema = Depends(require_permission("ma
     return default_settings
 
 @router.post("/admin/coupons/settings")
-async def save_coupon_settings(data: CouponSettingsUpdate, admin: UserSchema = Depends(require_permission("manage_settings")), db: AsyncSession = Depends(get_db)):
+async def save_coupon_settings(data: CouponSettingsUpdate, admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(SettingModel).where(SettingModel.key == "coupon_settings"))
     s = res.scalar_one_or_none()
     val = data.model_dump()
@@ -247,13 +434,102 @@ async def save_coupon_settings(data: CouponSettingsUpdate, admin: UserSchema = D
 
 
 # ── Admin CRUD Coupon Routes ──────────────────────────────────────────────
+@router.get("/admin/coupons/loyal-customers")
+async def list_loyal_customers(admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
+    settings = await get_loyalty_settings(db)
+    eligible_order = and_(
+        OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
+        OrderModel.order_status != "cancelled",
+    )
+    stats_res = await db.execute(
+        select(
+            UserModel.id,
+            UserModel.full_name,
+            UserModel.email,
+            UserModel.phone,
+            func.count(OrderModel.id).filter(eligible_order).label("orders_count"),
+            func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0).label("total_spent"),
+        )
+        .join(OrderModel, OrderModel.user_id == UserModel.id, isouter=True)
+        .where(UserModel.role == "customer")
+        .group_by(UserModel.id)
+        .order_by(func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0).desc())
+    )
+
+    customers = []
+    for row in stats_res.all():
+        orders_count = int(row.orders_count or 0)
+        total_spent = float(row.total_spent or 0)
+        is_loyal = orders_count >= settings["minimum_orders"] or total_spent >= settings["minimum_spend"]
+        if is_loyal:
+            customers.append({
+                "id": str(row.id),
+                "name": row.full_name or row.email,
+                "email": row.email,
+                "phone": row.phone,
+                "orders_count": orders_count,
+                "total_spent": round(total_spent, 2),
+            })
+    return {"items": customers, "criteria": settings, "total": len(customers)}
+
+
+@router.get("/admin/coupons/analytics")
+async def get_coupon_analytics(admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
+    settings = await get_loyalty_settings(db)
+    coupon_res = await db.execute(select(CouponModel))
+    coupons = coupon_res.scalars().all()
+    loyal_coupons = [c for c in coupons if coupon_is_loyalty(c)]
+    eligible_order = and_(
+        OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
+        OrderModel.order_status != "cancelled",
+    )
+
+    customers_res = await db.execute(
+        select(
+            UserModel.id,
+            UserModel.full_name,
+            UserModel.email,
+            func.count(OrderModel.id).filter(eligible_order).label("orders_count"),
+            func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0).label("total_spent"),
+        )
+        .join(OrderModel, OrderModel.user_id == UserModel.id, isouter=True)
+        .where(UserModel.role == "customer")
+        .group_by(UserModel.id)
+        .order_by(func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0).desc())
+    )
+    top_loyal = []
+    active_loyal_count = 0
+    for row in customers_res.all():
+        orders_count = int(row.orders_count or 0)
+        total_spent = float(row.total_spent or 0)
+        if orders_count >= settings["minimum_orders"] or total_spent >= settings["minimum_spend"]:
+            active_loyal_count += 1
+            if len(top_loyal) < 5:
+                top_loyal.append({
+                    "id": str(row.id),
+                    "name": row.full_name or row.email,
+                    "email": row.email,
+                    "orders_count": orders_count,
+                    "total_spent": round(total_spent, 2),
+                })
+
+    return {
+        "total_coupon_usage": sum(int(c.total_uses or 0) for c in coupons),
+        "total_discount_given": round(sum(float(c.total_discount_given or 0) for c in coupons), 2),
+        "revenue_generated": round(sum(float(c.revenue_generated or 0) for c in loyal_coupons), 2),
+        "active_loyal_customer_count": active_loyal_count,
+        "top_loyal_customers": top_loyal,
+        "loyalty_coupon_count": len(loyal_coupons),
+    }
+
+
 @router.get("/admin/coupons")
-async def list_coupons(admin: UserSchema = Depends(require_permission("manage_settings")), db: AsyncSession = Depends(get_db)):
+async def list_coupons(admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(CouponModel).order_by(CouponModel.created_at.desc()))
     return [row_to_dict(c) for c in res.scalars().all()]
 
 @router.get("/admin/coupons/{coupon_id}")
-async def get_coupon(coupon_id: str, admin: UserSchema = Depends(require_permission("manage_settings")), db: AsyncSession = Depends(get_db)):
+async def get_coupon(coupon_id: str, admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(CouponModel).where(CouponModel.id == coupon_id))
     c = res.scalar_one_or_none()
     if not c:
@@ -261,7 +537,7 @@ async def get_coupon(coupon_id: str, admin: UserSchema = Depends(require_permiss
     return row_to_dict(c)
 
 @router.post("/admin/coupons")
-async def create_coupon(data: CouponCreateUpdate, admin: UserSchema = Depends(require_permission("manage_settings")), db: AsyncSession = Depends(get_db)):
+async def create_coupon(data: CouponCreateUpdate, admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
     # Check duplicate code
     existing_res = await db.execute(select(CouponModel).where(CouponModel.code == data.code.strip().upper()))
     if existing_res.scalar_one_or_none():
@@ -277,17 +553,22 @@ async def create_coupon(data: CouponCreateUpdate, admin: UserSchema = Depends(re
         max_usage_count=data.max_usage_count,
         per_customer_usage_limit=data.per_customer_usage_limit,
         is_active=data.is_active,
+        coupon_type=data.coupon_type,
+        apply_to_all_loyal_customers=data.apply_to_all_loyal_customers,
+        eligible_customer_ids=[str(cid) for cid in (data.eligible_customer_ids or [])],
+        is_reusable=data.is_reusable,
         total_uses=0,
         total_discount_given=0.0,
         revenue_generated=0.0
     )
     db.add(c)
     await db.flush()
+    await notify_loyalty_coupon_recipients(db, c)
     await write_audit_log(db, "COUPON_CREATED", admin.id, "coupon", str(c.id))
     return row_to_dict(c)
 
 @router.put("/admin/coupons/{coupon_id}")
-async def update_coupon(coupon_id: str, data: CouponCreateUpdate, admin: UserSchema = Depends(require_permission("manage_settings")), db: AsyncSession = Depends(get_db)):
+async def update_coupon(coupon_id: str, data: CouponCreateUpdate, admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(CouponModel).where(CouponModel.id == coupon_id))
     c = res.scalar_one_or_none()
     if not c:
@@ -309,13 +590,18 @@ async def update_coupon(coupon_id: str, data: CouponCreateUpdate, admin: UserSch
     c.max_usage_count = data.max_usage_count
     c.per_customer_usage_limit = data.per_customer_usage_limit
     c.is_active = data.is_active
+    c.coupon_type = data.coupon_type
+    c.apply_to_all_loyal_customers = data.apply_to_all_loyal_customers
+    c.eligible_customer_ids = [str(cid) for cid in (data.eligible_customer_ids or [])]
+    c.is_reusable = data.is_reusable
 
     await db.flush()
+    await notify_loyalty_coupon_recipients(db, c)
     await write_audit_log(db, "COUPON_UPDATED", admin.id, "coupon", str(c.id))
     return row_to_dict(c)
 
 @router.delete("/admin/coupons/{coupon_id}")
-async def delete_coupon(coupon_id: str, admin: UserSchema = Depends(require_permission("manage_settings")), db: AsyncSession = Depends(get_db)):
+async def delete_coupon(coupon_id: str, admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(CouponModel).where(CouponModel.id == coupon_id))
     c = res.scalar_one_or_none()
     if not c:

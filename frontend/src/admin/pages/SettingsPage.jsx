@@ -7,7 +7,7 @@ import {
   Settings, Building2, Phone, Mail, MapPin,
   ShieldCheck, Save, Globe, Lock, Cpu,
   Cloud, Database, RefreshCcw, Timer, Megaphone, Sparkles, Play,
-  Instagram, Facebook, Youtube
+  Instagram, Facebook, Youtube, Star, MessageSquare, Users, IndianRupee
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
@@ -42,6 +42,8 @@ const SettingsPage = () => {
     const shippingSettings = data.shipping_settings || {};
     const paymentSettings = data.payment_settings || {};
     const bannerSettings = data.scrolling_banner || {};
+    const feedbackSettings = data.feedback_settings || {};
+    const loyaltySettings = data.loyalty_settings || {};
 
     return {
       companyName: profile.companyName || '',
@@ -59,6 +61,10 @@ const SettingsPage = () => {
       bannerTimerEnabled: !!bannerSettings.timer_enabled,
       bannerTimerTarget: formatToLocalInput(bannerSettings.timer_target || ''),
       bannerUseFavicon: bannerSettings.use_favicon !== false,
+      ratingsEnabled: feedbackSettings.ratings_enabled !== false,
+      commentsEnabled: feedbackSettings.comments_enabled !== false,
+      loyaltyMinimumOrders: loyaltySettings.minimum_orders || 10,
+      loyaltyMinimumSpend: loyaltySettings.minimum_spend || 15000,
       me: cachedMe?.data || null,
       loaded: !!(cachedSettings && cachedMe)
     };
@@ -87,6 +93,11 @@ const SettingsPage = () => {
   const [bannerTimerTarget, setBannerTimerTarget] = useState(initialState.bannerTimerTarget);
   const [bannerUseFavicon, setBannerUseFavicon] = useState(initialState.bannerUseFavicon);
   const [savingBanner, setSavingBanner] = useState(false);
+  const [ratingsEnabled, setRatingsEnabled] = useState(initialState.ratingsEnabled);
+  const [commentsEnabled, setCommentsEnabled] = useState(initialState.commentsEnabled);
+  const [loyaltyMinimumOrders, setLoyaltyMinimumOrders] = useState(initialState.loyaltyMinimumOrders);
+  const [loyaltyMinimumSpend, setLoyaltyMinimumSpend] = useState(initialState.loyaltyMinimumSpend);
+  const [savingExperience, setSavingExperience] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -155,6 +166,12 @@ const SettingsPage = () => {
       setBannerTimerEnabled(!!bannerSettings.timer_enabled);
       setBannerTimerTarget(formatToLocalInput(bannerSettings.timer_target || ''));
       setBannerUseFavicon(bannerSettings.use_favicon !== false);
+      const feedbackSettings = data.feedback_settings || {};
+      const loyaltySettings = data.loyalty_settings || {};
+      setRatingsEnabled(feedbackSettings.ratings_enabled !== false);
+      setCommentsEnabled(feedbackSettings.comments_enabled !== false);
+      setLoyaltyMinimumOrders(loyaltySettings.minimum_orders || 10);
+      setLoyaltyMinimumSpend(loyaltySettings.minimum_spend || 15000);
 
       setMe(meRes.data);
     } catch {
@@ -190,6 +207,12 @@ const SettingsPage = () => {
       setBannerTimerEnabled(!!bannerSettings.timer_enabled);
       setBannerTimerTarget(formatToLocalInput(bannerSettings.timer_target || ''));
       setBannerUseFavicon(bannerSettings.use_favicon !== false);
+      const feedbackSettings = data.feedback_settings || {};
+      const loyaltySettings = data.loyalty_settings || {};
+      setRatingsEnabled(feedbackSettings.ratings_enabled !== false);
+      setCommentsEnabled(feedbackSettings.comments_enabled !== false);
+      setLoyaltyMinimumOrders(loyaltySettings.minimum_orders || 10);
+      setLoyaltyMinimumSpend(loyaltySettings.minimum_spend || 15000);
 
       setMe(meRes.data);
     } catch {
@@ -276,6 +299,33 @@ const SettingsPage = () => {
     } catch (error) {
       setCodEnabled(!checked);
       toast.error(error.message || 'Failed to update payment settings');
+    }
+  };
+
+  const saveExperienceSettings = async () => {
+    try {
+      setSavingExperience(true);
+      await Promise.all([
+        adminService.updateSetting({
+          key: 'feedback_settings',
+          value: {
+            ratings_enabled: ratingsEnabled,
+            comments_enabled: commentsEnabled
+          }
+        }),
+        adminService.updateSetting({
+          key: 'loyalty_settings',
+          value: {
+            minimum_orders: Number(loyaltyMinimumOrders) || 10,
+            minimum_spend: Number(loyaltyMinimumSpend) || 15000
+          }
+        })
+      ]);
+      toast.success('Customer experience settings saved');
+    } catch (error) {
+      toast.error(error.message || 'Failed to save customer experience settings');
+    } finally {
+      setSavingExperience(false);
     }
   };
 
@@ -604,6 +654,96 @@ const SettingsPage = () => {
                      </Button>
                   </div>
                 </div>
+          )}
+
+
+          {(me?.role === 'SUPER_ADMIN' || me?.permissions?.manage_settings || me?.permissions?.manage_coupons) && (
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden mt-8">
+              <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12 pointer-events-none">
+                <Users className="w-32 h-32 text-primary/20" />
+              </div>
+
+              <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-4 flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                Customer Experience Controls
+              </h2>
+              <p className="text-xs text-slate-500 mb-8 font-medium">Control review visibility and the live criteria used to segment loyal customers.</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
+                  {
+                    label: 'Product Ratings',
+                    desc: 'Show star ratings on product pages and allow customers to submit ratings.',
+                    checked: ratingsEnabled,
+                    onToggle: () => setRatingsEnabled(prev => !prev),
+                    icon: Star
+                  },
+                  {
+                    label: 'Review Comments',
+                    desc: 'Show and collect written review comments independently from star ratings.',
+                    checked: commentsEnabled,
+                    onToggle: () => setCommentsEnabled(prev => !prev),
+                    icon: MessageSquare
+                  }
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex items-start justify-between gap-4">
+                      <div className="flex gap-4">
+                        <div className="p-3 rounded-xl bg-primary/10 text-primary h-max">
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">{item.label}</h3>
+                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">{item.desc}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={item.onToggle}
+                        className={`w-14 h-8 flex items-center rounded-full p-1 shrink-0 cursor-pointer transition-all duration-300 shadow-inner ${item.checked ? 'bg-primary' : 'bg-slate-300'}`}
+                      >
+                        <span className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${item.checked ? 'translate-x-6' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                  );
+                })}
+
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <Star className="w-3.5 h-3.5 text-primary" />
+                    Loyal Customer Minimum Orders
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none"
+                    value={loyaltyMinimumOrders}
+                    onChange={e => setLoyaltyMinimumOrders(e.target.value)}
+                  />
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <IndianRupee className="w-3.5 h-3.5 text-primary" />
+                    Loyal Customer Minimum Spend
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none"
+                    value={loyaltyMinimumSpend}
+                    onChange={e => setLoyaltyMinimumSpend(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-8 pt-8 border-t border-slate-200 flex justify-end">
+                <Button disabled={savingExperience} onClick={saveExperienceSettings} className="rounded-xl px-8 font-black uppercase tracking-widest shadow-lg shadow-emerald-glow flex items-center gap-2">
+                  {savingExperience ? 'Saving...' : <><Save className="w-4 h-4" /> Save Experience Settings</>}
+                </Button>
+              </div>
+            </div>
           )}
 
 

@@ -498,7 +498,8 @@ def require_permission(permission: str):
             'access_financial_reports': ['view_transactions', 'update_payment_status', 'export_payment_reports', 'view_analytics'],
             'access_gst_reports': ['view_gst_reports', 'export_gst_reports', 'upload_gst_files', 'import_gst_data'],
             'manage_admins': ['create_admin', 'edit_admin', 'disable_admin', 'delete_admin', 'assign_permissions', 'view_audit_logs'],
-            'manage_settings': ['manage_settings']
+            'manage_settings': ['manage_settings', 'manage_banner'],
+            'manage_coupons': ['manage_coupons', 'manage_settings']
         }
         
         # Check if legacy permission requested and any granular sub-permission is true

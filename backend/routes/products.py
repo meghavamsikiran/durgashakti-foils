@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from typing import Optional
 from database import get_db
-from models import ProductModel, ProductReviewModel
+from models import ProductModel, ProductReviewModel, SettingModel
 from deps import sanitize_search_term, row_to_dict, validate_uuid
 
 router = APIRouter(prefix="/api")
@@ -12,6 +12,10 @@ router = APIRouter(prefix="/api")
 
 async def _review_summaries(db: AsyncSession, product_ids: list[str]) -> dict:
     if not product_ids:
+        return {}
+    settings_res = await db.execute(select(SettingModel).where(SettingModel.key == "feedback_settings"))
+    setting = settings_res.scalar_one_or_none()
+    if setting and isinstance(setting.value, dict) and setting.value.get("ratings_enabled") is False:
         return {}
     result = await db.execute(
         select(

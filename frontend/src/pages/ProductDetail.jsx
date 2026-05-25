@@ -269,12 +269,14 @@ const ProductDetail = () => {
               {product.name}
             </h1>
 
-            <StarRating
-              value={product.rating_average}
-              count={product.review_count}
-              size="md"
-              className="mb-5"
-            />
+            {Number(product.review_count || 0) > 0 && (
+              <StarRating
+                value={product.rating_average}
+                count={product.review_count}
+                size="md"
+                className="mb-5"
+              />
+            )}
 
             <div className="flex items-center gap-4 mb-6">
               <span className="text-xs font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant bg-surface-container-low px-2.5 py-1 rounded border border-border-subtle">
