@@ -17,6 +17,17 @@ import DateFilterPopover from '../../components/ui/DateFilterPopover';
 
 const DEFAULT_CATEGORY = 'Aluminum Foil';
 const ADMIN_PRODUCTS_CACHE_PATH = '/admin/products';
+const BADGE_OPTIONS = ['', 'New Arrival', 'Best Seller', 'Limited Offer', 'Huge Saving'];
+
+const createVariantRow = (overrides = {}) => ({
+  size: '',
+  sku: '',
+  price: '',
+  discount_price: '',
+  stock_quantity: '',
+  badge: '',
+  ...overrides,
+});
 
 const ProductsPage = () => {
   const { isSuperAdmin, hasPermission } = useAuth();
@@ -60,6 +71,10 @@ const ProductsPage = () => {
     variants: '',
     is_active: true,
   });
+  const [variantRows, setVariantRows] = useState([
+    createVariantRow({ size: 'Small', sku: 'SKU-S', price: '99', discount_price: '79', stock_quantity: '100', badge: 'New Arrival' }),
+    createVariantRow({ size: 'Large', sku: 'SKU-L', price: '199', discount_price: '149', stock_quantity: '50', badge: 'Best Seller' }),
+  ]);
   const [metrics, setMetrics] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary');
     return cached?.metrics || null;
@@ -88,6 +103,10 @@ const ProductsPage = () => {
       is_active: true,
     });
     setImageFile(null);
+    setVariantRows([
+      createVariantRow({ size: 'Small', sku: 'SKU-S', price: '99', discount_price: '79', stock_quantity: '100', badge: 'New Arrival' }),
+      createVariantRow({ size: 'Large', sku: 'SKU-L', price: '199', discount_price: '149', stock_quantity: '50', badge: 'Best Seller' }),
+    ]);
   };
 
   const [total, setTotal] = useState(() => {
@@ -171,6 +190,16 @@ const ProductsPage = () => {
       variants: '', // Not used in edit mode
       is_active: product.is_active !== false,
     });
+    setVariantRows([
+      createVariantRow({
+        size: product.size || '',
+        sku: product.batch_no || product.variant_sku || '',
+        price: product.price || 0,
+        discount_price: product.discount_price || 0,
+        stock_quantity: product.stock_quantity || 0,
+        badge: product.badge || '',
+      })
+    ]);
     setShowForm(true);
     setTimeout(() => {
       productFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -274,6 +303,25 @@ const ProductsPage = () => {
     toast.success("Media asset removed from gallery");
   };
 
+  const updateVariantRow = (index, key, value) => {
+    setVariantRows(prev => prev.map((row, idx) => idx === index ? { ...row, [key]: value } : row));
+  };
+
+  const addVariantRow = () => {
+    setVariantRows(prev => [...prev, createVariantRow()]);
+  };
+
+  const removeVariantRow = (index) => {
+    setVariantRows(prev => prev.length <= 1 ? prev : prev.filter((_, idx) => idx !== index));
+  };
+
+  const loadVariantTemplate = () => {
+    setVariantRows([
+      createVariantRow({ size: 'Small', sku: 'SKU-S', price: '99', discount_price: '79', stock_quantity: '100', badge: 'New Arrival' }),
+      createVariantRow({ size: 'Large', sku: 'SKU-L', price: '199', discount_price: '149', stock_quantity: '50', badge: 'Best Seller' }),
+    ]);
+  };
+
   const saveProduct = async () => {
     if (!form.name.trim() || !form.description.trim() || !form.category) {
       toast.error('Name, description, and category are required'); return;
@@ -292,25 +340,23 @@ const ProductsPage = () => {
         });
         toast.success('Product updated');
       } else {
-        const variants = form.variants.split('\n').map(line => line.trim()).filter(Boolean).map(line => {
-          const parts = line.split('|').map(cell => (cell || '').trim());
-          const [size, sku, price, discountPrice, stock] = parts;
+        const variants = variantRows.map(row => ({
+          size: String(row.size || '').trim(),
+          sku: String(row.sku || '').trim(),
+          price: Number(row.price),
+          discount_price: row.discount_price !== '' && row.discount_price !== null ? Number(row.discount_price) : null,
+          stock_quantity: Number(row.stock_quantity || 0),
+          in_stock: Number(row.stock_quantity || 0) > 0,
+          badge: row.badge || null
+        }));
+        const skus = variants.map(v => v.sku).filter(Boolean);
 
-          if (parts.length < 3) return null;
-
-          return {
-            size,
-            sku,
-            price: Number(price),
-            discount_price: discountPrice ? Number(discountPrice) : null,
-            stock_quantity: Number(stock || 0),
-            in_stock: Number(stock || 0) > 0,
-            badge: parts[5] || null
-          };
-        });
-
-        if (!variants.length || variants.some(v => !v || !v.size || !v.sku || isNaN(v.price) || v.price < 0)) {
-          toast.error('Invalid Variants. Format: Size | SKU | Price | Discount | Stock');
+        if (!variants.length || variants.some(v => !v.size || !v.sku || isNaN(v.price) || v.price < 0 || isNaN(v.stock_quantity))) {
+          toast.error('Please complete size, SKU, price, and stock for every variant');
+          setSaving(false); return;
+        }
+        if (skus.length !== new Set(skus).size) {
+          toast.error('Variant SKUs must be unique');
           setSaving(false); return;
         }
         await adminService.createProduct({
@@ -673,7 +719,105 @@ const ProductsPage = () => {
                 )}
               </div>
 
-              {isEdit ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    {isEdit ? 'Product Inventory' : 'Variant Inventory Strategy'}
+                  </label>
+                  {!isEdit && (
+                    <button type="button" onClick={loadVariantTemplate} className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">
+                      Load Template
+                    </button>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+                  <table className="min-w-[620px] w-full text-left">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                      <tr>
+                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Size</th>
+                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">SKU</th>
+                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Price</th>
+                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Offer</th>
+                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Stock</th>
+                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Badge</th>
+                        {!isEdit && <th className="px-3 py-2 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Actions</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {isEdit ? (
+                        <tr>
+                          <td className="px-2 py-2">
+                            <input className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm" value={form.size} onChange={e => setForm({...form, size: e.target.value})} />
+                          </td>
+                          <td className="px-2 py-2">
+                            <input className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm font-mono" value={form.batch_no} onChange={e => setForm({...form, batch_no: e.target.value})} />
+                          </td>
+                          <td className="px-2 py-2">
+                            <input type="number" min="0" step="0.01" className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm" value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} />
+                          </td>
+                          <td className="px-2 py-2">
+                            <input type="number" min="0" step="0.01" className="w-full rounded-lg border border-slate-200 bg-emerald-50/40 px-2 py-2 text-sm" value={form.discount_price} onChange={e => setForm({...form, discount_price: Number(e.target.value)})} />
+                          </td>
+                          <td className="px-2 py-2">
+                            <input type="number" min="0" step="1" className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm" value={form.stock_quantity} onChange={e => setForm({...form, stock_quantity: Number(e.target.value)})} />
+                          </td>
+                          <td className="px-2 py-2">
+                            <select className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm" value={form.badge} onChange={e => setForm({...form, badge: e.target.value})}>
+                              {BADGE_OPTIONS.map(option => <option key={option || 'none'} value={option}>{option || 'No Badge'}</option>)}
+                            </select>
+                          </td>
+                        </tr>
+                      ) : (
+                        variantRows.map((row, index) => (
+                          <tr key={index}>
+                            <td className="px-2 py-2">
+                              <input className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm" value={row.size} onChange={e => updateVariantRow(index, 'size', e.target.value)} />
+                            </td>
+                            <td className="px-2 py-2">
+                              <input className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm font-mono" value={row.sku} onChange={e => updateVariantRow(index, 'sku', e.target.value)} />
+                            </td>
+                            <td className="px-2 py-2">
+                              <input type="number" min="0" step="0.01" className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm" value={row.price} onChange={e => updateVariantRow(index, 'price', e.target.value)} />
+                            </td>
+                            <td className="px-2 py-2">
+                              <input type="number" min="0" step="0.01" className="w-full rounded-lg border border-slate-200 bg-emerald-50/40 px-2 py-2 text-sm" value={row.discount_price} onChange={e => updateVariantRow(index, 'discount_price', e.target.value)} />
+                            </td>
+                            <td className="px-2 py-2">
+                              <input type="number" min="0" step="1" className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm" value={row.stock_quantity} onChange={e => updateVariantRow(index, 'stock_quantity', e.target.value)} />
+                            </td>
+                            <td className="px-2 py-2">
+                              <select className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm" value={row.badge} onChange={e => updateVariantRow(index, 'badge', e.target.value)}>
+                                {BADGE_OPTIONS.map(option => <option key={option || 'none'} value={option}>{option || 'No Badge'}</option>)}
+                              </select>
+                            </td>
+                            <td className="px-2 py-2">
+                              <button
+                                type="button"
+                                onClick={() => removeVariantRow(index)}
+                                disabled={variantRows.length <= 1}
+                                className="ml-auto flex h-9 w-9 items-center justify-center rounded-lg text-rose-500 hover:bg-rose-50 disabled:opacity-40"
+                                title="Remove variant"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {!isEdit && (
+                  <button type="button" onClick={addVariantRow} className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary hover:text-emerald-700">
+                    <Plus className="w-4 h-4" />
+                    Add Variant
+                  </button>
+                )}
+              </div>
+
+              {false && (isEdit ? (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="space-y-1">
@@ -714,7 +858,7 @@ const ProductsPage = () => {
                     <button onClick={() => setForm({...form, variants: 'Small | SKU-S | 99 | 79 | 100 | New Arrival\nLarge | SKU-L | 199 | 149 | 50 | Best Seller'})} className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">Load Template</button>
                   </div>
                 </div>
-              )}
+              ))}
             </div>
           </div>
 
