@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Instagram, Facebook, Youtube } from 'lucide-react';
 import settingsService from '../services/settings.service';
+import { useAuth } from '../contexts/AuthContext';
 
 const Footer = () => {
+  const { loading: authLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState({
     companyName: 'Durga Shakti Foils',
     companyPhone: '+91 83675 42954',
@@ -32,13 +35,17 @@ const Footer = () => {
         }
       } catch (err) {
         console.error('Failed to load public settings in Footer:', err);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadSettings();
   }, []);
 
+  if (authLoading) return null;
+
   return (
-    <footer className="bg-surface-container-low border-t border-border-subtle mt-24 font-inter text-on-surface">
+    <footer className={`bg-surface-container-low border-t border-border-subtle mt-24 font-inter text-on-surface transition-opacity duration-300 ${isLoading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
