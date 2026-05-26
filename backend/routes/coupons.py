@@ -249,8 +249,9 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
         # Keep only the first code
         normalized_input_codes = [normalized_input_codes[0]]
 
-    # If single_use_per_account is True, check if user has ever used any coupon code before
-    if coupon_settings["single_use_per_account"] and user_uuid:
+    # Pre-load user orders once to avoid N+1 query issue inside the loop and duplicate queries
+    user_orders = []
+    if user_uuid:
         orders_res = await db.execute(
             select(OrderModel).where(
                 and_(
@@ -259,8 +260,12 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
                 )
             )
         )
+        user_orders = orders_res.scalars().all()
+
+    # If single_use_per_account is True, check if user has ever used any coupon code before
+    if coupon_settings["single_use_per_account"] and user_uuid:
         has_used_coupon = False
-        for order in orders_res.scalars().all():
+        for order in user_orders:
             if order.coupon_codes and len(order.coupon_codes) > 0:
                 has_used_coupon = True
                 break
@@ -336,16 +341,8 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
 
         # 6. Reusable / per-customer usage limit
         if user_uuid:
-            user_orders_res = await db.execute(
-                select(OrderModel).where(
-                    and_(
-                        OrderModel.user_id == user_uuid,
-                        OrderModel.order_status != "cancelled"
-                    )
-                )
-            )
             usage_count = 0
-            for order in user_orders_res.scalars().all():
+            for order in user_orders:
                 applied_list = order.coupon_codes or []
                 if any(c.strip().upper() == code_upper for c in applied_list):
                     usage_count += 1

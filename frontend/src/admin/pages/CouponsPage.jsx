@@ -2333,6 +2333,19 @@ const CouponsPage = () => {
                   <p className="text-[10px] text-slate-400 mt-1">Leave empty if this coupon should never expire.</p>
                 </div>
 
+                {settings.single_use_per_account && (
+                  <div className="sm:col-span-2 flex items-start gap-3 bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl">
+                    <Info className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-wider text-amber-800">Global Restriction Active</p>
+                      <p className="text-xs mt-1 font-medium text-amber-900/90 leading-relaxed">
+                        The global setting <strong>"Allow only one coupon order per customer account"</strong> is currently enabled. 
+                        This overrides individual reusability rules below; customers will only be able to use one coupon across all their purchases.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
