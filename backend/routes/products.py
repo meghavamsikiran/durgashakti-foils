@@ -67,7 +67,7 @@ async def get_products(
 
     offset = (page - 1) * limit
     result = await db.execute(
-        q.order_by(ProductModel.created_at.desc()).offset(offset).limit(limit)
+        q.order_by(ProductModel.name.asc(), ProductModel.id.asc()).offset(offset).limit(limit)
     )
     rows = result.all()
     

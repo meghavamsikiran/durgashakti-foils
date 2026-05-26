@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import api, { formatImageUrl } from '../utils/api';
 import { getProductPricing } from '../utils/productPricing';
+import { getBadgeClasses, getProductBadge } from '../utils/productBadges';
 import StarRating from './reviews/StarRating';
 
 const ProductCard = ({ product }) => {
@@ -43,19 +44,7 @@ const ProductCard = ({ product }) => {
     });
   };
 
-  // Dynamic Tag Logic
-  const getDynamicTag = () => {
-    if (product.badge) return product.badge; // Admin manual override
-    
-    if (product.units_sold >= 50) return "Best Seller";
-    if (discountPercent >= 25) return "Hot Deal";
-    if (product.units_sold >= 20 && product.stock_quantity < 10) return "High Demand";
-    if (product.units_sold >= 10) return "Trending";
-    
-    return null;
-  };
-
-  const activeTag = getDynamicTag();
+  const activeTag = getProductBadge(product, discountPercent);
   const actualWishlisted = user?.wishlist?.some(item => item.product_id === product.id);
   const [optimisticWishlist, setOptimisticWishlist] = React.useState(null);
 
@@ -204,11 +193,7 @@ const ProductCard = ({ product }) => {
 
           {/* Active Tag */}
           {activeTag && (
-            <div className={`absolute top-3 left-0 text-white px-3 py-1 text-[9px] font-black uppercase tracking-widest shadow-md rounded-r-full z-10
-              ${activeTag === 'Best Seller' ? 'bg-primary' : 
-                activeTag === 'Hot Deal' ? 'bg-rose-600' : 
-                activeTag === 'High Demand' ? 'bg-warning-orange' : 
-                'bg-amber-500'}`}>
+            <div className={`absolute top-3 left-0 px-3 py-1 text-[9px] font-black uppercase tracking-widest shadow-md rounded-r-full z-10 ${getBadgeClasses(activeTag)}`}>
               {activeTag}
             </div>
           )}

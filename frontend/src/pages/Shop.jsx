@@ -32,10 +32,17 @@ const writeSessionList = (key, items) => {
   }
 };
 
+const productNameCompare = (a, b) => (
+  String(a?.name || '').localeCompare(String(b?.name || ''), 'en', { sensitivity: 'base', numeric: true }) ||
+  String(a?.id || '').localeCompare(String(b?.id || ''))
+);
+
+const normalizeShopProducts = (items = []) => [...items].sort(productNameCompare);
+
 const Shop = () => {
   const getInitialProducts = () => {
     const cachedResponse = apiClient.getCachedDataSync('/products');
-    return cachedResponse?.data?.items || readSessionList(PRODUCTS_CACHE_KEY);
+    return normalizeShopProducts(cachedResponse?.data?.items || readSessionList(PRODUCTS_CACHE_KEY));
   };
   const getInitialCategories = () => {
     const cachedResponse = apiClient.getCachedDataSync('/categories');
@@ -63,7 +70,7 @@ const Shop = () => {
     }
     try {
       const response = await api.getProducts();
-      const items = response.data.items || [];
+      const items = normalizeShopProducts(response.data.items || []);
       setProducts(items);
       setFilteredProducts(items);
       writeSessionList(PRODUCTS_CACHE_KEY, items);
@@ -111,13 +118,13 @@ const Shop = () => {
 
     // Sort
     if (sortBy === 'price-low') {
-      filtered.sort((a, b) => getProductPricing(a).displayPrice - getProductPricing(b).displayPrice);
+      filtered.sort((a, b) => getProductPricing(a).displayPrice - getProductPricing(b).displayPrice || productNameCompare(a, b));
     } else if (sortBy === 'price-high') {
-      filtered.sort((a, b) => getProductPricing(b).displayPrice - getProductPricing(a).displayPrice);
+      filtered.sort((a, b) => getProductPricing(b).displayPrice - getProductPricing(a).displayPrice || productNameCompare(a, b));
     } else if (sortBy === 'rating-high') {
-      filtered.sort((a, b) => Number(b.rating_average || 0) - Number(a.rating_average || 0));
+      filtered.sort((a, b) => Number(b.rating_average || 0) - Number(a.rating_average || 0) || productNameCompare(a, b));
     } else {
-      filtered.sort((a, b) => a.name.localeCompare(b.name));
+      filtered.sort(productNameCompare);
     }
 
     setFilteredProducts(filtered);

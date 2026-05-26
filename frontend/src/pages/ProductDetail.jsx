@@ -10,6 +10,7 @@ import api, { formatImageUrl } from '../utils/api';
 import PageLoader from '../components/ui/PageLoader';
 import apiClient from '../services/core/apiClient';
 import { getProductPricing } from '../utils/productPricing';
+import { getBadgeClasses, getProductBadge } from '../utils/productBadges';
 import ProductReviews from '../components/reviews/ProductReviews';
 import StarRating from '../components/reviews/StarRating';
 
@@ -37,17 +38,7 @@ const ProductDetail = () => {
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const pricing = getProductPricing(product);
   
-  // Dynamic Tag Logic
-  const getDynamicTag = () => {
-    if (product?.badge) return product.badge;
-    if (product?.units_sold >= 50) return "Best Seller";
-    if (pricing.discountPercent >= 25) return "Hot Deal";
-    if (product?.units_sold >= 20 && product?.stock_quantity < 10) return "High Demand";
-    if (product?.units_sold >= 10) return "Trending";
-    return null;
-  };
-
-  const activeTag = getDynamicTag();
+  const activeTag = getProductBadge(product, pricing.discountPercent);
   const primaryCoupon = Array.isArray(product?.applicable_coupons) ? product.applicable_coupons[0] : null;
   const formatCouponValue = (coupon) => {
     if (coupon.discount_type === 'percentage') return `${Number(coupon.discount_value || 0)}% OFF`;
@@ -301,10 +292,7 @@ const ProductDetail = () => {
                 {product.category}
               </span>
               {activeTag && (
-                <span className={`text-[10px] font-mono font-bold uppercase tracking-[0.15em] px-3.5 py-1.5 rounded border border-border-subtle animate-pulse
-                  ${activeTag === 'Best Seller' ? 'text-white bg-primary border-primary/30' : 
-                    activeTag === 'Hot Deal' ? 'text-white bg-rose-600 border-rose-700/30' : 
-                    'text-warning-orange bg-warning-orange/10 border-warning-orange/20'}`}>
+                <span className={`text-[10px] font-mono font-bold uppercase tracking-[0.15em] px-3.5 py-1.5 rounded border animate-pulse ${getBadgeClasses(activeTag)}`}>
                   {activeTag}
                 </span>
               )}

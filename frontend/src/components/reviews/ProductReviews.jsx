@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BadgeCheck, Camera, Check, Edit2, Eye, EyeOff, MessageSquareReply, Trash2, X } from 'lucide-react';
+import { BadgeCheck, Camera, Check, ChevronLeft, ChevronRight, Edit2, Eye, EyeOff, MessageSquareReply, Play, Trash2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import reviewService from '../../services/review.service';
@@ -17,6 +17,8 @@ const ProductReviews = ({ productId, summary }) => {
   const [replyDrafts, setReplyDrafts] = useState({});
   const [savingId, setSavingId] = useState(null);
   const [newReplyId, setNewReplyId] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(3);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(null);
 
   useEffect(() => {
     if (!productId) return;
@@ -24,7 +26,7 @@ const ProductReviews = ({ productId, summary }) => {
     const fetchReviews = async () => {
       setLoading(true);
       try {
-        const data = await reviewService.getProductReviews(productId);
+        const data = await reviewService.getProductReviews(productId, { limit: 50 });
         if (!active) return;
         const nextReviews = data.items || [];
         setReviews(nextReviews);
@@ -122,6 +124,24 @@ const ProductReviews = ({ productId, summary }) => {
   const count = ratingSummary.review_count ?? summary?.review_count ?? 0;
   const distribution = ratingSummary.rating_distribution || {};
   const ratingsEnabled = ratingSummary.settings?.ratings_enabled !== false;
+  const normalizeReviewMedia = (review) => {
+    try {
+      const media = typeof review.media_urls === 'string' ? JSON.parse(review.media_urls) : (review.media_urls || []);
+      return Array.isArray(media) ? media.filter(item => item?.url).map(item => ({ ...item, review })) : [];
+    } catch {
+      return [];
+    }
+  };
+  const mediaItems = reviews.flatMap(normalizeReviewMedia);
+  const visibleReviews = reviews.slice(0, visibleCount);
+  const selectedMedia = selectedMediaIndex !== null ? mediaItems[selectedMediaIndex] : null;
+  const shiftSelectedMedia = (delta) => {
+    if (!mediaItems.length) return;
+    setSelectedMediaIndex(prev => {
+      const current = prev ?? 0;
+      return (current + delta + mediaItems.length) % mediaItems.length;
+    });
+  };
 
   if (!ratingsEnabled) return null;
 
@@ -140,6 +160,75 @@ const ProductReviews = ({ productId, summary }) => {
       </div>
 
       {count > 0 && (
+        <>
+        {mediaItems.length > 0 && (
+          <div className="mb-8 border-b border-border-subtle pb-8">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h3 className="text-2xl font-black tracking-tight text-ink-slate font-manrope">Reviews with images & videos</h3>
+              {mediaItems.length > 6 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedMediaIndex(0)}
+                  className="text-sm font-bold text-primary hover:text-emerald-700"
+                >
+                  See all media
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              {mediaItems.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const strip = document.getElementById(`review-media-strip-${productId}`);
+                    strip?.scrollBy({ left: -360, behavior: 'smooth' });
+                  }}
+                  className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm hover:border-primary hover:text-primary"
+                  aria-label="Previous review media"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              )}
+              <div id={`review-media-strip-${productId}`} className="flex gap-3 overflow-x-auto scroll-smooth pb-1">
+                {mediaItems.map((media, index) => (
+                  <button
+                    key={`${media.review.id}-${index}`}
+                    type="button"
+                    onClick={() => setSelectedMediaIndex(index)}
+                    className="relative h-32 w-44 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-sm transition-all hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    {media.type === 'video' ? (
+                      <>
+                        <video src={formatImageUrl(media.url)} className="h-full w-full object-cover" muted playsInline />
+                        <span className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-primary shadow-sm">
+                            <Play className="h-5 w-5 fill-current" />
+                          </span>
+                        </span>
+                      </>
+                    ) : (
+                      <img src={formatImageUrl(media.url)} alt="" className="h-full w-full object-cover" />
+                    )}
+                  </button>
+                ))}
+              </div>
+              {mediaItems.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const strip = document.getElementById(`review-media-strip-${productId}`);
+                    strip?.scrollBy({ left: 360, behavior: 'smooth' });
+                  }}
+                  className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm hover:border-primary hover:text-primary"
+                  aria-label="Next review media"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-8">
           <div className="space-y-2">
             {[5, 4, 3, 2, 1].map((r) => {
@@ -177,7 +266,7 @@ const ProductReviews = ({ productId, summary }) => {
                 ))}
               </div>
             ) : (
-              reviews.map((review) => {
+              visibleReviews.map((review) => {
               const isHidden = review.status === 'hidden';
               const isEditing = editingReplyId === review.id;
               const isNewReply = newReplyId === review.id;
@@ -253,15 +342,27 @@ const ProductReviews = ({ productId, summary }) => {
                     }
                     return Array.isArray(mediaUrls) && mediaUrls.length > 0 && (
                       <div className="flex gap-3 overflow-x-auto mt-4">
-                        {mediaUrls.map((media, idx) => (
-                          <div key={`${review.id}-${idx}`} className="w-24 h-24 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
+                        {mediaUrls.map((media, idx) => {
+                          const globalIndex = mediaItems.findIndex(item => item.review.id === review.id && item.url === media.url);
+                          return (
+                          <button
+                            type="button"
+                            key={`${review.id}-${idx}`}
+                            onClick={() => setSelectedMediaIndex(Math.max(globalIndex, 0))}
+                            className="relative w-24 h-24 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 shrink-0 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          >
                             {media.type === 'video' ? (
-                              <video src={formatImageUrl(media.url)} className="w-full h-full object-cover" controls />
+                              <>
+                                <video src={formatImageUrl(media.url)} className="w-full h-full object-cover" muted playsInline />
+                                <span className="absolute inset-0 flex items-center justify-center bg-black/20 text-white">
+                                  <Play className="h-5 w-5 fill-current" />
+                                </span>
+                              </>
                             ) : (
                               <img src={formatImageUrl(media.url)} alt="" className="w-full h-full object-cover" />
                             )}
-                          </div>
-                        ))}
+                          </button>
+                        )})}
                       </div>
                     );
                   })()}
@@ -364,6 +465,18 @@ const ProductReviews = ({ productId, summary }) => {
             }))}
           </div>
         </div>
+        {reviews.length > visibleCount && (
+          <div className="mt-8 md:ml-[292px]">
+            <button
+              type="button"
+              onClick={() => setVisibleCount(prev => Math.min(prev + 5, reviews.length))}
+              className="w-full rounded-xl border border-slate-200 bg-white px-6 py-4 text-left text-sm font-black text-primary shadow-sm transition-all hover:border-primary hover:bg-emerald-50/40"
+            >
+              See more reviews
+            </button>
+          </div>
+        )}
+        </>
       )}
 
       {!loading && count === 0 && (
@@ -371,6 +484,81 @@ const ProductReviews = ({ productId, summary }) => {
           <Camera className="w-9 h-9 text-slate-300 mx-auto mb-3" />
           <p className="font-black text-slate-800">No reviews yet</p>
           <p className="text-sm text-slate-500 mt-1">Purchased customers can review this product from My Orders.</p>
+        </div>
+      )}
+      {selectedMedia && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="relative grid max-h-[88vh] w-full max-w-6xl grid-cols-1 overflow-hidden rounded-2xl bg-white shadow-2xl md:grid-cols-[minmax(0,1fr)_360px]">
+            <button
+              type="button"
+              onClick={() => setSelectedMediaIndex(null)}
+              className="absolute right-4 top-4 z-20 rounded-full bg-white/90 p-2 text-slate-700 shadow-sm hover:bg-white"
+              aria-label="Close review media"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="relative flex min-h-[420px] items-center justify-center bg-slate-950">
+              {mediaItems.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => shiftSelectedMedia(-1)}
+                  className="absolute left-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-sm hover:bg-white"
+                  aria-label="Previous media"
+                >
+                  <ChevronLeft className="h-7 w-7" />
+                </button>
+              )}
+              {selectedMedia.type === 'video' ? (
+                <video src={formatImageUrl(selectedMedia.url)} className="max-h-[88vh] w-full object-contain" controls autoPlay playsInline />
+              ) : (
+                <img src={formatImageUrl(selectedMedia.url)} alt="" className="max-h-[88vh] w-full object-contain" />
+              )}
+              {mediaItems.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => shiftSelectedMedia(1)}
+                  className="absolute right-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-sm hover:bg-white"
+                  aria-label="Next media"
+                >
+                  <ChevronRight className="h-7 w-7" />
+                </button>
+              )}
+            </div>
+            <aside className="max-h-[88vh] overflow-y-auto p-6">
+              <p className="text-xs font-black uppercase tracking-widest text-slate-500">Customer review</p>
+              <div className="mt-4">
+                <StarRating value={selectedMedia.review.rating} />
+                <h3 className="mt-3 text-lg font-black text-slate-900">{selectedMedia.review.title}</h3>
+                <p className="mt-1 text-xs font-bold text-slate-500">
+                  By {selectedMedia.review.public_name} on {new Date(selectedMedia.review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+                {selectedMedia.review.comment && (
+                  <p className="mt-5 text-sm font-medium leading-relaxed text-slate-700">{selectedMedia.review.comment}</p>
+                )}
+              </div>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {mediaItems.map((media, index) => (
+                  <button
+                    key={`${media.review.id}-modal-${index}`}
+                    type="button"
+                    onClick={() => setSelectedMediaIndex(index)}
+                    className={`h-16 w-16 overflow-hidden rounded-lg border bg-slate-50 ${selectedMediaIndex === index ? 'border-primary ring-2 ring-primary/30' : 'border-slate-200'}`}
+                  >
+                    {media.type === 'video' ? (
+                      <div className="relative h-full w-full">
+                        <video src={formatImageUrl(media.url)} className="h-full w-full object-cover" muted playsInline />
+                        <span className="absolute inset-0 flex items-center justify-center bg-black/20 text-white">
+                          <Play className="h-4 w-4 fill-current" />
+                        </span>
+                      </div>
+                    ) : (
+                      <img src={formatImageUrl(media.url)} alt="" className="h-full w-full object-cover" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </aside>
+          </div>
         </div>
       )}
     </section>
