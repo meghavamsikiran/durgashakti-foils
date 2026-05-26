@@ -43,56 +43,81 @@ const CustomerDetailPage = () => {
     loadCustomer();
   }, [loadCustomer]);
 
+  /* ── Optimistic helper: patch reviews in local data ── */
+  const patchReviews = (updater) => {
+    setData((prev) => {
+      if (!prev) return prev;
+      return { ...prev, reviews: updater(prev.reviews) };
+    });
+  };
+
+  /* ── Optimistic: Toggle status ── */
   const setReviewStatus = async (review, nextStatus) => {
+    const prevData = data;
+    patchReviews((revs) => revs.map((r) => r.id === review.id ? { ...r, status: nextStatus } : r));
     setSavingId(review.id);
     try {
       await reviewService.updateAdminReviewStatus(review.id, nextStatus);
       toast.success(nextStatus === 'published' ? 'Review published' : 'Review hidden');
-      await loadCustomer();
     } catch {
       toast.error('Failed to update review status');
+      setData(prevData); // rollback
     } finally {
       setSavingId(null);
     }
   };
 
+  /* ── Optimistic: Save / update reply ── */
   const saveReply = async (review) => {
+    const replyText = (replyDrafts[review.id] || '').trim();
+    if (!replyText) { toast.error('Reply cannot be empty'); return; }
+    const prevData = data;
+    patchReviews((revs) => revs.map((r) => r.id === review.id ? { ...r, admin_reply: replyText } : r));
+    setActiveReplyId(null);
     setSavingId(review.id);
     try {
-      await reviewService.replyToReview(review.id, replyDrafts[review.id] || '');
+      await reviewService.replyToReview(review.id, replyText);
       toast.success('Official reply saved');
-      await loadCustomer();
     } catch {
       toast.error('Failed to save reply');
+      setData(prevData);
+      setActiveReplyId(review.id);
     } finally {
       setSavingId(null);
     }
   };
 
+  /* ── Optimistic: Delete reply ── */
   const deleteReply = async (review) => {
     if (!window.confirm('Delete the official reply on this review?')) return;
+    const prevData = data;
+    patchReviews((revs) => revs.map((r) => r.id === review.id ? { ...r, admin_reply: null } : r));
+    setReplyDrafts((prev) => ({ ...prev, [review.id]: '' }));
+    setActiveReplyId(null);
     setSavingId(review.id);
     try {
       await reviewService.deleteReviewReply(review.id);
-      setReplyDrafts((prev) => ({ ...prev, [review.id]: '' }));
       toast.success('Official reply deleted');
-      await loadCustomer();
     } catch {
       toast.error('Failed to delete reply');
+      setData(prevData);
     } finally {
       setSavingId(null);
     }
   };
 
+  /* ── Optimistic: Delete review ── */
   const handleDeleteReview = async (reviewId) => {
     if (!window.confirm('Are you sure you want to delete this review permanently?')) return;
+    const prevData = data;
+    patchReviews((revs) => revs.filter((r) => r.id !== reviewId));
     setSavingId(reviewId);
     try {
       await reviewService.deleteAdminReview(reviewId);
       toast.success('Review deleted');
-      await loadCustomer();
     } catch {
       toast.error('Failed to delete review');
+      setData(prevData);
     } finally {
       setSavingId(null);
     }
@@ -350,17 +375,29 @@ const CustomerDetailPage = () => {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleDeleteReview(review.id)}
-                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                      title="Delete Review"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {/* Always-visible quick-action buttons (no edit gating) */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => setReviewStatus(review, review.status === 'hidden' ? 'published' : 'hidden')}
+                        disabled={savingId === review.id}
+                        className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-all disabled:opacity-50"
+                        title={review.status === 'hidden' ? 'Publish Review' : 'Hide Review'}
+                      >
+                        {review.status === 'hidden' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteReview(review.id)}
+                        disabled={savingId === review.id}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all disabled:opacity-50"
+                        title="Delete Review"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="border-t border-slate-200/50 pt-2 space-y-1.5">
-                    <div className="text-sm font-black text-slate-800">“{review.title}”</div>
+                    <div className="text-sm font-black text-slate-800">"{review.title}"</div>
                     {review.comment && <p className="text-xs text-slate-600 leading-relaxed font-medium">{review.comment}</p>}
                     
                     {/* Media attachments */}
@@ -396,7 +433,7 @@ const CustomerDetailPage = () => {
                         <div className="space-y-3">
                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 font-label-caps">
                             <MessageSquareReply className="w-3.5 h-3.5 text-primary" />
-                            Official Reply Editor
+                            {review.admin_reply ? 'Edit Reply' : 'New Reply'}
                           </label>
                           <textarea
                             value={replyDrafts[review.id] || ''}
@@ -404,13 +441,11 @@ const CustomerDetailPage = () => {
                             rows={2}
                             placeholder="Reply as Durga Shakti Foils..."
                             className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            autoFocus
                           />
                           <div className="flex flex-wrap justify-end gap-2">
                             <button 
-                              onClick={async () => {
-                                await saveReply(review);
-                                setActiveReplyId(null);
-                              }} 
+                              onClick={() => saveReply(review)} 
                               disabled={savingId === review.id} 
                               className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-primary hover:bg-[#005a14] border border-transparent rounded-full text-white transition-all disabled:opacity-50"
                             >
@@ -418,23 +453,13 @@ const CustomerDetailPage = () => {
                             </button>
                             {review.admin_reply && (
                               <button 
-                                onClick={async () => {
-                                  await deleteReply(review);
-                                  setActiveReplyId(null);
-                                }} 
+                                onClick={() => deleteReply(review)} 
                                 disabled={savingId === review.id} 
                                 className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-full text-rose-600 transition-all disabled:opacity-50"
                               >
-                                Delete
+                                Delete Reply
                               </button>
                             )}
-                            <button 
-                              onClick={() => setReviewStatus(review, review.status === 'hidden' ? 'published' : 'hidden')} 
-                              disabled={savingId === review.id} 
-                              className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-white hover:bg-slate-50 border border-slate-200 rounded-full text-slate-700 transition-all disabled:opacity-50"
-                            >
-                              {review.status === 'hidden' ? 'Publish' : 'Hide'}
-                            </button>
                             <button 
                               onClick={() => {
                                 setReplyDrafts((prev) => ({ ...prev, [review.id]: review.admin_reply || '' }));
@@ -447,7 +472,7 @@ const CustomerDetailPage = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           {review.admin_reply ? (
                             <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 space-y-2 relative">
                               <div className="flex items-center justify-between">
@@ -490,17 +515,6 @@ const CustomerDetailPage = () => {
                               </button>
                             </div>
                           )}
-                          
-                          {/* Publish/Hide button if not editing */}
-                          <div className="flex justify-end">
-                            <button 
-                              onClick={() => setReviewStatus(review, review.status === 'hidden' ? 'published' : 'hidden')} 
-                              disabled={savingId === review.id} 
-                              className="px-3.5 py-1.5 text-xs font-black uppercase tracking-wider bg-white hover:bg-slate-50 border border-slate-200 rounded-full text-slate-700 transition-all disabled:opacity-50"
-                            >
-                              {review.status === 'hidden' ? 'Publish Review' : 'Hide Review'}
-                            </button>
-                          </div>
                         </div>
                       )}
                     </div>

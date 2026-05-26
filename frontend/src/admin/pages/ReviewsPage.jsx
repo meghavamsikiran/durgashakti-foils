@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ChevronDown, Eye, EyeOff, Filter, MessageSquareReply, Search, Star, Trash2, X } from 'lucide-react';
+import { ChevronDown, Eye, EyeOff, Filter, MessageSquareReply, Pencil, Search, ShieldCheck, Star, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
 import TablePagination from '../../components/ui/TablePagination';
 import StarRating from '../../components/reviews/StarRating';
@@ -24,6 +23,7 @@ const ReviewsPage = () => {
   const [replyDrafts, setReplyDrafts] = useState({});
   const [savingId, setSavingId] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [replyOpenId, setReplyOpenId] = useState(null);
 
   const load = useCallback(async (pageNum = 1) => {
     setLoading(true);
@@ -57,56 +57,76 @@ const ReviewsPage = () => {
     return () => clearTimeout(timer);
   }, [load]);
 
+  /* ── Optimistic: Toggle status ── */
   const setReviewStatus = async (review, nextStatus) => {
+    const prevRows = [...rows];
+    setRows((prev) => prev.map((r) => r.id === review.id ? { ...r, status: nextStatus } : r));
     setSavingId(review.id);
     try {
       await reviewService.updateAdminReviewStatus(review.id, nextStatus);
       toast.success(nextStatus === 'published' ? 'Review published' : 'Review hidden');
-      await load(page);
     } catch {
       toast.error('Failed to update review status');
+      setRows(prevRows);
     } finally {
       setSavingId(null);
     }
   };
 
+  /* ── Optimistic: Save / update reply ── */
   const saveReply = async (review) => {
+    const replyText = (replyDrafts[review.id] || '').trim();
+    if (!replyText) { toast.error('Reply cannot be empty'); return; }
+    const prevRows = [...rows];
+    setRows((prev) => prev.map((r) => r.id === review.id ? { ...r, admin_reply: replyText } : r));
+    setReplyOpenId(null);
     setSavingId(review.id);
     try {
-      await reviewService.replyToReview(review.id, replyDrafts[review.id] || '');
-      toast.success('Official reply saved');
-      await load(page);
+      await reviewService.replyToReview(review.id, replyText);
+      toast.success('Reply saved');
     } catch {
       toast.error('Failed to save reply');
+      setRows(prevRows);
+      setReplyOpenId(review.id);
     } finally {
       setSavingId(null);
     }
   };
 
+  /* ── Optimistic: Delete reply ── */
   const deleteReply = async (review) => {
-    if (!window.confirm('Delete the official reply on this review?')) return;
+    if (!window.confirm('Delete the official reply?')) return;
+    const prevRows = [...rows];
+    setRows((prev) => prev.map((r) => r.id === review.id ? { ...r, admin_reply: null } : r));
+    setReplyDrafts((prev) => ({ ...prev, [review.id]: '' }));
+    setReplyOpenId(null);
     setSavingId(review.id);
     try {
       await reviewService.deleteReviewReply(review.id);
-      setReplyDrafts((prev) => ({ ...prev, [review.id]: '' }));
-      toast.success('Official reply deleted');
-      await load(page);
+      toast.success('Reply deleted');
     } catch {
       toast.error('Failed to delete reply');
+      setRows(prevRows);
     } finally {
       setSavingId(null);
     }
   };
 
+  /* ── Optimistic: Delete review ── */
   const deleteReview = async (review) => {
     if (!window.confirm('Delete this review permanently?')) return;
+    const prevRows = [...rows];
+    const prevTotal = total;
+    setRows((prev) => prev.filter((r) => r.id !== review.id));
+    setTotal((prev) => Math.max(0, prev - 1));
     setSavingId(review.id);
     try {
       await reviewService.deleteAdminReview(review.id);
       toast.success('Review deleted');
-      await load(page);
     } catch {
       toast.error('Failed to delete review');
+      setRows(prevRows);
+      setTotal(prevTotal);
     } finally {
       setSavingId(null);
     }
@@ -117,7 +137,8 @@ const ReviewsPage = () => {
   const activeFilterCount = (status !== 'all' ? 1 : 0) + (rating !== 'all' ? 1 : 0) + (dateRange !== 'all' ? 1 : 0);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* ── Header ── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
@@ -158,17 +179,14 @@ const ReviewsPage = () => {
         </div>
       </div>
 
+      {/* ── Filters ── */}
       {showFilters && (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
               <div>
                 <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">Status</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
-                >
+                <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700">
                   <option value="all">All Statuses</option>
                   <option value="published">Published</option>
                   <option value="hidden">Hidden</option>
@@ -176,24 +194,14 @@ const ReviewsPage = () => {
               </div>
               <div>
                 <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">Rating</label>
-                <select
-                  value={rating}
-                  onChange={(e) => setRating(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
-                >
+                <select value={rating} onChange={(e) => setRating(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700">
                   <option value="all">All Ratings</option>
-                  {[5, 4, 3, 2, 1].map((value) => (
-                    <option key={value} value={value}>{value} Star</option>
-                  ))}
+                  {[5, 4, 3, 2, 1].map((v) => <option key={v} value={v}>{v} Star</option>)}
                 </select>
               </div>
               <div>
                 <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">Date</label>
-                <select
-                  value={dateRange}
-                  onChange={(e) => setDateRange(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
-                >
+                <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700">
                   <option value="all">All Dates</option>
                   <option value="today">Today</option>
                   <option value="yesterday">Yesterday</option>
@@ -207,21 +215,11 @@ const ReviewsPage = () => {
                 <div className="grid grid-cols-1 gap-3 md:col-span-3 md:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">From</label>
-                    <input
-                      type="date"
-                      value={customStart}
-                      onChange={(e) => setCustomStart(e.target.value)}
-                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
-                    />
+                    <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" />
                   </div>
                   <div>
                     <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">To</label>
-                    <input
-                      type="date"
-                      value={customEnd}
-                      onChange={(e) => setCustomEnd(e.target.value)}
-                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
-                    />
+                    <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" />
                   </div>
                 </div>
               )}
@@ -229,13 +227,7 @@ const ReviewsPage = () => {
             {activeFilterCount > 0 && (
               <button
                 type="button"
-                onClick={() => {
-                  setStatus('all');
-                  setRating('all');
-                  setDateRange('all');
-                  setCustomStart('');
-                  setCustomEnd('');
-                }}
+                onClick={() => { setStatus('all'); setRating('all'); setDateRange('all'); setCustomStart(''); setCustomEnd(''); }}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50"
               >
                 <X className="w-4 h-4" />
@@ -246,73 +238,169 @@ const ReviewsPage = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5">
+      {/* ── Review cards ── */}
+      <div className="space-y-4">
         {rows.map((review) => {
           const hidden = review.status === 'hidden';
+          const isReplying = replyOpenId === review.id;
+          const isBusy = savingId === review.id;
+
           return (
-            <article key={review.id} className={`bg-white border rounded-2xl p-5 shadow-sm ${hidden ? 'border-slate-200 opacity-75' : 'border-slate-200'}`}>
-              <div className="flex flex-col xl:flex-row gap-5">
-                <div className="flex gap-4 min-w-0 flex-1">
-                  <div className="w-20 h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
+            <article
+              key={review.id}
+              className={`bg-white border rounded-2xl shadow-sm transition-all overflow-hidden ${
+                hidden ? 'border-slate-300 border-dashed' : 'border-slate-200'
+              }`}
+            >
+              {/* ── Card top bar with status + actions ── */}
+              <div className={`flex items-center justify-between px-5 py-2.5 border-b ${
+                hidden ? 'bg-slate-50 border-slate-200' : 'bg-[#f7faf8] border-slate-100'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                    hidden ? 'bg-slate-200 text-slate-600' : 'bg-emerald-100 text-emerald-700'
+                  }`}>
+                    {hidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    {review.status}
+                  </span>
+                  <StarRating value={review.rating} />
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setReviewStatus(review, hidden ? 'published' : 'hidden')}
+                    disabled={isBusy}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 ${
+                      hidden
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                        : 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+                    }`}
+                    title={hidden ? 'Publish review' : 'Hide review'}
+                  >
+                    {hidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                    {hidden ? 'Publish' : 'Hide'}
+                  </button>
+                  <button
+                    onClick={() => deleteReview(review)}
+                    disabled={isBusy}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-all disabled:opacity-50"
+                    title="Delete review"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </button>
+                </div>
+              </div>
+
+              {/* ── Card body ── */}
+              <div className="p-5">
+                <div className="flex gap-4">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0">
                     <img src={formatImageUrl(review.product_image)} alt={review.product_name} className="w-full h-full object-cover" />
                   </div>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <StarRating value={review.rating} />
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${hidden ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}`}>
-                        {review.status}
+                  <div className="min-w-0 flex-1">
+                    <h2 className="font-black text-slate-900 leading-tight text-[15px]">{review.title}</h2>
+                    <p className="text-xs font-bold text-slate-500 mt-0.5 truncate">
+                      {review.product_name}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                      <span className="text-xs font-semibold text-slate-600">{review.public_name || review.customer_name}</span>
+                      {review.customer_email && <span className="text-[11px] text-slate-400 font-mono">{review.customer_email}</span>}
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {new Date(review.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <h2 className="font-black text-slate-900 leading-tight">{review.title}</h2>
-                    <p className="text-xs font-bold text-slate-500 mt-1 truncate">
-                      {review.product_name} by {review.public_name || review.customer_name}
-                    </p>
-                    {review.customer_email && <p className="text-[11px] text-slate-400 font-mono mt-1">{review.customer_email}</p>}
                     {review.comment && <p className="text-sm text-slate-700 leading-relaxed mt-3">{review.comment}</p>}
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-3">
-                      {new Date(review.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </p>
                   </div>
                 </div>
 
-                <div className="xl:w-[420px] space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                    <MessageSquareReply className="w-3.5 h-3.5" />
-                    Official Reply
-                  </label>
-                  <textarea
-                    value={replyDrafts[review.id] || ''}
-                    onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [review.id]: e.target.value }))}
-                    rows={3}
-                    placeholder="Reply as Durga Shakti Foils..."
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                  <div className="flex flex-wrap justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => saveReply(review)} disabled={savingId === review.id} className="rounded-xl">
-                      {review.admin_reply ? 'Update Reply' : 'Save Reply'}
-                    </Button>
-                    {review.admin_reply && (
-                      <Button variant="outline" size="sm" onClick={() => deleteReply(review)} disabled={savingId === review.id} className="rounded-xl text-rose-600 hover:text-rose-700">
-                        <Trash2 className="w-4 h-4 mr-1.5" />
-                        Delete Reply
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setReviewStatus(review, hidden ? 'published' : 'hidden')}
-                      disabled={savingId === review.id}
-                      className="rounded-xl"
-                    >
-                      {hidden ? <Eye className="w-4 h-4 mr-1.5" /> : <EyeOff className="w-4 h-4 mr-1.5" />}
-                      {hidden ? 'Publish' : 'Hide'}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => deleteReview(review)} disabled={savingId === review.id} className="rounded-xl text-rose-600 hover:text-rose-700">
-                      <Trash2 className="w-4 h-4 mr-1.5" />
-                      Delete
-                    </Button>
+                {/* ── Official Reply (display mode) ── */}
+                {review.admin_reply && !isReplying && (
+                  <div className="mt-4 bg-emerald-50/60 border border-emerald-100 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">Official Reply</span>
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider bg-white border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded-full select-none">
+                          <ShieldCheck className="w-2.5 h-2.5" />
+                          Verified
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => { setReplyOpenId(review.id); setReplyDrafts((d) => ({ ...d, [review.id]: review.admin_reply || '' })); }}
+                          className="p-1.5 text-emerald-600 hover:text-primary hover:bg-white rounded-lg transition-all border border-transparent hover:border-slate-100"
+                          title="Edit reply"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => deleteReply(review)}
+                          disabled={isBusy}
+                          className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-white rounded-lg transition-all border border-transparent hover:border-rose-100 disabled:opacity-50"
+                          title="Delete reply"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-700 leading-relaxed font-medium">{review.admin_reply}</p>
                   </div>
-                </div>
+                )}
+
+                {/* ── Reply editor ── */}
+                {isReplying && (
+                  <div className="mt-4 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                      <MessageSquareReply className="w-3.5 h-3.5 text-primary" />
+                      {review.admin_reply ? 'Edit Reply' : 'New Reply'}
+                    </label>
+                    <textarea
+                      value={replyDrafts[review.id] || ''}
+                      onChange={(e) => setReplyDrafts((d) => ({ ...d, [review.id]: e.target.value }))}
+                      rows={3}
+                      placeholder="Reply as Durga Shakti Foils..."
+                      className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-y"
+                      autoFocus
+                    />
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <button
+                        onClick={() => { setReplyOpenId(null); setReplyDrafts((d) => ({ ...d, [review.id]: review.admin_reply || '' })); }}
+                        className="px-3.5 py-2 text-[10px] font-black uppercase tracking-wider bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-slate-500 transition-all"
+                      >
+                        Cancel
+                      </button>
+                      {review.admin_reply && (
+                        <button
+                          onClick={() => deleteReply(review)}
+                          disabled={isBusy}
+                          className="px-3.5 py-2 text-[10px] font-black uppercase tracking-wider bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-rose-600 transition-all disabled:opacity-50"
+                        >
+                          Delete Reply
+                        </button>
+                      )}
+                      <button
+                        onClick={() => saveReply(review)}
+                        disabled={isBusy}
+                        className="px-4 py-2 text-[10px] font-black uppercase tracking-wider bg-primary hover:bg-[#005a14] border border-transparent rounded-lg text-white transition-all disabled:opacity-50"
+                      >
+                        {review.admin_reply ? 'Update' : 'Submit'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Reply button (when no reply and not editing) ── */}
+                {!review.admin_reply && !isReplying && (
+                  <div className="mt-4 flex items-center justify-between bg-slate-50/70 border border-slate-100 rounded-xl px-4 py-3">
+                    <span className="text-xs text-slate-400 font-medium">No official reply yet</span>
+                    <button
+                      onClick={() => { setReplyOpenId(review.id); setReplyDrafts((d) => ({ ...d, [review.id]: '' })); }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider bg-primary hover:bg-[#005a14] text-white rounded-lg transition-all"
+                    >
+                      <MessageSquareReply className="w-3.5 h-3.5" />
+                      Reply
+                    </button>
+                  </div>
+                )}
               </div>
             </article>
           );
@@ -321,6 +409,7 @@ const ReviewsPage = () => {
 
       {rows.length === 0 && !loading && (
         <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-12 text-center">
+          <Star className="w-10 h-10 text-slate-200 mx-auto mb-3" />
           <p className="font-black text-slate-800">No reviews found</p>
           <p className="text-sm text-slate-500 mt-1">Reviews will appear here after customers submit verified purchase feedback.</p>
         </div>

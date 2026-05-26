@@ -30,7 +30,7 @@ const reviewService = {
   },
 
   getAdminReviews: async (params = {}) => {
-    const response = await apiClient.cachedGet('/admin/reviews', { params, ttl: 15000 });
+    const response = await apiClient.get('/admin/reviews', { params });
     return response.data;
   },
 
