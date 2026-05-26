@@ -20,9 +20,31 @@ export const useSavedCards = () => {
 
   const saveCard = async (cardData) => {
     try {
-      await cardService.saveCard(cardData);
+      const saved = await cardService.saveCard(cardData);
+      setCards(prev => [...prev, saved]);
       toast.success('Card saved securely');
-      fetchCards();
+      return true;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const updateCard = async (id, cardData) => {
+    try {
+      const updated = await cardService.updateCard(id, cardData);
+      setCards(prev => prev.map(card => card.id === id ? updated : card));
+      toast.success('Card updated');
+      return true;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const deleteCard = async (id) => {
+    try {
+      await cardService.deleteCard(id);
+      setCards(prev => prev.filter(card => card.id !== id));
+      toast.success('Card removed');
       return true;
     } catch (err) {
       return false;
@@ -33,5 +55,5 @@ export const useSavedCards = () => {
     fetchCards();
   }, [fetchCards]);
 
-  return { cards, loading, fetchCards, saveCard };
+  return { cards, loading, fetchCards, saveCard, updateCard, deleteCard };
 };

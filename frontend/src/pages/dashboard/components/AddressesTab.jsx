@@ -24,7 +24,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
   const [editingAddressId, setEditingAddressId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [addressForm, setAddressForm] = useState({ 
-    label: 'Home', full_name: '', phone: '', 
+    label: 'Home', full_name: '', phone: '', alternate_phone: '',
     address_line1: '', address_line2: '', 
     city: '', state: '', pincode: '', is_default: false 
   });
@@ -79,7 +79,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
     if (success) {
       setShowAddressForm(false);
       setEditingAddressId(null);
-      setAddressForm({ label: 'Home', full_name: '', phone: '', address_line1: '', address_line2: '', city: '', state: '', pincode: '', is_default: false });
+      setAddressForm({ label: 'Home', full_name: '', phone: '', alternate_phone: '', address_line1: '', address_line2: '', city: '', state: '', pincode: '', is_default: false });
     }
   };
 
@@ -88,6 +88,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
       label: addr.label,
       full_name: addr.full_name,
       phone: addr.phone,
+      alternate_phone: addr.alternate_phone || '',
       address_line1: addr.address_line1,
       address_line2: addr.address_line2 || '',
       city: addr.city,
@@ -131,6 +132,21 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
               <Input placeholder="e.g. Rahul Sharma" value={addressForm.full_name} onChange={e => setAddressForm({...addressForm, full_name: e.target.value})} required className="rounded-lg h-12 bg-surface border border-border-subtle focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all px-4 text-sm font-medium" />
             </div>
             <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Address Type</Label>
+              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-50 border border-slate-200 p-1">
+                {['Home', 'Work'].map(label => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => setAddressForm({...addressForm, label})}
+                    className={`h-10 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${addressForm.label === label ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-white'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mobile Number</Label>
               <PhoneInput
                 international
@@ -142,6 +158,21 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
                 numberInputProps={{
                   className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
                   placeholder: "Enter phone number"
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Alternative Phone Number (Optional)</Label>
+              <PhoneInput
+                international
+                defaultCountry="IN"
+                value={addressForm.alternate_phone}
+                onChange={val => setAddressForm({...addressForm, alternate_phone: val || ''})}
+                displayInitialValueAsLocalNumber={false}
+                className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
+                numberInputProps={{
+                  className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
+                  placeholder: "Optional alternate phone"
                 }}
               />
             </div>
@@ -233,6 +264,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
               <div className="mt-4 flex items-center gap-3 pt-4 border-t border-border-subtle">
                 <div className="flex items-center gap-2 text-muted-foreground font-mono text-xs">
                   {addr.phone}
+                  {addr.alternate_phone && <span className="text-slate-400">/ {addr.alternate_phone}</span>}
                 </div>
               </div>
               <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">

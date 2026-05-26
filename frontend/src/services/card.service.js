@@ -10,6 +10,16 @@ const cardService = {
     const response = await apiClient.post('/user/cards', cardData);
     return response.data;
   },
+
+  updateCard: async (id, cardData) => {
+    const response = await apiClient.put(`/user/cards/${id}`, cardData);
+    return response.data;
+  },
+
+  deleteCard: async (id) => {
+    const response = await apiClient.delete(`/user/cards/${id}`);
+    return response.data;
+  },
 };
 
 export default cardService;

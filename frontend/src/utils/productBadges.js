@@ -20,8 +20,11 @@ export const getProductBadge = (product, discountPercent = 0) => {
 export const getBadgeClasses = (badge) => {
   const normalized = String(badge || '').toLowerCase();
   if (normalized.includes('best')) return 'bg-primary text-white border-primary/30';
-  if (normalized.includes('hot') || normalized.includes('limited')) return 'bg-rose-600 text-white border-rose-700/30';
+  if (normalized.includes('hot') || normalized.includes('limited') || normalized.includes('flash')) return 'bg-rose-600 text-white border-rose-700/30';
   if (normalized.includes('new')) return 'bg-blue-600 text-white border-blue-700/30';
-  if (normalized.includes('huge') || normalized.includes('saving')) return 'bg-amber-500 text-white border-amber-600/30';
+  if (normalized.includes('top') || normalized.includes('favorite') || normalized.includes('popular')) return 'bg-violet-600 text-white border-violet-700/30';
+  if (normalized.includes('premium')) return 'bg-slate-900 text-white border-slate-700/30';
+  if (normalized.includes('eco')) return 'bg-emerald-600 text-white border-emerald-700/30';
+  if (normalized.includes('value') || normalized.includes('huge') || normalized.includes('saving')) return 'bg-amber-500 text-white border-amber-600/30';
   return 'bg-amber-500 text-white border-amber-600/30';
 };

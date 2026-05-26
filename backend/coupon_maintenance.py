@@ -54,6 +54,7 @@ def clean_popup_banner_value(value: Any, valid_codes: set[str]) -> dict:
         if not isinstance(banner, dict):
             continue
         clean_banner = dict(banner)
+        original_codes = [code for code in (clean_banner.get("coupon_codes") or []) if _code_of(code)]
         clean_banner["coupon_codes"] = [
             code for code in (clean_banner.get("coupon_codes") or [])
             if _code_of(code) in valid_codes
@@ -62,6 +63,8 @@ def clean_popup_banner_value(value: Any, valid_codes: set[str]) -> dict:
             coupon for coupon in (clean_banner.get("linked_coupons") or [])
             if _code_of(coupon) in valid_codes
         ]
+        if original_codes and not clean_banner["coupon_codes"]:
+            clean_banner["is_active"] = False
         cleaned_banners.append(clean_banner)
 
     popup["custom_banners"] = cleaned_banners

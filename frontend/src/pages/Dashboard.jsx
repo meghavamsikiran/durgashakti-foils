@@ -45,7 +45,7 @@ const Dashboard = () => {
   const { wishlist, loading: wishlistLoading, toggleWishlist, clearWishlist } = useWishlist();
   const { addresses, loading: addressesLoading, addAddress, updateAddress, deleteAddress } = useAddresses();
   const { notifications, loading: notificationsLoading, unreadCount, markAllAsRead } = useNotifications();
-  const { cards, loading: cardsLoading, saveCard } = useSavedCards();
+  const { cards, loading: cardsLoading, saveCard, updateCard, deleteCard } = useSavedCards();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -97,7 +97,7 @@ const Dashboard = () => {
       case 'transactions':
         return <TransactionsTab orders={orders} />;
       case 'cards':
-        return <SavedCardsTab cards={cards} loading={cardsLoading} onSaveCard={saveCard} />;
+        return <SavedCardsTab cards={cards} loading={cardsLoading} onSaveCard={saveCard} onUpdateCard={updateCard} onDeleteCard={deleteCard} />;
       case 'wishlist':
         return <WishlistTab wishlist={wishlist} loading={wishlistLoading} onToggleWishlist={toggleWishlist} onClearWishlist={clearWishlist} />;
       case 'addresses':

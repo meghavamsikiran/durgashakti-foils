@@ -499,6 +499,15 @@ const isBannerSelectableCoupon = (coupon) => Boolean(
   !isCouponExpired(coupon)
 );
 
+const getCouponExpiryTone = (coupon) => {
+  if (!coupon?.expiry_date) return 'text-emerald-700 font-bold';
+  const expiry = new Date(coupon.expiry_date).getTime();
+  const now = Date.now();
+  if (expiry <= now) return 'text-red-500 font-bold';
+  if (expiry - now <= 24 * 60 * 60 * 1000) return 'text-amber-600 font-bold';
+  return 'text-emerald-700 font-bold';
+};
+
 const normalizeCouponList = (list = []) => (
   (list || [])
     .filter(c => c !== null && c !== undefined && c.code)
@@ -513,11 +522,17 @@ const sanitizePopupBanner = (popupBannerValue = {}, coupons = []) => {
       .filter(c => c && validCodes.has(c.code)),
     custom_banners: (popupBannerValue?.custom_banners || [])
       .filter(Boolean)
-      .map(theme => ({
-        ...theme,
-        coupon_codes: (theme.coupon_codes || []).filter(code => validCodes.has(code)),
-        linked_coupons: (theme.linked_coupons || []).filter(c => c && validCodes.has(c.code))
-      }))
+      .map(theme => {
+        const originalCodes = (theme.coupon_codes || []).filter(Boolean);
+        const coupon_codes = originalCodes.filter(code => validCodes.has(code));
+        const linked_coupons = (theme.linked_coupons || []).filter(c => c && validCodes.has(c.code));
+        return {
+          ...theme,
+          is_active: originalCodes.length > 0 && coupon_codes.length === 0 ? false : theme.is_active,
+          coupon_codes,
+          linked_coupons
+        };
+      })
   };
 };
 
@@ -786,6 +801,11 @@ const CouponsPage = () => {
 
   const handlePromoteToBanner = async (coupon) => {
     const isScrollingPromoted = scrollingBanner && scrollingBanner.text2 && scrollingBanner.text2.includes(coupon.code);
+
+    if (!isScrollingPromoted && !isBannerSelectableCoupon(coupon)) {
+      toast.error('Inactive or expired coupons cannot be displayed in the top banner');
+      return;
+    }
 
     if (isScrollingPromoted) {
       setPromotingId(coupon.id);
@@ -1072,6 +1092,14 @@ const CouponsPage = () => {
   };
 
   const handleToggleCouponInBanner = (code) => {
+    const linkedTheme = (customBanners || []).find(
+      b => b && b.id !== bannerForm.id && (b.coupon_codes || []).includes(code)
+    );
+    if (linkedTheme) {
+      toast.error(`${code} is already used by ${linkedTheme.theme_context || 'another banner theme'}. Remove it there first.`);
+      return;
+    }
+
     setBannerForm(prev => {
       const currentCodes = prev.coupon_codes || [];
       const exists = currentCodes.includes(code);
@@ -1093,6 +1121,13 @@ const CouponsPage = () => {
     }
     if (!bannerForm.title.trim()) {
       toast.error("Title is required.");
+      return;
+    }
+    const duplicateCode = (bannerForm.coupon_codes || []).find(code =>
+      (customBanners || []).some(b => b && b.id !== bannerForm.id && (b.coupon_codes || []).includes(code))
+    );
+    if (duplicateCode) {
+      toast.error(`${duplicateCode} is already used by another banner theme.`);
       return;
     }
 
@@ -1133,15 +1168,9 @@ const CouponsPage = () => {
           return newBannerTheme;
         }
 
-        // Exclusivity enforcement: remove selected codes from other themes
-        const filteredCodes = (b.coupon_codes || []).filter(code => !currentCodes.includes(code));
-        const filteredLinkedCoupons = (b.linked_coupons || []).filter(c => !currentCodes.includes(c.code));
-
         return {
           ...b,
-          is_active: bannerForm.is_active ? false : b.is_active, // if new theme is active, old is inactive
-          coupon_codes: filteredCodes,
-          linked_coupons: filteredLinkedCoupons
+          is_active: bannerForm.is_active ? false : b.is_active
         };
       });
 
@@ -1302,7 +1331,7 @@ const CouponsPage = () => {
               : 'border-transparent text-slate-400 hover:text-slate-600'
           }`}
         >
-          ✨ Pop-up Banner Themes
+          Pop Up Banners
         </button>
       </div>
 
@@ -1511,7 +1540,7 @@ const CouponsPage = () => {
                           </td>
                           <td className="px-6 py-4 text-center font-mono text-xs">
                             {coupon.expiry_date ? (
-                              <span className={`inline-flex items-center gap-1.5 ${isExpired ? 'text-red-500 font-bold' : 'text-slate-500'}`}>
+                              <span className={`inline-flex items-center gap-1.5 ${getCouponExpiryTone(coupon)}`}>
                                 <Calendar className="w-3 h-3" />
                                 {new Date(coupon.expiry_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                               </span>
@@ -1543,12 +1572,6 @@ const CouponsPage = () => {
                             <div className="flex justify-end items-center gap-2">
                               {(() => {
                                 const isScrollingPromoted = scrollingBanner && scrollingBanner.text2 && scrollingBanner.text2.includes(coupon.code);
-                                const canPromotePopup = isBannerSelectableCoupon(coupon);
-                                const isPopupPromoted = canPromotePopup && (
-                                  (popupBanner?.promoted_coupons || []).some(c => c && c.code === coupon.code) ||
-                                  (customBanners || []).some(b => b?.is_active && (b.coupon_codes || []).includes(coupon.code))
-                                );
-
                                 return (
                                   <>
                                     <button 
@@ -1572,29 +1595,6 @@ const CouponsPage = () => {
                                         <Megaphone className={`w-3.5 h-3.5 ${isScrollingPromoted ? 'fill-amber-600' : ''}`} />
                                       )}
                                       <span>Top Banner</span>
-                                    </button>
-                                    
-                                    <button 
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleTogglePopupBannerPromotion(coupon);
-                                      }}
-                                      disabled={togglingPopupId === coupon.id || !canPromotePopup}
-                                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 ${
-                                        isPopupPromoted 
-                                          ? 'text-emerald-750 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200' 
-                                          : 'text-slate-500 bg-slate-50 hover:bg-slate-100 hover:text-slate-700 border border-slate-200'
-                                      }`}
-                                      title={isPopupPromoted ? "Promoted in Popup Banner" : "Promote in Popup Banner"}
-                                    >
-                                      {togglingPopupId === coupon.id ? (
-                                        <Loader2 className="w-3 h-3 animate-spin" />
-                                      ) : (
-                                        <Sparkles className={`w-3.5 h-3.5 ${isPopupPromoted ? 'fill-emerald-600' : ''}`} />
-                                      )}
-                                      <span>Popup Banner</span>
                                     </button>
                                   </>
                                 );
@@ -1740,12 +1740,13 @@ const CouponsPage = () => {
                               return (
                                 <label 
                                   key={coupon.id} 
-                                  className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 cursor-pointer select-none"
+                                  className={`flex items-center justify-between px-4 py-3 select-none ${linkedTheme ? 'bg-slate-50 cursor-not-allowed opacity-70' : 'hover:bg-slate-50 cursor-pointer'}`}
                                 >
                                   <div className="flex items-center gap-3">
                                     <input
                                       type="checkbox"
                                       checked={isChecked}
+                                      disabled={Boolean(linkedTheme)}
                                       onChange={() => handleToggleCouponInBanner(coupon.code)}
                                       className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
                                     />
@@ -1783,7 +1784,7 @@ const CouponsPage = () => {
                     (customBanners || []).some(b => b && b.id !== bannerForm.id && (b.coupon_codes || []).includes(c.code))
                   ) && (
                     <p className="text-[11px] text-amber-600 font-semibold mt-1.5 flex items-center gap-1 animate-pulse">
-                      ⚠️ Note: Some chosen coupons are already linked to other banner themes. Saving will unlink them from those themes.
+                      Some chosen coupons are already linked to other banner themes. Remove them there before saving.
                     </p>
                   )}
 
@@ -1954,27 +1955,30 @@ const CouponsPage = () => {
                             No coupon codes selected yet.
                           </div>
                         ) : (
-                          <div className="flex justify-center max-w-sm mx-auto w-full">
-                            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 text-center space-y-2.5 w-full max-w-xs">
-                              <p className="text-[10px] font-bold text-yellow-300 uppercase tracking-widest">
-                                {(() => {
-                                  const matchingC = coupons.find(c => c.code === couponCodes[0]);
-                                  if (!matchingC) return "Special Discount";
-                                  if (matchingC.discount_type === 'percentage') return `${matchingC.discount_value}% Off`;
-                                  if (matchingC.discount_type === 'flat') return `₹${matchingC.discount_value} Off`;
-                                  return "Free Shipping";
-                                })()}
-                                {couponCodes.length > 1 && ` (+${couponCodes.length - 1} more)`}
-                              </p>
-                              <div className="relative flex items-center justify-center w-full px-12">
-                                <span className="font-mono text-base font-black bg-black/20 px-3 py-1 rounded-xl border border-white/20 tracking-wider">
-                                  {couponCodes[0]}
-                                </span>
-                                <button type="button" className="absolute right-0 p-1.5 bg-white/5 border border-white/10 rounded-lg text-white/80">
-                                  <Copy className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-md mx-auto w-full">
+                            {couponCodes.map(code => {
+                              const matchingC = coupons.find(c => c.code === code);
+                              const label = !matchingC
+                                ? 'Special Discount'
+                                : matchingC.discount_type === 'percentage'
+                                  ? `${matchingC.discount_value}% Off`
+                                  : matchingC.discount_type === 'flat'
+                                    ? `Rs ${matchingC.discount_value} Off`
+                                    : 'Free Shipping';
+                              return (
+                                <div key={code} className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/15 text-center space-y-2 w-full">
+                                  <p className="text-[10px] font-bold text-yellow-300 uppercase tracking-widest">{label}</p>
+                                  <div className="relative flex items-center justify-center w-full px-8">
+                                    <span className="font-mono text-sm font-black bg-black/20 px-2.5 py-1 rounded-xl border border-white/20 tracking-wider">
+                                      {code}
+                                    </span>
+                                    <button type="button" className="absolute right-0 p-1.5 bg-white/5 border border-white/10 rounded-lg text-white/80">
+                                      <Copy className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>

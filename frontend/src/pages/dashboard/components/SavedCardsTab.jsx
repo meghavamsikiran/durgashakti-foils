@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Plus, CreditCard, ArrowLeft, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShieldCheck, Plus, CreditCard, ArrowLeft, Lock, ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import PageLoader from '../../../components/ui/PageLoader';
 
-const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
+const SavedCardsTab = ({ cards, loading, onSaveCard, onUpdateCard, onDeleteCard }) => {
   const ITEMS_PER_PAGE = 4;
   const [showForm, setShowForm] = useState(false);
+  const [editingCard, setEditingCard] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState({
     cardNumber: '',
@@ -60,7 +61,7 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const cleanNumber = formData.cardNumber.replace(/\s+/g, '');
-    if (cleanNumber.length < 16) {
+    if (!editingCard && cleanNumber.length < 16) {
       alert('Please enter a valid 16-digit card number.');
       return;
     }
@@ -79,24 +80,28 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
       alert('Please enter a valid 4-digit expiry year (e.g. 2028).');
       return;
     }
-    if (formData.cvv.length < 3) {
+    if (!editingCard && formData.cvv.length < 3) {
       alert('Please enter a valid 3-digit CVV.');
       return;
     }
 
     setSubmitting(true);
     const cardData = {
-      brand: getCardBrand(cleanNumber),
-      last4: cleanNumber.slice(-4),
+      id: editingCard?.id,
+      brand: editingCard ? (editingCard.brand || 'Visa') : getCardBrand(cleanNumber),
+      last4: editingCard ? editingCard.last4 : cleanNumber.slice(-4),
       expiry_month: formData.expiryMonth.padStart(2, '0'),
       expiry_year: String(fullYear),
       holder_name: formData.holderName.toUpperCase()
     };
 
-    const success = await onSaveCard(cardData);
+    const success = editingCard
+      ? await onUpdateCard(editingCard.id, cardData)
+      : await onSaveCard(cardData);
     setSubmitting(false);
     if (success) {
       setShowForm(false);
+      setEditingCard(null);
       setFormData({
         cardNumber: '',
         holderName: '',
@@ -107,6 +112,29 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
     }
   };
 
+  const openAddForm = () => {
+    setEditingCard(null);
+    setFormData({ cardNumber: '', holderName: '', expiryMonth: '', expiryYear: '', cvv: '' });
+    setShowForm(true);
+  };
+
+  const openEditForm = (card) => {
+    setEditingCard(card);
+    setFormData({
+      cardNumber: `**** **** **** ${card.last4 || ''}`,
+      holderName: card.holder_name || '',
+      expiryMonth: card.expiry_month || '',
+      expiryYear: card.expiry_year || '',
+      cvv: ''
+    });
+    setShowForm(true);
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingCard(null);
+  };
+
   if (loading && !showForm) return <PageLoader message="Syncing secure vault..." />;
 
   if (showForm) {
@@ -114,10 +142,10 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
     return (
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => setShowForm(false)} className="rounded-lg">
+          <Button variant="ghost" size="icon" onClick={closeForm} className="rounded-lg">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h2 className="text-3xl font-black text-foreground uppercase tracking-tighter">Add Saved Card</h2>
+          <h2 className="text-3xl font-black text-foreground uppercase tracking-tighter">{editingCard ? 'Edit Saved Card' : 'Add Saved Card'}</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -167,12 +195,13 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
             <div className="flex flex-col gap-1.5">
               <Label className="text-[10px] text-muted-foreground font-black uppercase tracking-wider ml-1">Card Number</Label>
               <Input
-                required
+                required={!editingCard}
+                disabled={Boolean(editingCard)}
                 type="text"
                 placeholder="4111 2222 3333 4444"
                 value={formData.cardNumber}
                 onChange={handleCardNumberChange}
-                className="h-12 rounded-lg border border-border-subtle bg-surface px-4 text-sm focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all font-mono"
+                className="h-12 rounded-lg border border-border-subtle bg-surface px-4 text-sm focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all font-mono disabled:bg-slate-50 disabled:text-slate-500"
               />
             </div>
 
@@ -216,7 +245,7 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
               <div className="flex flex-col gap-1.5">
                 <Label className="text-[10px] text-muted-foreground font-black uppercase tracking-wider ml-1">CVV</Label>
                 <Input
-                  required
+                  required={!editingCard}
                   type="password"
                   placeholder="•••"
                   maxLength={3}
@@ -233,12 +262,12 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
                 disabled={submitting}
                 className="flex-1 h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-lg text-xs transition-all shadow-sm hover:shadow-emerald-glow flex items-center justify-center gap-2"
               >
-                <Lock className="w-4 h-4" /> {submitting ? 'SAVING...' : 'SAVE SECURELY'}
+                <Lock className="w-4 h-4" /> {submitting ? 'SAVING...' : editingCard ? 'UPDATE CARD' : 'SAVE SECURELY'}
               </Button>
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setShowForm(false)}
+                onClick={closeForm}
                 className="h-12 rounded-lg border border-border-subtle text-muted-foreground font-bold px-6 text-xs uppercase hover:bg-surface-container"
               >
                 Cancel
@@ -257,7 +286,7 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="text-3xl font-black text-foreground uppercase tracking-tighter">Security Vault</h2>
-        <Button onClick={() => setShowForm(true)} className="rounded-lg h-12 px-6 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-emerald-glow font-black uppercase tracking-widest w-full sm:w-auto justify-center">
+        <Button onClick={openAddForm} className="rounded-lg h-12 px-6 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-emerald-glow font-black uppercase tracking-widest w-full sm:w-auto justify-center">
           <Plus className="w-5 h-5" /> Add Card
         </Button>
       </div>
@@ -281,29 +310,35 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
             <p className="text-muted-foreground font-bold">No saved cards found</p>
           </div>
         ) : pageCards.map(card => (
-          <div key={card.id} className="p-6 rounded-xl bg-surface-container-lowest border border-border-subtle shadow-sm relative overflow-hidden group hover:shadow-emerald-glow hover:border-primary/50 transition-all">
-            <div className="flex justify-between items-start mb-12">
-              <div className="w-10 h-10 bg-[#0B1220] rounded-lg flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-white" />
-              </div>
+          <div key={card.id} className="p-6 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white border border-white/10 shadow-xl relative overflow-hidden group hover:shadow-emerald-glow transition-all aspect-[1.586/1] min-h-[245px]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(16,185,129,0.22),transparent_34%),radial-gradient(circle_at_10%_90%,rgba(148,163,184,0.18),transparent_30%)]" />
+            <div className="flex justify-between items-start mb-10 relative z-10">
+              <div className="w-12 h-9 rounded-lg bg-gradient-to-br from-amber-200 to-amber-500 border border-amber-100/70 shadow-inner" />
               <div className="text-right">
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{card.brand || 'Card'}</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-200">{card.brand || 'Card'}</span>
               </div>
             </div>
-            <div className="space-y-4">
-              <div className="text-2xl font-black text-foreground tracking-[0.2em] font-mono">•••• •••• •••• {card.last4}</div>
+            <div className="space-y-5 relative z-10">
+              <div className="text-2xl font-black tracking-[0.2em] font-mono text-slate-50">•••• •••• •••• {card.last4}</div>
               <div className="flex justify-between items-end">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Card Holder</p>
-                  <p className="font-black text-foreground uppercase">{card.holder_name || 'Valued Customer'}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Card Holder</p>
+                  <p className="font-black uppercase text-slate-50">{card.holder_name || 'Valued Customer'}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Expires</p>
-                  <p className="font-black text-foreground font-mono">{card.expiry_month}/{card.expiry_year}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Expires</p>
+                  <p className="font-black font-mono text-slate-50">{card.expiry_month}/{card.expiry_year}</p>
                 </div>
               </div>
             </div>
-            <div className="absolute bottom-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mb-16 group-hover:bg-primary/10 transition-colors"></div>
+            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all z-20">
+              <button type="button" onClick={() => openEditForm(card)} className="w-9 h-9 rounded-lg bg-white/10 text-white hover:bg-white/20 border border-white/10 flex items-center justify-center">
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button type="button" onClick={() => onDeleteCard?.(card.id)} className="w-9 h-9 rounded-lg bg-white/10 text-rose-200 hover:bg-rose-500/20 border border-white/10 flex items-center justify-center">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         ))}
       </div>

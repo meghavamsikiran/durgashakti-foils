@@ -131,6 +131,7 @@ async def create_tables():
         await conn.execute(text("ALTER TABLE coupons ADD COLUMN IF NOT EXISTS eligible_product_ids JSONB DEFAULT '[]'::jsonb NOT NULL;"))
         await conn.execute(text("ALTER TABLE coupons ADD COLUMN IF NOT EXISTS eligible_category_ids JSONB DEFAULT '[]'::jsonb NOT NULL;"))
         await conn.execute(text("ALTER TABLE coupons ADD COLUMN IF NOT EXISTS is_reusable BOOLEAN DEFAULT true NOT NULL;"))
+        await conn.execute(text("ALTER TABLE addresses ADD COLUMN IF NOT EXISTS alternate_phone VARCHAR(20);"))
         await conn.execute(text("ALTER TABLE product_reviews ADD COLUMN IF NOT EXISTS admin_reply TEXT;"))
         await conn.execute(text("ALTER TABLE product_reviews ADD COLUMN IF NOT EXISTS admin_reply_by UUID;"))
         await conn.execute(text("ALTER TABLE product_reviews ADD COLUMN IF NOT EXISTS admin_reply_at TIMESTAMPTZ;"))

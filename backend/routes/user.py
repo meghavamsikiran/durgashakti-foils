@@ -68,6 +68,7 @@ async def add_address(address: UserAddress, current_user: UserSchema = Depends(g
         label=address.label,
         full_name=address.full_name,
         phone=address.phone,
+        alternate_phone=address.alternate_phone,
         address_line1=address.address_line1,
         address_line2=address.address_line2,
         city=address.city,
@@ -92,6 +93,7 @@ async def update_address(address_id: str, address: UserAddress, current_user: Us
     row.label = address.label
     row.full_name = address.full_name
     row.phone = address.phone
+    row.alternate_phone = address.alternate_phone
     row.address_line1 = address.address_line1
     row.address_line2 = address.address_line2
     row.city = address.city
@@ -203,3 +205,34 @@ async def add_card(card: SavedCard, current_user: UserSchema = Depends(get_curre
     user.saved_cards = cards
     await db.flush()
     return card
+
+
+@router.put("/user/cards/{card_id}")
+async def update_card(card_id: str, card: SavedCard, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(UserModel).where(UserModel.id == current_user.id))
+    user = result.scalar_one()
+    cards = list(user.saved_cards or [])
+    if not any(existing.get("id") == card_id for existing in cards):
+        raise HTTPException(status_code=404, detail="Card not found")
+
+    updated_card = card.model_dump()
+    updated_card["id"] = card_id
+    user.saved_cards = [
+        updated_card if existing.get("id") == card_id else existing
+        for existing in cards
+    ]
+    await db.flush()
+    return updated_card
+
+
+@router.delete("/user/cards/{card_id}")
+async def delete_card(card_id: str, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(UserModel).where(UserModel.id == current_user.id))
+    user = result.scalar_one()
+    cards = list(user.saved_cards or [])
+    updated_cards = [card for card in cards if card.get("id") != card_id]
+    if len(updated_cards) == len(cards):
+        raise HTTPException(status_code=404, detail="Card not found")
+    user.saved_cards = updated_cards
+    await db.flush()
+    return {"status": "ok"}

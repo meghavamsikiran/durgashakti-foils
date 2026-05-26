@@ -17,7 +17,23 @@ import DateFilterPopover from '../../components/ui/DateFilterPopover';
 
 const DEFAULT_CATEGORY = 'Aluminum Foil';
 const ADMIN_PRODUCTS_CACHE_PATH = '/admin/products';
-const BADGE_OPTIONS = ['', 'New Arrival', 'Best Seller', 'Limited Offer', 'Huge Saving'];
+const BADGE_OPTIONS = [
+  '',
+  'New Arrival',
+  'Best Seller',
+  'Limited Offer',
+  'Huge Saving',
+  'Trending',
+  'Hot Deal',
+  'Top Rated',
+  'Customer Favorite',
+  'Premium Pick',
+  'Value Pack',
+  'Limited Stock',
+  'Flash Deal',
+  'Most Popular',
+  'Eco Choice'
+];
 
 const createVariantRow = (overrides = {}) => ({
   size: '',

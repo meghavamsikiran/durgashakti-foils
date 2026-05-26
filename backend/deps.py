@@ -182,6 +182,7 @@ class UserAddress(BaseModel):
     label: str
     full_name: str
     phone: str
+    alternate_phone: Optional[str] = None
     address_line1: str
     address_line2: Optional[str] = None
     city: str
@@ -194,13 +195,22 @@ class UserAddress(BaseModel):
     def validate_phone(cls, v):
         return validate_phone_number(v)
 
+    @field_validator("alternate_phone")
+    @classmethod
+    def validate_alternate_phone(cls, v):
+        if v:
+            return validate_phone_number(v)
+        return v
+
 class CartItem(BaseModel):
     product_id: str
     quantity: int = Field(ge=1)
 
 class ShippingAddress(BaseModel):
+    label: Optional[str] = None
     full_name: str = Field(min_length=1, max_length=120)
     phone: str
+    alternate_phone: Optional[str] = None
     address_line1: str = Field(min_length=1, max_length=255)
     address_line2: Optional[str] = Field(default=None, max_length=255)
     city: str = Field(min_length=1, max_length=100)
@@ -211,6 +221,13 @@ class ShippingAddress(BaseModel):
     @classmethod
     def validate_phone(cls, v):
         return validate_phone_number(v)
+
+    @field_validator("alternate_phone")
+    @classmethod
+    def validate_shipping_alternate_phone(cls, v):
+        if v:
+            return validate_phone_number(v)
+        return v
 
 class OrderItemSchema(BaseModel):
     product_id: str

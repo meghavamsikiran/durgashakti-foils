@@ -64,8 +64,10 @@ export const useCheckout = () => {
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [shippingInfo, setShippingInfo] = useState({
-    full_name: user?.full_name || '',
-    phone: user?.phone || '',
+    label: 'Home',
+    full_name: '',
+    phone: '',
+    alternate_phone: '',
     address_line1: '',
     address_line2: '',
     city: '',
@@ -83,19 +85,7 @@ export const useCheckout = () => {
     try {
       const data = await addressService.getAddresses();
       setSavedAddresses(data);
-      if (data.length > 0) {
-        const primary = data.find(a => a.is_default) || data[0];
-        setSelectedAddressId(primary.id);
-        setShippingInfo({
-          full_name: primary.full_name,
-          phone: primary.phone,
-          address_line1: primary.address_line1,
-          address_line2: primary.address_line2 || '',
-          city: primary.city,
-          state: primary.state,
-          pincode: primary.pincode
-        });
-      }
+      setSelectedAddressId(null);
     } catch (err) {
       // Silent — addresses are optional at this point
     }
@@ -191,8 +181,10 @@ export const useCheckout = () => {
   const handleSelectAddress = (addr) => {
     setSelectedAddressId(addr.id);
     setShippingInfo({
+      label: addr.label || 'Home',
       full_name: addr.full_name,
       phone: addr.phone,
+      alternate_phone: addr.alternate_phone || '',
       address_line1: addr.address_line1,
       address_line2: addr.address_line2 || '',
       city: addr.city,

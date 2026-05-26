@@ -20,12 +20,11 @@ export const usePincodeLookup = () => {
           city: postOffice.District || postOffice.Block
         };
       } else {
-        toast.error("Invalid Pincode");
+        toast.error("Pincode not found. Please enter city and state manually.");
         return null;
       }
     } catch (err) {
       console.error("Pincode API failed:", err);
-      toast.error("Failed to lookup pincode");
       return null;
     } finally {
       setLoading(false);

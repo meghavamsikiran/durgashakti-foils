@@ -71,11 +71,11 @@ const ProductCard = ({ product }) => {
     const previousState = isWishlisted;
     setOptimisticWishlist(!previousState); // Instant visual update
     setWishlisting(true);
+    toast.success(previousState ? 'Removed from wishlist' : 'Added to wishlist');
     
     try {
       await api.toggleWishlist(product.id);
-      await refreshUser();
-      toast.success(previousState ? 'Removed from wishlist' : 'Added to wishlist');
+      refreshUser().catch(() => {});
     } catch (error) {
       setOptimisticWishlist(previousState); // Rollback on failure
       toast.error('Failed to update wishlist');

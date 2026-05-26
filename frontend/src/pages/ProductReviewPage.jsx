@@ -21,6 +21,7 @@ const ProductReviewPage = () => {
   const [comment, setComment] = useState('');
   const [publicName, setPublicName] = useState(user?.full_name || '');
   const [files, setFiles] = useState([]);
+  const [existingMedia, setExistingMedia] = useState([]);
 
   useEffect(() => {
     const load = async () => {
@@ -32,6 +33,7 @@ const ProductReviewPage = () => {
           setTitle(data.existing_review.title || '');
           setComment(data.existing_review.comment || '');
           setPublicName(data.existing_review.public_name || user?.full_name || '');
+          setExistingMedia(data.existing_review.media_urls || []);
         }
       } catch {
         toast.error('Unable to load review form');
@@ -160,6 +162,28 @@ const ProductReviewPage = () => {
                   </button>
                 </span>
               ))}
+            </div>
+          )}
+          {existingMedia.length > 0 && files.length === 0 && (
+            <div className="mt-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Uploaded media</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {existingMedia.map((media, index) => {
+                  const mediaUrl = typeof media === 'string' ? media : media.url;
+                  const mediaType = (typeof media === 'string' ? '' : media.type) || '';
+                  const isVideo = mediaType.startsWith('video') || /\.(mp4|webm|mov)$/i.test(mediaUrl || '');
+                  return (
+                    <div key={`${mediaUrl}-${index}`} className="aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                      {isVideo ? (
+                        <video src={formatImageUrl(mediaUrl)} controls className="w-full h-full object-cover" />
+                      ) : (
+                        <img src={formatImageUrl(mediaUrl)} alt="Uploaded review media" className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-2">Upload new files only if you want to replace the existing review media.</p>
             </div>
           )}
         </div>

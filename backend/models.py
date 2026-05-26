@@ -47,6 +47,7 @@ class AddressModel(Base):
     label = Column(String(50), default="Home", nullable=False)
     full_name = Column(String(255), nullable=False)
     phone = Column(String(20), nullable=False)
+    alternate_phone = Column(String(20), nullable=True)
     address_line1 = Column(Text, nullable=False)
     address_line2 = Column(Text, nullable=True)
     city = Column(String(100), nullable=False)

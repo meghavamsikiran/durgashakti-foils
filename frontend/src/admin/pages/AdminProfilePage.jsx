@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Save, Loader2 } from 'lucide-react';
-import { Button } from '../../components/ui/button';
+import { User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import adminService from '../services/admin.service';
-import { toast } from 'sonner';
 
 const AdminProfilePage = () => {
-  const { user, refreshUser } = useAuth();
-  const canEditContact = user?.role === 'SUPER_ADMIN';
+  const { user } = useAuth();
+  const canEditContact = false;
   const [profileForm, setProfileForm] = useState({
     full_name: user?.full_name || '',
     email: user?.email || '',
     phone: user?.phone || ''
   });
-  const [updatingProfile, setUpdatingProfile] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -25,29 +21,6 @@ const AdminProfilePage = () => {
       });
     }
   }, [user]);
-
-  const handleProfileSubmit = async (e) => {
-    e.preventDefault();
-    if (!profileForm.full_name.trim()) {
-      toast.error('Full Name cannot be empty');
-      return;
-    }
-    if (canEditContact && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileForm.email || '')) {
-      toast.error('Enter a valid email address');
-      return;
-    }
-
-    setUpdatingProfile(true);
-    try {
-      await adminService.updateProfile(profileForm);
-      toast.success('Profile details updated successfully');
-      await refreshUser();
-    } catch (err) {
-      toast.error(err.message || 'Failed to update profile details');
-    } finally {
-      setUpdatingProfile(false);
-    }
-  };
 
   const inputClass = (editable) => (
     `w-full h-12 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold ${
@@ -70,7 +43,7 @@ const AdminProfilePage = () => {
             <User className="w-8 h-8 text-primary" />
             My Account Settings
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">Update your profile details.</p>
+          <p className="text-slate-500 mt-1 font-medium">View your admin account details.</p>
         </div>
       </div>
 
@@ -86,15 +59,16 @@ const AdminProfilePage = () => {
             </div>
           </div>
 
-          <form onSubmit={handleProfileSubmit} className="space-y-4">
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Full Name</label>
               <input
                 type="text"
                 required
+                disabled
                 value={profileForm.full_name}
                 onChange={e => setProfileForm({ ...profileForm, full_name: e.target.value })}
-                className={inputClass(true)}
+                className={inputClass(false)}
               />
             </div>
 
@@ -119,26 +93,6 @@ const AdminProfilePage = () => {
                 onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
                 className={inputClass(canEditContact)}
               />
-            </div>
-
-            <div className="pt-2">
-              <Button
-                type="submit"
-                disabled={updatingProfile}
-                className="w-full h-12 rounded-xl font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow"
-              >
-                {updatingProfile ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Profile
-                  </>
-                )}
-              </Button>
             </div>
           </form>
         </div>

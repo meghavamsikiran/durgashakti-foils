@@ -22,13 +22,17 @@ const AddressStep = ({
   selectedAddressId, 
   shippingInfo, 
   onSelectAddress, 
-  onInputChange, 
-  onSetShippingInfo,
+  setShippingInfo,
   onContinue 
 }) => {
-  const [showAddressSelector, setShowAddressSelector] = useState(savedAddresses.length > 0);
+  const [showAddressSelector, setShowAddressSelector] = useState(false);
   const { lookup, loading: checkingPincode } = usePincodeLookup();
   const { detect, loading: detectingLocation } = useGeoLocationAddress();
+
+  const onInputChange = (event) => {
+    const { name, value } = event.target;
+    setShippingInfo(prev => ({ ...prev, [name]: value }));
+  };
 
   const handlePincodeChange = async (e) => {
     const pin = e.target.value.replace(/\D/g, '').slice(0, 6);
@@ -37,7 +41,7 @@ const AddressStep = ({
     if (pin.length === 6) {
       const data = await lookup(pin);
       if (data) {
-        onSetShippingInfo(prev => ({ ...prev, state: data.state, city: data.city }));
+        setShippingInfo(prev => ({ ...prev, state: data.state, city: data.city }));
       }
     }
   };
@@ -45,7 +49,7 @@ const AddressStep = ({
   const handleDetectLocation = async () => {
     try {
       const data = await detect();
-      onSetShippingInfo(prev => ({
+      setShippingInfo(prev => ({
         ...prev,
         pincode: data.pincode,
         state: data.state || prev.state,
@@ -70,11 +74,27 @@ const AddressStep = ({
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => setShowAddressSelector(!showAddressSelector)}
+            onClick={() => {
+              const next = !showAddressSelector;
+              setShowAddressSelector(next);
+              if (!next) {
+                setShippingInfo({
+                  label: 'Home',
+                  full_name: '',
+                  phone: '',
+                  alternate_phone: '',
+                  address_line1: '',
+                  address_line2: '',
+                  city: '',
+                  state: '',
+                  pincode: ''
+                });
+              }
+            }}
             className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-10 px-4"
           >
             {showAddressSelector ? <Plus className="w-3 h-3 mr-2" /> : <ArrowLeft className="w-3 h-3 mr-2" />}
-            {showAddressSelector ? "Add New Address" : "Select Saved Address"}
+            {showAddressSelector ? "Enter New Address" : "Select Saved Address"}
           </Button>
         )}
       </div>
@@ -91,7 +111,7 @@ const AddressStep = ({
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className={`p-2 rounded-lg ${selectedAddressId === addr.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'}`}>
-                      {addr.label === 'Home' ? <Home className="w-3 h-3" /> : addr.label === 'Office' ? <Briefcase className="w-3 h-3" /> : <MapPin className="w-3 h-3" />}
+                      {addr.label === 'Home' ? <Home className="w-3 h-3" /> : addr.label === 'Work' ? <Briefcase className="w-3 h-3" /> : <MapPin className="w-3 h-3" />}
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{addr.label}</span>
                   </div>
@@ -101,13 +121,30 @@ const AddressStep = ({
                 <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
                   {addr.address_line1}, {addr.city}, {addr.state} - {addr.pincode}
                 </p>
-                <div className="mt-3 text-[10px] font-bold text-slate-500 uppercase">{addr.phone}</div>
+                <div className="mt-3 text-[10px] font-bold text-slate-500 uppercase">
+                  {addr.phone}{addr.alternate_phone ? ` / ${addr.alternate_phone}` : ''}
+                </div>
               </div>
             ))}
           </div>
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5 md:col-span-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Address Type</Label>
+                <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-50 border border-slate-200 p-1 max-w-sm">
+                  {['Home', 'Work'].map(label => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => setShippingInfo(prev => ({ ...prev, label }))}
+                      className={`h-10 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${shippingInfo.label === label ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-white'}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Full Name</Label>
                 <Input name="full_name" value={shippingInfo.full_name} onChange={onInputChange} placeholder="Rahul Sharma" className="rounded-xl h-12" />
@@ -118,11 +155,25 @@ const AddressStep = ({
                   international
                   defaultCountry="IN"
                   value={shippingInfo.phone}
-                  onChange={val => onSetShippingInfo(prev => ({ ...prev, phone: val || '' }))}
+                  onChange={val => setShippingInfo(prev => ({ ...prev, phone: val || '' }))}
                   className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
                   numberInputProps={{
                     className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
                     placeholder: "Enter phone number"
+                  }}
+                />
+              </div>
+              <div className="space-y-1.5 md:col-span-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Alternative Phone Number (Optional)</Label>
+                <PhoneInput
+                  international
+                  defaultCountry="IN"
+                  value={shippingInfo.alternate_phone}
+                  onChange={val => setShippingInfo(prev => ({ ...prev, alternate_phone: val || '' }))}
+                  className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
+                  numberInputProps={{
+                    className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
+                    placeholder: "Optional alternate phone"
                   }}
                 />
               </div>
