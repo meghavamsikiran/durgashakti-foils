@@ -72,6 +72,99 @@ async def lifespan(app: FastAPI):
         asyncio.create_task(_audit_cleanup_loop())
     except Exception:
         logger.exception('Failed to start audit cleanup task')
+
+    # Start background cleanup task for expired pending payment orders (timeout of 15 minutes)
+    try:
+        from database import async_session_factory
+        from models import OrderModel, ProductModel, UserModel
+        from sqlalchemy import select
+        from deps import send_email, create_notification
+        from email_templates import order_cancelled_email
+
+        async def _payment_timeout_cleanup_loop():
+            while True:
+                try:
+                    cutoff = datetime.now(timezone.utc) - timedelta(minutes=15)
+                    async with async_session_factory() as session:
+                        stmt = select(OrderModel).where(
+                            OrderModel.order_status.in_(["pending_payment", "pending"]),
+                            OrderModel.payment_method != "cod",
+                            OrderModel.created_at < cutoff
+                        )
+                        result = await session.execute(stmt)
+                        expired_orders = result.scalars().all()
+
+                        for order in expired_orders:
+                            logger.info(f"Auto-cancelling expired pending order {order.order_number} (created at {order.created_at})")
+                            
+                            # Release stock if stock was applied
+                            if order.stock_applied:
+                                items_to_release = [
+                                    item for item in (order.items or [])
+                                    if item.get("product_id") and int(item.get("quantity", 0)) > 0
+                                ]
+                                if items_to_release:
+                                    prod_ids = [item.get("product_id") for item in items_to_release]
+                                    prod_stmt = select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update()
+                                    prod_res = await session.execute(prod_stmt)
+                                    locked_products = {str(p.id): p for p in prod_res.scalars().all()}
+                                    for item in items_to_release:
+                                        pid = item.get("product_id")
+                                        qty = int(item.get("quantity", 0))
+                                        product = locked_products.get(str(pid))
+                                        if product:
+                                            product.stock_quantity = int(product.stock_quantity or 0) + qty
+                                            product.units_sold = max(0, int(product.units_sold or 0) - qty)
+                                            product.in_stock = True
+                                            product.updated_at = datetime.now(timezone.utc)
+
+                            # Update order status
+                            order.order_status = "cancelled"
+                            order.payment_status = "failed"
+                            order.stock_applied = False
+                            order.updated_at = datetime.now(timezone.utc)
+
+                            # Create customer notification if user exists
+                            if order.user_id:
+                                await create_notification(
+                                    session,
+                                    str(order.user_id),
+                                    "Order Cancelled (Payment Timeout)",
+                                    f"Your order {order.order_number} has been automatically cancelled because the payment was not completed within the 15-minute window.",
+                                    "order"
+                                )
+
+                                # Send cancellation email
+                                user_stmt = select(UserModel).where(UserModel.id == order.user_id)
+                                user_res = await session.execute(user_stmt)
+                                user = user_res.scalar_one_or_none()
+                                if user and user.email:
+                                    try:
+                                        subj, body = order_cancelled_email(
+                                            user.full_name or user.email,
+                                            str(order.order_number),
+                                            float(order.total_amount or 0)
+                                        )
+                                        # Customize template subject and body content for payment timeout
+                                        subj = f"Order Cancelled (Payment Timeout) - {order.order_number}"
+                                        body = body.replace(
+                                            "your order has been cancelled.",
+                                            "your order has been automatically cancelled because the payment was not completed within the 15-minute window."
+                                        )
+                                        asyncio.create_task(send_email(user.email, subj, body))
+                                    except Exception:
+                                        logger.exception(f"Failed to send email for auto-cancelled order {order.order_number}")
+
+                        if expired_orders:
+                            await session.commit()
+                except Exception:
+                    logger.exception("Pending payment cleanup task failed")
+                # Check for expired payments every 60 seconds
+                await asyncio.sleep(60)
+
+        asyncio.create_task(_payment_timeout_cleanup_loop())
+    except Exception:
+        logger.exception("Failed to start payment timeout cleanup task")
     yield
     # Shutdown
     logger.info("DurgaShakti Foils Server Shutdown.")
