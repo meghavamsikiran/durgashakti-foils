@@ -180,7 +180,19 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
             item_dict['image_url'] = None
         enriched_items.append(item_dict)
 
-    order_number = f"ORD-{int(time.time())}-{uuid.uuid4().hex[:8]}"
+    # Generate unique order number similar to Amazon format (3-7-7 numeric format)
+    import random
+    while True:
+        part1 = random.randint(100, 999)
+        part2 = random.randint(1000000, 9999999)
+        part3 = random.randint(1000000, 9999999)
+        candidate = f"{part1}-{part2}-{part3}"
+        
+        dup_res = await db.execute(select(OrderModel).where(OrderModel.order_number == candidate))
+        if not dup_res.scalar_one_or_none():
+            order_number = candidate
+            break
+
     now = datetime.now(timezone.utc)
     order_status = "confirmed" if order_data.payment_method == "cod" else "pending_payment"
     payment_status = "Cash On Delivery" if order_data.payment_method == "cod" else "pending"

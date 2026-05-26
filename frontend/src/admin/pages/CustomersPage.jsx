@@ -28,7 +28,6 @@ const CustomersPage = () => {
     return cached?.metrics || null;
   });
   const [loyaltySettings, setLoyaltySettings] = useState({ enabled: true, minimum_orders: 10, minimum_spend: 15000, criteria_mode: 'either' });
-  const [savingLoyalty, setSavingLoyalty] = useState(false);
 
   const [total, setTotal] = useState(() => {
     const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
@@ -73,23 +72,6 @@ const CustomersPage = () => {
       // Some admin roles can view customers without settings access.
     }
   }, []);
-
-  const toggleLoyalty = async () => {
-    const next = { ...loyaltySettings, enabled: loyaltySettings.enabled === false };
-    try {
-      setSavingLoyalty(true);
-      setLoyaltySettings(next);
-      if (next.enabled === false && segment === 'loyal') {
-        setSegment('all');
-      }
-      await adminService.updateSetting({ key: 'loyalty_settings', value: next });
-      await load(1);
-    } catch {
-      setLoyaltySettings(loyaltySettings);
-    } finally {
-      setSavingLoyalty(false);
-    }
-  };
 
   const formatDate = (d) => {
     if (!d) return '—';
@@ -140,17 +122,6 @@ const CustomersPage = () => {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            type="button"
-            onClick={toggleLoyalty}
-            disabled={savingLoyalty}
-            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-[11px] font-black uppercase tracking-widest shadow-sm transition-all ${
-              loyaltyEnabled ? 'border-emerald-200 bg-emerald-50 text-primary' : 'border-slate-200 bg-white text-slate-500'
-            } disabled:opacity-60`}
-          >
-            {loyaltyEnabled ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-            Loyal {loyaltyEnabled ? 'On' : 'Off'}
-          </button>
           <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
             {[
               { id: 'all', label: 'All' },

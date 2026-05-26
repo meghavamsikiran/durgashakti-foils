@@ -66,6 +66,7 @@ const SettingsPage = () => {
       loyaltyMinimumOrders: loyaltySettings.minimum_orders || 10,
       loyaltyMinimumSpend: loyaltySettings.minimum_spend || 15000,
       loyaltyCriteriaMode: loyaltySettings.criteria_mode || 'either',
+      loyaltyEnabled: loyaltySettings.enabled !== false,
       me: cachedMe?.data || null,
       loaded: !!(cachedSettings && cachedMe)
     };
@@ -99,6 +100,7 @@ const SettingsPage = () => {
   const [loyaltyMinimumOrders, setLoyaltyMinimumOrders] = useState(initialState.loyaltyMinimumOrders);
   const [loyaltyMinimumSpend, setLoyaltyMinimumSpend] = useState(initialState.loyaltyMinimumSpend);
   const [loyaltyCriteriaMode, setLoyaltyCriteriaMode] = useState(initialState.loyaltyCriteriaMode);
+  const [loyaltyEnabled, setLoyaltyEnabled] = useState(initialState.loyaltyEnabled);
   const [savingExperience, setSavingExperience] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -175,6 +177,7 @@ const SettingsPage = () => {
       setLoyaltyMinimumOrders(loyaltySettings.minimum_orders || 10);
       setLoyaltyMinimumSpend(loyaltySettings.minimum_spend || 15000);
       setLoyaltyCriteriaMode(loyaltySettings.criteria_mode || 'either');
+      setLoyaltyEnabled(loyaltySettings.enabled !== false);
 
       setMe(meRes.data);
     } catch {
@@ -217,6 +220,7 @@ const SettingsPage = () => {
       setLoyaltyMinimumOrders(loyaltySettings.minimum_orders || 10);
       setLoyaltyMinimumSpend(loyaltySettings.minimum_spend || 15000);
       setLoyaltyCriteriaMode(loyaltySettings.criteria_mode || 'either');
+      setLoyaltyEnabled(loyaltySettings.enabled !== false);
 
       setMe(meRes.data);
     } catch {
@@ -320,6 +324,7 @@ const SettingsPage = () => {
         adminService.updateSetting({
           key: 'loyalty_settings',
           value: {
+            enabled: loyaltyEnabled,
             minimum_orders: loyaltyMinimumOrders === '' ? 10 : Math.max(0, Number(loyaltyMinimumOrders)),
             minimum_spend: loyaltyMinimumSpend === '' ? 15000 : Math.max(0, Number(loyaltyMinimumSpend)),
             criteria_mode: loyaltyCriteriaMode
@@ -357,6 +362,8 @@ const SettingsPage = () => {
       hasEmoji2: hasEdgeEmoji(bannerText2)
     };
   };
+
+  if (!loaded) return <PageLoader />;
 
   const { p1, p2, hasEmoji1, hasEmoji2 } = getPreviewTexts();
   const showFaviconSpacer1 = bannerUseFavicon || (!hasEmoji1 && (!(bannerText2 || bannerTimerEnabled) || !hasEmoji2));
@@ -714,7 +721,26 @@ const SettingsPage = () => {
                   );
                 })}
 
-                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="md:col-span-2 p-5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4">
+                  <div className="flex gap-4">
+                    <div className="p-3 rounded-xl bg-primary/10 text-primary h-max">
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Customer Loyalty System</h3>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">Turn on or off the automated loyalty segment qualifications and coupon eligibility.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLoyaltyEnabled(prev => !prev)}
+                    className={`w-14 h-8 flex items-center rounded-full p-1 shrink-0 cursor-pointer transition-all duration-300 shadow-inner ${loyaltyEnabled ? 'bg-primary' : 'bg-slate-300'}`}
+                  >
+                    <span className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${loyaltyEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+
+                <div className={`p-5 rounded-2xl bg-slate-50 border border-slate-200 transition-all duration-300 ${!loyaltyEnabled ? 'opacity-40 pointer-events-none' : ''}`}>
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                     <Star className="w-3.5 h-3.5 text-primary" />
                     Loyal Customer Minimum Orders
@@ -722,13 +748,14 @@ const SettingsPage = () => {
                   <input
                     type="number"
                     min="0"
-                    className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none"
+                    disabled={!loyaltyEnabled}
+                    className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none disabled:bg-slate-100"
                     value={loyaltyMinimumOrders}
                     onChange={e => setLoyaltyMinimumOrders(e.target.value)}
                   />
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className={`p-5 rounded-2xl bg-slate-50 border border-slate-200 transition-all duration-300 ${!loyaltyEnabled ? 'opacity-40 pointer-events-none' : ''}`}>
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                     <IndianRupee className="w-3.5 h-3.5 text-primary" />
                     Loyal Customer Minimum Spend
@@ -736,13 +763,14 @@ const SettingsPage = () => {
                   <input
                     type="number"
                     min="0"
-                    className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none"
+                    disabled={!loyaltyEnabled}
+                    className="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold focus:ring-2 focus:ring-primary/20 outline-none disabled:bg-slate-100"
                     value={loyaltyMinimumSpend}
                     onChange={e => setLoyaltyMinimumSpend(e.target.value)}
                   />
                 </div>
 
-                <div className="md:col-span-2 p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className={`md:col-span-2 p-5 rounded-2xl bg-slate-50 border border-slate-200 transition-all duration-300 ${!loyaltyEnabled ? 'opacity-40 pointer-events-none' : ''}`}>
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Loyalty Qualification Rule</label>
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mt-3">
                     {[
@@ -754,6 +782,7 @@ const SettingsPage = () => {
                       <button
                         key={option.value}
                         type="button"
+                        disabled={!loyaltyEnabled}
                         onClick={() => setLoyaltyCriteriaMode(option.value)}
                         className={`px-3 py-3 rounded-xl text-xs font-black uppercase tracking-wider border transition-all ${
                           loyaltyCriteriaMode === option.value
