@@ -9,7 +9,7 @@ import adminService from '../services/admin.service';
 import apiClient from '../../services/core/apiClient';
 import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
-import DateFilterPopover from '../../components/ui/DateFilterPopover';
+
 import TablePagination from '../../components/ui/TablePagination';
 
 const generateThemedBanner = (context) => {
@@ -514,6 +514,44 @@ const normalizeCouponList = (list = []) => (
     .map(c => isCouponExpired(c) ? { ...c, is_active: false } : c)
 );
 
+function toISODateStart(d) {
+  const dt = new Date(d);
+  dt.setHours(0, 0, 0, 0);
+  return dt.toISOString();
+}
+
+function toISODateEnd(d) {
+  const dt = new Date(d);
+  dt.setHours(23, 59, 59, 999);
+  return dt.toISOString();
+}
+
+function rangeForPreset(key) {
+  const now = new Date();
+  const start = new Date();
+  switch (key) {
+    case 'today':
+      return { start: toISODateStart(now), end: toISODateEnd(now) };
+    case 'last7':
+      start.setDate(now.getDate() - 6);
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
+    case 'thisWeek': {
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      start.setDate(diff);
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
+    }
+    case 'thisMonth':
+      start.setDate(1);
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
+    case 'thisYear':
+      start.setMonth(0, 1);
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
+    default:
+      return null;
+  }
+}
+
 const sanitizePopupBanner = (popupBannerValue = {}, coupons = []) => {
   const activeCodes = new Set(coupons.filter(isBannerSelectableCoupon).map(c => c.code));
   return {
@@ -546,6 +584,8 @@ const CouponsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState(null);
+  const [datePreset, setDatePreset] = useState('');
+  const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
   const [promotingId, setPromotingId] = useState(null);
   const [scrollingBanner, setScrollingBanner] = useState({ text1: '', text2: '', timer_enabled: false, timer_target: '', use_favicon: true });
   const [popupBanner, setPopupBanner] = useState({ promoted_coupons: [] });
@@ -557,6 +597,8 @@ const CouponsPage = () => {
   const [savingBanners, setSavingBanners] = useState(false);
   const [bannerSearchText, setBannerSearchText] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const filterRef = React.useRef(null);
   const [loyalCustomers, setLoyalCustomers] = useState([]);
   const [loyalCustomerSearch, setLoyalCustomerSearch] = useState('');
   const [loyalCustomerLoading, setLoyalCustomerLoading] = useState(false);
@@ -618,11 +660,7 @@ const CouponsPage = () => {
     setLoading(true);
     try {
       const [couponsData, settingsData, adminSettingsRes, loyalCustomerData, analyticsData] = await Promise.all([
-        couponService.getCoupons({
-          status: statusFilter !== 'all' ? statusFilter : undefined,
-          start_date: dateFilter?.start_date,
-          end_date: dateFilter?.end_date,
-        }),
+        couponService.getCoupons(),
         couponService.getSettings(),
         adminService.getSettings({ silent: true }).catch(() =>
           apiClient.cachedGet('/settings/public', { silent: true })
@@ -656,11 +694,21 @@ const CouponsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, dateFilter]);
+  }, []);
 
   useEffect(() => {
     fetchCouponsAndSettings();
   }, [fetchCouponsAndSettings]);
+
+  useEffect(() => {
+    function handleOutsideClick(e) {
+      if (filterRef.current && !filterRef.current.contains(e.target)) {
+        setIsFilterOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -788,8 +836,9 @@ const CouponsPage = () => {
         is_reusable: coupon.is_reusable !== false,
         is_active: !coupon.is_active
       };
-      await couponService.updateCoupon(coupon.id, updatedPayload);
+       await couponService.updateCoupon(coupon.id, updatedPayload);
       toast.success(`Coupon ${!coupon.is_active ? 'activated' : 'deactivated'} successfully`);
+      await fetchCouponsAndSettings();
     } catch (error) {
       // Revert state
       setCoupons(prev => prev.map(c => c.id === coupon.id ? { ...c, is_active: coupon.is_active } : c));
@@ -1022,6 +1071,7 @@ const CouponsPage = () => {
       await couponService.deleteCoupon(couponId);
       setCoupons(prev => prev.filter(c => c.id !== couponId));
       toast.success('Coupon deleted successfully');
+      await fetchCouponsAndSettings();
     } catch (error) {
       toast.error('Failed to delete coupon');
     }
@@ -1259,10 +1309,32 @@ const CouponsPage = () => {
   };
 
   // Filter & Search
-  const filteredCoupons = coupons.filter(c => 
-    c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.discount_type.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCoupons = coupons.filter(c => {
+    const matchesSearch = searchQuery ? (
+      c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.discount_type.toLowerCase().includes(searchQuery.toLowerCase())
+    ) : true;
+
+    const isExpired = c.expiry_date && new Date(c.expiry_date) < new Date();
+    const isActuallyActive = c.is_active && !isExpired;
+
+    let matchesStatus = true;
+    if (statusFilter === 'active') {
+      matchesStatus = isActuallyActive;
+    } else if (statusFilter === 'inactive') {
+      matchesStatus = !isActuallyActive;
+    }
+
+    let matchesDate = true;
+    if (dateFilter?.start_date) {
+      matchesDate = matchesDate && new Date(c.created_at) >= new Date(dateFilter.start_date);
+    }
+    if (dateFilter?.end_date) {
+      matchesDate = matchesDate && new Date(c.created_at) <= new Date(dateFilter.end_date);
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
+  });
   const bannerSelectableCoupons = coupons.filter(isBannerSelectableCoupon);
   const bannerSelectableCouponCodes = new Set(bannerSelectableCoupons.map(c => c.code));
 
@@ -1448,7 +1520,7 @@ const CouponsPage = () => {
           </div>
 
           {/* Coupons Table List */}
-          <div className="bg-white rounded-2xl border border-border-subtle shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-border-subtle shadow-sm overflow-visible">
             <div className="p-6 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h2 className="text-lg font-black text-ink-slate uppercase tracking-wider">All Coupon Codes</h2>
               <div className="flex flex-wrap items-center gap-3 w-full justify-end">
@@ -1462,19 +1534,117 @@ const CouponsPage = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm">
-                  <Filter className="w-4 h-4 text-slate-500" />
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="bg-transparent outline-none text-sm font-semibold"
+                {/* Unified Filter Button */}
+                <div className="relative" ref={filterRef}>
+                  <button
+                    onClick={() => setIsFilterOpen(prev => !prev)}
+                    className={`relative inline-flex items-center gap-2 px-3 py-2 rounded-xl border shadow-sm transition-all ${
+                      (statusFilter !== 'all' || dateFilter) ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
                   >
-                    <option value="all">All Statuses</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                    <Filter className="w-4 h-4" />
+                    <span className="text-xs font-black uppercase tracking-widest">Filter</span>
+                    {(statusFilter !== 'all' || dateFilter) && (
+                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center">
+                        {(statusFilter !== 'all' ? 1 : 0) + (dateFilter ? 1 : 0)}
+                      </span>
+                    )}
+                  </button>
+
+                  {isFilterOpen && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl p-5 z-50">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-black text-slate-800 uppercase tracking-wider">Filters</span>
+                        <button onClick={() => { setStatusFilter('all'); setDateFilter(null); setDatePreset(''); setCustomDateRange({ start: '', end: '' }); }} className="text-xs font-bold text-primary hover:underline">Reset All</button>
+                      </div>
+
+                      {/* Status Section */}
+                      <div className="mb-4">
+                        <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Status</div>
+                        <div className="flex gap-2">
+                          {[{ value: 'all', label: 'All' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }].map(opt => (
+                            <button
+                              key={opt.value}
+                              onClick={() => setStatusFilter(opt.value)}
+                              className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                                statusFilter === opt.value
+                                  ? 'bg-primary text-white shadow-sm'
+                                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Date Section */}
+                      <div>
+                        <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                          <Calendar className="w-3 h-3" /> Date Range
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { key: 'today', label: 'Today' },
+                            { key: 'last7', label: 'Last 7 Days' },
+                            { key: 'thisWeek', label: 'This Week' },
+                            { key: 'thisMonth', label: 'This Month' },
+                            { key: 'thisYear', label: 'This Year' },
+                            { key: 'custom', label: 'Custom Range' }
+                          ].map(p => (
+                            <button
+                              key={p.key}
+                              onClick={() => {
+                                setDatePreset(p.key);
+                                if (p.key !== 'custom') {
+                                  const r = rangeForPreset(p.key);
+                                  if (r) setDateFilter({ start_date: r.start, end_date: r.end, label: p.key });
+                                }
+                              }}
+                              className={`px-3 py-2 rounded-lg text-xs font-semibold text-left transition-all ${
+                                datePreset === p.key ? 'bg-primary text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                              }`}
+                            >
+                              {p.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {datePreset === 'custom' && (
+                          <div className="mt-3 space-y-2">
+                            <div>
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Start</label>
+                              <input type="date" value={customDateRange.start} onChange={e => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))} className="w-full mt-1 p-2 rounded-lg border border-slate-200 text-sm" />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">End</label>
+                              <input type="date" value={customDateRange.end} onChange={e => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))} className="w-full mt-1 p-2 rounded-lg border border-slate-200 text-sm" />
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (customDateRange.start && customDateRange.end && new Date(customDateRange.start) <= new Date(customDateRange.end)) {
+                                  setDateFilter({ start_date: toISODateStart(new Date(customDateRange.start)), end_date: toISODateEnd(new Date(customDateRange.end)), label: 'custom' });
+                                }
+                              }}
+                              className="w-full mt-1 px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold"
+                            >Apply Range</button>
+                          </div>
+                        )}
+
+                        {dateFilter && (
+                          <button
+                            onClick={() => { setDateFilter(null); setDatePreset(''); setCustomDateRange({ start: '', end: '' }); }}
+                            className="mt-2 text-xs font-bold text-red-500 hover:underline"
+                          >Clear Date Filter</button>
+                        )}
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+                        <button onClick={() => setIsFilterOpen(false)} className="px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold">Done</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <DateFilterPopover onChange={(value) => setDateFilter(value)} initial={dateFilter} />
               </div>
             </div>
 

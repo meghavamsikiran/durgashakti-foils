@@ -423,21 +423,9 @@ async def get_all_orders(
     db: AsyncSession = Depends(get_db)
 ):
     search = sanitize_search_term(search)
-    q = select(OrderModel, func.count(OrderModel.id).over().label('total_count'))
-
-    clause = None
-    if status and status.upper() != "ALL":
-        q = q.where(func.lower(OrderModel.order_status) == status.lower())
-    if search:
-        like_term = f"%{search}%"
-        clause = or_(
-            OrderModel.order_number.ilike(like_term),
-            OrderModel.customer_name.ilike(like_term),
-            func.cast(OrderModel.user_id, String).ilike(like_term),
-        )
-        q = q.where(clause)
-
-    # Date range filtering (expects ISO date/time or date strings)
+    
+    # Pre-parse date parameters
+    sd_dt = None
     if start_date:
         try:
             sd = start_date.rstrip('Z')
@@ -445,9 +433,9 @@ async def get_all_orders(
             if sd_dt.tzinfo is None:
                 sd_dt = sd_dt.replace(tzinfo=timezone.utc)
         except Exception:
-            sd_dt = None
-        if sd_dt:
-            q = q.where(OrderModel.created_at >= sd_dt)
+            pass
+
+    ed_dt = None
     if end_date:
         try:
             ed = end_date.rstrip('Z')
@@ -455,47 +443,35 @@ async def get_all_orders(
             if ed_dt.tzinfo is None:
                 ed_dt = ed_dt.replace(tzinfo=timezone.utc)
         except Exception:
-            ed_dt = None
-        if ed_dt:
-            q = q.where(OrderModel.created_at <= ed_dt)
+            pass
 
+    # Build filters
+    filters = []
+    if status and status.upper() != "ALL":
+        filters.append(func.lower(OrderModel.order_status) == status.lower())
+    if search:
+        like_term = f"%{search}%"
+        clause = or_(
+            OrderModel.order_number.ilike(like_term),
+            OrderModel.customer_name.ilike(like_term),
+            func.cast(OrderModel.user_id, String).ilike(like_term),
+        )
+        filters.append(clause)
+    if sd_dt:
+        filters.append(OrderModel.created_at >= sd_dt)
+    if ed_dt:
+        filters.append(OrderModel.created_at <= ed_dt)
+
+    # 1. Fast count query
+    count_q = select(func.count(OrderModel.id)).where(*filters)
+    total = (await db.execute(count_q)).scalar() or 0
+
+    # 2. Page fetch query
     offset = (page - 1) * limit
-    res = await db.execute(q.order_by(OrderModel.updated_at.desc()).offset(offset).limit(limit))
-    rows = res.all()
-    
-    total = 0
-    if rows:
-        total = rows[0][1]
-    elif page > 1:
-        fallback_q = select(func.count(OrderModel.id))
-        if status and status.upper() != "ALL":
-            fallback_q = fallback_q.where(func.lower(OrderModel.order_status) == status.lower())
-        if clause is not None:
-            fallback_q = fallback_q.where(clause)
-        # include date filters in fallback count as well
-        if start_date:
-            try:
-                sd = start_date.rstrip('Z')
-                sd_dt = datetime.fromisoformat(sd)
-                if sd_dt.tzinfo is None:
-                    sd_dt = sd_dt.replace(tzinfo=timezone.utc)
-            except Exception:
-                sd_dt = None
-            if sd_dt:
-                fallback_q = fallback_q.where(OrderModel.created_at >= sd_dt)
-        if end_date:
-            try:
-                ed = end_date.rstrip('Z')
-                ed_dt = datetime.fromisoformat(ed)
-                if ed_dt.tzinfo is None:
-                    ed_dt = ed_dt.replace(tzinfo=timezone.utc)
-            except Exception:
-                ed_dt = None
-            if ed_dt:
-                fallback_q = fallback_q.where(OrderModel.created_at <= ed_dt)
-        total = (await db.execute(fallback_q)).scalar() or 0
-
-    items = [row_to_dict(row[0]) for row in rows]
+    q = select(OrderModel).where(*filters).order_by(OrderModel.updated_at.desc()).offset(offset).limit(limit)
+    res = await db.execute(q)
+    orders = res.scalars().all()
+    items = [row_to_dict(order) for order in orders]
     return {"items": items, "total": total, "page": page, "limit": limit}
 
 
@@ -754,17 +730,33 @@ async def list_customers(
                 "loyalty_criteria": {"enabled": loyalty_enabled, "minimum_orders": min_orders, "minimum_spend": min_spend, "criteria_mode": criteria_mode}
             })
     else:
-        # Loyal segment path: must join and group since we filter by aggregated stats
-        q = (
+        # Loyal segment path: first find user_ids that match the loyalty criteria in a subquery
+        loyal_users_q = (
             select(
-                UserModel,
-                orders_expr.label("orders_count"),
-                spend_expr.label("total_spent"),
+                OrderModel.user_id,
+                func.count(OrderModel.id).filter(eligible_order).label("orders_count"),
+                func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0).label("total_spent")
             )
-            .join(OrderModel, OrderModel.user_id == UserModel.id, isouter=True)
-            .where(UserModel.role == "customer")
-            .group_by(UserModel.id)
+            .group_by(OrderModel.user_id)
         )
+        if loyalty_enabled:
+            orders_ok = func.count(OrderModel.id).filter(eligible_order) >= min_orders
+            spend_ok = func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0) >= min_spend
+            if criteria_mode == "orders_only":
+                loyal_users_q = loyal_users_q.having(orders_ok)
+            elif criteria_mode == "spend_only":
+                loyal_users_q = loyal_users_q.having(spend_ok)
+            elif criteria_mode == "both":
+                loyal_users_q = loyal_users_q.having(and_(orders_ok, spend_ok))
+            else:
+                loyal_users_q = loyal_users_q.having(orders_ok | spend_ok)
+        else:
+            loyal_users_q = loyal_users_q.having(func.count(OrderModel.id) < 0)
+
+        loyal_users_sub = loyal_users_q.subquery()
+
+        # Join UserModel with the subquery results
+        user_filters = [UserModel.role == "customer", UserModel.id == loyal_users_sub.c.user_id]
         if search:
             like_term = f"%{search}%"
             clause = or_(
@@ -772,25 +764,20 @@ async def list_customers(
                 UserModel.email.ilike(like_term),
                 UserModel.phone.ilike(like_term)
             )
-            q = q.where(clause)
+            user_filters.append(clause)
 
-        orders_ok = orders_expr >= min_orders
-        spend_ok = spend_expr >= min_spend
-        if loyalty_enabled:
-            if criteria_mode == "orders_only":
-                q = q.having(orders_ok)
-            elif criteria_mode == "spend_only":
-                q = q.having(spend_ok)
-            elif criteria_mode == "both":
-                q = q.having(and_(orders_ok, spend_ok))
-            else:
-                q = q.having(orders_ok | spend_ok)
-        else:
-            q = q.having(func.count(OrderModel.id) < 0)
+        total_q = select(func.count(UserModel.id)).where(*user_filters)
+        total = (await db.execute(total_q)).scalar() or 0
 
         offset = (page - 1) * limit
-        total = (await db.execute(select(func.count()).select_from(q.order_by(None).subquery()))).scalar() or 0
-        res = await db.execute(q.order_by(UserModel.created_at.desc()).offset(offset).limit(limit))
+        users_q = (
+            select(UserModel, loyal_users_sub.c.orders_count, loyal_users_sub.c.total_spent)
+            .where(*user_filters)
+            .order_by(UserModel.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        res = await db.execute(users_q)
         rows = res.all()
 
         rows_data = []

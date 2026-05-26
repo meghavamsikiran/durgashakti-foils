@@ -715,7 +715,7 @@ const ProductsPage = () => {
                       <div key={idx} className="aspect-square relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group hover:border-primary transition-colors shadow-sm">
                         {item.type === 'video' ? (
                           <div className="w-full h-full flex flex-col items-center justify-center p-1 bg-slate-900 text-white relative">
-                            <video src={formatImageUrl(item.url)} className="w-full h-full object-cover opacity-60" muted playsInline />
+                            <video src={`${formatImageUrl(item.url)}#t=0.001`} className="w-full h-full object-cover opacity-60" muted playsInline preload="metadata" />
                             <div className="absolute inset-0 flex items-center justify-center">
                               <span className="text-[8px] bg-primary text-white font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm flex items-center gap-0.5">
                                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span>

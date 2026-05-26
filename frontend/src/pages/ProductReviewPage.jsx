@@ -174,7 +174,7 @@ const ProductReviewPage = () => {
                   <div key={`${preview.name}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group">
                     {preview.type === 'video' ? (
                       <>
-                        <video src={preview.url} className="w-full h-full object-cover" muted playsInline />
+                        <video src={`${preview.url}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
                         <button
                           type="button"
                           onClick={() => {
@@ -244,7 +244,7 @@ const ProductReviewPage = () => {
                     <div key={`${mediaUrl}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group">
                       {isVideo ? (
                         <>
-                          <video src={fullUrl} className="w-full h-full object-cover" muted playsInline />
+                          <video src={`${fullUrl}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
                           <button
                             type="button"
                             onClick={() => {
@@ -417,7 +417,7 @@ const ProductReviewPage = () => {
                         >
                           {item.type === 'video' ? (
                             <div className="relative h-full w-full">
-                              <video src={fileSrc} className="h-full w-full object-cover" muted playsInline />
+                              <video src={`${fileSrc}#t=0.001`} className="h-full w-full object-cover" muted playsInline preload="metadata" />
                               <span className="absolute inset-0 flex items-center justify-center bg-black/10 text-white">
                                 <Play className="h-3.5 w-3.5 fill-current" />
                               </span>

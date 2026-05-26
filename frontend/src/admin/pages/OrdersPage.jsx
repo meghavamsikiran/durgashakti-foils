@@ -120,7 +120,10 @@ const OrdersPage = () => {
       params.end_date = dateFilter.end_date;
     }
     const cached = adminService.getCached('/admin/orders', params);
-    if (!cached) {
+    if (cached) {
+      setRows(cached.data?.items || []);
+      setTotal(cached.data?.total || 0);
+    } else {
       setLoading(true);
     }
     try {

@@ -428,7 +428,7 @@ const CustomerDetailPage = () => {
                             >
                               {media.type === 'video' ? (
                                 <>
-                                  <video src={formatImageUrl(media.url)} className="w-full h-full object-cover" muted playsInline />
+                                  <video src={`${formatImageUrl(media.url)}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
                                   <span className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
                                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-primary shadow-sm group-hover:scale-110 transition-transform">
                                       <Play className="h-4 w-4 fill-current translate-x-[1px]" />
@@ -643,7 +643,7 @@ const CustomerDetailPage = () => {
                       >
                         {item.type === 'video' ? (
                           <div className="relative h-full w-full">
-                            <video src={formatImageUrl(item.url)} className="h-full w-full object-cover" muted playsInline />
+                            <video src={`${formatImageUrl(item.url)}#t=0.001`} className="h-full w-full object-cover" muted playsInline preload="metadata" />
                             <span className="absolute inset-0 flex items-center justify-center bg-black/10 text-white">
                               <Play className="h-3.5 w-3.5 fill-current" />
                             </span>

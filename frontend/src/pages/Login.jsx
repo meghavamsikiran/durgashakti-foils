@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -30,6 +31,8 @@ const Login = () => {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const { login, register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
@@ -48,6 +51,12 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
+    if (!isLogin && !acceptTerms) {
+      toast.error('You must accept the Terms and Conditions to create an account.');
+      setLoading(false);
+      return;
+    }
 
     const identifier = email.trim();
     if (!isLogin && !identifier.includes('@')) {
@@ -236,6 +245,29 @@ const Login = () => {
               )}
             </div>
 
+            {!isLogin && (
+              <div className="flex items-start gap-2.5 my-4" data-testid="terms-checkbox-container">
+                <input
+                  id="acceptTerms"
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/25 accent-primary cursor-pointer"
+                  required
+                />
+                <label htmlFor="acceptTerms" className="text-xs font-semibold text-slate-650 leading-normal select-none cursor-pointer">
+                  I accept the{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsModal(true)}
+                    className="text-primary hover:underline font-extrabold focus:outline-none"
+                  >
+                    Terms & Conditions
+                  </button>
+                </label>
+              </div>
+            )}
+
             <Button
               type="submit"
               disabled={loading}
@@ -300,6 +332,103 @@ const Login = () => {
           </div>
         </div>
       </motion.div>
+      {showTermsModal && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" data-testid="terms-modal">
+          <div className="relative w-full max-w-xl max-h-[80vh] overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h2 className="text-lg font-black text-slate-900 font-manrope">Terms & Conditions</h2>
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(false)}
+                className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 transition-colors"
+                data-testid="terms-modal-close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Terms Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-slate-600 space-y-4 leading-relaxed no-scrollbar">
+              <p className="font-semibold text-slate-800">
+                Welcome to Durga Shakti Foils. Please read these Terms and Conditions carefully before registering an account or purchasing from us.
+              </p>
+              
+              <div>
+                <h3 className="font-extrabold text-slate-900 mt-2">1. Introduction</h3>
+                <p className="mt-1">
+                  By creating an account or using our services, you agree to comply with and be bound by these Terms and Conditions. If you do not agree, please do not create an account or place an order.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-extrabold text-slate-900 mt-2">2. Account Information & Security</h3>
+                <p className="mt-1">
+                  When you register, you must provide accurate, current, and complete information. You are solely responsible for safeguarding the credentials of your account and for any activities or actions under your password.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-extrabold text-slate-900 mt-2">3. Eligibility & Registration Rules</h3>
+                <p className="mt-1">
+                  Our platform permits account registration only using valid email addresses. Specifically, to ensure identity verification, we only accept standard Google accounts (@gmail.com) for customer registration.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-extrabold text-slate-900 mt-2">4. Product Specifications & Pricing</h3>
+                <p className="mt-1">
+                  We strive to present all products, categories, dimensions, and specifications (such as foil thickness, length, and width) as accurately as possible. Prices are subject to change without notice and include GST unless stated otherwise.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-extrabold text-slate-900 mt-2">5. Ordering & Payment</h3>
+                <p className="mt-1">
+                  All orders are subject to availability. You can pay via credit card, UPI, net banking, or Cash on Delivery (COD) where eligible. We reserve the right to cancel or refuse any order for reasons including stock limitations or suspect transactional fraud.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-extrabold text-slate-900 mt-2">6. Limitation of Liability</h3>
+                <p className="mt-1">
+                  Durga Shakti Foils shall not be liable for any indirect, incidental, or consequential damages resulting from the use or inability to use our products or services.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-extrabold text-slate-900 mt-2">7. Updates to Terms</h3>
+                <p className="mt-1">
+                  We may modify these Terms and Conditions at any time. Your continued use of the platform following updates signifies your acceptance of the revised terms.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowTermsModal(false)}
+                className="rounded-lg text-slate-700 font-bold"
+              >
+                Close
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setAcceptTerms(true);
+                  setShowTermsModal(false);
+                }}
+                className="rounded-lg bg-primary hover:bg-[#005a14] text-white font-bold px-5"
+                data-testid="terms-modal-accept"
+              >
+                Accept Terms
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -30,7 +30,21 @@ const ProductReviews = ({ productId, summary }) => {
   const filteredAndSortedReviews = React.useMemo(() => {
     let result = [...reviews];
     if (selectedRating !== 'all') {
-      result = result.filter(r => Number(r.rating) === Number(selectedRating));
+      if (selectedRating === '5') {
+        result = result.filter(r => Number(r.rating) === 5);
+      } else if (selectedRating === '4_above') {
+        result = result.filter(r => Number(r.rating) >= 4);
+      } else if (selectedRating === '3_above') {
+        result = result.filter(r => Number(r.rating) >= 3);
+      } else if (selectedRating === '2_above') {
+        result = result.filter(r => Number(r.rating) >= 2);
+      } else if (selectedRating === '1_above') {
+        result = result.filter(r => Number(r.rating) >= 1);
+      } else if (selectedRating === '1_only') {
+        result = result.filter(r => Number(r.rating) === 1);
+      } else {
+        result = result.filter(r => Number(r.rating) === Number(selectedRating));
+      }
     }
     if (sortBy === 'newest') {
       result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -219,7 +233,7 @@ const ProductReviews = ({ productId, summary }) => {
                   >
                     {media.type === 'video' ? (
                       <>
-                        <video src={formatImageUrl(media.url)} className="h-full w-full object-cover" muted playsInline />
+                        <video src={`${formatImageUrl(media.url)}#t=0.001`} className="h-full w-full object-cover" muted playsInline preload="metadata" />
                         <span className="absolute inset-0 flex items-center justify-center bg-black/20">
                           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-primary shadow-sm">
                             <Play className="h-4 w-4 fill-current translate-x-[1px]" />
@@ -267,12 +281,12 @@ const ProductReviews = ({ productId, summary }) => {
               {[5, 4, 3, 2, 1].map((r) => {
                 const amount = distribution[String(r)] || 0;
                 const percent = count ? Math.round((amount / count) * 100) : 0;
-                const isSelected = selectedRating === r;
+                const isSelected = String(selectedRating) === String(r);
                 return (
                   <button
                     key={r}
                     type="button"
-                    onClick={() => setSelectedRating(isSelected ? 'all' : r)}
+                    onClick={() => setSelectedRating(isSelected ? 'all' : String(r))}
                     className={`w-full flex items-center gap-3 text-xs font-semibold text-slate-600 hover:text-primary transition-all p-1.5 rounded-lg text-left ${
                       isSelected 
                         ? 'bg-primary/10 text-primary font-bold' 
@@ -297,7 +311,14 @@ const ProductReviews = ({ productId, summary }) => {
             <div className="flex flex-col gap-2 border-b border-slate-100 pb-4">
               <div className="flex items-center justify-between gap-4">
                 <h3 className="text-base font-bold text-slate-800">
-                  {selectedRating === 'all' ? 'All Reviews' : `${selectedRating} Star Reviews`} 
+                  {selectedRating === 'all' ? 'All Reviews' : 
+                   selectedRating === '5' ? '5 Star Reviews' :
+                   selectedRating === '4_above' ? '4 Stars & Above' :
+                   selectedRating === '3_above' ? '3 Stars & Above' :
+                   selectedRating === '2_above' ? '2 Stars & Above' :
+                   selectedRating === '1_above' ? '1 Star & Above' :
+                   selectedRating === '1_only' ? 'Only 1 Star Reviews' :
+                   `${selectedRating} Star Reviews`} 
                   <span className="text-xs font-normal text-slate-400 ml-2">({filteredAndSortedReviews.length})</span>
                 </h3>
                 
@@ -363,30 +384,34 @@ const ProductReviews = ({ productId, summary }) => {
                               <span>All Ratings</span>
                               {selectedRating === 'all' && <Check className="w-3.5 h-3.5" />}
                             </button>
-                            {[5, 4, 3, 2, 1].map(r => {
-                              const rCount = reviews.filter(rev => Number(rev.rating) === r).length;
-                              return (
-                                <button
-                                  key={r}
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedRating(r);
-                                    setIsFilterMenuOpen(false);
-                                  }}
-                                  disabled={rCount === 0}
-                                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all text-left ${
-                                    selectedRating === r
-                                      ? 'bg-primary/10 text-primary'
-                                      : rCount === 0
-                                        ? 'text-slate-300 cursor-not-allowed opacity-50'
-                                        : 'text-slate-600 hover:bg-slate-50'
-                                  }`}
-                                >
-                                  <span>{r} Stars ({rCount})</span>
-                                  {selectedRating === r && <Check className="w-3.5 h-3.5" />}
-                                </button>
-                              );
-                            })}
+                            {[
+                              { value: '5', label: '5 Stars', count: reviews.filter(rev => Number(rev.rating) === 5).length },
+                              { value: '4_above', label: '4 Stars & Above', count: reviews.filter(rev => Number(rev.rating) >= 4).length },
+                              { value: '3_above', label: '3 Stars & Above', count: reviews.filter(rev => Number(rev.rating) >= 3).length },
+                              { value: '2_above', label: '2 Stars & Above', count: reviews.filter(rev => Number(rev.rating) >= 2).length },
+                              { value: '1_above', label: '1 Star & Above', count: reviews.filter(rev => Number(rev.rating) >= 1).length },
+                              { value: '1_only', label: 'Only 1 Star', count: reviews.filter(rev => Number(rev.rating) === 1).length }
+                            ].map(opt => (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedRating(opt.value);
+                                  setIsFilterMenuOpen(false);
+                                }}
+                                disabled={opt.count === 0}
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all text-left ${
+                                  selectedRating === opt.value
+                                    ? 'bg-primary/10 text-primary'
+                                    : opt.count === 0
+                                      ? 'text-slate-350 cursor-not-allowed opacity-50'
+                                      : 'text-slate-600 hover:bg-slate-50'
+                                }`}
+                              >
+                                <span>{opt.label} ({opt.count})</span>
+                                {selectedRating === opt.value && <Check className="w-3.5 h-3.5" />}
+                              </button>
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -400,7 +425,15 @@ const ProductReviews = ({ productId, summary }) => {
                 <div className="flex flex-wrap gap-2 mt-2 animate-in fade-in duration-200">
                   {selectedRating !== 'all' && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/25">
-                      <span>{selectedRating} Star</span>
+                      <span>
+                        {selectedRating === '5' && '5 Stars'}
+                        {selectedRating === '4_above' && '4 Stars & Above'}
+                        {selectedRating === '3_above' && '3 Stars & Above'}
+                        {selectedRating === '2_above' && '2 Stars & Above'}
+                        {selectedRating === '1_above' && '1 Star & Above'}
+                        {selectedRating === '1_only' && 'Only 1 Star'}
+                        {!['5', '4_above', '3_above', '2_above', '1_above', '1_only'].includes(String(selectedRating)) && `${selectedRating} Star`}
+                      </span>
                       <button type="button" onClick={() => setSelectedRating('all')} className="hover:text-[#005a14] focus:outline-none">
                         <X className="w-3 h-3" />
                       </button>
@@ -557,7 +590,7 @@ const ProductReviews = ({ productId, summary }) => {
                               >
                                 {media.type === 'video' ? (
                                   <>
-                                    <video src={formatImageUrl(media.url)} className="w-full h-full object-cover" muted playsInline />
+                                    <video src={`${formatImageUrl(media.url)}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
                                     <span className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors">
                                       <Play className="h-4 w-4 fill-white text-white" />
                                     </span>
@@ -753,7 +786,7 @@ const ProductReviews = ({ productId, summary }) => {
                   >
                     {media.type === 'video' ? (
                       <div className="relative h-full w-full">
-                        <video src={formatImageUrl(media.url)} className="h-full w-full object-cover" muted playsInline />
+                        <video src={`${formatImageUrl(media.url)}#t=0.001`} className="h-full w-full object-cover" muted playsInline preload="metadata" />
                         <span className="absolute inset-0 flex items-center justify-center bg-black/20 text-white">
                           <Play className="h-3.5 w-3.5 fill-current" />
                         </span>

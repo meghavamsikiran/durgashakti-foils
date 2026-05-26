@@ -631,7 +631,7 @@ const OrderDetailsPage = () => {
                     {returnPreviews.map((preview, index) => (
                       <div key={index} className="relative w-full h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
                         {preview.type === 'video' ? (
-                          <video src={preview.url} className="w-full h-full object-cover" />
+                          <video src={`${preview.url}#t=0.001`} className="w-full h-full object-cover" preload="metadata" />
                         ) : (
                           <img src={preview.url} alt="Preview" className="w-full h-full object-cover" />
                         )}
@@ -943,7 +943,7 @@ const OrderDetailsPage = () => {
                     return (
                       <div key={index} className="relative rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm w-20 h-20 hover:ring-2 hover:ring-primary transition-all flex items-center justify-center group cursor-pointer">
                         {isVideo ? (
-                          <video src={fullUrl} controls className="w-full h-full object-cover" />
+                          <video src={`${fullUrl}#t=0.001`} controls className="w-full h-full object-cover" preload="metadata" />
                         ) : (
                           <a href={fullUrl} target="_blank" rel="noreferrer" className="w-full h-full">
                             <img src={fullUrl} alt="Proof" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />

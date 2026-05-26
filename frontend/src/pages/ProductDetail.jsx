@@ -203,7 +203,7 @@ const ProductDetail = () => {
                 >
                   {item.type === 'video' ? (
                     <div className="w-full h-full relative flex items-center justify-center bg-slate-950 text-white">
-                      <video src={formatImageUrl(item.url)} className="w-full h-full object-cover opacity-60" muted playsInline />
+                      <video src={`${formatImageUrl(item.url)}#t=0.001`} className="w-full h-full object-cover opacity-60" muted playsInline preload="metadata" />
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-sm">
                           <svg className="w-3.5 h-3.5 text-white fill-current translate-x-[1px]" viewBox="0 0 24 24">

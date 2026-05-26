@@ -31,18 +31,24 @@ const couponService = {
   
   createCoupon: async (payload) => {
     invalidateCache('/admin/coupons');
+    invalidateCache('/settings/public');
+    invalidateCache('/admin/settings');
     const response = await apiClient.post('/admin/coupons', payload);
     return response.data;
   },
   
   updateCoupon: async (couponId, payload) => {
     invalidateCache('/admin/coupons');
+    invalidateCache('/settings/public');
+    invalidateCache('/admin/settings');
     const response = await apiClient.put(`/admin/coupons/${couponId}`, payload);
     return response.data;
   },
   
   deleteCoupon: async (couponId) => {
     invalidateCache('/admin/coupons');
+    invalidateCache('/settings/public');
+    invalidateCache('/admin/settings');
     const response = await apiClient.delete(`/admin/coupons/${couponId}`);
     return response.data;
   },
