@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star } from 'lucide-react';
+import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star, Clock } from 'lucide-react';
 import { Button } from './../components/ui/button';
 import { formatImageUrl } from './../utils/api';
 import { useProgress } from './../components/ui/ProgressToast';
@@ -24,10 +24,67 @@ const OrderDetailsPage = () => {
   const [returnPreviews, setReturnPreviews] = useState([]);
   const [submittingReturn, setSubmittingReturn] = useState(false);
   const [payingOnline, setPayingOnline] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id, isReturning]);
+
+  useEffect(() => {
+    if (!order) return;
+    
+    const isOnlinePending = 
+      order.payment_status !== 'Paid' &&
+      order.payment_status !== 'completed' &&
+      (order.payment_method || '').toLowerCase() !== 'cod' &&
+      !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase());
+
+    if (!isOnlinePending) {
+      setTimeLeft(null);
+      return;
+    }
+
+    const calculateTimeLeft = () => {
+      const createdTime = new Date(order.created_at).getTime();
+      const expiryTime = createdTime + 15 * 60 * 1000;
+      const now = new Date().getTime();
+      const difference = expiryTime - now;
+
+      if (difference <= 0) {
+        setTimeLeft('Expired');
+        return false;
+      }
+
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+      
+      const formattedMin = String(minutes).padStart(2, '0');
+      const formattedSec = String(seconds).padStart(2, '0');
+      
+      setTimeLeft(`${formattedMin}:${formattedSec}`);
+      return true;
+    };
+
+    const active = calculateTimeLeft();
+    if (!active) return;
+
+    const timer = setInterval(() => {
+      const active = calculateTimeLeft();
+      if (!active) {
+        clearInterval(timer);
+        // Silently reload order details when the countdown expires to update statuses reactively
+        const fetchOrderSilently = async () => {
+          try {
+            const res = await apiClient.get(`/orders/${id}`);
+            setOrder(res.data);
+          } catch {}
+        };
+        fetchOrderSilently();
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [order, id]);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -627,6 +684,14 @@ const OrderDetailsPage = () => {
                 Payment Retry Option Available
               </h3>
               <p className="text-xs text-amber-700 font-semibold leading-relaxed">Your payment has not been completed. You can safely complete the payment online using Razorpay to process this order.</p>
+              {timeLeft && (
+                <div className="pt-1">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-black text-rose-600 bg-rose-50 border border-rose-100/60 px-3 py-1.5 rounded-xl shadow-sm animate-pulse">
+                    <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '4s' }} />
+                    Expires in: {timeLeft}
+                  </span>
+                </div>
+              )}
             </div>
             <button 
               onClick={handlePayOnline}
