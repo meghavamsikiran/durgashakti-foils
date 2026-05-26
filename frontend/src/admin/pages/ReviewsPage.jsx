@@ -181,7 +181,7 @@ const ReviewsPage = () => {
             {showFilters && (
               <>
                 <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setShowFilters(false)} />
-                <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 lg:absolute lg:translate-y-0 lg:inset-auto lg:right-0 lg:mt-2 w-auto lg:w-[480px] bg-white border border-slate-200 rounded-2xl shadow-2xl p-5 z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 lg:absolute lg:translate-y-0 lg:inset-auto lg:right-0 lg:mt-2 w-auto lg:w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl p-5 z-50 animate-in fade-in zoom-in-95 duration-200">
                   <div className="space-y-4">
                     <h3 className="text-sm font-black text-slate-900">Review Filters</h3>
                     <div className="grid grid-cols-1 gap-4">
