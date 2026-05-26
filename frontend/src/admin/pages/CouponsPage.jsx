@@ -516,6 +516,7 @@ const CouponsPage = () => {
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [productSearchResults, setProductSearchResults] = useState([]);
   const [couponAnalytics, setCouponAnalytics] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const initialBannerForm = {
     id: null,
@@ -1187,6 +1188,18 @@ const CouponsPage = () => {
     c.discount_type.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const PAGE_SIZE = 10;
+  const totalFilteredPages = Math.ceil(filteredCoupons.length / PAGE_SIZE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, dateFilter]);
+
+  const paginatedCoupons = filteredCoupons.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
   // Analytics Helpers
   const totalDiscountDistributed = coupons.reduce((sum, c) => sum + Number(c.total_discount_given || 0), 0);
   const couponDrivenRevenue = coupons.reduce((sum, c) => sum + Number(c.revenue_generated || 0), 0);
@@ -1410,7 +1423,7 @@ const CouponsPage = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-subtle text-sm text-ink-slate font-medium">
-                    {filteredCoupons.map((coupon) => {
+                    {paginatedCoupons.map((coupon) => {
                       const isExpired = coupon.expiry_date && new Date(coupon.expiry_date) < new Date();
                       const remaining = coupon.max_usage_count !== null 
                         ? Math.max(0, coupon.max_usage_count - (coupon.total_uses || 0)) 
@@ -1554,6 +1567,13 @@ const CouponsPage = () => {
                   </tbody>
                 </table>
               )}
+              <TablePagination
+                currentPage={currentPage}
+                totalPages={totalFilteredPages}
+                onPageChange={setCurrentPage}
+                totalItems={filteredCoupons.length}
+                pageSize={PAGE_SIZE}
+              />
             </div>
           </div>
         </>

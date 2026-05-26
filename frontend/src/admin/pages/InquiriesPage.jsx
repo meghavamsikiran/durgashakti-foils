@@ -7,6 +7,7 @@ import DateFilterPopover from '../../components/ui/DateFilterPopover';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
 import PageLoader from '../../components/ui/PageLoader';
+import TablePagination from '../../components/ui/TablePagination';
 
 const InquiriesPage = () => {
   const PAGE_SIZE = 20;
@@ -243,6 +244,13 @@ const InquiriesPage = () => {
               </button>
             )
           }))}
+        />
+        <TablePagination
+          currentPage={page}
+          totalPages={Math.ceil(total / PAGE_SIZE)}
+          onPageChange={(p) => loadInquiries(p)}
+          totalItems={total}
+          pageSize={PAGE_SIZE}
         />
       </div>
 

@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CreditCard, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import TablePagination from '../../../components/ui/TablePagination';
 
 const TransactionsTab = ({ orders }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
+
   const transactions = (orders || []).map((order) => ({
     id: order.id,
     transaction_id:
@@ -17,6 +21,12 @@ const TransactionsTab = ({ orders }) => {
     status: order.payment_status,
     type: 'debit',
   }));
+
+  const totalFilteredPages = Math.ceil(transactions.length / PAGE_SIZE);
+  const paginatedTransactions = transactions.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
@@ -41,7 +51,7 @@ const TransactionsTab = ({ orders }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
-                {transactions.map((tx) => (
+                {paginatedTransactions.map((tx) => (
                   <tr key={tx.id} className="hover:bg-surface-container-low transition-colors group">
                     <td className="px-5 py-5">
                       <div className="flex items-center gap-3">
@@ -73,6 +83,13 @@ const TransactionsTab = ({ orders }) => {
               </tbody>
             </table>
           </div>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalFilteredPages}
+            onPageChange={setCurrentPage}
+            totalItems={transactions.length}
+            pageSize={PAGE_SIZE}
+          />
         </div>
       )}
     </motion.div>

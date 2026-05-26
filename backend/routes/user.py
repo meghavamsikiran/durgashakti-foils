@@ -10,7 +10,7 @@ from deps import (
     apply_effective_product_pricing, attach_applicable_product_coupons
 )
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 router = APIRouter(prefix="/api")
 
@@ -161,6 +161,16 @@ async def clear_wishlist(current_user: UserSchema = Depends(get_current_user), d
 # ── Notifications ────────────────────────────────────────────────────────
 @router.get("/user/notifications")
 async def get_notifications(current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    # Auto-delete read notifications older than 3 days
+    three_days_ago = datetime.now(timezone.utc) - timedelta(days=3)
+    await db.execute(
+        delete(NotificationModel)
+        .where(
+            NotificationModel.user_id == current_user.id,
+            NotificationModel.is_read == True,
+            NotificationModel.created_at < three_days_ago
+        )
+    )
     result = await db.execute(
         select(NotificationModel)
         .where(NotificationModel.user_id == current_user.id)
