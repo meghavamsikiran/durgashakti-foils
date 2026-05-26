@@ -158,85 +158,98 @@ const ReviewsPage = () => {
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-full sm:w-72"
             />
           </div>
-          <button
-            type="button"
-            onClick={() => setShowFilters((prev) => !prev)}
-            className={`h-11 inline-flex items-center justify-center gap-2 rounded-xl border px-4 text-xs font-black uppercase tracking-widest shadow-sm transition-all ${
-              showFilters || activeFilterCount > 0
-                ? 'border-primary/30 bg-primary/10 text-primary'
-                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            <Filter className="w-4 h-4" />
-            Filters
-            {activeFilterCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] text-white">
-                {activeFilterCount}
-              </span>
-            )}
-            <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-          </button>
-        </div>
-      </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowFilters((prev) => !prev)}
+              className={`h-11 inline-flex items-center justify-center gap-2 rounded-xl border px-4 text-xs font-black uppercase tracking-widest shadow-sm transition-all ${
+                showFilters || activeFilterCount > 0
+                  ? 'border-primary/30 bg-primary/10 text-primary'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] text-white">
+                  {activeFilterCount}
+                </span>
+              )}
+              <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+            </button>
 
-      {/* ── Filters ── */}
-      {showFilters && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
-              <div>
-                <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">Status</label>
-                <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700">
-                  <option value="all">All Statuses</option>
-                  <option value="published">Published</option>
-                  <option value="hidden">Hidden</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">Rating</label>
-                <select value={rating} onChange={(e) => setRating(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700">
-                  <option value="all">All Ratings</option>
-                  {[5, 4, 3, 2, 1].map((v) => <option key={v} value={v}>{v} Star</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">Date</label>
-                <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700">
-                  <option value="all">All Dates</option>
-                  <option value="today">Today</option>
-                  <option value="yesterday">Yesterday</option>
-                  <option value="this_week">This Week</option>
-                  <option value="this_month">This Month</option>
-                  <option value="this_year">This Year</option>
-                  <option value="custom">Date Range</option>
-                </select>
-              </div>
-              {dateRange === 'custom' && (
-                <div className="grid grid-cols-1 gap-3 md:col-span-3 md:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">From</label>
-                    <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">To</label>
-                    <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700" />
+            {showFilters && (
+              <>
+                <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setShowFilters(false)} />
+                <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 lg:absolute lg:translate-y-0 lg:inset-auto lg:right-0 lg:mt-2 w-auto lg:w-[480px] bg-white border border-slate-200 rounded-2xl shadow-2xl p-5 z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-black text-slate-900">Review Filters</h3>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500">Status</label>
+                        <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25">
+                          <option value="all">All Statuses</option>
+                          <option value="published">Published</option>
+                          <option value="hidden">Hidden</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500">Rating</label>
+                        <select value={rating} onChange={(e) => setRating(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25">
+                          <option value="all">All Ratings</option>
+                          {[5, 4, 3, 2, 1].map((v) => <option key={v} value={v}>{v} Star</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500">Date</label>
+                        <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25">
+                          <option value="all">All Dates</option>
+                          <option value="today">Today</option>
+                          <option value="yesterday">Yesterday</option>
+                          <option value="this_week">This Week</option>
+                          <option value="this_month">This Month</option>
+                          <option value="this_year">This Year</option>
+                          <option value="custom">Date Range</option>
+                        </select>
+                      </div>
+                      {dateRange === 'custom' && (
+                        <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-100">
+                          <div>
+                            <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">From</label>
+                            <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">To</label>
+                            <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                      {activeFilterCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => { setStatus('all'); setRating('all'); setDateRange('all'); setCustomStart(''); setCustomEnd(''); }}
+                          className="mr-auto text-xs px-3.5 py-2 border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 font-bold"
+                        >
+                          Reset
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowFilters(false)}
+                        className="text-xs px-4 py-2 bg-primary hover:bg-[#005a14] text-white rounded-lg font-bold"
+                      >
+                        Apply
+                      </button>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
-            {activeFilterCount > 0 && (
-              <button
-                type="button"
-                onClick={() => { setStatus('all'); setRating('all'); setDateRange('all'); setCustomStart(''); setCustomEnd(''); }}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50"
-              >
-                <X className="w-4 h-4" />
-                Clear
-              </button>
+              </>
             )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* ── Review cards ── */}
       <div className="space-y-4">

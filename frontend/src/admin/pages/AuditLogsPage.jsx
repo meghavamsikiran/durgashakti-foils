@@ -11,11 +11,13 @@ import { Button } from '../../components/ui/button';
 import TablePagination from '../../components/ui/TablePagination';
 import PageLoader from '../../components/ui/PageLoader';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProgress } from '../../components/ui/ProgressToast';
 
 const PAGE_SIZE = 25;
 
 const AuditLogsPage = () => {
   const { hasPermission } = useAuth();
+  const { startProgress, updateProgress, finishProgress } = useProgress();
   const [rows, setRows] = useState(() => {
     const cached = adminService.getCached('/admin/audit-logs', { page: 1, limit: PAGE_SIZE, search: '' });
     return cached?.data?.items || [];
@@ -67,8 +69,16 @@ const AuditLogsPage = () => {
   }, [search]);
 
   const handleExport = useCallback(async () => {
+    const progressId = startProgress({
+      label: 'audit_logs.xlsx',
+      type: 'export',
+      fileType: 'spreadsheet',
+      message: 'Preparing system audit logs...',
+    });
     try {
+      updateProgress(progressId, { progress: 30, message: 'Fetching logs from server...' });
       const res = await adminService.exportAuditLogs();
+      updateProgress(progressId, { progress: 70, message: 'Processing report data...' });
       const contentDisposition = res.headers?.['content-disposition'] || res.headers?.['Content-Disposition'] || '';
       const filenameMatch = contentDisposition.match(/filename\*=UTF-8''([^;\n]+)|filename="?([^";]+)"?/);
       const filename = filenameMatch?.[1] || filenameMatch?.[2] || 'audit_logs.xlsx';
@@ -80,11 +90,14 @@ const AuditLogsPage = () => {
       link.href = url;
       link.download = safeFilename;
       document.body.appendChild(link);
+      updateProgress(progressId, { progress: 90, message: 'Downloading...' });
       link.click();
       document.body.removeChild(link);
       setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      finishProgress(progressId, { message: 'Audit logs exported successfully!' });
     } catch (error) {
       console.error('Failed to download audit logs', error);
+      finishProgress(progressId, { message: 'Failed to download audit logs', isError: true });
       if (error.message?.includes('timeout') || error.code === 'ECONNABORTED') {
         toast.error('The server is taking longer to respond. Please wait 30 seconds and try again.');
       } else if (error.message?.includes('Network Error') || error.message?.includes('Network') || !navigator.onLine) {
@@ -93,7 +106,7 @@ const AuditLogsPage = () => {
         toast.error('Audit log download failed. Please refresh and try again.');
       }
     }
-  }, []);
+  }, [startProgress, updateProgress, finishProgress]);
 
   const formatDate = (d) => {
     if (!d) return '—';
