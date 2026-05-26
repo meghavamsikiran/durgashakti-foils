@@ -49,7 +49,14 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
 
-    if (email && !email.toLowerCase().endsWith('@gmail.com')) {
+    const identifier = email.trim();
+    if (!isLogin && !identifier.includes('@')) {
+      toast.error('Please enter your full @gmail.com address to create an account.');
+      setLoading(false);
+      return;
+    }
+
+    if (identifier.includes('@') && !identifier.toLowerCase().endsWith('@gmail.com')) {
       toast.error('Only @gmail.com email addresses are permitted on this platform.');
       setLoading(false);
       return;
@@ -57,7 +64,7 @@ const Login = () => {
 
     try {
       if (isLogin) {
-        const res = await login(email, password);
+        const res = await login(identifier, password);
         toast.success('Login successful!');
         window.dispatchEvent(new CustomEvent('triggerLoginLoader', { detail: { duration: 3000 } }));
         const role = res.user?.role;
@@ -193,11 +200,12 @@ const Login = () => {
             )}
 
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{isLogin ? 'Email or Gmail Username' : 'Email'}</Label>
               <Input
                 id="email"
-                type="email"
-                autoComplete={isLogin ? "email" : "new-email"}
+                type="text"
+                inputMode="email"
+                autoComplete={isLogin ? "username" : "new-email"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

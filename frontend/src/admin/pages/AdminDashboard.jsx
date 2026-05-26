@@ -22,7 +22,16 @@ const metricConfigs = {
   sales_velocity: { label: 'Daily Velocity', icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
   top_performer: { label: 'Top Performer', icon: Trophy, color: 'text-amber-600', bg: 'bg-amber-50' },
   fastest_mover: { label: 'Fastest Mover', icon: Zap, color: 'text-primary', bg: 'bg-primary/10' },
+  out_of_stock_count: { label: 'Out of Stock', icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50' },
+  low_stock_count: { label: 'Low Stock', icon: Activity, color: 'text-amber-600', bg: 'bg-amber-50' },
+  security_events_count: { label: 'Security Events', icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50' },
+  destructive_actions_count: { label: 'Critical Actions', icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50' },
 };
+
+const humanizeMetricKey = (key) => key
+  .replace(/_count$/i, '')
+  .replace(/_/g, ' ')
+  .replace(/\b\w/g, (char) => char.toUpperCase());
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -136,7 +145,7 @@ const AdminDashboard = () => {
       {Object.keys(metrics).length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {Object.entries(metrics).map(([key, value]) => {
-            const config = metricConfigs[key] || { label: key, icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50' };
+            const config = metricConfigs[key] || { label: humanizeMetricKey(key), icon: Activity, color: 'text-slate-600', bg: 'bg-slate-50' };
             const Icon = config.icon;
             
             return (
@@ -215,7 +224,7 @@ const AdminDashboard = () => {
                   ))}
                </div>
                <button 
-                  onClick={() => navigate('/admin/analytics')}
+                  onClick={() => navigate(window.location.pathname.startsWith('/superadmin') ? '/superadmin/analytics' : '/admin/analytics')}
                   className="w-full py-4 bg-white text-primary rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/10 transition-all shadow-lg active:scale-95"
                >
                   Full Insights

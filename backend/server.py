@@ -182,6 +182,10 @@ if not cors_list:
         cors_list.append(frontend_url)
 
 cors_list.extend([
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
     "https://durgashakti-foils.vercel.app",
     "https://durgashakti-foils-git-main-meghavamsikirans-projects.vercel.app"
 ])
@@ -203,7 +207,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(self), payment=(self)"
         response.headers["X-XSS-Protection"] = "1; mode=block"
+        if os.environ.get("ENVIRONMENT") == "production" and request.url.scheme == "https":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
 

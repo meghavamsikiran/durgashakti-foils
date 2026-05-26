@@ -17,6 +17,7 @@ from deps import (
     normalize_order_status,
     ORDER_STATUS_TRANSITIONS,
     UserRegister,
+    UserLogin,
     ShippingAddress,
     CartItem,
     OrderItemSchema,
@@ -48,6 +49,11 @@ def test_jwt_token_lifecycle():
     assert payload["email"] == email
     assert payload["role"] == role
     assert "exp" in payload
+
+
+def test_login_accepts_gmail_username_alias():
+    login = UserLogin(email="durgashaktifoils", password="123456")
+    assert login.email == "durgashaktifoils@gmail.com"
 
 
 def test_invalid_token():

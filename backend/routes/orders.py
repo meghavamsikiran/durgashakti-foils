@@ -674,7 +674,7 @@ async def pay_cod_online(payment_data: dict, current_user: UserSchema = Depends(
 
 
 @router.get("/payment/test-mode")
-async def check_test_mode():
+async def check_test_mode(current_user: UserSchema = Depends(get_current_user)):
     return {"test_mode": is_test_mode()}
 
 

@@ -35,9 +35,12 @@ UPLOADS_DIR = ROOT_DIR / "uploads"
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── JWT Config ───────────────────────────────────────────────────────────
-JWT_SECRET = os.environ.get('JWT_SECRET', '')
+JWT_SECRET = os.environ.get('JWT_SECRET', '').strip()
 if not JWT_SECRET:
-    JWT_SECRET = "super_secret_local_dev_only_key_ds_foils"
+    if os.environ.get('ENVIRONMENT') == 'production':
+        raise RuntimeError("JWT_SECRET must be configured in production.")
+    JWT_SECRET = "local_dev_only_ds_foils_jwt_secret_change_me"
+    logger.warning("JWT_SECRET is not configured; using local development fallback.")
 
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 168  # 7 days
@@ -102,6 +105,18 @@ def validate_gmail_address(v: str) -> str:
     return cleaned
 
 
+def normalize_gmail_identifier(v: str) -> str:
+    """Allow staff/customer login with either full Gmail address or Gmail username."""
+    if not v:
+        raise ValueError("Email or username cannot be empty")
+    cleaned = v.strip().lower()
+    if "@" not in cleaned:
+        if not re.fullmatch(r"[a-zA-Z0-9._%+-]{3,64}", cleaned):
+            raise ValueError("Enter a valid Gmail username or @gmail.com address")
+        cleaned = f"{cleaned}@gmail.com"
+    return validate_gmail_address(cleaned)
+
+
 # ── Pydantic Schemas ─────────────────────────────────────────────────────
 class UserSchema(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -135,13 +150,13 @@ class UserRegister(BaseModel):
         return v
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
     @field_validator("email")
     @classmethod
     def validate_email_address(cls, v):
-        return validate_gmail_address(v)
+        return normalize_gmail_identifier(v)
 
 class UserProfileUpdate(BaseModel):
     full_name: Optional[str] = None

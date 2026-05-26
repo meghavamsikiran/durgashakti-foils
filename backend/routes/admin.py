@@ -662,7 +662,7 @@ async def list_customers(
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
     segment: Optional[str] = Query(None),
-    admin: UserSchema = Depends(require_permission("manage_customers")),
+    admin: UserSchema = Depends(require_permission("view_customers")),
     db: AsyncSession = Depends(get_db)
 ):
     search = sanitize_search_term(search)
@@ -823,7 +823,7 @@ async def list_customers(
 @router.get("/admin/customers/{customer_id}")
 async def get_customer_details(
     customer_id: str,
-    admin: UserSchema = Depends(require_permission("manage_customers")),
+    admin: UserSchema = Depends(require_permission("view_customers")),
     db: AsyncSession = Depends(get_db)
 ):
     validate_uuid(customer_id)
