@@ -98,7 +98,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
-      <div className="w-full max-w-full px-4 sm:px-6 md:px-8 lg:px-12 pt-8 lg:pt-10">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 pt-8 lg:pt-10">
         <div className="flex flex-col xl:flex-row gap-6 lg:gap-8 items-start">
           <Sidebar 
             user={user} 
