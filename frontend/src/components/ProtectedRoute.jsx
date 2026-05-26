@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import FoilLoader from './ui/FoilLoader';
+import PageLoader from './ui/PageLoader';
 
 /**
  * Route guard for authenticated customer routes.
@@ -12,7 +12,7 @@ const ProtectedRoute = ({ children }) => {
   const location = useLocation();
 
   if (loading) {
-    return <FoilLoader message="Loading account session" />;
+    return <PageLoader />;
   }
 
   if (!isAuthenticated) {

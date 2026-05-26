@@ -683,74 +683,139 @@ async def list_customers(
     orders_expr = func.count(OrderModel.id).filter(eligible_order)
     spend_expr = func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0)
 
-    q = (
-        select(
-            UserModel,
-            orders_expr.label("orders_count"),
-            spend_expr.label("total_spent"),
-        )
-        .join(OrderModel, OrderModel.user_id == UserModel.id, isouter=True)
-        .where(UserModel.role == "customer")
-        .group_by(UserModel.id)
-    )
-
-    clause = None
-    if search:
-        like_term = f"%{search}%"
-        clause = or_(
-            UserModel.full_name.ilike(like_term),
-            UserModel.email.ilike(like_term),
-            UserModel.phone.ilike(like_term)
-        )
-        q = q.where(clause)
-
     loyal_segment = segment == "loyal"
-    if loyal_segment and loyalty_enabled:
+
+    if not loyal_segment:
+        # Fast path: paginate users first, then aggregate order stats for the page only
+        user_filters = [UserModel.role == "customer"]
+        if search:
+            like_term = f"%{search}%"
+            clause = or_(
+                UserModel.full_name.ilike(like_term),
+                UserModel.email.ilike(like_term),
+                UserModel.phone.ilike(like_term)
+            )
+            user_filters.append(clause)
+
+        total_q = select(func.count(UserModel.id)).where(*user_filters)
+        total = (await db.execute(total_q)).scalar() or 0
+
+        offset = (page - 1) * limit
+        users_q = select(UserModel).where(*user_filters).order_by(UserModel.created_at.desc()).offset(offset).limit(limit)
+        res = await db.execute(users_q)
+        users = res.scalars().all()
+
+        user_ids = [u.id for u in users]
+        stats_map = {}
+        if user_ids:
+            stats_q = (
+                select(
+                    OrderModel.user_id,
+                    orders_expr.label("orders_count"),
+                    spend_expr.label("total_spent")
+                )
+                .where(OrderModel.user_id.in_(user_ids))
+                .group_by(OrderModel.user_id)
+            )
+            stats_res = await db.execute(stats_q)
+            for uid, orders_count, total_spent in stats_res.all():
+                stats_map[uid] = (int(orders_count or 0), float(total_spent or 0))
+
+        rows_data = []
+        for u in users:
+            orders_count, total_spent = stats_map.get(u.id, (0, 0.0))
+            orders_ok = orders_count >= min_orders
+            spend_ok = total_spent >= min_spend
+            if not loyalty_enabled:
+                is_loyal = False
+            elif criteria_mode == "orders_only":
+                is_loyal = orders_ok
+            elif criteria_mode == "spend_only":
+                is_loyal = spend_ok
+            elif criteria_mode == "both":
+                is_loyal = orders_ok and spend_ok
+            else:
+                is_loyal = orders_ok or spend_ok
+
+            rows_data.append({
+                "id": str(u.id),
+                "name": u.full_name or "Anonymous",
+                "email": u.email,
+                "phone": u.phone,
+                "created_at": u.created_at.isoformat(),
+                "orders_count": orders_count,
+                "total_spent": round(total_spent, 2),
+                "is_loyal": is_loyal,
+                "loyalty_criteria": {"enabled": loyalty_enabled, "minimum_orders": min_orders, "minimum_spend": min_spend, "criteria_mode": criteria_mode}
+            })
+    else:
+        # Loyal segment path: must join and group since we filter by aggregated stats
+        q = (
+            select(
+                UserModel,
+                orders_expr.label("orders_count"),
+                spend_expr.label("total_spent"),
+            )
+            .join(OrderModel, OrderModel.user_id == UserModel.id, isouter=True)
+            .where(UserModel.role == "customer")
+            .group_by(UserModel.id)
+        )
+        if search:
+            like_term = f"%{search}%"
+            clause = or_(
+                UserModel.full_name.ilike(like_term),
+                UserModel.email.ilike(like_term),
+                UserModel.phone.ilike(like_term)
+            )
+            q = q.where(clause)
+
         orders_ok = orders_expr >= min_orders
         spend_ok = spend_expr >= min_spend
-        if criteria_mode == "orders_only":
-            q = q.having(orders_ok)
-        elif criteria_mode == "spend_only":
-            q = q.having(spend_ok)
-        elif criteria_mode == "both":
-            q = q.having(and_(orders_ok, spend_ok))
+        if loyalty_enabled:
+            if criteria_mode == "orders_only":
+                q = q.having(orders_ok)
+            elif criteria_mode == "spend_only":
+                q = q.having(spend_ok)
+            elif criteria_mode == "both":
+                q = q.having(and_(orders_ok, spend_ok))
+            else:
+                q = q.having(orders_ok | spend_ok)
         else:
-            q = q.having(orders_ok | spend_ok)
-    elif loyal_segment and not loyalty_enabled:
-        q = q.having(func.count(OrderModel.id) < 0)
+            q = q.having(func.count(OrderModel.id) < 0)
 
-    offset = (page - 1) * limit
-    total = (await db.execute(select(func.count()).select_from(q.order_by(None).subquery()))).scalar() or 0
-    res = await db.execute(q.order_by(UserModel.created_at.desc()).offset(offset).limit(limit))
-    rows = res.all()
+        offset = (page - 1) * limit
+        total = (await db.execute(select(func.count()).select_from(q.order_by(None).subquery()))).scalar() or 0
+        res = await db.execute(q.order_by(UserModel.created_at.desc()).offset(offset).limit(limit))
+        rows = res.all()
 
-    rows_data = []
-    for u, orders_count, total_spent in rows:
-        orders_count = int(orders_count or 0)
-        total_spent = float(total_spent or 0)
-        orders_ok = orders_count >= min_orders
-        spend_ok = total_spent >= min_spend
-        if not loyalty_enabled:
-            is_loyal = False
-        elif criteria_mode == "orders_only":
-            is_loyal = orders_ok
-        elif criteria_mode == "spend_only":
-            is_loyal = spend_ok
-        elif criteria_mode == "both":
-            is_loyal = orders_ok and spend_ok
-        else:
-            is_loyal = orders_ok or spend_ok
-        rows_data.append({
-            "id": str(u.id),
-            "name": u.full_name or "Anonymous",
-            "email": u.email,
-            "phone": u.phone,
-            "created_at": u.created_at.isoformat(),
-            "orders_count": orders_count,
-            "total_spent": round(total_spent, 2),
-            "is_loyal": is_loyal,
-            "loyalty_criteria": {"enabled": loyalty_enabled, "minimum_orders": min_orders, "minimum_spend": min_spend, "criteria_mode": criteria_mode}
-        })
+        rows_data = []
+        for u, orders_count, total_spent in rows:
+            orders_count = int(orders_count or 0)
+            total_spent = float(total_spent or 0)
+            orders_ok = orders_count >= min_orders
+            spend_ok = total_spent >= min_spend
+            if not loyalty_enabled:
+                is_loyal = False
+            elif criteria_mode == "orders_only":
+                is_loyal = orders_ok
+            elif criteria_mode == "spend_only":
+                is_loyal = spend_ok
+            elif criteria_mode == "both":
+                is_loyal = orders_ok and spend_ok
+            else:
+                is_loyal = orders_ok or spend_ok
+
+            rows_data.append({
+                "id": str(u.id),
+                "name": u.full_name or "Anonymous",
+                "email": u.email,
+                "phone": u.phone,
+                "created_at": u.created_at.isoformat(),
+                "orders_count": orders_count,
+                "total_spent": round(total_spent, 2),
+                "is_loyal": is_loyal,
+                "loyalty_criteria": {"enabled": loyalty_enabled, "minimum_orders": min_orders, "minimum_spend": min_spend, "criteria_mode": criteria_mode}
+            })
 
     return {"items": rows_data, "total": total, "page": page, "limit": limit}
 

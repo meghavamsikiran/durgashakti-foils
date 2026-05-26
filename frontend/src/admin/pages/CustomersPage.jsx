@@ -12,17 +12,19 @@ import { useAuth } from '../../contexts/AuthContext';
 const CustomersPage = () => {
   const { hasPermission } = useAuth();
   const ITEMS_PER_PAGE = 15;
+  
+  const [segment, setSegment] = useState('all');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
   const [rows, setRows] = useState(() => {
-    const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
+    const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '', segment: undefined });
     return cached?.data?.items || [];
   });
   const [loading, setLoading] = useState(() => {
-    const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
+    const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '', segment: undefined });
     return !cached;
   });
-  const [search, setSearch] = useState('');
-  const [segment, setSegment] = useState('all');
-  const [page, setPage] = useState(1);
   const [metrics, setMetrics] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary');
     return cached?.metrics || null;
@@ -30,12 +32,17 @@ const CustomersPage = () => {
   const [loyaltySettings, setLoyaltySettings] = useState({ enabled: true, minimum_orders: 10, minimum_spend: 15000, criteria_mode: 'either' });
 
   const [total, setTotal] = useState(() => {
-    const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
+    const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '', segment: undefined });
     return cached?.data?.total || 0;
   });
 
   const load = useCallback(async (pageNum = 1) => {
-    const params = { page: pageNum, limit: ITEMS_PER_PAGE, search };
+    const params = { 
+      page: pageNum, 
+      limit: ITEMS_PER_PAGE, 
+      search,
+      segment: segment !== 'all' ? segment : undefined
+    };
     const cached = adminService.getCached('/admin/customers', params);
     if (!cached) {
       setLoading(true);
@@ -52,17 +59,25 @@ const CustomersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, segment]);
 
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
-      const response = await apiClient.get('/admin/customers', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true });
+      const response = await apiClient.get('/admin/customers', { 
+        params: { 
+          page: pageNum, 
+          limit: ITEMS_PER_PAGE, 
+          search,
+          segment: segment !== 'all' ? segment : undefined
+        }, 
+        silent: true 
+      });
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
     } catch {
       // Ignore background errors
     }
-  }, [search]);
+  }, [search, segment]);
 
   const loadLoyaltySettings = useCallback(async () => {
     try {
@@ -97,9 +112,7 @@ const CustomersPage = () => {
 
   const totalFilteredPages = Math.ceil(total / ITEMS_PER_PAGE);
   const loyaltyEnabled = loyaltySettings.enabled !== false;
-  const paginatedCustomers = segment === 'loyal'
-    ? rows.filter(row => loyaltyEnabled && row.is_loyal)
-    : rows;
+  const paginatedCustomers = rows;
 
   const stats = {
     total: metrics?.total_customers || total,
@@ -268,9 +281,9 @@ const CustomersPage = () => {
         </div>
         <TablePagination
           currentPage={page}
-          totalPages={segment === 'loyal' ? 1 : totalFilteredPages}
+          totalPages={totalFilteredPages}
           onPageChange={load}
-          totalItems={segment === 'loyal' ? paginatedCustomers.length : total}
+          totalItems={total}
           pageSize={ITEMS_PER_PAGE}
         />
       </div>
