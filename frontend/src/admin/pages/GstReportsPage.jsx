@@ -236,7 +236,7 @@ const GstrReportsPage = () => {
                   className="w-full md:w-auto min-w-[260px] rounded-xl h-12 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-extrabold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-md shadow-emerald-700/10 hover:scale-102 transform active:scale-98 transition-all duration-200 border-none"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
-                  Export Excel (.xlsx)
+                  Download
                 </Button>
               </div>
               

@@ -8,14 +8,38 @@ import { getProductPricing } from '../utils/productPricing';
 import { SlidersHorizontal, Star } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
 
+const PRODUCTS_CACHE_KEY = 'dsf_shop_products_v1';
+const CATEGORIES_CACHE_KEY = 'dsf_shop_categories_v1';
+
+const readSessionList = (key) => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const cached = window.sessionStorage.getItem(key);
+    if (!cached) return [];
+    const parsed = JSON.parse(cached);
+    return Array.isArray(parsed?.items) ? parsed.items : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeSessionList = (key, items) => {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(key, JSON.stringify({ items, time: Date.now() }));
+  } catch {
+    // Ignore storage quota/private-mode errors.
+  }
+};
+
 const Shop = () => {
   const getInitialProducts = () => {
     const cachedResponse = apiClient.getCachedDataSync('/products');
-    return cachedResponse?.data?.items || [];
+    return cachedResponse?.data?.items || readSessionList(PRODUCTS_CACHE_KEY);
   };
   const getInitialCategories = () => {
     const cachedResponse = apiClient.getCachedDataSync('/categories');
-    return cachedResponse?.data || [];
+    return cachedResponse?.data || readSessionList(CATEGORIES_CACHE_KEY);
   };
 
   const initialProducts = getInitialProducts();
@@ -33,8 +57,8 @@ const Shop = () => {
   const ITEMS_PER_PAGE = 9;
 
   const fetchProducts = useCallback(async () => {
-    const hasCached = !!apiClient.getCachedDataSync('/products');
-    if (!hasCached) {
+    const hasInstantData = !!apiClient.getCachedDataSync('/products') || readSessionList(PRODUCTS_CACHE_KEY).length > 0;
+    if (!hasInstantData) {
       setLoading(true);
     }
     try {
@@ -42,6 +66,7 @@ const Shop = () => {
       const items = response.data.items || [];
       setProducts(items);
       setFilteredProducts(items);
+      writeSessionList(PRODUCTS_CACHE_KEY, items);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -49,21 +74,12 @@ const Shop = () => {
     }
   }, []);
 
-  const fetchProductsSilent = useCallback(async () => {
-    try {
-      const response = await apiClient.get('/products', { silent: true });
-      const items = response.data.items || [];
-      setProducts(items);
-      setFilteredProducts(items);
-    } catch (error) {
-      console.error('Error in background products fetch:', error);
-    }
-  }, []);
-
   const fetchCategories = useCallback(async () => {
     try {
       const response = await apiClient.cachedGet('/categories');
-      setCategories(response.data || []);
+      const items = response.data || [];
+      setCategories(items);
+      writeSessionList(CATEGORIES_CACHE_KEY, items);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
@@ -110,9 +126,8 @@ const Shop = () => {
 
   useEffect(() => {
     fetchProducts();
-    fetchProductsSilent();
     fetchCategories();
-  }, [fetchProducts, fetchProductsSilent, fetchCategories]);
+  }, [fetchProducts, fetchCategories]);
 
   useEffect(() => {
     applyFilters();

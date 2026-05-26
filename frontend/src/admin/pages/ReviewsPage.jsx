@@ -137,7 +137,7 @@ const ReviewsPage = () => {
   const activeFilterCount = (status !== 'all' ? 1 : 0) + (rating !== 'all' ? 1 : 0) + (dateRange !== 'all' ? 1 : 0);
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-[calc(100vh-8rem)] flex flex-col space-y-6">
       {/* ── Header ── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
@@ -252,7 +252,7 @@ const ReviewsPage = () => {
       </div>
 
       {/* ── Review cards ── */}
-      <div className="space-y-4">
+      <div className="flex-1 space-y-4">
         {rows.map((review) => {
           const hidden = review.status === 'hidden';
           const isReplying = replyOpenId === review.id;
@@ -428,13 +428,15 @@ const ReviewsPage = () => {
         </div>
       )}
 
-      <TablePagination
-        currentPage={page}
-        totalPages={Math.ceil(total / PAGE_SIZE)}
-        onPageChange={load}
-        totalItems={total}
-        pageSize={PAGE_SIZE}
-      />
+      <div className="mt-auto border-t border-slate-200 pt-4">
+        <TablePagination
+          currentPage={page}
+          totalPages={Math.ceil(total / PAGE_SIZE)}
+          onPageChange={load}
+          totalItems={total}
+          pageSize={PAGE_SIZE}
+        />
+      </div>
     </div>
   );
 };

@@ -14,6 +14,7 @@ import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
 import PageLoader from '../../components/ui/PageLoader';
 import { useProgress } from '../../components/ui/ProgressToast';
+import { downloadXlsx } from '../../utils/xlsxExport';
 
 const metricConfigs = {
   total_orders: { label: 'Total Orders', icon: ShoppingBag, color: 'text-primary', bg: 'bg-primary/10' },
@@ -154,7 +155,7 @@ const AnalyticsPage = () => {
 
   const handleExport = () => {
     const progressId = startProgress({
-      label: `Durgashakti_Analytics_${new Date().toISOString().split('T')[0]}.csv`,
+      label: `Durgashakti_Analytics_${new Date().toISOString().split('T')[0]}.xlsx`,
       type: 'export',
       fileType: 'spreadsheet',
       message: 'Preparing analytics data...',
@@ -166,7 +167,7 @@ const AnalyticsPage = () => {
         return;
       }
 
-      updateProgress(progressId, { progress: 30, message: 'Building CSV rows...' });
+      updateProgress(progressId, { progress: 30, message: 'Building workbook rows...' });
 
       const headers = ["Product Name", "SKU", "Stock Left", "Units Sold", "Category"];
       const rows = summary.inventory.map(p => [
@@ -179,20 +180,13 @@ const AnalyticsPage = () => {
 
       updateProgress(progressId, { progress: 60, message: 'Generating file...' });
 
-      const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      
-      link.setAttribute("href", url);
-      link.setAttribute("download", `Durgashakti_Product_Analytics_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-
       updateProgress(progressId, { progress: 90, message: 'Downloading...' });
 
-      link.click();
-      document.body.removeChild(link);
+      downloadXlsx({
+        filename: `Durgashakti_Product_Analytics_${new Date().toISOString().split('T')[0]}.xlsx`,
+        sheetName: 'Product Analytics',
+        rows: [headers, ...rows.map((row) => row.map((cell) => String(cell).replace(/^"|"$/g, '')))]
+      });
       
       finishProgress(progressId, { message: 'Report downloaded successfully!' });
     } catch (err) {

@@ -604,29 +604,9 @@ const CouponsPage = () => {
     }
   }, [statusFilter, dateFilter]);
 
-  const loadCoupons = useCallback(async () => {
-    setLoading(true);
-    try {
-      const couponsData = await couponService.getCoupons({
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-        start_date: dateFilter?.start_date,
-        end_date: dateFilter?.end_date,
-      });
-      setCoupons((couponsData || []).filter(c => c !== null && c !== undefined && c.code));
-    } catch (error) {
-      toast.error('Failed to load coupons');
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter, dateFilter]);
-
   useEffect(() => {
     fetchCouponsAndSettings();
   }, [fetchCouponsAndSettings]);
-
-  useEffect(() => {
-    loadCoupons();
-  }, [loadCoupons]);
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -857,94 +837,102 @@ const CouponsPage = () => {
     }
   };
 
+  const buildPopupCouponDetail = (coupon) => ({
+    id: coupon.id,
+    code: coupon.code,
+    discount_type: coupon.discount_type,
+    discount_value: Number(coupon.discount_value),
+    expiry_date: coupon.expiry_date,
+    is_active: coupon.is_active
+  });
+
+  const getPopupCouponGroup = (coupon, themes = customBanners) => {
+    const activeTheme = (themes || []).find((theme) => (
+      theme?.is_active && (theme.coupon_codes || []).includes(coupon.code)
+    ));
+    const codes = activeTheme?.coupon_codes?.filter(Boolean) || [coupon.code];
+    return { activeTheme, codes };
+  };
+
   const handleTogglePopupBannerPromotion = async (coupon) => {
-    setTogglingPopupId(coupon.id);
-    try {
-      // 1. Fetch current settings to get existing popup_banner & custom_banners
-      const settingsRes = await adminService.getSettings();
-      const currentSettings = settingsRes.data || {};
-      const currentPopup = currentSettings.popup_banner || {};
-      
-      const currentList = currentPopup.promoted_coupons || [];
-      const currentThemes = (currentPopup.custom_banners || []).filter(b => b !== null && b !== undefined);
+    const previousPopup = popupBanner;
+    const previousBanners = customBanners;
+    const currentPopup = popupBanner || {};
+    const currentList = currentPopup.promoted_coupons || [];
+    const currentThemes = (customBanners || []).filter(Boolean);
+    const { activeTheme, codes } = getPopupCouponGroup(coupon, currentThemes);
+    const codeSet = new Set(codes);
+    const isAlreadyPromoted = codes.some((code) => (
+      currentList.some(c => c && c.code === code) ||
+      currentThemes.some(b => b?.is_active && (b.coupon_codes || []).includes(code))
+    ));
+    const groupLabel = codes.length > 1 ? `${codes.length} linked coupons` : `coupon ${coupon.code}`;
 
-      // Check if active in either promoted list or active custom theme
-      const isAlreadyPromoted = currentList.some(c => c && c.code === coupon.code) ||
-                                currentThemes.some(b => b?.is_active && (b.coupon_codes || []).includes(coupon.code));
+    const couponDetails = codes.map((code) => {
+      const found = coupons.find((item) => item.code === code) || coupon;
+      return buildPopupCouponDetail(found);
+    });
 
-      let updatedList = [];
-      let updatedThemes = [];
+    let updatedList;
+    let updatedThemes;
 
-      if (isAlreadyPromoted) {
-        // Deactivate/Demote (remove from promoted list AND all themes)
-        updatedList = currentList.filter(c => c && c.code !== coupon.code);
-        updatedThemes = currentThemes.map(theme => {
-          const filteredCodes = (theme.coupon_codes || []).filter(code => code !== coupon.code);
-          const filteredLinkedCoupons = (theme.linked_coupons || []).filter(c => c && c.code !== coupon.code);
-          return {
-            ...theme,
-            coupon_codes: filteredCodes,
-            linked_coupons: filteredLinkedCoupons
-          };
-        });
-      } else {
-        // Activate/Promote (add to promoted list, and if there is an active theme, add it there too)
-        const couponDetail = {
-          id: coupon.id,
-          code: coupon.code,
-          discount_type: coupon.discount_type,
-          discount_value: Number(coupon.discount_value),
-          expiry_date: coupon.expiry_date,
-          is_active: coupon.is_active
+    if (isAlreadyPromoted) {
+      updatedList = currentList.filter(c => c && !codeSet.has(c.code));
+      updatedThemes = currentThemes.map(theme => {
+        if (activeTheme && theme.id !== activeTheme.id) return theme;
+        const filteredCodes = (theme.coupon_codes || []).filter(code => !codeSet.has(code));
+        const filteredLinkedCoupons = (theme.linked_coupons || []).filter(c => c && !codeSet.has(c.code));
+        return {
+          ...theme,
+          coupon_codes: filteredCodes,
+          linked_coupons: filteredLinkedCoupons
         };
-        
-        // Add to promoted list if not already there
-        if (!currentList.some(c => c && c.code === coupon.code)) {
-          updatedList = [...currentList, couponDetail];
-        } else {
-          updatedList = currentList;
-        }
+      });
+    } else {
+      const existingCodes = new Set(currentList.filter(Boolean).map(c => c.code));
+      updatedList = [
+        ...currentList.filter(Boolean),
+        ...couponDetails.filter(detail => !existingCodes.has(detail.code))
+      ];
+      updatedThemes = currentThemes.map(theme => {
+        if (activeTheme && theme.id !== activeTheme.id) return theme;
+        if (!activeTheme) return theme;
 
-        updatedThemes = currentThemes.map(theme => {
-          if (theme.is_active) {
-            const currentCodes = theme.coupon_codes || [];
-            const currentLinked = theme.linked_coupons || [];
-            
-            const updatedCodes = currentCodes.includes(coupon.code) ? currentCodes : [...currentCodes, coupon.code];
-            const updatedLinked = currentLinked.some(c => c && c.code === coupon.code) ? currentLinked : [...currentLinked, couponDetail];
-            
-            return {
-              ...theme,
-              coupon_codes: updatedCodes,
-              linked_coupons: updatedLinked
-            };
-          }
-          return theme;
-        });
-      }
+        const themeCodes = new Set(theme.coupon_codes || []);
+        const linkedCodes = new Set((theme.linked_coupons || []).filter(Boolean).map(c => c.code));
+        return {
+          ...theme,
+          coupon_codes: [
+            ...(theme.coupon_codes || []),
+            ...codes.filter(code => !themeCodes.has(code))
+          ],
+          linked_coupons: [
+            ...(theme.linked_coupons || []).filter(Boolean),
+            ...couponDetails.filter(detail => !linkedCodes.has(detail.code))
+          ]
+        };
+      });
+    }
 
-      const updatedPopupSetting = {
-        ...currentPopup,
-        promoted_coupons: updatedList,
-        custom_banners: updatedThemes
-      };
+    const updatedPopupSetting = {
+      ...currentPopup,
+      promoted_coupons: updatedList,
+      custom_banners: updatedThemes
+    };
 
-      // 3. Update setting in backend under 'popup_banner'
+    setTogglingPopupId(coupon.id);
+    setPopupBanner(updatedPopupSetting);
+    setCustomBanners(updatedThemes);
+    toast.success(`${isAlreadyPromoted ? 'Removed' : 'Added'} ${groupLabel} ${isAlreadyPromoted ? 'from' : 'to'} the pop-up banner`);
+
+    try {
       await adminService.updateSetting({
         key: 'popup_banner',
         value: updatedPopupSetting
       });
-
-      // Update local states
-      setPopupBanner(updatedPopupSetting);
-      setCustomBanners(updatedThemes);
-      
-      if (isAlreadyPromoted) {
-        toast.success(`Removed coupon ${coupon.code} from the pop-up banner`);
-      } else {
-        toast.success(`Added coupon ${coupon.code} to the pop-up banner!`);
-      }
     } catch (error) {
+      setPopupBanner(previousPopup);
+      setCustomBanners(previousBanners);
       toast.error(error.message || 'Failed to update pop-up banner settings');
     } finally {
       setTogglingPopupId(null);
@@ -1171,13 +1159,13 @@ const CouponsPage = () => {
     // Optimistically update
     setCustomBanners(updatedBannersList);
     setPopupBanner(updatedPopupSetting);
+    toast.success(`Theme ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
 
     try {
       await adminService.updateSetting({
         key: 'popup_banner',
         value: updatedPopupSetting
       });
-      toast.success(`Theme ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
       // Revert state
       setCustomBanners(originalBannersList);

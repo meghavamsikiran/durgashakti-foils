@@ -207,10 +207,7 @@ const OrdersPage = () => {
   }, [selectedOrderForModal, page, loadSilent]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      load(1);
-    }, 100);
-    return () => clearTimeout(timer);
+    load(1);
   }, [search, filter, load, dateFilter]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time order dashboard
@@ -340,12 +337,16 @@ const OrdersPage = () => {
         </div>
       )}
 
-      <div className="bg-slate-50 p-1 rounded-2xl flex flex-wrap items-center gap-1 border border-slate-200">
+      <div className="bg-slate-50 p-1 rounded-2xl flex flex-nowrap items-center gap-1 border border-slate-200 overflow-x-auto">
         {['ALL', 'PENDING_PAYMENT', 'CONFIRMED', 'PACKAGING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURN_REQUESTED', 'CANCELLED', 'FAILED'].map((s) => (
           <button
             key={s}
-            onClick={() => setFilter(s)}
-            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-tighter transition-all ${
+            onClick={() => {
+              setExpandedOrderId(null);
+              setPage(1);
+              setFilter(s);
+            }}
+            className={`shrink-0 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-tighter transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
               filter === s
                 ? 'bg-white text-primary shadow-sm ring-1 ring-slate-200'
                 : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'

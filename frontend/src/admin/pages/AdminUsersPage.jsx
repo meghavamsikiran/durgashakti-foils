@@ -404,11 +404,17 @@ const AdminUsersPage = () => {
       toast.error('You cannot disable your own account');
       return;
     }
+    const nextStatus = row.is_active === false;
+    const previousRows = rows;
+    setRows((prev) => prev.map((admin) => (
+      admin.id === row.id ? { ...admin, is_active: nextStatus } : admin
+    )));
+    toast.success(`Admin ${nextStatus ? 'enabled' : 'disabled'}`);
     try {
-      await adminService.updateAdminStatus(row.id, !row.is_active);
-      toast.success(`Admin ${!row.is_active ? 'Enabled' : 'Disabled'}`);
-      load();
+      await adminService.updateAdminStatus(row.id, nextStatus);
+      loadSilent();
     } catch (err) {
+      setRows(previousRows);
       toast.error(err.message);
     }
   };

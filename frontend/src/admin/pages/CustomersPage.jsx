@@ -21,6 +21,7 @@ const CustomersPage = () => {
     const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '', segment: undefined });
     return cached?.data?.items || [];
   });
+  const rowsLengthRef = React.useRef(rows.length);
   const [loading, setLoading] = useState(() => {
     const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '', segment: undefined });
     return !cached;
@@ -36,15 +37,31 @@ const CustomersPage = () => {
     return cached?.data?.total || 0;
   });
 
-  const load = useCallback(async (pageNum = 1) => {
-    const params = { 
-      page: pageNum, 
-      limit: ITEMS_PER_PAGE, 
-      search,
-      segment: segment !== 'all' ? segment : undefined
-    };
+  const getCustomerParams = useCallback((pageNum = 1, nextSegment = segment, nextSearch = search) => ({ 
+    page: pageNum, 
+    limit: ITEMS_PER_PAGE, 
+    search: nextSearch,
+    segment: nextSegment !== 'all' ? nextSegment : undefined
+  }), [search, segment]);
+
+  const applyCachedCustomers = useCallback((pageNum = 1, nextSegment = segment, nextSearch = search) => {
+    const cached = adminService.getCached('/admin/customers', getCustomerParams(pageNum, nextSegment, nextSearch));
+    if (!cached) return false;
+    setRows(cached.data?.items || []);
+    setTotal(cached.data?.total || 0);
+    setPage(pageNum);
+    return true;
+  }, [getCustomerParams, search, segment]);
+
+  const load = useCallback(async (pageNum = 1, nextSegment = segment, nextSearch = search) => {
+    const params = getCustomerParams(pageNum, nextSegment, nextSearch);
     const cached = adminService.getCached('/admin/customers', params);
-    if (!cached) {
+    if (cached) {
+      setRows(cached.data?.items || []);
+      setTotal(cached.data?.total || 0);
+      setPage(pageNum);
+    }
+    if (!cached && rowsLengthRef.current === 0) {
       setLoading(true);
     }
     try {
@@ -59,17 +76,22 @@ const CustomersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, segment]);
+  }, [getCustomerParams, search, segment]);
+
+  useEffect(() => {
+    rowsLengthRef.current = rows.length;
+  }, [rows.length]);
 
   const loadSilent = useCallback(async (pageNum = 1) => {
+    const params = { 
+      page: pageNum, 
+      limit: ITEMS_PER_PAGE, 
+      search,
+      segment: segment !== 'all' ? segment : undefined
+    };
     try {
       const response = await apiClient.get('/admin/customers', { 
-        params: { 
-          page: pageNum, 
-          limit: ITEMS_PER_PAGE, 
-          search,
-          segment: segment !== 'all' ? segment : undefined
-        }, 
+        params, 
         silent: true 
       });
       setRows(response.data?.items || []);
@@ -100,12 +122,18 @@ const CustomersPage = () => {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      load(1);
-      loadLoyaltySettings();
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [search, load, loadLoyaltySettings]);
+    applyCachedCustomers(1);
+    load(1);
+    loadLoyaltySettings();
+  }, [search, load, loadLoyaltySettings, applyCachedCustomers]);
+
+  const handleSegmentChange = (nextSegment) => {
+    if (nextSegment === 'loyal' && !loyaltyEnabled) return;
+    setSegment(nextSegment);
+    setPage(1);
+    applyCachedCustomers(1, nextSegment, search);
+    load(1, nextSegment, search);
+  };
 
   // Periodic silent polling in the background (every 10 seconds) for real-time customer directory
   useEffect(() => {
@@ -146,7 +174,7 @@ const CustomersPage = () => {
             ].map(item => (
               <button
                 key={item.id}
-                onClick={() => { if (item.id === 'loyal' && !loyaltyEnabled) return; setSegment(item.id); setPage(1); }}
+                onClick={() => handleSegmentChange(item.id)}
                 className={`text-center px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${
                   item.id === 'loyal' && !loyaltyEnabled
                     ? 'text-slate-300 cursor-not-allowed'

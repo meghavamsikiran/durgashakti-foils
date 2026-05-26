@@ -310,28 +310,65 @@ const SettingsPage = () => {
     }
   };
 
+  const saveFeedbackToggle = async (key, checked) => {
+    const previousRatings = ratingsEnabled;
+    const previousComments = commentsEnabled;
+    const nextRatings = key === 'ratings_enabled' ? checked : ratingsEnabled;
+    const nextComments = key === 'comments_enabled' ? checked : commentsEnabled;
+
+    setRatingsEnabled(nextRatings);
+    setCommentsEnabled(nextComments);
+    toast.success(`${key === 'ratings_enabled' ? 'Product ratings' : 'Review comments'} ${checked ? 'enabled' : 'disabled'}`);
+
+    try {
+      await adminService.updateSetting({
+        key: 'feedback_settings',
+        value: {
+          ratings_enabled: nextRatings,
+          comments_enabled: nextComments
+        }
+      });
+    } catch (error) {
+      setRatingsEnabled(previousRatings);
+      setCommentsEnabled(previousComments);
+      toast.error(error.message || 'Failed to update customer experience control');
+    }
+  };
+
+  const saveLoyaltyToggle = async (checked) => {
+    const previous = loyaltyEnabled;
+    setLoyaltyEnabled(checked);
+    toast.success(`Customer loyalty system ${checked ? 'enabled' : 'disabled'}`);
+
+    try {
+      await adminService.updateSetting({
+        key: 'loyalty_settings',
+        value: {
+          enabled: checked,
+          minimum_orders: loyaltyMinimumOrders === '' ? 10 : Math.max(0, Number(loyaltyMinimumOrders)),
+          minimum_spend: loyaltyMinimumSpend === '' ? 15000 : Math.max(0, Number(loyaltyMinimumSpend)),
+          criteria_mode: loyaltyCriteriaMode
+        }
+      });
+    } catch (error) {
+      setLoyaltyEnabled(previous);
+      toast.error(error.message || 'Failed to update loyalty setting');
+    }
+  };
+
   const saveExperienceSettings = async () => {
     try {
       setSavingExperience(true);
-      await Promise.all([
-        adminService.updateSetting({
-          key: 'feedback_settings',
-          value: {
-            ratings_enabled: ratingsEnabled,
-            comments_enabled: commentsEnabled
-          }
-        }),
-        adminService.updateSetting({
-          key: 'loyalty_settings',
-          value: {
-            enabled: loyaltyEnabled,
-            minimum_orders: loyaltyMinimumOrders === '' ? 10 : Math.max(0, Number(loyaltyMinimumOrders)),
-            minimum_spend: loyaltyMinimumSpend === '' ? 15000 : Math.max(0, Number(loyaltyMinimumSpend)),
-            criteria_mode: loyaltyCriteriaMode
-          }
-        })
-      ]);
-      toast.success('Customer experience settings saved');
+      await adminService.updateSetting({
+        key: 'loyalty_settings',
+        value: {
+          enabled: loyaltyEnabled,
+          minimum_orders: loyaltyMinimumOrders === '' ? 10 : Math.max(0, Number(loyaltyMinimumOrders)),
+          minimum_spend: loyaltyMinimumSpend === '' ? 15000 : Math.max(0, Number(loyaltyMinimumSpend)),
+          criteria_mode: loyaltyCriteriaMode
+        }
+      });
+      toast.success('Loyalty criteria saved');
     } catch (error) {
       toast.error(error.message || 'Failed to save customer experience settings');
     } finally {
@@ -591,14 +628,14 @@ const SettingsPage = () => {
                     label: 'Product Ratings',
                     desc: 'Show star ratings on product pages and allow customers to submit ratings.',
                     checked: ratingsEnabled,
-                    onToggle: () => setRatingsEnabled(prev => !prev),
+                    onToggle: () => saveFeedbackToggle('ratings_enabled', !ratingsEnabled),
                     icon: Star
                   },
                   {
                     label: 'Review Comments',
                     desc: 'Show and collect written review comments independently from star ratings.',
                     checked: commentsEnabled,
-                    onToggle: () => setCommentsEnabled(prev => !prev),
+                    onToggle: () => saveFeedbackToggle('comments_enabled', !commentsEnabled),
                     icon: MessageSquare
                   }
                 ].map((item) => {
@@ -637,7 +674,7 @@ const SettingsPage = () => {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setLoyaltyEnabled(prev => !prev)}
+                    onClick={() => saveLoyaltyToggle(!loyaltyEnabled)}
                     className={`w-14 h-8 flex items-center rounded-full p-1 shrink-0 cursor-pointer transition-all duration-300 shadow-inner ${loyaltyEnabled ? 'bg-primary' : 'bg-slate-300'}`}
                   >
                     <span className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${loyaltyEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
@@ -703,7 +740,7 @@ const SettingsPage = () => {
 
               <div className="mt-8 pt-8 border-t border-slate-200 flex justify-end">
                 <Button disabled={savingExperience} onClick={saveExperienceSettings} className="rounded-xl px-8 font-black uppercase tracking-widest shadow-lg shadow-emerald-glow flex items-center gap-2">
-                  {savingExperience ? 'Saving...' : <><Save className="w-4 h-4" /> Save Experience Settings</>}
+                  {savingExperience ? 'Saving...' : <><Save className="w-4 h-4" /> Save Loyalty Criteria</>}
                 </Button>
               </div>
             </div>
