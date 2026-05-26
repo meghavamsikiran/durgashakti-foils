@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Lock, Save, Loader2, Key } from 'lucide-react';
+import { User, Save, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../contexts/AuthContext';
 import adminService from '../services/admin.service';
@@ -8,11 +8,8 @@ import { toast } from 'sonner';
 
 const AdminProfilePage = () => {
   const { user, refreshUser } = useAuth();
-  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const [profileForm, setProfileForm] = useState({ full_name: user?.full_name || '' });
-  const [passwordForm, setPasswordForm] = useState({ old_password: '', new_password: '', confirm_password: '' });
   const [updatingProfile, setUpdatingProfile] = useState(false);
-  const [updatingPassword, setUpdatingPassword] = useState(false);
 
   // Sync profile details if context loads late
   useEffect(() => {
@@ -39,30 +36,7 @@ const AdminProfilePage = () => {
     }
   };
 
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    if (passwordForm.new_password !== passwordForm.confirm_password) {
-      toast.error('New passwords do not match');
-      return;
-    }
-    if (passwordForm.new_password.length < 6) {
-      toast.error('Password must be at least 6 characters long');
-      return;
-    }
-    setUpdatingPassword(true);
-    try {
-      await adminService.changePassword({
-        current_password: passwordForm.old_password,
-        new_password: passwordForm.new_password
-      });
-      toast.success('Administrative password updated successfully');
-      setPasswordForm({ old_password: '', new_password: '', confirm_password: '' });
-    } catch (err) {
-      toast.error(err.message || 'Failed to change password');
-    } finally {
-      setUpdatingPassword(false);
-    }
-  };
+
 
   return (
     <motion.div 
@@ -79,13 +53,13 @@ const AdminProfilePage = () => {
             My Account Settings
           </h1>
           <p className="text-slate-500 mt-1 font-medium">
-            {isSuperAdmin ? 'Update your profile details and administrative password.' : 'Update your profile details.'}
+            Update your profile details.
           </p>
         </div>
       </div>
 
       {/* Grid of Forms */}
-      <div className={`grid grid-cols-1 ${isSuperAdmin ? 'md:grid-cols-2' : 'max-w-xl'} gap-8`}>
+      <div className="grid grid-cols-1 max-w-xl gap-8">
         
         {/* Profile Info Form */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-6">
@@ -155,78 +129,7 @@ const AdminProfilePage = () => {
           </form>
         </div>
 
-        {/* Change Password Form */}
-        {isSuperAdmin && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-6">
-            <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                <Key className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-base font-black text-slate-900 uppercase tracking-tight">Security Credentials</h2>
-                <p className="text-[11px] text-slate-500 font-semibold">Change your administrative password.</p>
-              </div>
-            </div>
 
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Current Password</label>
-                <input 
-                  type="password"
-                  required
-                  value={passwordForm.old_password} 
-                  onChange={e => setPasswordForm({...passwordForm, old_password: e.target.value})} 
-                  className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">New Password</label>
-                <input 
-                  type="password"
-                  required
-                  value={passwordForm.new_password} 
-                  onChange={e => setPasswordForm({...passwordForm, new_password: e.target.value})} 
-                  className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Confirm New Password</label>
-                <input 
-                  type="password"
-                  required
-                  value={passwordForm.confirm_password} 
-                  onChange={e => setPasswordForm({...passwordForm, confirm_password: e.target.value})} 
-                  className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div className="pt-2">
-                <Button 
-                  type="submit" 
-                  disabled={updatingPassword} 
-                  className="w-full h-12 rounded-xl font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow"
-                >
-                  {updatingPassword ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4 mr-2" />
-                      Update Password
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </div>
-        )}
 
       </div>
     </motion.div>
