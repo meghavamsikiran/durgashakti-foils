@@ -107,6 +107,59 @@ const OrdersPage = () => {
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [selectedOrderForModal, setSelectedOrderForModal] = useState(null);
   const [pendingActionIds, setPendingActionIds] = useState(() => new Set());
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    if (!selectedOrderForModal) {
+      setTimeLeft(null);
+      return;
+    }
+    
+    const isOnlinePending = 
+      selectedOrderForModal.payment_status !== 'Paid' &&
+      selectedOrderForModal.payment_status !== 'completed' &&
+      (selectedOrderForModal.payment_method || '').toLowerCase() !== 'cod' &&
+      !['cancelled', 'refunded', 'failed', 'return_approved'].includes((selectedOrderForModal.order_status || '').toLowerCase());
+
+    if (!isOnlinePending) {
+      setTimeLeft(null);
+      return;
+    }
+
+    const calculateTimeLeft = () => {
+      const createdTime = new Date(selectedOrderForModal.created_at).getTime();
+      const expiryTime = createdTime + 15 * 60 * 1000;
+      const now = new Date().getTime();
+      const difference = expiryTime - now;
+
+      if (difference <= 0) {
+        setTimeLeft('Expired');
+        return false;
+      }
+
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+      
+      const formattedMin = String(minutes).padStart(2, '0');
+      const formattedSec = String(seconds).padStart(2, '0');
+      
+      setTimeLeft(`${formattedMin}:${formattedSec}`);
+      return true;
+    };
+
+    const active = calculateTimeLeft();
+    if (!active) return;
+
+    const timer = setInterval(() => {
+      const active = calculateTimeLeft();
+      if (!active) {
+        clearInterval(timer);
+        loadSilent(page);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [selectedOrderForModal, page, loadSilent]);
 
   const load = useCallback(async (p = 1) => {
     const params = { page: p, limit: PAGE_SIZE, search };
@@ -615,6 +668,12 @@ const OrdersPage = () => {
                           <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Pending Payment
                         </p>
                         <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">Status: {selectedOrderForModal.payment_status || 'Unpaid'}</p>
+                        {timeLeft && (
+                          <p className="flex items-center gap-1 text-[9px] font-black text-rose-600 animate-pulse mt-1">
+                            <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '4s' }} />
+                            Expires in: {timeLeft}
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
