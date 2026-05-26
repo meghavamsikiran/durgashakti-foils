@@ -116,6 +116,8 @@ async def list_payments(
 @router.get("/admin/analytics/summary")
 async def get_analytics_summary(
     timeframe: Optional[str] = None,
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     admin: UserSchema = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -184,6 +186,28 @@ async def get_analytics_summary(
     elif timeframe == "All Time":
         date_filter = None
 
+    # Parse custom date range parameters
+    start_dt = None
+    end_dt = None
+    if start_date:
+        try:
+            sd = start_date.rstrip('Z')
+            start_dt = datetime.fromisoformat(sd)
+            if start_dt.tzinfo is None:
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
+        except Exception:
+            start_dt = None
+    if end_date:
+        try:
+            ed = end_date.rstrip('Z')
+            end_dt = datetime.fromisoformat(ed)
+            if end_dt.tzinfo is None:
+                end_dt = end_dt.replace(tzinfo=timezone.utc)
+            if len(ed) <= 10:
+                end_dt = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+        except Exception:
+            end_dt = None
+
     tasks = {}
 
     if has_orders or has_financial:
@@ -192,13 +216,24 @@ async def get_analytics_summary(
                 today_iso = now.replace(hour=0, minute=0, second=0, microsecond=0)
                 selects = []
                 selects.append(func.sum(case(((OrderModel.created_at >= today_iso), 1), else_=0)))
-                selects.append(func.sum(case(((OrderModel.created_at >= date_filter) if date_filter else (OrderModel.id.isnot(None)), 1), else_=0)))
-                selects.append(func.sum(case((
-                    (OrderModel.order_status.in_(REVENUE_ORDER_STATUSES)) &
-                    (OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES)) &
-                    ((OrderModel.created_at >= date_filter) if date_filter else True),
-                    OrderModel.total_amount
-                ), else_=0.0)))
+                
+                timeframe_clause = OrderModel.id.isnot(None)
+                if start_dt:
+                    timeframe_clause = timeframe_clause & (OrderModel.created_at >= start_dt)
+                if end_dt:
+                    timeframe_clause = timeframe_clause & (OrderModel.created_at <= end_dt)
+                elif date_filter:
+                    timeframe_clause = timeframe_clause & (OrderModel.created_at >= date_filter)
+                selects.append(func.sum(case((timeframe_clause, 1), else_=0)))
+                
+                revenue_clause = (OrderModel.order_status.in_(REVENUE_ORDER_STATUSES)) & (OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES))
+                if start_dt:
+                    revenue_clause = revenue_clause & (OrderModel.created_at >= start_dt)
+                if end_dt:
+                    revenue_clause = revenue_clause & (OrderModel.created_at <= end_dt)
+                elif date_filter:
+                    revenue_clause = revenue_clause & (OrderModel.created_at >= date_filter)
+                selects.append(func.sum(case((revenue_clause, OrderModel.total_amount), else_=0.0)))
                 
                 q = select(*selects)
                 res = await session.execute(q)
@@ -209,7 +244,11 @@ async def get_analytics_summary(
         async def fetch_status_counts():
             async with database.async_session_factory() as session:
                 st_q = select(OrderModel.order_status, func.count(OrderModel.id)).group_by(OrderModel.order_status)
-                if date_filter:
+                if start_dt:
+                    st_q = st_q.where(OrderModel.created_at >= start_dt)
+                if end_dt:
+                    st_q = st_q.where(OrderModel.created_at <= end_dt)
+                elif date_filter:
                     st_q = st_q.where(OrderModel.created_at >= date_filter)
                 st_res = await session.execute(st_q)
                 return {r[0]: r[1] for r in st_res.all()}
@@ -269,7 +308,11 @@ async def get_analytics_summary(
                     OrderModel.order_status.in_(REVENUE_ORDER_STATUSES),
                     OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES)
                 )
-                if date_filter:
+                if start_dt:
+                    best_prods_q = best_prods_q.where(OrderModel.created_at >= start_dt)
+                if end_dt:
+                    best_prods_q = best_prods_q.where(OrderModel.created_at <= end_dt)
+                elif date_filter:
                     best_prods_q = best_prods_q.where(OrderModel.created_at >= date_filter)
                 best_prods_res = await session.execute(best_prods_q)
                 return best_prods_res.scalars().all()
@@ -281,7 +324,11 @@ async def get_analytics_summary(
                     OrderModel.order_status.in_(REVENUE_ORDER_STATUSES),
                     OrderModel.payment_status.in_(REVENUE_PAYMENT_STATUSES)
                 )
-                if date_filter:
+                if start_dt:
+                    trend_q = trend_q.where(OrderModel.created_at >= start_dt)
+                if end_dt:
+                    trend_q = trend_q.where(OrderModel.created_at <= end_dt)
+                elif date_filter:
                     trend_q = trend_q.where(OrderModel.created_at >= date_filter)
                 trend_res = await session.execute(trend_q)
                 return trend_res.all()
@@ -365,7 +412,36 @@ async def get_analytics_summary(
     orders_trend = results.get("revenue_trend")
     if orders_trend is not None:
         trend_map = {}
-        if timeframe == "Today":
+        if start_dt or end_dt:
+            effective_start = start_dt or (now - timedelta(days=30))
+            effective_end = end_dt or now
+            delta = effective_end - effective_start
+            
+            if delta.days <= 1:
+                for dt, amt in orders_trend:
+                    if dt:
+                        hr_str = dt.strftime("%H:00")
+                        trend_map[hr_str] = trend_map.get(hr_str, 0.0) + float(amt)
+                sorted_keys = sorted(trend_map.keys())
+            elif delta.days <= 60:
+                for i in range((effective_end - effective_start).days + 1):
+                    d = (effective_start + timedelta(days=i)).strftime("%b %d")
+                    trend_map[d] = 0.0
+                for dt, amt in orders_trend:
+                    if dt:
+                        d_str = dt.strftime("%b %d")
+                        trend_map[d_str] = trend_map.get(d_str, 0.0) + float(amt)
+                sorted_keys = sorted(trend_map.keys(), key=lambda x: datetime.strptime(x, "%b %d"))
+            else:
+                for dt, amt in orders_trend:
+                    if dt:
+                        m_str = dt.strftime("%b %Y")
+                        trend_map[m_str] = trend_map.get(m_str, 0.0) + float(amt)
+                sorted_keys = sorted(trend_map.keys(), key=lambda x: datetime.strptime(x, "%b %Y"))
+            
+            revenue_trend = [{"name": k, "value": round(trend_map[k], 2)} for k in sorted_keys]
+
+        elif timeframe == "Today":
             for dt, amt in orders_trend:
                 if dt:
                     hr_str = dt.strftime("%H:00")

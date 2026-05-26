@@ -43,31 +43,46 @@ const AnalyticsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [topLimit, setTopLimit] = useState(10);
   const [timeframe, setTimeframe] = useState('All Time');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const { startProgress, updateProgress, finishProgress } = useProgress();
 
   const load = useCallback(async () => {
-    const cached = adminService.getCached('/admin/analytics/summary', { timeframe });
+    const isCustom = timeframe === 'Custom Range';
+    const params = {};
+    if (isCustom) {
+      if (customStart) params.start_date = customStart;
+      if (customEnd) params.end_date = customEnd;
+    }
+
+    const cached = adminService.getCached('/admin/analytics/summary', { timeframe, ...params });
     if (!cached) {
       setLoading(true);
     }
     try {
-      const response = await adminService.getDashboardMetrics(timeframe);
+      const response = await adminService.getDashboardMetrics(timeframe, params);
       setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
     } catch (error) {
       toast.error("Failed to load dashboard metrics");
     } finally {
       setLoading(false);
     }
-  }, [timeframe]);
+  }, [timeframe, customStart, customEnd]);
 
   const loadSilent = useCallback(async () => {
+    const isCustom = timeframe === 'Custom Range';
+    const params = {};
+    if (isCustom) {
+      if (customStart) params.start_date = customStart;
+      if (customEnd) params.end_date = customEnd;
+    }
     try {
-      const response = await apiClient.get('/admin/analytics/summary', { params: { timeframe }, silent: true });
+      const response = await apiClient.get('/admin/analytics/summary', { params: { timeframe, ...params }, silent: true });
       setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
     } catch (error) {
       // Ignore background errors
     }
-  }, [timeframe]);
+  }, [timeframe, customStart, customEnd]);
 
   useEffect(() => {
     load();
@@ -228,8 +243,28 @@ const AnalyticsPage = () => {
             <option>Last 7 Days</option>
             <option>This Month</option>
             <option>Fiscal Year</option>
+            <option>Custom Range</option>
           </select>
         </div>
+
+        {timeframe === 'Custom Range' && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200">
+            <input 
+              type="date" 
+              value={customStart} 
+              onChange={(e) => setCustomStart(e.target.value)} 
+              className="text-sm font-bold text-slate-700 outline-none bg-transparent border-0 p-0 focus:ring-0 cursor-pointer"
+            />
+            <span className="text-xs font-bold text-slate-400">to</span>
+            <input 
+              type="date" 
+              value={customEnd} 
+              onChange={(e) => setCustomEnd(e.target.value)} 
+              className="text-sm font-bold text-slate-700 outline-none bg-transparent border-0 p-0 focus:ring-0 cursor-pointer"
+            />
+          </div>
+        )}
+
         <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200 ml-auto">
           <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">Show:</span>
           <select value={topLimit} onChange={(e) => setTopLimit(Number(e.target.value))} className="text-sm font-bold text-slate-700 outline-none bg-transparent">

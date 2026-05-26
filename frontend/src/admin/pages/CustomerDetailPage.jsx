@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   User, Mail, Phone, Calendar, MapPin, 
   ShoppingBag, Star, ArrowLeft, Trash2, ShieldCheck, 
-  ExternalLink, IndianRupee, Clock, CheckCircle2, ShieldAlert
+  ExternalLink, IndianRupee, Clock, CheckCircle2, ShieldAlert,
+  MessageSquareReply, Eye, EyeOff
 } from 'lucide-react';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
@@ -17,11 +18,19 @@ const CustomerDetailPage = () => {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [savingId, setSavingId] = useState(null);
 
   const loadCustomer = useCallback(async () => {
     try {
       const response = await adminService.getCustomerDetails(id);
       setData(response.data);
+      if (response.data && response.data.reviews) {
+        setReplyDrafts(response.data.reviews.reduce((acc, r) => {
+          acc[r.id] = r.admin_reply || '';
+          return acc;
+        }, {}));
+      }
     } catch {
       toast.error('Failed to load customer details');
     } finally {
@@ -33,15 +42,58 @@ const CustomerDetailPage = () => {
     loadCustomer();
   }, [loadCustomer]);
 
+  const setReviewStatus = async (review, nextStatus) => {
+    setSavingId(review.id);
+    try {
+      await reviewService.updateAdminReviewStatus(review.id, nextStatus);
+      toast.success(nextStatus === 'published' ? 'Review published' : 'Review hidden');
+      await loadCustomer();
+    } catch {
+      toast.error('Failed to update review status');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const saveReply = async (review) => {
+    setSavingId(review.id);
+    try {
+      await reviewService.replyToReview(review.id, replyDrafts[review.id] || '');
+      toast.success('Official reply saved');
+      await loadCustomer();
+    } catch {
+      toast.error('Failed to save reply');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const deleteReply = async (review) => {
+    if (!window.confirm('Delete the official reply on this review?')) return;
+    setSavingId(review.id);
+    try {
+      await reviewService.deleteReviewReply(review.id);
+      setReplyDrafts((prev) => ({ ...prev, [review.id]: '' }));
+      toast.success('Official reply deleted');
+      await loadCustomer();
+    } catch {
+      toast.error('Failed to delete reply');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   const handleDeleteReview = async (reviewId) => {
-    if (window.confirm('Are you sure you want to delete this review?')) {
-      try {
-        await reviewService.deleteReview(reviewId);
-        toast.success('Review deleted successfully');
-        loadCustomer();
-      } catch {
-        toast.error('Failed to delete review');
-      }
+    if (!window.confirm('Are you sure you want to delete this review permanently?')) return;
+    setSavingId(reviewId);
+    try {
+      await reviewService.deleteAdminReview(reviewId);
+      toast.success('Review deleted');
+      await loadCustomer();
+    } catch {
+      toast.error('Failed to delete review');
+    } finally {
+      setSavingId(null);
     }
   };
 
@@ -77,11 +129,14 @@ const CustomerDetailPage = () => {
   }
 
   const { customer, addresses, orders, reviews } = data;
-  const paidOrders = orders.filter(o => 
-    ['completed', 'paid'].includes((o.payment_status || '').toLowerCase())
-  );
-  const totalVolume = paidOrders.length;
-  const lifetimeSpend = paidOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+  const totalVolume = customer.orders_count !== undefined ? customer.orders_count : orders.filter(o => 
+    ['completed', 'paid', 'cash on delivery'].includes((o.payment_status || '').toLowerCase()) &&
+    (o.order_status || '').toLowerCase() !== 'cancelled'
+  ).length;
+  const lifetimeSpend = customer.total_spent !== undefined ? customer.total_spent : orders.filter(o => 
+    ['completed', 'paid', 'cash on delivery'].includes((o.payment_status || '').toLowerCase()) &&
+    (o.order_status || '').toLowerCase() !== 'cancelled'
+  ).reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
 
   return (
     <div className="space-y-8">
@@ -89,7 +144,14 @@ const CustomerDetailPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => navigate(-1)} 
+            onClick={() => {
+              if (window.history.state && window.history.state.idx > 0) {
+                navigate(-1);
+              } else {
+                const isAdmin = window.location.pathname.startsWith('/superadmin');
+                navigate(isAdmin ? '/superadmin/customers' : '/admin/customers');
+              }
+            }} 
             className="p-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-slate-600" />
@@ -284,6 +346,9 @@ const CustomerDetailPage = () => {
                             <ShieldCheck className="w-2.5 h-2.5" />
                             Verified
                           </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${review.status === 'hidden' ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}`}>
+                            {review.status}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -326,6 +391,46 @@ const CustomerDetailPage = () => {
 
                     <div className="text-[10px] text-slate-400 font-mono font-bold pt-1.5">
                       Submitted on: {new Date(review.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </div>
+
+                    {/* Official Reply and Status toggler */}
+                    <div className="border-t border-slate-200/60 pt-3 mt-3 space-y-3">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                        <MessageSquareReply className="w-3.5 h-3.5 text-primary" />
+                        Official Reply
+                      </label>
+                      <textarea
+                        value={replyDrafts[review.id] || ''}
+                        onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [review.id]: e.target.value }))}
+                        rows={2}
+                        placeholder="Reply as Durga Shakti Foils..."
+                        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      />
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <button 
+                          onClick={() => saveReply(review)} 
+                          disabled={savingId === review.id} 
+                          className="px-3 py-1.5 text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-700 transition-all disabled:opacity-50"
+                        >
+                          {review.admin_reply ? 'Update Reply' : 'Save Reply'}
+                        </button>
+                        {review.admin_reply && (
+                          <button 
+                            onClick={() => deleteReply(review)} 
+                            disabled={savingId === review.id} 
+                            className="px-3 py-1.5 text-xs font-bold bg-white hover:bg-red-50 border border-slate-200 rounded-xl text-rose-600 transition-all disabled:opacity-50"
+                          >
+                            Delete Reply
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => setReviewStatus(review, review.status === 'hidden' ? 'published' : 'hidden')} 
+                          disabled={savingId === review.id} 
+                          className="px-3 py-1.5 text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-700 transition-all disabled:opacity-50"
+                        >
+                          {review.status === 'hidden' ? 'Publish' : 'Hide'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

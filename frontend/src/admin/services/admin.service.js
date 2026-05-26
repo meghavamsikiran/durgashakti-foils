@@ -13,7 +13,7 @@ const adminService = {
   getCached: (url, params) => apiClient.getCachedDataSync(url, params),
 
   // Dashboard
-  getDashboardMetrics: (timeframe) => cachedGet('/admin/analytics/summary', { params: { timeframe } }),
+  getDashboardMetrics: (timeframe, params = {}) => cachedGet('/admin/analytics/summary', { params: { timeframe, ...params } }),
 
   // Products
   getProducts: (params) => cachedGet('/admin/products', { params }),

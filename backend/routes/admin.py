@@ -788,6 +788,21 @@ async def get_customer_details(
         review_data["product_image"] = row.product_image
         reviews.append(review_data)
 
+    # Compute matched statistics
+    eligible_order = and_(
+        OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
+        OrderModel.order_status != "cancelled",
+    )
+    stats_res = await db.execute(
+        select(
+            func.count(OrderModel.id).label("orders_count"),
+            func.coalesce(func.sum(OrderModel.total_amount), 0).label("total_spent")
+        ).where(OrderModel.user_id == user.id, eligible_order)
+    )
+    stats = stats_res.first()
+    orders_count = int(stats.orders_count or 0) if stats else 0
+    total_spent = float(stats.total_spent or 0) if stats else 0.0
+
     return {
         "customer": {
             "id": str(user.id),
@@ -797,6 +812,8 @@ async def get_customer_details(
             "status": user.status,
             "is_active": user.is_active,
             "created_at": user.created_at.isoformat(),
+            "orders_count": orders_count,
+            "total_spent": total_spent,
         },
         "addresses": addresses,
         "orders": orders,
