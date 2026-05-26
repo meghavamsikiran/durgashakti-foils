@@ -331,7 +331,7 @@ const SavedCardsTab = ({ cards, loading, onSaveCard, onUpdateCard, onDeleteCard 
                 </div>
               </div>
             </div>
-            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all z-20">
+            <div className="absolute top-4 right-4 flex gap-2 z-20">
               <button type="button" onClick={() => openEditForm(card)} className="w-9 h-9 rounded-lg bg-white/10 text-white hover:bg-white/20 border border-white/10 flex items-center justify-center">
                 <Pencil className="w-4 h-4" />
               </button>

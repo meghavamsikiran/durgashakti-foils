@@ -1218,7 +1218,21 @@ async def get_public_settings(db: AsyncSession = Depends(get_db)):
     d = {s.key: s.value for s in res.scalars().all()}
     if "payment_settings" not in d:
         d["payment_settings"] = {"cod_enabled": True}
-    if "popup_banner" not in d:
+    
+    # Dynamically filter popup_banner settings for the public response
+    from models import CouponModel
+    from coupon_maintenance import coupon_is_expired, filter_public_popup_banner
+    now = datetime.now(timezone.utc)
+    coupons_res = await db.execute(select(CouponModel))
+    coupons = coupons_res.scalars().all()
+    active_codes = {
+        coupon.code.upper()
+        for coupon in coupons
+        if coupon.code and coupon.is_active and not coupon_is_expired(coupon, now)
+    }
+    if "popup_banner" in d:
+        d["popup_banner"] = filter_public_popup_banner(d["popup_banner"], active_codes)
+    else:
         d["popup_banner"] = {"promoted_coupons": []}
     if "feedback_settings" not in d:
         d["feedback_settings"] = {"ratings_enabled": True, "comments_enabled": True}

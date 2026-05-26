@@ -515,22 +515,20 @@ const normalizeCouponList = (list = []) => (
 );
 
 const sanitizePopupBanner = (popupBannerValue = {}, coupons = []) => {
-  const validCodes = new Set(coupons.filter(isBannerSelectableCoupon).map(c => c.code));
+  const activeCodes = new Set(coupons.filter(isBannerSelectableCoupon).map(c => c.code));
   return {
     ...(popupBannerValue || {}),
-    promoted_coupons: (popupBannerValue?.promoted_coupons || [])
-      .filter(c => c && validCodes.has(c.code)),
+    promoted_coupons: (popupBannerValue?.promoted_coupons || []).filter(Boolean),
     custom_banners: (popupBannerValue?.custom_banners || [])
       .filter(Boolean)
       .map(theme => {
         const originalCodes = (theme.coupon_codes || []).filter(Boolean);
-        const coupon_codes = originalCodes.filter(code => validCodes.has(code));
-        const linked_coupons = (theme.linked_coupons || []).filter(c => c && validCodes.has(c.code));
+        const anyActive = originalCodes.some(code => activeCodes.has(code));
         return {
           ...theme,
-          is_active: originalCodes.length > 0 && coupon_codes.length === 0 ? false : theme.is_active,
-          coupon_codes,
-          linked_coupons
+          is_active: originalCodes.length > 0 ? anyActive : theme.is_active,
+          coupon_codes: originalCodes,
+          linked_coupons: (theme.linked_coupons || []).filter(Boolean)
         };
       })
   };

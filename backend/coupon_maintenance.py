@@ -44,6 +44,27 @@ def clean_popup_banner_value(value: Any, valid_codes: set[str]) -> dict:
     popup = dict(value or {}) if isinstance(value, dict) else {}
     valid_codes = {str(code).upper() for code in valid_codes if code}
 
+    popup["promoted_coupons"] = popup.get("promoted_coupons") or []
+
+    cleaned_banners = []
+    for banner in popup.get("custom_banners") or []:
+        if not isinstance(banner, dict):
+            continue
+        clean_banner = dict(banner)
+        original_codes = [code for code in (clean_banner.get("coupon_codes") or []) if _code_of(code)]
+        if original_codes:
+            any_active = any(_code_of(code) in valid_codes for code in original_codes)
+            clean_banner["is_active"] = any_active
+        cleaned_banners.append(clean_banner)
+
+    popup["custom_banners"] = cleaned_banners
+    return popup
+
+
+def filter_public_popup_banner(value: Any, valid_codes: set[str]) -> dict:
+    popup = dict(value or {}) if isinstance(value, dict) else {}
+    valid_codes = {str(code).upper() for code in valid_codes if code}
+
     popup["promoted_coupons"] = [
         coupon for coupon in (popup.get("promoted_coupons") or [])
         if _code_of(coupon) in valid_codes
@@ -55,6 +76,8 @@ def clean_popup_banner_value(value: Any, valid_codes: set[str]) -> dict:
             continue
         clean_banner = dict(banner)
         original_codes = [code for code in (clean_banner.get("coupon_codes") or []) if _code_of(code)]
+        
+        # Only active coupons for public
         clean_banner["coupon_codes"] = [
             code for code in (clean_banner.get("coupon_codes") or [])
             if _code_of(code) in valid_codes
@@ -63,9 +86,13 @@ def clean_popup_banner_value(value: Any, valid_codes: set[str]) -> dict:
             coupon for coupon in (clean_banner.get("linked_coupons") or [])
             if _code_of(coupon) in valid_codes
         ]
-        if original_codes and not clean_banner["coupon_codes"]:
-            clean_banner["is_active"] = False
-        cleaned_banners.append(clean_banner)
+        
+        any_active = original_codes and any(_code_of(code) in valid_codes for code in original_codes)
+        
+        # Show on public only if active and contains active coupons
+        if clean_banner.get("is_active", True) and any_active:
+            clean_banner["is_active"] = True
+            cleaned_banners.append(clean_banner)
 
     popup["custom_banners"] = cleaned_banners
     return popup

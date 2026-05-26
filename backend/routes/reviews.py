@@ -332,6 +332,7 @@ async def submit_product_review(
     title: str = Form(...),
     comment: str = Form(""),
     public_name: str = Form(...),
+    existing_media: Optional[str] = Form(None),
     files: Optional[List[UploadFile]] = File(None),
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -355,6 +356,29 @@ async def submit_product_review(
     if not product_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Product not found")
     await _get_purchase_for_review(db, current_user.id, product_id, order_id)
+
+    retained_media = []
+    has_existing_media_field = (existing_media is not None)
+    if has_existing_media_field:
+        import json
+        try:
+            parsed = json.loads(existing_media)
+            if isinstance(parsed, list):
+                for item in parsed:
+                    if isinstance(item, dict) and "url" in item:
+                        retained_media.append({
+                            "url": item["url"],
+                            "type": item.get("type", "image"),
+                            "name": item.get("name", "Uploaded file")
+                        })
+                    elif isinstance(item, str):
+                        retained_media.append({
+                            "url": item,
+                            "type": "video" if item.endswith((".mp4", ".webm", ".mov")) else "image",
+                            "name": "Uploaded file"
+                        })
+        except Exception:
+            pass
 
     uploaded_media = []
     for file in (files or [])[:6]:
@@ -384,12 +408,16 @@ async def submit_product_review(
         review.comment = clean_comment[:2000]
         review.public_name = clean_public_name[:120]
         review.order_id = order_id  # Update to latest order
-        if uploaded_media:
+        if has_existing_media_field:
+            review.media_urls = retained_media + uploaded_media
+            flag_modified(review, "media_urls")
+        elif uploaded_media:
             review.media_urls = uploaded_media
             flag_modified(review, "media_urls")
         review.status = "published"
         review.updated_at = now
     else:
+        initial_media = retained_media + uploaded_media if has_existing_media_field else uploaded_media
         review = ProductReviewModel(
             product_id=product_id,
             user_id=current_user.id,
@@ -398,7 +426,7 @@ async def submit_product_review(
             title=clean_title[:140],
             comment=clean_comment[:2000],
             public_name=clean_public_name[:120],
-            media_urls=uploaded_media,
+            media_urls=initial_media,
             status="published",
             created_at=now,
             updated_at=now,

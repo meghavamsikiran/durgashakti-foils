@@ -86,6 +86,7 @@ const ProductReviewPage = () => {
     formData.append('title', title);
     formData.append('comment', comment);
     formData.append('public_name', publicName);
+    formData.append('existing_media', JSON.stringify(existingMedia));
     files.forEach(file => formData.append('files', file));
 
     setSubmitting(true);
@@ -219,7 +220,7 @@ const ProductReviewPage = () => {
           )}
 
           {/* Existing files preview grid */}
-          {existingMedia.length > 0 && files.length === 0 && (
+          {existingMedia.length > 0 && (
             <div className="mt-4">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Uploaded media</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -245,7 +246,7 @@ const ProductReviewPage = () => {
                         <>
                           <video src={fullUrl} className="w-full h-full object-cover" muted playsInline />
                           <button
-                            type="button; "
+                            type="button"
                             onClick={() => {
                               setSelectedModalMedia({
                                 urls: mappedExisting,
@@ -275,11 +276,18 @@ const ProductReviewPage = () => {
                           <img src={fullUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => setExistingMedia(prev => prev.filter((_, i) => i !== index))}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/70 text-white flex items-center justify-center hover:bg-slate-900 transition-colors z-10"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   );
                 })}
               </div>
-              <p className="text-[11px] text-slate-500 mt-2">Upload new files only if you want to replace the existing review media.</p>
+              <p className="text-[11px] text-slate-500 mt-2">Manage your uploaded files above, or upload additional new ones.</p>
             </div>
           )}
         </div>

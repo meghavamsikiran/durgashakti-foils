@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Plus as PlusIcon, Loader2, LocateFixed, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Plus as PlusIcon, Loader2, LocateFixed, Pencil, Trash2, ChevronLeft, ChevronRight, Home, Briefcase } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
@@ -44,9 +44,12 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
     if (pin.length === 6) {
       const data = await lookup(pin);
       if (data) {
+        const matchedState = INDIAN_STATES.find(
+          s => s.toLowerCase() === data.state.toLowerCase()
+        ) || data.state;
         setAddressForm(prev => ({
           ...prev,
-          state: data.state,
+          state: matchedState,
           city: data.city
         }));
       }
@@ -139,8 +142,9 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
                     key={label}
                     type="button"
                     onClick={() => setAddressForm({...addressForm, label})}
-                    className={`h-10 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${addressForm.label === label ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-white'}`}
+                    className={`h-10 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${addressForm.label === label ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-white'}`}
                   >
+                    {label === 'Home' ? <Home className="w-4 h-4" /> : <Briefcase className="w-4 h-4" />}
                     {label}
                   </button>
                 ))}

@@ -41,7 +41,10 @@ const AddressStep = ({
     if (pin.length === 6) {
       const data = await lookup(pin);
       if (data) {
-        setShippingInfo(prev => ({ ...prev, state: data.state, city: data.city }));
+        const matchedState = INDIAN_STATES.find(
+          s => s.toLowerCase() === data.state.toLowerCase()
+        ) || data.state;
+        setShippingInfo(prev => ({ ...prev, state: matchedState, city: data.city }));
       }
     }
   };
@@ -138,8 +141,9 @@ const AddressStep = ({
                       key={label}
                       type="button"
                       onClick={() => setShippingInfo(prev => ({ ...prev, label }))}
-                      className={`h-10 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${shippingInfo.label === label ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-white'}`}
+                      className={`h-10 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${shippingInfo.label === label ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-white'}`}
                     >
+                      {label === 'Home' ? <Home className="w-4 h-4" /> : <Briefcase className="w-4 h-4" />}
                       {label}
                     </button>
                   ))}
@@ -163,7 +167,7 @@ const AddressStep = ({
                   }}
                 />
               </div>
-              <div className="space-y-1.5 md:col-span-2">
+              <div className="space-y-1.5">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Alternative Phone Number (Optional)</Label>
                 <PhoneInput
                   international
