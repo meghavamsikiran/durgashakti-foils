@@ -16,12 +16,12 @@ const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, wishlistC
   ];
 
   return (
-    <aside className="w-full xl:w-80 flex-shrink-0 xl:sticky xl:top-24 self-start xl:h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide rounded-xl">
-      <div className="bg-[#0B1220] rounded-xl border border-slate-800 shadow-xl overflow-hidden min-h-full font-inter">
-        <div className="p-6 md:p-8 bg-[#0B1220] text-white relative overflow-hidden border-b border-slate-800">
+    <aside className="w-full xl:w-72 flex-shrink-0 xl:sticky xl:top-24 self-start xl:max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide rounded-xl">
+      <div className="bg-[#0B1220] rounded-xl border border-slate-800 shadow-xl overflow-hidden font-inter">
+        <div className="p-5 md:p-6 bg-[#0B1220] text-white relative overflow-hidden border-b border-slate-800">
           <div className="relative z-10 flex flex-row items-center gap-4 xl:flex-col xl:items-start">
-            <div className="w-12 h-12 xl:w-16 xl:h-16 bg-white/10 rounded-lg flex items-center justify-center mb-0 xl:mb-4 flex-shrink-0 border border-white/10">
-              <User className="w-6 h-6 xl:w-8 xl:h-8 text-primary" />
+            <div className="w-12 h-12 xl:w-14 xl:h-14 bg-white/10 rounded-lg flex items-center justify-center mb-0 xl:mb-3 flex-shrink-0 border border-white/10">
+              <User className="w-6 h-6 xl:w-7 xl:h-7 text-primary" />
             </div>
             <div className="min-w-0">
               <h2 className="text-base xl:text-lg font-bold truncate font-manrope">{user?.full_name}</h2>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Check, ArrowLeft, Heart, Trash2, Plus, Minus, AlertTriangle } from 'lucide-react';
+import { ShoppingCart, Check, ArrowLeft, Heart, Trash2, Plus, Minus, AlertTriangle, TicketPercent } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -48,6 +48,12 @@ const ProductDetail = () => {
   };
 
   const activeTag = getDynamicTag();
+  const primaryCoupon = Array.isArray(product?.applicable_coupons) ? product.applicable_coupons[0] : null;
+  const formatCouponValue = (coupon) => {
+    if (coupon.discount_type === 'percentage') return `${Number(coupon.discount_value || 0)}% OFF`;
+    if (coupon.discount_type === 'flat') return `SAVE Rs ${Number(coupon.discount_value || 0)}`;
+    return 'FREE SHIPPING';
+  };
   const actualWishlisted = user?.wishlist?.some(item => item.product_id === product?.id);
   const [optimisticWishlist, setOptimisticWishlist] = useState(null);
 
@@ -343,6 +349,21 @@ const ProductDetail = () => {
                 </span>
               )}
             </div>
+
+            {primaryCoupon && (
+              <div className="mb-6 inline-flex max-w-full items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800 shadow-sm">
+                <TicketPercent className="h-5 w-5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Applicable product coupon</p>
+                  <p className="truncate text-sm font-black">
+                    Use {primaryCoupon.code}
+                    <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-[10px] uppercase tracking-wider text-emerald-700">
+                      {formatCouponValue(primaryCoupon)}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            )}
 
             <p className="text-base leading-relaxed text-on-surface-variant mb-8 font-medium">
               {product.description}

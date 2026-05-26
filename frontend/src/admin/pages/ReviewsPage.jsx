@@ -16,6 +16,9 @@ const ReviewsPage = () => {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [rating, setRating] = useState('all');
+  const [dateRange, setDateRange] = useState('all');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [replyDrafts, setReplyDrafts] = useState({});
@@ -31,6 +34,9 @@ const ReviewsPage = () => {
         search,
         status: status === 'all' ? undefined : status,
         rating: rating === 'all' ? undefined : rating,
+        date_range: dateRange === 'all' ? undefined : dateRange,
+        start_date: dateRange === 'custom' ? customStart || undefined : undefined,
+        end_date: dateRange === 'custom' ? customEnd || undefined : undefined,
       });
       setRows(data.items || []);
       setTotal(data.total || 0);
@@ -44,7 +50,7 @@ const ReviewsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [rating, search, status]);
+  }, [customEnd, customStart, dateRange, rating, search, status]);
 
   useEffect(() => {
     const timer = setTimeout(() => load(1), 250);
@@ -108,7 +114,7 @@ const ReviewsPage = () => {
 
   if (loading && rows.length === 0) return <PageLoader message="Loading Reviews..." />;
 
-  const activeFilterCount = (status !== 'all' ? 1 : 0) + (rating !== 'all' ? 1 : 0);
+  const activeFilterCount = (status !== 'all' ? 1 : 0) + (rating !== 'all' ? 1 : 0) + (dateRange !== 'all' ? 1 : 0);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -153,9 +159,9 @@ const ReviewsPage = () => {
       </div>
 
       {showFilters && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
               <div>
                 <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">Status</label>
                 <select
@@ -181,6 +187,44 @@ const ReviewsPage = () => {
                   ))}
                 </select>
               </div>
+              <div>
+                <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">Date</label>
+                <select
+                  value={dateRange}
+                  onChange={(e) => setDateRange(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
+                >
+                  <option value="all">All Dates</option>
+                  <option value="today">Today</option>
+                  <option value="yesterday">Yesterday</option>
+                  <option value="this_week">This Week</option>
+                  <option value="this_month">This Month</option>
+                  <option value="this_year">This Year</option>
+                  <option value="custom">Custom Range</option>
+                </select>
+              </div>
+              {dateRange === 'custom' && (
+                <div className="grid grid-cols-1 gap-3 md:col-span-3 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">From</label>
+                    <input
+                      type="date"
+                      value={customStart}
+                      onChange={(e) => setCustomStart(e.target.value)}
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">To</label>
+                    <input
+                      type="date"
+                      value={customEnd}
+                      onChange={(e) => setCustomEnd(e.target.value)}
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             {activeFilterCount > 0 && (
               <button
@@ -188,6 +232,9 @@ const ReviewsPage = () => {
                 onClick={() => {
                   setStatus('all');
                   setRating('all');
+                  setDateRange('all');
+                  setCustomStart('');
+                  setCustomEnd('');
                 }}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50"
               >

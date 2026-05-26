@@ -1,17 +1,53 @@
 """User sub-resource routes: addresses, wishlist, notifications, cards."""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, func
 from database import get_db
-from models import UserModel, AddressModel, NotificationModel, ProductModel
+from models import UserModel, AddressModel, NotificationModel, ProductModel, ProductReviewModel, SettingModel
 from deps import (
     UserSchema, UserAddress, SavedCard, WishlistItem,
-    get_current_user, row_to_dict, validate_uuid, is_valid_uuid
+    get_current_user, row_to_dict, validate_uuid, is_valid_uuid,
+    apply_effective_product_pricing, attach_applicable_product_coupons
 )
 import uuid
 from datetime import datetime, timezone
 
 router = APIRouter(prefix="/api")
+
+
+async def _attach_review_summaries(db: AsyncSession, products: list[dict]) -> list[dict]:
+    if not products:
+        return products
+    settings_res = await db.execute(select(SettingModel).where(SettingModel.key == "feedback_settings"))
+    setting = settings_res.scalar_one_or_none()
+    if setting and isinstance(setting.value, dict) and setting.value.get("ratings_enabled") is False:
+        for product in products:
+            product["review_count"] = 0
+            product["rating_average"] = 0
+        return products
+
+    product_ids = [product["id"] for product in products if product.get("id")]
+    result = await db.execute(
+        select(
+            ProductReviewModel.product_id,
+            func.count(ProductReviewModel.id).label("review_count"),
+            func.coalesce(func.avg(ProductReviewModel.rating), 0).label("rating_average"),
+        )
+        .where(ProductReviewModel.product_id.in_(product_ids), ProductReviewModel.status == "published")
+        .group_by(ProductReviewModel.product_id)
+    )
+    summaries = {
+        str(row.product_id): {
+            "review_count": int(row.review_count or 0),
+            "rating_average": round(float(row.rating_average or 0), 1),
+        }
+        for row in result.all()
+    }
+    for product in products:
+        summary = summaries.get(product["id"], {})
+        product["review_count"] = summary.get("review_count", 0)
+        product["rating_average"] = summary.get("rating_average", 0)
+    return products
 
 
 # ── Addresses ────────────────────────────────────────────────────────────
@@ -82,8 +118,13 @@ async def get_wishlist(current_user: UserSchema = Depends(get_current_user), db:
     if not wishlist_ids:
         return []
     result = await db.execute(select(ProductModel).where(ProductModel.id.in_(wishlist_ids)))
-    products = result.scalars().all()
-    return [row_to_dict(p) for p in products]
+    products = [row_to_dict(p) for p in result.scalars().all()]
+    products_by_id = {product["id"]: product for product in products}
+    ordered_products = [products_by_id[product_id] for product_id in wishlist_ids if product_id in products_by_id]
+    ordered_products = await apply_effective_product_pricing(db, ordered_products)
+    ordered_products = await attach_applicable_product_coupons(db, ordered_products)
+    ordered_products = await _attach_review_summaries(db, ordered_products)
+    return ordered_products
 
 
 @router.post("/user/wishlist/{product_id}")

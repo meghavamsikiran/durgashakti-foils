@@ -5,7 +5,8 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 from typing import List, Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 import uuid
 
 from database import get_db
@@ -113,6 +114,9 @@ async def list_admin_reviews(
     search: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     rating: Optional[int] = Query(None, ge=1, le=5),
+    date_range: Optional[str] = Query(None, pattern="^(today|yesterday|this_week|this_month|this_year|custom)$"),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     admin: UserSchema = Depends(require_permission("view_reviews")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -128,6 +132,35 @@ async def list_admin_reviews(
         q = q.where(ProductReviewModel.status == _normalize_review_status(status))
     if rating:
         q = q.where(ProductReviewModel.rating == rating)
+    if date_range:
+        ist = ZoneInfo("Asia/Kolkata")
+        now_ist = datetime.now(ist)
+        start = None
+        end = None
+        if date_range == "today":
+            start = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
+            end = now_ist
+        elif date_range == "yesterday":
+            today = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
+            start = today - timedelta(days=1)
+            end = today
+        elif date_range == "this_week":
+            start = (now_ist - timedelta(days=now_ist.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+            end = now_ist
+        elif date_range == "this_month":
+            start = now_ist.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            end = now_ist
+        elif date_range == "this_year":
+            start = now_ist.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            end = now_ist
+        elif date_range == "custom" and start_date and end_date:
+            start = datetime.fromisoformat(start_date).replace(tzinfo=ist)
+            end = datetime.fromisoformat(end_date).replace(tzinfo=ist) + timedelta(days=1)
+        if start and end:
+            q = q.where(
+                ProductReviewModel.created_at >= start.astimezone(timezone.utc),
+                ProductReviewModel.created_at < end.astimezone(timezone.utc),
+            )
     if search:
         term = f"%{search.strip()}%"
         q = q.where(or_(

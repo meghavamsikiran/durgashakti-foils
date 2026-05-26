@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { User, LogOut, LayoutDashboard } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
+import { LayoutDashboard } from 'lucide-react';
 
 const ProfileHeader = ({ user, activeTab }) => {
   const getTabLabel = () => {
@@ -18,7 +17,7 @@ const ProfileHeader = ({ user, activeTab }) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
       <div>
         <div className="flex items-center gap-3 mb-2">
           <div className="w-8 h-8 rounded-lg bg-[#0B1220] text-white flex items-center justify-center">
@@ -26,7 +25,7 @@ const ProfileHeader = ({ user, activeTab }) => {
           </div>
           <span className="text-[10px] font-mono tracking-wider font-semibold text-muted-foreground">Dashboard / {getTabLabel()}</span>
         </div>
-        <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tighter uppercase leading-none">
+        <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tighter uppercase leading-none">
           Welcome, <span className="text-primary italic">{user?.full_name?.split(' ')[0]}</span>
         </h1>
       </div>

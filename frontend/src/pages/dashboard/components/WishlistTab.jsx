@@ -1,25 +1,31 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Heart, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, Trash2, ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import PageLoader from '../../../components/ui/PageLoader';
 import { useCart } from '../../../contexts/CartContext';
 import { formatImageUrl } from '../../../utils/api';
 import { getProductPricing } from '../../../utils/productPricing';
+import StarRating from '../../../components/reviews/StarRating';
 
 const ITEMS_PER_PAGE = 4;
 
+const formatCouponValue = (coupon) => {
+  if (!coupon) return '';
+  if (coupon.discount_type === 'percentage') return `${Number(coupon.discount_value || 0)}% OFF`;
+  if (coupon.discount_type === 'flat') return `SAVE Rs ${Number(coupon.discount_value || 0)}`;
+  return 'FREE SHIPPING';
+};
+
 const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) => {
   const { cart, addToCart } = useCart();
-  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [clearing, setClearing] = useState(false);
 
   if (loading) return <PageLoader message="Loading wishlist..." />;
 
   const handleClearWishlist = async () => {
-    if (window.confirm("Are you sure you want to clear your entire wishlist?")) {
+    if (window.confirm('Are you sure you want to clear your entire wishlist?')) {
       setClearing(true);
       if (onClearWishlist) {
         await onClearWishlist();
@@ -32,15 +38,15 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
   const currentItems = (wishlist || []).slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h2 className="text-3xl font-black text-foreground uppercase tracking-tighter">Wishlist</h2>
+        <h2 className="text-2xl md:text-3xl font-black text-foreground uppercase tracking-tighter">Wishlist</h2>
         {wishlist && wishlist.length > 0 && (
-          <Button 
-            variant="outline" 
-            onClick={handleClearWishlist} 
+          <Button
+            variant="outline"
+            onClick={handleClearWishlist}
             disabled={clearing}
-            className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 rounded-lg transition-all"
+            className="h-11 text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 rounded-lg transition-all"
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Clear All
@@ -55,44 +61,75 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {currentItems.map(product => {
-              const inCart = cart?.items?.some(i => i.product_id === product.id);
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {currentItems.map((product) => {
+              const inCart = cart?.items?.some((i) => String(i.product_id) === String(product.id));
+              const { basePrice, displayPrice, hasOffer, discountPercent } = getProductPricing(product);
+              const primaryCoupon = Array.isArray(product.applicable_coupons) ? product.applicable_coupons[0] : null;
 
               return (
-                <div key={product.id} className="group p-4 rounded-xl border border-border-subtle bg-surface-container-lowest hover:shadow-emerald-glow hover:border-primary/50 transition-all relative">
-                  <img src={formatImageUrl(product.image_url)} alt="" className="w-full h-40 object-cover rounded-lg mb-4" />
-                  <h4 className="font-black text-foreground truncate">{product.name}</h4>
-                  {(() => {
-                    const { basePrice, displayPrice, hasOffer, discountPercent } = getProductPricing(product);
-                    return (
-                      <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant">{product.size} • {product.thickness}</p>
-                          {hasOffer && (
-                            <span className="text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-sm ml-1">
-                              -{discountPercent}%
-                            </span>
-                          )}
-                        </div>
-                        <div className="mt-1">
-                          <span className="text-xl font-black text-primary mt-1 font-mono">₹{displayPrice}</span>
-                          {hasOffer && <span className="text-[11px] text-text-muted line-through font-semibold ml-2">₹{basePrice}</span>}
-                        </div>
-                      </div>
-                    )
-                  })()}
-                  <div className="flex gap-2 mt-4">
-                    {inCart ? (
-                      <Button disabled className="flex-1 rounded-lg bg-surface-container-low text-muted-foreground opacity-100 cursor-not-allowed hover:bg-surface-container-low">
-                        Item added to Cart
-                      </Button>
-                    ) : (
-                      <Button onClick={() => addToCart(product.id)} className="flex-1 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground">Add to Cart</Button>
+                <div
+                  key={product.id}
+                  className="group rounded-xl border border-border-subtle bg-white hover:shadow-emerald-glow hover:border-primary/50 transition-all overflow-hidden flex flex-col min-h-[356px]"
+                >
+                  <div className="relative h-44 bg-surface-container-low overflow-hidden">
+                    <img
+                      src={formatImageUrl(product.image_url)}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    {hasOffer && (
+                      <span className="absolute top-3 right-3 text-[10px] font-black text-rose-600 bg-rose-50/95 border border-rose-100 px-2 py-1 rounded-sm shadow-sm">
+                        -{discountPercent}%
+                      </span>
                     )}
-                    <Button variant="ghost" onClick={() => onToggleWishlist(product.id)} className="rounded-lg text-rose-500 hover:bg-rose-50">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {primaryCoupon && (
+                      <div className="absolute left-3 right-3 bottom-3 flex items-center justify-between gap-2 rounded-md border border-white/60 bg-white/95 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wider text-emerald-800 shadow-sm backdrop-blur-md">
+                        <span className="min-w-0 truncate">Coupon {primaryCoupon.code}</span>
+                        <span className="shrink-0 text-emerald-700">{formatCouponValue(primaryCoupon)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4 flex flex-col flex-1">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <p className="text-[10px] font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant truncate">
+                        {product.size} - {product.thickness}
+                      </p>
+                    </div>
+
+                    <h4 className="font-black text-foreground leading-snug line-clamp-2 min-h-[44px]">
+                      {product.name}
+                    </h4>
+
+                    {Number(product.review_count || 0) > 0 && (
+                      <StarRating value={product.rating_average} count={product.review_count} className="mt-2" />
+                    )}
+
+                    <div className="mt-auto pt-4">
+                      <div className="flex items-baseline gap-2 mb-4">
+                        <span className="text-xl font-black text-primary font-mono">&#8377;{displayPrice}</span>
+                        {hasOffer && (
+                          <span className="text-[11px] text-text-muted line-through font-semibold">&#8377;{basePrice}</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {inCart ? (
+                          <Button disabled className="flex-1 h-11 rounded-lg bg-surface-container-low text-muted-foreground opacity-100 cursor-not-allowed hover:bg-surface-container-low">
+                            In Cart
+                          </Button>
+                        ) : (
+                          <Button onClick={() => addToCart(product.id)} className="flex-1 h-11 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground">
+                            <ShoppingCart className="w-4 h-4 mr-2" />
+                            Add to Cart
+                          </Button>
+                        )}
+                        <Button variant="ghost" onClick={() => onToggleWishlist(product.id)} className="h-11 w-11 rounded-lg text-rose-500 hover:bg-rose-50">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
@@ -103,7 +140,7 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
             <div className="flex justify-center items-center gap-2 mt-8">
               <Button
                 variant="outline"
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
                 className="w-10 h-10 p-0 rounded-lg"
               >
@@ -114,7 +151,7 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
               </span>
               <Button
                 variant="outline"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
                 className="w-10 h-10 p-0 rounded-lg"
               >
