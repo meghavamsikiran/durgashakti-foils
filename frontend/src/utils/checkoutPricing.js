@@ -4,9 +4,9 @@ export const DEFAULT_SHIPPING_SETTINGS = {
   freeShippingThreshold: 1099,
   defaultShippingCharge: 70,
   codEnabled: true,
-  codCharge: 0,
-  minimumCodAmount: 300,
-  maximumCodAmount: 5000,
+  codCharge: 20,
+  minimumCodAmount: 1,
+  maximumCodAmount: 2000,
   codStatus: 'Active',
 };
 

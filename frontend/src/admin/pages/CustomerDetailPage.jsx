@@ -4,7 +4,7 @@ import {
   User, Mail, Phone, Calendar, MapPin, 
   ShoppingBag, Star, ArrowLeft, Trash2, ShieldCheck, 
   ExternalLink, IndianRupee, Clock, CheckCircle2, ShieldAlert,
-  MessageSquareReply, Eye, EyeOff
+  MessageSquareReply, Eye, EyeOff, Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
@@ -20,6 +20,7 @@ const CustomerDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [replyDrafts, setReplyDrafts] = useState({});
   const [savingId, setSavingId] = useState(null);
+  const [activeReplyId, setActiveReplyId] = useState(null);
 
   const loadCustomer = useCallback(async () => {
     try {
@@ -342,10 +343,6 @@ const CustomerDetailPage = () => {
                         <h4 className="text-sm font-black text-slate-900 leading-tight">{review.product_name}</h4>
                         <div className="mt-1 flex items-center gap-2">
                           <StarRating value={review.rating} size="sm" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                            <ShieldCheck className="w-2.5 h-2.5" />
-                            Verified
-                          </span>
                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${review.status === 'hidden' ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}`}>
                             {review.status}
                           </span>
@@ -393,44 +390,119 @@ const CustomerDetailPage = () => {
                       Submitted on: {new Date(review.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </div>
 
-                    {/* Official Reply and Status toggler */}
-                    <div className="border-t border-slate-200/60 pt-3 mt-3 space-y-3">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                        <MessageSquareReply className="w-3.5 h-3.5 text-primary" />
-                        Official Reply
-                      </label>
-                      <textarea
-                        value={replyDrafts[review.id] || ''}
-                        onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [review.id]: e.target.value }))}
-                        rows={2}
-                        placeholder="Reply as Durga Shakti Foils..."
-                        className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      />
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <button 
-                          onClick={() => saveReply(review)} 
-                          disabled={savingId === review.id} 
-                          className="px-3 py-1.5 text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-700 transition-all disabled:opacity-50"
-                        >
-                          {review.admin_reply ? 'Update Reply' : 'Save Reply'}
-                        </button>
-                        {review.admin_reply && (
-                          <button 
-                            onClick={() => deleteReply(review)} 
-                            disabled={savingId === review.id} 
-                            className="px-3 py-1.5 text-xs font-bold bg-white hover:bg-red-50 border border-slate-200 rounded-xl text-rose-600 transition-all disabled:opacity-50"
-                          >
-                            Delete Reply
-                          </button>
-                        )}
-                        <button 
-                          onClick={() => setReviewStatus(review, review.status === 'hidden' ? 'published' : 'hidden')} 
-                          disabled={savingId === review.id} 
-                          className="px-3 py-1.5 text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-slate-700 transition-all disabled:opacity-50"
-                        >
-                          {review.status === 'hidden' ? 'Publish' : 'Hide'}
-                        </button>
-                      </div>
+                    {/* Official Reply Section */}
+                    <div className="border-t border-slate-200/60 pt-3 mt-3">
+                      {activeReplyId === review.id ? (
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 font-label-caps">
+                            <MessageSquareReply className="w-3.5 h-3.5 text-primary" />
+                            Official Reply Editor
+                          </label>
+                          <textarea
+                            value={replyDrafts[review.id] || ''}
+                            onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [review.id]: e.target.value }))}
+                            rows={2}
+                            placeholder="Reply as Durga Shakti Foils..."
+                            className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          />
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <button 
+                              onClick={async () => {
+                                await saveReply(review);
+                                setActiveReplyId(null);
+                              }} 
+                              disabled={savingId === review.id} 
+                              className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-primary hover:bg-[#005a14] border border-transparent rounded-full text-white transition-all disabled:opacity-50"
+                            >
+                              {review.admin_reply ? 'Update' : 'Submit'}
+                            </button>
+                            {review.admin_reply && (
+                              <button 
+                                onClick={async () => {
+                                  await deleteReply(review);
+                                  setActiveReplyId(null);
+                                }} 
+                                disabled={savingId === review.id} 
+                                className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-full text-rose-600 transition-all disabled:opacity-50"
+                              >
+                                Delete
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => setReviewStatus(review, review.status === 'hidden' ? 'published' : 'hidden')} 
+                              disabled={savingId === review.id} 
+                              className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-white hover:bg-slate-50 border border-slate-200 rounded-full text-slate-700 transition-all disabled:opacity-50"
+                            >
+                              {review.status === 'hidden' ? 'Publish' : 'Hide'}
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setReplyDrafts((prev) => ({ ...prev, [review.id]: review.admin_reply || '' }));
+                                setActiveReplyId(null);
+                              }} 
+                              className="px-4 py-2 text-xs font-black uppercase tracking-wider bg-white hover:bg-slate-50 border border-slate-200 rounded-full text-slate-500 transition-all"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {review.admin_reply ? (
+                            <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 space-y-2 relative">
+                              <div className="flex items-center justify-between">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
+                                    REPLY FROM DURGA SHAKTI FOILS
+                                  </span>
+                                  <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-150 border border-emerald-200 text-emerald-800 px-2 py-0.5 rounded-full flex items-center gap-0.5 select-none">
+                                    <ShieldCheck className="w-2.5 h-2.5 text-primary" />
+                                    OFFICIAL VERIFIED
+                                  </span>
+                                </div>
+                                <button 
+                                  onClick={() => {
+                                    setActiveReplyId(review.id);
+                                    setReplyDrafts((prev) => ({ ...prev, [review.id]: review.admin_reply || '' }));
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-primary hover:bg-white rounded-lg transition-all border border-transparent hover:border-slate-100"
+                                  title="Edit Official Reply"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <p className="text-xs text-slate-700 leading-relaxed font-semibold">
+                                {review.admin_reply}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="flex justify-between items-center bg-slate-50/50 border border-slate-100 rounded-2xl p-3">
+                              <span className="text-xs text-slate-400 font-medium">No official reply posted yet.</span>
+                              <button
+                                onClick={() => {
+                                  setActiveReplyId(review.id);
+                                  setReplyDrafts((prev) => ({ ...prev, [review.id]: '' }));
+                                }}
+                                className="px-3.5 py-1.5 text-xs font-black uppercase tracking-wider bg-primary hover:bg-[#005a14] text-white rounded-full transition-all flex items-center gap-1.5"
+                              >
+                                <MessageSquareReply className="w-3.5 h-3.5" />
+                                Reply
+                              </button>
+                            </div>
+                          )}
+                          
+                          {/* Publish/Hide button if not editing */}
+                          <div className="flex justify-end">
+                            <button 
+                              onClick={() => setReviewStatus(review, review.status === 'hidden' ? 'published' : 'hidden')} 
+                              disabled={savingId === review.id} 
+                              className="px-3.5 py-1.5 text-xs font-black uppercase tracking-wider bg-white hover:bg-slate-50 border border-slate-200 rounded-full text-slate-700 transition-all disabled:opacity-50"
+                            >
+                              {review.status === 'hidden' ? 'Publish Review' : 'Hide Review'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
