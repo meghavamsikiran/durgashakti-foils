@@ -351,13 +351,16 @@ const ProductDetail = () => {
             </div>
 
             {primaryCoupon && (
-              <div className="mb-6 inline-flex max-w-full items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800 shadow-sm">
-                <TicketPercent className="h-5 w-5 shrink-0" />
+              <div className="mb-6 inline-flex max-w-full items-center gap-3.5 rounded-2xl border border-dashed border-emerald-500/40 bg-emerald-50/50 px-5 py-4 text-emerald-800 shadow-sm backdrop-blur-sm select-none">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-emerald-glow shrink-0">
+                  <TicketPercent className="h-5 w-5" />
+                </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Applicable product coupon</p>
-                  <p className="truncate text-sm font-black">
-                    Use {primaryCoupon.code}
-                    <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-[10px] uppercase tracking-wider text-emerald-700">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600 mb-0.5">Applicable product coupon</p>
+                  <p className="text-sm font-extrabold text-slate-800 flex flex-wrap items-center gap-2">
+                    <span>Use Code</span>
+                    <span className="font-mono text-emerald-700 bg-white border border-emerald-200 px-2 py-0.5 rounded-md shadow-sm select-all">{primaryCoupon.code}</span>
+                    <span className="rounded bg-emerald-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-sm">
                       {formatCouponValue(primaryCoupon)}
                     </span>
                   </p>
