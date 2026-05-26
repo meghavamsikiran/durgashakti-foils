@@ -104,7 +104,7 @@ const adminService = {
   exportAuditLogs: () => apiClient.get('/admin/audit-logs/export', { responseType: 'blob', timeout: 180000, silent: true, headers: { Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' } }),
 
   // Settings
-  getSettings: () => cachedGet('/admin/settings'),
+  getSettings: (options = {}) => cachedGet('/admin/settings', options),
   updateSetting: (payload) => {
     invalidateCache('/admin/settings');
     invalidateCache('/settings/public');

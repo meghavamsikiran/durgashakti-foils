@@ -201,7 +201,7 @@ const CategoriesPage = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full">
+            <table className="min-w-[800px] lg:min-w-full">
               <thead className="bg-slate-50/30">
                 <tr>
                   <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Category</th>

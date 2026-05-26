@@ -203,63 +203,66 @@ const InventoryPage = () => {
               <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
             </button>
             {filterOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50">
-                <div className="space-y-3">
-                  <h3 className="text-sm font-black text-slate-900">Stock Filters</h3>
-                  <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Category</label>
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 p-2 text-sm"
-                  >
-                    <option value="all">All Categories</option>
-                    {categoryOptions.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                  <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Status</label>
-                  <select
-                    value={activeFilter}
-                    onChange={(e) => setActiveFilter(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 p-2 text-sm"
-                  >
-                    <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                  <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Stock</label>
-                  <select
-                    value={stockFilter}
-                    onChange={(e) => setStockFilter(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 p-2 text-sm"
-                  >
-                    <option value="all">All Stock</option>
-                    <option value="in">In Stock</option>
-                    <option value="out">Out of Stock</option>
-                    <option value="low">Low Stock</option>
-                  </select>
-                  <div className="flex justify-between gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCategoryFilter('all');
-                        setActiveFilter('all');
-                        setStockFilter('all');
-                      }}
-                      className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest"
+              <>
+                <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setFilterOpen(false)} />
+                <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 md:absolute md:translate-y-0 md:inset-auto md:right-0 md:mt-2 w-auto md:w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50">
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-black text-slate-900">Stock Filters</h3>
+                    <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Category</label>
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 p-2 text-sm"
                     >
-                      Clear
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setFilterOpen(false); load(1); }}
-                      className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest"
+                      <option value="all">All Categories</option>
+                      {categoryOptions.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                    <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Status</label>
+                    <select
+                      value={activeFilter}
+                      onChange={(e) => setActiveFilter(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 p-2 text-sm"
                     >
-                      Apply
-                    </button>
+                      <option value="all">All</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                    <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Stock</label>
+                    <select
+                      value={stockFilter}
+                      onChange={(e) => setStockFilter(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                    >
+                      <option value="all">All Stock</option>
+                      <option value="in">In Stock</option>
+                      <option value="out">Out of Stock</option>
+                      <option value="low">Low Stock</option>
+                    </select>
+                    <div className="flex justify-between gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCategoryFilter('all');
+                          setActiveFilter('all');
+                          setStockFilter('all');
+                        }}
+                        className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest"
+                      >
+                        Clear
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setFilterOpen(false); load(1); }}
+                        className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest"
+                      >
+                        Apply
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
 
@@ -270,7 +273,7 @@ const InventoryPage = () => {
       </div>
 
       {hasPermission('view_analytics') && metrics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
               <IndianRupee className="w-6 h-6" />
@@ -312,7 +315,7 @@ const InventoryPage = () => {
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full">
+          <table className="min-w-[1000px] lg:min-w-full">
             <thead className="bg-slate-50/50 border-b border-slate-200">
               <tr>
                 <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Product Name</th>

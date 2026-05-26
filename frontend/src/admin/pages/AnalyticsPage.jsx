@@ -399,7 +399,7 @@ const AnalyticsPage = () => {
             </span>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full">
+            <table className="min-w-[600px] lg:min-w-full">
               <thead className="bg-slate-50/30">
                 <tr>
                   <th className="px-6 py-4 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Category</th>
@@ -516,7 +516,7 @@ const AnalyticsPage = () => {
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white px-3 py-1 rounded-full border">Sync Active</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full">
+          <table className="min-w-[800px] lg:min-w-full">
             <thead className="bg-slate-50/30">
               <tr>
                 <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Product</th>

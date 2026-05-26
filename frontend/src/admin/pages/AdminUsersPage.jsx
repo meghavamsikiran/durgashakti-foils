@@ -462,7 +462,7 @@ const AdminUsersPage = () => {
       </div>
 
       {hasPermission('view_analytics') && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
               <Users className="w-6 h-6" />
@@ -504,7 +504,7 @@ const AdminUsersPage = () => {
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full">
+          <table className="min-w-[1000px] lg:min-w-full">
             <thead className="bg-slate-50/50 border-b border-slate-200">
               <tr>
                 <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Admin Name</th>

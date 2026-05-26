@@ -6,6 +6,7 @@ import {
 import { toast } from 'sonner';
 import couponService from '../../services/coupon.service';
 import adminService from '../services/admin.service';
+import apiClient from '../../services/core/apiClient';
 import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
 import DateFilterPopover from '../../components/ui/DateFilterPopover';
@@ -577,7 +578,9 @@ const CouponsPage = () => {
           end_date: dateFilter?.end_date,
         }),
         couponService.getSettings(),
-        adminService.getSettings(),
+        adminService.getSettings({ silent: true }).catch(() =>
+          apiClient.cachedGet('/settings/public', { silent: true })
+        ),
         couponService.getLoyalCustomers({ limit: 25 }).catch(() => ({ items: [] })),
         couponService.getAnalytics().catch(() => null)
       ]);
@@ -1409,7 +1412,7 @@ const CouponsPage = () => {
                   <p className="text-xs text-slate-400 mt-0.5">Create a coupon or adjust your query.</p>
                 </div>
               ) : (
-                <table className="w-full text-left border-collapse">
+                <table className="min-w-[1000px] lg:min-w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50/75 border-b border-border-subtle text-[11px] font-black text-slate-400 uppercase tracking-widest">
                       <th className="px-6 py-4">Coupon Code</th>
