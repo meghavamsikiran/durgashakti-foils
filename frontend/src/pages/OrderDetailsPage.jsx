@@ -820,13 +820,6 @@ const OrderDetailsPage = () => {
                     </button>
                   )}
 
-                  <button 
-                    className="w-full bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 font-bold text-slate-700 text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all text-center uppercase tracking-widest text-[9px]"
-                    onClick={() => navigate('/inquiries')}
-                  >
-                    Ask product question
-                  </button>
-
                   {canReviewOrder() && (
                     <button
                       className="w-full bg-primary hover:bg-emerald-hover border border-primary/20 font-black text-white text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all text-center uppercase tracking-widest text-[9px] flex items-center justify-center gap-1.5 hover:shadow-emerald-glow"

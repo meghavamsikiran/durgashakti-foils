@@ -66,6 +66,7 @@ const ProductsPage = () => {
   });
   const [categories, setCategories] = useState([]);
   const [statusSavingIds, setStatusSavingIds] = useState(() => new Set());
+  const productFormRef = React.useRef(null);
 
   const resetForm = () => {
     setForm({
@@ -171,6 +172,9 @@ const ProductsPage = () => {
       is_active: product.is_active !== false,
     });
     setShowForm(true);
+    setTimeout(() => {
+      productFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   };
 
   const handleToggleProductStatus = async (product) => {
@@ -512,7 +516,7 @@ const ProductsPage = () => {
       )}
 
       {showForm && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-8 animate-in slide-in-from-top duration-500 overflow-hidden relative">
+        <div ref={productFormRef} className="bg-white rounded-3xl border border-slate-200 shadow-xl p-8 animate-in slide-in-from-top duration-500 overflow-hidden relative scroll-mt-6">
           <div className="absolute top-0 right-0 p-8">
              <div className="w-32 h-32 bg-primary/10 rounded-full blur-3xl opacity-20 -mr-16 -mt-16"></div>
           </div>
