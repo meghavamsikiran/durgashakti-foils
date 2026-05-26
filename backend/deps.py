@@ -760,6 +760,39 @@ def _send_vercel_relay(url: str, payload: dict):
     with urllib.request.urlopen(req, timeout=12) as response:
         return response.status, response.read().decode('utf-8')
 
+def _send_direct_smtp(smtp_host: str, smtp_port: int, smtp_user: str, smtp_pass: str, msg) -> tuple[bool, str]:
+    import smtplib
+    import logging
+    try:
+        logging.info("Attempting direct SMTP connection on %s:%d...", smtp_host, smtp_port)
+        if smtp_port == 465:
+            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10)
+        else:
+            server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
+            server.starttls()
+            
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        logging.info("Email sent successfully directly via port %d", smtp_port)
+        return True, "Sent"
+    except Exception as e1:
+        logging.warning("Direct SMTP Port %d failed: %s. Attempting fallback to SMTP_SSL on Port 465...", smtp_port, e1)
+        
+        # Fallback to SSL on 465
+        try:
+            logging.info("Attempting direct fallback SMTP_SSL connection on %s:465...", smtp_host)
+            server = smtplib.SMTP_SSL(smtp_host, 465, timeout=10)
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+            server.quit()
+            logging.info("Email sent successfully directly via fallback port 465")
+            return True, "Sent"
+        except Exception as e2:
+            err_msg = f"Direct Port {smtp_port} failed ({type(e1).__name__}: {e1}). Direct Fallback Port 465 failed ({type(e2).__name__}: {e2})."
+            logging.error("All direct SMTP delivery routes failed: %s", err_msg)
+            return False, err_msg
+
 async def send_email(to_email: str, subject: str, body: str, attachments: list = None) -> bool:
     """Send an email via Vercel HTTPS SMTP Relay or fallback directly to SMTP."""
     try:
@@ -829,35 +862,12 @@ async def send_email(to_email: str, subject: str, body: str, attachments: list =
             part.add_header('Content-Disposition', f"attachment; filename= {att['filename']}")
             msg.attach(part)
 
-    try:
-        logging.info("Attempting direct SMTP connection on %s:%d...", smtp_host, smtp_port)
-        if smtp_port == 465:
-            server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=10)
-        else:
-            server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
-            server.starttls()
-            
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
-        server.quit()
-        logging.info("Email sent successfully directly via port %d", smtp_port)
+    sent, err_msg = await asyncio.to_thread(_send_direct_smtp, smtp_host, smtp_port, smtp_user, smtp_pass, msg)
+    if sent:
         return True, "Sent"
-    except Exception as e1:
-        logging.warning("Direct SMTP Port %d failed: %s. Attempting fallback to SMTP_SSL on Port 465...", smtp_port, e1)
-        
-        # Fallback to SSL on 465
-        try:
-            logging.info("Attempting direct fallback SMTP_SSL connection on %s:465...", smtp_host)
-            server = smtplib.SMTP_SSL(smtp_host, 465, timeout=10)
-            server.login(smtp_user, smtp_pass)
-            server.send_message(msg)
-            server.quit()
-            logging.info("Email sent successfully directly via fallback port 465")
-            return True, "Sent"
-        except Exception as e2:
-            err_msg = f"Vercel Relay failed. Direct Port {smtp_port} failed ({type(e1).__name__}: {e1}). Direct Fallback Port 465 failed ({type(e2).__name__}: {e2})."
-            logging.error("All email delivery routes failed to send to %s: %s", to_email, err_msg)
-            return False, err_msg
+    
+    full_err = f"Vercel Relay failed. " + err_msg
+    return False, full_err
 
 
 # ── Order Status Machine ────────────────────────────────────────────────

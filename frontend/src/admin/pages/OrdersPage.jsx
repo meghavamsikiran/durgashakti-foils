@@ -379,7 +379,7 @@ const OrdersPage = () => {
                                return (
                                  <button
                                    key={a}
-                                   disabled={isOrderPending || submitting}
+                                   disabled={isOrderPending}
                                    onClick={(e) => {
                                      e.stopPropagation();
                                      if (a === 'SHIPPED') {
