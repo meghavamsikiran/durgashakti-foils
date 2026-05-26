@@ -635,7 +635,12 @@ async def pay_cod_online(payment_data: dict, current_user: UserSchema = Depends(
     if is_test_mode():
         test_order_id = f"order_test_{str(uuid.uuid4())[:16]}"
         order.razorpay_order_id = test_order_id
+        order.payment_method = "razorpay"
+        order.payment_status = "pending"
+        order.order_status = "pending_payment"
+        order.created_at = datetime.now(timezone.utc)
         order.updated_at = datetime.now(timezone.utc)
+        await db.flush()
         return {
             "razorpay_order_id": test_order_id,
             "amount": int(float(order.total_amount) * 100),
@@ -651,7 +656,12 @@ async def pay_cod_online(payment_data: dict, current_user: UserSchema = Depends(
             "notes": {"order_id": order_id, "type": "cod_online"}
         })
         order.razorpay_order_id = rz_order['id']
+        order.payment_method = "razorpay"
+        order.payment_status = "pending"
+        order.order_status = "pending_payment"
+        order.created_at = datetime.now(timezone.utc)
         order.updated_at = datetime.now(timezone.utc)
+        await db.flush()
         return {
             "razorpay_order_id": rz_order['id'],
             "amount": rz_order['amount'],

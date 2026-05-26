@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet } from 'lucide-react';
+import { X, Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, Clock } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { formatImageUrl } from '../../../utils/api';
 import { useProgress } from '../../../components/ui/ProgressToast';
@@ -17,6 +17,56 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
   const [imagePreview, setImagePreview] = useState(null);
   const [submittingReturn, setSubmittingReturn] = useState(false);
   const [payingOnline, setPayingOnline] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    if (!order || !isOpen) return;
+    
+    const isOnlinePending = 
+      order.payment_status !== 'Paid' &&
+      order.payment_status !== 'completed' &&
+      (order.payment_method || '').toLowerCase() !== 'cod' &&
+      !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase());
+
+    if (!isOnlinePending) {
+      setTimeLeft(null);
+      return;
+    }
+
+    const calculateTimeLeft = () => {
+      const createdTime = new Date(order.created_at).getTime();
+      const expiryTime = createdTime + 15 * 60 * 1000;
+      const now = new Date().getTime();
+      const difference = expiryTime - now;
+
+      if (difference <= 0) {
+        setTimeLeft('Expired');
+        return false;
+      }
+
+      const minutes = Math.floor((difference / 1000 / 60) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+      
+      const formattedMin = String(minutes).padStart(2, '0');
+      const formattedSec = String(seconds).padStart(2, '0');
+      
+      setTimeLeft(`${formattedMin}:${formattedSec}`);
+      return true;
+    };
+
+    const active = calculateTimeLeft();
+    if (!active) return;
+
+    const timer = setInterval(() => {
+      const active = calculateTimeLeft();
+      if (!active) {
+        clearInterval(timer);
+        window.location.reload();
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [order, isOpen]);
 
   if (!isOpen || !order) return null;
 
@@ -73,7 +123,11 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
     
     setPayingOnline(true);
     try {
-      const response = await paymentService.payCODOnline(order.id);
+      const isCod = order.payment_method === 'cod';
+      const response = isCod 
+        ? await paymentService.payCODOnline(order.id)
+        : await paymentService.createRazorpayOrder(order.id);
+      
       const { razorpay_order_id, amount, currency, key_id } = response;
 
       const options = {
@@ -81,7 +135,9 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
         amount: amount,
         currency: currency || 'INR',
         name: 'DurgaShakti Foils',
-        description: `COD Payment - Order ${order.order_number}`,
+        description: isCod 
+          ? `COD Payment - Order ${order.order_number}`
+          : `Prepaid Retry - Order ${order.order_number}`,
         order_id: razorpay_order_id,
         handler: async (paymentResponse) => {
           try {
@@ -94,6 +150,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
             window.location.reload();
           } catch {
             setPayingOnline(false);
+            window.location.reload();
           }
         },
         prefill: {
@@ -102,12 +159,18 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
           contact: order.shipping_address?.phone || ''
         },
         theme: { color: '#006e1b' },
-        modal: { ondismiss: () => setPayingOnline(false) }
+        modal: { 
+          ondismiss: () => {
+            setPayingOnline(false);
+            window.location.reload();
+          } 
+        }
       };
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', () => {
         setPayingOnline(false);
+        window.location.reload();
       });
       rzp.open();
     } catch {
@@ -673,17 +736,24 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                    <ExternalLink className="w-4 h-4 mr-2" /> Download Invoice
                 </Button>
               )}
-              {order.payment_method === 'cod' && 
-               order.payment_status !== 'Paid' && 
+              {order.payment_status !== 'Paid' && 
                order.payment_status !== 'completed' && 
                !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase()) && (
-                <Button
-                  onClick={handlePayOnline}
-                  disabled={payingOnline}
-                  className="flex-1 h-12 bg-primary hover:bg-primary/95 text-primary-foreground font-black uppercase tracking-widest rounded-lg shadow-sm hover:shadow-emerald-glow"
-                >
-                  <Wallet className="w-4 h-4 mr-2" /> {payingOnline ? 'Processing...' : 'Pay Online'}
-                </Button>
+                <div className="flex-1 flex flex-col items-center gap-1.5">
+                  <Button
+                    onClick={handlePayOnline}
+                    disabled={payingOnline}
+                    className="w-full h-12 bg-primary hover:bg-primary/95 text-primary-foreground font-black uppercase tracking-widest rounded-lg shadow-sm hover:shadow-emerald-glow flex items-center justify-center"
+                  >
+                    <Wallet className="w-4 h-4 mr-2" /> {payingOnline ? 'Processing...' : 'Pay Now'}
+                  </Button>
+                  {timeLeft && (
+                    <span className="flex items-center gap-1.5 text-xs font-black text-rose-600 animate-pulse">
+                      <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '4s' }} />
+                      Expires in: {timeLeft}
+                    </span>
+                  )}
+                </div>
               )}
               {order.order_status === 'delivered' && (
                 <Button

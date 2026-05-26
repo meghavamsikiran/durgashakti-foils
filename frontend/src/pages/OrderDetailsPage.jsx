@@ -203,6 +203,7 @@ const OrderDetailsPage = () => {
             window.location.reload();
           } catch {
             setPayingOnline(false);
+            window.location.reload();
           }
         },
         prefill: {
@@ -211,12 +212,18 @@ const OrderDetailsPage = () => {
           contact: order.shipping_address?.phone || ''
         },
         theme: { color: '#006e1b' },
-        modal: { ondismiss: () => setPayingOnline(false) }
+        modal: { 
+          ondismiss: () => {
+            setPayingOnline(false);
+            window.location.reload();
+          } 
+        }
       };
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', () => {
         setPayingOnline(false);
+        window.location.reload();
       });
       rzp.open();
     } catch {
@@ -675,15 +682,18 @@ const OrderDetailsPage = () => {
         {/* Retry Payment Warning Card */}
         {order.payment_status !== 'Paid' && 
          order.payment_status !== 'completed' && 
-         (order.payment_method || '').toLowerCase() !== 'cod' &&
          !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase()) && (
           <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm animate-in slide-in-from-top-2 duration-300">
             <div className="space-y-1">
               <h3 className="font-extrabold text-amber-900 text-sm flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-amber-700" />
-                Payment Retry Option Available
+                {order.payment_method === 'cod' ? 'Pay Online Option Available' : 'Payment Retry Option Available'}
               </h3>
-              <p className="text-xs text-amber-700 font-semibold leading-relaxed">Your payment has not been completed. You can safely complete the payment online using Razorpay to process this order.</p>
+              <p className="text-xs text-amber-700 font-semibold leading-relaxed">
+                {order.payment_method === 'cod'
+                  ? 'You placed this order as Cash on Delivery. You can safely pay online now to complete your transaction.'
+                  : 'Your payment has not been completed. You can safely complete the payment online using Razorpay to process this order.'}
+              </p>
               {timeLeft && (
                 <div className="pt-1">
                   <span className="inline-flex items-center gap-1.5 text-xs font-black text-rose-600 bg-rose-50 border border-rose-100/60 px-3 py-1.5 rounded-xl shadow-sm animate-pulse">
@@ -698,7 +708,7 @@ const OrderDetailsPage = () => {
               disabled={payingOnline}
               className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[10px] px-6 py-3.5 rounded-xl shadow-md shadow-emerald-glow transition-all whitespace-nowrap"
             >
-              {payingOnline ? 'Processing...' : 'Pay Online Now'}
+              {payingOnline ? 'Processing...' : 'Pay Now'}
             </button>
           </div>
         )}
