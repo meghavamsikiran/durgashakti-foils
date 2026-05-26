@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, delete, func, or_, false
 from database import get_db
 from models import CouponModel, SettingModel, OrderModel, UserModel
+from coupon_maintenance import cleanup_expired_coupons, coupon_is_expired, expiry_is_past
 from deps import UserSchema, get_current_user, require_permission, row_to_dict, write_audit_log, create_notification, send_email
 from pydantic import BaseModel
 from typing import List, Optional
@@ -47,6 +48,13 @@ LOYALTY_DEFAULTS = {
     "minimum_spend": 15000.0,
     "criteria_mode": "either"
 }
+
+
+def liable_order_filter():
+    return and_(
+        func.lower(OrderModel.order_status) == "delivered",
+        ~func.lower(func.coalesce(OrderModel.payment_status, "")).in_(["refunded", "refund", "failed"]),
+    )
 
 
 async def get_loyalty_settings(db: AsyncSession) -> dict:
@@ -102,8 +110,7 @@ async def get_customer_loyalty_stats(db: AsyncSession, user_id) -> dict:
             func.coalesce(func.sum(OrderModel.total_amount), 0).label("total_spent"),
         ).where(
             OrderModel.user_id == user_uuid,
-            OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
-            OrderModel.order_status != "cancelled",
+            liable_order_filter(),
         )
     )
     stats = stats_res.first()
@@ -166,10 +173,7 @@ async def list_loyal_customer_rows(db: AsyncSession, search: str = "", limit: in
     settings = await get_loyalty_settings(db)
     if settings.get("enabled", True) is False:
         return []
-    eligible_order = and_(
-        OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
-        OrderModel.order_status != "cancelled",
-    )
+    eligible_order = liable_order_filter()
     orders_expr = func.count(OrderModel.id).filter(eligible_order)
     spend_expr = func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0)
     q = (
@@ -208,6 +212,7 @@ async def list_loyal_customer_rows(db: AsyncSession, search: str = "", limit: in
 
 # ── Shared Validation Logic ──────────────────────────────────────────────
 async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str], subtotal: float):
+    await cleanup_expired_coupons(db)
     user_uuid = None
     if user_id:
         try:
@@ -256,7 +261,7 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
             select(OrderModel).where(
                 and_(
                     OrderModel.user_id == user_uuid,
-                    OrderModel.order_status != "cancelled"
+                    OrderModel.order_status != "cancelled",
                 )
             )
         )
@@ -309,13 +314,9 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
             continue
 
         # 2. Expiry check
-        if coupon.expiry_date:
-            expiry = coupon.expiry_date
-            if expiry.tzinfo is None:
-                expiry = expiry.replace(tzinfo=timezone.utc)
-            if now > expiry:
-                errors[raw_code] = "Coupon has expired"
-                continue
+        if coupon_is_expired(coupon, now):
+            errors[raw_code] = "Coupon has expired"
+            continue
 
         # 3. Minimum cart value check
         if subtotal < float(coupon.min_cart_value or 0):
@@ -411,6 +412,7 @@ async def validate_coupons(data: CouponValidationRequest, current_user: UserSche
 # ── Admin Global Settings Routes ──────────────────────────────────────────
 @router.get("/coupons/eligible")
 async def get_eligible_coupons(current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    await cleanup_expired_coupons(db)
     loyalty_stats = await get_customer_loyalty_stats(db, current_user.id)
     if not loyalty_stats["is_loyal"]:
         return {"is_loyal": False, "criteria": loyalty_stats["criteria"], "stats": loyalty_stats, "coupons": []}
@@ -425,12 +427,8 @@ async def get_eligible_coupons(current_user: UserSchema = Depends(get_current_us
 
     eligible = []
     for coupon in coupons_res.scalars().all():
-        expiry = coupon.expiry_date
-        if expiry:
-            if expiry.tzinfo is None:
-                expiry = expiry.replace(tzinfo=timezone.utc)
-            if now > expiry:
-                continue
+        if coupon_is_expired(coupon, now):
+            continue
         if coupon.max_usage_count is not None and coupon.total_uses >= coupon.max_usage_count:
             continue
         if not customer_allowed_for_loyalty_coupon(coupon, str(current_user.id)):
@@ -491,14 +489,12 @@ async def list_loyal_customers(
 
 @router.get("/admin/coupons/analytics")
 async def get_coupon_analytics(admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
+    await cleanup_expired_coupons(db)
     settings = await get_loyalty_settings(db)
     coupon_res = await db.execute(select(CouponModel))
     coupons = coupon_res.scalars().all()
     loyal_coupons = [c for c in coupons if coupon_is_loyalty(c)]
-    eligible_order = and_(
-        OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
-        OrderModel.order_status != "cancelled",
-    )
+    eligible_order = liable_order_filter()
 
     customers_res = await db.execute(
         select(
@@ -549,6 +545,7 @@ async def list_coupons(
     admin: UserSchema = Depends(require_permission("manage_coupons")),
     db: AsyncSession = Depends(get_db)
 ):
+    await cleanup_expired_coupons(db)
     q = select(CouponModel).order_by(CouponModel.created_at.desc())
     if search:
         term = f"%{search.strip()}%"
@@ -580,6 +577,7 @@ async def list_coupons(
 
 @router.get("/admin/coupons/{coupon_id}")
 async def get_coupon(coupon_id: str, admin: UserSchema = Depends(require_permission("manage_coupons")), db: AsyncSession = Depends(get_db)):
+    await cleanup_expired_coupons(db)
     res = await db.execute(select(CouponModel).where(CouponModel.id == coupon_id))
     c = res.scalar_one_or_none()
     if not c:
@@ -602,7 +600,7 @@ async def create_coupon(data: CouponCreateUpdate, admin: UserSchema = Depends(re
         max_discount_limit=data.max_discount_limit,
         max_usage_count=data.max_usage_count,
         per_customer_usage_limit=data.per_customer_usage_limit,
-        is_active=data.is_active,
+        is_active=(data.is_active and not expiry_is_past(data.expiry_date)),
         coupon_type=data.coupon_type,
         apply_to_all_loyal_customers=data.apply_to_all_loyal_customers,
         apply_to_all_products=data.apply_to_all_products,
@@ -642,7 +640,7 @@ async def update_coupon(coupon_id: str, data: CouponCreateUpdate, admin: UserSch
     c.max_discount_limit = data.max_discount_limit
     c.max_usage_count = data.max_usage_count
     c.per_customer_usage_limit = data.per_customer_usage_limit
-    c.is_active = data.is_active
+    c.is_active = data.is_active and not expiry_is_past(data.expiry_date)
     c.coupon_type = data.coupon_type
     c.apply_to_all_loyal_customers = data.apply_to_all_loyal_customers
     c.apply_to_all_products = data.apply_to_all_products

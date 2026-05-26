@@ -104,7 +104,7 @@ const Footer = () => {
             <h3 className="font-bold mb-4 font-manrope text-ink-slate tracking-wide uppercase text-xs font-label-caps">Customer Service</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/dashboard" className="text-sm text-on-surface-variant hover:text-primary transition-colors font-medium">
+                <Link to="/dashboard?tab=orders" className="text-sm text-on-surface-variant hover:text-primary transition-colors font-medium">
                   My Orders
                 </Link>
               </li>

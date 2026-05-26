@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, Trash2, ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
+import { Heart, Trash2, ChevronLeft, ChevronRight, ShoppingCart, Ticket } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import PageLoader from '../../../components/ui/PageLoader';
 import { useCart } from '../../../contexts/CartContext';
@@ -84,9 +84,17 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
                       </span>
                     )}
                     {primaryCoupon && (
-                      <div className="absolute left-3 right-3 bottom-3 flex items-center justify-between gap-2 rounded-md border border-white/60 bg-white/95 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wider text-emerald-800 shadow-sm backdrop-blur-md">
-                        <span className="min-w-0 truncate">Coupon {primaryCoupon.code}</span>
-                        <span className="shrink-0 text-emerald-700">{formatCouponValue(primaryCoupon)}</span>
+                      <div
+                        className="absolute bottom-3 left-3 right-3 z-10 flex items-center justify-between gap-2 rounded-xl border border-dashed border-emerald-500/40 bg-white/95 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-800 shadow-sm backdrop-blur-sm hover:bg-emerald-50/95 transition-all select-none"
+                        data-testid="wishlist-coupon-badge"
+                      >
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Ticket className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span className="min-w-0 truncate">Coupon <span className="font-mono text-emerald-600 font-extrabold">{primaryCoupon.code}</span></span>
+                        </div>
+                        <span className="shrink-0 rounded bg-emerald-600 px-2 py-0.5 text-[9px] font-extrabold text-white shadow-sm tracking-wide">
+                          {formatCouponValue(primaryCoupon)}
+                        </span>
                       </div>
                     )}
                   </div>

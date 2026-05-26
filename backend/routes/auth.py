@@ -167,7 +167,7 @@ async def get_me(current_user: UserSchema = Depends(get_current_user)):
 
 @router.put("/auth/me")
 async def update_profile(data: UserProfileUpdate, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if current_user.role in ("admin", "SUPER_ADMIN"):
+    if current_user.role == "admin":
         if (data.email is not None and data.email != current_user.email) or (data.phone is not None and data.phone != current_user.phone):
             raise HTTPException(status_code=400, detail="Administrators are not permitted to change their email or phone number via profile updates.")
 

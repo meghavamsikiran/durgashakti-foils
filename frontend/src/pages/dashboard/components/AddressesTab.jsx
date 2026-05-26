@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Plus as PlusIcon, Loader2, LocateFixed, Pencil, Trash2 } from 'lucide-react';
+import { MapPin, Plus as PlusIcon, Loader2, LocateFixed, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
@@ -19,8 +19,10 @@ const INDIAN_STATES = [
 ];
 
 const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDeleteAddress }) => {
+  const ITEMS_PER_PAGE = 4;
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [addressForm, setAddressForm] = useState({ 
     label: 'Home', full_name: '', phone: '', 
     address_line1: '', address_line2: '', 
@@ -29,6 +31,11 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
 
   const { lookup, loading: checkingPincode } = usePincodeLookup();
   const { detect, loading: detectingLocation } = useGeoLocationAddress();
+
+  useEffect(() => {
+    const pages = Math.max(1, Math.ceil((addresses?.length || 0) / ITEMS_PER_PAGE));
+    setCurrentPage(prev => Math.min(prev, pages));
+  }, [addresses?.length]);
 
   const handlePincodeChange = async (e) => {
     const pin = e.target.value.replace(/\D/g, '').slice(0, 6);
@@ -94,6 +101,9 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
   };
 
   if (loading && !showAddressForm) return <PageLoader message="Loading addresses..." />;
+
+  const totalPages = Math.max(1, Math.ceil((addresses?.length || 0) / ITEMS_PER_PAGE));
+  const pageItems = (addresses || []).slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
@@ -208,7 +218,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
               <h3 className="text-xl font-black text-foreground uppercase tracking-tight">No addresses found</h3>
               <p className="text-muted-foreground font-medium mt-2">Add your shipping address to start ordering.</p>
             </div>
-          ) : addresses.map(addr => (
+          ) : pageItems.map(addr => (
             <div key={addr.id} className="p-6 rounded-xl border border-border-subtle bg-surface-container-lowest relative group hover:shadow-emerald-glow hover:border-primary/50 transition-all animate-in zoom-in-95 duration-500">
               <div className="flex items-center gap-3 mb-4">
                 <div className="px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded-sm text-[10px] font-mono tracking-wider font-semibold uppercase">{addr.label}</div>
@@ -235,6 +245,17 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
               </div>
             </div>
           ))}
+        </div>
+      )}
+      {!showAddressForm && totalPages > 1 && (
+        <div className="flex justify-center items-center gap-3">
+          <Button variant="outline" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 p-0 rounded-lg">
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+          <span className="text-sm font-semibold text-muted-foreground font-mono">Page {currentPage} of {totalPages}</span>
+          <Button variant="outline" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 p-0 rounded-lg">
+            <ChevronRight className="w-5 h-5" />
+          </Button>
         </div>
       )}
     </motion.div>

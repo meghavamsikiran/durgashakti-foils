@@ -31,6 +31,7 @@ const CustomersPage = () => {
     return cached?.metrics || null;
   });
   const [loyaltySettings, setLoyaltySettings] = useState({ enabled: true, minimum_orders: 10, minimum_spend: 15000, criteria_mode: 'either' });
+  const skipNextLoadRef = React.useRef(false);
 
   const [total, setTotal] = useState(() => {
     const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '', segment: undefined });
@@ -122,6 +123,10 @@ const CustomersPage = () => {
   };
 
   useEffect(() => {
+    if (skipNextLoadRef.current) {
+      skipNextLoadRef.current = false;
+      return;
+    }
     applyCachedCustomers(1);
     load(1);
     loadLoyaltySettings();
@@ -129,9 +134,16 @@ const CustomersPage = () => {
 
   const handleSegmentChange = (nextSegment) => {
     if (nextSegment === 'loyal' && !loyaltyEnabled) return;
+    if (nextSegment === segment) return;
     setSegment(nextSegment);
     setPage(1);
-    applyCachedCustomers(1, nextSegment, search);
+    skipNextLoadRef.current = true;
+    const hadCache = applyCachedCustomers(1, nextSegment, search);
+    if (!hadCache && nextSegment === 'loyal') {
+      const visibleRows = rows.filter(row => row.is_loyal);
+      setRows(visibleRows);
+      setTotal(visibleRows.length);
+    }
     load(1, nextSegment, search);
   };
 
@@ -150,8 +162,8 @@ const CustomersPage = () => {
   const stats = {
     total: metrics?.total_customers || total,
     loyal: loyaltyEnabled ? rows.filter(r => r.is_loyal).length : 0,
-    revenue: metrics?.total_revenue || 0,
-    avg: (metrics?.total_revenue && metrics?.total_customers) ? (metrics.total_revenue / metrics.total_customers) : 0
+    revenue: rows.reduce((sum, row) => sum + Number(row.total_spent || 0), 0),
+    avg: rows.length ? rows.reduce((sum, row) => sum + Number(row.total_spent || 0), 0) / rows.length : 0
   };
 
   if (loading && rows.length === 0) return <PageLoader />;
@@ -223,7 +235,7 @@ const CustomersPage = () => {
               <IndianRupee className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Gross Lifetime</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Liable Lifetime</div>
               <div className="text-2xl font-black text-slate-900">₹{stats.revenue.toLocaleString('en-IN')}</div>
             </div>
           </div>
@@ -246,8 +258,8 @@ const CustomersPage = () => {
               <tr>
                 <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Customer Identity</th>
                 <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Contact Details</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Total Volume</th>
-                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Lifetime Spend</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Liable Orders</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Liable Lifetime Spend</th>
                 <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Joined Date</th>
                 <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Actions</th>
               </tr>

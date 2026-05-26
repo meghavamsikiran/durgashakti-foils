@@ -25,12 +25,20 @@ const Dashboard = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
-    return localStorage.getItem('dashboardActiveTab') || 'orders';
+    const urlTab = new URLSearchParams(window.location.search).get('tab');
+    return urlTab || localStorage.getItem('dashboardActiveTab') || 'orders';
   });
 
   useEffect(() => {
     localStorage.setItem('dashboardActiveTab', activeTab);
   }, [activeTab]);
+
+  useEffect(() => {
+    const tabFromUrl = new URLSearchParams(location.search).get('tab');
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [location.search, activeTab]);
 
   // Feature hooks
   const { orders, loading: ordersLoading, fetchOrders, cancelOrder, returnOrder } = useOrders();

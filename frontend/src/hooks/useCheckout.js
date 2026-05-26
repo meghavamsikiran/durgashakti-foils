@@ -413,11 +413,15 @@ export const useCheckout = () => {
       const orderId = response.id;
 
       if (paymentMethod === 'cod') {
-        await paymentService.confirmCOD(orderId);
-        // Clear cart BEFORE navigating
-        try { await clearCart(); } catch {}
         toast.success('Order placed successfully!');
         navigate(`/order-success?order_id=${orderId}&order_number=${response.order_number}`);
+        setLoading(false);
+        orderInProgress.current = false;
+        Promise.allSettled([
+          paymentService.confirmCOD(orderId),
+          clearCart()
+        ]).catch(() => {});
+        return;
       } else {
         await handleRazorpayPayment(orderId);
         // Cart already cleared inside handleRazorpayPayment handler

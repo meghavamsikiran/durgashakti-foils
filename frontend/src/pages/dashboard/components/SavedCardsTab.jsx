@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Plus, CreditCard, ArrowLeft, Lock } from 'lucide-react';
+import { ShieldCheck, Plus, CreditCard, ArrowLeft, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import PageLoader from '../../../components/ui/PageLoader';
 
 const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
+  const ITEMS_PER_PAGE = 4;
   const [showForm, setShowForm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [formData, setFormData] = useState({
     cardNumber: '',
     holderName: '',
@@ -16,6 +18,11 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
     cvv: ''
   });
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const pages = Math.max(1, Math.ceil((cards?.length || 0) / ITEMS_PER_PAGE));
+    setCurrentPage(prev => Math.min(prev, pages));
+  }, [cards?.length]);
 
   const getCardBrand = (number) => {
     const cleanNumber = number.replace(/\D/g, '');
@@ -67,8 +74,9 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
       return;
     }
     const year = parseInt(formData.expiryYear, 10);
-    if (isNaN(year) || year < 24) {
-      alert('Please enter a valid expiry year (e.g. 26).');
+    const fullYear = formData.expiryYear.length === 2 ? Number('20' + formData.expiryYear) : year;
+    if (isNaN(fullYear) || fullYear < new Date().getFullYear()) {
+      alert('Please enter a valid 4-digit expiry year (e.g. 2028).');
       return;
     }
     if (formData.cvv.length < 3) {
@@ -81,7 +89,7 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
       brand: getCardBrand(cleanNumber),
       last4: cleanNumber.slice(-4),
       expiry_month: formData.expiryMonth.padStart(2, '0'),
-      expiry_year: formData.expiryYear.length === 2 ? '20' + formData.expiryYear : formData.expiryYear,
+      expiry_year: String(fullYear),
       holder_name: formData.holderName.toUpperCase()
     };
 
@@ -147,7 +155,7 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
                 <div className="text-right flex-shrink-0">
                   <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Expires</p>
                   <p className="font-bold text-sm text-slate-100 font-mono">
-                    {formData.expiryMonth ? formData.expiryMonth.padStart(2, '0') : 'MM'}/{formData.expiryYear ? formData.expiryYear.padStart(2, '0') : 'YY'}
+                    {formData.expiryMonth ? formData.expiryMonth.padStart(2, '0') : 'MM'}/{formData.expiryYear || 'YYYY'}
                   </p>
                 </div>
               </div>
@@ -198,8 +206,8 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
                 <Input
                   required
                   type="text"
-                  placeholder="YY"
-                  maxLength={2}
+                  placeholder="YYYY"
+                  maxLength={4}
                   value={formData.expiryYear}
                   onChange={(e) => setFormData({ ...formData, expiryYear: e.target.value.replace(/\D/g, '') })}
                   className="h-12 rounded-lg border border-border-subtle bg-surface px-4 text-sm text-center focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all font-mono"
@@ -242,6 +250,9 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
     );
   }
 
+  const totalPages = Math.max(1, Math.ceil((cards?.length || 0) / ITEMS_PER_PAGE));
+  const pageCards = (cards || []).slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -269,7 +280,7 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
             <CreditCard className="w-10 h-10 text-muted-foreground/40 mx-auto mb-4" />
             <p className="text-muted-foreground font-bold">No saved cards found</p>
           </div>
-        ) : cards.map(card => (
+        ) : pageCards.map(card => (
           <div key={card.id} className="p-6 rounded-xl bg-surface-container-lowest border border-border-subtle shadow-sm relative overflow-hidden group hover:shadow-emerald-glow hover:border-primary/50 transition-all">
             <div className="flex justify-between items-start mb-12">
               <div className="w-10 h-10 bg-[#0B1220] rounded-lg flex items-center justify-center">
@@ -296,6 +307,17 @@ const SavedCardsTab = ({ cards, loading, onSaveCard }) => {
           </div>
         ))}
       </div>
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-3">
+          <Button variant="outline" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 p-0 rounded-lg">
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+          <span className="text-sm font-semibold text-muted-foreground font-mono">Page {currentPage} of {totalPages}</span>
+          <Button variant="outline" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 p-0 rounded-lg">
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+        </div>
+      )}
     </motion.div>
   );
 };

@@ -28,6 +28,7 @@ const ICON_MAP = {
   'Shipping Settings': Package2,
   'Coupons': Ticket,
   'Profile': Building2,
+  'Business Profile': Building2,
   'My Account': User,
 };
 
@@ -96,7 +97,8 @@ const AdminLayout = () => {
             const Icon = ICON_MAP[item.label] || LayoutDashboard;
             const isSuper = user?.role === 'SUPER_ADMIN' || location.pathname.startsWith('/superadmin');
             const prefix = isSuper ? '/superadmin' : '/admin';
-            const path = `${prefix}/${item.label.toLowerCase().replace(/\s+/g, '-')}`;
+            const routeSegment = item.path || item.label.toLowerCase().replace(/\s+/g, '-');
+            const path = `${prefix}/${routeSegment}`;
             const isActive = location.pathname === path || (item.label === 'Dashboard' && (location.pathname === '/admin' || location.pathname === '/superadmin'));
             
             return (

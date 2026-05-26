@@ -20,6 +20,7 @@ from deps import (
     create_notification, ensure_category_exists, sync_product_categories
 )
 from storage_service import upload_image, upload_media, delete_asset
+from coupon_maintenance import cleanup_expired_coupons
 import uuid
 from datetime import datetime, timezone
 import pandas as pd
@@ -42,6 +43,13 @@ ROLE_TEMPLATE_LABELS = {
 }
 
 PERMISSION_META_KEYS = {"is_first_login", "role_template"}
+
+
+def liable_order_filter():
+    return and_(
+        func.lower(OrderModel.order_status) == "delivered",
+        ~func.lower(func.coalesce(OrderModel.payment_status, "")).in_(["refunded", "refund", "failed"]),
+    )
 
 
 def _normalize_role_template(value: Optional[str]) -> str:
@@ -676,10 +684,7 @@ async def list_customers(
     min_spend = float(loyalty_config.get("minimum_spend") if loyalty_config.get("minimum_spend") is not None else 15000.0)
     criteria_mode = loyalty_config.get("criteria_mode") if loyalty_config.get("criteria_mode") in {"either", "both", "orders_only", "spend_only"} else "either"
 
-    eligible_order = and_(
-        OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
-        OrderModel.order_status != "cancelled",
-    )
+    eligible_order = liable_order_filter()
     orders_expr = func.count(OrderModel.id).filter(eligible_order)
     spend_expr = func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0)
 
@@ -854,10 +859,7 @@ async def get_customer_details(
         reviews.append(review_data)
 
     # Compute matched statistics
-    eligible_order = and_(
-        OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
-        OrderModel.order_status != "cancelled",
-    )
+    eligible_order = liable_order_filter()
     stats_res = await db.execute(
         select(
             func.count(OrderModel.id).label("orders_count"),
@@ -1154,6 +1156,7 @@ async def adjust_inventory(product_id: str, data: dict, admin: UserSchema = Depe
 # ── Settings (Admin) ─────────────────────────────────────────────────────
 @router.get("/admin/settings")
 async def get_settings(admin: UserSchema = Depends(require_permission("manage_settings")), db: AsyncSession = Depends(get_db)):
+    await cleanup_expired_coupons(db)
     res = await db.execute(select(SettingModel))
     data = {s.key: s.value for s in res.scalars().all()}
     loyalty = dict(data.get("loyalty_settings") or {})
@@ -1210,6 +1213,7 @@ async def save_setting(data: dict, admin: UserSchema = Depends(require_permissio
 
 @router.get("/settings/public")
 async def get_public_settings(db: AsyncSession = Depends(get_db)):
+    await cleanup_expired_coupons(db)
     res = await db.execute(select(SettingModel).where(SettingModel.key.in_(["company_profile", "payment_settings", "scrolling_banner", "shipping_settings", "popup_banner", "feedback_settings", "loyalty_settings"])))
     d = {s.key: s.value for s in res.scalars().all()}
     if "payment_settings" not in d:

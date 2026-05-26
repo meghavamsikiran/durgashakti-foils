@@ -210,7 +210,7 @@ export const superAdminSidebar = [
   { label: 'GSTR1', permissions: ['view_gst_reports', 'export_gst_reports'] },
   { label: 'Admins', permissions: ['create_admin', 'edit_admin', 'disable_admin', 'delete_admin', 'assign_permissions'] },
   { label: 'Audit Logs', permissions: ['view_audit_logs'] },
-  { label: 'Profile', permissions: ['manage_settings'] },
+  { label: 'Business Profile', path: 'profile', permissions: ['manage_settings'] },
   { label: 'Settings', permissions: ['manage_settings', 'manage_banner'] },
   { label: 'Shipping Settings', permissions: ['manage_settings'] },
   { label: 'Coupons', permissions: ['manage_coupons', 'manage_settings'] },

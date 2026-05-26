@@ -108,11 +108,12 @@ const OrdersPage = () => {
   const [selectedOrderForModal, setSelectedOrderForModal] = useState(null);
   const [pendingActionIds, setPendingActionIds] = useState(() => new Set());
   const [timeLeft, setTimeLeft] = useState(null);
+  const skipNextLoadRef = React.useRef(false);
 
-  const load = useCallback(async (p = 1) => {
+  const load = useCallback(async (p = 1, nextFilter = filter) => {
     const params = { page: p, limit: PAGE_SIZE, search };
-    if (filter !== 'ALL') {
-      params.status_filter = filter;
+    if (nextFilter !== 'ALL') {
+      params.status_filter = nextFilter;
     }
     if (dateFilter && dateFilter.start_date && dateFilter.end_date) {
       params.start_date = dateFilter.start_date;
@@ -207,6 +208,10 @@ const OrdersPage = () => {
   }, [selectedOrderForModal, page, loadSilent]);
 
   useEffect(() => {
+    if (skipNextLoadRef.current) {
+      skipNextLoadRef.current = false;
+      return;
+    }
     load(1);
   }, [search, filter, load, dateFilter]);
 
@@ -344,7 +349,9 @@ const OrdersPage = () => {
             onClick={() => {
               setExpandedOrderId(null);
               setPage(1);
+              skipNextLoadRef.current = true;
               setFilter(s);
+              load(1, s);
             }}
             className={`shrink-0 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-tighter transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
               filter === s

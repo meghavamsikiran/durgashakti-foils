@@ -488,6 +488,39 @@ const generateThemedBanner = (context) => {
   };
 };
 
+const isCouponExpired = (coupon) => {
+  if (!coupon?.expiry_date) return false;
+  return new Date(coupon.expiry_date).getTime() <= Date.now();
+};
+
+const isBannerSelectableCoupon = (coupon) => Boolean(
+  coupon?.code &&
+  coupon.is_active !== false &&
+  !isCouponExpired(coupon)
+);
+
+const normalizeCouponList = (list = []) => (
+  (list || [])
+    .filter(c => c !== null && c !== undefined && c.code)
+    .map(c => isCouponExpired(c) ? { ...c, is_active: false } : c)
+);
+
+const sanitizePopupBanner = (popupBannerValue = {}, coupons = []) => {
+  const validCodes = new Set(coupons.filter(isBannerSelectableCoupon).map(c => c.code));
+  return {
+    ...(popupBannerValue || {}),
+    promoted_coupons: (popupBannerValue?.promoted_coupons || [])
+      .filter(c => c && validCodes.has(c.code)),
+    custom_banners: (popupBannerValue?.custom_banners || [])
+      .filter(Boolean)
+      .map(theme => ({
+        ...theme,
+        coupon_codes: (theme.coupon_codes || []).filter(code => validCodes.has(code)),
+        linked_coupons: (theme.linked_coupons || []).filter(c => c && validCodes.has(c.code))
+      }))
+  };
+};
+
 const CouponsPage = () => {
   const [coupons, setCoupons] = useState([]);
   const [settings, setSettings] = useState({
@@ -525,10 +558,10 @@ const CouponsPage = () => {
     theme_context: '',
     title: '',
     subtitle: '',
-    is_active: true,
-    show_on_landing: true,
-    show_on_shop: true,
-    show_on_checkout: true,
+    is_active: false,
+    show_on_landing: false,
+    show_on_shop: false,
+    show_on_checkout: false,
     coupon_codes: [],
     theme_config: {
       background_gradient: 'from-[#4d0b5a] via-[#2f0438] to-[#1a0120]',
@@ -584,7 +617,8 @@ const CouponsPage = () => {
         couponService.getLoyalCustomers({ limit: 25 }).catch(() => ({ items: [] })),
         couponService.getAnalytics().catch(() => null)
       ]);
-      setCoupons((couponsData || []).filter(c => c !== null && c !== undefined && c.code));
+      const normalizedCoupons = normalizeCouponList(couponsData || []);
+      setCoupons(normalizedCoupons);
       setSettings(settingsData);
       const adminSettings = adminSettingsRes.data || {};
       const bannerVal = adminSettings.scrolling_banner || { text1: '', text2: '', timer_enabled: false, timer_target: '', use_favicon: true };
@@ -592,9 +626,16 @@ const CouponsPage = () => {
         bannerVal.popup_promoted_coupons ||
         adminSettings.popup_banner?.promoted_coupons ||
         [];
+      const cleanedPopupBanner = sanitizePopupBanner(
+        adminSettings.popup_banner || { promoted_coupons: popupPromotedCoupons },
+        normalizedCoupons
+      );
       setScrollingBanner(bannerVal);
-      setPopupBanner(adminSettings.popup_banner || { promoted_coupons: popupPromotedCoupons });
-      setCustomBanners((adminSettings.popup_banner?.custom_banners || []).filter(b => b !== null && b !== undefined));
+      setPopupBanner(cleanedPopupBanner);
+      setCustomBanners((cleanedPopupBanner.custom_banners || []).filter(b => b !== null && b !== undefined));
+      if (JSON.stringify(cleanedPopupBanner) !== JSON.stringify(adminSettings.popup_banner || { promoted_coupons: popupPromotedCoupons })) {
+        adminService.updateSetting({ key: 'popup_banner', value: cleanedPopupBanner }).catch(() => {});
+      }
       setLoyalCustomers(loyalCustomerData?.items || []);
       setCouponAnalytics(analyticsData);
     } catch (error) {
@@ -709,6 +750,10 @@ const CouponsPage = () => {
   };
 
   const handleToggleCouponActive = async (coupon) => {
+    if (!coupon.is_active && isCouponExpired(coupon)) {
+      toast.error('Expired coupons cannot be activated. Extend the expiry date first.');
+      return;
+    }
     // Optimistically update state
     setCoupons(prev => prev.map(c => c.id === coupon.id ? { ...c, is_active: !c.is_active } : c));
     try {
@@ -847,20 +892,32 @@ const CouponsPage = () => {
   });
 
   const getPopupCouponGroup = (coupon, themes = customBanners) => {
+    if (!isBannerSelectableCoupon(coupon)) {
+      return { activeTheme: null, codes: [] };
+    }
     const activeTheme = (themes || []).find((theme) => (
       theme?.is_active && (theme.coupon_codes || []).includes(coupon.code)
     ));
-    const codes = activeTheme?.coupon_codes?.filter(Boolean) || [coupon.code];
+    const selectableCodes = new Set(coupons.filter(isBannerSelectableCoupon).map(c => c.code));
+    const codes = (activeTheme?.coupon_codes?.filter(Boolean) || [coupon.code]).filter(code => selectableCodes.has(code));
     return { activeTheme, codes };
   };
 
   const handleTogglePopupBannerPromotion = async (coupon) => {
+    if (!isBannerSelectableCoupon(coupon)) {
+      toast.error('Only active, unexpired coupons can be used in pop-up banners');
+      return;
+    }
     const previousPopup = popupBanner;
     const previousBanners = customBanners;
     const currentPopup = popupBanner || {};
     const currentList = currentPopup.promoted_coupons || [];
     const currentThemes = (customBanners || []).filter(Boolean);
     const { activeTheme, codes } = getPopupCouponGroup(coupon, currentThemes);
+    if (codes.length === 0) {
+      toast.error('No active coupons are available for this banner group');
+      return;
+    }
     const codeSet = new Set(codes);
     const isAlreadyPromoted = codes.some((code) => (
       currentList.some(c => c && c.code === code) ||
@@ -1041,9 +1098,9 @@ const CouponsPage = () => {
 
     setSavingBanners(true);
     try {
-      const currentCodes = bannerForm.coupon_codes || [];
+      const currentCodes = (bannerForm.coupon_codes || []).filter(code => bannerSelectableCouponCodes.has(code));
       // Find full coupon objects for selected codes
-      const linkedCoupons = coupons
+      const linkedCoupons = bannerSelectableCoupons
         .filter(c => currentCodes.includes(c.code))
         .map(c => ({
           id: c.id,
@@ -1179,6 +1236,8 @@ const CouponsPage = () => {
     c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.discount_type.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const bannerSelectableCoupons = coupons.filter(isBannerSelectableCoupon);
+  const bannerSelectableCouponCodes = new Set(bannerSelectableCoupons.map(c => c.code));
 
   const PAGE_SIZE = 10;
   const totalFilteredPages = Math.ceil(filteredCoupons.length / PAGE_SIZE);
@@ -1196,7 +1255,7 @@ const CouponsPage = () => {
   const totalDiscountDistributed = coupons.reduce((sum, c) => sum + Number(c.total_discount_given || 0), 0);
   const couponDrivenRevenue = coupons.reduce((sum, c) => sum + Number(c.revenue_generated || 0), 0);
   const totalUses = coupons.reduce((sum, c) => sum + Number(c.total_uses || 0), 0);
-  const activeCount = coupons.filter(c => c.is_active).length;
+  const activeCount = coupons.filter(c => c.is_active && !isCouponExpired(c)).length;
 
   if (loading) {
     return (
@@ -1417,6 +1476,7 @@ const CouponsPage = () => {
                   <tbody className="divide-y divide-border-subtle text-sm text-ink-slate font-medium">
                     {paginatedCoupons.map((coupon) => {
                       const isExpired = coupon.expiry_date && new Date(coupon.expiry_date) < new Date();
+                      const isActuallyActive = coupon.is_active && !isExpired;
                       const remaining = coupon.max_usage_count !== null 
                         ? Math.max(0, coupon.max_usage_count - (coupon.total_uses || 0)) 
                         : 'Unlimited';
@@ -1466,13 +1526,15 @@ const CouponsPage = () => {
                           <td className="px-6 py-4 text-center">
                             <button
                               onClick={() => handleToggleCouponActive(coupon)}
+                              disabled={!coupon.is_active && isExpired}
+                              title={isExpired ? 'Expired coupons stay inactive until the expiry date is extended.' : undefined}
                               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                                coupon.is_active ? 'bg-primary' : 'bg-slate-200'
+                                isActuallyActive ? 'bg-primary' : 'bg-slate-200'
                               }`}
                             >
                               <span
                                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                  coupon.is_active ? 'translate-x-6' : 'translate-x-1'
+                                  isActuallyActive ? 'translate-x-6' : 'translate-x-1'
                                 }`}
                               />
                             </button>
@@ -1481,8 +1543,11 @@ const CouponsPage = () => {
                             <div className="flex justify-end items-center gap-2">
                               {(() => {
                                 const isScrollingPromoted = scrollingBanner && scrollingBanner.text2 && scrollingBanner.text2.includes(coupon.code);
-                                const isPopupPromoted = (popupBanner?.promoted_coupons || []).some(c => c && c.code === coupon.code) ||
-                                                        (customBanners || []).some(b => b?.is_active && (b.coupon_codes || []).includes(coupon.code));
+                                const canPromotePopup = isBannerSelectableCoupon(coupon);
+                                const isPopupPromoted = canPromotePopup && (
+                                  (popupBanner?.promoted_coupons || []).some(c => c && c.code === coupon.code) ||
+                                  (customBanners || []).some(b => b?.is_active && (b.coupon_codes || []).includes(coupon.code))
+                                );
 
                                 return (
                                   <>
@@ -1516,7 +1581,7 @@ const CouponsPage = () => {
                                         e.stopPropagation();
                                         handleTogglePopupBannerPromotion(coupon);
                                       }}
-                                      disabled={togglingPopupId === coupon.id}
+                                      disabled={togglingPopupId === coupon.id || !canPromotePopup}
                                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 ${
                                         isPopupPromoted 
                                           ? 'text-emerald-750 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200' 
@@ -1659,7 +1724,7 @@ const CouponsPage = () => {
                         </div>
 
                         <div className="divide-y divide-slate-100">
-                          {coupons
+                          {bannerSelectableCoupons
                             .filter(c => 
                               c.code.toLowerCase().includes(bannerSearchText.toLowerCase()) ||
                               c.discount_type.toLowerCase().includes(bannerSearchText.toLowerCase())
@@ -1702,9 +1767,9 @@ const CouponsPage = () => {
                                 </label>
                               );
                             })}
-                          {coupons.length === 0 && (
+                          {bannerSelectableCoupons.length === 0 && (
                             <div className="p-4 text-center text-xs text-slate-400">
-                              No coupon codes available.
+                              No active coupon codes available.
                             </div>
                           )}
                         </div>
@@ -1713,7 +1778,7 @@ const CouponsPage = () => {
                   </div>
 
                   {/* Warning if linked elsewhere is selected */}
-                  {coupons.some(c => 
+                  {bannerSelectableCoupons.some(c => 
                     couponCodes.includes(c.code) && 
                     (customBanners || []).some(b => b && b.id !== bannerForm.id && (b.coupon_codes || []).includes(c.code))
                   ) && (
@@ -1811,7 +1876,7 @@ const CouponsPage = () => {
                     onClick={() => setBannerForm(initialBannerForm)}
                     className="bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl py-3 px-6 font-bold uppercase tracking-wider text-xs transition-all"
                   >
-                    Clear Edit
+                    Cancel
                   </Button>
                 )}
                 <Button
@@ -2049,9 +2114,9 @@ const CouponsPage = () => {
 
       {/* Modal - Create/Edit */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[99999] overflow-y-auto flex items-center justify-center bg-black/70 p-4 backdrop-blur transition-all duration-300">
-          <div className="bg-white rounded-3xl border border-border-subtle shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto font-inter">
-            <div className="p-6 border-b border-border-subtle flex items-center justify-between">
+        <div className="fixed inset-0 z-[99999] overflow-y-auto flex items-start justify-center bg-black/70 p-4 sm:p-6 lg:p-8 backdrop-blur transition-all duration-300">
+          <div className="bg-white rounded-3xl border border-border-subtle shadow-2xl w-full max-w-5xl max-h-[calc(100vh-4rem)] overflow-hidden font-inter flex flex-col">
+            <div className="p-6 border-b border-border-subtle flex items-center justify-between shrink-0">
               <h3 className="text-xl font-black text-ink-slate flex items-center gap-2 uppercase tracking-wide">
                 <Ticket className="w-5 h-5 text-primary" /> {editingCoupon ? 'Edit Coupon' : 'Add Coupon'}
               </h3>
@@ -2063,7 +2128,7 @@ const CouponsPage = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Coupon code</label>
