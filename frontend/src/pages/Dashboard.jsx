@@ -97,7 +97,7 @@ const Dashboard = () => {
       case 'notifications':
         return <NotificationsTab notifications={notifications} loading={notificationsLoading} onMarkAllAsRead={markAllAsRead} />;
       case 'settings':
-        return <SettingsTab user={user} onUpdateProfile={handleUpdateProfile} onChangePassword={handleChangePassword} />;
+        return <SettingsTab user={user} onUpdateProfile={handleUpdateProfile} />;
       default:
         return <OrdersTab orders={orders} loading={ordersLoading} />;
     }

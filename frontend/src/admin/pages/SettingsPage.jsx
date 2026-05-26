@@ -378,109 +378,13 @@ const SettingsPage = () => {
             <Settings className="w-8 h-8 text-primary" />
             Settings
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">Update your business profile and system details.</p>
+          <p className="text-slate-500 mt-1 font-medium">Update your system configurations and announcement banner details.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
-                <Building2 className="w-32 h-32 text-primary/20" />
-             </div>
 
-             <h2 className="text-lg font-black text-slate-900 uppercase tracking-tighter mb-8 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-primary" />
-                Business Profile
-             </h2>
-
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Company Name</label>
-                   <div className="relative group">
-                      <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
-                         value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="DurgaShakti Foils" />
-                      <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
-                   </div>
-                </div>
-                <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">GST Number</label>
-                   <div className="relative group">
-                      <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
-                         value={gstNumber} onChange={e => setGstNumber(e.target.value)} placeholder="29XXXXX..." />
-                      <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
-                   </div>
-                </div>
-                <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Phone Number</label>
-                   <div className="relative group">
-                      <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
-                         value={companyPhone} onChange={e => setCompanyPhone(e.target.value)} placeholder="+91..." />
-                      <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
-                   </div>
-                </div>
-                <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Email Address</label>
-                   <div className="relative group">
-                      <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
-                         value={companyEmail} onChange={e => setCompanyEmail(e.target.value)} placeholder="ops@durgashakti.com" />
-                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
-                   </div>
-                </div>
-                <div className="md:col-span-2 space-y-1">
-                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Office Address</label>
-                   <div className="relative group">
-                      <textarea rows={3} className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
-                         value={companyAddress} onChange={e => setCompanyAddress(e.target.value)} placeholder="Full physical address..." />
-                      <MapPin className="absolute left-3.5 top-4 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
-                   </div>
-                </div>
-                 <div className="md:col-span-2 space-y-1">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Google Maps Share / Embed Link</label>
-                    <div className="relative group">
-                       <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
-                          value={googleMapsLink} onChange={e => setGoogleMapsLink(e.target.value)} placeholder="https://maps.app.goo.gl/FMk4dnhXvGeTrRFM6 or search query..." />
-                       <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
-                    </div>
-                 </div>
-
-                 <div className="md:col-span-2 mt-6 pt-6 border-t border-slate-100 space-y-4">
-                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Social Media Profile Links</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                       <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Instagram Link</label>
-                          <div className="relative group">
-                             <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
-                                value={instagramLink} onChange={e => setInstagramLink(e.target.value)} placeholder="https://instagram.com/..." />
-                             <Instagram className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
-                          </div>
-                       </div>
-                       <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Facebook Link</label>
-                          <div className="relative group">
-                             <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
-                                value={facebookLink} onChange={e => setFacebookLink(e.target.value)} placeholder="https://facebook.com/..." />
-                             <Facebook className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
-                          </div>
-                       </div>
-                       <div className="space-y-1">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">YouTube Link</label>
-                          <div className="relative group">
-                             <input className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10"
-                                value={youtubeLink} onChange={e => setYoutubeLink(e.target.value)} placeholder="https://youtube.com/..." />
-                             <Youtube className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
-                          </div>
-                       </div>
-                    </div>
-                 </div>
-             </div>
-
-             <div className="mt-8 pt-8 border-t border-slate-200 flex justify-end">
-                <Button disabled={saving} onClick={save} className="rounded-xl px-12 font-black uppercase tracking-widest shadow-lg shadow-emerald-glow flex items-center gap-2">
-                   {saving ? 'Saving...' : <><Save className="w-4 h-4" /> Save Settings</>}
-                </Button>
-             </div>
-          </div>
 
 
 

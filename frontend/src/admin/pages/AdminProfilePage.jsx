@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 
 const AdminProfilePage = () => {
   const { user, refreshUser } = useAuth();
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const [profileForm, setProfileForm] = useState({ full_name: user?.full_name || '' });
   const [passwordForm, setPasswordForm] = useState({ old_password: '', new_password: '', confirm_password: '' });
   const [updatingProfile, setUpdatingProfile] = useState(false);
@@ -77,12 +78,14 @@ const AdminProfilePage = () => {
             <User className="w-8 h-8 text-primary" />
             My Account Settings
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">Update your profile details and administrative password.</p>
+          <p className="text-slate-500 mt-1 font-medium">
+            {isSuperAdmin ? 'Update your profile details and administrative password.' : 'Update your profile details.'}
+          </p>
         </div>
       </div>
 
       {/* Grid of Forms */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className={`grid grid-cols-1 ${isSuperAdmin ? 'md:grid-cols-2' : 'max-w-xl'} gap-8`}>
         
         {/* Profile Info Form */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-6">
@@ -153,75 +156,77 @@ const AdminProfilePage = () => {
         </div>
 
         {/* Change Password Form */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-6">
-          <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <Key className="w-5 h-5" />
+        {isSuperAdmin && (
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <Key className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-black text-slate-900 uppercase tracking-tight">Security Credentials</h2>
+                <p className="text-[11px] text-slate-500 font-semibold">Change your administrative password.</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-black text-slate-900 uppercase tracking-tight">Security Credentials</h2>
-              <p className="text-[11px] text-slate-500 font-semibold">Change your administrative password.</p>
-            </div>
+
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Current Password</label>
+                <input 
+                  type="password"
+                  required
+                  value={passwordForm.old_password} 
+                  onChange={e => setPasswordForm({...passwordForm, old_password: e.target.value})} 
+                  className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">New Password</label>
+                <input 
+                  type="password"
+                  required
+                  value={passwordForm.new_password} 
+                  onChange={e => setPasswordForm({...passwordForm, new_password: e.target.value})} 
+                  className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Confirm New Password</label>
+                <input 
+                  type="password"
+                  required
+                  value={passwordForm.confirm_password} 
+                  onChange={e => setPasswordForm({...passwordForm, confirm_password: e.target.value})} 
+                  className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div className="pt-2">
+                <Button 
+                  type="submit" 
+                  disabled={updatingPassword} 
+                  className="w-full h-12 rounded-xl font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow"
+                >
+                  {updatingPassword ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4 mr-2" />
+                      Update Password
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
-
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Current Password</label>
-              <input 
-                type="password"
-                required
-                value={passwordForm.old_password} 
-                onChange={e => setPasswordForm({...passwordForm, old_password: e.target.value})} 
-                className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">New Password</label>
-              <input 
-                type="password"
-                required
-                value={passwordForm.new_password} 
-                onChange={e => setPasswordForm({...passwordForm, new_password: e.target.value})} 
-                className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Confirm New Password</label>
-              <input 
-                type="password"
-                required
-                value={passwordForm.confirm_password} 
-                onChange={e => setPasswordForm({...passwordForm, confirm_password: e.target.value})} 
-                className="w-full h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div className="pt-2">
-              <Button 
-                type="submit" 
-                disabled={updatingPassword} 
-                className="w-full h-12 rounded-xl font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow"
-              >
-                {updatingPassword ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-4 h-4 mr-2" />
-                    Update Password
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </div>
+        )}
 
       </div>
     </motion.div>

@@ -131,7 +131,7 @@ const GstrReportsPage = () => {
             <div className="bg-slate-50 p-1.5 rounded-2xl flex flex-wrap gap-1 border border-slate-100 shadow-inner">
               {[
                 { value: 'month', label: 'Monthly' },
-                { value: 'range', label: 'Custom Range' },
+                { value: 'range', label: 'Date Range' },
                 { value: 'day', label: 'Specific Day' },
                 { value: 'year', label: 'Specific Year' },
               ].map(option => (

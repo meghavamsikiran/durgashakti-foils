@@ -564,10 +564,12 @@ const AdminUsersPage = () => {
                         className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-primary hover:bg-primary/10 transition-all" title="Edit Admin">
                         <Edit3 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => { setResetModal(user); setNewPassword(''); }}
-                        className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-all" title="Reset Password">
-                        <Lock className="w-4 h-4" />
-                      </button>
+                      {user.role !== 'SUPER_ADMIN' && (
+                        <button onClick={() => { setResetModal(user); setNewPassword(''); }}
+                          className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-all" title="Reset Password">
+                          <Lock className="w-4 h-4" />
+                        </button>
+                      )}
                       {user.id !== me?.id && user.role !== 'SUPER_ADMIN' && (
                         <button onClick={() => setDeleteTarget(user)}
                           className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all" title="Delete Admin">

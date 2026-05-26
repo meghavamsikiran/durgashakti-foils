@@ -7,7 +7,7 @@ const PRESETS = [
   { key: 'thisWeek', label: 'This Week' },
   { key: 'thisMonth', label: 'This Month' },
   { key: 'thisYear', label: 'This Year' },
-  { key: 'custom', label: 'Custom Range' },
+  { key: 'custom', label: 'Date Range' },
 ];
 
 function toISODateStart(d) {
@@ -67,7 +67,7 @@ function labelForPreset(key) {
     case 'thisYear':
       return 'This Year';
     case 'custom':
-      return 'Custom';
+      return 'Date Range';
     default:
       return '';
   }

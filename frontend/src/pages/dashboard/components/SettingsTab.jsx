@@ -1,35 +1,25 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Lock, Save, Loader2 } from 'lucide-react';
+import { User, Save, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 
-const SettingsTab = ({ user, onUpdateProfile, onChangePassword }) => {
-  const [profileForm, setProfileForm] = useState({ full_name: user?.full_name || '', email: user?.email || '', phone: user?.phone || '' });
-  const [passwordForm, setPasswordForm] = useState({ old_password: '', new_password: '', confirm_password: '' });
+const SettingsTab = ({ user, onUpdateProfile }) => {
+  const [profileForm, setProfileForm] = useState({ 
+    full_name: user?.full_name || '', 
+    email: user?.email || '', 
+    phone: user?.phone || '' 
+  });
   const [updatingProfile, setUpdatingProfile] = useState(false);
-  const [updatingPassword, setUpdatingPassword] = useState(false);
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     setUpdatingProfile(true);
     await onUpdateProfile(profileForm);
     setUpdatingProfile(false);
-  };
-
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    if (passwordForm.new_password !== passwordForm.confirm_password) {
-      alert('Passwords do not match');
-      return;
-    }
-    setUpdatingPassword(true);
-    await onChangePassword(passwordForm);
-    setUpdatingPassword(false);
-    setPasswordForm({ old_password: '', new_password: '', confirm_password: '' });
   };
 
   return (
@@ -39,7 +29,7 @@ const SettingsTab = ({ user, onUpdateProfile, onChangePassword }) => {
           <div className="w-10 h-10 rounded-lg bg-primary text-white flex items-center justify-center shadow-emerald-glow">
             <User className="w-5 h-5" />
           </div>
-          <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Account Settings</h2>
+          <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Profile</h2>
         </div>
 
         <form onSubmit={handleProfileSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 md:p-8 bg-surface-container-lowest rounded-xl border border-border-subtle shadow-sm">
@@ -74,62 +64,12 @@ const SettingsTab = ({ user, onUpdateProfile, onChangePassword }) => {
         </form>
       </div>
 
-      <div className="space-y-8">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary text-white flex items-center justify-center shadow-emerald-glow">
-            <Lock className="w-5 h-5" />
-          </div>
-          <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Security Credentials</h2>
-        </div>
-
-        <form onSubmit={handlePasswordSubmit} className="grid grid-cols-1 gap-6 p-6 md:p-8 bg-surface-container-lowest rounded-xl border border-border-subtle shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Current Password</Label>
-              <Input 
-                type="password" 
-                required 
-                value={passwordForm.old_password} 
-                onChange={e => setPasswordForm({...passwordForm, old_password: e.target.value})} 
-                className="h-12 rounded-lg bg-surface border border-border-subtle focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all px-4 text-sm font-medium" 
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">New Password</Label>
-              <Input 
-                type="password" 
-                required 
-                value={passwordForm.new_password} 
-                onChange={e => setPasswordForm({...passwordForm, new_password: e.target.value})} 
-                className="h-12 rounded-lg bg-surface border border-border-subtle focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all px-4 text-sm font-medium" 
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Confirm New Password</Label>
-              <Input 
-                type="password" 
-                required 
-                value={passwordForm.confirm_password} 
-                onChange={e => setPasswordForm({...passwordForm, confirm_password: e.target.value})} 
-                className="h-12 rounded-lg bg-surface border border-border-subtle focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all px-4 text-sm font-medium" 
-              />
-            </div>
-          </div>
-          <div className="pt-2">
-            <Button type="submit" disabled={updatingPassword} className="h-12 rounded-lg px-8 gap-2 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-emerald-glow shadow-sm">
-              {updatingPassword ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              Update Password
-            </Button>
-          </div>
-        </form>
-      </div>
-
       <div className="space-y-8 pb-12">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-red-600 text-white flex items-center justify-center">
-            <Lock className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-lg bg-red-600 text-white flex items-center justify-center shadow-md">
+            <Trash2 className="w-5 h-5" />
           </div>
-          <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Danger Zone</h2>
+          <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Account Deactivation</h2>
         </div>
         <div className="p-6 bg-red-50/50 rounded-xl border border-red-200/50 shadow-sm flex flex-col items-start gap-4">
           <div className="space-y-1">
@@ -142,7 +82,7 @@ const SettingsTab = ({ user, onUpdateProfile, onChangePassword }) => {
                 window.dispatchEvent(new CustomEvent('request-account-deletion'));
               }
             }}
-            className="h-12 rounded-lg px-6 gap-2 font-black uppercase tracking-widest bg-red-600 hover:bg-red-755 text-white"
+            className="h-12 rounded-lg px-6 gap-2 font-black uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white shadow-sm"
           >
             Delete Account
           </Button>

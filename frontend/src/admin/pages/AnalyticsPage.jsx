@@ -48,7 +48,7 @@ const AnalyticsPage = () => {
   const { startProgress, updateProgress, finishProgress } = useProgress();
 
   const load = useCallback(async () => {
-    const isCustom = timeframe === 'Custom Range';
+    const isCustom = timeframe === 'Date Range';
     const params = {};
     if (isCustom) {
       if (customStart) params.start_date = customStart;
@@ -70,7 +70,7 @@ const AnalyticsPage = () => {
   }, [timeframe, customStart, customEnd]);
 
   const loadSilent = useCallback(async () => {
-    const isCustom = timeframe === 'Custom Range';
+    const isCustom = timeframe === 'Date Range';
     const params = {};
     if (isCustom) {
       if (customStart) params.start_date = customStart;
@@ -243,11 +243,11 @@ const AnalyticsPage = () => {
             <option>Last 7 Days</option>
             <option>This Month</option>
             <option>Fiscal Year</option>
-            <option>Custom Range</option>
+            <option>Date Range</option>
           </select>
         </div>
 
-        {timeframe === 'Custom Range' && (
+        {timeframe === 'Date Range' && (
           <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200">
             <input 
               type="date" 

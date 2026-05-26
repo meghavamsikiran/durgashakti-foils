@@ -208,7 +208,7 @@ const ReviewsPage = () => {
                   <option value="this_week">This Week</option>
                   <option value="this_month">This Month</option>
                   <option value="this_year">This Year</option>
-                  <option value="custom">Custom Range</option>
+                  <option value="custom">Date Range</option>
                 </select>
               </div>
               {dateRange === 'custom' && (

@@ -49,6 +49,7 @@ import AnalyticsPage from './admin/pages/AnalyticsPage';
 import AdminUsersPage from './admin/pages/AdminUsersPage';
 import InquiriesPage from './admin/pages/InquiriesPage';
 import AdminProfilePage from './admin/pages/AdminProfilePage';
+import BusinessProfilePage from './admin/pages/BusinessProfilePage';
 import ReviewsPage from './admin/pages/ReviewsPage';
 
 import PageLoader from './components/ui/PageLoader';
@@ -176,7 +177,15 @@ function AppRoutes() {
                     </ProtectedAdminRoute>
                   }
                 />
-                <Route path="profile" element={<AdminProfilePage />} />
+                <Route
+                  path="profile"
+                  element={
+                    <ProtectedAdminRoute permission="manage_settings">
+                      <BusinessProfilePage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route path="my-account" element={<AdminProfilePage />} />
               </Route>
 
               {/* Super Admin Routes */}
@@ -248,7 +257,15 @@ function AppRoutes() {
                     </ProtectedAdminRoute>
                   }
                 />
-                <Route path="profile" element={<AdminProfilePage />} />
+                <Route
+                  path="profile"
+                  element={
+                    <ProtectedAdminRoute permission="manage_settings">
+                      <BusinessProfilePage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route path="my-account" element={<AdminProfilePage />} />
               </Route>
 
               {/* Catch-all */}

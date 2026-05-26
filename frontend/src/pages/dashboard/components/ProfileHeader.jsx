@@ -11,7 +11,7 @@ const ProfileHeader = ({ user, activeTab, onMenuClick }) => {
       case 'wishlist': return 'Favorites';
       case 'addresses': return 'Shipping Network';
       case 'notifications': return 'Alert Center';
-      case 'settings': return 'Account Profile';
+      case 'settings': return 'Profile';
       default: return 'Overview';
     }
   };

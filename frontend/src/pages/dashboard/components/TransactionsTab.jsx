@@ -11,6 +11,8 @@ const TransactionsTab = ({ orders }) => {
   const [methodFilter, setMethodFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [timeframeFilter, setTimeframeFilter] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const PAGE_SIZE = 10;
 
   const transactions = (orders || []).map((order) => ({
@@ -67,15 +69,30 @@ const TransactionsTab = ({ orders }) => {
     if (timeframeFilter !== 'all' && tx.date) {
       const createdDate = new Date(tx.date);
       const now = new Date();
-      if (timeframeFilter === '30_days') {
-        const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
-        matchesTimeframe = createdDate >= thirtyDaysAgo;
-      } else if (timeframeFilter === '6_months') {
-        const sixMonthsAgo = new Date(now.setMonth(now.getMonth() - 6));
-        matchesTimeframe = createdDate >= sixMonthsAgo;
-      } else if (timeframeFilter === 'year') {
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
-        matchesTimeframe = createdDate >= startOfYear;
+      if (timeframeFilter === 'today') {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999);
+        matchesTimeframe = createdDate >= startOfToday && createdDate <= endOfToday;
+      } else if (timeframeFilter === 'this_month') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        matchesTimeframe = createdDate >= startOfMonth;
+      } else if (timeframeFilter === 'last_month') {
+        const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+        matchesTimeframe = createdDate >= startOfLastMonth && createdDate <= endOfLastMonth;
+      } else if (timeframeFilter === 'custom') {
+        if (startDate) {
+          const s = new Date(startDate);
+          s.setHours(0, 0, 0, 0);
+          matchesTimeframe = matchesTimeframe && createdDate >= s;
+        }
+        if (endDate) {
+          const e = new Date(endDate);
+          e.setHours(23, 59, 59, 999);
+          matchesTimeframe = matchesTimeframe && createdDate <= e;
+        }
       }
     }
 
@@ -115,7 +132,7 @@ const TransactionsTab = ({ orders }) => {
               type="button"
               onClick={() => setFilterOpen((prev) => !prev)}
               className={`inline-flex items-center justify-center w-[48px] h-[48px] rounded-lg border shadow-sm transition-colors ${
-                filterOpen || methodFilter !== 'all' || statusFilter !== 'all' || timeframeFilter !== 'all'
+                filterOpen || methodFilter !== 'all' || statusFilter !== 'all' || timeframeFilter !== 'all' || startDate !== '' || endDate !== ''
                   ? 'border-primary bg-primary/5 text-primary'
                   : 'border-border-subtle bg-surface text-muted-foreground hover:bg-slate-50'
               }`}
@@ -170,11 +187,40 @@ const TransactionsTab = ({ orders }) => {
                         className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
                       >
                         <option value="all">All Time</option>
-                        <option value="30_days">Last 30 Days</option>
-                        <option value="6_months">Last 6 Months</option>
-                        <option value="year">This Year</option>
+                        <option value="today">Today</option>
+                        <option value="this_month">This Month</option>
+                        <option value="last_month">Last Month</option>
+                        <option value="custom">Date Range</option>
                       </select>
                     </div>
+                    {timeframeFilter === 'custom' && (
+                      <div className="space-y-2 mt-2">
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Start Date</label>
+                          <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => {
+                              setStartDate(e.target.value);
+                              setCurrentPage(1);
+                            }}
+                            className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25 bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">End Date</label>
+                          <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => {
+                              setEndDate(e.target.value);
+                              setCurrentPage(1);
+                            }}
+                            className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25 bg-white"
+                          />
+                        </div>
+                      </div>
+                    )}
                     <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                       <Button
                         variant="ghost"
@@ -182,6 +228,8 @@ const TransactionsTab = ({ orders }) => {
                           setMethodFilter('all');
                           setStatusFilter('all');
                           setTimeframeFilter('all');
+                          setStartDate('');
+                          setEndDate('');
                           setFilterOpen(false);
                         }}
                         className="text-xs px-3 py-1.5 h-auto text-slate-500 hover:bg-slate-100 rounded-lg"
