@@ -927,7 +927,7 @@ async def send_email(to_email: str, subject: str, body: str, attachments: list =
 
     # Route 1: Try high-deliverability Vercel HTTPS SMTP Relay (never blocked by Render)
     try:
-        vercel_url = "https://durgashakti-foils.vercel.app/api/send-email"
+        vercel_url = "https://durgashakti-foils.vercel.app/api/send-email.js"
         logging.info("Attempting email dispatch via Vercel HTTPS Relay to %s...", to_email)
         payload = {
             "to": to_email,
