@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, User, LogOut, Package, Menu, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
@@ -10,7 +10,9 @@ const Navbar = () => {
   const { user, logout, isAdmin, isSuperAdmin } = useAuth();
   const { cartItemCount } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const isDashboard = location.pathname === '/dashboard';
 
   // Banner dynamic config state
   const [bannerConfig, setBannerConfig] = React.useState({
@@ -148,12 +150,24 @@ const Navbar = () => {
       <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-border-subtle">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2 font-manrope" data-testid="navbar-logo">
-            <img src="/favicon.png" alt="Durga Maa" className="w-8 h-8 object-contain" />
-            <span className="font-bold text-xl tracking-tight text-ink-slate">
-              Durga Shakti<span className="text-primary ml-1">Foils</span>
-            </span>
-          </Link>
+          <div className="flex items-center gap-2">
+            {isDashboard && (
+              <button 
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('toggle-customer-sidebar'))}
+                className="xl:hidden p-2 -ml-2 text-ink-slate hover:text-primary transition-colors focus:outline-none"
+                aria-label="Toggle Dashboard Menu"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+            )}
+            <Link to="/" className="flex items-center gap-2 font-manrope" data-testid="navbar-logo">
+              <img src="/favicon.png" alt="Durga Maa" className="w-8 h-8 object-contain" />
+              <span className="font-bold text-xl tracking-tight text-ink-slate">
+                Durga Shakti<span className="text-primary ml-1">Foils</span>
+              </span>
+            </Link>
+          </div>
 
           <div className="hidden md:flex items-center gap-6 font-inter">
             <Link
@@ -225,12 +239,18 @@ const Navbar = () => {
           </div>
 
           {/* Mobile Toggle */}
-          <button 
-            className="md:hidden p-2 text-ink-slate"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {isDashboard ? (
+            <div className="md:hidden w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black text-xs">
+              {user?.full_name?.charAt(0) || 'U'}
+            </div>
+          ) : (
+            <button 
+              className="md:hidden p-2 text-ink-slate"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          )}
         </div>
 
         {/* Mobile Menu */}

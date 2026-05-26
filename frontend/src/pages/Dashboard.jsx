@@ -60,6 +60,12 @@ const Dashboard = () => {
     return () => window.removeEventListener('request-account-deletion', handleDeleteAccount);
   }, [logout, navigate]);
 
+  useEffect(() => {
+    const handleToggle = () => setSidebarOpen(prev => !prev);
+    window.addEventListener('toggle-customer-sidebar', handleToggle);
+    return () => window.removeEventListener('toggle-customer-sidebar', handleToggle);
+  }, []);
+
   if (authLoading) return <PageLoader message="Authenticating..." />;
 
   const handleUpdateProfile = async (data) => {

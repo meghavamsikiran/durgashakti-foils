@@ -138,9 +138,8 @@ const CustomersPage = () => {
           </h1>
           <p className="text-slate-500 mt-1 font-medium">Analyze buyer behavior and lifetime value metrics.</p>
         </div>
-        
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <div className="grid grid-cols-2 sm:flex w-full sm:w-auto bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
             {[
               { id: 'all', label: 'All' },
               { id: 'loyal', label: 'Loyal Customers' }
@@ -148,7 +147,7 @@ const CustomersPage = () => {
               <button
                 key={item.id}
                 onClick={() => { if (item.id === 'loyal' && !loyaltyEnabled) return; setSegment(item.id); setPage(1); }}
-                className={`px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${
+                className={`text-center px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${
                   item.id === 'loyal' && !loyaltyEnabled
                     ? 'text-slate-300 cursor-not-allowed'
                     : segment === item.id ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'

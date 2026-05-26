@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Clock, Package, Wallet, Search, Star } from 'lucide-react';
+import { ShoppingBag, Clock, Package, Wallet, Search, Star, Filter } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import TablePagination from '../../../components/ui/TablePagination';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,9 @@ const OrdersTab = ({ orders, loading, onCancelOrder }) => {
   const navigate = useNavigate();
   const [ordersPage, setOrdersPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [timeframeFilter, setTimeframeFilter] = useState('all');
   const ORDERS_PER_PAGE = 5;
 
   const getStatusBadge = (status) => {
@@ -34,23 +37,49 @@ const OrdersTab = ({ orders, loading, onCancelOrder }) => {
     return config[s] || { bg: 'bg-slate-50 text-slate-600', label: s };
   };
 
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = (orders || []).filter(order => {
+    // 1. Search Query Filter
     const query = searchQuery.toLowerCase().trim();
-    if (!query) return true;
-    
-    // Search order number
-    const matchesOrderNumber = (order.order_number || '').toLowerCase().includes(query);
-    
-    // Search product names
-    const matchesProducts = (order.items || []).some(item => 
-      (item.product_name || '').toLowerCase().includes(query)
-    );
-    
-    // Search status
-    const badge = getStatusBadge(order.order_status);
-    const matchesStatus = (badge.label || '').toLowerCase().includes(query) || (order.order_status || '').toLowerCase().includes(query);
-    
-    return matchesOrderNumber || matchesProducts || matchesStatus;
+    let matchesSearch = true;
+    if (query) {
+      const matchesOrderNumber = (order.order_number || '').toLowerCase().includes(query);
+      const matchesProducts = (order.items || []).some(item => 
+        (item.product_name || '').toLowerCase().includes(query)
+      );
+      const badge = getStatusBadge(order.order_status);
+      const matchesStatus = (badge.label || '').toLowerCase().includes(query) || (order.order_status || '').toLowerCase().includes(query);
+      matchesSearch = matchesOrderNumber || matchesProducts || matchesStatus;
+    }
+
+    // 2. Status Filter
+    let matchesStatusFilter = true;
+    if (statusFilter !== 'all') {
+      const oStatus = (order.order_status || '').toLowerCase();
+      if (statusFilter === 'pending') {
+        matchesStatusFilter = ['pending', 'pending_payment'].includes(oStatus);
+      } else {
+        matchesStatusFilter = oStatus === statusFilter;
+      }
+    }
+
+    // 3. Timeframe Filter
+    let matchesTimeframe = true;
+    if (timeframeFilter !== 'all' && order.created_at) {
+      const createdDate = new Date(order.created_at);
+      const now = new Date();
+      if (timeframeFilter === '30_days') {
+        const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
+        matchesTimeframe = createdDate >= thirtyDaysAgo;
+      } else if (timeframeFilter === '6_months') {
+        const sixMonthsAgo = new Date(now.setMonth(now.getMonth() - 6));
+        matchesTimeframe = createdDate >= sixMonthsAgo;
+      } else if (timeframeFilter === 'year') {
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        matchesTimeframe = createdDate >= startOfYear;
+      }
+    }
+
+    return matchesSearch && matchesStatusFilter && matchesTimeframe;
   });
 
   const canReviewOrder = (order) => {
@@ -68,18 +97,97 @@ const OrdersTab = ({ orders, loading, onCancelOrder }) => {
       </div>
 
       {orders.length > 0 && (
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search by order number, product name, or status..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setOrdersPage(1);
-            }}
-            className="w-full pl-12 pr-4 h-[48px] rounded-lg border border-border-subtle focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium text-foreground placeholder:text-muted-foreground bg-surface shadow-sm"
-          />
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by order number, product name, or status..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setOrdersPage(1);
+              }}
+              className="w-full pl-12 pr-4 h-[48px] rounded-lg border border-border-subtle focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium text-foreground placeholder:text-muted-foreground bg-surface shadow-sm"
+            />
+          </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setFilterOpen((prev) => !prev)}
+              className={`inline-flex items-center justify-center w-[48px] h-[48px] rounded-lg border shadow-sm transition-colors ${
+                filterOpen || statusFilter !== 'all' || timeframeFilter !== 'all'
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-border-subtle bg-surface text-muted-foreground hover:bg-slate-50'
+              }`}
+            >
+              <Filter className="w-5 h-5" />
+            </button>
+            {filterOpen && (
+              <>
+                <div className="fixed inset-0 bg-black/40 z-40 xl:hidden" onClick={() => setFilterOpen(false)} />
+                <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 xl:absolute xl:translate-y-0 xl:inset-auto xl:right-0 xl:mt-2 w-auto xl:w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-black text-slate-900">Order Filters</h3>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Order Status</label>
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => {
+                          setStatusFilter(e.target.value);
+                          setOrdersPage(1);
+                        }}
+                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
+                      >
+                        <option value="all">All Statuses</option>
+                        <option value="pending">Placed / Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="out_for_delivery">Out for Delivery</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Timeframe</label>
+                      <select
+                        value={timeframeFilter}
+                        onChange={(e) => {
+                          setTimeframeFilter(e.target.value);
+                          setOrdersPage(1);
+                        }}
+                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
+                      >
+                        <option value="all">All Time</option>
+                        <option value="30_days">Last 30 Days</option>
+                        <option value="6_months">Last 6 Months</option>
+                        <option value="year">This Year</option>
+                      </select>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setStatusFilter('all');
+                          setTimeframeFilter('all');
+                          setFilterOpen(false);
+                        }}
+                        className="text-xs px-3 py-1.5 h-auto text-slate-500 hover:bg-slate-100 rounded-lg"
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        onClick={() => setFilterOpen(false)}
+                        className="text-xs px-3 py-1.5 h-auto bg-primary hover:bg-primary/90 text-white rounded-lg font-bold"
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
       

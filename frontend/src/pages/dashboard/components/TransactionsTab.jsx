@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CreditCard, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { CreditCard, ArrowUpRight, ArrowDownLeft, Search, Filter } from 'lucide-react';
+import { Button } from '../../../components/ui/button';
 import TablePagination from '../../../components/ui/TablePagination';
 
 const TransactionsTab = ({ orders }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [methodFilter, setMethodFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [timeframeFilter, setTimeframeFilter] = useState('all');
   const PAGE_SIZE = 10;
 
   const transactions = (orders || []).map((order) => ({
@@ -22,20 +28,191 @@ const TransactionsTab = ({ orders }) => {
     type: 'debit',
   }));
 
-  const totalFilteredPages = Math.ceil(transactions.length / PAGE_SIZE);
-  const paginatedTransactions = transactions.slice(
+  const filteredTransactions = transactions.filter((tx) => {
+    // 1. Search Query Filter
+    const query = searchQuery.toLowerCase().trim();
+    let matchesSearch = true;
+    if (query) {
+      const matchesOrderNumber = (tx.order_number || '').toLowerCase().includes(query);
+      const matchesTxId = (tx.transaction_id || '').toLowerCase().includes(query);
+      matchesSearch = matchesOrderNumber || matchesTxId;
+    }
+
+    // 2. Method Filter
+    let matchesMethod = true;
+    if (methodFilter !== 'all') {
+      const methodStr = (tx.method || '').toLowerCase();
+      if (methodFilter === 'cod') {
+        matchesMethod = methodStr.includes('cod') || methodStr.includes('cash');
+      } else if (methodFilter === 'razorpay') {
+        matchesMethod = methodStr.includes('razorpay') || methodStr.includes('card') || methodStr.includes('net') || methodStr.includes('upi') || methodStr.includes('online');
+      }
+    }
+
+    // 3. Status Filter
+    let matchesStatus = true;
+    if (statusFilter !== 'all') {
+      const statusStr = (tx.status || '').toLowerCase();
+      if (statusFilter === 'paid') {
+        matchesStatus = ['paid', 'completed', 'success'].includes(statusStr);
+      } else if (statusFilter === 'pending') {
+        matchesStatus = ['pending', 'unpaid', 'processing'].includes(statusStr);
+      } else if (statusFilter === 'failed') {
+        matchesStatus = ['failed', 'cancelled', 'refunded'].includes(statusStr);
+      }
+    }
+
+    // 4. Timeframe Filter
+    let matchesTimeframe = true;
+    if (timeframeFilter !== 'all' && tx.date) {
+      const createdDate = new Date(tx.date);
+      const now = new Date();
+      if (timeframeFilter === '30_days') {
+        const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
+        matchesTimeframe = createdDate >= thirtyDaysAgo;
+      } else if (timeframeFilter === '6_months') {
+        const sixMonthsAgo = new Date(now.setMonth(now.getMonth() - 6));
+        matchesTimeframe = createdDate >= sixMonthsAgo;
+      } else if (timeframeFilter === 'year') {
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        matchesTimeframe = createdDate >= startOfYear;
+      }
+    }
+
+    return matchesSearch && matchesMethod && matchesStatus && matchesTimeframe;
+  });
+
+  const totalFilteredPages = Math.ceil(filteredTransactions.length / PAGE_SIZE);
+  const paginatedTransactions = filteredTransactions.slice(
     (currentPage - 1) * PAGE_SIZE,
     currentPage * PAGE_SIZE
   );
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-      <h2 className="text-2xl md:text-3xl font-black text-foreground uppercase tracking-tighter">Transaction History</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl md:text-3xl font-black text-foreground uppercase tracking-tighter">Transaction History</h2>
+        <CreditCard className="w-8 h-8 text-muted-foreground/30" />
+      </div>
+
+      {transactions.length > 0 && (
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by order # or TXN ID..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-12 pr-4 h-[48px] rounded-lg border border-border-subtle focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium text-foreground placeholder:text-muted-foreground bg-surface shadow-sm"
+            />
+          </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setFilterOpen((prev) => !prev)}
+              className={`inline-flex items-center justify-center w-[48px] h-[48px] rounded-lg border shadow-sm transition-colors ${
+                filterOpen || methodFilter !== 'all' || statusFilter !== 'all' || timeframeFilter !== 'all'
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-border-subtle bg-surface text-muted-foreground hover:bg-slate-50'
+              }`}
+            >
+              <Filter className="w-5 h-5" />
+            </button>
+            {filterOpen && (
+              <>
+                <div className="fixed inset-0 bg-black/40 z-40 xl:hidden" onClick={() => setFilterOpen(false)} />
+                <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 xl:absolute xl:translate-y-0 xl:inset-auto xl:right-0 xl:mt-2 w-auto xl:w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-black text-slate-900">Transaction Filters</h3>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Payment Method</label>
+                      <select
+                        value={methodFilter}
+                        onChange={(e) => {
+                          setMethodFilter(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
+                      >
+                        <option value="all">All Methods</option>
+                        <option value="cod">Cash On Delivery (COD)</option>
+                        <option value="razorpay">Razorpay / Online</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Payment Status</label>
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => {
+                          setStatusFilter(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
+                      >
+                        <option value="all">All Statuses</option>
+                        <option value="paid">Paid / Completed</option>
+                        <option value="pending">Pending</option>
+                        <option value="failed">Failed / Refunded</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Timeframe</label>
+                      <select
+                        value={timeframeFilter}
+                        onChange={(e) => {
+                          setTimeframeFilter(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
+                      >
+                        <option value="all">All Time</option>
+                        <option value="30_days">Last 30 Days</option>
+                        <option value="6_months">Last 6 Months</option>
+                        <option value="year">This Year</option>
+                      </select>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setMethodFilter('all');
+                          setStatusFilter('all');
+                          setTimeframeFilter('all');
+                          setFilterOpen(false);
+                        }}
+                        className="text-xs px-3 py-1.5 h-auto text-slate-500 hover:bg-slate-100 rounded-lg"
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        onClick={() => setFilterOpen(false)}
+                        className="text-xs px-3 py-1.5 h-auto bg-primary hover:bg-primary/90 text-white rounded-lg font-bold"
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {transactions.length === 0 ? (
         <div className="text-center py-20 bg-surface-container-low rounded-xl border border-dashed border-border-subtle">
           <CreditCard className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
           <p className="text-muted-foreground font-bold">No transactions found</p>
+        </div>
+      ) : filteredTransactions.length === 0 ? (
+        <div className="text-center py-16 bg-surface-container-low/50 rounded-xl border border-dashed border-border-subtle">
+          <Search className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-muted-foreground font-bold">No matching transactions found</p>
+          <p className="text-muted-foreground/60 text-xs mt-1">Try refining your search terms</p>
         </div>
       ) : (
         <div className="bg-surface-container-lowest rounded-xl border border-border-subtle shadow-sm overflow-hidden">
@@ -71,7 +248,7 @@ const TransactionsTab = ({ orders }) => {
                     </td>
                     <td className="px-5 py-5 text-sm font-bold text-foreground uppercase tracking-tight whitespace-nowrap">{tx.method}</td>
                     <td className="px-5 py-5">
-                      <span className={`px-2.5 py-1 rounded-sm text-[10px] font-mono tracking-wider font-semibold ${['completed', 'paid'].includes(tx.status?.toLowerCase()) ? 'bg-primary/10 text-primary' : 'bg-amber-50 text-amber-600'}`}>
+                      <span className={`px-2.5 py-1 rounded-sm text-[10px] font-mono tracking-wider font-semibold ${['completed', 'paid'].includes(tx.status?.toLowerCase()) ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
                         {tx.status}
                       </span>
                     </td>
@@ -87,7 +264,7 @@ const TransactionsTab = ({ orders }) => {
             currentPage={currentPage}
             totalPages={totalFilteredPages}
             onPageChange={setCurrentPage}
-            totalItems={transactions.length}
+            totalItems={filteredTransactions.length}
             pageSize={PAGE_SIZE}
           />
         </div>
