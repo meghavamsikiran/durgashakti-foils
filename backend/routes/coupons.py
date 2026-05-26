@@ -274,9 +274,9 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
                 "valid": False,
                 "discount_amount": 0.0,
                 "free_shipping": False,
-                "error": "Only one coupon can be used per customer account across all purchases.",
+                "error": "You have already redeemed a coupon on a past order. Only one coupon can be used per customer account.",
                 "applied_coupons": [],
-                "errors": {c: "Only one coupon can be used per customer account" for c in codes}
+                "errors": {c: "You have already used a coupon on your account" for c in codes}
             }
 
     applied_coupons = []
@@ -352,7 +352,7 @@ async def validate_coupons_logic(db: AsyncSession, user_id: str, codes: List[str
                 effective_customer_limit = 1
 
             if effective_customer_limit is not None and usage_count >= effective_customer_limit:
-                errors[raw_code] = f"You have used this coupon {usage_count}/{effective_customer_limit} times"
+                errors[raw_code] = "You have already redeemed this coupon code on a past order."
                 continue
 
         # If we passed all checks, apply this coupon!

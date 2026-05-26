@@ -17,6 +17,12 @@ const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID;
 const getCustomerCouponError = (message) => {
   if (!message) return 'This coupon could not be applied. Please check the code and try again.';
   const lowerMessage = String(message).toLowerCase();
+  if (lowerMessage.includes('already redeemed') || lowerMessage.includes('already used') || lowerMessage.includes('used this coupon')) {
+    return 'You have already redeemed this coupon code on a past order.';
+  }
+  if (lowerMessage.includes('only one coupon can be used per customer') || lowerMessage.includes('only one coupon order')) {
+    return 'You have already redeemed a coupon on a past order. Only one coupon order can be placed per account.';
+  }
   if (lowerMessage.includes('stacking')) {
     return 'Only one coupon can be used per order. Remove the applied coupon before using another code.';
   }
