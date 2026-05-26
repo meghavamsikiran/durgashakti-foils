@@ -154,6 +154,10 @@ const adminService = {
   // Auth
   changePassword: (payload) => apiClient.post('/auth/change-password', payload),
   getMe: () => cachedGet('/auth/me'),
+  updateProfile: (payload) => {
+    invalidateCache('/auth/me');
+    return apiClient.put('/auth/me', payload);
+  },
 };
 
 export default adminService;
