@@ -19,6 +19,25 @@ const ProductReviews = ({ productId, summary }) => {
   const [newReplyId, setNewReplyId] = useState(null);
   const [visibleCount, setVisibleCount] = useState(3);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(null);
+  const [selectedRating, setSelectedRating] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+
+  useEffect(() => {
+    setVisibleCount(3);
+  }, [selectedRating, sortBy]);
+
+  const filteredAndSortedReviews = React.useMemo(() => {
+    let result = [...reviews];
+    if (selectedRating !== 'all') {
+      result = result.filter(r => Number(r.rating) === Number(selectedRating));
+    }
+    if (sortBy === 'newest') {
+      result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    } else if (sortBy === 'oldest') {
+      result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    }
+    return result;
+  }, [reviews, selectedRating, sortBy]);
 
   useEffect(() => {
     if (!productId) return;
@@ -133,7 +152,7 @@ const ProductReviews = ({ productId, summary }) => {
     }
   };
   const mediaItems = reviews.flatMap(normalizeReviewMedia);
-  const visibleReviews = reviews.slice(0, visibleCount);
+  const visibleReviews = filteredAndSortedReviews.slice(0, visibleCount);
   const selectedMedia = selectedMediaIndex !== null ? mediaItems[selectedMediaIndex] : null;
   const shiftSelectedMedia = (delta) => {
     if (!mediaItems.length) return;
@@ -234,19 +253,80 @@ const ProductReviews = ({ productId, summary }) => {
             {[5, 4, 3, 2, 1].map((r) => {
               const amount = distribution[String(r)] || 0;
               const percent = count ? Math.round((amount / count) * 100) : 0;
+              const isSelected = selectedRating === r;
               return (
-                <div key={r} className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                  <span className="w-8">{r} star</span>
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setSelectedRating(isSelected ? 'all' : r)}
+                  className={`w-full flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-primary transition-all p-1.5 rounded-lg text-left ${
+                    isSelected 
+                      ? 'bg-primary/10 text-primary border border-primary/20 font-extrabold' 
+                      : 'border border-transparent hover:bg-slate-50'
+                  }`}
+                  title={isSelected ? "Clear filter" : `Filter by ${r} star reviews`}
+                >
+                  <span className="w-12 shrink-0">{r} star</span>
                   <div className="h-2 flex-1 rounded-full bg-slate-100 overflow-hidden">
                     <div className="h-full bg-primary" style={{ width: `${percent}%` }} />
                   </div>
-                  <span className="w-9 text-right">{percent}%</span>
-                </div>
+                  <span className="w-9 text-right shrink-0">{percent}%</span>
+                </button>
               );
             })}
           </div>
 
           <div className="space-y-5">
+            {/* Filter and Sort Controls Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border-subtle pb-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-400 mr-2">Filter:</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRating('all')}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                    selectedRating === 'all'
+                      ? 'bg-primary text-white border-primary shadow-sm shadow-emerald-100'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-primary hover:text-primary'
+                  }`}
+                >
+                  All ({reviews.length})
+                </button>
+                {[5, 4, 3, 2, 1].map(r => {
+                  const rCount = reviews.filter(rev => Number(rev.rating) === r).length;
+                  return (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setSelectedRating(r)}
+                      disabled={rCount === 0}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
+                        selectedRating === r
+                          ? 'bg-primary text-white border-primary shadow-sm shadow-emerald-100'
+                          : rCount === 0
+                            ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-primary hover:text-primary'
+                      }`}
+                    >
+                      {r}★ ({rCount})
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-400">Sort:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                </select>
+              </div>
+            </div>
+
             {loading ? (
               <div className="space-y-4">
                 {[1, 2].map((i) => (
@@ -264,6 +344,17 @@ const ProductReviews = ({ productId, summary }) => {
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : filteredAndSortedReviews.length === 0 ? (
+              <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-8 text-center text-slate-500">
+                <p className="font-bold">No reviews found matching the selected rating filter.</p>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRating('all')}
+                  className="mt-3 text-xs font-black uppercase tracking-wider text-primary hover:underline"
+                >
+                  Show all reviews
+                </button>
               </div>
             ) : (
               visibleReviews.map((review) => {
@@ -465,11 +556,11 @@ const ProductReviews = ({ productId, summary }) => {
             }))}
           </div>
         </div>
-        {reviews.length > visibleCount && (
+        {filteredAndSortedReviews.length > visibleCount && (
           <div className="mt-8 md:ml-[292px]">
             <button
               type="button"
-              onClick={() => setVisibleCount(prev => Math.min(prev + 5, reviews.length))}
+              onClick={() => setVisibleCount(prev => Math.min(prev + 5, filteredAndSortedReviews.length))}
               className="w-full rounded-xl border border-slate-200 bg-white px-6 py-4 text-left text-sm font-black text-primary shadow-sm transition-all hover:border-primary hover:bg-emerald-50/40"
             >
               See more reviews

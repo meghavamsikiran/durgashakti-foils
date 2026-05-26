@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Camera, Upload, X } from 'lucide-react';
+import { Camera, Upload, X, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import PageLoader from '../components/ui/PageLoader';
@@ -22,6 +22,18 @@ const ProductReviewPage = () => {
   const [publicName, setPublicName] = useState(user?.full_name || '');
   const [files, setFiles] = useState([]);
   const [existingMedia, setExistingMedia] = useState([]);
+  const [filePreviews, setFilePreviews] = useState([]);
+  const [selectedModalMedia, setSelectedModalMedia] = useState(null);
+
+  useEffect(() => {
+    const urls = files.map(file => {
+      return { url: URL.createObjectURL(file), type: file.type.startsWith('video/') ? 'video' : 'image', name: file.name };
+    });
+    setFilePreviews(urls);
+    return () => {
+      urls.forEach(item => URL.revokeObjectURL(item.url));
+    };
+  }, [files]);
 
   useEffect(() => {
     const load = async () => {
@@ -151,19 +163,62 @@ const ProductReviewPage = () => {
             <span className="text-xs font-bold uppercase tracking-wider">Upload media</span>
             <input type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleFiles} />
           </label>
-          {files.length > 0 && (
-            <div className="flex gap-2 flex-wrap mt-3">
-              {files.map((file, index) => (
-                <span key={`${file.name}-${index}`} className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary border border-primary/20 px-3 py-1 text-xs font-bold">
-                  <Upload className="w-3 h-3" />
-                  {file.name}
-                  <button type="button" onClick={() => setFiles(prev => prev.filter((_, i) => i !== index))}>
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
+          
+          {/* New files preview grid */}
+          {filePreviews.length > 0 && (
+            <div className="mt-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Selected new files to upload</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 animate-in fade-in duration-200">
+                {filePreviews.map((preview, index) => (
+                  <div key={`${preview.name}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group">
+                    {preview.type === 'video' ? (
+                      <>
+                        <video src={preview.url} className="w-full h-full object-cover" muted playsInline />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedModalMedia({
+                              urls: filePreviews,
+                              currentIndex: index,
+                              title: preview.name
+                            });
+                          }}
+                          className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors"
+                        >
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-primary shadow-sm group-hover:scale-110 transition-transform">
+                            <Play className="h-4 w-4 fill-current translate-x-[1px]" />
+                          </span>
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedModalMedia({
+                            urls: filePreviews,
+                            currentIndex: index,
+                            title: preview.name
+                          });
+                        }}
+                        className="w-full h-full"
+                      >
+                        <img src={preview.url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setFiles(prev => prev.filter((_, i) => i !== index))}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-slate-900/70 text-white flex items-center justify-center hover:bg-slate-900 transition-colors z-10"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
+
+          {/* Existing files preview grid */}
           {existingMedia.length > 0 && files.length === 0 && (
             <div className="mt-4">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Uploaded media</p>
@@ -172,12 +227,53 @@ const ProductReviewPage = () => {
                   const mediaUrl = typeof media === 'string' ? media : media.url;
                   const mediaType = (typeof media === 'string' ? '' : media.type) || '';
                   const isVideo = mediaType.startsWith('video') || /\.(mp4|webm|mov)$/i.test(mediaUrl || '');
+                  const fullUrl = formatImageUrl(mediaUrl);
+                  
+                  const mappedExisting = existingMedia.map(m => {
+                    const mUrl = typeof m === 'string' ? m : m.url;
+                    const mType = (typeof m === 'string' ? '' : m.type) || '';
+                    return {
+                      url: mUrl,
+                      type: mType.startsWith('video') || /\.(mp4|webm|mov)$/i.test(mUrl || '') ? 'video' : 'image',
+                      name: 'Uploaded file'
+                    };
+                  });
+
                   return (
-                    <div key={`${mediaUrl}-${index}`} className="aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
+                    <div key={`${mediaUrl}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group">
                       {isVideo ? (
-                        <video src={formatImageUrl(mediaUrl)} controls className="w-full h-full object-cover" />
+                        <>
+                          <video src={fullUrl} className="w-full h-full object-cover" muted playsInline />
+                          <button
+                            type="button; "
+                            onClick={() => {
+                              setSelectedModalMedia({
+                                urls: mappedExisting,
+                                currentIndex: index,
+                                title: 'Uploaded review media'
+                              });
+                            }}
+                            className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors"
+                          >
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-primary shadow-sm group-hover:scale-110 transition-transform">
+                              <Play className="h-4 w-4 fill-current translate-x-[1px]" />
+                            </span>
+                          </button>
+                        </>
                       ) : (
-                        <img src={formatImageUrl(mediaUrl)} alt="Uploaded review media" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedModalMedia({
+                              urls: mappedExisting,
+                              currentIndex: index,
+                              title: 'Uploaded review media'
+                            });
+                          }}
+                          className="w-full h-full"
+                        >
+                          <img src={fullUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        </button>
                       )}
                     </div>
                   );
@@ -218,6 +314,119 @@ const ProductReviewPage = () => {
           </Button>
         </div>
       </form>
+
+      {selectedModalMedia && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setSelectedModalMedia(null)}
+              className="absolute right-4 top-4 z-20 rounded-full bg-white/90 p-2 text-slate-700 shadow-sm hover:bg-white transition-all hover:scale-105"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            
+            {/* Media box */}
+            <div className="relative flex-1 min-h-[320px] md:min-h-[480px] bg-slate-950 flex items-center justify-center">
+              {selectedModalMedia.urls.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedModalMedia(prev => ({
+                      ...prev,
+                      currentIndex: (prev.currentIndex - 1 + prev.urls.length) % prev.urls.length
+                    }));
+                  }}
+                  className="absolute left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-sm hover:bg-white hover:scale-105 transition-all"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
+              
+              {(() => {
+                const activeItem = selectedModalMedia.urls[selectedModalMedia.currentIndex];
+                const isBlob = activeItem.url.startsWith('blob:');
+                if (activeItem.type === 'video') {
+                  return (
+                    <video
+                      key={activeItem.url}
+                      src={isBlob ? activeItem.url : formatImageUrl(activeItem.url)}
+                      className="max-h-[70vh] w-full object-contain"
+                      controls
+                      autoPlay
+                      playsInline
+                    />
+                  );
+                } else {
+                  return (
+                    <img
+                      src={isBlob ? activeItem.url : formatImageUrl(activeItem.url)}
+                      alt=""
+                      className="max-h-[70vh] w-full object-contain"
+                    />
+                  );
+                }
+              })()}
+
+              {selectedModalMedia.urls.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedModalMedia(prev => ({
+                      ...prev,
+                      currentIndex: (prev.currentIndex + 1) % prev.urls.length
+                    }));
+                  }}
+                  className="absolute right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-sm hover:bg-white hover:scale-105 transition-all"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              )}
+            </div>
+
+            {/* Sidebar or metadata */}
+            <div className="w-full md:w-[300px] p-6 flex flex-col justify-between bg-slate-50 border-t md:border-t-0 md:border-l border-slate-200">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Attachment Preview</span>
+                <h3 className="mt-3 text-base font-extrabold text-slate-900 leading-tight">
+                  {selectedModalMedia.title || 'Review Attachment'}
+                </h3>
+              </div>
+
+              {selectedModalMedia.urls.length > 1 && (
+                <div className="mt-6">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-2">Files ({selectedModalMedia.urls.length})</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedModalMedia.urls.map((item, idx) => {
+                      const isBlob = item.url.startsWith('blob:');
+                      const fileSrc = isBlob ? item.url : formatImageUrl(item.url);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setSelectedModalMedia(prev => ({ ...prev, currentIndex: idx }))}
+                          className={`h-12 w-12 overflow-hidden rounded-lg border bg-white transition-all ${selectedModalMedia.currentIndex === idx ? 'border-primary ring-2 ring-primary/25 scale-105 shadow-sm' : 'border-slate-200 hover:border-slate-400'}`}
+                        >
+                          {item.type === 'video' ? (
+                            <div className="relative h-full w-full">
+                              <video src={fileSrc} className="h-full w-full object-cover" muted playsInline />
+                              <span className="absolute inset-0 flex items-center justify-center bg-black/10 text-white">
+                                <Play className="h-3.5 w-3.5 fill-current" />
+                              </span>
+                            </div>
+                          ) : (
+                            <img src={fileSrc} alt="" className="h-full w-full object-cover" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

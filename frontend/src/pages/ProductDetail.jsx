@@ -13,6 +13,7 @@ import { getProductPricing } from '../utils/productPricing';
 import { getBadgeClasses, getProductBadge } from '../utils/productBadges';
 import ProductReviews from '../components/reviews/ProductReviews';
 import StarRating from '../components/reviews/StarRating';
+import reviewService from '../services/review.service';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -83,8 +84,11 @@ const ProductDetail = () => {
       setLoading(true);
     }
     try {
-      const response = await api.getProduct(id);
-      setProduct(response.data);
+      const [prodResponse] = await Promise.all([
+        api.getProduct(id),
+        reviewService.getProductReviews(id, { limit: 50 }).catch(() => null)
+      ]);
+      setProduct(prodResponse.data);
       setNotFound(false);
     } catch (error) {
       setProduct(null);
@@ -97,8 +101,11 @@ const ProductDetail = () => {
 
   const fetchProductSilent = useCallback(async () => {
     try {
-      const response = await apiClient.get(`/products/${id}`, { silent: true });
-      setProduct(response.data);
+      const [prodResponse] = await Promise.all([
+        apiClient.get(`/products/${id}`, { silent: true }),
+        reviewService.getProductReviews(id, { limit: 50 }).catch(() => null)
+      ]);
+      setProduct(prodResponse.data);
       setNotFound(false);
     } catch {
       // Ignore background errors

@@ -4,7 +4,7 @@ import {
   User, Mail, Phone, Calendar, MapPin, 
   ShoppingBag, Star, ArrowLeft, Trash2, ShieldCheck, 
   ExternalLink, IndianRupee, Clock, CheckCircle2, ShieldAlert,
-  MessageSquareReply, Eye, EyeOff, Pencil
+  MessageSquareReply, Eye, EyeOff, Pencil, Play, X, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
@@ -21,6 +21,7 @@ const CustomerDetailPage = () => {
   const [replyDrafts, setReplyDrafts] = useState({});
   const [savingId, setSavingId] = useState(null);
   const [activeReplyId, setActiveReplyId] = useState(null);
+  const [selectedModalMedia, setSelectedModalMedia] = useState(null);
 
   const loadCustomer = useCallback(async () => {
     try {
@@ -409,15 +410,35 @@ const CustomerDetailPage = () => {
                         mediaUrls = [];
                       }
                       return Array.isArray(mediaUrls) && mediaUrls.length > 0 && (
-                        <div className="flex gap-2 pt-1.5 overflow-x-auto">
+                        <div className="flex gap-2.5 pt-2 flex-wrap">
                           {mediaUrls.map((media, idx) => (
-                            <div key={`${review.id}-${idx}`} className="w-14 h-14 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0">
+                            <button
+                              key={`${review.id}-${idx}`}
+                              type="button"
+                              onClick={() => {
+                                setSelectedModalMedia({
+                                  urls: mediaUrls,
+                                  currentIndex: idx,
+                                  title: review.title,
+                                  public_name: data?.customer?.full_name || review.public_name,
+                                  created_at: review.created_at
+                                });
+                              }}
+                              className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 hover:border-primary focus:outline-none transition-all group"
+                            >
                               {media.type === 'video' ? (
-                                <video src={formatImageUrl(media.url)} className="w-full h-full object-cover" controls />
+                                <>
+                                  <video src={formatImageUrl(media.url)} className="w-full h-full object-cover" muted playsInline />
+                                  <span className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-primary shadow-sm group-hover:scale-110 transition-transform">
+                                      <Play className="h-4 w-4 fill-current translate-x-[1px]" />
+                                    </span>
+                                  </span>
+                                </>
                               ) : (
-                                <img src={formatImageUrl(media.url)} alt="" className="w-full h-full object-cover" />
+                                <img src={formatImageUrl(media.url)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                               )}
-                            </div>
+                            </button>
                           ))}
                         </div>
                       );
@@ -525,6 +546,120 @@ const CustomerDetailPage = () => {
           )}
         </div>
       </div>
+
+      {selectedModalMedia && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setSelectedModalMedia(null)}
+              className="absolute right-4 top-4 z-20 rounded-full bg-white/90 p-2 text-slate-700 shadow-sm hover:bg-white transition-all hover:scale-105"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            
+            {/* Media box */}
+            <div className="relative flex-1 min-h-[320px] md:min-h-[480px] bg-slate-950 flex items-center justify-center">
+              {selectedModalMedia.urls.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedModalMedia(prev => ({
+                      ...prev,
+                      currentIndex: (prev.currentIndex - 1 + prev.urls.length) % prev.urls.length
+                    }));
+                  }}
+                  className="absolute left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-sm hover:bg-white hover:scale-105 transition-all"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+              )}
+              
+              {(() => {
+                const activeItem = selectedModalMedia.urls[selectedModalMedia.currentIndex];
+                if (activeItem.type === 'video') {
+                  return (
+                    <video
+                      key={activeItem.url}
+                      src={formatImageUrl(activeItem.url)}
+                      className="max-h-[70vh] w-full object-contain"
+                      controls
+                      autoPlay
+                      playsInline
+                    />
+                  );
+                } else {
+                  return (
+                    <img
+                      src={formatImageUrl(activeItem.url)}
+                      alt=""
+                      className="max-h-[70vh] w-full object-contain"
+                    />
+                  );
+                }
+              })()}
+
+              {selectedModalMedia.urls.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedModalMedia(prev => ({
+                      ...prev,
+                      currentIndex: (prev.currentIndex + 1) % prev.urls.length
+                    }));
+                  }}
+                  className="absolute right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-sm hover:bg-white hover:scale-105 transition-all"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              )}
+            </div>
+
+            {/* Sidebar or metadata */}
+            <div className="w-full md:w-[300px] p-6 flex flex-col justify-between bg-slate-50 border-t md:border-t-0 md:border-l border-slate-200">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Review Attachment</span>
+                <h3 className="mt-3 text-lg font-black text-slate-900 leading-tight">"{selectedModalMedia.title}"</h3>
+                <p className="mt-1.5 text-xs font-bold text-slate-600">
+                  By <span className="font-extrabold text-slate-900">{selectedModalMedia.public_name}</span>
+                </p>
+                {selectedModalMedia.created_at && (
+                  <p className="text-[10px] text-slate-400 font-mono font-bold mt-1">
+                    {new Date(selectedModalMedia.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </p>
+                )}
+              </div>
+
+              {selectedModalMedia.urls.length > 1 && (
+                <div className="mt-6">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-slate-400 mb-2">Attached files ({selectedModalMedia.urls.length})</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedModalMedia.urls.map((item, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setSelectedModalMedia(prev => ({ ...prev, currentIndex: idx }))}
+                        className={`h-12 w-12 overflow-hidden rounded-lg border bg-white transition-all ${selectedModalMedia.currentIndex === idx ? 'border-primary ring-2 ring-primary/25 scale-105 shadow-sm' : 'border-slate-200 hover:border-slate-400'}`}
+                      >
+                        {item.type === 'video' ? (
+                          <div className="relative h-full w-full">
+                            <video src={formatImageUrl(item.url)} className="h-full w-full object-cover" muted playsInline />
+                            <span className="absolute inset-0 flex items-center justify-center bg-black/10 text-white">
+                              <Play className="h-3.5 w-3.5 fill-current" />
+                            </span>
+                          </div>
+                        ) : (
+                          <img src={formatImageUrl(item.url)} alt="" className="h-full w-full object-cover" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
