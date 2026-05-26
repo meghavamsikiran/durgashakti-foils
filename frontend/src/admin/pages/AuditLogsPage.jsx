@@ -215,6 +215,10 @@ const AuditLogsPage = () => {
                 const info = actionInfo(row.action);
                 const ActionIcon = info.icon;
                 const isExpanded = expandedRow === row.id;
+                const metadata = row.metadata || {};
+                const actorName = row.actor_name || metadata.actor_name || 'System Process';
+                const actorRole = row.actor_role_label || metadata.actor_role_label || row.actor_role || metadata.actor_role || 'SYSTEM';
+                const actorEmail = row.actor_email || metadata.actor_email;
                 
                 return (
                   <React.Fragment key={row.id}>
@@ -291,13 +295,13 @@ const AuditLogsPage = () => {
                                           <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Updated By Name & Role</div>
                                           <div className="text-xs font-black text-slate-800 bg-primary/5 border border-primary/20 p-2.5 rounded-xl truncate flex items-center gap-2">
                                              <User className="w-3.5 h-3.5 text-primary" />
-                                             {row.actor_name || 'System Process'} ({row.actor_role ? row.actor_role.replace('_', ' ') : 'SYSTEM'})
+                                             {actorName} ({actorRole.replaceAll('_', ' ')})
                                           </div>
                                        </div>
-                                       {row.actor_email && (
+                                       {actorEmail && (
                                           <div>
                                              <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Actor Email</div>
-                                             <div className="text-xs font-bold text-slate-600 bg-slate-50 p-2 rounded-xl truncate">{row.actor_email}</div>
+                                             <div className="text-xs font-bold text-slate-600 bg-slate-50 p-2 rounded-xl truncate">{actorEmail}</div>
                                           </div>
                                        )}
                                        <div>

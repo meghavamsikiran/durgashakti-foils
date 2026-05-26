@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
+import apiClient from '../../services/core/apiClient';
 import { 
   Users, ShieldCheck, UserPlus, Search, 
   Mail, Phone, Lock, Edit3, Trash2,
@@ -196,6 +197,47 @@ const RoleTemplateSelector = ({ selectedTemplate, onSelectTemplate }) => {
   );
 };
 
+const PERMISSION_META_KEYS = new Set(['is_first_login', 'role_template']);
+
+const getPermissionCount = (permissions = {}) =>
+  Object.entries(permissions).filter(([key, value]) => !PERMISSION_META_KEYS.has(key) && value === true).length;
+
+const normalizeTemplateKey = (key) => (ROLE_TEMPLATES[key] ? key : 'CUSTOM');
+
+const getTemplateKeyForUser = (user) => {
+  if (user?.role === 'SUPER_ADMIN') return 'SUPER_ADMIN';
+  return normalizeTemplateKey(user?.permissions?.role_template || 'CUSTOM');
+};
+
+const permissionsWithTemplate = (permissions = {}, templateKey = 'CUSTOM') => ({
+  ...permissions,
+  role_template: normalizeTemplateKey(templateKey)
+});
+
+const templatePermissions = (templateKey) => {
+  const key = normalizeTemplateKey(templateKey);
+  return permissionsWithTemplate({ ...(ROLE_TEMPLATES[key]?.permissions || {}) }, key);
+};
+
+const RoleTemplateSelect = ({ value, onChange, disabled = false }) => (
+  <div className="space-y-1">
+    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Role Template</label>
+    <div className="relative">
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 py-3 pr-10 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-primary/20 outline-none transition-all disabled:bg-slate-50 disabled:text-slate-500"
+      >
+        {Object.entries(ROLE_TEMPLATES).map(([key, tmpl]) => (
+          <option key={key} value={key}>{tmpl.label}</option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+    </div>
+  </div>
+);
+
 
 const AdminUsersPage = () => {
   const { hasPermission } = useAuth();
@@ -210,12 +252,12 @@ const AdminUsersPage = () => {
   });
   
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: {} });
+  const [form, setForm] = useState({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: templatePermissions('CUSTOM') });
   const [selectedTemplate, setSelectedTemplate] = useState('CUSTOM');
   const [creating, setCreating] = useState(false);
   
   const [editModal, setEditModal] = useState(null);
-  const [editForm, setEditForm] = useState({ full_name: '', email: '', phone: '', role: '', permissions: {} });
+  const [editForm, setEditForm] = useState({ full_name: '', email: '', phone: '', role: '', permissions: templatePermissions('CUSTOM') });
   const [editSelectedTemplate, setEditSelectedTemplate] = useState('CUSTOM');
   const [editSaving, setEditSaving] = useState(false);
   
@@ -279,10 +321,11 @@ const AdminUsersPage = () => {
       setCreating(true);
       await adminService.createAdminUser({
         ...form,
+        permissions: permissionsWithTemplate(form.permissions, selectedTemplate),
         role_template: selectedTemplate
       });
       toast.success('Admin created successfully');
-      setForm({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: {} });
+      setForm({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: templatePermissions('CUSTOM') });
       setSelectedTemplate('CUSTOM');
       setShowCreate(false);
       load();
@@ -296,7 +339,14 @@ const AdminUsersPage = () => {
   const handleEdit = async () => {
     try {
       setEditSaving(true);
-      await adminService.updateAdminUser(editModal.id, editForm);
+      const payload = editForm.role === 'SUPER_ADMIN'
+        ? { full_name: editForm.full_name, email: editForm.email, phone: editForm.phone, role: editForm.role }
+        : {
+            ...editForm,
+            permissions: permissionsWithTemplate(editForm.permissions, editSelectedTemplate),
+            role_template: editSelectedTemplate
+          };
+      await adminService.updateAdminUser(editModal.id, payload);
       toast.success('Admin info updated');
       setEditModal(null);
       load();
@@ -392,7 +442,7 @@ const AdminUsersPage = () => {
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
-          <Button onClick={() => { setShowCreate(true); setForm({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: {} }); setSelectedTemplate('CUSTOM'); }} className="rounded-xl flex items-center gap-2 px-6 shadow-lg shadow-emerald-glow hover:shadow-emerald-glow transition-all">
+          <Button onClick={() => { setShowCreate(true); setForm({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: templatePermissions('CUSTOM') }); setSelectedTemplate('CUSTOM'); }} className="rounded-xl flex items-center gap-2 px-6 shadow-lg shadow-emerald-glow hover:shadow-emerald-glow transition-all">
             <UserPlus className="w-4 h-4" />
             Add New Admin
           </Button>
@@ -457,6 +507,9 @@ const AdminUsersPage = () => {
                 <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-6">
                     <div className="font-bold text-slate-800 group-hover:text-primary transition-colors">{user.full_name}</div>
+                    <div className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest mt-1">
+                      Admin ID: {(user.admin_id || user.id || '').slice(0, 12)}
+                    </div>
                     <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
                       <Mail className="w-3 h-3" />
                       {user.email}
@@ -472,11 +525,11 @@ const AdminUsersPage = () => {
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
                       user.role === 'SUPER_ADMIN' ? 'bg-secondary-container text-secondary' : 'bg-slate-50 text-slate-600'
                     }`}>
-                      {user.role?.replace('_', ' ')}
+                      {user.role_label || ROLE_TEMPLATES[getTemplateKeyForUser(user)]?.label || user.role?.replace('_', ' ')}
                     </span>
                     {user.role !== 'SUPER_ADMIN' && user.permissions && (
                       <div className="text-[9px] text-slate-400 font-bold mt-2 uppercase tracking-wider">
-                        {Object.values(user.permissions).filter(Boolean).length} Permissions
+                        {user.permission_count ?? getPermissionCount(user.permissions)} Permissions
                       </div>
                     )}
                   </td>
@@ -495,7 +548,7 @@ const AdminUsersPage = () => {
                   </td>
                   <td className="px-8 py-6">
                     <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => { setEditModal(user); setEditForm({ full_name: user.full_name, email: user.email, phone: user.phone || '', role: user.role, permissions: user.permissions || {} }); setEditSelectedTemplate('CUSTOM'); }}
+                      <button onClick={() => { const templateKey = getTemplateKeyForUser(user); setEditModal(user); setEditForm({ full_name: user.full_name, email: user.email, phone: user.phone || '', role: user.role, permissions: permissionsWithTemplate(user.permissions || {}, templateKey) }); setEditSelectedTemplate(templateKey === 'SUPER_ADMIN' ? 'CUSTOM' : templateKey); }}
                         className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-primary hover:bg-primary/10 transition-all" title="Edit Admin">
                         <Edit3 className="w-4 h-4" />
                       </button>
@@ -568,6 +621,13 @@ const AdminUsersPage = () => {
                       className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                       value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="Secure password..." />
                   </div>
+                  <RoleTemplateSelect
+                    value={selectedTemplate}
+                    onChange={(key) => {
+                      setSelectedTemplate(key);
+                      setForm({ ...form, permissions: templatePermissions(key) });
+                    }}
+                  />
                 </div>
               </div>
 
@@ -576,8 +636,7 @@ const AdminUsersPage = () => {
                   selectedTemplate={selectedTemplate}
                   onSelectTemplate={(key) => {
                     setSelectedTemplate(key);
-                    const tmpl = ROLE_TEMPLATES[key];
-                    if (tmpl) setForm({...form, permissions: { ...tmpl.permissions }});
+                    setForm({ ...form, permissions: templatePermissions(key) });
                   }}
                 />
               </div>
@@ -585,7 +644,7 @@ const AdminUsersPage = () => {
               <div>
                 <PermissionsSelector 
                   selectedPermissions={form.permissions} 
-                  onChange={(perms) => { setForm({...form, permissions: perms}); setSelectedTemplate('CUSTOM'); }}
+                  onChange={(perms) => { setForm({...form, permissions: permissionsWithTemplate(perms, 'CUSTOM')}); setSelectedTemplate('CUSTOM'); }}
                   role={form.role}
                 />
               </div>
@@ -644,12 +703,22 @@ const AdminUsersPage = () => {
                       }}
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Role</label>
-                    <div className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm bg-slate-50 font-bold text-slate-500 select-none">
-                      {editForm.role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'ADMIN'}
+                  {editForm.role === 'SUPER_ADMIN' ? (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Role</label>
+                      <div className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm bg-slate-50 font-bold text-slate-500 select-none">
+                        SUPER ADMIN
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <RoleTemplateSelect
+                      value={editSelectedTemplate}
+                      onChange={(key) => {
+                        setEditSelectedTemplate(key);
+                        setEditForm({ ...editForm, permissions: templatePermissions(key) });
+                      }}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -659,8 +728,7 @@ const AdminUsersPage = () => {
                     selectedTemplate={editSelectedTemplate}
                     onSelectTemplate={(key) => {
                       setEditSelectedTemplate(key);
-                      const tmpl = ROLE_TEMPLATES[key];
-                      if (tmpl) setEditForm({...editForm, permissions: { ...tmpl.permissions }});
+                      setEditForm({ ...editForm, permissions: templatePermissions(key) });
                     }}
                   />
                 </div>
@@ -669,7 +737,7 @@ const AdminUsersPage = () => {
               <div>
                 <PermissionsSelector 
                   selectedPermissions={editForm.permissions} 
-                  onChange={(perms) => { setEditForm({...editForm, permissions: perms}); setEditSelectedTemplate('CUSTOM'); }}
+                  onChange={(perms) => { setEditForm({...editForm, permissions: permissionsWithTemplate(perms, 'CUSTOM')}); setEditSelectedTemplate('CUSTOM'); }}
                   role={editForm.role}
                 />
               </div>

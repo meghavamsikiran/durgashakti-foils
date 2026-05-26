@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Camera, ShieldCheck, Edit2, Trash2 } from 'lucide-react';
+import { BadgeCheck, Camera, ShieldCheck, Edit2, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import reviewService from '../../services/review.service';
@@ -132,8 +132,12 @@ const ProductReviews = ({ productId, summary }) => {
                 {review.comment && <p className="text-sm text-slate-700 leading-relaxed mt-4">{review.comment}</p>}
                 {review.admin_reply && (
                   <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
-                    <div className="text-[10px] font-black uppercase tracking-widest text-emerald-700 mb-2">
-                      Reply from durgashaktiofficial
+                    <div className="mb-2 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                      <span>Reply from Durga Shakti Foils</span>
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white/70 px-2 py-0.5 text-[9px] text-emerald-700">
+                        <BadgeCheck className="h-3 w-3" />
+                        Official verified
+                      </span>
                     </div>
                     <p className="text-sm text-slate-700 leading-relaxed font-medium">{review.admin_reply}</p>
                   </div>

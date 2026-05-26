@@ -58,7 +58,7 @@ export const PERMISSION_GROUPS = [
     permissions: [
       { id: 'view_reviews', label: 'View Reviews', desc: 'Browse customer product reviews and ratings' },
       { id: 'moderate_reviews', label: 'Moderate Reviews', desc: 'Hide, publish, or delete product reviews' },
-      { id: 'reply_reviews', label: 'Reply to Reviews', desc: 'Post official durgashaktiofficial replies to reviews' }
+      { id: 'reply_reviews', label: 'Reply to Reviews', desc: 'Post official Durga Shakti Foils replies to reviews' }
     ]
   },
   {

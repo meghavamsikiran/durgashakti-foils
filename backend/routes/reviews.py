@@ -83,7 +83,8 @@ async def _serialize_review(review: ProductReviewModel) -> dict:
     data = row_to_dict(review)
     data["is_verified_purchase"] = True
     if data.get("admin_reply"):
-        data["admin_reply_author"] = "durgashaktiofficial"
+        data["admin_reply_author"] = "Durga Shakti Foils"
+        data["admin_reply_verified"] = True
     return data
 
 

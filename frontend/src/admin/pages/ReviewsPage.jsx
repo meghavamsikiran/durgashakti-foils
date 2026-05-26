@@ -76,6 +76,21 @@ const ReviewsPage = () => {
     }
   };
 
+  const deleteReply = async (review) => {
+    if (!window.confirm('Delete the official reply on this review?')) return;
+    setSavingId(review.id);
+    try {
+      await reviewService.deleteReviewReply(review.id);
+      setReplyDrafts((prev) => ({ ...prev, [review.id]: '' }));
+      toast.success('Official reply deleted');
+      await load(page);
+    } catch {
+      toast.error('Failed to delete reply');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   const deleteReview = async (review) => {
     if (!window.confirm('Delete this review permanently?')) return;
     setSavingId(review.id);
@@ -100,7 +115,7 @@ const ReviewsPage = () => {
             <Star className="w-8 h-8 text-primary" />
             Reviews
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">Moderate customer reviews and reply as durgashaktiofficial.</p>
+          <p className="text-slate-500 mt-1 font-medium">Moderate customer reviews and reply as Durga Shakti Foils.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative">
@@ -173,13 +188,19 @@ const ReviewsPage = () => {
                     value={replyDrafts[review.id] || ''}
                     onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [review.id]: e.target.value }))}
                     rows={3}
-                    placeholder="Reply as durgashaktiofficial..."
+                    placeholder="Reply as Durga Shakti Foils..."
                     className="w-full rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
                   <div className="flex flex-wrap justify-end gap-2">
                     <Button variant="outline" size="sm" onClick={() => saveReply(review)} disabled={savingId === review.id} className="rounded-xl">
-                      Save Reply
+                      {review.admin_reply ? 'Update Reply' : 'Save Reply'}
                     </Button>
+                    {review.admin_reply && (
+                      <Button variant="outline" size="sm" onClick={() => deleteReply(review)} disabled={savingId === review.id} className="rounded-xl text-rose-600 hover:text-rose-700">
+                        <Trash2 className="w-4 h-4 mr-1.5" />
+                        Delete Reply
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

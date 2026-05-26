@@ -48,6 +48,13 @@ const reviewService = {
     return response.data;
   },
 
+  deleteReviewReply: async (reviewId) => {
+    const response = await apiClient.put(`/admin/reviews/${reviewId}/reply`, { reply: '' });
+    apiClient.invalidateCache('/admin/reviews');
+    apiClient.invalidateCache('/products');
+    return response.data;
+  },
+
   deleteAdminReview: async (reviewId) => {
     const response = await apiClient.delete(`/admin/reviews/${reviewId}`);
     apiClient.invalidateCache('/admin/reviews');

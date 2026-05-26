@@ -261,6 +261,7 @@ class AdminUpdateRequest(BaseModel):
     phone: Optional[str] = None
     role: Optional[str] = None
     permissions: Optional[dict] = None
+    role_template: Optional[str] = None
 
     @field_validator("email")
     @classmethod
@@ -700,6 +701,22 @@ async def write_audit_log(db: AsyncSession, action: str, actor_id: str, target_t
                     meta.setdefault('actor_name', u.full_name or u.email)
                     meta.setdefault('actor_email', u.email)
                     meta.setdefault('actor_role', u.role)
+                    if u.role == "SUPER_ADMIN":
+                        meta.setdefault('actor_role_label', "Super Admin")
+                    else:
+                        role_labels = {
+                            "OPERATIONS_ADMIN": "Operations Admin",
+                            "ORDER_MANAGER": "Order Manager",
+                            "PRODUCT_MANAGER": "Product Manager",
+                            "INVENTORY_MANAGER": "Inventory Manager",
+                            "CUSTOMER_SUPPORT": "Customer Support Admin",
+                            "SHIPPING_MANAGER": "Shipping Manager",
+                            "FINANCE_ADMIN": "Finance Admin",
+                            "ANALYTICS_VIEWER": "Analytics Viewer",
+                            "CUSTOM": "Custom Admin",
+                        }
+                        role_template = str((u.permissions or {}).get("role_template") or "CUSTOM").upper()
+                        meta.setdefault('actor_role_label', role_labels.get(role_template, "Custom Admin"))
         except Exception:
             # don't block audit logging on enrichment failure
             pass

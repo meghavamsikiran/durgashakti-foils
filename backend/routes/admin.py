@@ -29,6 +29,81 @@ import json
 
 router = APIRouter(prefix="/api")
 
+ROLE_TEMPLATE_LABELS = {
+    "OPERATIONS_ADMIN": "Operations Admin",
+    "ORDER_MANAGER": "Order Manager",
+    "PRODUCT_MANAGER": "Product Manager",
+    "INVENTORY_MANAGER": "Inventory Manager",
+    "CUSTOMER_SUPPORT": "Customer Support Admin",
+    "SHIPPING_MANAGER": "Shipping Manager",
+    "FINANCE_ADMIN": "Finance Admin",
+    "ANALYTICS_VIEWER": "Analytics Viewer",
+    "CUSTOM": "Custom Admin",
+}
+
+PERMISSION_META_KEYS = {"is_first_login", "role_template"}
+
+
+def _normalize_role_template(value: Optional[str]) -> str:
+    key = str(value or "CUSTOM").upper()
+    return key if key in ROLE_TEMPLATE_LABELS else "CUSTOM"
+
+
+def _admin_role_label(user: UserModel) -> str:
+    if user.role == "SUPER_ADMIN":
+        return "Super Admin"
+    permissions = user.permissions or {}
+    template_key = _normalize_role_template(permissions.get("role_template"))
+    return ROLE_TEMPLATE_LABELS.get(template_key, "Custom Admin")
+
+
+def _admin_permission_count(user: UserModel) -> int:
+    permissions = user.permissions or {}
+    return sum(1 for key, value in permissions.items() if key not in PERMISSION_META_KEYS and value is True)
+
+
+def _prepare_admin_user(user: UserModel) -> dict:
+    data = row_to_dict(user)
+    data.pop("password", None)
+    permissions = dict(data.get("permissions") or {})
+    if user.role != "SUPER_ADMIN":
+        permissions["role_template"] = _normalize_role_template(permissions.get("role_template"))
+        data["permissions"] = permissions
+    data["admin_id"] = str(user.id)
+    data["role_label"] = _admin_role_label(user)
+    data["permission_count"] = _admin_permission_count(user)
+    return data
+
+
+def _format_updated_by(item: dict) -> None:
+    name = item.get("actor_name") or "System Process"
+    role = item.get("actor_role_label") or item.get("actor_role") or "SYSTEM"
+    item["updated_by_name_role"] = f"{name} ({role})"
+
+
+async def _enrich_audit_actor_fields(db: AsyncSession, items: list[dict]) -> None:
+    actor_ids = {str(it.get("actor_id")) for it in items if it.get("actor_id") and is_valid_uuid(str(it.get("actor_id")))}
+    users = {}
+    if actor_ids:
+        users_q = await db.execute(select(UserModel).where(UserModel.id.in_(list(actor_ids))))
+        users = {str(u.id): u for u in users_q.scalars().all()}
+
+    for item in items:
+        meta = item.get("metadata") or {}
+        actor_id = str(item.get("actor_id") or "")
+        user = users.get(actor_id)
+        if user:
+            item["actor_name"] = user.full_name or user.email or "Unknown"
+            item["actor_email"] = user.email
+            item["actor_role"] = user.role
+            item["actor_role_label"] = _admin_role_label(user)
+        else:
+            item["actor_name"] = item.get("actor_name") or meta.get("actor_name") or "System Process"
+            item["actor_email"] = item.get("actor_email") or meta.get("actor_email")
+            item["actor_role"] = item.get("actor_role") or meta.get("actor_role") or "SYSTEM"
+            item["actor_role_label"] = item.get("actor_role_label") or meta.get("actor_role_label") or item["actor_role"]
+        _format_updated_by(item)
+
 
 @router.get("/admin/products")
 async def get_admin_products(
@@ -728,12 +803,7 @@ async def get_customer_details(
 @router.get("/superadmin/admins")
 async def list_admin_users(admin: UserSchema = Depends(require_permission("manage_admins")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(UserModel).where(UserModel.role.in_(["admin", "SUPER_ADMIN"])))
-    rows = []
-    for u in res.scalars().all():
-        d = row_to_dict(u)
-        d.pop('password', None)
-        rows.append(d)
-    return rows
+    return [_prepare_admin_user(u) for u in res.scalars().all()]
 
 
 @router.post("/superadmin/admins")
@@ -753,7 +823,8 @@ async def create_admin_user(payload: AdminCreateRequest, admin: UserSchema = Dep
     from email_templates import admin_onboarding_email
 
     # Set first-login password reset requirement
-    permissions_dict = payload.permissions or {}
+    permissions_dict = dict(payload.permissions or {})
+    permissions_dict["role_template"] = _normalize_role_template(payload.role_template)
     permissions_dict["is_first_login"] = True
 
     uid = str(uuid.uuid4())
@@ -817,8 +888,11 @@ async def update_admin_user(user_id: str, data: AdminUpdateRequest, admin: UserS
             raise HTTPException(status_code=400, detail="Email already in use")
         u.email = data.email
     if data.permissions is not None:
-        u.permissions = data.permissions
+        permissions_dict = dict(data.permissions or {})
+        permissions_dict["role_template"] = _normalize_role_template(data.role_template or permissions_dict.get("role_template"))
+        u.permissions = permissions_dict
     await db.flush()
+    await write_audit_log(db, "ADMIN_UPDATED", admin.id, "user", user_id)
     return {"message": "Admin updated"}
 
 
@@ -857,12 +931,7 @@ async def reset_admin_password(user_id: str, req: PasswordResetRequest, admin: U
 @router.get("/admin/admin-users")
 async def list_admin_users_legacy(admin: UserSchema = Depends(require_permission("manage_admins")), db: AsyncSession = Depends(get_db)):
     res = await db.execute(select(UserModel).where(UserModel.role.in_(["admin", "SUPER_ADMIN"])))
-    rows = []
-    for u in res.scalars().all():
-        d = row_to_dict(u)
-        d.pop('password', None)
-        rows.append(d)
-    return rows
+    return [_prepare_admin_user(u) for u in res.scalars().all()]
 
 
 @router.post("/admin/admin-users")
@@ -879,7 +948,8 @@ async def create_admin_user_legacy(payload: AdminCreateRequest, admin: UserSchem
             raise HTTPException(status_code=400, detail="Phone number already registered to another account")
     if payload.role == "SUPER_ADMIN":
         raise HTTPException(status_code=400, detail="Only one Super Admin allowed")
-    permissions_dict = payload.permissions or {}
+    permissions_dict = dict(payload.permissions or {})
+    permissions_dict["role_template"] = _normalize_role_template(payload.role_template)
     permissions_dict["is_first_login"] = True
     uid = str(uuid.uuid4())
     u = UserModel(id=uid, email=payload.email, full_name=payload.full_name, phone=payload.phone,
@@ -929,8 +999,11 @@ async def update_admin_user_legacy(user_id: str, data: AdminUpdateRequest, admin
             raise HTTPException(status_code=400, detail="Email already in use")
         u.email = data.email
     if data.permissions is not None:
-        u.permissions = data.permissions
+        permissions_dict = dict(data.permissions or {})
+        permissions_dict["role_template"] = _normalize_role_template(data.role_template or permissions_dict.get("role_template"))
+        u.permissions = permissions_dict
     await db.flush()
+    await write_audit_log(db, "ADMIN_UPDATED", admin.id, "user", user_id)
     return {"message": "Admin updated"}
 
 
@@ -1327,21 +1400,7 @@ async def get_audit_logs(page: int = Query(1), limit: int = Query(50), search: O
 
     items = [row_to_dict(row[0]) for row in rows]
 
-    # Enrich actor info by querying users in a single call
-    actor_ids = {it.get('actor_id') for it in items if it.get('actor_id')}
-    if actor_ids:
-        users_q = await db.execute(select(UserModel).where(UserModel.id.in_(list(actor_ids))))
-        users = {u.id: u for u in users_q.scalars().all()}
-        for it in items:
-            aid = it.get('actor_id')
-            if aid and aid in users:
-                u = users[aid]
-                it['actor_name'] = f"{u.full_name or u.email or 'Unknown'}"
-                it['actor_email'] = u.email
-                it['actor_role'] = u.role
-            else:
-                it.setdefault('actor_name', 'System Process')
-                it.setdefault('actor_role', 'SYSTEM')
+    await _enrich_audit_actor_fields(db, items)
 
     return {"items": items, "total": total, "page": page, "limit": limit}
 
@@ -1354,32 +1413,23 @@ async def export_audit_logs(admin: UserSchema = Depends(require_permission("view
     rows = q.scalars().all()
 
     items = [row_to_dict(r) for r in rows]
-    # Enrich actor info
-    actor_ids = {it.get('actor_id') for it in items if it.get('actor_id')}
-    if actor_ids:
-        users_q = await db.execute(select(UserModel).where(UserModel.id.in_(list(actor_ids))))
-        users = {u.id: u for u in users_q.scalars().all()}
-        for it in items:
-            aid = it.get('actor_id')
-            if aid and aid in users:
-                u = users[aid]
-                it['actor_name'] = f"{u.full_name or u.email or 'Unknown'}"
-                it['actor_email'] = u.email
-                it['actor_role'] = u.role
-            else:
-                it.setdefault('actor_name', 'System Process')
-                it.setdefault('actor_role', 'SYSTEM')
+    await _enrich_audit_actor_fields(db, items)
 
     # Build DataFrame
     df = pd.DataFrame(items)
     # Normalize metadata column (JSON) to a readable string
     if 'metadata' in df.columns:
         df['metadata'] = df['metadata'].apply(lambda m: (json.dumps(m, ensure_ascii=False) if m else ""))
+    preferred_columns = [
+        "id", "action", "actor_id", "actor_name", "actor_email", "actor_role", "actor_role_label",
+        "updated_by_name_role", "target_type", "target_id", "metadata", "created_at",
+    ]
+    if not df.empty:
+        existing_preferred = [col for col in preferred_columns if col in df.columns]
+        remaining_columns = [col for col in df.columns if col not in existing_preferred]
+        df = df[existing_preferred + remaining_columns]
     if df.empty:
-        df = pd.DataFrame(columns=[
-            "id", "action", "actor_id", "actor_name", "actor_email", "actor_role",
-            "target_type", "target_id", "metadata", "created_at",
-        ])
+        df = pd.DataFrame(columns=preferred_columns)
 
     out = BytesIO()
     with pd.ExcelWriter(out, engine='openpyxl') as writer:
