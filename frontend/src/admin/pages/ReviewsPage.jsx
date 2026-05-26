@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Eye, EyeOff, MessageSquareReply, Search, Star, Trash2 } from 'lucide-react';
+import { ChevronDown, Eye, EyeOff, Filter, MessageSquareReply, Search, Star, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
@@ -20,6 +20,7 @@ const ReviewsPage = () => {
   const [total, setTotal] = useState(0);
   const [replyDrafts, setReplyDrafts] = useState({});
   const [savingId, setSavingId] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   const load = useCallback(async (pageNum = 1) => {
     setLoading(true);
@@ -107,6 +108,8 @@ const ReviewsPage = () => {
 
   if (loading && rows.length === 0) return <PageLoader message="Loading Reviews..." />;
 
+  const activeFilterCount = (status !== 'all' ? 1 : 0) + (rating !== 'all' ? 1 : 0);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
@@ -128,27 +131,73 @@ const ReviewsPage = () => {
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-full sm:w-72"
             />
           </div>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
+          <button
+            type="button"
+            onClick={() => setShowFilters((prev) => !prev)}
+            className={`h-11 inline-flex items-center justify-center gap-2 rounded-xl border px-4 text-xs font-black uppercase tracking-widest shadow-sm transition-all ${
+              showFilters || activeFilterCount > 0
+                ? 'border-primary/30 bg-primary/10 text-primary'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+            }`}
           >
-            <option value="all">All Statuses</option>
-            <option value="published">Published</option>
-            <option value="hidden">Hidden</option>
-          </select>
-          <select
-            value={rating}
-            onChange={(e) => setRating(e.target.value)}
-            className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
-          >
-            <option value="all">All Ratings</option>
-            {[5, 4, 3, 2, 1].map((value) => (
-              <option key={value} value={value}>{value} Star</option>
-            ))}
-          </select>
+            <Filter className="w-4 h-4" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] text-white">
+                {activeFilterCount}
+              </span>
+            )}
+            <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+          </button>
         </div>
       </div>
+
+      {showFilters && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">Status</label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="published">Published</option>
+                  <option value="hidden">Hidden</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500">Rating</label>
+                <select
+                  value={rating}
+                  onChange={(e) => setRating(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
+                >
+                  <option value="all">All Ratings</option>
+                  {[5, 4, 3, 2, 1].map((value) => (
+                    <option key={value} value={value}>{value} Star</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStatus('all');
+                  setRating('all');
+                }}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50"
+              >
+                <X className="w-4 h-4" />
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-5">
         {rows.map((review) => {

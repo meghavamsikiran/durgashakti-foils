@@ -1,7 +1,8 @@
 export const getProductPricing = (product = {}) => {
-  const basePrice = Number(product.base_price ?? product.price ?? 0);
-  const effectivePrice = Number(product.effective_price || 0);
-  const rawDiscountPrice = Number(product.discount_price || 0);
+  const safeProduct = product || {};
+  const basePrice = Number(safeProduct.base_price ?? safeProduct.price ?? 0);
+  const effectivePrice = Number(safeProduct.effective_price || 0);
+  const rawDiscountPrice = Number(safeProduct.discount_price || 0);
   const discountPrice = effectivePrice > 0 && effectivePrice < basePrice
     ? effectivePrice
     : rawDiscountPrice;

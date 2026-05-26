@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BadgeCheck, Camera, ShieldCheck, Edit2, Trash2 } from 'lucide-react';
+import { BadgeCheck, Camera, Check, Edit2, Trash2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import reviewService from '../../services/review.service';
@@ -13,6 +13,9 @@ const ProductReviews = ({ productId, summary }) => {
   const [reviews, setReviews] = useState([]);
   const [ratingSummary, setRatingSummary] = useState(summary || {});
   const [loading, setLoading] = useState(false);
+  const [editingReplyId, setEditingReplyId] = useState(null);
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [savingReplyId, setSavingReplyId] = useState(null);
 
   useEffect(() => {
     if (!productId) return;
@@ -22,8 +25,13 @@ const ProductReviews = ({ productId, summary }) => {
       try {
         const data = await reviewService.getProductReviews(productId);
         if (!active) return;
-        setReviews(data.items || []);
+        const nextReviews = data.items || [];
+        setReviews(nextReviews);
         setRatingSummary(data);
+        setReplyDrafts(nextReviews.reduce((acc, review) => {
+          acc[review.id] = review.admin_reply || '';
+          return acc;
+        }, {}));
       } catch {
         if (active) setReviews([]);
       } finally {
@@ -52,10 +60,51 @@ const ProductReviews = ({ productId, summary }) => {
     }
   };
 
+  const refreshReviews = async () => {
+    const data = await reviewService.getProductReviews(productId);
+    const nextReviews = data.items || [];
+    setReviews(nextReviews);
+    setRatingSummary(data);
+    setReplyDrafts(nextReviews.reduce((acc, review) => {
+      acc[review.id] = review.admin_reply || '';
+      return acc;
+    }, {}));
+  };
+
+  const handleSaveReply = async (reviewId) => {
+    setSavingReplyId(reviewId);
+    try {
+      await reviewService.replyToReview(reviewId, replyDrafts[reviewId] || '');
+      toast.success('Official reply updated');
+      setEditingReplyId(null);
+      await refreshReviews();
+    } catch {
+      toast.error('Failed to update reply');
+    } finally {
+      setSavingReplyId(null);
+    }
+  };
+
+  const handleDeleteReply = async (reviewId) => {
+    if (!window.confirm('Delete the official reply on this review?')) return;
+    setSavingReplyId(reviewId);
+    try {
+      await reviewService.deleteReviewReply(reviewId);
+      toast.success('Official reply deleted');
+      setEditingReplyId(null);
+      await refreshReviews();
+    } catch {
+      toast.error('Failed to delete reply');
+    } finally {
+      setSavingReplyId(null);
+    }
+  };
+
   const average = ratingSummary.rating_average ?? summary?.rating_average ?? 0;
   const count = ratingSummary.review_count ?? summary?.review_count ?? 0;
   const distribution = ratingSummary.rating_distribution || {};
   const ratingsEnabled = ratingSummary.settings?.ratings_enabled !== false;
+  const isAdmin = user?.role === 'admin' || user?.role === 'SUPER_ADMIN';
 
   if (!ratingsEnabled) return null;
 
@@ -123,23 +172,78 @@ const ProductReviews = ({ productId, summary }) => {
                         </button>
                       </div>
                     )}
-                    <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3" />
-                      Verified
-                    </span>
                   </div>
                 </div>
                 {review.comment && <p className="text-sm text-slate-700 leading-relaxed mt-4">{review.comment}</p>}
                 {review.admin_reply && (
                   <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
-                    <div className="mb-2 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-700">
-                      <span>Reply from Durga Shakti Foils</span>
-                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white/70 px-2 py-0.5 text-[9px] text-emerald-700">
-                        <BadgeCheck className="h-3 w-3" />
-                        Official verified
-                      </span>
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <div className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                        <span>Reply from Durga Shakti Foils</span>
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white/70 px-2 py-0.5 text-[9px] text-emerald-700">
+                          <BadgeCheck className="h-3 w-3" />
+                          Official verified
+                        </span>
+                      </div>
+                      {isAdmin && editingReplyId !== review.id && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingReplyId(review.id);
+                              setReplyDrafts((prev) => ({ ...prev, [review.id]: review.admin_reply || '' }));
+                            }}
+                            className="rounded-lg border border-emerald-200 bg-white/80 p-1.5 text-emerald-700 transition-all hover:bg-white"
+                            title="Edit official reply"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteReply(review.id)}
+                            disabled={savingReplyId === review.id}
+                            className="rounded-lg border border-rose-100 bg-white/80 p-1.5 text-rose-600 transition-all hover:bg-white disabled:opacity-50"
+                            title="Delete official reply"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-slate-700 leading-relaxed font-medium">{review.admin_reply}</p>
+                    {editingReplyId === review.id ? (
+                      <div className="space-y-3">
+                        <textarea
+                          value={replyDrafts[review.id] || ''}
+                          onChange={(event) => setReplyDrafts((prev) => ({ ...prev, [review.id]: event.target.value }))}
+                          rows={3}
+                          className="w-full rounded-xl border border-emerald-200 bg-white/90 p-3 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingReplyId(null);
+                              setReplyDrafts((prev) => ({ ...prev, [review.id]: review.admin_reply || '' }));
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSaveReply(review.id)}
+                            disabled={savingReplyId === review.id}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white disabled:opacity-50"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-700 leading-relaxed font-medium">{review.admin_reply}</p>
+                    )}
                   </div>
                 )}
                 {(() => {

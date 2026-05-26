@@ -28,6 +28,7 @@ const ProductDetail = () => {
 
   const [product, setProduct] = useState(() => getInitialProduct());
   const [loading, setLoading] = useState(() => !getInitialProduct());
+  const [notFound, setNotFound] = useState(false);
   const [adding, setAdding] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const { cart, addToCart, updateCartItem, removeFromCart, setPendingQty } = useCart();
@@ -87,18 +88,21 @@ const ProductDetail = () => {
     try {
       const response = await api.getProduct(id);
       setProduct(response.data);
+      setNotFound(false);
     } catch (error) {
+      setProduct(null);
+      setNotFound(true);
       toast.error('Product not found');
-      navigate('/shop');
     } finally {
       setLoading(false);
     }
-  }, [id, navigate, getInitialProduct]);
+  }, [id, getInitialProduct]);
 
   const fetchProductSilent = useCallback(async () => {
     try {
       const response = await apiClient.get(`/products/${id}`, { silent: true });
       setProduct(response.data);
+      setNotFound(false);
     } catch {
       // Ignore background errors
     }
@@ -119,12 +123,47 @@ const ProductDetail = () => {
     );
   }
 
-  if (!product) return null;
+  if (!product || notFound) {
+    return (
+      <div className="min-h-screen py-20" data-testid="product-not-found">
+        <div className="max-w-lg mx-auto px-6 text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-rose-50 text-rose-600">
+            <AlertTriangle className="h-8 w-8" />
+          </div>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">Product unavailable</h1>
+          <p className="mt-3 text-sm font-medium leading-relaxed text-slate-500">
+            This item is no longer visible in the shop. Your order details remain available from the order page.
+          </p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <Button variant="outline" onClick={() => navigate(-1)} className="rounded-xl">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Order
+            </Button>
+            <Button onClick={() => navigate('/shop')} className="rounded-xl bg-primary text-white hover:bg-emerald-hover">
+              Browse Shop
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const mediaList = product.media_urls && product.media_urls.length > 0 
-    ? product.media_urls 
+  const normalizedMediaUrls = (() => {
+    try {
+      if (Array.isArray(product.media_urls)) return product.media_urls;
+      if (typeof product.media_urls === 'string') return JSON.parse(product.media_urls || '[]');
+    } catch {
+      return [];
+    }
+    return [];
+  })();
+  const mediaList = normalizedMediaUrls.length > 0
+    ? normalizedMediaUrls
     : [{ url: product.image_url, type: 'image' }];
   const activeMedia = mediaList[activeMediaIndex] || mediaList[0];
+  const productFeatures = Array.isArray(product.features)
+    ? product.features.filter(Boolean)
+    : [];
 
   return (
     <div className="min-h-screen py-12" data-testid="product-detail-page">
@@ -309,19 +348,21 @@ const ProductDetail = () => {
               {product.description}
             </p>
 
-            <div className="mb-8 border-t border-border-subtle pt-6">
-              <h3 className="font-bold text-lg font-manrope text-ink-slate mb-4 uppercase tracking-wider text-sm font-label-caps">
-                Key Features
-              </h3>
-              <ul className="space-y-3 font-inter">
-                {product.features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-2.5">
-                    <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm font-semibold text-slate-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {productFeatures.length > 0 && (
+              <div className="mb-8 border-t border-border-subtle pt-6">
+                <h3 className="font-bold text-lg font-manrope text-ink-slate mb-4 uppercase tracking-wider text-sm font-label-caps">
+                  Key Features
+                </h3>
+                <ul className="space-y-3 font-inter">
+                  {productFeatures.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-2.5">
+                      <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-sm font-semibold text-slate-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Cart Sync Logic */}
             {(() => {
