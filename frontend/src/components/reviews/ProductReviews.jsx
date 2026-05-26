@@ -158,7 +158,26 @@ const ProductReviews = ({ productId, summary }) => {
           </div>
 
           <div className="space-y-5">
-            {reviews.map((review) => {
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2].map((i) => (
+                  <div key={i} className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm space-y-4 animate-pulse">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-slate-200 rounded w-24"></div>
+                        <div className="h-3 bg-slate-200 rounded w-32 mt-2"></div>
+                      </div>
+                      <div className="h-4 bg-slate-200 rounded w-16"></div>
+                    </div>
+                    <div className="space-y-2 mt-4">
+                      <div className="h-3.5 bg-slate-200 rounded w-full"></div>
+                      <div className="h-3.5 bg-slate-200 rounded w-5/6 mt-2"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              reviews.map((review) => {
               const isHidden = review.status === 'hidden';
               const isEditing = editingReplyId === review.id;
               const isNewReply = newReplyId === review.id;
@@ -342,7 +361,7 @@ const ProductReviews = ({ productId, summary }) => {
                   )}
                 </article>
               );
-            })}
+            }))}
           </div>
         </div>
       )}

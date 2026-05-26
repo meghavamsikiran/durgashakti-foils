@@ -9,6 +9,7 @@ import adminService from '../services/admin.service';
 import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
 import DateFilterPopover from '../../components/ui/DateFilterPopover';
+import TablePagination from '../../components/ui/TablePagination';
 
 const generateThemedBanner = (context) => {
   const ctx = context.trim().toUpperCase();
