@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, Filter } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X } from 'lucide-react';
 import AdminTable from '../components/AdminTable';
 import apiClient from '../../services/core/apiClient';
 import DateFilterPopover from '../../components/ui/DateFilterPopover';
@@ -146,7 +147,7 @@ const InquiriesPage = () => {
   if (loading && inquiries.length === 0) return <PageLoader />;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-[1500px] mx-auto">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200/60">
         <div>
@@ -172,7 +173,7 @@ const InquiriesPage = () => {
               <option value="pending">Pending</option>
               <option value="in_progress">In Progress</option>
               <option value="replied">Replied</option>
-              <option value="resolved">Resolved</option>
+              <option value="resolved">Closed</option>
             </select>
           </div>
           <DateFilterPopover onChange={(value) => setDateFilter(value)} initial={dateFilter} />
@@ -230,7 +231,7 @@ const InquiriesPage = () => {
                 <option value="pending">Pending</option>
                 <option value="in_progress">In Progress</option>
                 <option value="replied">Replied</option>
-                <option value="resolved">Resolved</option>
+                <option value="resolved">Closed</option>
               </select>
             ),
             actions: (
@@ -246,9 +247,9 @@ const InquiriesPage = () => {
       </div>
 
       {/* Inquiry Detail Modal */}
-      {selectedInquiry && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-white rounded-[2rem] max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 shadow-2xl shadow-slate-900/10 border border-white/50 flex flex-col scrollbar-thin">
+      {selectedInquiry && createPortal((
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+          <div className="bg-white rounded-[2rem] max-w-3xl w-full max-h-[92vh] overflow-y-auto p-6 md:p-8 shadow-2xl shadow-slate-900/20 border border-white/50 flex flex-col scrollbar-thin">
             <div className="flex justify-between items-start mb-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
@@ -265,7 +266,7 @@ const InquiriesPage = () => {
                 onClick={() => setSelectedInquiry(null)}
                 className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600 transition-colors"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
             
@@ -337,7 +338,7 @@ const InquiriesPage = () => {
                   <option value="pending">Pending</option>
                   <option value="in_progress">In Progress</option>
                   <option value="replied">Replied</option>
-                  <option value="resolved">Resolved</option>
+                  <option value="resolved">Closed</option>
                 </select>
               </div>
 
@@ -357,7 +358,7 @@ const InquiriesPage = () => {
               {selectedInquiry.status === 'resolved' ? (
                 <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4 text-xs font-semibold flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
-                  This inquiry is marked as resolved/closed. You cannot send replies unless it is re-opened (change status to Pending or In Progress).
+                  This inquiry is closed. You cannot send replies unless it is re-opened (change status to Pending or In Progress).
                 </div>
               ) : (
                 <form onSubmit={handleSendReply} className="space-y-4 pt-4 border-t border-slate-100">
@@ -394,7 +395,7 @@ const InquiriesPage = () => {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </div>
   );
 };

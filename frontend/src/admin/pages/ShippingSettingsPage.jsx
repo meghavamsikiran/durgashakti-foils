@@ -244,7 +244,7 @@ const ShippingSettingsPage = () => {
   const isEditable = me?.role === 'SUPER_ADMIN' || me?.permissions?.manage_settings;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-16">
+    <div className="space-y-8 pb-16">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>

@@ -1,7 +1,7 @@
 """Coupon Router for admin management and checkout validation."""
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, delete, func, or_
+from sqlalchemy import select, and_, delete, func, or_, false
 from database import get_db
 from models import CouponModel, SettingModel, OrderModel, UserModel
 from deps import UserSchema, get_current_user, require_permission, row_to_dict, write_audit_log, create_notification, send_email
@@ -42,6 +42,7 @@ class CouponValidationRequest(BaseModel):
     cart_subtotal: float
 
 LOYALTY_DEFAULTS = {
+    "enabled": True,
     "minimum_orders": 10,
     "minimum_spend": 15000.0,
     "criteria_mode": "either"
@@ -54,6 +55,7 @@ async def get_loyalty_settings(db: AsyncSession) -> dict:
     settings = dict(LOYALTY_DEFAULTS)
     if setting and isinstance(setting.value, dict):
         settings.update(setting.value)
+    settings["enabled"] = settings.get("enabled", True) is not False
     settings["minimum_orders"] = int(settings.get("minimum_orders") if settings.get("minimum_orders") is not None else LOYALTY_DEFAULTS["minimum_orders"])
     settings["minimum_spend"] = float(settings.get("minimum_spend") if settings.get("minimum_spend") is not None else LOYALTY_DEFAULTS["minimum_spend"])
     if settings.get("criteria_mode") not in {"either", "both", "orders_only", "spend_only"}:
@@ -62,6 +64,8 @@ async def get_loyalty_settings(db: AsyncSession) -> dict:
 
 
 def is_loyal_by_settings(orders_count: int, total_spent: float, settings: dict) -> bool:
+    if settings.get("enabled", True) is False:
+        return False
     mode = settings.get("criteria_mode", "either")
     orders_ok = orders_count >= settings["minimum_orders"]
     spend_ok = total_spent >= settings["minimum_spend"]
@@ -75,6 +79,8 @@ def is_loyal_by_settings(orders_count: int, total_spent: float, settings: dict) 
 
 
 def loyalty_having_clause(orders_expr, spend_expr, settings: dict):
+    if settings.get("enabled", True) is False:
+        return false()
     orders_ok = orders_expr >= settings["minimum_orders"]
     spend_ok = spend_expr >= settings["minimum_spend"]
     mode = settings.get("criteria_mode", "either")
@@ -158,6 +164,8 @@ async def notify_loyalty_coupon_recipients(db: AsyncSession, coupon: CouponModel
 
 async def list_loyal_customer_rows(db: AsyncSession, search: str = "", limit: int | None = None) -> list[dict]:
     settings = await get_loyalty_settings(db)
+    if settings.get("enabled", True) is False:
+        return []
     eligible_order = and_(
         OrderModel.payment_status.in_(["completed", "Paid", "Cash On Delivery"]),
         OrderModel.order_status != "cancelled",

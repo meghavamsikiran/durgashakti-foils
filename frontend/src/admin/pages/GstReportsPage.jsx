@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Calendar, Download, FileSpreadsheet, ShieldCheck, CheckCircle2, FileText, Sparkles, AlertCircle } from 'lucide-react';
+import { Calendar, FileSpreadsheet, ShieldCheck, CheckCircle2, FileText, Sparkles, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import apiClient from '../../services/core/apiClient';
 import { Button } from '../../components/ui/button';
@@ -96,7 +96,7 @@ const GstrReportsPage = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8">
       {/* Premium Sleek Header */}
       <div className="pb-6 border-b border-slate-200">
         <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
@@ -229,29 +229,21 @@ const GstrReportsPage = () => {
               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">
                 Step 2: Instant Export
               </span>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+              <div className="mt-4">
                 <Button 
                   onClick={() => exportGstr1('excel')} 
                   disabled={exporting}
-                  className="rounded-xl h-12 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-extrabold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-md shadow-emerald-700/10 hover:scale-102 transform active:scale-98 transition-all duration-200 border-none"
+                  className="w-full md:w-auto min-w-[260px] rounded-xl h-12 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-extrabold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-md shadow-emerald-700/10 hover:scale-102 transform active:scale-98 transition-all duration-200 border-none"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
                   Export Excel (.xlsx)
-                </Button>
-                <Button 
-                  onClick={() => exportGstr1('csv')} 
-                  disabled={exporting}
-                  className="rounded-xl h-12 bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white font-extrabold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-md shadow-slate-700/15 hover:scale-102 transform active:scale-98 transition-all duration-200 border-none"
-                >
-                  <Download className="w-4 h-4" />
-                  Export CSV (.csv)
                 </Button>
               </div>
               
               <div className="mt-3 flex items-start gap-2 text-[10px] text-slate-400 font-bold leading-normal">
                 <AlertCircle className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                 <p>
-                  If you cannot open .xlsx files because they open in VS Code (Codex) or you lack Microsoft Excel, download the <strong>CSV</strong> format. It is plain text and works instantly on all devices.
+                  Excel .xlsx is the recommended CA-ready GSTR1 export format for invoice reconciliation and GST filing review.
                 </p>
               </div>
             </div>

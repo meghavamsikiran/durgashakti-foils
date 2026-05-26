@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
 import apiClient from '../../services/core/apiClient';
@@ -11,6 +12,7 @@ import {
 import { Button } from '../../components/ui/button';
 import { PERMISSION_GROUPS, ROLE_TEMPLATES, getAllPermissionKeys } from '../constants/rbac';
 import PageLoader from '../../components/ui/PageLoader';
+import TablePagination from '../../components/ui/TablePagination';
 import { useAuth } from '../../contexts/AuthContext';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -240,6 +242,7 @@ const RoleTemplateSelect = ({ value, onChange, disabled = false }) => (
 
 
 const AdminUsersPage = () => {
+  const PAGE_SIZE = 10;
   const { hasPermission } = useAuth();
   const [rows, setRows] = useState(() => {
     const cached = adminService.getCached('/superadmin/admins');
@@ -269,6 +272,7 @@ const AdminUsersPage = () => {
   const [deleteSaving, setDeleteSaving] = useState(false);
   
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [me, setMe] = useState(() => {
     const cached = adminService.getCached('/auth/me');
     return cached?.data || null;
@@ -311,6 +315,10 @@ const AdminUsersPage = () => {
     load();
     loadSilent();
   }, [load, loadSilent]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const create = async (e) => {
     e.preventDefault();
@@ -411,6 +419,10 @@ const AdminUsersPage = () => {
     a.email?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const totalFilteredPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalFilteredPages);
+  const paginatedAdmins = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   const stats = {
     total: rows.length,
     super: rows.filter(a => a.role === 'SUPER_ADMIN').length,
@@ -421,7 +433,7 @@ const AdminUsersPage = () => {
   if (loading && rows.length === 0) return <PageLoader message="Loading Administrators..." />;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
@@ -503,7 +515,7 @@ const AdminUsersPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filtered.map((user) => (
+              {paginatedAdmins.map((user) => (
                 <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-6">
                     <div className="font-bold text-slate-800 group-hover:text-primary transition-colors">{user.full_name}</div>
@@ -574,11 +586,20 @@ const AdminUsersPage = () => {
             </div>
           )}
         </div>
+        {filtered.length > 0 && (
+          <TablePagination
+            currentPage={safePage}
+            totalPages={totalFilteredPages}
+            onPageChange={setPage}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
+          />
+        )}
       </div>
 
       {/* Add Modal */}
-      {showCreate && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4 animate-in fade-in duration-300">
+      {showCreate && createPortal((
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Add New Admin</h2>
@@ -632,16 +653,6 @@ const AdminUsersPage = () => {
               </div>
 
               <div>
-                <RoleTemplateSelector
-                  selectedTemplate={selectedTemplate}
-                  onSelectTemplate={(key) => {
-                    setSelectedTemplate(key);
-                    setForm({ ...form, permissions: templatePermissions(key) });
-                  }}
-                />
-              </div>
-              
-              <div>
                 <PermissionsSelector 
                   selectedPermissions={form.permissions} 
                   onChange={(perms) => { setForm({...form, permissions: permissionsWithTemplate(perms, 'CUSTOM')}); setSelectedTemplate('CUSTOM'); }}
@@ -662,11 +673,11 @@ const AdminUsersPage = () => {
             </form>
           </div>
         </div>
-      )}
+      ), document.body)}
 
       {/* Edit Modal */}
-      {editModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4 animate-in fade-in duration-300">
+      {editModal && createPortal((
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Edit Admin</h2>
@@ -722,18 +733,6 @@ const AdminUsersPage = () => {
                 </div>
               </div>
 
-              {editForm.role !== 'SUPER_ADMIN' && (
-                <div>
-                  <RoleTemplateSelector
-                    selectedTemplate={editSelectedTemplate}
-                    onSelectTemplate={(key) => {
-                      setEditSelectedTemplate(key);
-                      setEditForm({ ...editForm, permissions: templatePermissions(key) });
-                    }}
-                  />
-                </div>
-              )}
-              
               <div>
                 <PermissionsSelector 
                   selectedPermissions={editForm.permissions} 
@@ -751,11 +750,11 @@ const AdminUsersPage = () => {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
 
       {/* Reset Password Modal */}
-      {resetModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4 animate-in fade-in duration-300">
+      {resetModal && createPortal((
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-2">Reset Password</h2>
             <p className="text-sm text-slate-500 mb-6">Updating password for <span className="font-bold text-primary">{resetModal.full_name}</span></p>
@@ -772,11 +771,11 @@ const AdminUsersPage = () => {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
 
       {/* Delete Admin Modal */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4 animate-in fade-in duration-300">
+      {deleteTarget && createPortal((
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-slate-200">
             <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-6">
               <Trash2 className="w-8 h-8" />
@@ -791,7 +790,7 @@ const AdminUsersPage = () => {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </div>
   );
 };

@@ -106,6 +106,8 @@ async def update_contact_status(
     status = data.get("status")
     if not status:
         raise HTTPException(status_code=400, detail="Status is required")
+    if status == "closed":
+        status = "resolved"
         
     res = await db.execute(select(ContactModel).where(ContactModel.id == contact_id))
     contact = res.scalar_one_or_none()

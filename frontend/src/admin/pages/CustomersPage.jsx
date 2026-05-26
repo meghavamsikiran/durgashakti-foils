@@ -3,7 +3,7 @@ import adminService from '../services/admin.service';
 import apiClient from '../../services/core/apiClient';
 import { 
   Users, UserCheck, Star, IndianRupee, 
-  Search, Mail, Phone, Calendar
+  Search, Mail, Phone, Calendar, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import TablePagination from '../../components/ui/TablePagination';
 import PageLoader from '../../components/ui/PageLoader';
@@ -27,6 +27,8 @@ const CustomersPage = () => {
     const cached = adminService.getCached('/admin/analytics/summary');
     return cached?.metrics || null;
   });
+  const [loyaltySettings, setLoyaltySettings] = useState({ enabled: true, minimum_orders: 10, minimum_spend: 15000, criteria_mode: 'either' });
+  const [savingLoyalty, setSavingLoyalty] = useState(false);
 
   const [total, setTotal] = useState(() => {
     const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '' });
@@ -34,7 +36,7 @@ const CustomersPage = () => {
   });
 
   const load = useCallback(async (pageNum = 1) => {
-    const params = { page: pageNum, limit: ITEMS_PER_PAGE, search, ...(segment === 'loyal' ? { segment: 'loyal' } : {}) };
+    const params = { page: pageNum, limit: ITEMS_PER_PAGE, search };
     const cached = adminService.getCached('/admin/customers', params);
     if (!cached) {
       setLoading(true);
@@ -51,17 +53,43 @@ const CustomersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, segment]);
+  }, [search]);
 
   const loadSilent = useCallback(async (pageNum = 1) => {
     try {
-      const response = await apiClient.get('/admin/customers', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search, ...(segment === 'loyal' ? { segment: 'loyal' } : {}) }, silent: true });
+      const response = await apiClient.get('/admin/customers', { params: { page: pageNum, limit: ITEMS_PER_PAGE, search }, silent: true });
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
     } catch {
       // Ignore background errors
     }
-  }, [search, segment]);
+  }, [search]);
+
+  const loadLoyaltySettings = useCallback(async () => {
+    try {
+      const response = await adminService.getSettings();
+      setLoyaltySettings(prev => ({ ...prev, ...(response.data?.loyalty_settings || {}) }));
+    } catch {
+      // Some admin roles can view customers without settings access.
+    }
+  }, []);
+
+  const toggleLoyalty = async () => {
+    const next = { ...loyaltySettings, enabled: loyaltySettings.enabled === false };
+    try {
+      setSavingLoyalty(true);
+      setLoyaltySettings(next);
+      if (next.enabled === false && segment === 'loyal') {
+        setSegment('all');
+      }
+      await adminService.updateSetting({ key: 'loyalty_settings', value: next });
+      await load(1);
+    } catch {
+      setLoyaltySettings(loyaltySettings);
+    } finally {
+      setSavingLoyalty(false);
+    }
+  };
 
   const formatDate = (d) => {
     if (!d) return '—';
@@ -72,9 +100,10 @@ const CustomersPage = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       load(1);
+      loadLoyaltySettings();
     }, 100);
     return () => clearTimeout(timer);
-  }, [search, load]);
+  }, [search, load, loadLoyaltySettings]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time customer directory
   useEffect(() => {
@@ -85,11 +114,14 @@ const CustomersPage = () => {
   }, [loadSilent, page]);
 
   const totalFilteredPages = Math.ceil(total / ITEMS_PER_PAGE);
-  const paginatedCustomers = rows;
+  const loyaltyEnabled = loyaltySettings.enabled !== false;
+  const paginatedCustomers = segment === 'loyal'
+    ? rows.filter(row => loyaltyEnabled && row.is_loyal)
+    : rows;
 
   const stats = {
     total: metrics?.total_customers || total,
-    loyal: rows.filter(r => r.is_loyal).length,
+    loyal: loyaltyEnabled ? rows.filter(r => r.is_loyal).length : 0,
     revenue: metrics?.total_revenue || 0,
     avg: (metrics?.total_revenue && metrics?.total_customers) ? (metrics.total_revenue / metrics.total_customers) : 0
   };
@@ -97,7 +129,7 @@ const CustomersPage = () => {
   if (loading && rows.length === 0) return <PageLoader />;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
@@ -108,6 +140,17 @@ const CustomersPage = () => {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={toggleLoyalty}
+            disabled={savingLoyalty}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-[11px] font-black uppercase tracking-widest shadow-sm transition-all ${
+              loyaltyEnabled ? 'border-emerald-200 bg-emerald-50 text-primary' : 'border-slate-200 bg-white text-slate-500'
+            } disabled:opacity-60`}
+          >
+            {loyaltyEnabled ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+            Loyal {loyaltyEnabled ? 'On' : 'Off'}
+          </button>
           <div className="flex bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
             {[
               { id: 'all', label: 'All' },
@@ -115,8 +158,12 @@ const CustomersPage = () => {
             ].map(item => (
               <button
                 key={item.id}
-                onClick={() => { setSegment(item.id); setPage(1); }}
-                className={`px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${segment === item.id ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'}`}
+                onClick={() => { if (item.id === 'loyal' && !loyaltyEnabled) return; setSegment(item.id); setPage(1); }}
+                className={`px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${
+                  item.id === 'loyal' && !loyaltyEnabled
+                    ? 'text-slate-300 cursor-not-allowed'
+                    : segment === item.id ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
+                }`}
               >
                 {item.label}
               </button>
@@ -242,7 +289,7 @@ const CustomersPage = () => {
               ))}
             </tbody>
           </table>
-          {rows.length === 0 && !loading && (
+          {paginatedCustomers.length === 0 && !loading && (
             <div className="p-12 text-center text-slate-500 font-medium italic">
               No matching customer data found.
             </div>
@@ -250,9 +297,9 @@ const CustomersPage = () => {
         </div>
         <TablePagination
           currentPage={page}
-          totalPages={totalFilteredPages}
+          totalPages={segment === 'loyal' ? 1 : totalFilteredPages}
           onPageChange={load}
-          totalItems={total}
+          totalItems={segment === 'loyal' ? paginatedCustomers.length : total}
           pageSize={ITEMS_PER_PAGE}
         />
       </div>

@@ -117,7 +117,7 @@ const ReviewsPage = () => {
   const activeFilterCount = (status !== 'all' ? 1 : 0) + (rating !== 'all' ? 1 : 0) + (dateRange !== 'all' ? 1 : 0);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">

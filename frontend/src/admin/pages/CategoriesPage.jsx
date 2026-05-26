@@ -115,7 +115,7 @@ const CategoriesPage = () => {
   if (loading && categories.length === 0) return <PageLoader />;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
         <div>
