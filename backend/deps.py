@@ -748,16 +748,17 @@ async def create_notification(db: AsyncSession, user_id: str, title: str, messag
 import urllib.request
 import json
 import asyncio
+import base64
 
-def _send_vercel_relay(url: str, payload: dict):
+def _post_json(url: str, payload: dict, headers: dict | None = None, timeout: int = 15):
     data = json.dumps(payload).encode('utf-8')
     req = urllib.request.Request(
         url,
         data=data,
-        headers={'Content-Type': 'application/json'},
+        headers={'Content-Type': 'application/json', **(headers or {})},
         method='POST'
     )
-    with urllib.request.urlopen(req, timeout=12) as response:
+    with urllib.request.urlopen(req, timeout=timeout) as response:
         return response.status, response.read().decode('utf-8')
 
 def _send_direct_smtp(smtp_host: str, smtp_port: int, smtp_user: str, smtp_pass: str, msg) -> tuple[bool, str]:
@@ -793,18 +794,114 @@ def _send_direct_smtp(smtp_host: str, smtp_port: int, smtp_user: str, smtp_pass:
             logging.error("All direct SMTP delivery routes failed: %s", err_msg)
             return False, err_msg
 
+def _attachment_content(att: dict) -> str:
+    content = str(att.get('content') or '')
+    return content.split(',')[-1] if ',' in content else content
+
+def _email_from_address(default_from: str) -> str:
+    return os.environ.get('EMAIL_FROM') or os.environ.get('SMTP_FROM') or default_from
+
+def _email_from_name() -> str:
+    return os.environ.get('EMAIL_FROM_NAME', 'Durga Shakti Foils')
+
+def _send_resend_email(api_key: str, to_email: str, subject: str, body: str, attachments: list | None, sender: str):
+    payload = {
+        "from": f"{_email_from_name()} <{sender}>",
+        "to": [to_email],
+        "subject": subject,
+        "html": body,
+    }
+    if attachments:
+        payload["attachments"] = [
+            {"filename": att.get("filename", "attachment.pdf"), "content": _attachment_content(att)}
+            for att in attachments if att and att.get("content")
+        ]
+    return _post_json(
+        "https://api.resend.com/emails",
+        payload,
+        {"Authorization": f"Bearer {api_key}"},
+        timeout=20,
+    )
+
+def _send_brevo_email(api_key: str, to_email: str, subject: str, body: str, attachments: list | None, sender: str):
+    payload = {
+        "sender": {"name": _email_from_name(), "email": sender},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "htmlContent": body,
+    }
+    if attachments:
+        payload["attachment"] = [
+            {"name": att.get("filename", "attachment.pdf"), "content": _attachment_content(att)}
+            for att in attachments if att and att.get("content")
+        ]
+    return _post_json(
+        "https://api.brevo.com/v3/smtp/email",
+        payload,
+        {"api-key": api_key, "accept": "application/json"},
+        timeout=20,
+    )
+
+def _send_sendgrid_email(api_key: str, to_email: str, subject: str, body: str, attachments: list | None, sender: str):
+    payload = {
+        "personalizations": [{"to": [{"email": to_email}]}],
+        "from": {"email": sender, "name": _email_from_name()},
+        "subject": subject,
+        "content": [{"type": "text/html", "value": body}],
+    }
+    if attachments:
+        payload["attachments"] = [
+            {
+                "filename": att.get("filename", "attachment.pdf"),
+                "content": _attachment_content(att),
+                "type": att.get("contentType", "application/octet-stream"),
+                "disposition": "attachment",
+            }
+            for att in attachments if att and att.get("content")
+        ]
+    return _post_json(
+        "https://api.sendgrid.com/v3/mail/send",
+        payload,
+        {"Authorization": f"Bearer {api_key}"},
+        timeout=20,
+    )
+
+async def _send_via_email_api(to_email: str, subject: str, body: str, attachments: list | None, sender: str):
+    providers = [
+        ("Resend", os.environ.get("RESEND_API_KEY"), _send_resend_email),
+        ("Brevo", os.environ.get("BREVO_API_KEY") or os.environ.get("SENDINBLUE_API_KEY"), _send_brevo_email),
+        ("SendGrid", os.environ.get("SENDGRID_API_KEY"), _send_sendgrid_email),
+    ]
+    preferred = (os.environ.get("EMAIL_PROVIDER") or "").strip().lower()
+    if preferred:
+        providers.sort(key=lambda item: 0 if item[0].lower() == preferred else 1)
+
+    errors = []
+    for name, api_key, fn in providers:
+        if not api_key:
+            continue
+        try:
+            status, text = await asyncio.to_thread(fn, api_key, to_email, subject, body, attachments, sender)
+            if 200 <= status < 300:
+                logging.info("Email sent via %s API to %s", name, to_email)
+                return True, f"Sent via {name}"
+            errors.append(f"{name} API returned {status}: {text[:250]}")
+        except Exception as exc:
+            errors.append(f"{name} API failed ({type(exc).__name__}: {exc})")
+            logging.warning("Email API provider %s failed: %s", name, exc)
+
+    if errors:
+        return False, "; ".join(errors)
+    return False, "No HTTPS email provider configured. Set RESEND_API_KEY, BREVO_API_KEY, or SENDGRID_API_KEY."
+
+def _send_vercel_relay(url: str, payload: dict):
+    return _post_json(url, payload, timeout=12)
+
 async def send_email(to_email: str, subject: str, body: str, attachments: list = None) -> bool:
-    """Send an email via Vercel HTTPS SMTP Relay or fallback directly to SMTP."""
+    """Send email through an HTTPS email API first, with legacy SMTP fallbacks."""
     try:
-        from email.mime.text import MIMEText
-        from email.mime.multipart import MIMEMultipart
         from email.mime.base import MIMEBase
         from email import encoders
-        import smtplib
-        import os
-        import base64
-        import asyncio
-        import logging
     except ImportError:
         return False, "Failed to import email modules"
 
@@ -813,12 +910,18 @@ async def send_email(to_email: str, subject: str, body: str, attachments: list =
     smtp_user = os.environ.get('SMTP_USER', '')
     smtp_pass = os.environ.get('SMTP_PASS', '').replace(' ', '')
     smtp_from = os.environ.get('SMTP_FROM', smtp_user)
+    sender = _email_from_address(smtp_from or smtp_user)
     is_production = os.environ.get('ENVIRONMENT') == 'production'
+
+    api_sent, api_msg = await _send_via_email_api(to_email, subject, body, attachments, sender)
+    if api_sent:
+        return True, api_msg
+    logging.warning("HTTPS email API unavailable/failed: %s", api_msg)
     
     if not all([smtp_host, smtp_user, smtp_pass]) or "example.com" in smtp_host:
         logging.warning("SMTP not configured. Host=%s User=%s PassLen=%d", smtp_host, smtp_user, len(smtp_pass))
         if is_production:
-            return False, "SMTP not configured or placeholder values detected on production."
+            return False, f"{api_msg} SMTP not configured or placeholder values detected on production."
         logging.info("--- MOCK EMAIL ---  To: %s  Subject: %s", to_email, subject)
         return True, "Mock Sent"
 

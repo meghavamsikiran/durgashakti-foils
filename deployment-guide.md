@@ -30,6 +30,15 @@ RAZORPAY_KEY_SECRET="your_secret"
 PAYPAL_MODE="live"
 PAYPAL_CLIENT_ID="your_client_id"
 PAYPAL_SECRET="your_secret"
+
+# Email delivery. Render/Vercel commonly block SMTP ports 587/465,
+# so configure one HTTPS email provider instead of Gmail SMTP.
+EMAIL_PROVIDER="resend"  # resend, brevo, or sendgrid
+EMAIL_FROM="notifications@yourdomain.com"
+EMAIL_FROM_NAME="Durga Shakti Foils"
+RESEND_API_KEY="re_your_key"
+# or BREVO_API_KEY="xkeysib-your_key"
+# or SENDGRID_API_KEY="SG.your_key"
 ```
 
 ### 3. Run Backend with Gunicorn (Production)
