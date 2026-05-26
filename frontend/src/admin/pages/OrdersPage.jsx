@@ -109,6 +109,51 @@ const OrdersPage = () => {
   const [pendingActionIds, setPendingActionIds] = useState(() => new Set());
   const [timeLeft, setTimeLeft] = useState(null);
 
+  const load = useCallback(async (p = 1) => {
+    const params = { page: p, limit: PAGE_SIZE, search };
+    if (filter !== 'ALL') {
+      params.status_filter = filter;
+    }
+    if (dateFilter && dateFilter.start_date && dateFilter.end_date) {
+      params.start_date = dateFilter.start_date;
+      params.end_date = dateFilter.end_date;
+    }
+    const cached = adminService.getCached('/admin/orders', params);
+    if (!cached) {
+      setLoading(true);
+    }
+    try {
+      const response = await adminService.getOrders(params);
+      setRows(response.data.items || []);
+      setTotal(response.data.total || 0);
+      setPage(p);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [search, filter, dateFilter]);
+
+  const loadSilent = useCallback(async (p = 1) => {
+    try {
+      const params = { page: p, limit: PAGE_SIZE, search };
+      if (filter !== 'ALL') params.status_filter = filter;
+      if (dateFilter && dateFilter.start_date && dateFilter.end_date) {
+        params.start_date = dateFilter.start_date;
+        params.end_date = dateFilter.end_date;
+      }
+      const response = await apiClient.get('/admin/orders', { params, silent: true });
+      const items = (response.data.items || []).map((order) => ({
+        ...order,
+        status: (order.order_status || '').toUpperCase(),
+      }));
+      setRows(items);
+      setTotal(response.data.total || 0);
+    } catch (err) {
+      // Ignore background errors
+    }
+  }, [search, filter, dateFilter]);
+
   useEffect(() => {
     if (!selectedOrderForModal) {
       setTimeLeft(null);
@@ -160,51 +205,6 @@ const OrdersPage = () => {
 
     return () => clearInterval(timer);
   }, [selectedOrderForModal, page, loadSilent]);
-
-  const load = useCallback(async (p = 1) => {
-    const params = { page: p, limit: PAGE_SIZE, search };
-    if (filter !== 'ALL') {
-      params.status_filter = filter;
-    }
-    if (dateFilter && dateFilter.start_date && dateFilter.end_date) {
-      params.start_date = dateFilter.start_date;
-      params.end_date = dateFilter.end_date;
-    }
-    const cached = adminService.getCached('/admin/orders', params);
-    if (!cached) {
-      setLoading(true);
-    }
-    try {
-      const response = await adminService.getOrders(params);
-      setRows(response.data.items || []);
-      setTotal(response.data.total || 0);
-      setPage(p);
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [search, filter, dateFilter]);
-
-  const loadSilent = useCallback(async (p = 1) => {
-    try {
-      const params = { page: p, limit: PAGE_SIZE, search };
-      if (filter !== 'ALL') params.status_filter = filter;
-      if (dateFilter && dateFilter.start_date && dateFilter.end_date) {
-        params.start_date = dateFilter.start_date;
-        params.end_date = dateFilter.end_date;
-      }
-      const response = await apiClient.get('/admin/orders', { params, silent: true });
-      const items = (response.data.items || []).map((order) => ({
-        ...order,
-        status: (order.order_status || '').toUpperCase(),
-      }));
-      setRows(items);
-      setTotal(response.data.total || 0);
-    } catch (err) {
-      // Ignore background errors
-    }
-  }, [search, filter, dateFilter]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

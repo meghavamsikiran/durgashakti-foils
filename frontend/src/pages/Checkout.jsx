@@ -111,7 +111,13 @@ const Checkout = () => {
           <Button onClick={handleContinueToPayment} className="rounded-xl px-8 h-12 font-black uppercase tracking-widest">Next Step</Button>
         ) : (
           <Button onClick={handlePlaceOrder} disabled={loading} className="rounded-xl px-8 h-12 font-black uppercase tracking-widest">
-            {loading ? <Loader2 className="animate-spin w-5 h-5" /> : 'Pay Now'}
+            {loading ? (
+              <Loader2 className="animate-spin w-5 h-5" />
+            ) : paymentMethod === 'cod' ? (
+              'Place your Order'
+            ) : (
+              'Pay Now'
+            )}
           </Button>
         )}
       </div>
