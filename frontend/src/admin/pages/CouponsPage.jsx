@@ -2209,11 +2209,23 @@ const CouponsPage = () => {
                         {theme.coupon_codes?.length === 0 ? (
                           <span className="text-[10px] text-red-500 font-bold italic">No linked coupons</span>
                         ) : (
-                          theme.coupon_codes?.map(code => (
-                            <span key={code} className="text-[9px] font-mono px-1.5 py-0.5 bg-slate-100 text-slate-650 rounded border border-slate-200 font-bold uppercase">
-                              {code}
-                            </span>
-                          ))
+                          theme.coupon_codes?.map(code => {
+                            const matchedCoupon = coupons.find(c => c.code === code);
+                            const isActive = matchedCoupon && isBannerSelectableCoupon(matchedCoupon);
+                            return (
+                              <span
+                                key={code}
+                                className={`text-[9px] font-mono px-1.5 py-0.5 rounded border font-bold uppercase ${
+                                  isActive
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    : 'bg-slate-50 text-slate-400 border-slate-200 line-through'
+                                }`}
+                                title={isActive ? 'Active coupon' : (matchedCoupon ? (isCouponExpired(matchedCoupon) ? 'Expired coupon' : 'Inactive coupon') : 'Coupon not found')}
+                              >
+                                {code}{!isActive && <span className="ml-1 no-underline text-[8px] italic"> (inactive)</span>}
+                              </span>
+                            );
+                          })
                         )}
                       </div>
 
