@@ -649,6 +649,14 @@ async def update_coupon(coupon_id: str, data: CouponCreateUpdate, admin: UserSch
     c.eligible_category_ids = [str(cid) for cid in (data.eligible_category_ids or [])]
     c.is_reusable = data.is_reusable
 
+    c.coupon_type = data.coupon_type
+    c.apply_to_all_loyal_customers = data.apply_to_all_loyal_customers
+    c.apply_to_all_products = data.apply_to_all_products
+    c.eligible_customer_ids = [str(cid) for cid in (data.eligible_customer_ids or [])]
+    c.eligible_product_ids = [str(pid) for pid in (data.eligible_product_ids or [])]
+    c.eligible_category_ids = [str(cid) for cid in (data.eligible_category_ids or [])]
+    c.is_reusable = data.is_reusable
+
     await db.flush()
     await notify_loyalty_coupon_recipients(db, c)
     await write_audit_log(db, "COUPON_UPDATED", admin.id, "coupon", str(c.id))
@@ -665,3 +673,159 @@ async def delete_coupon(coupon_id: str, admin: UserSchema = Depends(require_perm
     await db.flush()
     await write_audit_log(db, "COUPON_DELETED", admin.id, "coupon", coupon_id)
     return {"message": "Coupon deleted successfully"}
+
+
+@router.get("/admin/coupons/{coupon_id}/export")
+async def export_coupon_details(
+    coupon_id: str,
+    admin: UserSchema = Depends(require_permission("manage_coupons")),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        coupon_uuid = uuid.UUID(coupon_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid coupon ID format")
+
+    res = await db.execute(select(CouponModel).where(CouponModel.id == coupon_uuid))
+    coupon = res.scalar_one_or_none()
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+
+    # Fetch audit logs for this coupon
+    from models import AuditLogModel
+    logs_res = await db.execute(
+        select(AuditLogModel)
+        .where(
+            AuditLogModel.target_type == "coupon",
+            AuditLogModel.target_id == str(coupon.id)
+        )
+        .order_by(AuditLogModel.created_at.asc())
+    )
+    logs = logs_res.scalars().all()
+
+    # Get admin user details for actors in audit logs
+    actor_ids = [log.actor_id for log in logs if log.actor_id]
+    valid_uuids = []
+    for aid in actor_ids:
+        try:
+            valid_uuids.append(uuid.UUID(aid))
+        except (ValueError, TypeError):
+            continue
+    admins_by_id = {}
+    if valid_uuids:
+        admins_res = await db.execute(select(UserModel).where(UserModel.id.in_(valid_uuids)))
+        admins_by_id = {str(a.id): a for a in admins_res.scalars().all()}
+
+    # Resolve created by and last updated by
+    created_by_admin = None
+    updated_by_admin = None
+
+    created_log = next((log for log in logs if log.action == "COUPON_CREATED"), None)
+    update_logs = [log for log in logs if log.action == "COUPON_UPDATED"]
+
+    if created_log and created_log.actor_id in admins_by_id:
+        created_by_admin = admins_by_id[created_log.actor_id]
+
+    if update_logs:
+        last_update_log = update_logs[-1]
+        if last_update_log.actor_id in admins_by_id:
+            updated_by_admin = admins_by_id[last_update_log.actor_id]
+
+    # Fetch orders that used this coupon
+    orders_res = await db.execute(
+        select(OrderModel)
+        .where(OrderModel.coupon_codes.contains([coupon.code]))
+        .order_by(OrderModel.created_at.desc())
+    )
+    orders = orders_res.scalars().all()
+
+    # Format data for Excel
+    import pandas as pd
+    import io
+    from fastapi.responses import StreamingResponse
+
+    # 1. Summary Sheet
+    created_by_str = f"{created_by_admin.full_name} ({created_by_admin.email})" if created_by_admin else "System / Unknown"
+    last_updated_by_str = f"{updated_by_admin.full_name} ({updated_by_admin.email})" if updated_by_admin else "Never"
+    
+    left_uses = "Unlimited"
+    if coupon.max_usage_count is not None:
+        left_uses = max(0, coupon.max_usage_count - coupon.total_uses)
+
+    summary_data = {
+        "Property": [
+            "Coupon Code", "Coupon Type", "Discount Type", "Discount Value",
+            "Minimum Order Value", "Max Discount Limit", "Max Usage Count",
+            "Total Uses", "Used / Left", "Revenue Generated", "Total Discount Given",
+            "Active Status", "Created By", "Created Date", "Expiry Date",
+            "Last Updated Date", "Last Updated By"
+        ],
+        "Value": [
+            coupon.code,
+            coupon.coupon_type or "standard",
+            coupon.discount_type,
+            float(coupon.discount_value),
+            float(coupon.min_cart_value or 0),
+            float(coupon.max_discount_limit) if coupon.max_discount_limit else "None",
+            coupon.max_usage_count if coupon.max_usage_count is not None else "Unlimited",
+            coupon.total_uses,
+            f"{coupon.total_uses} / {left_uses}",
+            float(coupon.revenue_generated or 0),
+            float(coupon.total_discount_given or 0),
+            "Yes" if coupon.is_active else "No",
+            created_by_str,
+            coupon.created_at.strftime('%Y-%m-%d %H:%M:%S') if coupon.created_at else "Unknown",
+            coupon.expiry_date.strftime('%Y-%m-%d %H:%M:%S') if coupon.expiry_date else "Never",
+            coupon.updated_at.strftime('%Y-%m-%d %H:%M:%S') if coupon.updated_at else "Never",
+            last_updated_by_str
+        ]
+    }
+    df_summary = pd.DataFrame(summary_data)
+
+    # 2. Usage History Sheet
+    usage_rows = []
+    for order in orders:
+        usage_rows.append({
+            "Order Number": order.order_number,
+            "Customer Name": order.customer_name or "Guest",
+            "Customer Email": order.shipping_address.get("email") if isinstance(order.shipping_address, dict) else "",
+            "Order Total": float(order.total_amount),
+            "Discount Received": float(order.discount_amount),
+            "Date Used": order.created_at.strftime('%Y-%m-%d %H:%M:%S') if order.created_at else ""
+        })
+    df_usage = pd.DataFrame(usage_rows if usage_rows else [
+        {"Order Number": "No usages found", "Customer Name": "", "Customer Email": "", "Order Total": 0.0, "Discount Received": 0.0, "Date Used": ""}
+    ])
+
+    # 3. Edit History Sheet
+    edit_rows = []
+    for log in logs:
+        log_actor = admins_by_id.get(log.actor_id)
+        actor_name = f"{log_actor.full_name} ({log_actor.email})" if log_actor else f"Admin ID: {log.actor_id}"
+        edit_rows.append({
+            "Date & Time Updated": log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else "",
+            "Updated By": actor_name,
+            "Action": log.action,
+            "Details / Metadata": str(log.metadata_)
+        })
+    df_updates = pd.DataFrame(edit_rows if edit_rows else [
+        {"Date & Time Updated": "No edits logged", "Updated By": "", "Action": "", "Details / Metadata": ""}
+    ])
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_summary.to_excel(writer, sheet_name='Summary', index=False)
+        df_usage.to_excel(writer, sheet_name='Usage History', index=False)
+        df_updates.to_excel(writer, sheet_name='Edit History', index=False)
+
+    output.seek(0)
+    filename = f"coupon_{coupon.code}_report.xlsx"
+    headers = {
+        'Content-Disposition': f'attachment; filename="{filename}"',
+        'Access-Control-Expose-Headers': 'Content-Disposition'
+    }
+    return StreamingResponse(
+        output,
+        headers=headers,
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Ticket, Plus, Search, Edit2, Trash2, Settings, 
-  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone, Sparkles, Copy, Star, UserCheck, Filter
+  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone, Sparkles, Copy, Star, UserCheck, Filter, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import couponService from '../../services/coupon.service';
@@ -9,6 +9,7 @@ import adminService from '../services/admin.service';
 import apiClient from '../../services/core/apiClient';
 import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
+import { useProgress } from '../../components/ui/ProgressToast';
 
 import TablePagination from '../../components/ui/TablePagination';
 
@@ -607,6 +608,7 @@ const CouponsPage = () => {
   const [productSearchResults, setProductSearchResults] = useState([]);
   const [couponAnalytics, setCouponAnalytics] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const { startProgress, updateProgress, finishProgress } = useProgress();
 
   const initialBannerForm = {
     id: null,
@@ -1074,6 +1076,40 @@ const CouponsPage = () => {
       await fetchCouponsAndSettings();
     } catch (error) {
       toast.error('Failed to delete coupon');
+    }
+  };
+
+  const handleExportCoupon = async (coupon) => {
+    const pid = startProgress({
+      label: `Coupon_${coupon.code}.xlsx`,
+      type: 'export',
+      fileType: 'spreadsheet',
+      message: `Preparing coupon export for ${coupon.code}...`,
+    });
+    try {
+      updateProgress(pid, { progress: 30, message: 'Collecting coupon audit and usage logs...' });
+      const response = await apiClient.get(`/admin/coupons/${coupon.id}/export`, {
+        responseType: 'blob',
+        timeout: 120000,
+      });
+
+      updateProgress(pid, { progress: 80, message: 'Downloading Excel workbook...' });
+      const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      const blob = new Blob([response.data], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `coupon_${coupon.code}_report.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      finishProgress(pid, { message: `Coupon ${coupon.code} details successfully downloaded.` });
+    } catch (error) {
+      console.error('Failed to export coupon details:', error);
+      toast.error(error.message || 'Failed to export coupon details');
+      finishProgress(pid, { message: 'Coupon export failed', isError: true });
     }
   };
 
@@ -1770,6 +1806,13 @@ const CouponsPage = () => {
                               
                               <span className="h-4 w-px bg-slate-200 mx-1"></span>
                               
+                              <button 
+                                onClick={() => handleExportCoupon(coupon)}
+                                className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-slate-100 rounded-xl transition-all"
+                                title="Download Excel Report"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
                               <button 
                                 onClick={() => handleOpenEditModal(coupon)}
                                 className="p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-xl transition-all"
