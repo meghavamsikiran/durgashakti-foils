@@ -310,22 +310,20 @@ const SettingsPage = () => {
     }
   };
 
-  const saveFeedbackToggle = async (key, checked) => {
+  const handleToggleReviews = async (checked) => {
     const previousRatings = ratingsEnabled;
     const previousComments = commentsEnabled;
-    const nextRatings = key === 'ratings_enabled' ? checked : ratingsEnabled;
-    const nextComments = key === 'comments_enabled' ? checked : commentsEnabled;
 
-    setRatingsEnabled(nextRatings);
-    setCommentsEnabled(nextComments);
-    toast.success(`${key === 'ratings_enabled' ? 'Product ratings' : 'Review comments'} ${checked ? 'enabled' : 'disabled'}`);
+    setRatingsEnabled(checked);
+    setCommentsEnabled(checked);
+    toast.success(`Product reviews and ratings ${checked ? 'enabled' : 'disabled'}`);
 
     try {
       await adminService.updateSetting({
         key: 'feedback_settings',
         value: {
-          ratings_enabled: nextRatings,
-          comments_enabled: nextComments
+          ratings_enabled: checked,
+          comments_enabled: checked
         }
       });
     } catch (error) {
@@ -623,44 +621,26 @@ const SettingsPage = () => {
               <p className="text-xs text-slate-500 mb-8 font-medium">Control review visibility and the live criteria used to segment loyal customers.</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[
-                  {
-                    label: 'Product Ratings',
-                    desc: 'Show star ratings on product pages and allow customers to submit ratings.',
-                    checked: ratingsEnabled,
-                    onToggle: () => saveFeedbackToggle('ratings_enabled', !ratingsEnabled),
-                    icon: Star
-                  },
-                  {
-                    label: 'Review Comments',
-                    desc: 'Show and collect written review comments independently from star ratings.',
-                    checked: commentsEnabled,
-                    onToggle: () => saveFeedbackToggle('comments_enabled', !commentsEnabled),
-                    icon: MessageSquare
-                  }
-                ].map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <div key={item.label} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex items-start justify-between gap-4">
-                      <div className="flex gap-4">
-                        <div className="p-3 rounded-xl bg-primary/10 text-primary h-max">
-                          <Icon className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">{item.label}</h3>
-                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">{item.desc}</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={item.onToggle}
-                        className={`w-14 h-8 flex items-center rounded-full p-1 shrink-0 cursor-pointer transition-all duration-300 shadow-inner ${item.checked ? 'bg-primary' : 'bg-slate-300'}`}
-                      >
-                        <span className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${item.checked ? 'translate-x-6' : 'translate-x-0'}`} />
-                      </button>
+                <div className="md:col-span-2 p-5 rounded-2xl bg-slate-50 border border-slate-200 flex items-start justify-between gap-4">
+                  <div className="flex gap-4">
+                    <div className="p-3 rounded-xl bg-primary/10 text-primary h-max">
+                      <Star className="w-5 h-5" />
                     </div>
-                  );
-                })}
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Product Reviews & Ratings</h3>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                        Show star ratings and written reviews on product pages, and allow customers to submit their feedback.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleReviews(!(ratingsEnabled || commentsEnabled))}
+                    className={`w-14 h-8 flex items-center rounded-full p-1 shrink-0 cursor-pointer transition-all duration-300 shadow-inner ${(ratingsEnabled || commentsEnabled) ? 'bg-primary' : 'bg-slate-300'}`}
+                  >
+                    <span className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-all duration-300 ${(ratingsEnabled || commentsEnabled) ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
 
                 <div className="md:col-span-2 p-5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4">
                   <div className="flex gap-4">
