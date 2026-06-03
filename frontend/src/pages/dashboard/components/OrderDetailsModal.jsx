@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, Clock } from 'lucide-react';
+import { X, Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, Clock, Check } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { formatImageUrl } from '../../../utils/api';
 import { useProgress } from '../../../components/ui/ProgressToast';
@@ -555,64 +555,76 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                 ) : (
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-[10px] font-mono tracking-wider font-semibold text-muted-foreground mb-4 ml-1 uppercase">Timeline</h3>
-                      <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-border-subtle">
-                        {(() => {
-                          const status = (order.order_status || '').toLowerCase();
-                          const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
-                          const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
-                          const isDelivered = ['delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
-
-                          const steps = [
-                            { label: 'Placed', date: order.created_at, status: 'completed' }
-                          ];
-
-                          if (status === 'cancelled') {
-                            steps.push({ label: 'Cancelled', date: order.updated_at || order.created_at, status: 'completed' });
-                          } else {
-                            steps.push({ label: 'Confirmed', date: isConfirmed ? order.created_at : null, status: isConfirmed ? 'completed' : 'pending' });
-                            steps.push({ label: 'Shipped', date: isShipped ? (order.shipped_at || order.updated_at) : null, status: isShipped ? 'completed' : 'pending' });
-                            steps.push({ label: 'Delivered', date: isDelivered ? (order.delivered_at || order.updated_at) : null, status: isDelivered ? 'completed' : 'pending' });
-
-                            if (status === 'return_requested') {
-                              steps.push({ label: 'Return Requested', date: order.updated_at, status: 'completed' });
-                            } else if (status === 'return_approved' || status === 'refunded') {
-                              steps.push({ label: 'Return Approved & Refunded', date: order.updated_at, status: 'completed' });
-                            } else if (status === 'return_rejected') {
-                              steps.push({ label: 'Return Rejected', date: order.updated_at, status: 'completed' });
-                            }
-                          }
-                          return steps;
-                        })().map((step, idx) => (
-                          <div key={idx} className="flex gap-4 relative z-10">
-                            <div className={`w-6 h-6 rounded-full border-4 border-white flex-shrink-0 shadow-sm ${
-                              step.status === 'completed'
-                                ? step.label.includes('Cancel') || step.label.includes('Rejected')
-                                  ? 'bg-rose-600'
-                                  : step.label.includes('Request')
-                                    ? 'bg-amber-500'
-                                    : step.label.includes('Refund') || step.label.includes('Approved')
-                                      ? 'bg-emerald-600'
-                                      : 'bg-primary'
-                                : 'bg-surface-container'
-                            }`} />
-                            <div>
-                              <p className={`text-xs font-black uppercase tracking-tight ${
-                                step.status === 'completed'
-                                  ? step.label.includes('Cancel') || step.label.includes('Rejected')
-                                    ? 'text-rose-600'
-                                    : step.label.includes('Request')
-                                      ? 'text-amber-600'
-                                      : step.label.includes('Refund') || step.label.includes('Approved')
-                                        ? 'text-emerald-600'
-                                        : 'text-foreground'
-                                  : 'text-muted-foreground'
-                              }`}>{step.label}</p>
-                              {step.date && <p className="text-[10px] font-mono text-muted-foreground">{new Date(step.date).toLocaleString()}</p>}
-                            </div>
-                          </div>
-                        ))}
+                      <div className="flex items-center justify-between mb-4 ml-1">
+                        <h3 className="text-[10px] font-mono tracking-wider font-semibold text-muted-foreground uppercase">Timeline</h3>
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${
+                          (() => {
+                            const s = (order.order_status || '').toLowerCase();
+                            if (s === 'delivered') return 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20';
+                            if (s === 'in_transit') return 'bg-blue-500/10 text-blue-500 border border-blue-500/20';
+                            if (s === 'out_for_delivery') return 'bg-amber-500/10 text-amber-500 border border-amber-500/20';
+                            if (s === 'failed_delivery' || s === 'failed' || s === 'cancelled') return 'bg-rose-500/10 text-rose-500 border border-rose-500/20';
+                            if (s === 'returned' || s === 'return_approved') return 'bg-purple-500/10 text-purple-500 border border-purple-500/20';
+                            return 'bg-primary/10 text-primary border border-primary/20';
+                          })()
+                        }`}>
+                          {order.order_status?.replace('_', ' ')}
+                        </span>
                       </div>
+                      
+                      {(() => {
+                        const status = (order.order_status || '').toLowerCase();
+                        const isPaid = order.payment_status?.toLowerCase() === 'paid' || order.payment_status?.toLowerCase() === 'completed' || order.payment_method?.toLowerCase() === 'cod';
+                        const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                        const isPacked = ['packaging', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                        const isShipped = ['shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                        const isInTransit = ['in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                        const isOutForDelivery = ['out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                        const isDelivered = ['delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+
+                        const steps = [
+                          { label: 'Order Placed', active: true, date: order.created_at },
+                          { label: 'Payment Successful', active: isPaid, date: isPaid ? (order.transaction_date || order.created_at) : null },
+                          { label: 'Order Confirmed', active: isConfirmed, date: isConfirmed ? order.created_at : null },
+                          { label: 'Packed', active: isPacked, date: null },
+                          { label: 'Shipped', active: isShipped, date: isShipped ? (order.shipped_at || order.shipment_date) : null },
+                          { label: 'In Transit', active: isInTransit, date: null },
+                          { label: 'Out For Delivery', active: isOutForDelivery, date: null },
+                          { label: 'Delivered', active: isDelivered, date: isDelivered ? (order.delivered_at || order.updated_at) : null },
+                        ];
+
+                        if (status === 'cancelled') {
+                          return (
+                            <div className="flex items-center gap-3 bg-rose-950/20 border border-rose-800/30 rounded-xl p-4 text-rose-400 font-semibold text-xs">
+                              <X className="w-5 h-5 text-rose-500 shrink-0" />
+                              <div>
+                                <p className="font-extrabold text-rose-300">Order Cancelled</p>
+                                <p className="text-rose-400/80 mt-0.5">This order was cancelled on {new Date(order.updated_at || order.created_at).toLocaleString('en-IN')}</p>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-border-subtle">
+                            {steps.map((step, idx) => (
+                              <div key={idx} className="flex gap-4 relative z-10">
+                                <div className={`w-6 h-6 rounded-full border-4 border-surface flex-shrink-0 shadow-sm flex items-center justify-center ${
+                                  step.active ? 'bg-primary text-white' : 'bg-surface-container text-muted-foreground'
+                                }`}>
+                                  {step.active ? <Check className="w-3 h-3 stroke-[3px]" /> : <span className="text-[8px] font-bold">{idx + 1}</span>}
+                                </div>
+                                <div>
+                                  <p className={`text-xs font-black uppercase tracking-tight ${
+                                    step.active ? 'text-foreground' : 'text-muted-foreground'
+                                  }`}>{step.label}</p>
+                                  {step.date && <p className="text-[10px] font-mono text-muted-foreground">{new Date(step.date).toLocaleString()}</p>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <div className="p-6 rounded-xl border border-border-subtle bg-surface-container-low/20 space-y-4">
@@ -642,18 +654,48 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                     </div>
 
                     {order.tracking_id && (
-                      <div className="p-6 rounded-xl bg-sky-50/40 border border-sky-200/50 flex items-center justify-between gap-4">
-                        <div>
-                          <h3 className="text-[10px] font-mono tracking-wider font-semibold text-sky-600 mb-1 uppercase">Shipment Tracking</h3>
-                          <p className="font-black text-foreground font-mono uppercase tracking-tight">{order.carrier || 'Courier'}</p>
-                          <p className="text-xs font-mono text-muted-foreground mt-1">{order.tracking_id}</p>
-                          {order.tracking_url && (
-                            <a href={order.tracking_url} target="_blank" rel="noreferrer" className="text-[10px] font-mono font-semibold uppercase tracking-widest text-sky-700 hover:underline mt-2 inline-block">
-                              Track package
-                            </a>
-                          )}
+                      <div className="p-6 rounded-xl bg-sky-50/5 border border-sky-500/15 flex flex-col gap-4">
+                        <div className="flex items-start gap-4">
+                          <Truck className="w-6 h-6 text-sky-400 shrink-0 mt-0.5" />
+                          <div className="space-y-1 flex-1">
+                            <h4 className="text-[10px] font-mono tracking-wider font-semibold text-sky-450 uppercase">Shipment Tracking Details</h4>
+                            <div className="text-xs text-muted-foreground leading-relaxed font-semibold">
+                              <p>Courier: <span className="font-extrabold text-foreground">{order.courier_name || order.carrier || 'Courier'}</span></p>
+                              <p className="flex items-center gap-2 mt-0.5">
+                                Tracking Number: <span className="font-mono text-foreground font-extrabold select-all">{order.tracking_number || order.tracking_id}</span>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(order.tracking_number || order.tracking_id);
+                                    toast.success('Tracking number copied!');
+                                  }}
+                                  className="text-[9px] font-black uppercase text-primary border border-primary/20 bg-surface hover:bg-primary/5 px-2 py-0.5 rounded-md shadow-sm transition-all"
+                                >
+                                  Copy
+                                </button>
+                              </p>
+                              {order.expected_delivery_date && (
+                                <p className="mt-0.5">Estimated Delivery: <span className="font-extrabold text-foreground">{new Date(order.expected_delivery_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</span></p>
+                              )}
+                              {order.shipment_notes && (
+                                <p className="mt-2 text-muted-foreground italic bg-surface-container-low/30 p-2 rounded-lg border border-border-subtle/50">Notes: {order.shipment_notes}</p>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <Truck className="w-8 h-8 text-sky-400/40 shrink-0" />
+                        {order.tracking_url ? (
+                          <a 
+                            href={order.tracking_url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[9px] px-5 py-3 rounded-lg shadow-md hover:shadow-emerald-glow transition-all whitespace-nowrap text-center"
+                          >
+                            Track Shipment
+                          </a>
+                        ) : (
+                          <span className="w-full text-[9px] font-black uppercase tracking-wider text-muted-foreground bg-surface-container border border-border-subtle px-3 py-3 rounded-lg text-center">
+                            No Direct Tracking Link
+                          </span>
+                        )}
                       </div>
                     )}
 

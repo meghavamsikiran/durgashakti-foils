@@ -20,10 +20,12 @@ const STATUS_FLOW = {
   PENDING_PAYMENT: ['CANCELLED'],
   CONFIRMED: ['PACKAGING', 'CANCELLED'],
   PACKAGING: ['SHIPPED', 'CANCELLED'],
-  SHIPPED: ['OUT_FOR_DELIVERY', 'CANCELLED'],
+  SHIPPED: ['IN_TRANSIT', 'OUT_FOR_DELIVERY', 'CANCELLED'],
+  IN_TRANSIT: ['OUT_FOR_DELIVERY', 'FAILED', 'CANCELLED'],
   OUT_FOR_DELIVERY: ['DELIVERED', 'FAILED', 'CANCELLED'],
-  DELIVERED: [],
-  FAILED: [],
+  DELIVERED: ['RETURNED'],
+  FAILED: ['RETURNED', 'SHIPPED', 'CANCELLED'],
+  RETURNED: [],
   CANCELLED: [],
   REFUNDED: [],
   // Legacy status support for compatibility
@@ -44,9 +46,11 @@ const statusConfigs = {
   PACKAGING: { color: 'text-secondary', bg: 'bg-secondary-container', icon: PackageCheck },
   PACKED: { color: 'text-secondary', bg: 'bg-secondary-container', icon: PackageCheck },
   SHIPPED: { color: 'text-sky-600', bg: 'bg-sky-50', icon: Truck },
-  OUT_FOR_DELIVERY: { color: 'text-amber-600', bg: 'bg-amber-50', icon: Truck },
+  IN_TRANSIT: { color: 'text-blue-600', bg: 'bg-blue-50', icon: Truck },
+  OUT_FOR_DELIVERY: { color: 'text-orange-600', bg: 'bg-orange-50', icon: Truck },
   DELIVERED: { color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle2 },
   FAILED: { color: 'text-rose-600', bg: 'bg-rose-50', icon: XCircle },
+  RETURNED: { color: 'text-purple-600', bg: 'bg-purple-50', icon: RefreshCcw },
   CANCELLED: { color: 'text-rose-600', bg: 'bg-rose-50', icon: XCircle },
   RETURN_REQUESTED: { color: 'text-orange-600', bg: 'bg-orange-50', icon: RefreshCcw },
   RETURN_APPROVED: { color: 'text-teal-600', bg: 'bg-teal-50', icon: CheckCircle2 },
@@ -102,7 +106,13 @@ const OrdersPage = () => {
   const [page, setPage] = useState(1);
   const [messageModal, setMessageModal] = useState(null);
   const [trackingModal, setTrackingModal] = useState(null);
-  const [trackingForm, setTrackingForm] = useState({ carrier: '', tracking_id: '', tracking_url: '' });
+  const [trackingForm, setTrackingForm] = useState({ carrier: 'India Post', tracking_id: '', expected_delivery_date: '', shipment_notes: '', custom_carrier: '' });
+  const [selectedOrderIds, setSelectedOrderIds] = useState(new Set());
+  const [bulkShipModal, setBulkShipModal] = useState(false);
+  const [bulkShipForm, setBulkShipForm] = useState({ courier: 'India Post', custom_carrier: '', expected_delivery_date: '', shipment_notes: '', pasted_text: '' });
+  const [courierFilter, setCourierFilter] = useState('');
+  const [trackingFilter, setTrackingFilter] = useState('');
+  const [shipmentStatusFilter, setShipmentStatusFilter] = useState('');
   const [adminMessage, setAdminMessage] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [selectedOrderForModal, setSelectedOrderForModal] = useState(null);
@@ -119,6 +129,10 @@ const OrdersPage = () => {
       params.start_date = dateFilter.start_date;
       params.end_date = dateFilter.end_date;
     }
+    if (courierFilter) params.courier = courierFilter;
+    if (trackingFilter) params.tracking_number = trackingFilter;
+    if (shipmentStatusFilter) params.shipment_status = shipmentStatusFilter;
+
     const cached = adminService.getCached('/admin/orders', params);
     if (cached) {
       setRows(cached.data?.items || []);
@@ -136,7 +150,7 @@ const OrdersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, filter, dateFilter]);
+  }, [search, filter, dateFilter, courierFilter, trackingFilter, shipmentStatusFilter]);
 
   const loadSilent = useCallback(async (p = 1) => {
     try {
@@ -146,6 +160,10 @@ const OrdersPage = () => {
         params.start_date = dateFilter.start_date;
         params.end_date = dateFilter.end_date;
       }
+      if (courierFilter) params.courier = courierFilter;
+      if (trackingFilter) params.tracking_number = trackingFilter;
+      if (shipmentStatusFilter) params.shipment_status = shipmentStatusFilter;
+
       const response = await apiClient.get('/admin/orders', { params, silent: true });
       const items = (response.data.items || []).map((order) => ({
         ...order,
@@ -156,7 +174,7 @@ const OrdersPage = () => {
     } catch (err) {
       // Ignore background errors
     }
-  }, [search, filter, dateFilter]);
+  }, [search, filter, dateFilter, courierFilter, trackingFilter, shipmentStatusFilter]);
 
   useEffect(() => {
     if (!selectedOrderForModal) {
@@ -216,7 +234,7 @@ const OrdersPage = () => {
       return;
     }
     load(1);
-  }, [search, filter, load, dateFilter]);
+  }, [search, filter, load, dateFilter, courierFilter, trackingFilter, shipmentStatusFilter]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time order dashboard
   useEffect(() => {
@@ -289,17 +307,58 @@ const OrdersPage = () => {
           <p className="text-slate-500 mt-1 font-medium">View and manage customer orders.</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative group flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative group flex items-center">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
               type="text"
-              placeholder="Order Number..."
+              placeholder="Search Customer, Order, Tracking..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64"
             />
           </div>
+
+          <select
+            value={courierFilter}
+            onChange={(e) => setCourierFilter(e.target.value)}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none"
+          >
+            <option value="">All Couriers</option>
+            <option value="India Post">India Post</option>
+            <option value="Speed Post">Speed Post</option>
+            <option value="DTDC">DTDC</option>
+            <option value="Blue Dart">Blue Dart</option>
+            <option value="Delhivery">Delhivery</option>
+            <option value="Ecom Express">Ecom Express</option>
+            <option value="XpressBees">XpressBees</option>
+            <option value="Professional Couriers">Professional Couriers</option>
+            <option value="Shadowfax">Shadowfax</option>
+            <option value="Ekart">Ekart</option>
+          </select>
+
+          <select
+            value={shipmentStatusFilter}
+            onChange={(e) => setShipmentStatusFilter(e.target.value)}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none"
+          >
+            <option value="">All Shipment Statuses</option>
+            <option value="packed">Packed</option>
+            <option value="shipped">Shipped</option>
+            <option value="in_transit">In Transit</option>
+            <option value="out_for_delivery">Out For Delivery</option>
+            <option value="delivered">Delivered</option>
+            <option value="failed">Failed Delivery</option>
+            <option value="returned">Returned</option>
+          </select>
+
+          <input
+            placeholder="Filter Tracking ID..."
+            value={trackingFilter}
+            onChange={(e) => setTrackingFilter(e.target.value)}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-40"
+          />
+
           <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} />
         </div>
       </div>
@@ -367,11 +426,47 @@ const OrdersPage = () => {
         ))}
       </div>
 
+      {selectedOrderIds.size > 0 && (
+        <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-black uppercase tracking-widest text-primary">{selectedOrderIds.size} Orders Selected</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setBulkShipModal(true)}
+              className="px-4 py-2 bg-primary hover:bg-emerald-hover text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg transition-all"
+            >
+              Ship Orders in Bulk
+            </button>
+            <button
+              onClick={() => setSelectedOrderIds(new Set())}
+              className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-black uppercase tracking-widest rounded-xl transition-all"
+            >
+              Clear Selection
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-[1000px] lg:min-w-full">
             <thead className="bg-slate-50/50 border-b border-slate-200">
               <tr>
+                <th className="px-8 py-5 text-left w-12">
+                  <input
+                    type="checkbox"
+                    checked={filtered.length > 0 && selectedOrderIds.size === filtered.length}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedOrderIds(new Set(filtered.map(r => r.id)));
+                      } else {
+                        setSelectedOrderIds(new Set());
+                      }
+                    }}
+                    className="w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer"
+                  />
+                </th>
                 <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Order ID</th>
                 <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Customer</th>
                 <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Status</th>
@@ -391,6 +486,23 @@ const OrdersPage = () => {
                 return (
                    <React.Fragment key={order.id}>
                      <tr className={`hover:bg-slate-50/50 transition-colors group ${expandedOrderId === order.id ? 'bg-primary/5' : ''}`}>
+                       <td className="px-8 py-6">
+                         <input
+                           type="checkbox"
+                           checked={selectedOrderIds.has(order.id)}
+                           onChange={(e) => {
+                             const next = new Set(selectedOrderIds);
+                             if (e.target.checked) {
+                               next.add(order.id);
+                             } else {
+                               next.delete(order.id);
+                             }
+                             setSelectedOrderIds(next);
+                           }}
+                           onClick={(e) => e.stopPropagation()}
+                           className="w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer"
+                         />
+                       </td>
                        <td className="px-8 py-6">
                          <div className="font-mono text-xs font-black text-primary mb-1">{order.order_number}</div>
                          <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
@@ -427,12 +539,14 @@ const OrdersPage = () => {
                                const actionLabels = {
                                  CONFIRMED: 'Confirm',
                                  CANCELLED: 'Cancel',
-                                 PACKAGING: 'Package',
-                                 PACKED: 'Package',
-                                 SHIPPED: 'Ship',
-                                 OUT_FOR_DELIVERY: 'Dispatch Out',
-                                 DELIVERED: 'Deliver',
-                                 FAILED: 'Mark Failed',
+                                 PACKAGING: 'Mark Packed',
+                                 PACKED: 'Mark Packed',
+                                 SHIPPED: 'Mark Shipped',
+                                 IN_TRANSIT: 'Mark In Transit',
+                                 OUT_FOR_DELIVERY: 'Mark Out For Delivery',
+                                 DELIVERED: 'Mark Delivered',
+                                 FAILED: 'Mark Failed Delivery',
+                                 RETURNED: 'Mark Returned',
                                  RETURN_APPROVED: 'Approve',
                                  RETURN_REJECTED: 'Reject',
                                  REFUNDED: 'Refund'
@@ -449,9 +563,11 @@ const OrdersPage = () => {
                                      if (a === 'SHIPPED') {
                                        setTrackingModal({ orderId: order.id, status: a });
                                        setTrackingForm({
-                                         carrier: order.carrier || '',
+                                         carrier: order.carrier || 'India Post',
                                          tracking_id: order.tracking_id || '',
-                                         tracking_url: order.tracking_url || ''
+                                         expected_delivery_date: order.expected_delivery_date ? new Date(order.expected_delivery_date).toISOString().split('T')[0] : '',
+                                         shipment_notes: order.shipment_notes || '',
+                                         custom_carrier: ''
                                        });
                                      } else if (['RETURN_APPROVED', 'RETURN_REJECTED', 'CANCELLED'].includes(a)) {
                                        setMessageModal({ orderId: order.id, status: a });
@@ -564,6 +680,158 @@ const OrdersPage = () => {
         </div>
       )}
 
+      {bulkShipModal && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
+          <div className="bg-white rounded-3xl p-8 max-w-lg w-full border border-slate-100 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Bulk Shipping Details</h3>
+              <p className="text-xs text-slate-500 mt-1">Ship multiple orders at once by providing tracking details.</p>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Courier *</label>
+                <select
+                  value={bulkShipForm.courier}
+                  onChange={(e) => setBulkShipForm({ ...bulkShipForm, courier: e.target.value })}
+                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                >
+                  <option value="India Post">India Post</option>
+                  <option value="Speed Post">Speed Post</option>
+                  <option value="DTDC">DTDC</option>
+                  <option value="Blue Dart">Blue Dart</option>
+                  <option value="Delhivery">Delhivery</option>
+                  <option value="Ecom Express">Ecom Express</option>
+                  <option value="XpressBees">XpressBees</option>
+                  <option value="Professional Couriers">Professional Couriers</option>
+                  <option value="Shadowfax">Shadowfax</option>
+                  <option value="Ekart">Ekart</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {bulkShipForm.courier === 'Other' && (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Custom Courier Name *</label>
+                  <input
+                    placeholder="Enter Courier Name"
+                    value={bulkShipForm.custom_carrier}
+                    onChange={(e) => setBulkShipForm({ ...bulkShipForm, custom_carrier: e.target.value })}
+                    className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Expected Delivery Date</label>
+                <input
+                  type="date"
+                  value={bulkShipForm.expected_delivery_date}
+                  onChange={(e) => setBulkShipForm({ ...bulkShipForm, expected_delivery_date: e.target.value })}
+                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Shipment Notes</label>
+                <textarea
+                  placeholder="Optional shipment notes"
+                  value={bulkShipForm.shipment_notes}
+                  onChange={(e) => setBulkShipForm({ ...bulkShipForm, shipment_notes: e.target.value })}
+                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none resize-none h-16"
+                />
+              </div>
+
+              <div className="border-t border-slate-100 pt-4 space-y-4">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">CSV Tracking Upload</label>
+                  <input
+                    type="file"
+                    accept=".csv,.txt"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (evt) => {
+                        const text = evt.target.result;
+                        const lines = text.split('\n');
+                        const pairs = [];
+                        lines.forEach(line => {
+                          const parts = line.split(/[,\t;]+/);
+                          if (parts.length >= 2) {
+                            const o = parts[0].trim();
+                            const t = parts[1].trim();
+                            if (o && t) {
+                              pairs.push(`${o} - ${t}`);
+                            }
+                          }
+                        });
+                        setBulkShipForm(prev => ({ ...prev, pasted_text: pairs.join('\n') }));
+                        toast.success(`Parsed ${pairs.length} shipments from CSV!`);
+                      };
+                      reader.readAsText(file);
+                    }}
+                    className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:uppercase file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Paste Tracking Numbers (ORDER - TRACKING)</label>
+                  <textarea
+                    placeholder="E.g.&#10;ORD1001 - TRACK001&#10;ORD1002 - TRACK002"
+                    value={bulkShipForm.pasted_text}
+                    onChange={(e) => setBulkShipForm({ ...bulkShipForm, pasted_text: e.target.value })}
+                    className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-mono bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none resize-none h-32"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBulkShipModal(false)}
+                className="flex-1 h-12 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  const toastId = toast.loading('Bulk shipping orders...');
+                  try {
+                    setSubmitting(true);
+                    const payload = {
+                      courier: bulkShipForm.courier === 'Other' ? bulkShipForm.custom_carrier : bulkShipForm.courier,
+                      expected_delivery_date: bulkShipForm.expected_delivery_date || undefined,
+                      shipment_notes: bulkShipForm.shipment_notes || undefined,
+                      pasted_text: bulkShipForm.pasted_text || undefined
+                    };
+                    const res = await adminService.bulkShipOrders(payload);
+                    toast.success(res.message || 'Orders shipped successfully!', { id: toastId });
+                    if (res.warnings && res.warnings.length > 0) {
+                      res.warnings.forEach(w => toast.error(w, { duration: 5000 }));
+                    }
+                    if (res.errors && res.errors.length > 0) {
+                      res.errors.forEach(e => toast.error(e, { duration: 6000 }));
+                    }
+                    setBulkShipModal(false);
+                    setSelectedOrderIds(new Set());
+                    setBulkShipForm({ courier: 'India Post', custom_carrier: '', expected_delivery_date: '', shipment_notes: '', pasted_text: '' });
+                    load(page);
+                  } catch (err) {
+                    toast.error(err.message || 'Failed to bulk ship orders', { id: toastId });
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+                disabled={!bulkShipForm.pasted_text.trim() || (bulkShipForm.courier === 'Other' && !bulkShipForm.custom_carrier.trim()) || submitting}
+                className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow disabled:opacity-50 transition-all"
+              >
+                Ship All Orders
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {trackingModal && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6">
@@ -572,24 +840,68 @@ const OrdersPage = () => {
               <p className="text-xs text-slate-500 mt-1">Add courier details before marking this order as shipped.</p>
             </div>
             <div className="space-y-4">
-              <input
-                placeholder="Carrier / courier"
-                value={trackingForm.carrier}
-                onChange={(e) => setTrackingForm({ ...trackingForm, carrier: e.target.value })}
-                className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
-              />
-              <input
-                placeholder="Tracking ID"
-                value={trackingForm.tracking_id}
-                onChange={(e) => setTrackingForm({ ...trackingForm, tracking_id: e.target.value })}
-                className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
-              />
-              <input
-                placeholder="Tracking URL (optional)"
-                value={trackingForm.tracking_url}
-                onChange={(e) => setTrackingForm({ ...trackingForm, tracking_url: e.target.value })}
-                className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
-              />
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Courier *</label>
+                <select
+                  value={trackingForm.carrier}
+                  onChange={(e) => setTrackingForm({ ...trackingForm, carrier: e.target.value })}
+                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                >
+                  <option value="India Post">India Post</option>
+                  <option value="Speed Post">Speed Post</option>
+                  <option value="DTDC">DTDC</option>
+                  <option value="Blue Dart">Blue Dart</option>
+                  <option value="Delhivery">Delhivery</option>
+                  <option value="Ecom Express">Ecom Express</option>
+                  <option value="XpressBees">XpressBees</option>
+                  <option value="Professional Couriers">Professional Couriers</option>
+                  <option value="Shadowfax">Shadowfax</option>
+                  <option value="Ekart">Ekart</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {trackingForm.carrier === 'Other' && (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Custom Courier Name *</label>
+                  <input
+                    placeholder="Enter Courier Name"
+                    value={trackingForm.custom_carrier}
+                    onChange={(e) => setTrackingForm({ ...trackingForm, custom_carrier: e.target.value })}
+                    className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tracking Number *</label>
+                <input
+                  placeholder="Tracking ID"
+                  value={trackingForm.tracking_id}
+                  onChange={(e) => setTrackingForm({ ...trackingForm, tracking_id: e.target.value })}
+                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Expected Delivery Date</label>
+                <input
+                  type="date"
+                  value={trackingForm.expected_delivery_date}
+                  onChange={(e) => setTrackingForm({ ...trackingForm, expected_delivery_date: e.target.value })}
+                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Shipment Notes</label>
+                <textarea
+                  placeholder="Optional shipment notes"
+                  value={trackingForm.shipment_notes}
+                  onChange={(e) => setTrackingForm({ ...trackingForm, shipment_notes: e.target.value })}
+                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none resize-none h-20"
+                />
+              </div>
             </div>
             <div className="flex gap-3">
               <button
@@ -599,8 +911,18 @@ const OrdersPage = () => {
                 Go Back
               </button>
               <button
-                onClick={() => updateStatus(trackingModal.orderId, trackingModal.status, '', trackingForm)}
-                disabled={!trackingForm.tracking_id.trim() || submitting}
+                onClick={() => {
+                  const payload = {
+                    courier_name: trackingForm.carrier === 'Other' ? trackingForm.custom_carrier : trackingForm.carrier,
+                    carrier: trackingForm.carrier === 'Other' ? trackingForm.custom_carrier : trackingForm.carrier,
+                    tracking_number: trackingForm.tracking_id,
+                    tracking_id: trackingForm.tracking_id,
+                    expected_delivery_date: trackingForm.expected_delivery_date || undefined,
+                    shipment_notes: trackingForm.shipment_notes || undefined
+                  };
+                  updateStatus(trackingModal.orderId, trackingModal.status, '', payload);
+                }}
+                disabled={!trackingForm.tracking_id.trim() || (trackingForm.carrier === 'Other' && !trackingForm.custom_carrier.trim()) || submitting}
                 className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow disabled:opacity-50 transition-all"
               >
                 Ship Order

@@ -713,11 +713,11 @@ const OrderDetailsPage = () => {
           </div>
         )}
 
-        {/* Elegant Horizontal Timeline / Progress Stepper Card */}
+        {/* Elegant Horizontal/Responsive Stepper Timeline Card */}
         {!isReturning && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-50">
-              <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Shipment Progress</h3>
+            <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-50">
+              <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Shipment Timeline</h3>
               <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                 order.order_status === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
                 order.order_status === 'cancelled' ? 'bg-rose-100 text-rose-800' :
@@ -729,14 +729,22 @@ const OrderDetailsPage = () => {
 
             {(() => {
               const status = (order.order_status || '').toLowerCase();
-              const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
-              const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+              const isPaid = order.payment_status?.toLowerCase() === 'paid' || order.payment_status?.toLowerCase() === 'completed' || order.payment_method?.toLowerCase() === 'cod';
+              const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+              const isPacked = ['packaging', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+              const isShipped = ['shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+              const isInTransit = ['in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+              const isOutForDelivery = ['out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
               const isDelivered = ['delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
 
               const steps = [
-                { label: 'Ordered', active: true, date: order.created_at },
-                { label: 'Confirmed', active: isConfirmed, date: isConfirmed ? order.created_at : null },
-                { label: 'Shipped', active: isShipped, date: isShipped ? (order.shipped_at || order.updated_at) : null },
+                { label: 'Order Placed', active: true, date: order.created_at },
+                { label: 'Payment Successful', active: isPaid, date: isPaid ? (order.transaction_date || order.created_at) : null },
+                { label: 'Order Confirmed', active: isConfirmed, date: isConfirmed ? order.created_at : null },
+                { label: 'Packed', active: isPacked, date: null },
+                { label: 'Shipped', active: isShipped, date: isShipped ? (order.shipped_at || order.shipment_date) : null },
+                { label: 'In Transit', active: isInTransit, date: null },
+                { label: 'Out For Delivery', active: isOutForDelivery, date: null },
                 { label: 'Delivered', active: isDelivered, date: isDelivered ? (order.delivered_at || order.updated_at) : null },
               ];
 
@@ -753,42 +761,91 @@ const OrderDetailsPage = () => {
               }
 
               return (
-                <div className="relative pt-6 pb-2">
-                  {/* Progress Line Background */}
-                  <div className="absolute top-[32px] left-[10%] right-[10%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
-                  {/* Active Progress Line */}
-                  <div 
-                    className="absolute top-[32px] left-[10%] h-1 bg-primary -translate-y-1/2 rounded-full transition-all duration-700 ease-out" 
-                    style={{ 
-                      width: isDelivered ? '80%' : isShipped ? '53.33%' : isConfirmed ? '26.66%' : '0%' 
-                    }} 
-                  />
+                <div className="relative pt-6 pb-2 overflow-x-auto">
+                  <div className="min-w-[700px] relative">
+                    {/* Progress Line Background */}
+                    <div className="absolute top-[16px] left-[5%] right-[5%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
+                    {/* Active Progress Line */}
+                    <div 
+                      className="absolute top-[16px] left-[5%] h-1 bg-primary -translate-y-1/2 rounded-full transition-all duration-700 ease-out" 
+                      style={{ 
+                        width: isDelivered ? '90%' : isOutForDelivery ? '77.14%' : isInTransit ? '64.28%' : isShipped ? '51.42%' : isPacked ? '38.56%' : isConfirmed ? '25.7%' : isPaid ? '12.85%' : '0%' 
+                      }} 
+                    />
 
-                  {/* Stepper Dots */}
-                  <div className="relative flex justify-between">
-                    {steps.map((step, idx) => (
-                      <div key={idx} className="flex flex-col items-center w-[25%] text-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all duration-300 ${
-                          step.active 
-                            ? 'bg-primary text-white ring-4 ring-primary/10' 
-                            : 'bg-slate-200 text-slate-400'
-                        }`}>
-                          {step.active ? <Check className="w-3.5 h-3.5 stroke-[3px]" /> : <span className="text-[10px] font-bold">{idx + 1}</span>}
-                        </div>
-                        <p className={`text-xs mt-2.5 ${step.active ? 'text-primary font-black' : 'text-slate-400 font-semibold'}`}>
-                          {step.label}
-                        </p>
-                        {step.date && (
-                          <p className="text-[9px] font-bold text-slate-400 mt-1">
-                            {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                    {/* Stepper Dots */}
+                    <div className="relative flex justify-between">
+                      {steps.map((step, idx) => (
+                        <div key={idx} className="flex flex-col items-center w-[12.5%] text-center">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all duration-300 ${
+                            step.active 
+                              ? 'bg-primary text-white ring-4 ring-primary/10' 
+                              : 'bg-slate-200 text-slate-400'
+                          }`}>
+                            {step.active ? <Check className="w-3.5 h-3.5 stroke-[3px]" /> : <span className="text-[10px] font-bold">{idx + 1}</span>}
+                          </div>
+                          <p className={`text-[10px] mt-2.5 leading-tight font-black ${step.active ? 'text-primary' : 'text-slate-400'}`}>
+                            {step.label}
                           </p>
-                        )}
-                      </div>
-                    ))}
+                          {step.date && (
+                            <p className="text-[8px] font-bold text-slate-400 mt-1">
+                              {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               );
             })()}
+          </div>
+        )}
+
+        {/* Courier Details Card */}
+        {order.tracking_id && (
+          <div className="bg-sky-50/50 border border-sky-100 rounded-2xl p-5 mb-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-300">
+            <div className="flex items-start gap-4">
+              <Truck className="w-6 h-6 text-sky-600 shrink-0 mt-0.5" />
+              <div className="space-y-1 flex-1">
+                <h4 className="text-[10px] font-black text-sky-700 uppercase tracking-widest">Shipment Tracking details</h4>
+                <div className="text-xs text-slate-650 leading-relaxed font-semibold">
+                  <p>Courier: <span className="font-extrabold text-slate-900">{order.courier_name || order.carrier || 'Courier'}</span></p>
+                  <p className="flex items-center gap-2 mt-0.5">
+                    Tracking Number: <span className="font-mono text-slate-900 font-extrabold select-all">{order.tracking_number || order.tracking_id}</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(order.tracking_number || order.tracking_id);
+                        toast.success('Tracking number copied!');
+                      }}
+                      className="text-[9px] font-black uppercase text-primary border border-primary/20 bg-white hover:bg-primary/5 px-2 py-0.5 rounded-md shadow-sm transition-all"
+                    >
+                      Copy
+                    </button>
+                  </p>
+                  {order.expected_delivery_date && (
+                    <p className="mt-0.5 text-slate-700">Estimated Delivery: <span className="font-extrabold text-slate-900">{new Date(order.expected_delivery_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</span></p>
+                  )}
+                  {order.shipment_notes && (
+                    <p className="mt-1 text-slate-500 italic bg-white/60 p-2 rounded-lg border border-slate-100">Notes: {order.shipment_notes}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            {order.tracking_url ? (
+              <a 
+                href={order.tracking_url} 
+                target="_blank" 
+                rel="noreferrer"
+                className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[9px] px-5 py-3 rounded-xl shadow-md shadow-emerald-glow transition-all whitespace-nowrap text-center"
+              >
+                Track Shipment
+              </a>
+            ) : (
+              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl">
+                No Direct Tracking Link
+              </span>
+            )}
           </div>
         )}
 
@@ -825,23 +882,6 @@ const OrderDetailsPage = () => {
                 }
               </p>
             </div>
-            
-            {order.tracking_id && (
-              <div className="text-xs text-slate-700 bg-white border border-slate-200 rounded-xl px-3 py-1.5 font-bold flex items-center gap-1.5 shadow-sm">
-                <Truck className="w-3.5 h-3.5 text-slate-400" />
-                <span>{order.carrier || 'Courier'}: {order.tracking_id}</span>
-                {order.tracking_url && (
-                  <a 
-                    href={order.tracking_url} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="text-[9px] font-black text-primary hover:underline uppercase tracking-wider pl-1.5 border-l border-slate-200"
-                  >
-                    Track Package
-                  </a>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Items Row list */}

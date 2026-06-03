@@ -234,6 +234,15 @@ async def get_analytics_summary(
                 elif date_filter:
                     revenue_clause = revenue_clause & (OrderModel.created_at >= date_filter)
                 selects.append(func.sum(case((revenue_clause, OrderModel.total_amount), else_=0.0)))
+
+                avg_del_clause = (OrderModel.order_status == "delivered") & (OrderModel.delivered_at.is_not(None)) & (OrderModel.shipped_at.is_not(None))
+                if start_dt:
+                    avg_del_clause = avg_del_clause & (OrderModel.created_at >= start_dt)
+                if end_dt:
+                    avg_del_clause = avg_del_clause & (OrderModel.created_at <= end_dt)
+                elif date_filter:
+                    avg_del_clause = avg_del_clause & (OrderModel.created_at >= date_filter)
+                selects.append(func.avg(case((avg_del_clause, func.extract('epoch', OrderModel.delivered_at - OrderModel.shipped_at)), else_=None)))
                 
                 q = select(*selects)
                 res = await session.execute(q)
@@ -346,6 +355,8 @@ async def get_analytics_summary(
     orders_today_count = int(orders_val[0]) if (orders_val and orders_val[0] is not None) else 0
     total_orders = int(orders_val[1]) if (orders_val and orders_val[1] is not None) else 0
     revenue = round(float(orders_val[2]), 2) if (orders_val and orders_val[2] is not None) else 0.0
+    avg_del_seconds = float(orders_val[3]) if (orders_val and len(orders_val) > 3 and orders_val[3] is not None) else 0.0
+    avg_delivery_time_hours = round(avg_del_seconds / 3600.0, 1)
 
     prod_val = results.get("product_metrics")
     if prod_val:
@@ -494,6 +505,7 @@ async def get_analytics_summary(
     if has_orders:
         metrics["total_orders"] = total_orders
         metrics["orders_today"] = orders_today_count
+        metrics["avg_delivery_time_hours"] = avg_delivery_time_hours
     if has_financial:
         metrics["total_revenue"] = revenue
     if has_products:

@@ -109,7 +109,16 @@ async def run_migrations():
         await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_id VARCHAR(255);"))
         await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_url TEXT;"))
         await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipped_at TIMESTAMPTZ;"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name VARCHAR(120);"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number VARCHAR(255);"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS expected_delivery_date TIMESTAMPTZ;"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipment_status VARCHAR(50);"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS last_tracking_sync TIMESTAMPTZ;"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_events_json JSONB DEFAULT '[]'::jsonb;"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipment_notes TEXT;"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipment_date TIMESTAMPTZ;"))
         await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_orders_tracking_id ON orders(tracking_id);"))
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_orders_tracking_number ON orders(tracking_number);"))
         logger.info("Order shipment tracking columns checked/added.")
 
         # Let's check contacts table

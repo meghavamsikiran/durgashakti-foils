@@ -30,6 +30,30 @@ import json
 
 router = APIRouter(prefix="/api")
 
+def generate_tracking_url(courier: str, tracking_number: str) -> str:
+    if not tracking_number:
+        return ""
+    c_lower = courier.lower().strip()
+    if "india post" in c_lower or "speed post" in c_lower:
+        return f"https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx?consignmentNo={tracking_number}"
+    elif "dtdc" in c_lower:
+        return f"https://www.dtdc.in/tracking/tracking_results.asp?pinno={tracking_number}"
+    elif "blue dart" in c_lower:
+        return f"https://www.bluedart.com/tracking?trackid={tracking_number}"
+    elif "delhivery" in c_lower:
+        return f"https://www.delhivery.com/track/package/{tracking_number}"
+    elif "ecom express" in c_lower:
+        return f"https://ecomexpress.in/tracking/?tracking_id={tracking_number}"
+    elif "xpressbees" in c_lower:
+        return f"https://www.xpressbees.com/track?tracking_id={tracking_number}"
+    elif "professional couriers" in c_lower:
+        return "http://www.tpcindia.com/Default.aspx"
+    elif "shadowfax" in c_lower:
+        return "https://www.shadowfax.in/"
+    elif "ekart" in c_lower:
+        return f"https://ekartlogistics.com/track/{tracking_number}"
+    return ""
+
 ROLE_TEMPLATE_LABELS = {
     "OPERATIONS_ADMIN": "Operations Admin",
     "ORDER_MANAGER": "Order Manager",
@@ -419,6 +443,9 @@ async def get_all_orders(
     status: Optional[str] = Query(None, alias="status_filter"),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
+    courier: Optional[str] = Query(None),
+    tracking_number: Optional[str] = Query(None),
+    shipment_status: Optional[str] = Query(None),
     admin: UserSchema = Depends(require_permission("view_orders")),
     db: AsyncSession = Depends(get_db)
 ):
@@ -449,11 +476,25 @@ async def get_all_orders(
     filters = []
     if status and status.upper() != "ALL":
         filters.append(func.lower(OrderModel.order_status) == status.lower())
+    if courier:
+        filters.append(or_(
+            func.lower(OrderModel.carrier) == courier.lower(),
+            func.lower(OrderModel.courier_name) == courier.lower()
+        ))
+    if tracking_number:
+        filters.append(or_(
+            OrderModel.tracking_id.ilike(f"%{tracking_number}%"),
+            OrderModel.tracking_number.ilike(f"%{tracking_number}%")
+        ))
+    if shipment_status:
+        filters.append(func.lower(OrderModel.shipment_status) == shipment_status.lower())
     if search:
         like_term = f"%{search}%"
         clause = or_(
             OrderModel.order_number.ilike(like_term),
             OrderModel.customer_name.ilike(like_term),
+            OrderModel.tracking_id.ilike(like_term),
+            OrderModel.tracking_number.ilike(like_term),
             func.cast(OrderModel.user_id, String).ilike(like_term),
         )
         filters.append(clause)
@@ -572,20 +613,66 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
 
     order.order_status = effective_status
     order.updated_at = now
+    
+    warning_message = None
+    
     if new_status == "shipped":
-        carrier = str(status_data.get("carrier") or "").strip()
-        tracking_id = str(status_data.get("tracking_id") or "").strip()
-        tracking_url = str(status_data.get("tracking_url") or "").strip()
+        carrier = str(status_data.get("carrier") or status_data.get("courier_name") or "").strip()
+        tracking_id = str(status_data.get("tracking_id") or status_data.get("tracking_number") or "").strip()
+        if not carrier:
+            raise HTTPException(status_code=400, detail="Courier name is required before marking an order shipped")
         if not tracking_id:
-            raise HTTPException(status_code=400, detail="Tracking ID is required before marking an order shipped")
-        order.carrier = carrier or None
+            raise HTTPException(status_code=400, detail="Tracking Number is required before marking an order shipped")
+            
+        dup_res = await db.execute(
+            select(OrderModel).where(
+                or_(OrderModel.tracking_id == tracking_id, OrderModel.tracking_number == tracking_id),
+                OrderModel.id != order.id
+            )
+        )
+        if dup_res.scalars().first():
+            warning_message = f"Warning: Tracking number '{tracking_id}' is already assigned to another order."
+
+        order.carrier = carrier
+        order.courier_name = carrier
         order.tracking_id = tracking_id
-        order.tracking_url = tracking_url or None
+        order.tracking_number = tracking_id
+        
+        gen_url = generate_tracking_url(carrier, tracking_id)
+        if gen_url:
+            order.tracking_url = gen_url
+        else:
+            order.tracking_url = str(status_data.get("tracking_url") or "").strip() or None
+            
         order.shipped_at = now
-    if new_status == "delivered":
+        order.shipment_date = now
+        order.shipment_status = "shipped"
+        
+        if status_data.get("expected_delivery_date"):
+            try:
+                dt_str = status_data.get("expected_delivery_date").rstrip('Z')
+                order.expected_delivery_date = datetime.fromisoformat(dt_str)
+            except Exception:
+                pass
+        if status_data.get("shipment_notes"):
+            order.shipment_notes = status_data.get("shipment_notes")
+            
+    elif new_status == "packaging":
+        order.shipment_status = "packed"
+    elif new_status == "in_transit":
+        order.shipment_status = "in_transit"
+    elif new_status == "out_for_delivery":
+        order.shipment_status = "out_for_delivery"
+    elif new_status == "delivered":
         order.delivered_at = now
+        order.shipment_status = "delivered"
         if order.payment_method == "cod" and status_data.get("mark_paid", True):
             order.payment_status = "Paid"
+    elif new_status == "failed":
+        order.shipment_status = "failed"
+    elif new_status == "returned":
+        order.shipment_status = "returned"
+        
     if status_data.get("admin_message"):
         order.admin_message = status_data["admin_message"]
 
@@ -636,7 +723,190 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     except Exception:
         pass
 
-    return {"message": "Order status updated", "order": row_to_dict(order)}
+    res_payload = {"message": "Order status updated", "order": row_to_dict(order)}
+    if warning_message:
+        res_payload["warning"] = warning_message
+    return res_payload
+
+
+class BulkShipInput(BaseModel):
+    courier: str
+    expected_delivery_date: Optional[str] = None
+    shipment_notes: Optional[str] = None
+    shipments: Optional[List[dict]] = None
+    pasted_text: Optional[str] = None
+
+@router.post("/admin/orders/bulk-ship")
+async def bulk_ship_orders(
+    payload: BulkShipInput,
+    admin: UserSchema = Depends(require_permission("update_order_status")),
+    db: AsyncSession = Depends(get_db)
+):
+    courier = payload.courier.strip()
+    if not courier:
+        raise HTTPException(status_code=400, detail="Courier is required")
+        
+    shipment_pairs = []
+    
+    # 1. Parse shipments list if provided
+    if payload.shipments:
+        for s in payload.shipments:
+            o_num = str(s.get("order_number") or "").strip()
+            t_num = str(s.get("tracking_number") or "").strip()
+            if o_num and t_num:
+                shipment_pairs.append((o_num, t_num))
+                
+    # 2. Parse pasted_text if provided (support various separators)
+    if payload.pasted_text:
+        import re
+        lines = payload.pasted_text.strip().split("\n")
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            parts = re.split(r'[\s,\-\t]+', line, maxsplit=1)
+            if len(parts) == 2:
+                o_num = parts[0].strip()
+                t_num = parts[1].strip()
+                if o_num and t_num:
+                    shipment_pairs.append((o_num, t_num))
+            else:
+                parts = [p.strip() for p in re.split(r'[\s\-]+', line) if p.strip()]
+                if len(parts) >= 2:
+                    shipment_pairs.append((parts[0], parts[1]))
+
+    if not shipment_pairs:
+        raise HTTPException(status_code=400, detail="No valid order number and tracking number pairs found")
+
+    order_numbers = [p[0] for p in shipment_pairs]
+    
+    res = await db.execute(
+        select(OrderModel).where(func.lower(OrderModel.order_number).in_([o.lower() for o in order_numbers]))
+    )
+    orders = res.scalars().all()
+    orders_map = {o.order_number.lower(): o for o in orders}
+    
+    now = datetime.now(timezone.utc)
+    success_count = 0
+    errors = []
+    warnings = []
+    
+    expected_date = None
+    if payload.expected_delivery_date:
+        try:
+            expected_date = datetime.fromisoformat(payload.expected_delivery_date.rstrip('Z'))
+        except Exception:
+            pass
+            
+    for o_num_raw, tracking_number in shipment_pairs:
+        o_key = o_num_raw.lower()
+        if o_key not in orders_map:
+            errors.append(f"Order '{o_num_raw}' not found")
+            continue
+            
+        order = orders_map[o_key]
+        prev_status = order.order_status or "processing"
+        
+        valid_trans = ORDER_STATUS_TRANSITIONS.get(prev_status, [])
+        if "shipped" not in valid_trans and prev_status != "shipped":
+            errors.append(f"Order '{order.order_number}' cannot be transitioned to Shipped from status '{prev_status}'")
+            continue
+            
+        dup_res = await db.execute(
+            select(OrderModel).where(
+                or_(OrderModel.tracking_id == tracking_number, OrderModel.tracking_number == tracking_number),
+                OrderModel.id != order.id
+            )
+        )
+        if dup_res.scalars().first():
+            warnings.append(f"Tracking number '{tracking_number}' is already assigned to another order (assigned to '{order.order_number}')")
+
+        if prev_status in ("placed", "processing", "confirmed", "packaging") and not order.stock_applied:
+            items_to_deduct = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
+            if items_to_deduct:
+                prod_ids = [item.get("product_id") for item in items_to_deduct]
+                p_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+                locked_products = {str(p.id): p for p in p_res.scalars().all()}
+                insufficient_stock = False
+                for item in items_to_deduct:
+                    pid = item.get("product_id")
+                    qty = int(item.get("quantity", 0))
+                    p = locked_products.get(str(pid))
+                    if p:
+                        if int(p.stock_quantity or 0) < qty:
+                            errors.append(f"Insufficient stock for product '{p.name}' in order '{order.order_number}'")
+                            insufficient_stock = True
+                            break
+                if insufficient_stock:
+                    continue
+                    
+                for item in items_to_deduct:
+                    pid = item.get("product_id")
+                    qty = int(item.get("quantity", 0))
+                    p = locked_products.get(str(pid))
+                    if p:
+                        p.stock_quantity = max(0, int(p.stock_quantity or 0) - qty)
+                        p.units_sold = int(p.units_sold or 0) + qty
+                        p.updated_at = now
+                        if p.stock_quantity <= 0:
+                            p.in_stock = False
+            order.stock_applied = True
+
+        order.order_status = "shipped"
+        order.carrier = courier
+        order.courier_name = courier
+        order.tracking_id = tracking_number
+        order.tracking_number = tracking_number
+        
+        gen_url = generate_tracking_url(courier, tracking_number)
+        if gen_url:
+            order.tracking_url = gen_url
+        else:
+            order.tracking_url = None
+            
+        order.shipped_at = now
+        order.shipment_date = now
+        order.shipment_status = "shipped"
+        order.updated_at = now
+        
+        if expected_date:
+            order.expected_delivery_date = expected_date
+        if payload.shipment_notes:
+            order.shipment_notes = payload.shipment_notes
+            
+        await write_audit_log(db, "ORDER_STATUS_UPDATED", admin.id, "order", str(order.id), {"from": prev_status, "to": "shipped", "via": "bulk"})
+        
+        try:
+            user_res = await db.execute(select(UserModel).where(UserModel.id == order.user_id))
+            cust = user_res.scalar_one_or_none()
+            if cust:
+                await create_notification(
+                    db,
+                    str(cust.id),
+                    "Order Shipped",
+                    f"Your order {order.order_number} has been shipped via {courier}.",
+                    "order"
+                )
+                import asyncio
+                from deps import send_email as _send
+                from email_templates import order_shipped_email
+                order_dict = row_to_dict(order)
+                cust_name = cust.full_name or cust.email
+                subj, body = order_shipped_email(cust_name, order_dict)
+                if subj and body:
+                    asyncio.create_task(_send(cust.email, subj, body))
+        except Exception:
+            pass
+            
+        success_count += 1
+        
+    await db.flush()
+    return {
+        "message": f"Successfully shipped {success_count} orders",
+        "success_count": success_count,
+        "errors": errors,
+        "warnings": warnings
+    }
 
 
 # ── Customers (Admin) ────────────────────────────────────────────────────

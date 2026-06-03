@@ -91,6 +91,10 @@ const adminService = {
     invalidateCache('/admin/orders');
     return apiClient.put(`/admin/orders/${orderId}/status`, payload, { silent: true });
   },
+  bulkShipOrders: (payload) => {
+    invalidateCache('/admin/orders');
+    return apiClient.post('/admin/orders/bulk-ship', payload);
+  },
 
   // Customers
   getCustomers: (params) => cachedGet('/admin/customers', { params }),

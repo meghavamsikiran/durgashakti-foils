@@ -89,6 +89,9 @@ def test_order_status_transitions():
     assert "cancelled" in ORDER_STATUS_TRANSITIONS["pending"]
     assert "packaging" in ORDER_STATUS_TRANSITIONS["confirmed"]
     assert "shipped" in ORDER_STATUS_TRANSITIONS["packaging"]
+    assert "in_transit" in ORDER_STATUS_TRANSITIONS["shipped"]
+    assert "returned" in ORDER_STATUS_TRANSITIONS["delivered"]
+    assert "returned" in ORDER_STATUS_TRANSITIONS["failed"]
     assert len(ORDER_STATUS_TRANSITIONS["cancelled"]) == 0
     assert len(ORDER_STATUS_TRANSITIONS["refunded"]) == 0
 
