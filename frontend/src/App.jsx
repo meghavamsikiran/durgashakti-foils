@@ -78,8 +78,8 @@ function AppRoutes() {
         <div className="App">
           <ScrollToTop />
           <RouteTransitionLoader />
-          {!isAdminPath && !isLandingPath && <Navbar />}
-          {!isAdminPath && !isLandingPath && <PopupBanner />}
+          {!isAdminPath && <Navbar />}
+          {!isAdminPath && <PopupBanner />}
           <Suspense fallback={<SuspenseTrigger />}>
             <Routes>
               {/* Public Routes */}

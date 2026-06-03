@@ -15,16 +15,7 @@ import {
   User,
   Users,
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { useCart } from '../contexts/CartContext';
 
-const navItems = [
-  { label: 'Home', to: '/' },
-  { label: 'Shop', to: '/shop' },
-  { label: 'About Us', to: '/about' },
-  { label: 'Bulk Order', to: '/contact' },
-  { label: 'Contact Us', to: '/contact' },
-];
 
 const heroFeatures = [
   { label: '100% Virgin Aluminium', icon: Boxes },
@@ -61,9 +52,6 @@ const brands = ["Haldiram's", 'Barbeque Nation', 'Biryani Blues', 'BOX8', 'Parad
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
-  const { cartItemCount } = useCart();
-  const accountPath = user ? (isAdmin ? '/admin/dashboard' : '/dashboard') : '/login';
 
   const go = (to) => {
     if (to.startsWith('#')) {
@@ -84,13 +72,10 @@ const Home = () => {
           height="867"
           fetchPriority="high"
           decoding="async"
-          className="absolute bottom-0 right-0 top-[82px] hidden w-[72%] object-cover object-right opacity-95 md:block"
+          className="absolute bottom-0 right-0 top-0 hidden w-[72%] object-cover object-right opacity-95 md:block"
         />
         <div className="absolute inset-y-0 left-0 w-[58%] bg-[linear-gradient(90deg,#030504_0%,rgba(3,5,4,0.96)_45%,rgba(3,5,4,0)_100%)]" />
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black to-transparent" />
-
-        <Header onNavigate={go} accountPath={accountPath} cartItemCount={cartItemCount} />
-        <div className="relative z-10 h-[78px] md:h-[84px]" />
 
         <div className="relative z-10 mx-auto grid max-w-[1536px] grid-cols-1 gap-8 px-6 pb-8 pt-5 md:px-12 lg:grid-cols-[420px_1fr] lg:px-[50px]">
           <div className="max-w-[390px] pb-3 pt-2 md:pt-8">
@@ -168,58 +153,6 @@ const Home = () => {
   );
 };
 
-const Header = ({ onNavigate, accountPath, cartItemCount }) => (
-  <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#030504]/88 shadow-[0_16px_40px_rgba(0,0,0,0.32)] backdrop-blur-xl">
-    <div className="relative mx-auto flex max-w-[1536px] items-center justify-between px-6 py-4 md:px-12 lg:px-[50px]">
-      <button onClick={() => onNavigate('/')} className="flex min-w-0 items-center gap-3 text-left">
-        <img src="/favicon.png" alt="" className="h-10 w-10 shrink-0 object-contain brightness-0 invert" />
-        <span className="min-w-0">
-          <span className="block truncate font-serif text-[22px] font-bold leading-none text-white sm:text-[25px]">Durga Shakti Foils</span>
-          <span className="mt-1 block truncate text-[11px] font-bold text-white sm:text-[12px]">Wrap Purity, Seal Freshness</span>
-        </span>
-      </button>
-      <nav className="hidden items-center gap-8 text-sm font-bold lg:flex xl:gap-10">
-        {navItems.map((item) => (
-          <button
-            key={item.label}
-            onClick={() => onNavigate(item.to)}
-            className={`pb-2 transition ${item.label === 'Home' ? 'border-b-2 border-[#25d958] text-[#25d958]' : 'text-white hover:text-[#25d958]'}`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
-      <div className="hidden items-center gap-5 xl:flex">
-        <div className="absolute right-[150px] top-1 flex items-center gap-8 text-[12px] font-semibold text-white">
-          {['ISO Certified', 'BPA Free', 'Food Grade Certified'].map((item) => (
-            <span key={item} className="flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-[#25d958]" />
-              {item}
-            </span>
-          ))}
-        </div>
-        <button aria-label="Account dashboard" onClick={() => onNavigate(accountPath)} className="p-1 text-white transition hover:text-[#25d958]"><User className="h-5 w-5" /></button>
-        <button aria-label="Cart" onClick={() => onNavigate('/cart')} className="relative p-1 text-white transition hover:text-[#25d958]">
-          <ShoppingCart className="h-5 w-5" />
-          {cartItemCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#25d958] px-1 text-[9px] font-black text-black">{cartItemCount}</span>
-          )}
-        </button>
-        <button onClick={() => onNavigate('/shop')} className="h-10 rounded-lg bg-[#39c653] px-7 text-sm font-black text-white transition hover:bg-[#48d862]">Shop Now</button>
-      </div>
-      <div className="flex shrink-0 items-center gap-3 xl:hidden">
-        <button aria-label="Account dashboard" onClick={() => onNavigate(accountPath)} className="p-1 text-white transition hover:text-[#25d958]"><User className="h-5 w-5" /></button>
-        <button aria-label="Cart" onClick={() => onNavigate('/cart')} className="relative p-1 text-white transition hover:text-[#25d958]">
-          <ShoppingCart className="h-5 w-5" />
-          {cartItemCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#25d958] px-1 text-[9px] font-black text-black">{cartItemCount}</span>
-          )}
-        </button>
-        <button aria-label="Shop products" onClick={() => onNavigate('/shop')} className="hidden h-9 rounded-lg bg-[#39c653] px-4 text-xs font-black text-white transition hover:bg-[#48d862] min-[460px]:block">Shop</button>
-      </div>
-    </div>
-  </header>
-);
 
 const MetricStrip = () => (
   <section className="border-y border-white/15 bg-[#050a09]">

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
 import TablePagination from '../components/ui/TablePagination';
@@ -61,6 +62,8 @@ const Shop = () => {
   const [ratingFilter, setRatingFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [page, setPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
   const ITEMS_PER_PAGE = 9;
 
   const fetchProducts = useCallback(async () => {
@@ -94,6 +97,16 @@ const Shop = () => {
 
   const applyFilters = useCallback(() => {
     let filtered = [...products];
+
+    // Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(p => 
+        (p.name || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q)
+      );
+    }
 
     if (categoryFilter !== 'all') {
       filtered = filtered.filter(p => p.category === categoryFilter);
@@ -129,7 +142,7 @@ const Shop = () => {
 
     setFilteredProducts(filtered);
     setPage(1); // Reset to first page when filters change
-  }, [products, categoryFilter, priceFilter, ratingFilter, sortBy]);
+  }, [products, categoryFilter, priceFilter, ratingFilter, sortBy, searchQuery]);
 
   useEffect(() => {
     fetchProducts();
@@ -145,6 +158,11 @@ const Shop = () => {
     setPriceFilter('all');
     setRatingFilter('all');
     setSortBy('name');
+    if (searchParams.has('search')) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('search');
+      setSearchParams(newParams);
+    }
   };
 
   return (
@@ -348,6 +366,23 @@ const Shop = () => {
 
           {/* Products Grid */}
           <div className="flex-1">
+            {searchQuery && (
+              <div className="mb-6 p-4 rounded-xl border border-primary/20 bg-primary/5 flex items-center justify-between text-sm">
+                <span className="font-semibold text-slate-700">
+                  Search results for: <strong className="text-primary font-extrabold">"{searchQuery}"</strong>
+                </span>
+                <button
+                  onClick={() => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.delete('search');
+                    setSearchParams(newParams);
+                  }}
+                  className="text-xs font-bold text-rose-500 hover:text-rose-600 uppercase tracking-wider transition-colors"
+                >
+                  Clear Search
+                </button>
+              </div>
+            )}
             {loading ? <PageLoader /> : filteredProducts.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-2xl border border-border-subtle p-8 shadow-sm">
                 <p className="text-on-surface-variant font-medium">No products found match your active filters.</p>

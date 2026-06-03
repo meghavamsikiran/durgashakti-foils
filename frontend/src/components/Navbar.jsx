@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, Menu, X } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Menu, X, Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { Button } from './ui/button';
@@ -12,7 +12,27 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
   const isDashboard = location.pathname === '/dashboard';
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get('search') || '';
+    setSearchQuery(q);
+    if (q) {
+      setIsSearchOpen(true);
+    }
+  }, [location.search]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsMobileSearchOpen(false);
+    }
+  };
 
   // Banner dynamic config state
   const [bannerConfig, setBannerConfig] = React.useState({
@@ -190,43 +210,72 @@ const Navbar = () => {
               Contact Us
             </Link>
 
+            {/* Search Input / Toggle */}
+            {isSearchOpen ? (
+              <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-40 lg:w-48 h-9 bg-white/10 text-white placeholder-white/50 text-xs px-3 pr-8 rounded-lg border border-white/15 focus:outline-none focus:border-[#25d958] focus:ring-1 focus:ring-[#25d958]/20 transition-all font-semibold"
+                  autoFocus
+                />
+                <button type="submit" className="absolute right-2 p-1 text-white/70 hover:text-[#25d958] transition-colors">
+                  <Search className="w-3.5 h-3.5" />
+                </button>
+                <button type="button" onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="ml-2 text-white/50 hover:text-white transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </form>
+            ) : (
+              <button
+                aria-label="Search products"
+                onClick={() => setIsSearchOpen(true)}
+                className="p-1 text-white transition hover:text-[#25d958]"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Unconditional Cart Link */}
+            <Link
+              to="/cart"
+              className="relative text-white hover:text-[#25d958] transition-colors"
+              data-testid="navbar-cart-link"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {cartItemCount > 0 && (
+                <span
+                  className="absolute -top-2 -right-2 bg-[#25d958] text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center"
+                  data-testid="cart-item-count"
+                >
+                  {cartItemCount}
+                </span>
+              )}
+            </Link>
+
+            {/* Unconditional Dashboard/Login Link */}
+            <Link
+              to={user ? (isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard") : "/login"}
+              title={user ? (isAdmin ? (isSuperAdmin ? "Super Admin Panel" : "Admin Panel") : "Customer Dashboard") : "Login / Register"}
+              className="text-white hover:text-[#25d958] transition-colors"
+              data-testid="navbar-dashboard-link"
+            >
+              <User className="w-5 h-5" />
+            </Link>
+
+            {/* Logout/Login Button */}
             {user ? (
-              <>
-                <Link
-                  to="/cart"
-                  className="relative mr-2 text-white"
-                  data-testid="navbar-cart-link"
-                >
-                  <ShoppingCart className="w-5 h-5 hover:text-primary transition-colors" />
-                  {cartItemCount > 0 && (
-                    <span
-                      className="absolute -top-2 -right-2 bg-primary text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center font-bold"
-                      data-testid="cart-item-count"
-                    >
-                      {cartItemCount}
-                    </span>
-                  )}
-                </Link>
-
-                <Link
-                  to={isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard"}
-                  title={isAdmin ? (isSuperAdmin ? "Super Admin Panel" : "Admin Panel") : "Customer Dashboard"}
-                  className="text-white hover:text-[#25d958] transition-colors"
-                  data-testid="navbar-dashboard-link"
-                >
-                  <User className="w-5 h-5" />
-                </Link>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="h-10 px-4 rounded-lg text-white hover:bg-white/10 hover:text-[#25d958]"
-                  data-testid="navbar-logout-button"
-                >
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="h-10 px-4 rounded-lg text-white hover:bg-white/10 hover:text-[#25d958]"
+                data-testid="navbar-logout-button"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
             ) : (
               <Button
                 onClick={() => navigate('/login')}
@@ -238,20 +287,61 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Toggle */}
+          {/* Mobile Actions and Toggle */}
           {isDashboard ? (
             <div className="md:hidden w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black text-xs">
               {user?.full_name?.charAt(0) || 'U'}
             </div>
           ) : (
-            <button 
-              className="md:hidden p-2 text-white"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            <div className="md:hidden flex items-center gap-3">
+              <button
+                aria-label="Search products"
+                onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+                className="p-1 text-white hover:text-[#25d958] transition-colors"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+
+              <Link to="/cart" className="relative p-1 text-white hover:text-[#25d958] transition-colors">
+                <ShoppingCart className="w-5 h-5" />
+                {cartItemCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#25d958] px-1 text-[9px] font-black text-black">{cartItemCount}</span>
+                )}
+              </Link>
+
+              <Link to={user ? (isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard") : "/login"} className="p-1 text-white hover:text-[#25d958] transition-colors">
+                <User className="w-5 h-5" />
+              </Link>
+
+              <button 
+                className="p-2 text-white hover:text-[#25d958] transition-colors"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Toggle Menu"
+              >
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           )}
         </div>
+
+        {/* Mobile Search Dropdown */}
+        {isMobileSearchOpen && (
+          <div className="md:hidden py-3 border-t border-white/10">
+            <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-10 bg-white/10 text-white placeholder-white/50 text-sm px-4 pr-10 rounded-lg border border-white/15 focus:outline-none focus:border-[#25d958]"
+                autoFocus
+              />
+              <button type="submit" className="absolute right-3 p-1 text-white/70 hover:text-[#25d958]">
+                <Search className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        )}
 
         {/* Mobile Menu */}
         {isMenuOpen && (
@@ -260,17 +350,14 @@ const Navbar = () => {
             <Link to="/about" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-white px-2">About Us</Link>
             <Link to="/contact" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-white px-2">Contact Us</Link>
 
-            
             {user ? (
               <>
                 <Link to="/cart" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-white px-2 flex items-center gap-2">
                   Cart ({cartItemCount})
                 </Link>
-                {!isAdmin ? (
-                  <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-white px-2">Dashboard</Link>
-                ) : (
-                  <Link to={isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard"} onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-white px-2">Admin Panel</Link>
-                )}
+                <Link to={isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard"} onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-white px-2">
+                  Dashboard
+                </Link>
                 <button 
                   onClick={() => { handleLogout(); setIsMenuOpen(false); }}
                   className="text-lg font-bold text-rose-600 px-2 text-left"
