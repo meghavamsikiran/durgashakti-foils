@@ -102,38 +102,49 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-surface font-inter text-on-surface" data-testid="home-page">
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-24 md:py-32 bg-gradient-to-b from-surface-container-low to-surface border-b border-border-subtle">
-        {/* Technical grids/glows for depth */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,110,27,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(0,110,27,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-        <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-primary/5 rounded-full blur-[100px] pointer-events-none -mr-32 -mt-32" />
+      <section className="relative overflow-hidden min-h-[85vh] flex items-center bg-[#070b13] border-b border-border-subtle">
+        {/* Full-bleed absolute background image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/product_display_poster.png"
+            alt="Durga Shakti Foils - Premium food grade aluminum foil packaging product ecosystem"
+            className="w-full h-full object-cover opacity-35 md:opacity-45"
+          />
+          {/* Layered dark gradients for premium text readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#070b13] via-[#070b13]/90 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#070b13] via-transparent to-[#070b13]/45" />
+          
+          {/* Ambient glowing radial light aura */}
+          <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(0,110,27,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(0,110,27,0.015)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+        </div>
         
-        <div className="relative max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 lg:px-24 w-full py-20 md:py-32">
+          <div className="max-w-3xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="md:col-span-7"
+              transition={{ duration: 0.6 }}
             >
               <span className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-primary bg-primary/10 px-3.5 py-1.5 rounded-full inline-block mb-6 border border-primary/20">
                 100% FOOD GRADE CERTIFIED
               </span>
               <h1
-                className="text-5xl md:text-7xl font-extrabold tracking-tighter leading-[1.05] mb-6 font-manrope text-ink-slate"
+                className="text-5xl md:text-7xl font-extrabold tracking-tighter leading-[1.05] mb-6 font-manrope text-white"
                 data-testid="hero-title"
               >
                 Wrap it right,<br />
-                <span className="text-amber-500 bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">KEEP IT HOT</span>,<br />
+                <span className="text-amber-500 bg-gradient-to-r from-amber-400 to-amber-500 bg-clip-text text-transparent">KEEP IT HOT</span>,<br />
                 <span className="text-primary bg-gradient-to-r from-primary to-emerald-hover bg-clip-text text-transparent">KEEP IT FRESH!</span>
               </h1>
-              <p className="text-base md:text-lg leading-relaxed text-on-surface-variant mb-8 max-w-2xl font-semibold">
+              <p className="text-base md:text-lg leading-relaxed text-slate-300 mb-8 max-w-2xl font-semibold">
                 Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil engineered for commercial strength and clinical hygiene.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button
                   onClick={() => navigate('/shop')}
                   size="default"
-                  className="bg-primary text-white hover:bg-emerald-hover h-[52px] px-8 rounded-lg font-bold tracking-wider shadow-sm transition-transform active:scale-98"
+                  className="bg-primary text-white hover:bg-emerald-hover h-[52px] px-8 rounded-lg font-bold tracking-wider shadow-lg hover:shadow-emerald-glow transition-all active:scale-98"
                   data-testid="hero-shop-button"
                 >
                   SHOP NOW
@@ -142,7 +153,7 @@ const Home = () => {
                 <Button
                   onClick={() => window.scrollTo({ top: 850, behavior: 'smooth' })}
                   variant="outline"
-                  className="h-[52px] px-8 rounded-lg font-bold transition-all border border-border-subtle bg-white text-slate-700 hover:border-primary hover:bg-slate-50"
+                  className="h-[52px] px-8 rounded-lg font-bold transition-all border border-slate-600 bg-white/10 text-white hover:border-primary hover:bg-white/25"
                   data-testid="hero-learn-button"
                 >
                   LEARN MORE
@@ -150,7 +161,7 @@ const Home = () => {
               </div>
 
               {/* Technical Specifications Overlay */}
-              <div className="mt-10 pt-8 border-t border-border-subtle grid grid-cols-3 gap-4">
+              <div className="mt-12 pt-8 border-t border-white/10 grid grid-cols-3 gap-8">
                 <div>
                   <span className="block text-xl md:text-2xl font-black text-primary font-manrope">11 Microns</span>
                   <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">Thickness</span>
@@ -162,43 +173,6 @@ const Home = () => {
                 <div>
                   <span className="block text-xl md:text-2xl font-black text-primary font-manrope">100% Pure</span>
                   <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">Virgin Alloy</span>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="md:col-span-5"
-            >
-              <div 
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                style={{
-                  transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-                  transition: 'transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)',
-                }}
-                className="relative aspect-[4/3] md:aspect-square rounded-3xl overflow-hidden shadow-emerald-glow transition-all duration-500 hover:shadow-2xl cursor-pointer"
-              >
-                <div className="w-full h-full rounded-3xl overflow-hidden relative group">
-                  <img
-                    src="/product_display_poster.png"
-                    alt="Durga Shakti Foils - Premium food grade aluminum foil packaging product ecosystem"
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-                  
-                  {/* Floating badge */}
-                  <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md p-3.5 rounded-xl border border-white/20 shadow-lg flex items-center justify-between">
-                    <div>
-                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-primary">PREMIUM PACKAGING</span>
-                      <h4 className="font-bold text-slate-800 text-xs font-manrope">DurgaShakti Hot Wrap</h4>
-                    </div>
-                    <span className="bg-primary text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
-                      Active Shield
-                    </span>
-                  </div>
                 </div>
               </div>
             </motion.div>
