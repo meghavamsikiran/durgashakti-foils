@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, Menu, X } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Package, Menu, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { Button } from './ui/button';
+import settingsService from '../services/settings.service';
 
 const Navbar = () => {
   const { user, logout, isAdmin, isSuperAdmin } = useAuth();
@@ -14,15 +15,29 @@ const Navbar = () => {
   const isDashboard = location.pathname === '/dashboard';
 
   // Banner dynamic config state
-  const bannerText = 'Durga Shakti Foils: Premium Aluminum Packaging Solutions';
-  const [bannerConfig] = React.useState({
-    text1: bannerText,
+  const [bannerConfig, setBannerConfig] = React.useState({
+    text1: 'Durga Shakti Foils: Premium Packing Solutions',
     text2: '',
     timer_enabled: false,
-    timer_target: '',
-    use_favicon: true,
+    timer_target: ''
   });
   const [timerText, setTimerText] = React.useState('');
+
+  React.useEffect(() => {
+    let active = true;
+    const fetchBanner = async () => {
+      try {
+        const data = await settingsService.getPublicSettings();
+        if (data && data.scrolling_banner && active) {
+          setBannerConfig(data.scrolling_banner);
+        }
+      } catch (err) {
+        console.error("Failed to load banner settings in Navbar:", err);
+      }
+    };
+    fetchBanner();
+    return () => { active = false; };
+  }, []);
 
   React.useEffect(() => {
     if (!bannerConfig.timer_enabled || !bannerConfig.timer_target) {
@@ -69,7 +84,7 @@ const Navbar = () => {
   };
 
   const getDisplayTexts = () => {
-    let t1 = bannerText;
+    let t1 = bannerConfig.text1 || "Durga Shakti Foils: Premium Packing Solutions";
     let t2 = bannerConfig.text2 || "";
 
     if (t2.includes("{timer}")) {
@@ -100,15 +115,16 @@ const Navbar = () => {
 
   return (
     <>
-      <div className="w-full bg-[#0b1325] text-white overflow-hidden py-1.5 relative border-b border-white/10">
+      <div className="w-full bg-slate-900 text-white overflow-hidden py-2 relative">
         <div className="flex whitespace-nowrap animate-marquee">
           <div className="flex">
             {bannerItems.map((item, index) => {
+              const prevItem = index === 0 ? bannerItems[bannerItems.length - 1] : bannerItems[index - 1];
               const showFavicon = bannerConfig.use_favicon !== false;
               return (
-                <span key={item.id} className="text-[9px] leading-none font-black uppercase tracking-[0.24em] px-14 border-r border-white/10 flex items-center gap-2.5">
+                <span key={item.id} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                   {showFavicon && (
-                     <img src="/favicon.png" alt="Durga Maa" className="w-3.5 h-3.5 object-contain drop-shadow-sm" />
+                     <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
                   )}
                   {item.text}
                 </span>
@@ -119,9 +135,9 @@ const Navbar = () => {
             {bannerItems.map((item, index) => {
               const showFavicon = bannerConfig.use_favicon !== false;
               return (
-                <span key={`dup-${item.id}`} className="text-[9px] leading-none font-black uppercase tracking-[0.24em] px-14 border-r border-white/10 flex items-center gap-2.5">
+                <span key={`dup-${item.id}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                   {showFavicon && (
-                     <img src="/favicon.png" alt="Durga Maa" className="w-3.5 h-3.5 object-contain drop-shadow-sm" />
+                     <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
                   )}
                   {item.text}
                 </span>
@@ -131,9 +147,9 @@ const Navbar = () => {
         </div>
       </div>
       
-      <nav className="sticky top-0 z-50 bg-white/92 backdrop-blur-xl border-b border-[#d8dde6]">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 lg:px-10">
-        <div className="flex items-center justify-between h-[52px]">
+      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-border-subtle">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
+        <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
             {isDashboard && (
               <button 
@@ -146,9 +162,9 @@ const Navbar = () => {
               </button>
             )}
             <Link to="/" className="flex items-center gap-2 font-manrope" data-testid="navbar-logo">
-              <img src="/favicon.png" alt="Durga Maa" className="w-5 h-5 object-contain" />
-              <span className="font-bold text-sm tracking-tight text-[#111827]">
-                Durga Shakti<span className="text-[#2563eb] ml-1">Foils</span>
+              <img src="/favicon.png" alt="Durga Maa" className="w-8 h-8 object-contain" />
+              <span className="font-bold text-xl tracking-tight text-ink-slate">
+                Durga Shakti<span className="text-primary ml-1">Foils</span>
               </span>
             </Link>
           </div>
@@ -156,20 +172,20 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-6 font-inter">
             <Link
               to="/shop"
-              className="text-[11px] font-semibold hover:text-primary transition-colors text-[#111827]"
+              className="text-sm font-semibold hover:text-primary transition-colors text-ink-slate"
               data-testid="navbar-shop-link"
             >
               Shop
             </Link>
             <Link
               to="/about"
-              className="text-[11px] font-semibold hover:text-primary transition-colors text-[#111827]"
+              className="text-sm font-semibold hover:text-primary transition-colors text-ink-slate"
             >
               About Us
             </Link>
             <Link
               to="/contact"
-              className="text-[11px] font-semibold hover:text-primary transition-colors text-[#111827]"
+              className="text-sm font-semibold hover:text-primary transition-colors text-ink-slate"
             >
               Contact Us
             </Link>
@@ -178,10 +194,10 @@ const Navbar = () => {
               <>
                 <Link
                   to="/cart"
-                  className="relative text-[#111827]"
+                  className="relative mr-2 text-ink-slate"
                   data-testid="navbar-cart-link"
                 >
-                  <ShoppingCart className="w-4 h-4 hover:text-primary transition-colors" />
+                  <ShoppingCart className="w-5 h-5 hover:text-primary transition-colors" />
                   {cartItemCount > 0 && (
                     <span
                       className="absolute -top-2 -right-2 bg-primary text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center font-bold"
@@ -195,41 +211,30 @@ const Navbar = () => {
                 <Link
                   to={isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard"}
                   title={isAdmin ? (isSuperAdmin ? "Super Admin Panel" : "Admin Panel") : "Customer Dashboard"}
-                  className="hover:text-primary transition-colors text-[#111827]"
+                  className="hover:text-primary transition-colors text-ink-slate"
                   data-testid="navbar-dashboard-link"
                 >
-                  <User className="w-4 h-4" />
+                  <User className="w-5 h-5" />
                 </Link>
 
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleLogout}
-                  className="h-8 px-2 rounded-none text-[#111827] hover:bg-slate-100"
+                  className="h-10 px-4 rounded-lg text-ink-slate hover:bg-slate-100"
                   data-testid="navbar-logout-button"
                 >
                   <LogOut className="w-4 h-4" />
                 </Button>
               </>
             ) : (
-              <>
-                <Link
-                  to="/cart"
-                  className="relative text-[#111827]"
-                  data-testid="navbar-cart-link"
-                >
-                  <ShoppingCart className="w-4 h-4 hover:text-primary transition-colors" />
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => navigate('/login')}
-                  className="text-[#111827] hover:text-primary transition-colors"
-                  aria-label="Login"
-                  data-testid="navbar-login-button"
-                >
-                  <User className="w-4 h-4" />
-                </button>
-              </>
+              <Button
+                onClick={() => navigate('/login')}
+                className="bg-primary text-primary-foreground hover:bg-primary/95 h-10 px-6 rounded-lg font-semibold"
+                data-testid="navbar-login-button"
+              >
+                Login
+              </Button>
             )}
           </div>
 
