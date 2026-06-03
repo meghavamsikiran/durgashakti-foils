@@ -5,6 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { Button } from './ui/button';
 import settingsService from '../services/settings.service';
+import apiClient from '../services/core/apiClient';
+import api, { formatImageUrl } from '../utils/api';
+import { getProductPricing } from '../utils/productPricing';
 
 const Navbar = () => {
   const { user, logout, isAdmin, isSuperAdmin } = useAuth();
@@ -15,8 +18,17 @@ const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [searchResults, setSearchResults] = React.useState([]);
+  const [allProducts, setAllProducts] = React.useState([]);
+  const [isSearching, setIsSearching] = React.useState(false);
+  const [showDropdown, setShowDropdown] = React.useState(false);
+  const [activeIndex, setActiveIndex] = React.useState(-1);
+  const searchRef = React.useRef(null);
+  const mobileSearchRef = React.useRef(null);
+  const debounceRef = React.useRef(null);
   const isDashboard = location.pathname === '/dashboard';
 
+  // Sync search query from URL params
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);
     const q = params.get('search') || '';
@@ -26,12 +38,206 @@ const Navbar = () => {
     }
   }, [location.search]);
 
+  // Fetch products for live search
+  React.useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        // First try to get from cache
+        const cachedResponse = apiClient.getCachedDataSync('/products');
+        if (cachedResponse?.data?.items?.length) {
+          setAllProducts(cachedResponse.data.items);
+          return;
+        }
+        // Otherwise fetch
+        const response = await api.getProducts();
+        if (response?.data?.items) {
+          setAllProducts(response.data.items);
+        }
+      } catch (err) {
+        console.error('Failed to load products for search:', err);
+      }
+    };
+    loadProducts();
+  }, []);
+
+  // Live search with debounce
+  React.useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      setActiveIndex(-1);
+      return;
+    }
+
+    setIsSearching(true);
+    debounceRef.current = setTimeout(() => {
+      const q = searchQuery.toLowerCase().trim();
+      const results = allProducts.filter(p =>
+        (p.name || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q)
+      ).slice(0, 6);
+
+      setSearchResults(results);
+      setShowDropdown(true);
+      setActiveIndex(-1);
+      setIsSearching(false);
+    }, 200);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery, allProducts]);
+
+  // Close dropdown on click outside
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        searchRef.current && !searchRef.current.contains(e.target) &&
+        mobileSearchRef.current && !mobileSearchRef.current.contains(e.target)
+      ) {
+        setShowDropdown(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        // Don't close desktop search if mobile is the target
+        if (!mobileSearchRef.current || !mobileSearchRef.current.contains(e.target)) {
+          setShowDropdown(false);
+        }
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close dropdown when navigating away
+  React.useEffect(() => {
+    setShowDropdown(false);
+    setIsSearchOpen(false);
+    setIsMobileSearchOpen(false);
+    setIsMenuOpen(false);
+  }, [location.pathname]);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+      setShowDropdown(false);
       setIsMobileSearchOpen(false);
+      setIsSearchOpen(false);
     }
+  };
+
+  const handleProductClick = (productId) => {
+    setShowDropdown(false);
+    setSearchQuery('');
+    setIsSearchOpen(false);
+    setIsMobileSearchOpen(false);
+    navigate(`/product/${productId}`);
+  };
+
+  const handleKeyDown = (e) => {
+    if (!showDropdown || searchResults.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev < searchResults.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev > 0 ? prev - 1 : searchResults.length - 1));
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault();
+      handleProductClick(searchResults[activeIndex].id);
+    } else if (e.key === 'Escape') {
+      setShowDropdown(false);
+      setIsSearchOpen(false);
+    }
+  };
+
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+    setShowDropdown(false);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  // Search results dropdown component
+  const SearchDropdown = ({ results, isSearching: searching, query, isMobile }) => {
+    if (!query.trim()) return null;
+    if (!showDropdown) return null;
+
+    return (
+      <div
+        className={`absolute left-0 right-0 bg-[#0a0f0c] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100] ${
+          isMobile ? 'top-full mt-1' : 'top-full mt-2'
+        }`}
+        style={{ maxHeight: '380px', overflowY: 'auto' }}
+      >
+        {searching ? (
+          <div className="px-4 py-6 text-center">
+            <div className="inline-block w-5 h-5 border-2 border-[#25d958]/30 border-t-[#25d958] rounded-full animate-spin"></div>
+            <p className="text-white/50 text-xs mt-2">Searching...</p>
+          </div>
+        ) : results.length === 0 ? (
+          <div className="px-4 py-6 text-center">
+            <Search className="w-6 h-6 text-white/20 mx-auto mb-2" />
+            <p className="text-white/50 text-xs">No products found for "{query}"</p>
+            <button
+              onClick={handleSearchSubmit}
+              className="mt-3 text-[#25d958] text-xs font-semibold hover:underline"
+            >
+              Search in Shop →
+            </button>
+          </div>
+        ) : (
+          <>
+            {results.map((product, index) => {
+              const { displayPrice, basePrice, hasOffer } = getProductPricing(product);
+              return (
+                <button
+                  key={product.id}
+                  onClick={() => handleProductClick(product.id)}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-b border-white/5 last:border-0 ${
+                    activeIndex === index
+                      ? 'bg-[#25d958]/10'
+                      : 'hover:bg-white/5'
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-white/5 flex-shrink-0 border border-white/10">
+                    <img
+                      src={formatImageUrl(product.image_url)}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-semibold truncate">{product.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[#25d958] text-xs font-bold">₹{displayPrice}</span>
+                      {hasOffer && (
+                        <span className="text-white/30 text-[10px] line-through">₹{basePrice}</span>
+                      )}
+                      {product.category && (
+                        <span className="text-white/30 text-[10px] font-medium">• {product.category}</span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+            <button
+              onClick={handleSearchSubmit}
+              className="w-full px-4 py-3 text-center text-[#25d958] text-xs font-bold hover:bg-[#25d958]/10 transition-all border-t border-white/10"
+            >
+              View all results for "{query}" →
+            </button>
+          </>
+        )}
+      </div>
+    );
   };
 
   // Banner dynamic config state
@@ -139,7 +345,6 @@ const Navbar = () => {
         <div className="flex whitespace-nowrap animate-marquee">
           <div className="flex">
             {bannerItems.map((item, index) => {
-              const prevItem = index === 0 ? bannerItems[bannerItems.length - 1] : bannerItems[index - 1];
               const showFavicon = bannerConfig.use_favicon !== false;
               return (
                 <span key={item.id} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
@@ -182,10 +387,12 @@ const Navbar = () => {
               </button>
             )}
             <Link to="/" className="flex items-center gap-2 font-manrope" data-testid="navbar-logo">
-              <img src="/favicon.png" alt="Durga Maa" className="w-8 h-8 object-contain brightness-0 invert" />
-              <span className="font-bold text-xl tracking-tight text-white">
-                Durga Shakti<span className="text-[#25d958] ml-1">Foils</span>
-              </span>
+              <img
+                src="/logo-orange.png"
+                alt="DurgaShakti Foils Pvt Ltd"
+                className="h-10 w-auto object-contain"
+                style={{ maxWidth: '220px' }}
+              />
             </Link>
           </div>
 
@@ -211,32 +418,44 @@ const Navbar = () => {
             </Link>
 
             {/* Search Input / Toggle */}
-            {isSearchOpen ? (
-              <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-40 lg:w-48 h-9 bg-white/10 text-white placeholder-white/50 text-xs px-3 pr-8 rounded-lg border border-white/15 focus:outline-none focus:border-[#25d958] focus:ring-1 focus:ring-[#25d958]/20 transition-all font-semibold"
-                  autoFocus
-                />
-                <button type="submit" className="absolute right-2 p-1 text-white/70 hover:text-[#25d958] transition-colors">
-                  <Search className="w-3.5 h-3.5" />
+            <div className="relative" ref={searchRef}>
+              {isSearchOpen ? (
+                <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() => { if (searchQuery.trim()) setShowDropdown(true); }}
+                    className="w-48 lg:w-56 h-9 bg-white/10 text-white placeholder-white/50 text-xs px-3 pr-8 rounded-lg border border-white/15 focus:outline-none focus:border-[#25d958] focus:ring-1 focus:ring-[#25d958]/20 transition-all font-semibold"
+                    autoFocus
+                  />
+                  <button type="submit" className="absolute right-8 p-1 text-white/70 hover:text-[#25d958] transition-colors">
+                    <Search className="w-3.5 h-3.5" />
+                  </button>
+                  <button type="button" onClick={closeSearch} className="absolute right-2 p-1 text-white/50 hover:text-white transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+
+                  {/* Live Search Dropdown */}
+                  <SearchDropdown
+                    results={searchResults}
+                    isSearching={isSearching}
+                    query={searchQuery}
+                    isMobile={false}
+                  />
+                </form>
+              ) : (
+                <button
+                  aria-label="Search products"
+                  onClick={() => setIsSearchOpen(true)}
+                  className="p-2 text-white transition-all hover:text-[#25d958] hover:bg-white/5 rounded-lg"
+                >
+                  <Search className="w-5 h-5" />
                 </button>
-                <button type="button" onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }} className="ml-2 text-white/50 hover:text-white transition-colors">
-                  <X className="w-4 h-4" />
-                </button>
-              </form>
-            ) : (
-              <button
-                aria-label="Search products"
-                onClick={() => setIsSearchOpen(true)}
-                className="p-1 text-white transition hover:text-[#25d958]"
-              >
-                <Search className="w-5 h-5" />
-              </button>
-            )}
+              )}
+            </div>
 
             {/* Unconditional Cart Link */}
             <Link
@@ -299,7 +518,7 @@ const Navbar = () => {
                 onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
                 className="p-1 text-white hover:text-[#25d958] transition-colors"
               >
-                <Search className="w-5 h-5" />
+                {isMobileSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
               </button>
 
               <Link to="/cart" className="relative p-1 text-white hover:text-[#25d958] transition-colors">
@@ -326,13 +545,15 @@ const Navbar = () => {
 
         {/* Mobile Search Dropdown */}
         {isMobileSearchOpen && (
-          <div className="md:hidden py-3 border-t border-white/10">
+          <div className="md:hidden py-3 border-t border-white/10 relative" ref={mobileSearchRef}>
             <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
               <input
                 type="text"
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => { if (searchQuery.trim()) setShowDropdown(true); }}
                 className="w-full h-10 bg-white/10 text-white placeholder-white/50 text-sm px-4 pr-10 rounded-lg border border-white/15 focus:outline-none focus:border-[#25d958]"
                 autoFocus
               />
@@ -340,6 +561,14 @@ const Navbar = () => {
                 <Search className="w-4 h-4" />
               </button>
             </form>
+
+            {/* Mobile Live Search Dropdown */}
+            <SearchDropdown
+              results={searchResults}
+              isSearching={isSearching}
+              query={searchQuery}
+              isMobile={true}
+            />
           </div>
         )}
 
