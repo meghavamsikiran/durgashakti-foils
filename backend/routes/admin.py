@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func, or_, and_, String
 from typing import Optional, List
+from pydantic import BaseModel
 from urllib.parse import quote
 from database import get_db
 from models import (

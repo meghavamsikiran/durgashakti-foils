@@ -20,6 +20,20 @@ const Home = () => {
   const [products, setProducts] = useState(initialProducts);
   const [loading, setLoading] = useState(!initialProducts.length);
   const [activeHotspot, setActiveHotspot] = useState('micron');
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    const rotateX = -(y / (rect.height / 2)) * 12;
+    const rotateY = (x / (rect.width / 2)) * 12;
+    setTilt({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+  };
 
   const fetchProducts = async () => {
     const hasCached = !!apiClient.getCachedDataSync('/products');
@@ -158,8 +172,16 @@ const Home = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="md:col-span-5"
             >
-              <div className="relative aspect-[4/3] md:aspect-square rounded-3xl overflow-hidden shadow-emerald-glow border border-border-subtle p-2.5 bg-white transition-all duration-500 hover:shadow-2xl">
-                <div className="w-full h-full rounded-2xl overflow-hidden relative group">
+              <div 
+                onMouseMove={handleMouseMove}
+                onMouseLeave={handleMouseLeave}
+                style={{
+                  transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+                  transition: 'transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)',
+                }}
+                className="relative aspect-[4/3] md:aspect-square rounded-3xl overflow-hidden shadow-emerald-glow transition-all duration-500 hover:shadow-2xl cursor-pointer"
+              >
+                <div className="w-full h-full rounded-3xl overflow-hidden relative group">
                   <img
                     src="/product_display_poster.png"
                     alt="Durga Shakti Foils - Premium food grade aluminum foil packaging product ecosystem"
