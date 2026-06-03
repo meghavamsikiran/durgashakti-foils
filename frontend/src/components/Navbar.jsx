@@ -388,7 +388,7 @@ const Navbar = () => {
             )}
             <Link to="/" className="flex items-center gap-2 font-manrope" data-testid="navbar-logo">
               <img
-                src="/logo-orange.png"
+                src="/logo-durga.png"
                 alt="DurgaShakti Foils Pvt Ltd"
                 className="h-10 w-auto object-contain"
                 style={{ maxWidth: '220px' }}
