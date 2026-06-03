@@ -6,14 +6,12 @@ import {
   Boxes,
   Flame,
   Leaf,
-  MapPin,
   PackageCheck,
   Recycle,
   ShieldCheck,
   ShoppingCart,
   ThermometerSun,
   User,
-  Users,
 } from 'lucide-react';
 
 
@@ -39,22 +37,6 @@ const processSteps = [
   { title: 'Quality Testing', image: '/landing-testing.jpg' },
   { title: 'Packaging', image: '/landing-packaging.jpg' },
   { title: 'Delivered Across India', image: '/landing-delivery.jpg' },
-];
-
-const trustStats = [
-  { value: '1000+', label: 'Businesses Served', icon: Users },
-  { value: '50+', label: 'Cities Across India', icon: MapPin },
-  { value: '99%', label: 'Customer Satisfaction', icon: Users },
-  { value: '100%', label: 'Food Grade Certified', icon: ShieldCheck },
-];
-
-const brandMarks = [
-  { name: "Haldiram's", sub: 'Traditional Foods', className: 'font-serif text-2xl italic sm:text-3xl' },
-  { name: 'Barbeque Nation', sub: 'Live Grills', className: 'font-manrope text-lg font-black uppercase sm:text-xl' },
-  { name: 'Biryani Blues', sub: 'Indian Kitchen', className: 'font-serif text-xl font-bold sm:text-2xl' },
-  { name: 'BOX8', sub: 'Desi Meals', className: 'font-manrope text-2xl font-black italic sm:text-3xl' },
-  { name: 'Paradise', sub: 'Since 1953', className: 'font-serif text-2xl font-bold sm:text-3xl' },
-  { name: 'SUBWAY', sub: 'Fresh Network', className: 'font-manrope text-2xl font-black uppercase sm:text-3xl' },
 ];
 
 const Home = () => {
@@ -150,7 +132,7 @@ const Home = () => {
         <FactoryFlow onNavigate={go} />
       </section>
 
-      <section className="border-b border-white/15 bg-[#020403]">
+      <section className="grid border-b border-white/15 bg-[#020403] lg:grid-cols-2">
         <HeatComparison />
         <TrustPanel />
       </section>
@@ -216,59 +198,17 @@ const FactoryFlow = ({ onNavigate }) => (
 );
 
 const HeatComparison = () => (
-  <div className="border-b border-white/10 bg-[radial-gradient(circle_at_50%_44%,rgba(37,217,88,0.09),transparent_44%)] px-6 py-9 sm:px-10 lg:px-[50px]">
-    <div className="mx-auto max-w-[1180px]">
-      <p className="font-serif text-xl">See The Difference. Feel The Confidence.</p>
-      <h2 className="font-serif text-3xl font-bold leading-tight text-[#25d958]">See Why Food Stays Hot</h2>
-      <div className="mt-7 grid grid-cols-1 items-center gap-6 md:grid-cols-[minmax(0,1fr)_56px_minmax(0,1fr)]">
-        <Tray label="Normal Wrapping" cool />
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-sm font-black text-black shadow-[0_0_35px_rgba(255,255,255,0.22)]">VS</div>
-        <Tray label="Hot Wrap Foils" />
-      </div>
-      <p className="mt-6 text-center text-xs font-medium text-white/78">Advanced Heat Lock Technology keeps your food hot, fresh and flavorful for longer.</p>
-    </div>
-  </div>
-);
-
-const Tray = ({ label, cool = false }) => (
-  <div className="mx-auto w-full max-w-[500px]">
-    <div className={`mb-4 rounded-full px-5 py-2 text-center text-sm font-black ${cool ? 'bg-white/15 text-white' : 'bg-[#28a845] text-white'}`}>{label}</div>
-    <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[74px_minmax(0,1fr)_32px]">
-      <div className={`hidden gap-3 text-[12px] font-bold leading-tight sm:grid ${cool ? 'text-red-400' : 'text-[#25d958]'}`}>
-        <div>
-          <span className="block text-white/84">{cool ? 'Heat Loss' : 'Heat Retention'}</span>
-          <span className="block">{cool ? 'High' : 'High'}</span>
-        </div>
-        <div>
-          <span className="block text-white/84">Freshness</span>
-          <span className="block">{cool ? 'Low' : 'High'}</span>
-        </div>
-      </div>
-      <div className="relative aspect-[2.55/1] min-h-[128px] overflow-hidden rounded-[30px] border border-white/50 bg-[linear-gradient(145deg,#f5f7f2_0%,#8f9992_16%,#343b37_38%,#d9ddd8_52%,#101412_100%)] p-[10px] shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_22px_50px_rgba(0,0,0,0.45)]">
-        <div className="absolute inset-0 bg-[repeating-linear-gradient(95deg,rgba(255,255,255,0.28)_0,rgba(255,255,255,0.28)_1px,transparent_1px,transparent_12px)] opacity-45" />
-        <div className="absolute inset-x-8 bottom-1 h-8 rounded-full bg-black/55 blur-xl" />
-        <div className="relative h-full rounded-[24px] border border-black/45 bg-[linear-gradient(180deg,#dfe5df_0%,#929b94_12%,#202722_28%,#101512_100%)] p-[12px] shadow-[inset_0_9px_18px_rgba(255,255,255,0.22),inset_0_-16px_26px_rgba(0,0,0,0.7)]">
-          <div className="absolute inset-[9px] rounded-[19px] bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.2)_0,rgba(255,255,255,0.2)_1px,transparent_1px,transparent_10px)] opacity-45" />
-          <div
-            className="relative h-full overflow-hidden rounded-[19px] border border-white/35 shadow-[inset_0_0_26px_rgba(255,255,255,0.34)]"
-            style={{
-              background: cool
-                ? 'radial-gradient(circle at 48% 46%, #e6ef52 0 10%, #53d596 20%, #19a8c8 36%, #227fd6 58%, #1766bd 100%)'
-                : 'radial-gradient(circle at 50% 48%, #ffeb78 0 13%, #ff9b33 30%, #f0471f 55%, #c41612 100%)',
-            }}
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_78%,rgba(255,255,255,0.32),transparent_17%),radial-gradient(circle_at_76%_18%,rgba(255,255,255,0.22),transparent_20%),repeating-linear-gradient(135deg,rgba(255,255,255,0.16)_0,rgba(255,255,255,0.16)_1px,transparent_1px,transparent_13px)] mix-blend-screen" />
-            <div className="absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-black/30 to-transparent" />
-            <div className="absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-black/30 to-transparent" />
-          </div>
-        </div>
-      </div>
-      <ThermalScale />
-    </div>
-    <div className={`mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm font-black ${cool ? 'text-red-400' : 'text-[#25d958]'}`}>
-      <span>{cool ? 'Heat Loss High' : 'Heat Retention High'}</span>
-      <span>{cool ? 'Freshness Low' : 'Freshness High'}</span>
-    </div>
+  <div className="min-w-0 border-b border-white/10 bg-[#020605] lg:border-b-0 lg:border-r lg:border-white/15">
+    <img
+      src="/heat-comparison-exact.png"
+      alt="Thermal comparison between normal wrapping and Hot Wrap Foils"
+      width="2148"
+      height="732"
+      loading="eager"
+      fetchPriority="high"
+      decoding="sync"
+      className="block h-auto w-full"
+    />
   </div>
 );
 
@@ -281,36 +221,17 @@ const ThermalScale = () => (
 );
 
 const TrustPanel = () => (
-  <div className="px-6 py-9 sm:px-10 lg:px-[50px]">
-    <div className="mx-auto max-w-[1536px]">
-      <h2 className="font-serif text-2xl">Trusted By Thousands. Every Day.</h2>
-      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {trustStats.map((stat) => (
-          <div key={stat.label} className="rounded-lg border border-white/15 bg-white/[0.06] p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <div className="font-manrope text-3xl font-black leading-none text-[#25d958]">{stat.value}</div>
-                <div className="mt-1 text-xs font-semibold leading-4 text-white">{stat.label}</div>
-              </div>
-              <stat.icon className="h-9 w-9 text-[#25d958]" strokeWidth={1.5} />
-            </div>
-          </div>
-        ))}
-      </div>
-      <p className="mt-8 text-sm font-bold">Trusted By Leading Brands</p>
-      <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-7 sm:grid-cols-3 xl:grid-cols-6">
-        {brandMarks.map((brand) => <BrandMark key={brand.name} brand={brand} />)}
-      </div>
-    </div>
-  </div>
-);
-
-const BrandMark = ({ brand }) => (
-  <div role="img" aria-label={`${brand.name} logo`} className="flex min-h-[66px] items-center justify-center text-center text-white/58 transition hover:text-white/78">
-    <div>
-      <div className={`${brand.className} leading-none`}>{brand.name}</div>
-      <div className="mt-1 font-manrope text-[10px] font-bold uppercase text-white/32">{brand.sub}</div>
-    </div>
+  <div className="min-w-0 bg-[#020605]">
+    <img
+      src="/trusted-panel-exact.png"
+      alt="Trusted by thousands statistics and leading restaurant brands"
+      width="2173"
+      height="724"
+      loading="eager"
+      fetchPriority="high"
+      decoding="sync"
+      className="block h-auto w-full"
+    />
   </div>
 );
 
