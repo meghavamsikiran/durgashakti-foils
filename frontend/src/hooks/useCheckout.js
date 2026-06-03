@@ -14,6 +14,25 @@ import { getProductPricing } from '../utils/productPricing';
 
 const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID;
 
+const loadRazorpaySdk = () => new Promise((resolve, reject) => {
+  if (window.Razorpay) {
+    resolve();
+    return;
+  }
+  const existingScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+  if (existingScript) {
+    existingScript.addEventListener('load', resolve, { once: true });
+    existingScript.addEventListener('error', reject, { once: true });
+    return;
+  }
+  const script = document.createElement('script');
+  script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+  script.async = true;
+  script.onload = resolve;
+  script.onerror = reject;
+  document.head.appendChild(script);
+});
+
 const getCustomerCouponError = (message) => {
   if (!message) return 'This coupon could not be applied. Please check the code and try again.';
   const lowerMessage = String(message).toLowerCase();
@@ -222,17 +241,23 @@ export const useCheckout = () => {
     return true;
   };
 
-  const handleRazorpayPayment = (orderId) => {
+  const handleRazorpayPayment = (orderId, orderNumber) => {
     return new Promise(async (resolve, reject) => {
-      // Check SDK before making any API calls
       if (!window.Razorpay) {
-        toast.error('Payment gateway not loaded. Refresh and try again.');
-        reject(new Error('razorpay_sdk_missing'));
-        return;
+        try {
+          await loadRazorpaySdk();
+        } catch {
+          toast.error('Payment gateway could not load. Check your connection and try again.');
+          reject(new Error('razorpay_sdk_missing'));
+          return;
+        }
       }
 
+      let openingToastId;
       try {
+        openingToastId = toast.loading('Opening secure payment...');
         const response = await paymentService.createRazorpayOrder(orderId);
+        toast.dismiss(openingToastId);
         const { razorpay_order_id, amount, currency, key_id } = response;
 
         const options = {
@@ -250,10 +275,9 @@ export const useCheckout = () => {
                 razorpay_payment_id: paymentResponse.razorpay_payment_id,
                 razorpay_signature: paymentResponse.razorpay_signature
               });
-              try { await clearCart(); } catch {}
+              clearCart().catch(() => {});
               toast.success('Payment successful! Order confirmed.');
-              const orderData = await orderService.getOrder(orderId);
-              navigate(`/order-success?order_id=${orderId}&order_number=${orderData.order_number}`);
+              navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber || ''}`);
               resolve();
             } catch (err) {
               toast.error('Payment verification failed. Check your dashboard.');
@@ -276,6 +300,7 @@ export const useCheckout = () => {
         });
         rzp.open();
       } catch (error) {
+        if (openingToastId) toast.dismiss(openingToastId);
         reject(error);
       }
     });
@@ -406,16 +431,14 @@ export const useCheckout = () => {
 
       if (paymentMethod === 'cod') {
         toast.success('Order placed successfully!');
+        clearCart().catch(() => {});
+        paymentService.confirmCOD(orderId).catch(() => {});
         navigate(`/order-success?order_id=${orderId}&order_number=${response.order_number}`);
         setLoading(false);
         orderInProgress.current = false;
-        Promise.allSettled([
-          paymentService.confirmCOD(orderId),
-          clearCart()
-        ]).catch(() => {});
         return;
       } else {
-        await handleRazorpayPayment(orderId);
+        await handleRazorpayPayment(orderId, response.order_number);
         // Cart already cleared inside handleRazorpayPayment handler
       }
     } catch (error) {

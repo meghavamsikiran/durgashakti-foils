@@ -28,6 +28,7 @@ import pandas as pd
 from io import BytesIO
 import os
 import json
+import logging
 
 router = APIRouter(prefix="/api")
 
@@ -578,6 +579,7 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
         order.stock_applied = False
 
     effective_status = new_status
+    refund_warning = None
     if new_status == "return_approved":
         # Check if prepaid order is Paid/completed to initiate Razorpay refund
         if order.payment_method != "cod" and order.payment_status in ("Paid", "completed"):
@@ -585,7 +587,6 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
             
             # Import Razorpay dependencies dynamically to avoid circular references
             from routes.orders import razorpay_client, is_test_mode
-            import logging
             
             is_dummy_pay = not payment_id or payment_id.startswith(("pay_dummy_", "pay_sample_", "pay_test_"))
             if not is_dummy_pay and not is_test_mode():
@@ -600,15 +601,19 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
                     logging.info(f"Razorpay refund processed successfully. Refund ID: {refund.get('id')}")
                 except Exception as e:
                     logging.error(f"Razorpay refund failed: {e}")
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Failed to process digital refund via Razorpay: {str(e)}"
+                    refund_warning = (
+                        "Return approved, but Razorpay could not start the refund automatically. "
+                        "Refund is marked pending; retry/manual refund may be needed after settlement or balance update."
                     )
+                    order.payment_status = "refund_pending"
             else:
                 logging.info(f"Skipping live Razorpay refund for dummy/test payment {payment_id} or test mode.")
 
-        effective_status = "refunded"
-        order.payment_status = "refunded"
+        if order.payment_status != "refund_pending":
+            effective_status = "refunded"
+            order.payment_status = "refunded"
+        else:
+            effective_status = "return_approved"
     if new_status == "return_rejected":
         effective_status = "return_rejected"
 
@@ -710,7 +715,7 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
                 subj, body = order_shipped_email(cust_name, order_dict)
             elif effective_status == "delivered":
                 subj, body, att = order_delivered_email(cust_name, order_dict)
-            elif effective_status == "refunded" and new_status == "return_approved":
+            elif effective_status in ("refunded", "return_approved") and new_status == "return_approved":
                 subj, body = return_approved_email(cust_name, str(order.order_number), float(order.total_amount or 0))
             elif effective_status == "return_rejected":
                 subj, body = return_rejected_email(cust_name, str(order.order_number), status_data.get("admin_message", ""))
@@ -727,6 +732,8 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     res_payload = {"message": "Order status updated", "order": row_to_dict(order)}
     if warning_message:
         res_payload["warning"] = warning_message
+    if refund_warning:
+        res_payload["warning"] = refund_warning
     return res_payload
 
 

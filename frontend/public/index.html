@@ -9,6 +9,8 @@
         <link rel="apple-touch-icon" href="%PUBLIC_URL%/favicon.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="preconnect" href="https://checkout.razorpay.com" />
+        <link rel="preload" as="image" href="%PUBLIC_URL%/landing-hero-foil.jpg" fetchpriority="high" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet" />
         <!--
         manifest.json provides metadata used when your web app is installed on a
@@ -24,7 +26,7 @@
         Learn how to configure a non-root public URL by running `npm run build`.
         -->
         <title>DurgaShakti Foils | Premium Aluminum Foil</title>
-        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+        <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
         <script>window.addEventListener("error",function(e){if(e.error instanceof DOMException&&e.error.name==="DataCloneError"&&e.message&&e.message.includes("PerformanceServerTiming")){e.stopImmediatePropagation();e.preventDefault()}},true);</script>
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
         <!--

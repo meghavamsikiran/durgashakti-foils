@@ -195,8 +195,11 @@ export const CartProvider = ({ children }) => {
   }, [token, fetchCart]);
 
   const clearCart = useCallback(async () => {
+    const rollbackCart = cart;
+    setCart({ items: [] });
+    setPendingQtyState({});
+
     if (!token) {
-      setCart({ items: [] });
       localStorage.removeItem(GUEST_CART_KEY);
       return;
     }
@@ -204,13 +207,14 @@ export const CartProvider = ({ children }) => {
     setLoading(true);
     try {
       await apiClient.delete('/cart/clear');
-      setCart({ items: [] });
+      apiClient.invalidateCache('/cart');
     } catch (error) {
+      setCart(rollbackCart);
       throw error;
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, cart]);
 
   const cartItemCount = useMemo(() => {
     const cartTotal = cart.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0;

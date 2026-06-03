@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, Package, Menu, X } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { Button } from './ui/button';
@@ -115,7 +115,7 @@ const Navbar = () => {
 
   return (
     <>
-      <div className="w-full bg-slate-900 text-white overflow-hidden py-2 relative">
+      <div className="w-full bg-[#050807] text-white overflow-hidden py-2 relative border-b border-white/10">
         <div className="flex whitespace-nowrap animate-marquee">
           <div className="flex">
             {bannerItems.map((item, index) => {
@@ -124,7 +124,7 @@ const Navbar = () => {
               return (
                 <span key={item.id} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                   {showFavicon && (
-                     <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
+                     <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm brightness-0 invert" />
                   )}
                   {item.text}
                 </span>
@@ -137,7 +137,7 @@ const Navbar = () => {
               return (
                 <span key={`dup-${item.id}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                   {showFavicon && (
-                     <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm" />
+                     <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm brightness-0 invert" />
                   )}
                   {item.text}
                 </span>
@@ -147,7 +147,7 @@ const Navbar = () => {
         </div>
       </div>
       
-      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-border-subtle">
+      <nav className="sticky top-0 z-50 border-b border-white/10 bg-[#030504] text-white shadow-[0_16px_40px_rgba(0,0,0,0.22)]">
       <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
@@ -155,16 +155,16 @@ const Navbar = () => {
               <button 
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent('toggle-customer-sidebar'))}
-                className="xl:hidden p-2 -ml-2 text-ink-slate hover:text-primary transition-colors focus:outline-none"
+                className="xl:hidden p-2 -ml-2 text-white hover:text-[#25d958] transition-colors focus:outline-none"
                 aria-label="Toggle Dashboard Menu"
               >
                 <Menu className="w-6 h-6" />
               </button>
             )}
             <Link to="/" className="flex items-center gap-2 font-manrope" data-testid="navbar-logo">
-              <img src="/favicon.png" alt="Durga Maa" className="w-8 h-8 object-contain" />
-              <span className="font-bold text-xl tracking-tight text-ink-slate">
-                Durga Shakti<span className="text-primary ml-1">Foils</span>
+              <img src="/favicon.png" alt="Durga Maa" className="w-8 h-8 object-contain brightness-0 invert" />
+              <span className="font-bold text-xl tracking-tight text-white">
+                Durga Shakti<span className="text-[#25d958] ml-1">Foils</span>
               </span>
             </Link>
           </div>
@@ -172,20 +172,20 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-6 font-inter">
             <Link
               to="/shop"
-              className="text-sm font-semibold hover:text-primary transition-colors text-ink-slate"
+              className="text-sm font-semibold text-white hover:text-[#25d958] transition-colors"
               data-testid="navbar-shop-link"
             >
               Shop
             </Link>
             <Link
               to="/about"
-              className="text-sm font-semibold hover:text-primary transition-colors text-ink-slate"
+              className="text-sm font-semibold text-white hover:text-[#25d958] transition-colors"
             >
               About Us
             </Link>
             <Link
               to="/contact"
-              className="text-sm font-semibold hover:text-primary transition-colors text-ink-slate"
+              className="text-sm font-semibold text-white hover:text-[#25d958] transition-colors"
             >
               Contact Us
             </Link>
@@ -194,7 +194,7 @@ const Navbar = () => {
               <>
                 <Link
                   to="/cart"
-                  className="relative mr-2 text-ink-slate"
+                  className="relative mr-2 text-white"
                   data-testid="navbar-cart-link"
                 >
                   <ShoppingCart className="w-5 h-5 hover:text-primary transition-colors" />
@@ -211,7 +211,7 @@ const Navbar = () => {
                 <Link
                   to={isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard"}
                   title={isAdmin ? (isSuperAdmin ? "Super Admin Panel" : "Admin Panel") : "Customer Dashboard"}
-                  className="hover:text-primary transition-colors text-ink-slate"
+                  className="text-white hover:text-[#25d958] transition-colors"
                   data-testid="navbar-dashboard-link"
                 >
                   <User className="w-5 h-5" />
@@ -221,7 +221,7 @@ const Navbar = () => {
                   variant="ghost"
                   size="sm"
                   onClick={handleLogout}
-                  className="h-10 px-4 rounded-lg text-ink-slate hover:bg-slate-100"
+                  className="h-10 px-4 rounded-lg text-white hover:bg-white/10 hover:text-[#25d958]"
                   data-testid="navbar-logout-button"
                 >
                   <LogOut className="w-4 h-4" />
@@ -230,7 +230,7 @@ const Navbar = () => {
             ) : (
               <Button
                 onClick={() => navigate('/login')}
-                className="bg-primary text-primary-foreground hover:bg-primary/95 h-10 px-6 rounded-lg font-semibold"
+                className="bg-[#39c653] text-white hover:bg-[#48d862] h-10 px-6 rounded-lg font-semibold"
                 data-testid="navbar-login-button"
               >
                 Login
@@ -245,7 +245,7 @@ const Navbar = () => {
             </div>
           ) : (
             <button 
-              className="md:hidden p-2 text-ink-slate"
+              className="md:hidden p-2 text-white"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -255,21 +255,21 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-6 border-t border-border-subtle flex flex-col gap-6 animate-in slide-in-from-top duration-300 font-inter">
-            <Link to="/shop" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-ink-slate px-2">Shop</Link>
-            <Link to="/about" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-ink-slate px-2">About Us</Link>
-            <Link to="/contact" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-ink-slate px-2">Contact Us</Link>
+          <div className="md:hidden py-6 border-t border-white/10 flex flex-col gap-6 animate-in slide-in-from-top duration-300 font-inter">
+            <Link to="/shop" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-white px-2">Shop</Link>
+            <Link to="/about" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-white px-2">About Us</Link>
+            <Link to="/contact" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-white px-2">Contact Us</Link>
 
             
             {user ? (
               <>
-                <Link to="/cart" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-ink-slate px-2 flex items-center gap-2">
+                <Link to="/cart" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-white px-2 flex items-center gap-2">
                   Cart ({cartItemCount})
                 </Link>
                 {!isAdmin ? (
-                  <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-ink-slate px-2">Dashboard</Link>
+                  <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-white px-2">Dashboard</Link>
                 ) : (
-                  <Link to={isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard"} onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-ink-slate px-2">Admin Panel</Link>
+                  <Link to={isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard"} onClick={() => setIsMenuOpen(false)} className="text-lg font-bold text-white px-2">Admin Panel</Link>
                 )}
                 <button 
                   onClick={() => { handleLogout(); setIsMenuOpen(false); }}
@@ -281,7 +281,7 @@ const Navbar = () => {
             ) : (
               <Button
                 onClick={() => { navigate('/login'); setIsMenuOpen(false); }}
-                className="bg-primary text-primary-foreground w-full py-4 text-base font-bold rounded-lg"
+                className="bg-[#39c653] text-white w-full py-4 text-base font-bold rounded-lg"
               >
                 Login / Register
               </Button>

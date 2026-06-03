@@ -9,7 +9,6 @@ import {
   MapPin,
   PackageCheck,
   Recycle,
-  Search,
   ShieldCheck,
   ShoppingCart,
   ThermometerSun,
@@ -17,6 +16,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 
 const navItems = [
   { label: 'Home', to: '/' },
@@ -43,11 +43,11 @@ const metrics = [
 ];
 
 const processSteps = [
-  { title: 'Raw Material', image: '/landing-raw-material.png' },
-  { title: 'Precision Rolling', image: '/landing-rolling.png' },
-  { title: 'Quality Testing', image: '/landing-testing.png' },
-  { title: 'Packaging', image: '/landing-packaging.png' },
-  { title: 'Delivered Across India', image: '/landing-delivery.png' },
+  { title: 'Raw Material', image: '/landing-raw-material.jpg' },
+  { title: 'Precision Rolling', image: '/landing-rolling.jpg' },
+  { title: 'Quality Testing', image: '/landing-testing.jpg' },
+  { title: 'Packaging', image: '/landing-packaging.jpg' },
+  { title: 'Delivered Across India', image: '/landing-delivery.jpg' },
 ];
 
 const trustStats = [
@@ -62,6 +62,7 @@ const brands = ["Haldiram's", 'Barbeque Nation', 'Biryani Blues', 'BOX8', 'Parad
 const Home = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
+  const { cartItemCount } = useCart();
   const accountPath = user ? (isAdmin ? '/admin/dashboard' : '/dashboard') : '/login';
 
   const go = (to) => {
@@ -77,14 +78,18 @@ const Home = () => {
       <section className="relative overflow-hidden border-b border-white/10 bg-[#030504]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_14%,rgba(56,189,88,0.16),transparent_27%),linear-gradient(180deg,#050706_0%,#000_100%)]" />
         <img
-          src="/landing-hero-foil-source.png"
+          src="/landing-hero-foil.jpg"
           alt="Premium aluminum foil roll with unrolled foil sheet"
-          className="absolute right-0 top-[82px] hidden h-[390px] w-[72%] object-cover object-right opacity-95 md:block"
+          width="2400"
+          height="867"
+          fetchPriority="high"
+          decoding="async"
+          className="absolute bottom-0 right-0 top-[82px] hidden w-[72%] object-cover object-right opacity-95 md:block"
         />
         <div className="absolute inset-y-0 left-0 w-[58%] bg-[linear-gradient(90deg,#030504_0%,rgba(3,5,4,0.96)_45%,rgba(3,5,4,0)_100%)]" />
         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black to-transparent" />
 
-        <Header onNavigate={go} accountPath={accountPath} />
+        <Header onNavigate={go} accountPath={accountPath} cartItemCount={cartItemCount} />
         <div className="relative z-10 h-[78px] md:h-[84px]" />
 
         <div className="relative z-10 mx-auto grid max-w-[1536px] grid-cols-1 gap-8 px-6 pb-8 pt-5 md:px-12 lg:grid-cols-[420px_1fr] lg:px-[50px]">
@@ -120,8 +125,12 @@ const Home = () => {
               </button>
             </div>
             <img
-              src="/landing-hero-foil-source.png"
+              src="/landing-hero-foil.jpg"
               alt="Premium aluminum foil roll with unrolled foil sheet"
+              width="2400"
+              height="867"
+              loading="eager"
+              decoding="async"
               className="mt-8 block w-full rounded-xl border border-white/10 object-cover shadow-[0_18px_50px_rgba(0,0,0,0.38)] md:hidden"
             />
           </div>
@@ -159,7 +168,7 @@ const Home = () => {
   );
 };
 
-const Header = ({ onNavigate, accountPath }) => (
+const Header = ({ onNavigate, accountPath, cartItemCount }) => (
   <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#030504]/88 shadow-[0_16px_40px_rgba(0,0,0,0.32)] backdrop-blur-xl">
     <div className="relative mx-auto flex max-w-[1536px] items-center justify-between px-6 py-4 md:px-12 lg:px-[50px]">
       <button onClick={() => onNavigate('/')} className="flex min-w-0 items-center gap-3 text-left">
@@ -189,20 +198,22 @@ const Header = ({ onNavigate, accountPath }) => (
             </span>
           ))}
         </div>
-        <button aria-label="Search products" onClick={() => onNavigate('/shop')} className="p-1 text-white transition hover:text-[#25d958]"><Search className="h-5 w-5" /></button>
         <button aria-label="Account dashboard" onClick={() => onNavigate(accountPath)} className="p-1 text-white transition hover:text-[#25d958]"><User className="h-5 w-5" /></button>
         <button aria-label="Cart" onClick={() => onNavigate('/cart')} className="relative p-1 text-white transition hover:text-[#25d958]">
           <ShoppingCart className="h-5 w-5" />
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#25d958] text-[9px] font-black text-black">3</span>
+          {cartItemCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#25d958] px-1 text-[9px] font-black text-black">{cartItemCount}</span>
+          )}
         </button>
         <button onClick={() => onNavigate('/shop')} className="h-10 rounded-lg bg-[#39c653] px-7 text-sm font-black text-white transition hover:bg-[#48d862]">Shop Now</button>
       </div>
       <div className="flex shrink-0 items-center gap-3 xl:hidden">
-        <button aria-label="Search products" onClick={() => onNavigate('/shop')} className="p-1 text-white transition hover:text-[#25d958]"><Search className="h-5 w-5" /></button>
         <button aria-label="Account dashboard" onClick={() => onNavigate(accountPath)} className="p-1 text-white transition hover:text-[#25d958]"><User className="h-5 w-5" /></button>
         <button aria-label="Cart" onClick={() => onNavigate('/cart')} className="relative p-1 text-white transition hover:text-[#25d958]">
           <ShoppingCart className="h-5 w-5" />
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#25d958] text-[9px] font-black text-black">3</span>
+          {cartItemCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#25d958] px-1 text-[9px] font-black text-black">{cartItemCount}</span>
+          )}
         </button>
         <button aria-label="Shop products" onClick={() => onNavigate('/shop')} className="hidden h-9 rounded-lg bg-[#39c653] px-4 text-xs font-black text-white transition hover:bg-[#48d862] min-[460px]:block">Shop</button>
       </div>
@@ -228,7 +239,7 @@ const MetricStrip = () => (
 
 const ProductRange = ({ onNavigate }) => (
   <div className="relative overflow-hidden bg-[#f3efe8] text-black md:min-h-[270px]">
-    <img src="/landing-products-source.png" alt="Durga Shakti Hot Wrap aluminum foil product range" className="h-auto w-full object-cover object-center md:absolute md:inset-y-0 md:right-0 md:h-full md:w-[72%]" />
+    <img src="/landing-products.jpg" alt="Durga Shakti Hot Wrap aluminum foil product range" width="1600" height="833" loading="lazy" decoding="async" className="h-auto w-full object-cover object-center md:absolute md:inset-y-0 md:right-0 md:h-full md:w-[72%]" />
     <div className="relative z-10 flex min-h-[230px] w-full flex-col justify-center bg-[#f3efe8]/96 px-6 py-8 sm:px-10 md:h-full md:min-h-[270px] md:w-[37%] md:py-0">
       <p className="mb-4 text-xs font-black text-[#008b2c]">Our Premium Range</p>
       <h2 className="font-serif text-[27px] font-bold leading-tight">Premium Foils For Every Need</h2>
@@ -250,7 +261,7 @@ const FactoryFlow = ({ onNavigate }) => (
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#25d958] text-[#25d958]">{index + 1}</span>
             <span className="truncate">{step.title}</span>
           </div>
-          <img src={step.image} alt={step.title} className="h-[88px] w-full rounded-lg border border-white/8 object-cover" />
+          <img src={step.image} alt={step.title} loading="lazy" decoding="async" className="h-[88px] w-full rounded-lg border border-white/8 object-cover" />
         </div>
       ))}
     </div>
@@ -269,18 +280,31 @@ const HeatComparison = () => (
     <p className="font-serif text-xl">See The Difference. Feel The Confidence.</p>
     <h2 className="font-serif text-3xl font-bold leading-tight text-[#25d958]">See Why Food Stays Hot</h2>
     <div className="mt-7 grid grid-cols-1 items-center gap-5 md:grid-cols-[1fr_48px_1fr]">
-      <Tray label="Normal Wrapping" image="/landing-normal-tray.png" cool />
+      <Tray label="Normal Wrapping" cool />
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-sm font-black text-black">VS</div>
-      <Tray label="Hot Wrap Foils" image="/landing-hot-tray.png" />
+      <Tray label="Hot Wrap Foils" />
     </div>
     <p className="mt-4 text-center text-xs font-medium text-white/78">Advanced Heat Lock Technology keeps your food hot, fresh and flavorful for longer.</p>
   </div>
 );
 
-const Tray = ({ label, image, cool = false }) => (
+const Tray = ({ label, cool = false }) => (
   <div className="mx-auto w-full max-w-[420px]">
     <div className={`mb-4 rounded-full px-5 py-2 text-center text-sm font-black ${cool ? 'bg-white/15' : 'bg-[#28a845]'}`}>{label}</div>
-    <img src={image} alt="" className="h-[94px] w-full rounded-xl object-cover" />
+    <div className="grid grid-cols-[34px_1fr] items-center gap-3">
+      <div className={`grid gap-1 text-[11px] font-bold leading-tight ${cool ? 'text-red-400' : 'text-[#25d958]'}`}>
+        <span>{cool ? 'Heat Loss' : 'Heat Retention'}</span>
+        <span>{cool ? 'High' : 'High'}</span>
+        <span className={cool ? 'text-white/80' : 'text-white/80'}>Freshness</span>
+        <span>{cool ? 'Low' : 'High'}</span>
+      </div>
+      <div className="relative h-[122px] rounded-[22px] border border-white/12 bg-[linear-gradient(180deg,#252928,#0e1010)] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_18px_40px_rgba(0,0,0,0.35)]">
+        <div className="absolute inset-x-5 bottom-2 h-7 rounded-b-[18px] bg-black/45 blur-sm" />
+        <div className="relative h-full rounded-[18px] border border-white/15 bg-[linear-gradient(180deg,#bfc5c2,#636b67_16%,#1d201f_88%)] p-3">
+          <div className={`h-full rounded-[16px] border border-white/20 ${cool ? 'bg-[radial-gradient(circle_at_52%_50%,#d8ef4b_0%,#38c8b6_22%,#2485d9_58%,#1161b6_100%)]' : 'bg-[radial-gradient(circle_at_50%_50%,#ffe46c_0%,#ff8f2f_24%,#f42f19_62%,#b5120b_100%)]'} shadow-[inset_0_0_24px_rgba(255,255,255,0.28)]`} />
+        </div>
+      </div>
+    </div>
     <div className={`mt-3 text-sm font-bold ${cool ? 'text-red-400' : 'text-[#25d958]'}`}>{cool ? 'Heat Loss High' : 'Heat Retention High'}</div>
     <div className={`text-sm font-bold ${cool ? 'text-red-400' : 'text-[#25d958]'}`}>{cool ? 'Freshness Low' : 'Freshness High'}</div>
   </div>

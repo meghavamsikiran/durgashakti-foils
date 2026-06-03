@@ -60,6 +60,7 @@ const statusConfigs = {
 
 const PAGE_SIZE = 15;
 const uiStatus = (status) => (status || '').toUpperCase();
+const isPaidStatus = (status) => ['paid', 'completed'].includes(String(status || '').toLowerCase());
 
 const patchOrderStatus = (order, status, extraData = {}) => {
   const next = uiStatus(status);
@@ -72,11 +73,6 @@ const patchOrderStatus = (order, status, extraData = {}) => {
   };
   if (next === 'DELIVERED' && order.payment_method === 'cod' && extraData.mark_paid !== false) {
     patched.payment_status = 'Paid';
-  }
-  if (next === 'RETURN_APPROVED') {
-    patched.status = 'REFUNDED';
-    patched.order_status = 'refunded';
-    patched.payment_status = 'refunded';
   }
   return patched;
 };
@@ -264,7 +260,16 @@ const OrdersPage = () => {
       setTrackingModal(null);
       setTrackingForm({ carrier: '', tracking_id: '', tracking_url: '' });
       setAdminMessage('');
-      await adminService.updateOrderStatus(orderId, { status: newStatus, admin_message: message, ...extraData });
+      const response = await adminService.updateOrderStatus(orderId, { status: newStatus, admin_message: message, ...extraData });
+      const serverOrder = response?.data?.order;
+      if (serverOrder) {
+        const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
+        setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
+        setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
+      }
+      if (response?.data?.warning) {
+        toast.warning(response.data.warning, { duration: 8000 });
+      }
       toast.success(`Order status updated to ${newStatus.toLowerCase().replace('_', ' ')}`, { id: toastId });
       loadSilent(page);
     } catch (err) {
@@ -513,7 +518,7 @@ const OrdersPage = () => {
                        <td className="px-8 py-6">
                          <div className="font-bold text-slate-800">{order.customer_name || 'Guest User'}</div>
                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
-                           <div className={`w-1.5 h-1.5 rounded-full ${order.payment_status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+                           <div className={`w-1.5 h-1.5 rounded-full ${isPaidStatus(order.payment_status) ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
                            {order.payment_method} • {order.payment_status}
                          </div>
                        </td>
