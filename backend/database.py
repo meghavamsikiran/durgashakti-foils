@@ -135,20 +135,10 @@ async def create_tables():
         await conn.execute(text("ALTER TABLE product_reviews ADD COLUMN IF NOT EXISTS admin_reply TEXT;"))
         await conn.execute(text("ALTER TABLE product_reviews ADD COLUMN IF NOT EXISTS admin_reply_by UUID;"))
         await conn.execute(text("ALTER TABLE product_reviews ADD COLUMN IF NOT EXISTS admin_reply_at TIMESTAMPTZ;"))
-        # Clean up legacy India Post tracking URLs
+        # Clean up legacy India Post tracking URLs to point to the working homepage to avoid deep link connection resets
         await conn.execute(text("""
             UPDATE orders 
-            SET tracking_url = REPLACE(tracking_url, 'https://indiapost.gov.in', 'https://www.indiapost.gov.in')
-            WHERE tracking_url LIKE '%https://indiapost.gov.in%' AND tracking_url NOT LIKE '%https://www.indiapost.gov.in%';
-        """))
-        await conn.execute(text("""
-            UPDATE orders 
-            SET tracking_url = REPLACE(tracking_url, 'http://indiapost.gov.in', 'https://www.indiapost.gov.in')
-            WHERE tracking_url LIKE '%http://indiapost.gov.in%';
-        """))
-        await conn.execute(text("""
-            UPDATE orders 
-            SET tracking_url = REPLACE(tracking_url, 'http://www.indiapost.gov.in', 'https://www.indiapost.gov.in')
-            WHERE tracking_url LIKE '%http://www.indiapost.gov.in%';
+            SET tracking_url = 'https://www.indiapost.gov.in/'
+            WHERE tracking_url LIKE '%indiapost.gov.in%';
         """))
     logger.info("Database tables created / verified and legacy tracking URLs migrated.")

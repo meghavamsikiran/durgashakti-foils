@@ -36,7 +36,7 @@ def generate_tracking_url(courier: str, tracking_number: str) -> str:
         return ""
     c_lower = courier.lower().strip()
     if "india post" in c_lower or "speed post" in c_lower:
-        return f"https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx?consignmentNo={tracking_number}"
+        return "https://www.indiapost.gov.in/"
     elif "dtdc" in c_lower:
         return f"https://www.dtdc.in/tracking/tracking_results.asp?pinno={tracking_number}"
     elif "blue dart" in c_lower:
