@@ -161,8 +161,8 @@ const Home = () => {
               <div className="relative aspect-[4/3] md:aspect-square rounded-3xl overflow-hidden shadow-emerald-glow border border-border-subtle p-2.5 bg-white transition-all duration-500 hover:shadow-2xl">
                 <div className="w-full h-full rounded-2xl overflow-hidden relative group">
                   <img
-                    src="/chef-wrap.jpg"
-                    alt="Professional chef wrapping food with DurgaShakti Hot Wrap Foil"
+                    src="/product_display_poster.png"
+                    alt="Durga Shakti Foils - Premium food grade aluminum foil packaging product ecosystem"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />

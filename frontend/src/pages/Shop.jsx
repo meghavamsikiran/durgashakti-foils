@@ -5,7 +5,7 @@ import TablePagination from '../components/ui/TablePagination';
 import api from '../utils/api';
 import apiClient from '../services/core/apiClient';
 import { getProductPricing } from '../utils/productPricing';
-import { SlidersHorizontal, Star } from 'lucide-react';
+import { SlidersHorizontal, Star, ChevronRight } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
 
 const PRODUCTS_CACHE_KEY = 'dsf_shop_products_v1';

@@ -524,7 +524,7 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    prev_status = order.order_status or "processing"
+    prev_status = (order.order_status or "processing").lower()
     new_status = normalize_order_status(status_data.get("status"))
     if new_status not in ORDER_STATUS_TRANSITIONS:
         raise HTTPException(status_code=400, detail="Invalid status")
@@ -805,7 +805,7 @@ async def bulk_ship_orders(
             continue
             
         order = orders_map[o_key]
-        prev_status = order.order_status or "processing"
+        prev_status = (order.order_status or "processing").lower()
         
         valid_trans = ORDER_STATUS_TRANSITIONS.get(prev_status, [])
         if "shipped" not in valid_trans and prev_status != "shipped":

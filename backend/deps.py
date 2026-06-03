@@ -1017,7 +1017,7 @@ ORDER_STATUS_TRANSITIONS = {
     "shipped": ["in_transit", "out_for_delivery", "cancelled"],
     "in_transit": ["out_for_delivery", "failed", "cancelled"],
     "out_for_delivery": ["delivered", "failed", "cancelled"],
-    "delivered": ["returned"],
+    "delivered": [],
     "cancelled": [],
     "refunded": [],
     "failed": ["returned", "shipped", "cancelled"],
