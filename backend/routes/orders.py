@@ -39,6 +39,22 @@ def _expected_amount_paise(order: OrderModel) -> int:
     return int(round(float(order.total_amount or 0) * 100))
 
 
+def _normalize_refund_error(err: Optional[Exception]) -> str:
+    msg = str(err or "").strip()
+    if not msg:
+        return "An unknown Razorpay refund error occurred."
+    lowered = msg.lower()
+    if any(keyword in lowered for keyword in [
+        "not have enough balance",
+        "insufficient balance",
+        "insufficient funds",
+        "cannot carry out the refund operation",
+        "wallet balance"
+    ]):
+        return "Razorpay account has insufficient balance to process the refund. Add funds in Razorpay or capture new payments before retrying."
+    return msg
+
+
 def _is_online_payment_pending(order: OrderModel) -> bool:
     payment_status = str(order.payment_status or "").lower()
     if payment_status in {"paid", "completed", "cash on delivery", "refunded", "refund_pending", "failed", "cancelled"}:
@@ -117,15 +133,23 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
         # ── Step 2: Check for existing refunds ──
         existing_refunds = await asyncio.to_thread(client.payment.fetch_multiple_refund, payment_id)
         existing_items = existing_refunds.get("items", []) if isinstance(existing_refunds, dict) else []
-        usable_refunds = [
+        pending_refunds = [
             refund for refund in existing_items
-            if str((refund or {}).get("status") or "").lower() in {"pending", "processed"}
+            if str((refund or {}).get("status") or "").lower() == "pending"
         ]
-        refunded_amount = sum(int((refund or {}).get("amount") or 0) for refund in usable_refunds)
-        if refunded_amount >= amount_paise and usable_refunds:
-            latest_refund = sorted(usable_refunds, key=lambda r: r.get("created_at") or 0, reverse=True)[0]
+        processed_refunds = [
+            refund for refund in existing_items
+            if str((refund or {}).get("status") or "").lower() == "processed"
+        ]
+        refundable_amount = sum(int((refund or {}).get("amount") or 0) for refund in pending_refunds + processed_refunds)
+        if refundable_amount >= amount_paise and existing_items:
+            latest_refund = sorted(existing_items, key=lambda r: r.get("created_at") or 0, reverse=True)[0]
             logger.info("Existing Razorpay refund covers order %s: %s", order.order_number, latest_refund)
             return True, None, latest_refund
+        if pending_refunds:
+            latest_pending = sorted(pending_refunds, key=lambda r: r.get("created_at") or 0, reverse=True)[0]
+            logger.info("Existing Razorpay refund already pending for order %s: %s", order.order_number, latest_pending)
+            return True, None, latest_pending
 
         # Adjust refund amount to remaining un-refunded portion
         remaining = amount_paise - refunded_amount
@@ -165,7 +189,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
         return True, None, refund_resp
     except Exception as exc:
         logger.exception("Failed to trigger Razorpay refund for order %s", order.order_number)
-        return False, str(exc), None
+        return False, _normalize_refund_error(exc), None
 
 
 async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSession, source: str = "order_fetch") -> bool:

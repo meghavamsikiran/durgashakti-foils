@@ -318,7 +318,13 @@ const OrdersPage = () => {
     } catch (err) {
       setRows(previousRows);
       setSelectedOrderForModal(previousModalOrder);
-      toast.error(err.message, { id: toastId });
+        const detail = (err && (err.data?.detail || err.message || err.detail || err?.response?.data?.detail)) || '';
+        const lower = String(detail).toLowerCase();
+        if (lower.includes('insufficient balance') || lower.includes('your account does not have enough balance') || lower.includes('insufficient funds')) {
+          toast.error('Razorpay account has insufficient balance to process the refund. Add funds in Razorpay dashboard or capture new payments before retrying.', { id: toastId, duration: 10000 });
+        } else {
+          toast.error(detail || 'Network error while retrying refund', { id: toastId });
+        }
     } finally {
       setPendingActionIds(prev => {
         const next = new Set(prev);

@@ -823,7 +823,7 @@ async def retry_order_refund(
     if not success:
         raise HTTPException(
             status_code=400,
-            detail=f"Razorpay refund is still pending: {err_msg}"
+            detail=f"Razorpay refund could not be processed: {err_msg}"
         )
 
     refund_status = str((refund_info or {}).get("status") or "").lower()
