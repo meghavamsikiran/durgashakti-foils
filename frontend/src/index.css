@@ -258,6 +258,27 @@ h1, h2, h3, h4, h5, h6 {
   .public-theme .hover\:bg-slate-100:hover,
   .public-theme .hover\:bg-rose-50:hover,
   .public-theme .hover\:bg-amber-100:hover,
+  .public-theme .razorpay-iframe {
+    min-width: 900px !important;
+    max-width: 1100px !important;
+    min-height: 720px !important;
+    border-radius: 24px !important;
+    box-shadow: 0 32px 90px rgba(0, 0, 0, 0.18) !important;
+  }
+
+  iframe[src*="checkout.razorpay.com"] {
+    min-width: 900px !important;
+    max-width: 1100px !important;
+    min-height: 720px !important;
+    width: min(100vw - 48px, 1100px) !important;
+    height: min(100vh - 80px, 820px) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 32px 90px rgba(0, 0, 0, 0.18) !important;
+  }
+
+  iframe[src*="checkout.razorpay.com"] + div {
+    border-radius: 28px !important;
+  }
   .public-theme .hover\:bg-emerald-100:hover {
     background-color: inherit !important;
   }

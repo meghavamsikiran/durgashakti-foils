@@ -404,7 +404,7 @@ export const useCheckout = () => {
           currency: "INR",
           name: "DurgaShakti Foils",
           description: `Order #${orderNumber}`,
-          image: "/logo-durga.png",
+          image: "/logo-orange.png",
           theme: {
             color: '#006e1b',
             hide_topbar: false
