@@ -11,7 +11,12 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
   const maxCod = config.maximumCodAmount;
   const codCharge = config.codCharge;
 
-  const paymentMethods = [];
+  const paymentMethods = [{
+    id: 'online',
+    name: 'Online Payment (Prepaid)',
+    icon: CreditCard,
+    description: 'Pay securely online using Cards, UPI, NetBanking, Wallets, or scan a QR code.'
+  }];
   
   if (codEnabled) {
     paymentMethods.push({
@@ -21,13 +26,6 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
       description: `Pay with cash (plus ₹${codCharge} COD service charge) when your order arrives.`
     });
   }
-
-  paymentMethods.push({
-    id: 'online',
-    name: 'Online Payment (Prepaid)',
-    icon: CreditCard,
-    description: 'Pay securely online using Cards, UPI, NetBanking, Wallets, or scan a QR code.'
-  });
 
   return (
     <motion.div

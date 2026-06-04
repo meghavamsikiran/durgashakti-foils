@@ -19,6 +19,7 @@ const INDIAN_STATES = [
 
 const AddressStep = ({ 
   savedAddresses, 
+  addressesLoading = false,
   selectedAddressId, 
   shippingInfo, 
   onSelectAddress, 
@@ -73,10 +74,11 @@ const AddressStep = ({
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
         <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tighter">Shipping Details</h2>
-        {savedAddresses.length > 0 && (
+        {(addressesLoading || savedAddresses.length > 0) && (
           <Button 
             variant="outline" 
             size="sm" 
+            disabled={addressesLoading || savedAddresses.length === 0}
             onClick={() => {
               const next = !showAddressSelector;
               setShowAddressSelector(next);
@@ -96,8 +98,14 @@ const AddressStep = ({
             }}
             className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-10 px-4"
           >
-            {showAddressSelector ? <Plus className="w-3 h-3 mr-2" /> : <ArrowLeft className="w-3 h-3 mr-2" />}
-            {showAddressSelector ? "Enter New Address" : "Select Saved Address"}
+            {addressesLoading ? (
+              <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+            ) : showAddressSelector ? (
+              <Plus className="w-3 h-3 mr-2" />
+            ) : (
+              <ArrowLeft className="w-3 h-3 mr-2" />
+            )}
+            {addressesLoading ? "Loading Addresses..." : showAddressSelector ? "Enter New Address" : "Select Saved Address"}
           </Button>
         )}
       </div>

@@ -12,6 +12,7 @@ import couponService from '../services/coupon.service';
 import { calculateCheckoutPricing, normalizeShippingSettings } from '../utils/checkoutPricing';
 import { getProductPricing } from '../utils/productPricing';
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const PENDING_RAZORPAY_ORDER_KEY = 'pending_razorpay_order';
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
@@ -72,10 +73,11 @@ export const useCheckout = () => {
   const [products, setProducts] = useState({});
   const [loading, setLoading] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState('shipping');
-  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [paymentMethod, setPaymentMethod] = useState('online');
   const [codEnabled, setCodEnabled] = useState(true);
   const [shippingSettings, setShippingSettings] = useState(null);
   const [savedAddresses, setSavedAddresses] = useState([]);
+  const [addressesLoading, setAddressesLoading] = useState(true);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [shippingInfo, setShippingInfo] = useState({
     label: 'Home',
@@ -96,12 +98,15 @@ export const useCheckout = () => {
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   const fetchAddresses = useCallback(async () => {
+    setAddressesLoading(true);
     try {
       const data = await addressService.getAddresses();
       setSavedAddresses(data);
       setSelectedAddressId(null);
     } catch (err) {
       // Silent — addresses are optional at this point
+    } finally {
+      setAddressesLoading(false);
     }
   }, []);
 
@@ -138,6 +143,20 @@ export const useCheckout = () => {
     if (!user) {
       navigate('/login');
       return;
+    }
+    const pendingOnlineOrder = localStorage.getItem(PENDING_RAZORPAY_ORDER_KEY);
+    if (pendingOnlineOrder) {
+      try {
+        const parsed = JSON.parse(pendingOnlineOrder);
+        const isFresh = !parsed?.createdAt || Date.now() - Number(parsed.createdAt) < 30 * 60 * 1000;
+        if (parsed?.orderId && isFresh) {
+          navigate(`/order/${parsed.orderId}`);
+          return;
+        }
+        localStorage.removeItem(PENDING_RAZORPAY_ORDER_KEY);
+      } catch {
+        localStorage.removeItem(PENDING_RAZORPAY_ORDER_KEY);
+      }
     }
     if (!cartReady) {
       return;
@@ -372,6 +391,12 @@ export const useCheckout = () => {
         const orderNumber = response.order_number;
         const rzpOrderId = response.razorpay_order_id;
         const totalAmount = response.total_amount;
+        localStorage.setItem(PENDING_RAZORPAY_ORDER_KEY, JSON.stringify({
+          orderId,
+          orderNumber,
+          razorpayOrderId: rzpOrderId,
+          createdAt: Date.now()
+        }));
 
         const options = {
           key: process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_live_SsPZ6WqWCSv7VP',
@@ -400,6 +425,7 @@ export const useCheckout = () => {
               const verificationResult = await paymentService.verifyRazorpayPayment(verifyPayload);
               if (verificationResult && verificationResult.success) {
                 sessionStorage.removeItem(`razorpay_payment_${orderId}`);
+                localStorage.removeItem(PENDING_RAZORPAY_ORDER_KEY);
                 toast.success('Payment verified successfully!');
                 await clearCart();
                 navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber}&payment_method=online`);
@@ -470,6 +496,7 @@ export const useCheckout = () => {
     codEnabled,
     shippingSettings,
     savedAddresses,
+    addressesLoading,
     selectedAddressId,
     shippingInfo,
     setShippingInfo,

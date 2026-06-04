@@ -21,6 +21,7 @@ const Checkout = () => {
     codEnabled,
     shippingSettings,
     savedAddresses,
+    addressesLoading,
     selectedAddressId,
     shippingInfo,
     setShippingInfo,
@@ -58,6 +59,7 @@ const Checkout = () => {
                 <AddressStep
                   key="shipping"
                   savedAddresses={savedAddresses}
+                  addressesLoading={addressesLoading}
                   selectedAddressId={selectedAddressId}
                   shippingInfo={shippingInfo}
                   setShippingInfo={setShippingInfo}

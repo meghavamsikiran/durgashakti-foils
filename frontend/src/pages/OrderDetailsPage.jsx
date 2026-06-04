@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import PageLoader from './../components/ui/PageLoader';
 import { useCart } from './../contexts/CartContext';
 
+const PENDING_RAZORPAY_ORDER_KEY = 'pending_razorpay_order';
+
 const OrderDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,6 +27,7 @@ const OrderDetailsPage = () => {
   const [submittingReturn, setSubmittingReturn] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [retryingPayment, setRetryingPayment] = useState(false);
+  const [syncingPayment, setSyncingPayment] = useState(false);
 
   const fetchOrder = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -35,10 +38,10 @@ const OrderDetailsPage = () => {
         (orderData.payment_status || '').toLowerCase() !== 'paid' &&
         (orderData.payment_status || '').toLowerCase() !== 'completed' &&
         (orderData.payment_method || '').toLowerCase() !== 'cod' &&
-        !['cancelled', 'refunded', 'failed', 'return_approved'].includes((orderData.order_status || '').toLowerCase());
+        !['refunded', 'return_approved'].includes((orderData.order_status || '').toLowerCase());
       const rememberedPaymentId = sessionStorage.getItem(`razorpay_payment_${id}`);
 
-      if (isOnlinePending && rememberedPaymentId) {
+      if (isOnlinePending) {
         try {
           const syncResult = await paymentService.syncRazorpayPayment({
             order_id: id,
@@ -53,6 +56,14 @@ const OrderDetailsPage = () => {
         } catch {}
       }
 
+      if (
+        (orderData.payment_status || '').toLowerCase() === 'paid' ||
+        (orderData.payment_status || '').toLowerCase() === 'completed'
+      ) {
+        localStorage.removeItem(PENDING_RAZORPAY_ORDER_KEY);
+        sessionStorage.removeItem(`razorpay_payment_${id}`);
+      }
+
       setOrder(orderData);
     } catch (err) {
       if (!silent) {
@@ -63,6 +74,31 @@ const OrderDetailsPage = () => {
       if (!silent) setLoading(false);
     }
   }, [id, navigate]);
+
+  const handleSyncPayment = async () => {
+    if (!order || syncingPayment) return;
+    setSyncingPayment(true);
+    try {
+      const rememberedPaymentId = sessionStorage.getItem(`razorpay_payment_${id}`);
+      const result = await paymentService.syncRazorpayPayment({
+        order_id: id,
+        razorpay_order_id: order.razorpay_order_id,
+        razorpay_payment_id: rememberedPaymentId
+      });
+      await fetchOrder(true);
+      if (result?.success) {
+        localStorage.removeItem(PENDING_RAZORPAY_ORDER_KEY);
+        sessionStorage.removeItem(`razorpay_payment_${id}`);
+        toast.success('Payment confirmed.');
+      } else {
+        toast.info('Still waiting for Razorpay confirmation. We will keep checking automatically.');
+      }
+    } catch {
+      toast.info('Still waiting for Razorpay confirmation. We will keep checking automatically.');
+    } finally {
+      setSyncingPayment(false);
+    }
+  };
 
   const handleRetryPayment = async () => {
     if (retryingPayment) return;
@@ -151,7 +187,7 @@ const OrderDetailsPage = () => {
       (order.payment_status || '').toLowerCase() !== 'paid' &&
       (order.payment_status || '').toLowerCase() !== 'completed' &&
       (order.payment_method || '').toLowerCase() !== 'cod' &&
-      !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase());
+      !['refunded', 'return_approved'].includes((order.order_status || '').toLowerCase());
 
     if (!isOnlinePending) {
       setTimeLeft(null);
@@ -197,8 +233,7 @@ const OrderDetailsPage = () => {
       }
     }, 1000);
 
-    // Auto-poll every 5 seconds to detect webhook-confirmed payments
-    // (e.g. when verify call fails but webhook succeeds on the backend)
+    // Auto-poll quickly to detect Razorpay-confirmed payments after a browser refresh.
     const poller = setInterval(async () => {
       try {
         const res = await apiClient.get(`/orders/${id}`);
@@ -214,7 +249,7 @@ const OrderDetailsPage = () => {
           clearInterval(timer);
         }
       } catch {}
-    }, 5000);
+    }, 2500);
 
     return () => {
       clearInterval(timer);
@@ -233,13 +268,13 @@ const OrderDetailsPage = () => {
       (order.payment_status || '').toLowerCase() !== 'paid' &&
       (order.payment_status || '').toLowerCase() !== 'completed' &&
       (order.payment_method || '').toLowerCase() !== 'cod' &&
-      !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase());
+      !['refunded', 'return_approved'].includes((order.order_status || '').toLowerCase());
 
     if (!isOnlinePending) return;
 
     const pollTimer = setInterval(() => {
       fetchOrder(true);
-    }, 10000);
+    }, 4000);
 
     return () => clearInterval(pollTimer);
   }, [order, fetchOrder]);
@@ -581,14 +616,12 @@ const OrderDetailsPage = () => {
                   </p>
                   <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">Status: {order.payment_status || 'Unpaid'}</p>
                   <button
-                    onClick={() => {
-                      fetchOrder(false);
-                      toast.success('Order status synchronized.');
-                    }}
-                    className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-750 font-bold text-[9px] uppercase tracking-widest py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5"
+                    onClick={handleSyncPayment}
+                    disabled={syncingPayment}
+                    className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-750 font-bold text-[9px] uppercase tracking-widest py-2 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                   >
-                    <RefreshCw className="w-3 h-3 text-slate-500" />
-                    Sync Payment Status
+                    <RefreshCw className={`w-3 h-3 text-slate-500 ${syncingPayment ? 'animate-spin' : ''}`} />
+                    {syncingPayment ? 'Checking Razorpay...' : 'Sync Payment Status'}
                   </button>
                   {timeLeft && timeLeft !== 'Expired' && (order.payment_method || '').toLowerCase() !== 'cod' && !['cancelled', 'failed'].includes((order.order_status || '').toLowerCase()) && (
                     <div className="mt-2 space-y-2">
