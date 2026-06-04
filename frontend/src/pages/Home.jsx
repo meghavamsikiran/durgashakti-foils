@@ -67,7 +67,7 @@ const Home = () => {
     <main className="min-h-screen bg-white text-white font-inter selection:bg-[#25d958]/30" data-testid="home-page">
       <section
         className="home-hero-stage relative isolate min-h-[620px] overflow-visible bg-[#020807] bg-no-repeat md:min-h-[604px]"
-        style={{ backgroundImage: "url('/homepage-hero-reference.png')", backgroundSize: 'cover', backgroundPosition: 'center right' }}
+        style={{ backgroundImage: "url('/homepage-hero-reference.png')", backgroundSize: 'contain', backgroundPosition: 'right center' }}
       >
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.86)_0%,rgba(0,0,0,0.74)_58%,rgba(0,0,0,0.28)_100%)] md:bg-[linear-gradient(90deg,rgba(0,0,0,0.2)_0%,rgba(0,0,0,0.08)_45%,rgba(0,0,0,0)_72%)]" />
 
