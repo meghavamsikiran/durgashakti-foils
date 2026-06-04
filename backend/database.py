@@ -87,6 +87,9 @@ async def create_tables():
     if not engine:
         raise RuntimeError("Database engine not initialized.")
     async with engine.begin() as conn:
+        # Increase statement timeout for startup migrations (default pooler
+        # timeout can be too short for ALTER TABLE on larger tables).
+        await conn.execute(text("SET LOCAL statement_timeout = '60s';"))
         await conn.run_sync(Base.metadata.create_all)
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS categories (
