@@ -506,41 +506,12 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Actions and Toggle */}
+          {/* Mobile Actions and Toggle - Removed on client/customer view as they are present in the bottom navigation */}
           {isDashboard ? (
             <div className="md:hidden w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black text-xs">
               {user?.full_name?.charAt(0) || 'U'}
             </div>
-          ) : (
-            <div className="md:hidden flex items-center gap-3">
-              <button
-                aria-label="Search products"
-                onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-                className="p-1 text-white hover:text-[#25d958] transition-colors"
-              >
-                {isMobileSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
-              </button>
-
-              <Link to="/cart" className="relative p-1 text-white hover:text-[#25d958] transition-colors">
-                <ShoppingCart className="w-5 h-5" />
-                {cartItemCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#25d958] px-1 text-[9px] font-black text-black">{cartItemCount}</span>
-                )}
-              </Link>
-
-              <Link to={user ? (isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard") : "/login"} className="p-1 text-white hover:text-[#25d958] transition-colors">
-                <User className="w-5 h-5" />
-              </Link>
-
-              <button 
-                className="p-2 text-white hover:text-[#25d958] transition-colors"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                aria-label="Toggle Menu"
-              >
-                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            </div>
-          )}
+          ) : null}
         </div>
 
         {/* Mobile Search Dropdown */}
