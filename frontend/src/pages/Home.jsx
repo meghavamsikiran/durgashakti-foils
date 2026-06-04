@@ -104,12 +104,12 @@ const Home = () => {
 
       <section className="home-hero-stage relative isolate min-h-[620px] md:min-h-[760px] lg:min-h-[820px] overflow-visible bg-[#020807] flex items-center">
         {/* Full-bleed Background Image with 5px shift to the right */}
-        <div className="absolute inset-0 z-0 select-none pointer-events-none">
+        <div className="absolute inset-0 md:left-auto md:right-0 md:w-[60%] z-0 select-none pointer-events-none">
           <img
             src="/homepage-hero-bg.jpg"
             alt="Durga Shakti Foils Premium Packing Solutions"
             className="h-full w-full object-cover opacity-30 md:opacity-100 transition-opacity duration-700"
-            style={{ objectPosition: '80% center' }}
+            style={{ objectPosition: 'center' }}
           />
         </div>
 
