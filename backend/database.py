@@ -124,6 +124,10 @@ async def create_tables():
         # Ensure order table coupon alterations are applied
         await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_codes JSONB DEFAULT '[]'::jsonb;"))
         await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12, 2) DEFAULT 0.0 NOT NULL;"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS razorpay_order_id VARCHAR(255);"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS razorpay_payment_id VARCHAR(255);"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS razorpay_signature VARCHAR(255);"))
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_orders_razorpay_order_id ON orders(razorpay_order_id);"))
         await conn.execute(text("ALTER TABLE coupons ADD COLUMN IF NOT EXISTS coupon_type VARCHAR(50) DEFAULT 'standard' NOT NULL;"))
         await conn.execute(text("ALTER TABLE coupons ADD COLUMN IF NOT EXISTS apply_to_all_loyal_customers BOOLEAN DEFAULT false NOT NULL;"))
         await conn.execute(text("ALTER TABLE coupons ADD COLUMN IF NOT EXISTS apply_to_all_products BOOLEAN DEFAULT false NOT NULL;"))

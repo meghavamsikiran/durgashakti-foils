@@ -9,6 +9,7 @@ const OrderSuccess = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('order_id');
   const orderNumber = searchParams.get('order_number');
+  const paymentMethod = searchParams.get('payment_method') || 'cod';
 
   useEffect(() => {
     if (!orderId) {
@@ -30,7 +31,7 @@ const OrderSuccess = () => {
             Order Placed!
           </h1>
           <p className="text-lg text-muted-foreground">
-            Thank you for your purchase. Your order has been placed successfully under Cash on Delivery.
+            Thank you for your purchase. Your order has been placed successfully{paymentMethod === 'online' ? ' via Online Payment.' : ' under Cash on Delivery.'}
           </p>
         </div>
 

@@ -119,7 +119,11 @@ async def run_migrations():
         await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipment_date TIMESTAMPTZ;"))
         await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_orders_tracking_id ON orders(tracking_id);"))
         await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_orders_tracking_number ON orders(tracking_number);"))
-        logger.info("Order shipment tracking columns checked/added.")
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS razorpay_order_id VARCHAR(255);"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS razorpay_payment_id VARCHAR(255);"))
+        await conn.execute(text("ALTER TABLE orders ADD COLUMN IF NOT EXISTS razorpay_signature VARCHAR(255);"))
+        await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_orders_razorpay_order_id ON orders(razorpay_order_id);"))
+        logger.info("Order shipment tracking and Razorpay columns checked/added.")
 
         # Let's check contacts table
         logger.info("Checking and altering 'contacts' table...")

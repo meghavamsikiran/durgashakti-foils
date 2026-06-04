@@ -13,6 +13,21 @@ import { calculateCheckoutPricing, normalizeShippingSettings } from '../utils/ch
 import { getProductPricing } from '../utils/productPricing';
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 const getCustomerCouponError = (message) => {
   if (!message) return 'This coupon could not be applied. Please check the code and try again.';
   const lowerMessage = String(message).toLowerCase();
@@ -332,29 +347,105 @@ export const useCheckout = () => {
         }
       }
 
-      const { grandTotal } = calculateCheckoutPricing(subtotal, normalizedShippingSettings, 'cod', appliedCoupons);
+      const { grandTotal } = calculateCheckoutPricing(subtotal, normalizedShippingSettings, paymentMethod, appliedCoupons);
 
       const orderData = {
         items: orderItems,
         total_amount: Number(grandTotal.toFixed(2)),
-        payment_method: 'cod',
+        payment_method: paymentMethod,
         shipping_address: shippingInfo,
         idempotency_key: `order_${user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
         coupon_codes: appliedCoupons.map(c => c.code)
       };
 
+      if (paymentMethod === 'online') {
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded) {
+          toast.error("Failed to load Razorpay SDK. Please check your network connection.");
+          setLoading(false);
+          orderInProgress.current = false;
+          return;
+        }
+
+        const response = await orderService.createOrder(orderData);
+        const orderId = response.id;
+        const orderNumber = response.order_number;
+        const rzpOrderId = response.razorpay_order_id;
+        const totalAmount = response.total_amount;
+
+        const options = {
+          key: process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_live_SsPZ6WqWCSv7VP',
+          amount: Math.round(totalAmount * 100),
+          currency: "INR",
+          name: "DurgaShakti Foils",
+          description: `Order #${orderNumber}`,
+          order_id: rzpOrderId,
+          prefill: {
+            name: user.full_name || '',
+            email: user.email || '',
+            contact: shippingInfo.phone || ''
+          },
+          handler: async function (paymentResponse) {
+            setLoading(true);
+            try {
+              const verifyPayload = {
+                razorpay_order_id: rzpOrderId,
+                razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                razorpay_signature: paymentResponse.razorpay_signature
+              };
+              const verificationResult = await paymentService.verifyRazorpayPayment(verifyPayload);
+              if (verificationResult && verificationResult.success) {
+                toast.success('Payment verified successfully!');
+                await clearCart();
+                navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber}&payment_method=online`);
+              } else {
+                toast.error('Payment verification failed.');
+                navigate(`/order/${orderId}`);
+              }
+            } catch (err) {
+              toast.error(err.response?.data?.detail || err.message || 'Payment verification failed.');
+              navigate(`/order/${orderId}`);
+            } finally {
+              setLoading(false);
+              orderInProgress.current = false;
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              toast.info('Payment window closed. You can complete the payment from the order details page.');
+              navigate(`/order/${orderId}`);
+              orderInProgress.current = false;
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (resp) {
+          toast.error(resp.error?.description || 'Payment failed.');
+          navigate(`/order/${orderId}`);
+          orderInProgress.current = false;
+        });
+        rzp.open();
+        setLoading(false);
+        return;
+      }
+
+      // COD path
       const response = await orderService.createOrder(orderData);
       const orderId = response.id;
 
       toast.success('Order placed successfully!');
       clearCart().catch(() => {});
       paymentService.confirmCOD(orderId).catch(() => {});
-      navigate(`/order-success?order_id=${orderId}&order_number=${response.order_number}`);
+      navigate(`/order-success?order_id=${orderId}&order_number=${response.order_number}&payment_method=cod`);
       setLoading(false);
       orderInProgress.current = false;
       return;
     } catch (error) {
-      // Error is handled/toasted by interceptor
+      const isAxiosError = !!error.response;
+      if (!isAxiosError) {
+        toast.error(error.message || 'An error occurred.');
+      }
     } finally {
       setLoading(false);
       orderInProgress.current = false;

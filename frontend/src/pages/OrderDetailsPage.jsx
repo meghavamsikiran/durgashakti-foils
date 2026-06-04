@@ -24,6 +24,78 @@ const OrderDetailsPage = () => {
   const [returnPreviews, setReturnPreviews] = useState([]);
   const [submittingReturn, setSubmittingReturn] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
+  const [retryingPayment, setRetryingPayment] = useState(false);
+
+  const handleRetryPayment = async () => {
+    if (retryingPayment) return;
+    setRetryingPayment(true);
+    try {
+      // Load Razorpay script dynamically
+      const scriptLoaded = await new Promise((resolve) => {
+        if (window.Razorpay) { resolve(true); return; }
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+      });
+      if (!scriptLoaded) {
+        toast.error('Failed to load payment gateway. Please check your network.');
+        setRetryingPayment(false);
+        return;
+      }
+
+      const rzpOrderId = order.razorpay_order_id;
+      const totalAmount = Number(order.total_amount);
+
+      const options = {
+        key: process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_live_SsPZ6WqWCSv7VP',
+        amount: Math.round(totalAmount * 100),
+        currency: 'INR',
+        name: 'DurgaShakti Foils',
+        description: `Order #${order.order_number}`,
+        order_id: rzpOrderId,
+        handler: async function (paymentResponse) {
+          try {
+            const verifyPayload = {
+              razorpay_order_id: rzpOrderId,
+              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_signature: paymentResponse.razorpay_signature
+            };
+            const result = await paymentService.verifyRazorpayPayment(verifyPayload);
+            if (result && result.success) {
+              toast.success('Payment verified successfully!');
+              const res = await apiClient.get(`/orders/${id}`);
+              setOrder(res.data);
+            } else {
+              toast.error('Payment verification failed.');
+            }
+          } catch (err) {
+            toast.error(err.response?.data?.detail || 'Payment verification failed.');
+          } finally {
+            setRetryingPayment(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            toast.info('Payment window closed. You can retry anytime within the time limit.');
+            setRetryingPayment(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (resp) {
+        toast.error(resp.error?.description || 'Payment failed. Please try again.');
+        setRetryingPayment(false);
+      });
+      rzp.open();
+    } catch (err) {
+      toast.error('Something went wrong. Please try again.');
+      setRetryingPayment(false);
+    }
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -431,11 +503,33 @@ const OrderDetailsPage = () => {
                   )}
                 </div>
               ) : (
-                <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-100/60 space-y-1 font-semibold">
+                <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-100/60 space-y-2 font-semibold">
                   <p className="font-extrabold flex items-center gap-1.5 text-amber-700">
-                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Pending Payment
+                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span> Pending Payment
                   </p>
                   <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">Status: {order.payment_status || 'Unpaid'}</p>
+                  {timeLeft && timeLeft !== 'Expired' && (order.payment_method || '').toLowerCase() !== 'cod' && !['cancelled', 'failed'].includes((order.order_status || '').toLowerCase()) && (
+                    <div className="mt-2 space-y-2">
+                      <div className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-2 border border-amber-200">
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span className="text-xs font-black text-amber-800 tabular-nums">{timeLeft}</span>
+                        <span className="text-[9px] font-bold text-amber-600">remaining to complete payment</span>
+                      </div>
+                      <button
+                        onClick={handleRetryPayment}
+                        disabled={retryingPayment}
+                        className="w-full bg-primary hover:bg-emerald-hover text-white font-black text-[10px] uppercase tracking-widest py-2.5 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                      >
+                        <CreditCard className="w-3.5 h-3.5" />
+                        {retryingPayment ? 'Processing...' : 'Complete Payment Now'}
+                      </button>
+                    </div>
+                  )}
+                  {timeLeft === 'Expired' && (order.payment_method || '').toLowerCase() !== 'cod' && (
+                    <div className="mt-2 bg-rose-50 text-rose-700 text-[9px] font-bold rounded-lg px-3 py-2 border border-rose-200">
+                      Payment window has expired. This order will be automatically cancelled.
+                    </div>
+                  )}
                 </div>
               )}
             </div>

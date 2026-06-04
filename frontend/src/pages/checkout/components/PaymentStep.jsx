@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { Truck, Shield } from 'lucide-react';
+import { Truck, Shield, CreditCard } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { normalizeShippingSettings } from '../../../utils/checkoutPricing';
 
@@ -11,20 +11,23 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
   const maxCod = config.maximumCodAmount;
   const codCharge = config.codCharge;
 
-  useEffect(() => {
-    if (selectPaymentMethod && paymentMethod !== 'cod') {
-      selectPaymentMethod('cod');
-    }
-  }, [paymentMethod, selectPaymentMethod]);
-
-  const paymentMethods = [
-    {
+  const paymentMethods = [];
+  
+  if (codEnabled) {
+    paymentMethods.push({
       id: 'cod',
       name: 'Cash on Delivery',
       icon: Truck,
-      description: `Pay with cash (plus ₹${codCharge} COD service charge) when your order arrives. Currently, this is the only supported payment option.`
-    }
-  ];
+      description: `Pay with cash (plus ₹${codCharge} COD service charge) when your order arrives.`
+    });
+  }
+
+  paymentMethods.push({
+    id: 'online',
+    name: 'Online Payment (Prepaid)',
+    icon: CreditCard,
+    description: 'Pay securely online using Cards, UPI, NetBanking, Wallets, or scan a QR code.'
+  });
 
   return (
     <motion.div
@@ -41,17 +44,20 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
 
       <div className="space-y-4">
         {paymentMethods.map((method) => {
+          const isSelected = paymentMethod === method.id;
           return (
             <label
               key={method.id}
-              className="flex items-center gap-4 p-6 border-2 rounded-3xl border-primary bg-primary/5 cursor-pointer"
+              className={`flex items-center gap-4 p-6 border-2 rounded-3xl cursor-pointer transition-all ${
+                isSelected ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'
+              }`}
             >
               <input
                 type="radio"
                 name="payment_method"
                 value={method.id}
-                checked={true}
-                readOnly
+                checked={isSelected}
+                onChange={() => selectPaymentMethod(method.id)}
                 className="w-5 h-5 border-slate-300 focus:ring-primary text-primary cursor-pointer"
               />
               <div className="p-3 rounded-2xl bg-primary text-white">
@@ -73,7 +79,11 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
           <Shield className="w-6 h-6 text-primary/70" />
           <span className="font-bold uppercase tracking-widest text-xs">DurgaShakti Protection</span>
         </div>
-        <p className="text-sm text-slate-500 leading-relaxed">Your order is backed by DurgaShakti Foils directly. Simply verify your items and hand over the cash upon delivery.</p>
+        <p className="text-sm text-slate-500 leading-relaxed">
+          {paymentMethod === 'cod' 
+            ? 'Your order is backed by DurgaShakti Foils directly. Simply verify your items and hand over the cash upon delivery.'
+            : 'Your payment is processed securely. We offer buyer protection and easy refunds if there are any issues with your order.'}
+        </p>
       </div>
     </motion.div>
   );
