@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import settingsService from '../services/settings.service';
 import apiClient from '../services/core/apiClient';
-import { useAuth } from '../contexts/AuthContext';
 
 const DEFAULT_PROFILE = {
   companyName: 'Durga Shakti Foils',
@@ -37,7 +36,6 @@ const getCachedProfile = () => {
 };
 
 const Footer = () => {
-  const { loading: authLoading } = useAuth();
   const [profile, setProfile] = useState(getCachedProfile);
 
   useEffect(() => {
@@ -64,8 +62,6 @@ const Footer = () => {
       isMounted = false;
     };
   }, []);
-
-  if (authLoading) return null;
 
   const socialLinks = [
     { href: profile.instagramLink, label: 'Instagram', Icon: Instagram },
