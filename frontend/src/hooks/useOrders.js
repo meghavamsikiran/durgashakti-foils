@@ -13,6 +13,7 @@ export const useOrders = () => {
 
   const [orders, setOrders] = useState(initialOrders);
   const [loading, setLoading] = useState(!initialOrders.length);
+  const [error, setError] = useState(null);
 
   const fetchOrders = useCallback(async () => {
     const hasCached = !!apiClient.getCachedDataSync('/orders');
@@ -20,10 +21,11 @@ export const useOrders = () => {
       setLoading(true);
     }
     try {
-      const data = await orderService.getOrders();
+      setError(null);
+      const data = await orderService.getOrders(undefined, { silent: true, timeout: 90000 });
       setOrders(data || []);
     } catch (err) {
-      // Error is handled by interceptor toast
+      setError('Order history could not be loaded. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -31,7 +33,8 @@ export const useOrders = () => {
 
   const fetchOrdersSilent = useCallback(async () => {
     try {
-      const response = await apiClient.get('/orders', { silent: true });
+      const response = await apiClient.get('/orders', { silent: true, timeout: 90000 });
+      setError(null);
       setOrders(response.data || []);
     } catch (err) {
       // Ignore background fetch errors to prevent user distraction
@@ -73,5 +76,5 @@ export const useOrders = () => {
     return () => clearInterval(timer);
   }, [fetchOrdersSilent]);
 
-  return { orders, loading, fetchOrders, cancelOrder, returnOrder };
+  return { orders, loading, error, fetchOrders, cancelOrder, returnOrder };
 };

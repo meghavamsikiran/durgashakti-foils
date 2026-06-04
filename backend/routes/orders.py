@@ -16,6 +16,7 @@ from deps import (
 from storage_service import upload_image
 from datetime import datetime, timezone, timedelta
 from io import BytesIO
+import asyncio
 import os, uuid, time, logging, razorpay
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ def is_test_mode() -> bool:
     return not k or k.startswith('rzp_test_') or k in ('rzp_test_dummy', '')
 
 
+RAZORPAY_API_TIMEOUT_SECONDS = float(os.environ.get("RAZORPAY_API_TIMEOUT_SECONDS", "12"))
 PAID_PAYMENT_STATUSES = {"paid", "completed"}
 
 
@@ -41,6 +43,13 @@ def _is_paid_order(order: OrderModel) -> bool:
 
 def _expected_amount_paise(order: OrderModel) -> int:
     return int(round(float(order.total_amount or 0) * 100))
+
+
+async def _razorpay_call(func, *args, **kwargs):
+    return await asyncio.wait_for(
+        asyncio.to_thread(func, *args, **kwargs),
+        timeout=RAZORPAY_API_TIMEOUT_SECONDS
+    )
 
 
 async def _clear_user_cart(db: AsyncSession, user_id, now: datetime):
@@ -162,11 +171,11 @@ async def check_and_sync_razorpay_payment(order: OrderModel, db: AsyncSession):
         return order
 
     try:
-        rz_order = razorpay_client.order.fetch(order.razorpay_order_id)
+        rz_order = await _razorpay_call(razorpay_client.order.fetch, order.razorpay_order_id)
         expected_amount = _expected_amount_paise(order)
         amount_paid = int(rz_order.get("amount_paid") or 0)
         if rz_order.get("status") == "paid" or (expected_amount > 0 and amount_paid >= expected_amount):
-            payments = razorpay_client.order.payments(order.razorpay_order_id)
+            payments = await _razorpay_call(razorpay_client.order.payments, order.razorpay_order_id)
             payment = _captured_payment_from_response(payments)
             payment_id = payment.get("id") if payment else f"pay_captured_{order.razorpay_order_id[6:]}"
             await _finalize_paid_order(
@@ -461,10 +470,6 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
         select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.updated_at.desc()).limit(1000)
     )
     orders = result.scalars().all()
-    for order in orders:
-        if order.payment_method != "cod" and str(order.payment_status).lower() in ("pending", "pending_payment"):
-            await check_and_sync_razorpay_payment(order, db)
-        
     orders_dict = [row_to_dict(o) for o in orders]
     return await _enrich_order_items(db, orders_dict)
 
@@ -476,9 +481,7 @@ async def get_order(order_id: str, current_user: UserSchema = Depends(get_curren
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    
-    order = await check_and_sync_razorpay_payment(order, db)
-    
+
     d = row_to_dict(order)
     return await _enrich_order_items(db, d)
 
@@ -637,7 +640,7 @@ async def create_razorpay_order(order_id: str, current_user: UserSchema = Depend
         }
 
     try:
-        rz_order = razorpay_client.order.create({
+        rz_order = await _razorpay_call(razorpay_client.order.create, {
             "amount": int(float(order.total_amount) * 100),
             "currency": "INR",
             "receipt": order.order_number,
@@ -676,7 +679,7 @@ async def verify_razorpay_payment(payment_data: dict, current_user: UserSchema =
 
     if not is_test_mode():
         try:
-            razorpay_client.utility.verify_payment_signature(payment_data)
+            await _razorpay_call(razorpay_client.utility.verify_payment_signature, payment_data)
         except Exception:
             raise HTTPException(status_code=400, detail="Payment signature verification failed")
 
@@ -791,7 +794,7 @@ async def pay_cod_online(payment_data: dict, current_user: UserSchema = Depends(
             "test_mode": True
         }
     try:
-        rz_order = razorpay_client.order.create({
+        rz_order = await _razorpay_call(razorpay_client.order.create, {
             "amount": int(float(order.total_amount) * 100),
             "currency": "INR",
             "receipt": f"COD-{order.order_number}",

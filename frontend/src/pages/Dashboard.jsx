@@ -41,7 +41,7 @@ const Dashboard = () => {
   }, [location.search, activeTab]);
 
   // Feature hooks
-  const { orders, loading: ordersLoading, fetchOrders, cancelOrder, returnOrder } = useOrders();
+  const { orders, loading: ordersLoading, error: ordersError, fetchOrders, cancelOrder, returnOrder } = useOrders();
   const { wishlist, loading: wishlistLoading, toggleWishlist, clearWishlist } = useWishlist();
   const { addresses, loading: addressesLoading, addAddress, updateAddress, deleteAddress } = useAddresses();
   const { notifications, loading: notificationsLoading, unreadCount, markAllAsRead } = useNotifications();
@@ -93,7 +93,7 @@ const Dashboard = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'orders':
-        return <OrdersTab orders={orders} loading={ordersLoading} onCancelOrder={cancelOrder} />;
+        return <OrdersTab orders={orders} loading={ordersLoading} error={ordersError} onRetry={fetchOrders} onCancelOrder={cancelOrder} />;
       case 'transactions':
         return <TransactionsTab orders={orders} />;
       case 'cards':
@@ -107,7 +107,7 @@ const Dashboard = () => {
       case 'settings':
         return <SettingsTab user={user} onUpdateProfile={handleUpdateProfile} />;
       default:
-        return <OrdersTab orders={orders} loading={ordersLoading} />;
+        return <OrdersTab orders={orders} loading={ordersLoading} error={ordersError} onRetry={fetchOrders} />;
     }
   };
 

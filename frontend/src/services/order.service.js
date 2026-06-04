@@ -9,8 +9,8 @@ const orderService = {
     return response.data;
   },
 
-  getOrders: async (params) => {
-    const response = await apiClient.cachedGet('/orders', { params });
+  getOrders: async (params, options = {}) => {
+    const response = await apiClient.cachedGet('/orders', { params, ...options });
     return response.data;
   },
 
@@ -39,4 +39,3 @@ const orderService = {
 };
 
 export default orderService;
-

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Clock, Package, Wallet, Search, Star, Filter } from 'lucide-react';
+import { ShoppingBag, Clock, Search, Filter, RefreshCw } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import TablePagination from '../../../components/ui/TablePagination';
 import { useNavigate } from 'react-router-dom';
 import PageLoader from '../../../components/ui/PageLoader';
 
-const OrdersTab = ({ orders, loading, onCancelOrder }) => {
+const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
   const navigate = useNavigate();
   const [ordersPage, setOrdersPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -238,7 +238,13 @@ const OrdersTab = ({ orders, loading, onCancelOrder }) => {
         </div>
       )}
       
-      {orders.length === 0 ? (
+      {error ? (
+        <div className="text-center py-20 bg-surface-container-low rounded-xl border border-dashed border-border-subtle">
+          <RefreshCw className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+          <p className="text-muted-foreground font-bold">{error}</p>
+          <Button onClick={onRetry} className="mt-6 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground">Retry</Button>
+        </div>
+      ) : orders.length === 0 ? (
         <div className="text-center py-20 bg-surface-container-low rounded-xl border border-dashed border-border-subtle">
           <Clock className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
           <p className="text-muted-foreground font-bold">No orders found yet</p>
