@@ -116,6 +116,11 @@ const OrderDetailsPage = () => {
         currency: 'INR',
         name: 'DurgaShakti Foils',
         description: `Order #${payableOrder.order_number || order.order_number}`,
+        image: '/logo-durga.png',
+        theme: {
+          color: '#006e1b',
+          hide_topbar: false
+        },
         order_id: rzpOrderId,
         handler: async function (paymentResponse) {
           const paidPaymentId = paymentResponse?.razorpay_payment_id;
