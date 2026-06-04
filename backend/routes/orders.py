@@ -32,8 +32,130 @@ def is_test_mode() -> bool:
     return not k or k.startswith('rzp_test_') or k in ('rzp_test_dummy', '')
 
 
+PAID_PAYMENT_STATUSES = {"paid", "completed"}
+
+
+def _is_paid_order(order: OrderModel) -> bool:
+    return str(order.payment_status or "").lower() in PAID_PAYMENT_STATUSES
+
+
+def _expected_amount_paise(order: OrderModel) -> int:
+    return int(round(float(order.total_amount or 0) * 100))
+
+
+async def _clear_user_cart(db: AsyncSession, user_id, now: datetime):
+    if not user_id:
+        return
+    await db.execute(
+        update(CartModel)
+        .where(CartModel.user_id == user_id)
+        .values(items=[], updated_at=now)
+    )
+
+
+async def _deduct_stock_once(order: OrderModel, db: AsyncSession, now: datetime) -> bool:
+    if order.stock_applied:
+        return True
+
+    deducted = []
+    try:
+        items_to_deduct = [
+            item for item in (order.items or [])
+            if item.get("product_id")
+            and is_valid_uuid(item.get("product_id"))
+            and int(item.get("quantity", 0)) > 0
+        ]
+        if items_to_deduct:
+            prod_ids = [item.get("product_id") for item in items_to_deduct]
+            prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+            locked_products = {str(p.id): p for p in prod_res.scalars().all()}
+            for item in items_to_deduct:
+                pid = item.get("product_id")
+                qty = int(item.get("quantity", 0))
+                product = locked_products.get(str(pid))
+                if not product:
+                    raise ValueError(f"Product {pid} not found while applying paid order stock")
+                if int(product.stock_quantity or 0) < qty:
+                    raise ValueError(f"Insufficient stock for '{product.name}' while applying paid order stock")
+                product.stock_quantity = max(0, int(product.stock_quantity) - qty)
+                product.units_sold = int(product.units_sold or 0) + qty
+                product.updated_at = now
+                if product.stock_quantity <= 0:
+                    product.in_stock = False
+                deducted.append((product, qty))
+        order.stock_applied = True
+        return True
+    except Exception as exc:
+        for prod, qty in deducted:
+            prod.stock_quantity = int(prod.stock_quantity or 0) + qty
+            prod.units_sold = max(0, int(prod.units_sold or 0) - qty)
+            prod.in_stock = True
+            prod.updated_at = now
+        order.stock_applied = False
+        logger.error("Paid order stock deduction failed for %s: %s", order.order_number, exc)
+        try:
+            await write_audit_log(
+                db,
+                "ORDER_STOCK_DEDUCTION_FAILED",
+                order.user_id,
+                "order",
+                str(order.id),
+                {"error": str(exc)}
+            )
+        except Exception:
+            logger.exception("Failed to audit stock deduction failure for %s", order.order_number)
+        return False
+
+
+async def _finalize_paid_order(
+    order: OrderModel,
+    db: AsyncSession,
+    *,
+    payment_id: Optional[str] = None,
+    audit_action: Optional[str] = None,
+    audit_metadata: Optional[dict] = None,
+) -> dict:
+    now = datetime.now(timezone.utc)
+    was_paid = _is_paid_order(order)
+
+    await _deduct_stock_once(order, db, now)
+
+    order.payment_status = "Paid"
+    order.order_status = "confirmed"
+    if payment_id:
+        order.razorpay_payment_id = payment_id
+    order.updated_at = now
+
+    await _clear_user_cart(db, order.user_id, now)
+    await db.flush()
+
+    if audit_action:
+        await write_audit_log(
+            db,
+            audit_action,
+            order.user_id,
+            "order",
+            str(order.id),
+            audit_metadata or {}
+        )
+
+    return {"success": True, "newly_paid": not was_paid, "stock_applied": bool(order.stock_applied)}
+
+
+def _captured_payment_from_response(payments: dict) -> Optional[dict]:
+    for status in ("captured", "authorized"):
+        for payment in payments.get("items", []) if payments else []:
+            if payment.get("status") == status:
+                return payment
+    return None
+
+
 async def check_and_sync_razorpay_payment(order: OrderModel, db: AsyncSession):
-    if order.payment_method == "cod" or str(order.payment_status).lower() in ("paid", "completed", "refunded"):
+    if order.payment_method == "cod" or str(order.payment_status).lower() == "refunded":
+        return order
+
+    if _is_paid_order(order):
+        await _finalize_paid_order(order, db)
         return order
 
     if is_test_mode() or not order.razorpay_order_id:
@@ -41,67 +163,19 @@ async def check_and_sync_razorpay_payment(order: OrderModel, db: AsyncSession):
 
     try:
         rz_order = razorpay_client.order.fetch(order.razorpay_order_id)
-        if rz_order.get("status") == "paid":
-            # Find payments for this order to retrieve a payment ID
+        expected_amount = _expected_amount_paise(order)
+        amount_paid = int(rz_order.get("amount_paid") or 0)
+        if rz_order.get("status") == "paid" or (expected_amount > 0 and amount_paid >= expected_amount):
             payments = razorpay_client.order.payments(order.razorpay_order_id)
-            payment_id = None
-            if payments and payments.get("items"):
-                # find the captured/authorized payment
-                for p in payments["items"]:
-                    if p.get("status") in ("captured", "authorized"):
-                        payment_id = p.get("id")
-                        break
-            if not payment_id:
-                payment_id = f"pay_captured_{order.razorpay_order_id[6:]}"
-
-            now = datetime.now(timezone.utc)
-            # Atomic stock deduction if not already applied
-            if not order.stock_applied:
-                deducted = []
-                try:
-                    items_to_deduct = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
-                    if items_to_deduct:
-                        prod_ids = [item.get("product_id") for item in items_to_deduct]
-                        prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
-                        locked_products = {str(p.id): p for p in prod_res.scalars().all()}
-                        for item in items_to_deduct:
-                            pid = item.get("product_id")
-                            qty = int(item.get("quantity", 0))
-                            product = locked_products.get(str(pid))
-                            if product:
-                                product.stock_quantity = max(0, int(product.stock_quantity) - qty)
-                                product.units_sold = int(product.units_sold or 0) + qty
-                                product.updated_at = now
-                                if product.stock_quantity <= 0:
-                                    product.in_stock = False
-                                deducted.append((product, qty))
-                    order.stock_applied = True
-                except Exception as e:
-                    for prod, qty in deducted:
-                        prod.stock_quantity = int(prod.stock_quantity or 0) + qty
-                        prod.units_sold = max(0, int(prod.units_sold or 0) - qty)
-                        prod.in_stock = True
-                        prod.updated_at = now
-                    logging.error(f"Failed auto-deducting stock in sync: {e}")
-
-            order.payment_status = "Paid"
-            order.order_status = "confirmed"
-            order.razorpay_payment_id = payment_id
-            order.updated_at = now
-            await db.flush()
-            
-            # Clear user cart
-            if order.user_id:
-                try:
-                    cart_res = await db.execute(select(CartModel).where(CartModel.user_id == order.user_id))
-                    cart = cart_res.scalar_one_or_none()
-                    if cart:
-                        cart.items = []
-                        cart.updated_at = now
-                except Exception:
-                    pass
-
-            await write_audit_log(db, "ORDER_PAYMENT_CAPTURED_AUTO_SYNC", order.user_id, "order", str(order.id), {"payment_id": payment_id})
+            payment = _captured_payment_from_response(payments)
+            payment_id = payment.get("id") if payment else f"pay_captured_{order.razorpay_order_id[6:]}"
+            await _finalize_paid_order(
+                order,
+                db,
+                payment_id=payment_id,
+                audit_action="ORDER_PAYMENT_CAPTURED_AUTO_SYNC",
+                audit_metadata={"payment_id": payment_id}
+            )
             await db.commit()
     except Exception as e:
         await db.rollback()
@@ -596,8 +670,8 @@ async def verify_razorpay_payment(payment_data: dict, current_user: UserSchema =
     if payment_data.get("razorpay_order_id") and order.razorpay_order_id and payment_data.get("razorpay_order_id") != order.razorpay_order_id:
         raise HTTPException(status_code=400, detail="Payment order mismatch")
 
-    now = datetime.now(timezone.utc)
-    if str(order.payment_status or "").lower() in {"paid", "completed"} and order.razorpay_payment_id:
+    if _is_paid_order(order) and order.razorpay_payment_id:
+        await _finalize_paid_order(order, db)
         return {"success": True, "message": "Payment already verified"}
 
     if not is_test_mode():
@@ -606,71 +680,60 @@ async def verify_razorpay_payment(payment_data: dict, current_user: UserSchema =
         except Exception:
             raise HTTPException(status_code=400, detail="Payment signature verification failed")
 
-    # Atomic stock deduction upon successful payment verification
-    if not order.stock_applied:
-        deducted = []
-        try:
-            items_to_deduct = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
-            if items_to_deduct:
-                prod_ids = [item.get("product_id") for item in items_to_deduct]
-                prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
-                locked_products = {str(p.id): p for p in prod_res.scalars().all()}
-                for item in items_to_deduct:
-                    pid = item.get("product_id")
-                    qty = int(item.get("quantity", 0))
-                    product = locked_products.get(str(pid))
-                    if not product:
-                        raise HTTPException(status_code=400, detail="Product not found")
-                    if int(product.stock_quantity or 0) < qty:
-                        raise HTTPException(status_code=400, detail=f"Insufficient stock for '{product.name}'")
-                    product.stock_quantity = max(0, int(product.stock_quantity) - qty)
-                    product.units_sold = int(product.units_sold or 0) + qty
-                    product.updated_at = now
-                    if product.stock_quantity <= 0:
-                        product.in_stock = False
-                    deducted.append((product, qty))
-            order.stock_applied = True
-        except Exception as e:
-            for prod, qty in deducted:
-                prod.stock_quantity = int(prod.stock_quantity or 0) + qty
-                prod.units_sold = max(0, int(prod.units_sold or 0) - qty)
-                prod.in_stock = True
-                prod.updated_at = now
-            order.order_status = "failed"
-            order.payment_status = "failed"
-            await db.flush()
-            if isinstance(e, HTTPException):
-                raise e
-            raise HTTPException(status_code=400, detail=str(e))
-
-    order.payment_status = "Paid"
-    order.order_status = "confirmed"
-    order.razorpay_payment_id = payment_data.get("razorpay_payment_id", "pay_dummy_123")
-    order.updated_at = now
-    await create_notification(
+    finalize_result = await _finalize_paid_order(
+        order,
         db,
-        str(current_user.id),
-        "Payment confirmed",
-        f"Payment for order {order.order_number} is confirmed.",
-        "payment"
+        payment_id=payment_data.get("razorpay_payment_id", "pay_dummy_123"),
+        audit_action="ORDER_PAYMENT_CAPTURED_VERIFY",
+        audit_metadata={"payment_id": payment_data.get("razorpay_payment_id")}
     )
-
-    # Clear cart
-    cart_res = await db.execute(select(CartModel).where(CartModel.user_id == current_user.id))
-    cart = cart_res.scalar_one_or_none()
-    if cart:
-        cart.items = []
-        cart.updated_at = now
+    if finalize_result.get("newly_paid"):
+        await create_notification(
+            db,
+            str(current_user.id),
+            "Payment confirmed",
+            f"Payment for order {order.order_number} is confirmed.",
+            "payment"
+        )
 
     try:
         from email_templates import payment_success_email
         import asyncio
-        order_dict = row_to_dict(order)
-        subj, body, attachments = payment_success_email(current_user.full_name or current_user.email, order_dict)
-        asyncio.create_task(send_email(current_user.email, subj, body, attachments=attachments))
+        if finalize_result.get("newly_paid"):
+            order_dict = row_to_dict(order)
+            subj, body, attachments = payment_success_email(current_user.full_name or current_user.email, order_dict)
+            asyncio.create_task(send_email(current_user.email, subj, body, attachments=attachments))
     except Exception:
         pass
     return {"success": True, "message": "Payment verified and order confirmed"}
+
+
+@router.post("/payment/razorpay/reconcile")
+async def reconcile_razorpay_payment(payment_data: dict, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    order_id = payment_data.get('order_id')
+    if not order_id:
+        raise HTTPException(status_code=400, detail="order_id is required")
+    validate_uuid(order_id)
+
+    result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id))
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found or access denied")
+
+    if order.payment_method != "cod" and not _is_paid_order(order):
+        order = await check_and_sync_razorpay_payment(order, db)
+    elif _is_paid_order(order):
+        await _finalize_paid_order(order, db)
+
+    paid = _is_paid_order(order)
+    return {
+        "success": True,
+        "paid": paid,
+        "order_id": str(order.id),
+        "order_number": order.order_number,
+        "payment_status": order.payment_status,
+        "order_status": order.order_status,
+    }
 
 
 @router.post("/payment/cod/confirm")
@@ -691,11 +754,7 @@ async def confirm_cod_payment(order_id: str, current_user: UserSchema = Depends(
         f"Cash on Delivery is confirmed for order {order.order_number}.",
         "payment"
     )
-    cart_res = await db.execute(select(CartModel).where(CartModel.user_id == current_user.id))
-    cart = cart_res.scalar_one_or_none()
-    if cart:
-        cart.items = []
-        cart.updated_at = now
+    await _clear_user_cart(db, current_user.id, now)
     await write_audit_log(db, "ORDER_COD_CONFIRMED", current_user.id, "order", order_id)
     return {"success": True, "message": "COD order confirmed"}
 
@@ -797,54 +856,15 @@ async def razorpay_webhook(request: Request, db: AsyncSession = Depends(get_db))
             result = await db.execute(select(OrderModel).where(OrderModel.razorpay_order_id == rz_order_id))
             order = result.scalar_one_or_none()
             if order:
-                if int(amount_paid) != int(float(order.total_amount) * 100):
+                if int(amount_paid) != _expected_amount_paise(order):
                     return {"status": "amount_mismatch"}
-                
-                # Atomic stock deduction upon successful payment verification via webhook
-                if not order.stock_applied:
-                    deducted = []
-                    try:
-                        items_to_deduct = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
-                        if items_to_deduct:
-                            prod_ids = [item.get("product_id") for item in items_to_deduct]
-                            prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
-                            locked_products = {str(p.id): p for p in prod_res.scalars().all()}
-                            for item in items_to_deduct:
-                                pid = item.get("product_id")
-                                qty = int(item.get("quantity", 0))
-                                product = locked_products.get(str(pid))
-                                if not product or int(product.stock_quantity or 0) < qty:
-                                    raise Exception("Insufficient stock")
-                                product.stock_quantity = max(0, int(product.stock_quantity) - qty)
-                                product.units_sold = int(product.units_sold or 0) + qty
-                                product.updated_at = now
-                                if product.stock_quantity <= 0:
-                                    product.in_stock = False
-                                deducted.append((product, qty))
-                        order.stock_applied = True
-                        order.payment_status = "Paid"
-                        order.order_status = "confirmed"
-                    except Exception:
-                        for prod, qty in deducted:
-                            prod.stock_quantity = int(prod.stock_quantity or 0) + qty
-                            prod.units_sold = max(0, int(prod.units_sold or 0) - qty)
-                            prod.in_stock = True
-                            prod.updated_at = now
-                        order.order_status = "failed"
-                        order.payment_status = "failed"
-                else:
-                    order.payment_status = "Paid"
-                    order.order_status = "confirmed"
-
-                order.razorpay_payment_id = payment_id
-                order.updated_at = now
-                if order.user_id:
-                    cart_res = await db.execute(select(CartModel).where(CartModel.user_id == order.user_id))
-                    cart = cart_res.scalar_one_or_none()
-                    if cart:
-                        cart.items = []
-                        cart.updated_at = now
-                await write_audit_log(db, "ORDER_PAYMENT_CAPTURED_WEBHOOK", order.user_id, "order", str(order.id), {"payment_id": payment_id})
+                await _finalize_paid_order(
+                    order,
+                    db,
+                    payment_id=payment_id,
+                    audit_action="ORDER_PAYMENT_CAPTURED_WEBHOOK",
+                    audit_metadata={"payment_id": payment_id}
+                )
 
         elif event == 'payment.failed':
             payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
@@ -854,6 +874,9 @@ async def razorpay_webhook(request: Request, db: AsyncSession = Depends(get_db))
             result = await db.execute(select(OrderModel).where(OrderModel.razorpay_order_id == rz_order_id))
             order = result.scalar_one_or_none()
             if order:
+                if _is_paid_order(order):
+                    logger.info("Ignoring Razorpay failed event for already-paid order %s", order.order_number)
+                    return {"status": "ignored_already_paid"}
                 order.payment_status = "failed"
                 order.order_status = "failed"
                 order.updated_at = now

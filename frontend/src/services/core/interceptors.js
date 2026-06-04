@@ -29,7 +29,7 @@ export const setupInterceptors = (apiClient) => {
     },
     (error) => {
       const { response } = error;
-      
+
       if (response) {
         // Handle unauthorized (expired token)
         if (response.status === 401) {
@@ -52,11 +52,10 @@ export const setupInterceptors = (apiClient) => {
           errorMessage = response.data.message;
         }
 
-        // Avoid showing toast for certain errors if needed, or handle globally
         if (response.status !== 401 && !response.config?.silent) {
           toast.error(errorMessage);
         }
-        
+
         if (!response.config?.silent) setLoading(false);
         return Promise.reject({
           message: errorMessage,
@@ -65,23 +64,27 @@ export const setupInterceptors = (apiClient) => {
         });
       }
 
-      // Handle network errors - only show once per page/session and avoid repeated toasts
       if (!error.config?.silent) {
         setLoading(false);
         const now = Date.now();
+        const timedOut = error.code === 'ECONNABORTED';
         const networkError = !response && (
           error.message?.includes('Network Error') ||
           error.code === 'ERR_NETWORK' ||
           error.code === 'ENOTFOUND' ||
-          error.code === 'ECONNABORTED' ||
+          timedOut ||
           !navigator.onLine
         );
 
-        if (networkError && window.location.pathname !== '/') {
+        if (timedOut) {
+          toast.error('The server is taking longer than expected. Please wait a moment and try again.', {
+            duration: 8000,
+          });
+        } else if (networkError && window.location.pathname !== '/') {
           if (!coldStartWarningShown || now - lastErrorTime > 300000) {
             coldStartWarningShown = true;
             lastErrorTime = now;
-            toast.error('🌐 Live server is waking from sleep mode. Please wait 30 seconds and refresh!', {
+            toast.error('Unable to reach the server right now. Please check your connection and try again.', {
               duration: 8000,
             });
           }

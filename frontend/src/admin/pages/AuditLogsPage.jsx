@@ -99,9 +99,9 @@ const AuditLogsPage = () => {
       console.error('Failed to download audit logs', error);
       finishProgress(progressId, { message: 'Failed to download audit logs', isError: true });
       if (error.message?.includes('timeout') || error.code === 'ECONNABORTED') {
-        toast.error('The server is taking longer to respond. Please wait 30 seconds and try again.');
+        toast.error('The server is taking longer to respond. Please wait a moment and try again.');
       } else if (error.message?.includes('Network Error') || error.message?.includes('Network') || !navigator.onLine) {
-        toast.error('🌐 Live server is waking from sleep mode. Please wait 30 seconds and refresh!');
+        toast.error('Unable to reach the server right now. Please check your connection and try again.');
       } else {
         toast.error('Audit log download failed. Please refresh and try again.');
       }

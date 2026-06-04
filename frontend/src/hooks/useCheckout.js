@@ -11,6 +11,7 @@ import settingsService from '../services/settings.service';
 import couponService from '../services/coupon.service';
 import { calculateCheckoutPricing, normalizeShippingSettings } from '../utils/checkoutPricing';
 import { getProductPricing } from '../utils/productPricing';
+import { clearPendingRazorpayOrder, savePendingRazorpayOrder } from '../utils/pendingPayment';
 
 const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID;
 
@@ -259,6 +260,7 @@ export const useCheckout = () => {
         const response = await paymentService.createRazorpayOrder(orderId);
         toast.dismiss(openingToastId);
         const { razorpay_order_id, amount, currency, key_id } = response;
+        savePendingRazorpayOrder({ orderId, orderNumber });
 
         const options = {
           key: key_id || RAZORPAY_KEY_ID,
@@ -275,6 +277,7 @@ export const useCheckout = () => {
                 razorpay_payment_id: paymentResponse.razorpay_payment_id,
                 razorpay_signature: paymentResponse.razorpay_signature
               });
+              clearPendingRazorpayOrder(orderId);
               clearCart().catch(() => {});
               toast.success('Payment successful! Order confirmed.');
               navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber || ''}`);
@@ -295,6 +298,7 @@ export const useCheckout = () => {
 
         const rzp = new window.Razorpay(options);
         rzp.on('payment.failed', (response) => {
+          clearPendingRazorpayOrder(orderId);
           toast.error('Payment failed. You can retry from your dashboard.');
           reject(new Error('payment_failed'));
         });
