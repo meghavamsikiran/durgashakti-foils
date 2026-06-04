@@ -49,12 +49,12 @@ const AdminLayout = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#f7faf8] flex flex-col md:flex-row text-on-surface">
+    <div className="admin-shell min-h-screen bg-[#f7faf8] flex flex-col md:flex-row text-on-surface">
       {/* Mobile Header */}
       <header className="flex md:hidden items-center justify-between px-6 py-4 bg-white border-b border-border-subtle sticky top-0 z-30 shadow-sm">
         <button 
           onClick={() => setSidebarOpen(true)}
-          className="p-2 -ml-2 text-slate-600 hover:text-slate-900 focus:outline-none"
+          className="p-2 -ml-2 text-slate-600 focus:outline-none"
         >
           <Menu className="w-6 h-6" />
         </button>
@@ -94,7 +94,7 @@ const AdminLayout = () => {
           </Link>
           <button 
             onClick={() => setSidebarOpen(false)}
-            className="md:hidden p-1 text-slate-400 hover:text-white"
+            className="md:hidden p-1 text-slate-400"
           >
             <X className="w-5 h-5" />
           </button>
@@ -116,10 +116,10 @@ const AdminLayout = () => {
                 className={`flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group ${
                   isActive 
                     ? 'bg-[rgba(11,209,61,0.12)] text-[#16E34A] border-l-4 border-primary pl-2.5 font-bold' 
-                    : 'text-slate-400 hover:bg-slate-800/40 hover:text-white pl-3 font-medium'
+                    : 'text-slate-300 pl-3 font-medium'
                 }`}
               >
-                <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-[#16E34A]' : 'text-slate-500 group-hover:text-primary'}`} />
+                <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-[#16E34A]' : 'text-slate-500'}`} />
                 {item.label}
               </Link>
             );
@@ -139,7 +139,7 @@ const AdminLayout = () => {
           <button 
             type="button" 
             onClick={logout} 
-            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-bold text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all"
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-bold text-slate-400 transition-all"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
@@ -149,7 +149,7 @@ const AdminLayout = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 md:ml-64 min-h-screen bg-[#f7faf8]">
-        <div className="max-w-[1500px] mx-auto p-4 md:p-8">
+        <div className="mx-auto max-w-[1280px] p-4 md:p-8">
           <Outlet />
         </div>
       </main>

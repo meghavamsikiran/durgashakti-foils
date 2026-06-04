@@ -32,7 +32,7 @@ const SettingsTab = ({ user, onUpdateProfile }) => {
           <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Profile</h2>
         </div>
 
-        <form onSubmit={handleProfileSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 md:p-8 bg-surface-container-lowest rounded-xl border border-border-subtle shadow-sm">
+        <form onSubmit={handleProfileSubmit} className="grid max-w-4xl grid-cols-1 gap-6 rounded-xl border border-border-subtle bg-surface-container-lowest p-6 shadow-sm md:grid-cols-2 md:p-8">
           <div className="space-y-2">
             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Full Name</Label>
             <Input value={profileForm.full_name} onChange={e => setProfileForm({...profileForm, full_name: e.target.value})} className="h-12 rounded-lg bg-surface border border-border-subtle focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all px-4 text-sm font-medium" />
@@ -41,7 +41,7 @@ const SettingsTab = ({ user, onUpdateProfile }) => {
             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email Address</Label>
             <Input value={profileForm.email} disabled className="h-12 rounded-lg bg-surface-container-low border border-border-subtle px-4 text-sm font-medium cursor-not-allowed opacity-60" />
           </div>
-          <div className="space-y-2 md:col-span-2">
+          <div className="space-y-2">
             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Phone Number</Label>
             <PhoneInput
               international
@@ -55,7 +55,7 @@ const SettingsTab = ({ user, onUpdateProfile }) => {
               }}
             />
           </div>
-          <div className="md:col-span-2 pt-2">
+          <div className="pt-2 md:col-span-2">
             <Button type="submit" disabled={updatingProfile} className="h-12 rounded-lg px-8 gap-2 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-emerald-glow shadow-sm">
               {updatingProfile ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
               Save Profile
@@ -71,7 +71,7 @@ const SettingsTab = ({ user, onUpdateProfile }) => {
           </div>
           <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Account Deactivation</h2>
         </div>
-        <div className="p-6 bg-red-50/50 rounded-xl border border-red-200/50 shadow-sm flex flex-col items-start gap-4">
+        <div className="flex max-w-4xl flex-col items-start gap-4 rounded-xl border border-red-200/50 bg-red-50/50 p-6 shadow-sm">
           <div className="space-y-1">
             <h3 className="text-lg font-black text-red-900">Delete Account Permanently</h3>
             <p className="text-red-700 text-sm font-medium">Once you delete your account, there is no going back. Please be certain.</p>
