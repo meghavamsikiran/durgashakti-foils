@@ -404,6 +404,11 @@ export const useCheckout = () => {
           currency: "INR",
           name: "DurgaShakti Foils",
           description: `Order #${orderNumber}`,
+          image: "/logo-durga.png",
+          theme: {
+            color: '#006e1b',
+            hide_topbar: false
+          },
           order_id: rzpOrderId,
           prefill: {
             name: user.full_name || '',
