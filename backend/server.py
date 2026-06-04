@@ -50,9 +50,10 @@ async def lifespan(app: FastAPI):
     # Startup: Initialize PostgreSQL Async Engine + Supabase Storage
     logger.info("Starting DurgaShakti Foils Server (Supabase PostgreSQL)...")
     init_engine()
-    await create_tables()
+    await create_tables(background_migrations=True)
     from storage_service import ensure_bucket_exists
-    await ensure_bucket_exists()
+    asyncio.create_task(ensure_bucket_exists())
+    logger.info("Supabase storage bucket verification scheduled in the background.")
     # Start background cleanup task for audit logs (delete entries older than 6 months)
     try:
         from database import async_session_factory

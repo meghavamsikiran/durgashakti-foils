@@ -6,6 +6,7 @@ Handles URL-encoded passwords (special chars like [, !, ]) correctly.
 import os
 import re as _re
 import logging
+import asyncio
 from urllib.parse import unquote
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
@@ -82,7 +83,25 @@ async def get_db() -> AsyncSession:
             raise
 
 
-async def create_tables():
+async def _execute_incremental_migration_stmts(migration_stmts):
+    failed = 0
+    for stmt in migration_stmts:
+        try:
+            async with engine.begin() as conn:
+                await conn.execute(text(stmt))
+        except Exception as exc:
+            failed += 1
+            # Log but don't crash; these migrations are idempotent and may already be applied.
+            logger.warning("Migration statement skipped (timeout/error): %s - %s", stmt[:80], exc)
+
+    if failed:
+        logger.warning("%d migration statement(s) skipped due to errors (likely already applied).", failed)
+    else:
+        logger.info("All migration statements applied successfully.")
+    logger.info("Database incremental migrations completed.")
+
+
+async def create_tables(background_migrations: bool = False):
     """Create all tables defined in models.py. Idempotent (IF NOT EXISTS)."""
     if not engine:
         raise RuntimeError("Database engine not initialized.")
@@ -155,6 +174,14 @@ async def create_tables():
               AND tracking_number IS NOT NULL
               AND tracking_number <> '';""",
     ]
+
+    if background_migrations:
+        asyncio.create_task(_execute_incremental_migration_stmts(migration_stmts))
+        logger.info("Database incremental migrations scheduled in the background.")
+        return
+
+    await _execute_incremental_migration_stmts(migration_stmts)
+    return
 
     failed = 0
     for stmt in migration_stmts:
