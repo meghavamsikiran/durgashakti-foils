@@ -65,20 +65,62 @@ const Home = () => {
 
   return (
     <main className="min-h-screen bg-white text-white font-inter selection:bg-[#25d958]/30" data-testid="home-page">
-      <section
-        className="home-hero-stage relative isolate min-h-[620px] overflow-visible bg-[#020807] bg-no-repeat md:min-h-[604px]"
-        style={{ backgroundImage: "url('/homepage-hero-reference.png')", backgroundSize: 'contain', backgroundPosition: 'right center' }}
-      >
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.86)_0%,rgba(0,0,0,0.74)_58%,rgba(0,0,0,0.28)_100%)] md:bg-[linear-gradient(90deg,rgba(0,0,0,0.2)_0%,rgba(0,0,0,0.08)_45%,rgba(0,0,0,0)_72%)]" />
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .animate-fade-in-up {
+          opacity: 0;
+          animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-fade-in {
+          opacity: 0;
+          animation: fadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+      `}</style>
 
-        <div className="relative z-10 mx-auto flex max-w-[1340px] px-6 pb-[112px] pt-14 md:px-12 lg:px-[90px]">
+      <section className="home-hero-stage relative isolate min-h-[620px] overflow-hidden bg-[#020807] md:min-h-[620px] flex items-center">
+        {/* Background Image Container with Contain and smooth fade gradient */}
+        <div className="absolute inset-0 z-0 flex justify-end overflow-hidden">
+          <div className="relative h-full w-full md:w-[65%] lg:w-[60%] opacity-20 md:opacity-100 transition-opacity duration-700 animate-fade-in">
+            <img
+              src="/homepage-hero-reference.png"
+              alt="Durga Shakti Foils Premium Packing Solutions"
+              className="h-full w-full object-cover object-right md:object-contain md:object-right-bottom select-none pointer-events-none"
+            />
+            {/* Blending Gradients to merge left and bottom edges */}
+            <div className="absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-[#020807] to-transparent hidden md:block" />
+            <div className="absolute inset-x-0 bottom-0 h-1/6 bg-gradient-to-t from-[#020807]/40 to-transparent hidden md:block" />
+          </div>
+        </div>
+
+        {/* Ambient background overlay for left content readability */}
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#020807_0%,#020807_35%,rgba(2,8,7,0.75)_55%,rgba(2,8,7,0)_100%)] z-[1] hidden md:block" />
+        <div className="absolute inset-0 bg-[#020807]/75 z-[1] md:hidden" />
+
+        <div className="relative z-10 mx-auto flex w-full max-w-[1340px] px-6 pb-[112px] pt-14 md:px-12 lg:px-[90px]">
           <div className="max-w-[455px]">
-            <div className="mb-4 inline-flex h-7 items-center gap-2 rounded-full border border-[#16823a]/80 bg-[#03140d]/80 px-3 text-[11px] font-extrabold uppercase tracking-wide text-[#2fda54] shadow-[0_0_20px_rgba(47,218,84,0.18)]">
+            <div className="mb-4 inline-flex h-7 items-center gap-2 rounded-full border border-[#16823a]/80 bg-[#03140d]/80 px-3 text-[11px] font-extrabold uppercase tracking-wide text-[#2fda54] shadow-[0_0_20px_rgba(47,218,84,0.18)] animate-fade-in-up">
               <BadgeCheck className="h-3.5 w-3.5" strokeWidth={2.2} />
               100% Food Grade Certified
             </div>
 
-            <h1 className="font-serif text-[clamp(2.35rem,4.2vw,3.55rem)] font-bold leading-[1.04] tracking-normal text-[#b9cbc6] drop-shadow-[0_3px_14px_rgba(0,0,0,0.35)]">
+            <h1 className="font-serif text-[clamp(2.35rem,4.2vw,3.55rem)] font-bold leading-[1.04] tracking-normal text-[#b9cbc6] drop-shadow-[0_3px_14px_rgba(0,0,0,0.35)] animate-fade-in-up delay-100">
               Wrap it Right,
               <br />
               <span className="text-[#f6ca51]">Keep it Hot,</span>
@@ -86,37 +128,27 @@ const Home = () => {
               <span className="text-[#25d958]">Keep it Fresh!</span>
             </h1>
 
-            <p className="mt-5 max-w-[405px] text-[14px] font-medium leading-[1.65] text-white/80">
+            <p className="mt-5 max-w-[405px] text-[14px] font-medium leading-[1.65] text-white/80 animate-fade-in-up delay-200">
               Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminium foil engineered for commercial strength and clinical hygiene.
             </p>
 
-            <div className="mt-7 flex flex-wrap gap-4">
+            <div className="mt-7 flex flex-wrap gap-4 animate-fade-in-up delay-300">
               <button
                 onClick={() => go('/shop')}
-                className="inline-flex h-10 items-center gap-3 rounded-lg bg-[#38d25a] px-6 text-sm font-black text-white shadow-[0_12px_24px_rgba(56,210,90,0.28)] transition hover:bg-[#28c94e] focus:outline-none focus:ring-2 focus:ring-[#7cff94]/70"
+                className="inline-flex h-10 items-center gap-3 rounded-lg bg-[#38d25a] px-6 text-sm font-black text-white shadow-[0_12px_24px_rgba(56,210,90,0.28)] transition hover:-translate-y-0.5 hover:bg-[#28c94e] focus:outline-none focus:ring-2 focus:ring-[#7cff94]/70"
               >
                 Shop Now
                 <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/65">
                   <ArrowRight className="h-3 w-3" />
                 </span>
               </button>
-
-              <button
-                onClick={() => go('/shop')}
-                className="inline-flex h-10 items-center gap-3 rounded-lg border border-[#286c31]/90 bg-[#09150d]/55 px-6 text-sm font-black text-white shadow-[inset_0_0_18px_rgba(55,211,86,0.08)] transition hover:border-[#37d856] hover:bg-[#102416]/70 focus:outline-none focus:ring-2 focus:ring-[#37d856]/45"
-              >
-                Explore Products
-                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-[#d9ad30] text-[#d9ad30]">
-                  <ArrowRight className="h-3 w-3" />
-                </span>
-              </button>
             </div>
 
-            <div className="mt-9 hidden max-w-[370px] grid-cols-3 gap-6 md:grid">
+            <div className="mt-9 hidden max-w-[370px] grid-cols-3 gap-6 md:grid animate-fade-in-up delay-400">
               {heroFeatures.map((feature) => (
                 <div key={feature.title} className="min-w-0">
                   <div
-                    className={`mb-3 flex h-11 w-11 items-center justify-center rounded-full border bg-black/30 ${
+                    className={`mb-3 flex h-11 w-11 items-center justify-center rounded-full border bg-black/30 transition-transform duration-300 hover:scale-110 ${
                       feature.tone === 'gold'
                         ? 'border-[#d9ad30] text-[#d9ad30]'
                         : 'border-[#31d856] text-[#31d856]'
