@@ -102,7 +102,9 @@ async def check_and_sync_razorpay_payment(order: OrderModel, db: AsyncSession):
                     pass
 
             await write_audit_log(db, "ORDER_PAYMENT_CAPTURED_AUTO_SYNC", order.user_id, "order", str(order.id), {"payment_id": payment_id})
+            await db.commit()
     except Exception as e:
+        await db.rollback()
         logging.error(f"Error syncing order payment status for {order.order_number}: {e}")
     return order
 
@@ -379,21 +381,15 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
             pass
 
     return row_to_dict(order)
-
-
 @router.get("/orders")
 async def get_user_orders(current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.updated_at.desc()).limit(1000)
     )
     orders = result.scalars().all()
-    any_updated = False
     for order in orders:
         if order.payment_method != "cod" and str(order.payment_status).lower() in ("pending", "pending_payment"):
             await check_and_sync_razorpay_payment(order, db)
-            any_updated = True
-    if any_updated:
-        await db.commit()
         
     orders_dict = [row_to_dict(o) for o in orders]
     return await _enrich_order_items(db, orders_dict)
@@ -408,7 +404,6 @@ async def get_order(order_id: str, current_user: UserSchema = Depends(get_curren
         raise HTTPException(status_code=404, detail="Order not found")
     
     order = await check_and_sync_razorpay_payment(order, db)
-    await db.commit()
     
     d = row_to_dict(order)
     return await _enrich_order_items(db, d)
