@@ -89,11 +89,11 @@ const adminService = {
   },
   updateOrderStatus: (orderId, payload) => {
     invalidateCache('/admin/orders');
-    return apiClient.put(`/admin/orders/${orderId}/status`, payload, { silent: true });
+    return apiClient.put(`/admin/orders/${orderId}/status`, payload, { silent: true, timeout: 120000 });
   },
   retryRefund: (orderId) => {
     invalidateCache('/admin/orders');
-    return apiClient.put(`/admin/orders/${orderId}/refund-retry`, {}, { silent: true });
+    return apiClient.put(`/admin/orders/${orderId}/refund-retry`, {}, { silent: true, timeout: 120000 });
   },
   bulkShipOrders: (payload) => {
     invalidateCache('/admin/orders');

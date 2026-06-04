@@ -29,6 +29,7 @@ from io import BytesIO
 import os
 import json
 import logging
+import asyncio
 
 router = APIRouter(prefix="/api")
 
@@ -516,6 +517,16 @@ async def get_all_orders(
     q = select(OrderModel).where(*filters).order_by(OrderModel.updated_at.desc()).offset(offset).limit(limit)
     res = await db.execute(q)
     orders = res.scalars().all()
+    pending_refund_orders = [
+        order for order in orders
+        if str(order.payment_status or "").lower() == "refund_pending"
+    ]
+    if pending_refund_orders:
+        from routes.orders import reconcile_order_refund_with_razorpay
+        await asyncio.gather(*[
+            reconcile_order_refund_with_razorpay(order, db, source="admin_orders_list")
+            for order in pending_refund_orders
+        ])
     items = [row_to_dict(order) for order in orders]
     return {"items": items, "total": total, "page": page, "limit": limit}
 
@@ -527,6 +538,10 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     order = res.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    if str(order.payment_status or "").lower() == "refund_pending":
+        from routes.orders import reconcile_order_refund_with_razorpay
+        await reconcile_order_refund_with_razorpay(order, db, source="admin_status_update")
 
     prev_status = (order.order_status or "processing").lower()
     new_status = normalize_order_status(status_data.get("status"))
@@ -1175,7 +1190,18 @@ async def get_customer_details(
     order_res = await db.execute(
         select(OrderModel).where(OrderModel.user_id == user.id).order_by(OrderModel.created_at.desc())
     )
-    orders = [row_to_dict(order) for order in order_res.scalars().all()]
+    customer_orders = order_res.scalars().all()
+    pending_refund_orders = [
+        order for order in customer_orders
+        if str(order.payment_status or "").lower() == "refund_pending"
+    ]
+    if pending_refund_orders:
+        from routes.orders import reconcile_order_refund_with_razorpay
+        await asyncio.gather(*[
+            reconcile_order_refund_with_razorpay(order, db, source="admin_customer_detail")
+            for order in pending_refund_orders
+        ])
+    orders = [row_to_dict(order) for order in customer_orders]
 
     review_res = await db.execute(
         select(ProductReviewModel, ProductModel.name.label("product_name"), ProductModel.image_url.label("product_image"))
