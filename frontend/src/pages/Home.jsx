@@ -95,17 +95,19 @@ const Home = () => {
       `}</style>
 
       <section className="home-hero-stage relative isolate min-h-[620px] md:min-h-[760px] lg:min-h-[820px] overflow-hidden bg-[#020807] flex items-center">
-        {/* Full-bleed Background Image */}
-        <div className="absolute inset-0 z-0 select-none pointer-events-none">
+        {/* Constrained Background Image Container to create spacing and prevent clipping */}
+        <div className="absolute top-0 bottom-0 right-0 z-0 w-full md:w-[70%] lg:w-[65%] select-none pointer-events-none">
           <img
             src="/homepage-hero-reference.png"
             alt="Durga Shakti Foils Premium Packing Solutions"
-            className="h-full w-full object-cover object-center opacity-30 md:opacity-100 transition-opacity duration-700"
+            className="h-full w-full object-contain object-right opacity-30 md:opacity-100 transition-opacity duration-700"
           />
+          {/* Blend overlay to transition from solid black text area to image */}
+          <div className="absolute inset-y-0 left-0 w-48 bg-gradient-to-r from-[#020807] to-transparent hidden md:block" />
         </div>
 
         {/* Smooth gradient overlay to ensure text readability on the left */}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,#020807_0%,#020807_35%,rgba(2,8,7,0.4)_65%,rgba(2,8,7,0)_100%)] z-[1] hidden md:block" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#020807_0%,#020807_30%,rgba(2,8,7,0.3)_60%,rgba(2,8,7,0)_100%)] z-[1] hidden md:block" />
         <div className="absolute inset-0 bg-[#020807]/75 z-[1] md:hidden" />
 
         <div className="relative z-10 mx-auto flex w-full max-w-[1340px] px-6 pb-[112px] pt-14 md:px-12 lg:px-[90px]">
