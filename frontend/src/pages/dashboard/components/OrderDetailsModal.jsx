@@ -22,8 +22,8 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
     if (!order || !isOpen) return;
     
     const isOnlinePending = 
-      order.payment_status !== 'Paid' &&
-      order.payment_status !== 'completed' &&
+      (order.payment_status || '').toLowerCase() !== 'paid' &&
+      (order.payment_status || '').toLowerCase() !== 'completed' &&
       (order.payment_method || '').toLowerCase() !== 'cod' &&
       !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase());
 
@@ -706,7 +706,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
           {/* Footer */}
           {!isReturning && (
             <div className="p-8 border-t border-border-subtle flex gap-4">
-              {(order.payment_status === 'Paid' || order.payment_status === 'completed') && (
+              {((order.payment_status || '').toLowerCase() === 'paid' || (order.payment_status || '').toLowerCase() === 'completed') && (
                 <Button
                   className="flex-1 h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest rounded-lg shadow-sm hover:shadow-emerald-glow"
                   onClick={handleDownloadInvoice}

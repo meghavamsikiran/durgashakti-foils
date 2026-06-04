@@ -631,6 +631,7 @@ async def verify_razorpay_payment(
     msg = f"{payload.razorpay_order_id}|{payload.razorpay_payment_id}".encode("utf-8")
     expected = hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(expected, payload.razorpay_signature):
+        logger.error(f"Razorpay verify signature failure. Expected: {expected}, Got: {payload.razorpay_signature}")
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     res = await db.execute(
@@ -639,7 +640,7 @@ async def verify_razorpay_payment(
                 OrderModel.razorpay_order_id == payload.razorpay_order_id,
                 OrderModel.idempotency_key == payload.razorpay_order_id
             )
-        )
+        ).with_for_update()
     )
     order = res.scalar_one_or_none()
     if not order:
@@ -704,22 +705,35 @@ async def razorpay_webhook(
     if not x_razorpay_signature:
         raise HTTPException(status_code=400, detail="Missing webhook signature")
 
-    secret = os.environ.get("RAZORPAY_WEBHOOK_SECRET", "test_webhook_secret_key")
+    secret = os.environ.get("RAZORPAY_WEBHOOK_SECRET") or os.environ.get("RAZORPAY_WEBHOOK_SECRE") or "test_webhook_secret_key"
     expected = hmac.new(secret.encode("utf-8"), body_bytes, hashlib.sha256).hexdigest()
-    if not hmac.compare_digest(expected, x_razorpay_signature):
+    verified = hmac.compare_digest(expected, x_razorpay_signature)
+    
+    if not verified:
+        alt_secret = os.environ.get("RAZORPAY_WEBHOOK_SECRE")
+        if alt_secret and alt_secret != secret:
+            expected_alt = hmac.new(alt_secret.encode("utf-8"), body_bytes, hashlib.sha256).hexdigest()
+            if hmac.compare_digest(expected_alt, x_razorpay_signature):
+                verified = True
+                
+    if not verified:
+        logger.error(f"Webhook signature verification failed. X-Razorpay-Signature: {x_razorpay_signature}")
         raise HTTPException(status_code=400, detail="Invalid webhook signature")
 
     payload = json.loads(body_bytes.decode("utf-8"))
     event = payload.get("event")
-    if event != "payment.captured":
+    if event not in ["payment.captured", "order.paid"]:
         return {"status": "ignored"}
 
     inner_payload = payload.get("payload", {})
-    payment_obj = inner_payload.get("payment", {})
-    if not payment_obj:
-        payment_obj = payload.get("payment", {})
-    entity = payment_obj.get("entity", {})
+    payment_obj = inner_payload.get("payment", {}) or payload.get("payment", {})
+    entity = payment_obj.get("entity", {}) if payment_obj else {}
     rzp_order_id = entity.get("order_id")
+
+    if not rzp_order_id:
+        order_obj = inner_payload.get("order", {}) or payload.get("order", {})
+        order_entity = order_obj.get("entity", {}) if order_obj else {}
+        rzp_order_id = order_entity.get("id")
 
     if not rzp_order_id:
         raise HTTPException(status_code=400, detail="Missing razorpay_order_id in payload")
@@ -730,7 +744,7 @@ async def razorpay_webhook(
                 OrderModel.razorpay_order_id == rzp_order_id,
                 OrderModel.idempotency_key == rzp_order_id
             )
-        )
+        ).with_for_update()
     )
     order = res.scalar_one_or_none()
     if not order:

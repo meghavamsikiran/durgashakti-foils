@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star, Clock } from 'lucide-react';
+import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star, Clock, RefreshCw } from 'lucide-react';
 import { Button } from './../components/ui/button';
 import { formatImageUrl } from './../utils/api';
 import { useProgress } from './../components/ui/ProgressToast';
@@ -25,6 +25,21 @@ const OrderDetailsPage = () => {
   const [submittingReturn, setSubmittingReturn] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [retryingPayment, setRetryingPayment] = useState(false);
+
+  const fetchOrder = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const res = await apiClient.get(`/orders/${id}`);
+      setOrder(res.data);
+    } catch (err) {
+      if (!silent) {
+        toast.error('Failed to load order details');
+        navigate('/dashboard');
+      }
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [id, navigate]);
 
   const handleRetryPayment = async () => {
     if (retryingPayment) return;
@@ -105,8 +120,8 @@ const OrderDetailsPage = () => {
     if (!order) return;
     
     const isOnlinePending = 
-      order.payment_status !== 'Paid' &&
-      order.payment_status !== 'completed' &&
+      (order.payment_status || '').toLowerCase() !== 'paid' &&
+      (order.payment_status || '').toLowerCase() !== 'completed' &&
       (order.payment_method || '').toLowerCase() !== 'cod' &&
       !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase());
 
@@ -139,11 +154,11 @@ const OrderDetailsPage = () => {
     const active = calculateTimeLeft();
     if (!active) return;
 
+    // Countdown timer — tick every second
     const timer = setInterval(() => {
       const active = calculateTimeLeft();
       if (!active) {
         clearInterval(timer);
-        // Silently reload order details when the countdown expires to update statuses reactively
         const fetchOrderSilently = async () => {
           try {
             const res = await apiClient.get(`/orders/${id}`);
@@ -154,23 +169,52 @@ const OrderDetailsPage = () => {
       }
     }, 1000);
 
-    return () => clearInterval(timer);
+    // Auto-poll every 5 seconds to detect webhook-confirmed payments
+    // (e.g. when verify call fails but webhook succeeds on the backend)
+    const poller = setInterval(async () => {
+      try {
+        const res = await apiClient.get(`/orders/${id}`);
+        const updated = res.data;
+        if (
+          (updated.payment_status || '').toLowerCase() === 'paid' ||
+          (updated.payment_status || '').toLowerCase() === 'completed' ||
+          updated.order_status === 'confirmed' ||
+          updated.order_status === 'cancelled'
+        ) {
+          setOrder(updated);
+          clearInterval(poller);
+          clearInterval(timer);
+        }
+      } catch {}
+    }, 5000);
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(poller);
+    };
   }, [order, id]);
 
   useEffect(() => {
-    const fetchOrder = async () => {
-      try {
-        const res = await apiClient.get(`/orders/${id}`);
-        setOrder(res.data);
-      } catch (err) {
-        toast.error('Failed to load order details');
-        navigate('/dashboard');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrder();
-  }, [id, navigate]);
+    fetchOrder(false);
+  }, [fetchOrder]);
+
+  useEffect(() => {
+    if (!order) return;
+    
+    const isOnlinePending = 
+      (order.payment_status || '').toLowerCase() !== 'paid' &&
+      (order.payment_status || '').toLowerCase() !== 'completed' &&
+      (order.payment_method || '').toLowerCase() !== 'cod' &&
+      !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase());
+
+    if (!isOnlinePending) return;
+
+    const pollTimer = setInterval(() => {
+      fetchOrder(true);
+    }, 10000);
+
+    return () => clearInterval(pollTimer);
+  }, [order, fetchOrder]);
 
   if (loading) {
     return (
@@ -445,7 +489,7 @@ const OrderDetailsPage = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            {(order.payment_status === 'Paid' || order.payment_status === 'completed') && (
+            {((order.payment_status || '').toLowerCase() === 'paid' || (order.payment_status || '').toLowerCase() === 'completed') && (
               <button
                 onClick={handleDownloadInvoice}
                 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-600 hover:text-primary border border-slate-300 rounded-xl px-4 py-2.5 bg-white transition-all shadow-sm hover:bg-slate-50"
@@ -490,7 +534,7 @@ const OrderDetailsPage = () => {
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Payment Method</h3>
             <div className="text-xs text-slate-600 space-y-2.5">
               <p className="font-extrabold text-slate-900 uppercase tracking-wider">{order.payment_method || 'Razorpay'}</p>
-              {order.payment_status === 'Paid' || order.payment_status === 'completed' ? (
+              {(order.payment_status || '').toLowerCase() === 'paid' || (order.payment_status || '').toLowerCase() === 'completed' ? (
                 <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1 font-semibold">
                   <p className="font-extrabold flex items-center gap-1.5 text-emerald-700">
                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Paid
@@ -508,6 +552,16 @@ const OrderDetailsPage = () => {
                     <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span> Pending Payment
                   </p>
                   <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">Status: {order.payment_status || 'Unpaid'}</p>
+                  <button
+                    onClick={() => {
+                      fetchOrder(false);
+                      toast.success('Order status synchronized.');
+                    }}
+                    className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-750 font-bold text-[9px] uppercase tracking-widest py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3 h-3 text-slate-500" />
+                    Sync Payment Status
+                  </button>
                   {timeLeft && timeLeft !== 'Expired' && (order.payment_method || '').toLowerCase() !== 'cod' && !['cancelled', 'failed'].includes((order.order_status || '').toLowerCase()) && (
                     <div className="mt-2 space-y-2">
                       <div className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-2 border border-amber-200">

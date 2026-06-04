@@ -403,7 +403,10 @@ export const useCheckout = () => {
                 navigate(`/order/${orderId}`);
               }
             } catch (err) {
-              toast.error(err.response?.data?.detail || err.message || 'Payment verification failed.');
+              // Payment was successful on Razorpay's side but verify call failed
+              // (e.g. server cold start, network timeout). The webhook will confirm it.
+              toast.info('Payment received! Confirming your order — this may take a moment.');
+              clearCart().catch(() => {});
               navigate(`/order/${orderId}`);
             } finally {
               setLoading(false);

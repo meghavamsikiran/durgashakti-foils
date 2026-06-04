@@ -115,7 +115,8 @@ async def mock_create_order(
         order_status="pending_payment" if payment_method != "cod" else "confirmed",
         stock_applied=False,
         shipping_address=shipping_address,
-        idempotency_key=idempotency_key or f"rzp_order_{uuid.uuid4().hex}",
+        idempotency_key=idempotency_key,
+        razorpay_order_id=idempotency_key or f"rzp_order_{uuid.uuid4().hex}",
         created_at=now,
         updated_at=now,
     )
@@ -136,7 +137,7 @@ async def mock_create_order(
         "payment_method": order.payment_method,
         "payment_status": order.payment_status,
         "order_status": order.order_status,
-        "razorpay_order_id": order.idempotency_key,
+        "razorpay_order_id": order.razorpay_order_id,
         "total_amount": float(order.total_amount)
     }
 
@@ -160,7 +161,12 @@ async def mock_verify_payment(
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     # Retrieve order
-    res = await db.execute(select(OrderModel).where(OrderModel.idempotency_key == rzp_order_id))
+    res = await db.execute(
+        select(OrderModel).where(
+            (OrderModel.razorpay_order_id == rzp_order_id) |
+            (OrderModel.idempotency_key == rzp_order_id)
+        ).with_for_update()
+    )
     order = res.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -213,7 +219,12 @@ async def mock_webhook(
     pay_entity = payload.get("payload", {}).get("payment", {}).get("entity", {})
     rzp_order_id = pay_entity.get("order_id")
 
-    res = await db.execute(select(OrderModel).where(OrderModel.idempotency_key == rzp_order_id))
+    res = await db.execute(
+        select(OrderModel).where(
+            (OrderModel.razorpay_order_id == rzp_order_id) |
+            (OrderModel.idempotency_key == rzp_order_id)
+        ).with_for_update()
+    )
     order = res.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
