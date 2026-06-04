@@ -126,6 +126,16 @@ const Footer = () => {
                   About Us
                 </Link>
               </li>
+              <li>
+                <Link to="/dashboard?tab=orders" className="text-sm font-semibold text-white/64 transition">
+                  Your Orders
+                </Link>
+              </li>
+              <li>
+                <Link to="/cart" className="text-sm font-semibold text-white/64 transition">
+                  Cart
+                </Link>
+              </li>
             </ul>
           </div>
 
