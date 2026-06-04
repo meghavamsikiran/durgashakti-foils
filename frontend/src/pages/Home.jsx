@@ -95,22 +95,18 @@ const Home = () => {
       `}</style>
 
       <section className="home-hero-stage relative isolate min-h-[620px] overflow-hidden bg-[#020807] md:min-h-[620px] flex items-center">
-        {/* Background Image Container with Contain and smooth fade gradient */}
-        <div className="absolute inset-0 z-0 flex justify-end overflow-hidden">
-          <div className="relative h-full w-full md:w-[65%] lg:w-[60%] opacity-20 md:opacity-100 transition-opacity duration-700 animate-fade-in">
-            <img
-              src="/homepage-hero-reference.png"
-              alt="Durga Shakti Foils Premium Packing Solutions"
-              className="h-full w-full object-cover object-right md:object-contain md:object-right-bottom select-none pointer-events-none"
-            />
-            {/* Blending Gradients to merge left and bottom edges */}
-            <div className="absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-[#020807] to-transparent hidden md:block" />
-            <div className="absolute inset-x-0 bottom-0 h-1/6 bg-gradient-to-t from-[#020807]/40 to-transparent hidden md:block" />
-          </div>
+        {/* Background Image Container spanning right side */}
+        <div className="absolute top-0 bottom-0 right-0 z-0 w-full md:w-[60%] lg:w-[55%] select-none pointer-events-none">
+          <img
+            src="/homepage-hero-reference.png"
+            alt="Durga Shakti Foils Premium Packing Solutions"
+            className="h-full w-full object-cover object-center md:object-right opacity-25 md:opacity-100 transition-opacity duration-700"
+          />
+          {/* Smooth blend overlay to merge the image with the black background */}
+          <div className="absolute inset-y-0 left-0 w-64 bg-gradient-to-r from-[#020807] to-transparent hidden md:block" />
         </div>
 
-        {/* Ambient background overlay for left content readability */}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,#020807_0%,#020807_35%,rgba(2,8,7,0.75)_55%,rgba(2,8,7,0)_100%)] z-[1] hidden md:block" />
+        {/* Mobile-only overlay for text readability */}
         <div className="absolute inset-0 bg-[#020807]/75 z-[1] md:hidden" />
 
         <div className="relative z-10 mx-auto flex w-full max-w-[1340px] px-6 pb-[112px] pt-14 md:px-12 lg:px-[90px]">
