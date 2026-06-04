@@ -109,7 +109,7 @@ const Home = () => {
             src="/homepage-hero-reference.png"
             alt="Durga Shakti Foils Premium Packing Solutions"
             className="h-full w-full object-cover opacity-30 md:opacity-100 transition-opacity duration-700"
-            style={{ objectPosition: '83% center' }}
+            style={{ objectPosition: '80% center' }}
           />
         </div>
 
