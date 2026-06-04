@@ -22,6 +22,7 @@ from deps import (
 )
 from storage_service import upload_image, upload_media, delete_asset
 from coupon_maintenance import cleanup_expired_coupons
+import database
 import uuid
 from datetime import datetime, timezone
 import pandas as pd
@@ -56,6 +57,53 @@ def generate_tracking_url(courier: str, tracking_number: str) -> str:
     elif "ekart" in c_lower:
         return f"https://ekartlogistics.com/track/{tracking_number}"
     return ""
+
+
+async def _process_return_refund_background(order_id: str, actor_id: str = "system") -> None:
+    try:
+        if not database.async_session_factory:
+            logger.warning("Refund background task skipped; database session factory is unavailable")
+            return
+        from routes.orders import trigger_razorpay_refund
+
+        async with database.async_session_factory() as session:
+            res = await session.execute(
+                select(OrderModel)
+                .where(OrderModel.id == order_id)
+                .with_for_update()
+            )
+            order = res.scalar_one_or_none()
+            if not order:
+                return
+            if str(order.payment_status or "").lower() not in {"paid", "completed", "refund_pending"}:
+                return
+            if str(order.payment_method or "").lower() == "cod":
+                return
+
+            success, err_msg, refund_info = await trigger_razorpay_refund(order, session)
+            if success:
+                refund_status = str((refund_info or {}).get("status") or "").lower()
+                order.payment_status = "refunded" if refund_status == "processed" else "refund_pending"
+                order.order_status = "refunded" if order.payment_status == "refunded" else "return_approved"
+                order.updated_at = datetime.now(timezone.utc)
+            else:
+                order.payment_status = "refund_pending"
+                if str(order.order_status or "").lower() == "return_requested":
+                    order.order_status = "return_approved"
+                await write_audit_log(
+                    session,
+                    "PAYMENT_RAZORPAY_REFUND_PENDING",
+                    actor_id,
+                    "order",
+                    order_id,
+                    {
+                        "razorpay_payment_id": order.razorpay_payment_id,
+                        "error": err_msg,
+                    },
+                )
+            await session.commit()
+    except Exception:
+        logger.exception("Background Razorpay refund task failed for order %s", order_id)
 
 ROLE_TEMPLATE_LABELS = {
     "OPERATIONS_ADMIN": "Operations Admin",
@@ -599,10 +647,15 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
 
     effective_status = new_status
     refund_warning = None
+    should_schedule_refund = False
     if new_status == "return_approved":
         effective_status = "return_approved"
         payment_status = str(order.payment_status or "").lower()
         if payment_method_lower != "cod" and payment_status in ("paid", "completed"):
+            order.payment_status = "refund_pending"
+            should_schedule_refund = True
+            refund_warning = "Return approved. Razorpay refund is processing in the background and will update automatically."
+        elif False:
             from routes.orders import trigger_razorpay_refund
             success, err_msg, refund_info = await trigger_razorpay_refund(order, db)
             if success:
@@ -696,6 +749,8 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
         res_payload["warning"] = warning_message
     if refund_warning:
         res_payload["warning"] = refund_warning
+    if should_schedule_refund:
+        asyncio.create_task(_process_return_refund_background(str(order.id), str(admin.id)))
 
     # ── Transactional Emails ─────────────────────────────────────────────
     try:
