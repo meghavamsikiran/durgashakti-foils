@@ -34,7 +34,7 @@ export const api = {
   // Payment
   createRazorpayOrder: (orderId) => apiClient.post(`/payment/razorpay/create-order?order_id=${orderId}`, null, { timeout: 90000 }),
   verifyRazorpayPayment: async (data) => {
-    const res = await apiClient.post('/payment/razorpay/verify', data, { timeout: 90000 });
+    const res = await apiClient.post('/payment/razorpay/verify', data, { silent: true, timeout: 90000 });
     apiClient.invalidateCache('/cart');
     apiClient.invalidateCache('/orders');
     return res;

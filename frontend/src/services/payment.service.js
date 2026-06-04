@@ -7,7 +7,7 @@ const paymentService = {
   },
 
   verifyRazorpayPayment: async (paymentData) => {
-    const response = await apiClient.post('/payment/razorpay/verify', paymentData, { timeout: 90000 });
+    const response = await apiClient.post('/payment/razorpay/verify', paymentData, { silent: true, timeout: 90000 });
     apiClient.invalidateCache('/cart');
     apiClient.invalidateCache('/orders');
     apiClient.invalidateCache('/admin/orders');

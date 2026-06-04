@@ -14,6 +14,15 @@ import { getProductPricing } from '../utils/productPricing';
 import { clearPendingRazorpayOrder, savePendingRazorpayOrder } from '../utils/pendingPayment';
 
 const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID;
+const PAYMENT_VERIFY_RETRY_DELAYS = [0, 1500, 3500];
+const PAYMENT_RECONCILE_RETRY_DELAYS = [0, 3000, 7000];
+
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const isRetryablePaymentError = (error) => {
+  if (!error?.status) return true;
+  return error.status === 408 || error.status === 429 || error.status >= 500;
+};
 
 const loadRazorpaySdk = () => new Promise((resolve, reject) => {
   if (window.Razorpay) {
@@ -70,7 +79,7 @@ const getCustomerCouponError = (message) => {
 export const useCheckout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { cart, clearCart, cartReady } = useCart();
+  const { cart, clearCart, clearLocalCart, cartReady } = useCart();
   
   // Prevent duplicate order submissions
   const orderInProgress = useRef(false);
@@ -242,6 +251,36 @@ export const useCheckout = () => {
     return true;
   };
 
+  const confirmRazorpayPayment = async (orderId, paymentPayload) => {
+    let lastError = null;
+
+    for (const delay of PAYMENT_VERIFY_RETRY_DELAYS) {
+      if (delay) await wait(delay);
+      try {
+        await paymentService.verifyRazorpayPayment(paymentPayload);
+        return { confirmed: true };
+      } catch (error) {
+        lastError = error;
+        if (!isRetryablePaymentError(error)) break;
+      }
+    }
+
+    for (const delay of PAYMENT_RECONCILE_RETRY_DELAYS) {
+      if (delay) await wait(delay);
+      try {
+        const result = await paymentService.reconcileRazorpayPayment(orderId);
+        if (result?.paid) {
+          return { confirmed: true };
+        }
+      } catch (error) {
+        lastError = error;
+        if (!isRetryablePaymentError(error)) break;
+      }
+    }
+
+    return { confirmed: false, error: lastError };
+  };
+
   const handleRazorpayPayment = (orderId, orderNumber) => {
     return new Promise(async (resolve, reject) => {
       if (!window.Razorpay) {
@@ -270,21 +309,36 @@ export const useCheckout = () => {
           description: 'Secure Payment',
           order_id: razorpay_order_id,
           handler: async (paymentResponse) => {
+            const verifyingToastId = toast.loading('Payment received. Confirming your order...');
             try {
-              await paymentService.verifyRazorpayPayment({
+              const confirmation = await confirmRazorpayPayment(orderId, {
                 order_id: orderId,
                 razorpay_order_id: paymentResponse.razorpay_order_id,
                 razorpay_payment_id: paymentResponse.razorpay_payment_id,
                 razorpay_signature: paymentResponse.razorpay_signature
               });
-              clearPendingRazorpayOrder(orderId);
-              clearCart().catch(() => {});
-              toast.success('Payment successful! Order confirmed.');
-              navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber || ''}`);
+              clearLocalCart();
+              toast.dismiss(verifyingToastId);
+
+              if (confirmation.confirmed) {
+                clearPendingRazorpayOrder(orderId);
+                toast.success('Payment successful! Order confirmed.');
+                navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber || ''}`);
+              } else {
+                toast.info('Payment received by Razorpay. We are finalizing your order now.', {
+                  duration: 10000,
+                });
+                navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber || ''}&confirming=1`);
+              }
               resolve();
             } catch (err) {
-              toast.error('Payment verification failed. Check your dashboard.');
-              reject(err);
+              toast.dismiss(verifyingToastId);
+              clearLocalCart();
+              toast.info('Payment received by Razorpay. We are finalizing your order now.', {
+                duration: 10000,
+              });
+              navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber || ''}&confirming=1`);
+              resolve();
             }
           },
           prefill: {

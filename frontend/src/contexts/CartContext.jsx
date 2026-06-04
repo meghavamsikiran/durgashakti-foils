@@ -230,6 +230,14 @@ export const CartProvider = ({ children }) => {
     }
   }, [token, cart]);
 
+  const clearLocalCart = useCallback(() => {
+    setCart({ items: [] });
+    setPendingQtyState({});
+    if (!token) {
+      localStorage.removeItem(GUEST_CART_KEY);
+    }
+  }, [token]);
+
   const cartItemCount = useMemo(() => {
     const cartTotal = cart.items?.reduce((total, item) => total + (item.quantity || 0), 0) || 0;
     // Add pending previews for products NOT yet in cart
@@ -248,10 +256,11 @@ export const CartProvider = ({ children }) => {
     updateCartItem,
     removeFromCart,
     clearCart,
+    clearLocalCart,
     fetchCart,
     cartItemCount,
     setPendingQty
-  }), [cart, loading, cartReady, addToCart, updateCartItem, removeFromCart, clearCart, fetchCart, cartItemCount, setPendingQty]);
+  }), [cart, loading, cartReady, addToCart, updateCartItem, removeFromCart, clearCart, clearLocalCart, fetchCart, cartItemCount, setPendingQty]);
 
   return (
     <CartContext.Provider value={value}>

@@ -1,20 +1,46 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle, Package } from 'lucide-react';
+import { CheckCircle, Clock, Package } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import paymentService from '../services/payment.service';
+import { clearPendingRazorpayOrder } from '../utils/pendingPayment';
 
 const OrderSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('order_id');
   const orderNumber = searchParams.get('order_number');
+  const [confirming, setConfirming] = useState(searchParams.get('confirming') === '1');
 
   useEffect(() => {
     if (!orderId) {
       navigate('/shop');
     }
   }, [orderId, navigate]);
+
+  useEffect(() => {
+    if (!orderId || !confirming) return;
+
+    let active = true;
+    const timer = setInterval(async () => {
+      try {
+        const result = await paymentService.reconcileRazorpayPayment(orderId);
+        if (active && result?.paid) {
+          clearPendingRazorpayOrder(orderId);
+          setConfirming(false);
+          clearInterval(timer);
+        }
+      } catch {
+        // Keep the page calm; dashboard/cart reconciliation will keep retrying.
+      }
+    }, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [orderId, confirming]);
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-6" data-testid="order-success-page">
@@ -25,12 +51,18 @@ const OrderSuccess = () => {
         className="text-center max-w-md"
       >
         <div className="mb-8">
-          <CheckCircle className="w-24 h-24 text-green-500 mx-auto mb-4" />
+          {confirming ? (
+            <Clock className="w-24 h-24 text-amber-500 mx-auto mb-4" />
+          ) : (
+            <CheckCircle className="w-24 h-24 text-green-500 mx-auto mb-4" />
+          )}
           <h1 className="text-4xl font-bold mb-4" style={{ fontFamily: 'Manrope' }} data-testid="success-title">
-            Successfully!
+            {confirming ? 'Payment Received' : 'Successfully!'}
           </h1>
           <p className="text-lg text-muted-foreground">
-            Thank you for your purchase. Your order has been confirmed.
+            {confirming
+              ? 'Razorpay has received your payment. We are finalizing your order and it will appear in My Orders shortly.'
+              : 'Thank you for your purchase. Your order has been confirmed.'}
           </p>
         </div>
 

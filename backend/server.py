@@ -100,6 +100,9 @@ async def lifespan(app: FastAPI):
                             if str(order.payment_status or "").lower() in {"paid", "completed"}:
                                 logger.info(f"Pending order {order.order_number} was paid in Razorpay; skipping timeout cancellation")
                                 continue
+                            if order.razorpay_order_id:
+                                logger.info(f"Pending order {order.order_number} has Razorpay order {order.razorpay_order_id}; keeping it pending for reconciliation")
+                                continue
 
                             logger.info(f"Auto-cancelling expired pending order {order.order_number} (created at {order.created_at})")
                             
