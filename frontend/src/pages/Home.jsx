@@ -4,31 +4,19 @@ import {
   ArrowRight,
   BadgeCheck,
   Boxes,
-  Flame,
-  Leaf,
   PackageCheck,
   Recycle,
   ShieldCheck,
   ShoppingCart,
-  ThermometerSun,
-  User,
+  ThermometerSun
 } from 'lucide-react';
-
-
-const heroFeatures = [
-  { label: '100% Virgin Aluminium', icon: Boxes },
-  { label: 'Heat Lock Technology', icon: ThermometerSun },
-  { label: 'Strong & Leak Proof', icon: Flame },
-  { label: 'Eco Friendly & Recyclable', icon: Leaf },
-  { label: 'Hygienic & Safe', icon: ShieldCheck },
-];
 
 const metrics = [
   { value: '11', label: 'Microns Thickness', icon: Boxes },
   { value: '72', label: 'Meters Length', icon: PackageCheck },
   { value: '100%', label: 'Virgin Aluminium', icon: ShieldCheck },
   { value: 'Heat Lock', label: 'Technology', icon: ThermometerSun },
-  { value: 'Eco', label: 'Friendly Recyclable', icon: Recycle },
+  { value: 'Eco', label: 'Friendly Recyclable', icon: Recycle }
 ];
 
 const processSteps = [
@@ -36,7 +24,7 @@ const processSteps = [
   { title: 'Precision Rolling', image: '/landing-rolling.jpg' },
   { title: 'Quality Testing', image: '/landing-testing.jpg' },
   { title: 'Packaging', image: '/landing-packaging.jpg' },
-  { title: 'Delivered Across India', image: '/landing-delivery.jpg' },
+  { title: 'Delivered Across India', image: '/landing-delivery.jpg' }
 ];
 
 const Home = () => {
@@ -109,19 +97,7 @@ const Home = () => {
             />
           </div>
 
-          <div id="why" className="relative hidden min-h-[350px] md:block">
-            <div className="absolute bottom-4 right-[3%] w-[58%] rounded-[22px] bg-[linear-gradient(180deg,rgba(223,223,216,0.82),rgba(192,192,185,0.76))] p-4 text-center text-black shadow-[0_18px_60px_rgba(0,0,0,0.45)] backdrop-blur-sm">
-              <h2 className="mb-4 font-manrope text-lg font-black">Why Choose Durga Shakti Foils?</h2>
-              <div className="grid grid-cols-5 gap-3">
-                {heroFeatures.map((feature) => (
-                  <div key={feature.label} className="flex flex-col items-center gap-1.5">
-                    <feature.icon className="h-7 w-7 text-[#0b2614]" strokeWidth={1.7} />
-                    <span className="text-[12px] font-bold leading-tight">{feature.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <div className="hidden min-h-[350px] md:block" />
         </div>
       </section>
 
@@ -136,12 +112,9 @@ const Home = () => {
         <HeatComparison />
         <TrustPanel />
       </section>
-
-      <Footer onNavigate={go} />
     </main>
   );
 };
-
 
 const MetricStrip = () => (
   <section className="border-y border-white/15 bg-[#050a09]">
@@ -161,7 +134,15 @@ const MetricStrip = () => (
 
 const ProductRange = ({ onNavigate }) => (
   <div className="relative overflow-hidden bg-[#f3efe8] text-black md:min-h-[270px]">
-    <img src="/landing-products.jpg" alt="Durga Shakti Hot Wrap aluminum foil product range" width="1600" height="833" loading="lazy" decoding="async" className="h-auto w-full object-cover object-center md:absolute md:inset-y-0 md:right-0 md:h-full md:w-[72%]" />
+    <img
+      src="/landing-products.jpg"
+      alt="Durga Shakti Hot Wrap aluminum foil product range"
+      width="1600"
+      height="833"
+      loading="lazy"
+      decoding="async"
+      className="h-auto w-full object-cover object-center md:absolute md:inset-y-0 md:right-0 md:h-full md:w-[72%]"
+    />
     <div className="relative z-10 flex min-h-[230px] w-full flex-col justify-center bg-[#f3efe8]/96 px-6 py-8 sm:px-10 md:h-full md:min-h-[270px] md:w-[37%] md:py-0">
       <p className="mb-4 text-xs font-black text-[#008b2c]">Our Premium Range</p>
       <h2 className="font-serif text-[27px] font-bold leading-tight">Premium Foils For Every Need</h2>
@@ -212,14 +193,6 @@ const HeatComparison = () => (
   </div>
 );
 
-const ThermalScale = () => (
-  <div className="hidden h-[128px] grid-rows-[auto_1fr_auto] items-center justify-items-center text-[9px] font-bold text-white/65 sm:grid">
-    <span>80°</span>
-    <div className="my-1 h-full w-2.5 rounded-full border border-white/25 bg-[linear-gradient(180deg,#e32016_0%,#ff902e_22%,#f2ec62_42%,#35c79c_58%,#2385da_78%,#123f94_100%)] shadow-[0_0_16px_rgba(255,255,255,0.12)]" />
-    <span>30°</span>
-  </div>
-);
-
 const TrustPanel = () => (
   <div className="min-w-0 bg-[#020605]">
     <img
@@ -232,40 +205,6 @@ const TrustPanel = () => (
       decoding="sync"
       className="block h-auto w-full"
     />
-  </div>
-);
-
-const Footer = ({ onNavigate }) => (
-  <footer className="border-t border-white/10 bg-[#030504] px-6 py-10 md:px-12 lg:px-[50px]">
-    <div className="mx-auto grid max-w-[1536px] gap-8 md:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
-      <div>
-        <div className="flex items-center gap-3">
-          <img src="/favicon.png" alt="" className="h-9 w-9 object-contain brightness-0 invert" />
-          <div>
-            <div className="font-serif text-2xl font-bold">Durga Shakti Foils</div>
-            <div className="text-xs font-bold text-white/75">Wrap Purity, Seal Freshness</div>
-          </div>
-        </div>
-        <p className="mt-4 max-w-sm text-sm leading-6 text-white/70">Premium food-grade aluminium foil solutions engineered for freshness, heat lock performance, and reliable commercial packaging.</p>
-      </div>
-      <FooterLinks title="Company" items={[['Home', '/'], ['Shop', '/shop'], ['About Us', '/about'], ['Contact Us', '/contact']]} onNavigate={onNavigate} />
-      <FooterLinks title="Quality" items={[['ISO Certified', '#'], ['BPA Free', '#'], ['Food Grade Certified', '#'], ['Bulk Orders', '/contact']]} onNavigate={onNavigate} />
-      <div>
-        <h3 className="font-manrope text-sm font-black uppercase tracking-widest text-[#25d958]">Ready To Order?</h3>
-        <p className="mt-3 text-sm leading-6 text-white/70">Talk to us for retail packs, restaurant supply, and bulk packaging requirements.</p>
-        <button onClick={() => onNavigate('/contact')} className="mt-5 inline-flex h-11 items-center gap-3 rounded-lg bg-[#39c653] px-6 text-sm font-black text-white">Contact Us <ArrowRight className="h-4 w-4" /></button>
-      </div>
-    </div>
-    <div className="mx-auto mt-10 max-w-[1536px] border-t border-white/10 pt-5 text-xs font-semibold text-white/45">(c) 2026 Durga Shakti Foils Pvt. Ltd. All rights reserved.</div>
-  </footer>
-);
-
-const FooterLinks = ({ title, items, onNavigate }) => (
-  <div>
-    <h3 className="font-manrope text-sm font-black uppercase tracking-widest text-[#25d958]">{title}</h3>
-    <div className="mt-4 grid gap-2">
-      {items.map(([label, to]) => <button key={label} onClick={() => to !== '#' && onNavigate(to)} className="w-fit text-sm font-semibold text-white/70 transition hover:text-white">{label}</button>)}
-    </div>
   </div>
 );
 

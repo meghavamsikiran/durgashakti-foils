@@ -69,13 +69,12 @@ function ScrollToTop() {
 function AppRoutes() {
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin');
-  const isLandingPath = location.pathname === '/';
 
   return (
     <AuthProvider>
       <CartProvider>
         <ProgressProvider>
-        <div className="App">
+        <div className={`App ${isAdminPath ? 'admin-theme' : 'public-theme'}`}>
           <ScrollToTop />
           <RouteTransitionLoader />
           {!isAdminPath && <Navbar />}
@@ -273,7 +272,7 @@ function AppRoutes() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
-          {!isAdminPath && !isLandingPath && <Footer />}
+          {!isAdminPath && <Footer />}
           <Toaster position="top-center" closeButton visibleToasts={1} />
         </div>
         </ProgressProvider>
