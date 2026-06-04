@@ -32,6 +32,81 @@ def is_test_mode() -> bool:
     return not k or k.startswith('rzp_test_') or k in ('rzp_test_dummy', '')
 
 
+async def check_and_sync_razorpay_payment(order: OrderModel, db: AsyncSession):
+    if order.payment_method == "cod" or str(order.payment_status).lower() in ("paid", "completed", "refunded"):
+        return order
+
+    if is_test_mode() or not order.razorpay_order_id:
+        return order
+
+    try:
+        rz_order = razorpay_client.order.fetch(order.razorpay_order_id)
+        if rz_order.get("status") == "paid":
+            # Find payments for this order to retrieve a payment ID
+            payments = razorpay_client.order.payments(order.razorpay_order_id)
+            payment_id = None
+            if payments and payments.get("items"):
+                # find the captured/authorized payment
+                for p in payments["items"]:
+                    if p.get("status") in ("captured", "authorized"):
+                        payment_id = p.get("id")
+                        break
+            if not payment_id:
+                payment_id = f"pay_captured_{order.razorpay_order_id[6:]}"
+
+            now = datetime.now(timezone.utc)
+            # Atomic stock deduction if not already applied
+            if not order.stock_applied:
+                deducted = []
+                try:
+                    items_to_deduct = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
+                    if items_to_deduct:
+                        prod_ids = [item.get("product_id") for item in items_to_deduct]
+                        prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+                        locked_products = {str(p.id): p for p in prod_res.scalars().all()}
+                        for item in items_to_deduct:
+                            pid = item.get("product_id")
+                            qty = int(item.get("quantity", 0))
+                            product = locked_products.get(str(pid))
+                            if product:
+                                product.stock_quantity = max(0, int(product.stock_quantity) - qty)
+                                product.units_sold = int(product.units_sold or 0) + qty
+                                product.updated_at = now
+                                if product.stock_quantity <= 0:
+                                    product.in_stock = False
+                                deducted.append((product, qty))
+                    order.stock_applied = True
+                except Exception as e:
+                    for prod, qty in deducted:
+                        prod.stock_quantity = int(prod.stock_quantity or 0) + qty
+                        prod.units_sold = max(0, int(prod.units_sold or 0) - qty)
+                        prod.in_stock = True
+                        prod.updated_at = now
+                    logging.error(f"Failed auto-deducting stock in sync: {e}")
+
+            order.payment_status = "Paid"
+            order.order_status = "confirmed"
+            order.razorpay_payment_id = payment_id
+            order.updated_at = now
+            await db.flush()
+            
+            # Clear user cart
+            if order.user_id:
+                try:
+                    cart_res = await db.execute(select(CartModel).where(CartModel.user_id == order.user_id))
+                    cart = cart_res.scalar_one_or_none()
+                    if cart:
+                        cart.items = []
+                        cart.updated_at = now
+                except Exception:
+                    pass
+
+            await write_audit_log(db, "ORDER_PAYMENT_CAPTURED_AUTO_SYNC", order.user_id, "order", str(order.id), {"payment_id": payment_id})
+    except Exception as e:
+        logging.error(f"Error syncing order payment status for {order.order_number}: {e}")
+    return order
+
+
 async def _enrich_order_items(db: AsyncSession, orders_data):
     if not orders_data:
         return orders_data
@@ -311,8 +386,17 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
     result = await db.execute(
         select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.updated_at.desc()).limit(1000)
     )
-    orders = [row_to_dict(o) for o in result.scalars().all()]
-    return await _enrich_order_items(db, orders)
+    orders = result.scalars().all()
+    any_updated = False
+    for order in orders:
+        if order.payment_method != "cod" and str(order.payment_status).lower() in ("pending", "pending_payment"):
+            await check_and_sync_razorpay_payment(order, db)
+            any_updated = True
+    if any_updated:
+        await db.commit()
+        
+    orders_dict = [row_to_dict(o) for o in orders]
+    return await _enrich_order_items(db, orders_dict)
 
 
 @router.get("/orders/{order_id}")
@@ -322,6 +406,10 @@ async def get_order(order_id: str, current_user: UserSchema = Depends(get_curren
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    
+    order = await check_and_sync_razorpay_payment(order, db)
+    await db.commit()
+    
     d = row_to_dict(order)
     return await _enrich_order_items(db, d)
 
