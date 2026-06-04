@@ -8,7 +8,15 @@ import {
   Recycle,
   Ruler,
   ShieldCheck,
-  ThermometerSun
+  ThermometerSun,
+  Utensils,
+  Building2,
+  ShoppingBag,
+  ChefHat,
+  Hospital,
+  Landmark,
+  Factory,
+  Store
 } from 'lucide-react';
 
 const metrics = [
@@ -95,12 +103,13 @@ const Home = () => {
       `}</style>
 
       <section className="home-hero-stage relative isolate min-h-[620px] md:min-h-[760px] lg:min-h-[820px] overflow-visible bg-[#020807] flex items-center">
-        {/* Full-bleed Background Image */}
+        {/* Full-bleed Background Image with 5px shift to the right */}
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
           <img
             src="/homepage-hero-reference.png"
             alt="Durga Shakti Foils Premium Packing Solutions"
-            className="h-full w-full object-cover object-center opacity-30 md:opacity-100 transition-opacity duration-700"
+            className="h-full w-full object-cover opacity-30 md:opacity-100 transition-opacity duration-700"
+            style={{ objectPosition: '83% center' }}
           />
         </div>
 
@@ -165,6 +174,8 @@ const Home = () => {
       <PremiumRange go={go} />
 
       <ComparisonSection />
+
+      <IndustriesSection />
     </main>
   );
 };
@@ -230,13 +241,49 @@ const ComparisonSection = () => (
   <section className="bg-[#020605]">
     <img
       src="/normal-vs-durgashakti-foil.png"
-      alt="Normal Foil vs Durga Shakti Foil comparison and industries served"
+      alt="Normal Foil vs Durga Shakti Foil comparison"
       width="1774"
       height="887"
       loading="lazy"
       decoding="async"
       className="block h-auto w-full object-contain"
     />
+  </section>
+);
+
+const industries = [
+  { name: 'Restaurants', icon: Utensils },
+  { name: 'Hotels', icon: Building2 },
+  { name: 'Takeaways', icon: ShoppingBag },
+  { name: 'Catering', icon: ChefHat },
+  { name: 'Hospitals', icon: Hospital },
+  { name: 'Institutions', icon: Landmark },
+  { name: 'Food Manufacturers', icon: Factory },
+  { name: 'Retail Stores', icon: Store }
+];
+
+const IndustriesSection = () => (
+  <section className="bg-[#020605] py-16 px-6 md:px-12 lg:px-[90px] border-t border-white/5">
+    <div className="mx-auto max-w-[1200px]">
+      <h2 className="text-[12px] font-black uppercase tracking-widest text-[#25d958] mb-8">
+        INDUSTRIES WE SERVE
+      </h2>
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+        {industries.map((item) => (
+          <div
+            key={item.name}
+            className="group flex flex-col items-center justify-center p-6 rounded-xl border border-white/10 bg-[#070d0b]/80 text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#25d958]/40 hover:bg-[#0b1411]/90 hover:shadow-[0_10px_20px_rgba(37,217,88,0.08)] cursor-pointer"
+          >
+            <div className="mb-4 text-[#25d958] transition-transform duration-300 group-hover:scale-110">
+              <item.icon className="h-10 w-10 stroke-[1.5]" />
+            </div>
+            <span className="text-[13px] font-bold text-white group-hover:text-[#25d958] transition-colors duration-300 leading-tight">
+              {item.name}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   </section>
 );
 
