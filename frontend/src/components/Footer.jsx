@@ -101,7 +101,7 @@ const Footer = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={label}
-                    className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition hover:border-[#20dc5b] hover:bg-[#20dc5b] hover:text-black"
+                    className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition"
                   >
                     <Icon className="h-4 w-4" />
                   </a>
@@ -116,17 +116,17 @@ const Footer = () => {
             </h3>
             <ul className="mt-5 space-y-3">
               <li>
-                <Link to="/" className="text-sm font-semibold text-white/64 transition hover:text-[#20dc5b]">
+                <Link to="/" className="text-sm font-semibold text-white/64 transition">
                   Home
                 </Link>
               </li>
               <li>
-                <Link to="/shop" className="text-sm font-semibold text-white/64 transition hover:text-[#20dc5b]">
+                <Link to="/shop" className="text-sm font-semibold text-white/64 transition">
                   Shop
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-sm font-semibold text-white/64 transition hover:text-[#20dc5b]">
+                <Link to="/about" className="text-sm font-semibold text-white/64 transition">
                   About Us
                 </Link>
               </li>
@@ -170,7 +170,7 @@ const Footer = () => {
                   <Phone className="h-4 w-4 flex-shrink-0 text-[#20dc5b]" />
                   <a
                     href={`tel:${profile.companyPhone}`}
-                    className="text-sm font-semibold text-white/68 transition hover:text-[#20dc5b]"
+                    className="text-sm font-semibold text-white/68 transition"
                   >
                     {profile.companyPhone}
                   </a>
@@ -181,7 +181,7 @@ const Footer = () => {
                   <Mail className="h-4 w-4 flex-shrink-0 text-[#20dc5b]" />
                   <a
                     href={`mailto:${profile.companyEmail}`}
-                    className="text-sm font-semibold text-white/68 transition hover:text-[#20dc5b]"
+                    className="text-sm font-semibold text-white/68 transition"
                   >
                     {profile.companyEmail}
                   </a>
@@ -193,7 +193,7 @@ const Footer = () => {
                     href={profile.googleMapsLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm font-bold text-[#20dc5b] transition hover:text-white"
+                    className="inline-flex items-center gap-2 text-sm font-bold text-[#20dc5b] transition"
                   >
                     View on map
                     <ExternalLink className="h-3.5 w-3.5" />

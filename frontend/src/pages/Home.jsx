@@ -7,7 +7,6 @@ import {
   PackageCheck,
   Recycle,
   ShieldCheck,
-  ShoppingCart,
   ThermometerSun
 } from 'lucide-react';
 
@@ -73,13 +72,13 @@ const Home = () => {
               Premium food-grade aluminium foils for every kitchen, every business, every time.
             </p>
             <div className="mt-7 flex flex-wrap gap-5">
-              <button onClick={() => go('/shop')} className="inline-flex h-11 items-center gap-3 rounded-lg bg-[#39c653] px-7 text-sm font-black text-white shadow-[0_10px_26px_rgba(37,217,88,0.24)] transition hover:bg-[#48d862]">
+              <button onClick={() => go('/shop')} className="inline-flex h-11 items-center gap-3 rounded-lg bg-[#39c653] px-7 text-sm font-black text-white shadow-[0_10px_26px_rgba(37,217,88,0.24)] transition">
                 Shop Now
                 <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/60">
                   <ArrowRight className="h-3 w-3" />
                 </span>
               </button>
-              <button onClick={() => go('/shop')} className="inline-flex h-11 items-center gap-3 rounded-lg border border-[#1e8438] bg-black/30 px-7 text-sm font-black text-white transition hover:bg-[#102016]">
+              <button onClick={() => go('/shop')} className="inline-flex h-11 items-center gap-3 rounded-lg border border-[#1e8438] bg-black/30 px-7 text-sm font-black text-white transition">
                 Explore Products
                 <span className="flex h-5 w-5 items-center justify-center rounded-full border border-[#b98923] text-[#b98923]">
                   <ArrowRight className="h-3 w-3" />
@@ -108,7 +107,7 @@ const Home = () => {
         <FactoryFlow onNavigate={go} />
       </section>
 
-      <section className="grid border-b border-white/15 bg-[#020403] lg:grid-cols-2">
+      <section className="border-b border-white/15 bg-[#020403]">
         <HeatComparison />
         <TrustPanel />
       </section>
@@ -146,7 +145,7 @@ const ProductRange = ({ onNavigate }) => (
     <div className="relative z-10 flex min-h-[230px] w-full flex-col justify-center bg-[#f3efe8]/96 px-6 py-8 sm:px-10 md:h-full md:min-h-[270px] md:w-[37%] md:py-0">
       <p className="mb-4 text-xs font-black text-[#008b2c]">Our Premium Range</p>
       <h2 className="font-serif text-[27px] font-bold leading-tight">Premium Foils For Every Need</h2>
-      <button onClick={() => onNavigate('/shop')} className="mt-9 inline-flex h-11 w-fit items-center gap-5 rounded-lg border border-[#19a044] bg-[#edf5ed] px-6 text-sm font-bold text-[#008b2c] transition hover:bg-white">
+      <button onClick={() => onNavigate('/shop')} className="mt-9 inline-flex h-11 w-fit items-center gap-5 rounded-lg border border-[#19a044] bg-[#edf5ed] px-6 text-sm font-bold text-[#008b2c] transition">
         View All Products
         <ArrowRight className="h-4 w-4" />
       </button>
@@ -173,163 +172,38 @@ const FactoryFlow = ({ onNavigate }) => (
         <ShieldCheck className="h-10 w-10 shrink-0 text-[#25d958]" strokeWidth={1.6} />
         <p className="max-w-xl text-sm font-semibold leading-6 text-white/90">Every roll is manufactured under strict quality control ensuring safety, strength and superior performance.</p>
       </div>
-      <button onClick={() => onNavigate('/about')} className="h-11 rounded-lg border border-[#25d958]/70 px-6 text-sm font-bold text-white transition hover:bg-[#25d958]/10">Know More About Us</button>
+      <button onClick={() => onNavigate('/about')} className="h-11 rounded-lg border border-[#25d958]/70 px-6 text-sm font-bold text-white transition">Know More About Us</button>
     </div>
   </div>
 );
 
 const HeatComparison = () => (
-  <div className="relative min-w-0 border-b border-white/10 bg-[#020605] lg:border-b-0 lg:border-r lg:border-white/15 p-4 sm:p-8 flex flex-col justify-between select-text">
-    <div className="mb-6">
-      <p className="text-xs sm:text-sm font-serif text-white/60 tracking-wider">
-        See The Difference. Feel The Confidence.
-      </p>
-      <h2 className="text-xl sm:text-2xl lg:text-3xl font-serif font-extrabold text-[#25d958] mt-1">
-        See Why Food Stays Hot
-      </h2>
-    </div>
-
-    <div className="flex flex-row items-center justify-between gap-1 sm:gap-4 my-auto py-4">
-      <div className="flex-1 flex flex-col items-center">
-        <span className="inline-block py-1 px-2.5 sm:px-4 rounded-full bg-white/10 text-white font-extrabold text-[9px] sm:text-xs uppercase tracking-wider mb-4 text-center">
-          Normal Wrapping
-        </span>
-        
-        <div className="flex items-center justify-center gap-0.5 sm:gap-2 w-full">
-          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-            <div className="text-right flex flex-col justify-between h-20 sm:h-28 text-[8px] sm:text-[10px]">
-              <div>
-                <span className="block text-white/55 font-bold uppercase tracking-wider leading-none">Heat Loss</span>
-                <span className="block text-red-500 font-extrabold uppercase mt-0.5">High</span>
-              </div>
-              <span className="text-white/30 font-mono font-bold leading-none mt-1 sm:mt-2">600</span>
-              <span className="text-white/30 font-mono font-bold leading-none mb-1">300</span>
-              <div className="mt-1 sm:mt-2">
-                <span className="block text-white/55 font-bold uppercase tracking-wider leading-none">Freshness</span>
-                <span className="block text-red-500 font-extrabold uppercase mt-0.5">Low</span>
-              </div>
-            </div>
-            <img src="/scale-normal.png" alt="Normal wrapping temperature scale" className="h-20 sm:h-28 object-contain shrink-0" />
-          </div>
-
-          <img src="/tray-normal.png" alt="Normal wrapping heat signature" className="w-20 xs:w-28 sm:w-36 md:w-40 object-contain" />
-        </div>
-      </div>
-
-      <div className="flex flex-col items-center justify-center h-full gap-2 shrink-0">
-        <div className="w-px h-10 sm:h-12 bg-white/20"></div>
-        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-white/20 bg-[#020605] text-white text-[9px] sm:text-xs font-black flex items-center justify-center shadow-lg shadow-white/5">
-          VS
-        </div>
-        <div className="w-px h-10 sm:h-12 bg-white/20"></div>
-      </div>
-
-      <div className="flex-1 flex flex-col items-center">
-        <span className="inline-block py-1 px-2.5 sm:px-4 rounded-full bg-[#006e1b] text-white font-extrabold text-[9px] sm:text-xs uppercase tracking-wider mb-4 text-center font-bold">
-          Hot Wrap Foils
-        </span>
-
-        <div className="flex items-center justify-center gap-0.5 sm:gap-2 w-full">
-          <img src="/tray-hot.png" alt="Hot Wrap Foils heat signature" className="w-20 xs:w-28 sm:w-36 md:w-40 object-contain" />
-
-          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-            <img src="/scale-hot.png" alt="Hot Wrap Foils temperature scale" className="h-20 sm:h-28 object-contain shrink-0" />
-            <div className="text-left flex flex-col justify-between h-20 sm:h-28 text-[8px] sm:text-[10px]">
-              <div>
-                <span className="block text-white/55 font-bold uppercase tracking-wider leading-none">Heat Retention</span>
-                <span className="block text-[#25d958] font-extrabold uppercase mt-0.5">High</span>
-              </div>
-              <span className="text-white/30 font-mono font-bold leading-none mt-1 sm:mt-2">600</span>
-              <span className="text-white/30 font-mono font-bold leading-none mb-1">300</span>
-              <div className="mt-1 sm:mt-2">
-                <span className="block text-white/55 font-bold uppercase tracking-wider leading-none">Freshness</span>
-                <span className="block text-[#25d958] font-extrabold uppercase mt-0.5">High</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div className="mt-4 text-center">
-      <p className="text-[10px] sm:text-xs text-white/60 leading-relaxed max-w-md mx-auto">
-        Advanced Heat Lock Technology keeps your food hot, fresh and flavorful for longer.
-      </p>
-    </div>
+  <div className="mx-auto w-full max-w-[1536px] border-b border-white/10 bg-[#020605]">
+    <img
+      src="/heat-comparison-exact.png"
+      alt="Thermal comparison between normal wrapping and Hot Wrap Foils"
+      width="2148"
+      height="732"
+      loading="eager"
+      fetchPriority="high"
+      decoding="sync"
+      className="block h-auto w-full object-contain"
+    />
   </div>
 );
 
 const TrustPanel = () => (
-  <div className="relative min-w-0 bg-[#020605] p-6 sm:p-8 flex flex-col justify-between select-text">
-    <div className="mb-6">
-      <h2 className="text-xl sm:text-2xl lg:text-3xl font-serif font-extrabold text-white">
-        Trusted By Thousands. Every Day.
-      </h2>
-    </div>
-
-    <div className="grid grid-cols-2 gap-3 sm:gap-4 my-auto py-2">
-      <div className="border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-all rounded-xl p-3 sm:p-4 flex items-center justify-between shadow-lg">
-        <div className="min-w-0">
-          <div className="text-lg sm:text-2xl font-extrabold text-[#25d958] font-manrope leading-none">1000+</div>
-          <div className="text-[9px] sm:text-[11px] font-semibold text-white/70 uppercase tracking-wider mt-1.5 leading-tight truncate">Businesses Served</div>
-        </div>
-        <div className="h-6 w-6 sm:h-8 sm:w-8 text-[#25d958] flex items-center justify-center shrink-0">
-          <svg className="w-full h-full" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-        </div>
-      </div>
-
-      <div className="border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-all rounded-xl p-3 sm:p-4 flex items-center justify-between shadow-lg">
-        <div className="min-w-0">
-          <div className="text-lg sm:text-2xl font-extrabold text-[#25d958] font-manrope leading-none">50+</div>
-          <div className="text-[9px] sm:text-[11px] font-semibold text-white/70 uppercase tracking-wider mt-1.5 leading-tight truncate">Cities Across India</div>
-        </div>
-        <div className="h-6 w-6 sm:h-8 sm:w-8 text-[#25d958] flex items-center justify-center shrink-0">
-          <svg className="w-full h-full" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </div>
-      </div>
-
-      <div className="border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-all rounded-xl p-3 sm:p-4 flex items-center justify-between shadow-lg">
-        <div className="min-w-0">
-          <div className="text-lg sm:text-2xl font-extrabold text-[#25d958] font-manrope leading-none">99%</div>
-          <div className="text-[9px] sm:text-[11px] font-semibold text-white/70 uppercase tracking-wider mt-1.5 leading-tight truncate">Customer Satisfaction</div>
-        </div>
-        <div className="h-6 w-6 sm:h-8 sm:w-8 text-[#25d958] flex items-center justify-center shrink-0">
-          <svg className="w-full h-full" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-      </div>
-
-      <div className="border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-all rounded-xl p-3 sm:p-4 flex items-center justify-between shadow-lg">
-        <div className="min-w-0">
-          <div className="text-lg sm:text-2xl font-extrabold text-[#25d958] font-manrope leading-none">100%</div>
-          <div className="text-[9px] sm:text-[11px] font-semibold text-white/70 uppercase tracking-wider mt-1.5 leading-tight truncate">Food Grade Certified</div>
-        </div>
-        <div className="h-6 w-6 sm:h-8 sm:w-8 text-[#25d958] flex items-center justify-center shrink-0">
-          <svg className="w-full h-full" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <div className="mt-4">
-      <h3 className="text-[10px] sm:text-xs font-semibold text-white/60 uppercase tracking-widest text-center mb-3">
-        Trusted By Leading Brands
-      </h3>
-      <img
-        src="/trusted-brands.png"
-        alt="Leading Restaurant Brands (Haldiram's, Barbeque Nation, Biryani Blues, Box8, Paradise, Subway)"
-        width="2173"
-        height="204"
-        className="w-full h-auto object-contain opacity-85"
-      />
-    </div>
+  <div className="mx-auto w-full max-w-[1536px] bg-[#020605]">
+    <img
+      src="/trusted-panel-exact.png"
+      alt="Trusted by thousands statistics and leading restaurant brands"
+      width="2173"
+      height="724"
+      loading="eager"
+      fetchPriority="high"
+      decoding="sync"
+      className="block h-auto w-full object-contain"
+    />
   </div>
 );
 
