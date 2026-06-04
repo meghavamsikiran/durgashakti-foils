@@ -142,6 +142,8 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
             if str((refund or {}).get("status") or "").lower() == "processed"
         ]
         refundable_amount = sum(int((refund or {}).get("amount") or 0) for refund in pending_refunds + processed_refunds)
+        refunded_amount = sum(int((refund or {}).get("amount") or 0) for refund in processed_refunds)
+        usable_refunds = pending_refunds + processed_refunds
         if refundable_amount >= amount_paise and existing_items:
             latest_refund = sorted(existing_items, key=lambda r: r.get("created_at") or 0, reverse=True)[0]
             logger.info("Existing Razorpay refund covers order %s: %s", order.order_number, latest_refund)
