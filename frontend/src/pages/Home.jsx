@@ -103,21 +103,20 @@ const Home = () => {
       `}</style>
 
       <section className="home-hero-stage relative isolate min-h-[620px] md:min-h-[760px] lg:min-h-[820px] overflow-visible bg-[#020807] flex flex-col md:flex-row md:items-center">
-        {/* Full-bleed Background Image with 5px shift to the right */}
-        <div className="absolute inset-0 md:left-auto md:right-0 md:w-[60%] z-0 select-none pointer-events-none">
+        {/* Hero Background Image - Absolute on desktop, relative flow on mobile to prevent text overlay */}
+        <div className="relative md:absolute w-full md:w-[60%] md:right-0 md:left-auto h-[260px] sm:h-[340px] md:h-full z-0 select-none pointer-events-none mt-6 md:mt-0 order-2 md:order-none">
           <img
             src="/homepage-hero-bg.jpg"
             alt="Durga Shakti Foils Premium Packing Solutions"
-            className="h-full w-full object-cover opacity-70 md:opacity-100 transition-opacity duration-700"
+            className="h-full w-full object-cover opacity-100 transition-opacity duration-700"
             style={{ objectPosition: 'center' }}
           />
         </div>
 
-        {/* Smooth gradient overlay to ensure text readability on the left */}
+        {/* Smooth gradient overlay to ensure text readability on the left (desktop only) */}
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#020807_0%,#020807_35%,rgba(2,8,7,0.4)_65%,rgba(2,8,7,0)_100%)] z-[1] hidden md:block" />
-        <div className="absolute inset-0 bg-[#020807]/45 z-[1] md:hidden" />
 
-        <div className="relative z-10 mx-auto flex w-full max-w-[1340px] px-6 pb-10 md:pb-[112px] pt-14 md:px-12 lg:px-[90px]">
+        <div className="relative z-10 mx-auto flex w-full max-w-[1340px] px-6 pb-4 pt-14 md:px-12 lg:px-[90px] order-1 md:order-none">
           <div className="max-w-[455px]">
             <div className="mb-4 inline-flex h-7 items-center gap-2 rounded-full border border-[#16823a]/80 bg-[#03140d]/80 px-3 text-[11px] font-extrabold uppercase tracking-wide text-[#2fda54] shadow-[0_0_20px_rgba(47,218,84,0.18)] animate-fade-in-up">
               <BadgeCheck className="h-3.5 w-3.5" strokeWidth={2.2} />
@@ -179,7 +178,7 @@ const Home = () => {
 };
 
 const MetricStrip = () => (
-  <div className="relative md:absolute inset-x-0 bottom-0 md:bottom-[-38px] z-20 px-6 md:px-12 mt-6 md:mt-0 pb-12 md:pb-0">
+  <div className="relative md:absolute inset-x-0 bottom-0 md:bottom-[-38px] z-20 px-6 md:px-12 mt-6 md:mt-0 pb-12 md:pb-0 order-3 md:order-none">
     <div className="mx-auto max-w-[1024px] rounded-lg border border-white/10 bg-[#0c1817]/95 px-7 py-5 shadow-[0_22px_55px_rgba(0,0,0,0.48)] backdrop-blur-md">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5 md:divide-x md:divide-white/15">
         {metrics.map((metric, index) => (
