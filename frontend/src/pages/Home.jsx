@@ -106,7 +106,7 @@ const Home = () => {
         {/* Full-bleed Background Image with 5px shift to the right */}
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
           <img
-            src="/homepage-hero-reference.png"
+            src="/homepage-hero-bg.jpg"
             alt="Durga Shakti Foils Premium Packing Solutions"
             className="h-full w-full object-cover opacity-30 md:opacity-100 transition-opacity duration-700"
             style={{ objectPosition: '80% center' }}
