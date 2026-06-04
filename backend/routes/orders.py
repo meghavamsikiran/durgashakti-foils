@@ -92,7 +92,29 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
         return False, "Razorpay client could not be initialized.", None
 
     try:
-        amount_paise = _expected_amount_paise(order)
+        # ── Step 1: Fetch payment details to verify status & actual amount ──
+        payment_info = await asyncio.to_thread(client.payment.fetch, payment_id)
+        payment_status = str(payment_info.get("status") or "").lower()
+        captured_amount = int(payment_info.get("amount") or 0)
+        logger.info(
+            "Razorpay payment %s: status=%s, amount=%d paise",
+            payment_id, payment_status, captured_amount,
+        )
+
+        # Payment must be captured before it can be refunded
+        if payment_status != "captured":
+            return False, (
+                f"Payment is in '{payment_status}' state, not 'captured'. "
+                "Only captured payments can be refunded. Please check your Razorpay dashboard."
+            ), None
+
+        # Use the ACTUAL captured amount from Razorpay (avoids mismatches
+        # where order.total_amount was rounded or edited after payment).
+        amount_paise = min(_expected_amount_paise(order), captured_amount)
+        if amount_paise <= 0:
+            return False, "Refund amount is zero or negative.", None
+
+        # ── Step 2: Check for existing refunds ──
         existing_refunds = await asyncio.to_thread(client.payment.fetch_multiple_refund, payment_id)
         existing_items = existing_refunds.get("items", []) if isinstance(existing_refunds, dict) else []
         usable_refunds = [
@@ -105,11 +127,17 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
             logger.info("Existing Razorpay refund covers order %s: %s", order.order_number, latest_refund)
             return True, None, latest_refund
 
+        # Adjust refund amount to remaining un-refunded portion
+        remaining = amount_paise - refunded_amount
+        if remaining <= 0:
+            return True, None, usable_refunds[-1] if usable_refunds else None
+
+        # ── Step 3: Create the refund ──
         refund_resp = await asyncio.to_thread(
             client.payment.refund,
             payment_id,
             {
-                "amount": amount_paise,
+                "amount": remaining,
                 "speed": "optimum",
                 "receipt": f"refund_{order.order_number}",
                 "notes": {

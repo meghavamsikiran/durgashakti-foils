@@ -590,12 +590,17 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
         if payment_method_lower != "cod" and payment_status in ("paid", "completed"):
             from routes.orders import trigger_razorpay_refund
             success, err_msg, refund_info = await trigger_razorpay_refund(order, db)
-            if not success:
-                raise HTTPException(status_code=400, detail=f"Automatic refund failed: {err_msg}")
-            refund_status = str((refund_info or {}).get("status") or "").lower()
-            order.payment_status = "refunded" if refund_status == "processed" else "refund_pending"
-            if order.payment_status == "refund_pending":
-                refund_warning = "Refund has been initiated with Razorpay and is pending bank confirmation."
+            if success:
+                refund_status = str((refund_info or {}).get("status") or "").lower()
+                order.payment_status = "refunded" if refund_status == "processed" else "refund_pending"
+                if order.payment_status == "refund_pending":
+                    refund_warning = "Refund has been initiated with Razorpay and is pending bank confirmation."
+            else:
+                # Refund failed but don't block return approval — mark as
+                # refund_pending so admin can retry or process manually later.
+                order.payment_status = "refund_pending"
+                refund_warning = f"Return approved but automatic refund failed: {err_msg}. You can retry or mark as manually refunded from order details."
+                logger.warning("Refund failed for order %s: %s", order.order_number, err_msg)
         elif payment_method_lower != "cod" and payment_status not in ("refunded", "refund_pending"):
             raise HTTPException(status_code=400, detail="Cannot approve return before prepaid payment is captured")
     if new_status == "return_rejected":

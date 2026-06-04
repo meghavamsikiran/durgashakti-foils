@@ -13,6 +13,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [timeframeFilter, setTimeframeFilter] = useState('all');
+  const [courierFilter, setCourierFilter] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const ORDERS_PER_PAGE = 5;
@@ -21,7 +22,6 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
     { value: 'pending', label: 'Placed' },
     { value: 'pending_payment', label: 'Payment Pending' },
     { value: 'confirmed', label: 'Confirmed' },
-    { value: 'processing', label: 'Processing' },
     { value: 'packaging', label: 'Packed' },
     { value: 'shipped', label: 'Shipped' },
     { value: 'in_transit', label: 'In Transit' },
@@ -86,6 +86,8 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
       const matchesStatus = (badge.label || '').toLowerCase().includes(query) || (order.order_status || '').toLowerCase().includes(query);
       const matchesPayment =
         (order.transaction_id || '').toLowerCase().includes(query) ||
+        (order.razorpay_payment_id || '').toLowerCase().includes(query) ||
+        (order.razorpay_order_id || '').toLowerCase().includes(query) ||
         getPaymentMethodLabel(order).toLowerCase().includes(query) ||
         getPaymentStatusLabel(order).toLowerCase().includes(query);
       matchesSearch = matchesOrderNumber || matchesProducts || matchesStatus || matchesPayment;
@@ -96,7 +98,9 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
     if (statusFilter !== 'all') {
       const oStatus = (order.order_status || '').toLowerCase();
       if (statusFilter === 'pending') {
-        matchesStatusFilter = ['pending', 'pending_payment'].includes(oStatus);
+        matchesStatusFilter = ['pending', 'placed'].includes(oStatus);
+      } else if (statusFilter === 'packaging') {
+        matchesStatusFilter = ['packaging', 'packed'].includes(oStatus);
       } else {
         matchesStatusFilter = oStatus === statusFilter;
       }
@@ -133,7 +137,14 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
       }
     }
 
-    return matchesSearch && matchesStatusFilter && matchesTimeframe;
+    // 4. Courier Filter
+    let matchesCourier = true;
+    if (courierFilter !== 'all') {
+      const oCourier = (order.carrier || order.courier_name || '').toLowerCase();
+      matchesCourier = oCourier === courierFilter.toLowerCase();
+    }
+
+    return matchesSearch && matchesStatusFilter && matchesTimeframe && matchesCourier;
   });
 
   const canReviewOrder = (order) => {
@@ -170,7 +181,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
               type="button"
               onClick={() => setFilterOpen((prev) => !prev)}
               className={`inline-flex items-center justify-center w-[48px] h-[48px] rounded-lg border shadow-sm transition-colors ${
-                filterOpen || statusFilter !== 'all' || timeframeFilter !== 'all' || startDate !== '' || endDate !== ''
+                filterOpen || statusFilter !== 'all' || timeframeFilter !== 'all' || courierFilter !== 'all' || startDate !== '' || endDate !== ''
                   ? 'border-primary bg-primary/5 text-primary'
                   : 'border-border-subtle bg-surface text-muted-foreground hover:bg-slate-50'
               }`}
@@ -191,11 +202,34 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                           setStatusFilter(e.target.value);
                           setOrdersPage(1);
                         }}
-                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
+                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25 bg-white"
                       >
                         {statusOptions.map((option) => (
                           <option key={option.value} value={option.value}>{option.label}</option>
                         ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Courier</label>
+                      <select
+                        value={courierFilter}
+                        onChange={(e) => {
+                          setCourierFilter(e.target.value);
+                          setOrdersPage(1);
+                        }}
+                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25 bg-white"
+                      >
+                        <option value="all">All Couriers</option>
+                        <option value="India Post">India Post</option>
+                        <option value="Speed Post">Speed Post</option>
+                        <option value="DTDC">DTDC</option>
+                        <option value="Blue Dart">Blue Dart</option>
+                        <option value="Delhivery">Delhivery</option>
+                        <option value="Ecom Express">Ecom Express</option>
+                        <option value="XpressBees">XpressBees</option>
+                        <option value="Professional Couriers">Professional Couriers</option>
+                        <option value="Shadowfax">Shadowfax</option>
+                        <option value="Ekart">Ekart</option>
                       </select>
                     </div>
                     <div>
@@ -206,7 +240,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                           setTimeframeFilter(e.target.value);
                           setOrdersPage(1);
                         }}
-                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
+                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25 bg-white"
                       >
                         <option value="all">All Time</option>
                         <option value="today">Today</option>
@@ -248,6 +282,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                         variant="ghost"
                         onClick={() => {
                           setStatusFilter('all');
+                          setCourierFilter('all');
                           setTimeframeFilter('all');
                           setStartDate('');
                           setEndDate('');
@@ -315,12 +350,29 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                       {(order.items || []).map(item => item.product_name).join(', ')}
                     </h3>
                     <p className="text-xs text-muted-foreground font-mono">Placed on {order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}</p>
-                    {order.transaction_id && (
-                      <p className="text-[11px] text-muted-foreground font-mono mt-1.5 flex items-center gap-1.5">
-                        <span>{order.transaction_id === 'COD' ? 'Payment:' : 'Payment ID:'}</span>
-                        <span className="font-extrabold text-foreground bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] select-all">{order.transaction_id}</span>
-                      </p>
-                    )}
+                    <div className="text-[11px] text-muted-foreground font-mono mt-1.5 space-y-1">
+                      {((order.payment_method || '').toLowerCase() === 'cod') ? (
+                        <p className="flex items-center gap-1.5">
+                          <span>Payment:</span>
+                          <span className="font-extrabold text-foreground bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] select-all">COD</span>
+                        </p>
+                      ) : (
+                        <p className="flex items-center gap-1.5">
+                          <span>Payment ID:</span>
+                          {order.razorpay_payment_id || order.transaction_id ? (
+                            <span className="font-extrabold text-foreground bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] select-all">
+                              {order.razorpay_payment_id || order.transaction_id}
+                            </span>
+                          ) : order.razorpay_order_id ? (
+                            <span className="font-extrabold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[10px] select-all">
+                              {order.razorpay_order_id} (Pending)
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic">Not Available</span>
+                          )}
+                        </p>
+                      )}
+                    </div>
 
                   </div>
                   <div className="text-left md:text-right flex-shrink-0">
