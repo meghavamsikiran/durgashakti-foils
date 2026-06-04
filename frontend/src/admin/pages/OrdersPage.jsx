@@ -329,21 +329,21 @@ const OrdersPage = () => {
     }
   };
 
-  const refundManual = async (orderId) => {
+  const retryRefund = async (orderId) => {
     const previousRows = rows;
     const previousModalOrder = selectedOrderForModal;
-    const toastId = toast.loading('Marking manual refund...');
+    const toastId = toast.loading('Retrying Razorpay refund...');
     try {
       setPendingActionIds(prev => new Set(prev).add(orderId));
       setSubmitting(true);
-      const response = await adminService.markRefundManual(orderId);
+      const response = await adminService.retryRefund(orderId);
       const serverOrder = response?.data?.order;
       if (serverOrder) {
         const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
         setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
         setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
       }
-      toast.success('Order marked as manually refunded', { id: toastId });
+      toast.success(response?.data?.message || 'Razorpay refund updated', { id: toastId });
       loadSilent(page);
     } catch (err) {
       setRows(previousRows);
@@ -648,13 +648,13 @@ const OrdersPage = () => {
                                     disabled={isOrderPending}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      refundManual(order.id);
+                                      retryRefund(order.id);
                                     }}
                                     className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
                                       isOrderPending ? 'opacity-60 cursor-wait' : ''
                                     } border-emerald-100 text-emerald-600 hover:bg-emerald-50`}
                                   >
-                                    {isOrderPending ? 'Updating' : 'Mark Refunded (Manual)'}
+                                    {isOrderPending ? 'Retrying' : 'Retry Refund'}
                                   </button>
                                 );
                               }
@@ -1527,11 +1527,11 @@ const OrdersPage = () => {
               {selectedOrderForModal.payment_status === 'refund_pending' && hasPermission('update_order_status') && (
                 <button
                   onClick={() => {
-                    refundManual(selectedOrderForModal.id);
+                    retryRefund(selectedOrderForModal.id);
                   }}
                   className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98]"
                 >
-                  Mark Refunded (Manual)
+                  Retry Razorpay Refund
                 </button>
               )}
               <button

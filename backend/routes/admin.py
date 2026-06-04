@@ -729,8 +729,9 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     return res_payload
 
 
+@router.put("/admin/orders/{order_id}/refund-retry")
 @router.put("/admin/orders/{order_id}/refund-manual")
-async def mark_refund_manual(
+async def retry_order_refund(
     order_id: str,
     admin: UserSchema = Depends(require_permission("update_order_status")),
     db: AsyncSession = Depends(get_db)
@@ -741,27 +742,42 @@ async def mark_refund_manual(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    if order.payment_status != "refund_pending":
+    if str(order.payment_status or "").lower() != "refund_pending":
         raise HTTPException(status_code=400, detail="Refund is not pending for this order")
 
     prev_payment_status = order.payment_status
     prev_order_status = order.order_status
 
-    order.payment_status = "refunded"
-    order.order_status = "refunded"
+    from routes.orders import trigger_razorpay_refund
+    success, err_msg, refund_info = await trigger_razorpay_refund(order, db)
+    if not success:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Razorpay refund is still pending: {err_msg}"
+        )
+
+    refund_status = str((refund_info or {}).get("status") or "").lower()
+    order.payment_status = "refunded" if refund_status == "processed" else "refund_pending"
+    order.order_status = "refunded" if order.payment_status == "refunded" else "return_approved"
     order.updated_at = datetime.now(timezone.utc)
 
     await db.flush()
     await write_audit_log(
         db,
-        "ORDER_MANUAL_REFUND_MARKED",
+        "ORDER_RAZORPAY_REFUND_RETRIED",
         admin.id,
         "order",
         order_id,
-        {"prev_payment_status": prev_payment_status, "prev_order_status": prev_order_status}
+        {
+            "prev_payment_status": prev_payment_status,
+            "prev_order_status": prev_order_status,
+            "razorpay_refund_id": (refund_info or {}).get("id"),
+            "refund_status": refund_status,
+            "amount": (refund_info or {}).get("amount"),
+        }
     )
 
-    try:
+    if order.payment_status == "refunded":
         from sqlalchemy import select as _sel
         from models import UserModel as _UM
         user_res = await db.execute(_sel(_UM).where(_UM.id == order.user_id))
@@ -781,10 +797,9 @@ async def mark_refund_manual(
             subj, body = return_approved_email(cust_name, str(order.order_number), float(order.total_amount or 0))
             if subj and body:
                 asyncio.create_task(_send(cust.email, subj, body))
-    except Exception:
-        pass
 
-    return {"message": "Order marked as manually refunded", "order": row_to_dict(order)}
+    message = "Razorpay refund processed" if order.payment_status == "refunded" else "Razorpay refund initiated and pending bank confirmation"
+    return {"message": message, "order": row_to_dict(order)}
 
 
 

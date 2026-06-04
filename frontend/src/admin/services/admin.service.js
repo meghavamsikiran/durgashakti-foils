@@ -91,9 +91,9 @@ const adminService = {
     invalidateCache('/admin/orders');
     return apiClient.put(`/admin/orders/${orderId}/status`, payload, { silent: true });
   },
-  markRefundManual: (orderId) => {
+  retryRefund: (orderId) => {
     invalidateCache('/admin/orders');
-    return apiClient.put(`/admin/orders/${orderId}/refund-manual`, {}, { silent: true });
+    return apiClient.put(`/admin/orders/${orderId}/refund-retry`, {}, { silent: true });
   },
   bulkShipOrders: (payload) => {
     invalidateCache('/admin/orders');
