@@ -20,7 +20,7 @@ const TrishoolLoader = ({ isProcessing = false }) => {
   return (
     <div 
       className="fixed top-0 left-0 right-0 z-[99999] pointer-events-none overflow-hidden"
-      style={{ height: isMobile ? '12px' : '40px' }} // 12px on mobile, 40px on desktop
+      style={{ height: isMobile ? '20px' : '63px' }} // 20px on mobile, 63px on desktop to match aspect ratio of child SVG (1.2)
     >
       <motion.div
         initial={{ x: '-100vw', opacity: 0 }}
@@ -34,6 +34,7 @@ const TrishoolLoader = ({ isProcessing = false }) => {
         className="absolute left-0 top-0 h-full flex items-center"
         style={{
           width: isMobile ? '24px' : '75px', // 24px on mobile, 75px on desktop
+          height: '100%',
           willChange: 'transform, opacity',
           transform: 'translateZ(0)',
         }}
