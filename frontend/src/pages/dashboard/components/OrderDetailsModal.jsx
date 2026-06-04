@@ -529,6 +529,50 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                           { label: 'Delivered', active: isDelivered, date: isDelivered ? (order.delivered_at || order.updated_at) : null },
                         ];
 
+                        if (['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status)) {
+                          const isReturnRequested = ['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                          const isReturnApproved = ['return_approved', 'refunded'].includes(status);
+                          const isRefunded = ['refunded'].includes(status);
+                          const isReturnRejected = status === 'return_rejected';
+
+                          const returnSteps = [
+                            { label: 'Return Requested', active: isReturnRequested, date: order.updated_at },
+                            { 
+                              label: isReturnRejected ? 'Return Rejected' : 'Return Approved', 
+                              active: isReturnApproved || isReturnRejected, 
+                              date: (isReturnApproved || isReturnRejected) ? order.updated_at : null,
+                              isRejected: isReturnRejected 
+                            },
+                            ...(!isReturnRejected ? [{
+                              label: 'Refund Processed', 
+                              active: isRefunded, 
+                              date: isRefunded ? order.updated_at : null 
+                            }] : [])
+                          ];
+
+                          return (
+                            <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-border-subtle">
+                              {returnSteps.map((step, idx) => (
+                                <div key={idx} className="flex gap-4 relative z-10">
+                                  <div className={`w-6 h-6 rounded-full border-4 border-surface flex-shrink-0 shadow-sm flex items-center justify-center ${
+                                    step.active 
+                                      ? (step.isRejected ? 'bg-rose-600 text-white' : 'bg-primary text-white') 
+                                      : 'bg-surface-container text-muted-foreground'
+                                  }`}>
+                                    {step.active ? (step.isRejected ? <X className="w-3 h-3 stroke-[3px]" /> : <Check className="w-3 h-3 stroke-[3px]" />) : <span className="text-[8px] font-bold">{idx + 1}</span>}
+                                  </div>
+                                  <div>
+                                    <p className={`text-xs font-black uppercase tracking-tight ${
+                                      step.active ? (step.isRejected ? 'text-rose-600' : 'text-foreground') : 'text-muted-foreground'
+                                    }`}>{step.label}</p>
+                                    {step.date && <p className="text-[10px] font-mono text-muted-foreground">{new Date(step.date).toLocaleString()}</p>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        }
+
                         if (status === 'cancelled') {
                           return (
                             <div className="flex items-center gap-3 bg-rose-950/20 border border-rose-800/30 rounded-xl p-4 text-rose-400 font-semibold text-xs">

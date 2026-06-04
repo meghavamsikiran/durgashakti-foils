@@ -514,6 +514,17 @@ async def get_all_orders(
     q = select(OrderModel).where(*filters).order_by(OrderModel.updated_at.desc()).offset(offset).limit(limit)
     res = await db.execute(q)
     orders = res.scalars().all()
+
+    # Auto-reconcile pending prepaid online orders
+    from routes.orders import _reconcile_order_with_razorpay, _is_online_payment_pending
+    reconcile_tasks = []
+    for order in orders:
+        if _is_online_payment_pending(order):
+            reconcile_tasks.append(_reconcile_order_with_razorpay(order, db, source="admin_list_fetch"))
+    if reconcile_tasks:
+        await asyncio.gather(*reconcile_tasks)
+        await db.flush()
+
     items = [row_to_dict(order) for order in orders]
     return {"items": items, "total": total, "page": page, "limit": limit}
 
@@ -582,6 +593,11 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     refund_warning = None
     if new_status == "return_approved":
         effective_status = "refunded"
+        if order.payment_method != "cod" and order.payment_status in ("Paid", "completed"):
+            from routes.orders import trigger_razorpay_refund
+            success, err_msg = await trigger_razorpay_refund(order, db)
+            if not success:
+                raise HTTPException(status_code=400, detail=f"Automatic refund failed: {err_msg}")
         order.payment_status = "refunded"
     if new_status == "return_rejected":
         effective_status = "return_rejected"

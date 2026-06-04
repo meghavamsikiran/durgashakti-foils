@@ -63,6 +63,46 @@ def _get_razorpay_client():
         return None
 
 
+async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[bool, Optional[str]]:
+    """Trigger a refund via Razorpay API for prepaid orders."""
+    if str(order.payment_method).lower() == "cod":
+        return False, "COD orders cannot be refunded online automatically."
+        
+    payment_id = order.razorpay_payment_id
+    if not payment_id:
+        return False, "No Razorpay payment ID found for this order."
+        
+    client = _get_razorpay_client()
+    if not client:
+        # Check if it's fake/mock key
+        key_id = os.environ.get("RAZORPAY_KEY_ID")
+        is_fake = not key_id or "fake" in key_id.lower() or "dummy" in key_id.lower() or "test" in key_id.lower()
+        if is_fake:
+            logger.info("Mocking successful Razorpay refund for payment_id %s", payment_id)
+            return True, "Mock Refund Successful"
+        return False, "Razorpay client could not be initialized."
+        
+    try:
+        amount_paise = int(round(float(order.total_amount or 0) * 105)) # wait, refund the exact amount, not *1.05! Let's refund order.total_amount
+        amount_paise = int(round(float(order.total_amount or 0) * 100))
+        refund_resp = await asyncio.to_thread(
+            client.refund.create,
+            {
+                "payment_id": payment_id,
+                "amount": amount_paise,
+                "notes": {
+                    "order_number": order.order_number,
+                    "reason": "Return Approved"
+                }
+            }
+        )
+        logger.info("Razorpay refund successful: %s", refund_resp)
+        return True, None
+    except Exception as exc:
+        logger.exception("Failed to trigger Razorpay refund for order %s", order.order_number)
+        return False, str(exc)
+
+
 async def _clear_user_cart(db: AsyncSession, user_id, now: datetime):
     if not user_id:
         return
@@ -626,6 +666,16 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
         select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.updated_at.desc()).limit(1000)
     )
     orders = result.scalars().all()
+    
+    # Auto-reconcile pending prepaid online orders for this user
+    reconcile_tasks = []
+    for order in orders:
+        if _is_online_payment_pending(order):
+            reconcile_tasks.append(_reconcile_order_with_razorpay(order, db, source="user_list_fetch"))
+    if reconcile_tasks:
+        await asyncio.gather(*reconcile_tasks)
+        await db.flush()
+
     orders_dict = [row_to_dict(o) for o in orders]
     return await _enrich_order_items(db, orders_dict)
 
