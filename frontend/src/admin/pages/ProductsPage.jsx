@@ -224,22 +224,15 @@ const ProductsPage = () => {
 
   const handleToggleProductStatus = async (product) => {
     const nextStatus = product.is_active === false;
-    setStatusSavingIds(prev => new Set(prev).add(product.id));
     setRows(prev => prev.map(row => row.id === product.id ? { ...row, is_active: nextStatus } : row));
-
+    toast.success(`Product ${nextStatus ? 'activated' : 'deactivated'}`);
+ 
     try {
       await adminService.toggleProductStatus(product.id, nextStatus);
-      toast.success(`Product ${nextStatus ? 'activated' : 'deactivated'}`);
       fetchRowsSilent(page);
     } catch (err) {
-      setRows(prev => prev.map(row => row.id === product.id ? { ...row, is_active: product.is_active } : row));
+      setRows(prev => prev.map(row => row.id === product.id ? { ...row, is_active: !nextStatus } : row));
       toast.error(err.response?.data?.detail || 'Failed to update product status');
-    } finally {
-      setStatusSavingIds(prev => {
-        const next = new Set(prev);
-        next.delete(product.id);
-        return next;
-      });
     }
   };
 

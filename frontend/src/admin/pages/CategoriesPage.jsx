@@ -61,13 +61,15 @@ const CategoriesPage = () => {
 
   const handleToggle = async (cat) => {
     const nextStatus = !cat.is_active;
+    // Update state instantly for a premium responsive feel
+    setCategories(prev => prev.map(c => c.id === cat.id ? { ...c, is_active: nextStatus } : c));
+    toast.success(`Category ${nextStatus ? 'enabled' : 'disabled'} successfully`);
+    
     try {
       await adminService.updateCategory(cat.id, { is_active: nextStatus });
-      toast.success(`Category ${nextStatus ? 'enabled' : 'disabled'} successfully`);
-      
-      // Update state instantly for a premium responsive feel
-      setCategories(prev => prev.map(c => c.id === cat.id ? { ...c, is_active: nextStatus } : c));
     } catch (err) {
+      // Revert if failed
+      setCategories(prev => prev.map(c => c.id === cat.id ? { ...c, is_active: !nextStatus } : c));
       toast.error('Failed to toggle category status');
     }
   };
