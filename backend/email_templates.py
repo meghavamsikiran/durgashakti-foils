@@ -95,7 +95,7 @@ def welcome_email(name: str) -> tuple[str, str]:
         <li>✨ Premium quality aluminium foils & packaging</li>
         <li>🚚 Fast, reliable delivery across India</li>
         <li>💰 Competitive wholesale & retail pricing</li>
-        <li>🔒 Secure payments via Razorpay &amp; COD</li>
+        <li>🔒 Cash on Delivery (COD) payment</li>
         <li>📦 Easy returns within 4 days of delivery</li>
       </ul>
     </div>
@@ -147,7 +147,7 @@ def payment_success_email(name: str, order: dict) -> tuple[str, str, list]:
     first = name.split()[0] if name else "Customer"
     order_num = order.get("order_number", "N/A")
     total = float(order.get("total_amount", 0))
-    payment_id = order.get("razorpay_payment_id", "N/A")
+    payment_id = "COD"
     content = f"""
     <div style="text-align:center;margin-bottom:28px;">
       <div style="font-size:48px;margin-bottom:8px;">✅</div>

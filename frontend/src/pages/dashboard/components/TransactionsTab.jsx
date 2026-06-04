@@ -19,13 +19,11 @@ const TransactionsTab = ({ orders }) => {
     id: order.id,
     transaction_id:
       order.transaction_id ||
-      order.razorpay_payment_id ||
-      order.razorpay_order_id ||
-      (String(order.payment_method || '').toLowerCase() === 'cod' ? 'Cash on delivery' : order.id),
+      (String(order.payment_method || '').toLowerCase() === 'cod' ? 'Cash on Delivery' : order.id),
     order_number: order.order_number,
     amount: order.total_amount,
     date: order.created_at,
-    method: order.payment_method || 'Razorpay',
+    method: order.payment_method || 'COD',
     status: order.payment_status,
     type: 'debit',
   }));
@@ -46,8 +44,6 @@ const TransactionsTab = ({ orders }) => {
       const methodStr = (tx.method || '').toLowerCase();
       if (methodFilter === 'cod') {
         matchesMethod = methodStr.includes('cod') || methodStr.includes('cash');
-      } else if (methodFilter === 'razorpay') {
-        matchesMethod = methodStr.includes('razorpay') || methodStr.includes('card') || methodStr.includes('net') || methodStr.includes('upi') || methodStr.includes('online');
       }
     }
 
@@ -157,7 +153,6 @@ const TransactionsTab = ({ orders }) => {
                       >
                         <option value="all">All Methods</option>
                         <option value="cod">Cash On Delivery (COD)</option>
-                        <option value="razorpay">Razorpay / Online</option>
                       </select>
                     </div>
                     <div>

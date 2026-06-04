@@ -46,11 +46,10 @@ async def main():
                 'price': float(product.get('discount_price') or product.get('price', 299))
             }],
             'total_amount': float(product.get('discount_price') or product.get('price', 299)),
-            'payment_method': 'razorpay',
+            'payment_method': 'cod',
             'payment_status': 'completed',
             'order_status': 'DELIVERED',
             'stock_applied': True,
-            'razorpay_payment_id': f'pay_test_{order_id[:12]}',
             'shipping_address': {
                 'full_name': user.get('full_name', 'Vamsi Kiran'),
                 'phone': user.get('phone', '1234567890'),

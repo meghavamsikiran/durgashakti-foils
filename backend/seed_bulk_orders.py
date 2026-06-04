@@ -44,7 +44,7 @@ async def seed_bulk_orders():
         ("confirmed", "completed")
     ]
     
-    methods = ["razorpay", "cod", "razorpay"]
+    methods = ["cod"]
     
     for i in range(15):
         order_id = str(uuid.uuid4())
@@ -83,7 +83,6 @@ async def seed_bulk_orders():
             "payment_method": method,
             "payment_status": p_status,
             "order_status": status,
-            "razorpay_payment_id": f"pay_{uuid.uuid4().hex[:12]}" if method == "razorpay" else None,
             "shipping_address": {
                 "full_name": user.get("full_name", "Valued Customer"),
                 "phone": user.get("phone", "9000000000"),

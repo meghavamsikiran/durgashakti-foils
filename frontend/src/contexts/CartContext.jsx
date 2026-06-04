@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import apiClient from '../services/core/apiClient';
 import { useAuth } from './AuthContext';
-import { clearPendingRazorpayOrder, getPendingRazorpayOrder } from '../utils/pendingPayment';
+
 
 const CartContext = createContext(null);
 
@@ -48,19 +48,7 @@ export const CartProvider = ({ children }) => {
     }
     setLoading(true);
     try {
-      const pendingPayment = getPendingRazorpayOrder();
-      if (pendingPayment?.orderId) {
-        try {
-          const reconcile = await apiClient.post('/payment/razorpay/reconcile', { order_id: pendingPayment.orderId }, { silent: true, timeout: 90000 });
-          if (reconcile.data?.paid) {
-            clearPendingRazorpayOrder(pendingPayment.orderId);
-            setPendingQtyState({});
-            apiClient.invalidateCache('/orders');
-          }
-        } catch {
-          // Keep cart loading resilient; reconciliation will retry on the next cart fetch.
-        }
-      }
+
       const response = await apiClient.get('/cart');
       // Ignore background fetch responses if there are active, newer local state updates in progress
       if (activeRequestsCount.current === 0) {

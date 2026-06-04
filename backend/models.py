@@ -148,8 +148,6 @@ class OrderModel(Base):
     stock_applied = Column(Boolean, default=False, nullable=False)
     shipping_address = Column(JSONB, nullable=False)
     idempotency_key = Column(String(255), unique=True, nullable=True)
-    razorpay_order_id = Column(String(255), nullable=True)
-    razorpay_payment_id = Column(String(255), nullable=True)
     carrier = Column(String(120), nullable=True)
     tracking_id = Column(String(255), nullable=True)
     tracking_url = Column(Text, nullable=True)

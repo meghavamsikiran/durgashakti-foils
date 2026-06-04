@@ -49,11 +49,9 @@ async def wipe_and_seed():
             }
         ],
         "total_amount": product["price"] * 2,
-        "payment_method": "razorpay",
+        "payment_method": "cod",
         "payment_status": "completed",
         "order_status": "confirmed",
-        "razorpay_payment_id": f"pay_sample_{order_id[:8]}",
-        "razorpay_order_id": f"order_sample_{order_id[:8]}",
         "shipping_address": {
             "full_name": user.get("full_name", "Vamsi Kiran"),
             "phone": user.get("phone", "9876543210"),

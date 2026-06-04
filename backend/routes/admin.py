@@ -581,39 +581,8 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     effective_status = new_status
     refund_warning = None
     if new_status == "return_approved":
-        # Check if prepaid order is Paid/completed to initiate Razorpay refund
-        if order.payment_method != "cod" and order.payment_status in ("Paid", "completed"):
-            payment_id = order.razorpay_payment_id
-            
-            # Import Razorpay dependencies dynamically to avoid circular references
-            from routes.orders import razorpay_client, is_test_mode
-            
-            is_dummy_pay = not payment_id or payment_id.startswith(("pay_dummy_", "pay_sample_", "pay_test_"))
-            if not is_dummy_pay and not is_test_mode():
-                try:
-                    amount_paise = int(float(order.total_amount) * 100)
-                    logging.info(f"Initiating digital Razorpay refund for payment {payment_id} of amount {amount_paise} paise.")
-                    refund = razorpay_client.refund.create({
-                        "payment_id": payment_id,
-                        "amount": amount_paise,
-                        "speed": "optimum"
-                    })
-                    logging.info(f"Razorpay refund processed successfully. Refund ID: {refund.get('id')}")
-                except Exception as e:
-                    logging.error(f"Razorpay refund failed: {e}")
-                    refund_warning = (
-                        "Return approved, but Razorpay could not start the refund automatically. "
-                        "Refund is marked pending; retry/manual refund may be needed after settlement or balance update."
-                    )
-                    order.payment_status = "refund_pending"
-            else:
-                logging.info(f"Skipping live Razorpay refund for dummy/test payment {payment_id} or test mode.")
-
-        if order.payment_status != "refund_pending":
-            effective_status = "refunded"
-            order.payment_status = "refunded"
-        else:
-            effective_status = "return_approved"
+        effective_status = "refunded"
+        order.payment_status = "refunded"
     if new_status == "return_rejected":
         effective_status = "return_rejected"
 
@@ -1746,11 +1715,7 @@ async def export_gstr1(
                 "Order Number": order.get("order_number"),
                 "Customer Name": order.get("customer_name") or addr.get("full_name"),
                 "Seller GSTIN": "36AALCD9777D1Z5",
-                "Transaction ID": str(
-                    order.get("razorpay_payment_id")
-                    or order.get("razorpay_order_id")
-                    or ("COD" if str(order.get("payment_method") or "").lower() in {"cod", "cash on delivery"} else "")
-                ),
+                "Transaction ID": "COD",
                 "Place of Supply": place,
                 "Product": item.get("product_name") or item.get("name"),
                 "HSN": item.get("hsn") or item.get("hsn_code") or "76071991",

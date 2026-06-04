@@ -57,7 +57,7 @@ async def seed_proper_users_and_orders():
         order_id = str(uuid.uuid4())
         user = random.choice(users)
         status, p_status = random.choice(statuses)
-        method = random.choice(["razorpay", "cod", "razorpay"])
+        method = "cod"
         
         days_ago = random.randint(0, 20)
         dt = datetime.now(timezone.utc) - timedelta(days=days_ago, minutes=random.randint(0, 1440))

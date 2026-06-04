@@ -17,39 +17,21 @@ from storage_service import upload_image
 from datetime import datetime, timezone, timedelta
 from io import BytesIO
 import asyncio
-import os, uuid, time, logging, razorpay
+import os, uuid, time, logging
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api")
 
-razorpay_client = razorpay.Client(auth=(
-    os.environ.get('RAZORPAY_KEY_ID', ''),
-    os.environ.get('RAZORPAY_KEY_SECRET', '')
-))
-
-def is_test_mode() -> bool:
-    k = os.environ.get('RAZORPAY_KEY_ID', '')
-    return not k or k.startswith('rzp_test_') or k in ('rzp_test_dummy', '')
-
-
-RAZORPAY_API_TIMEOUT_SECONDS = float(os.environ.get("RAZORPAY_API_TIMEOUT_SECONDS", "12"))
-PAID_PAYMENT_STATUSES = {"paid", "completed"}
+PAID_PAYMENT_STATUSES = {"paid", "completed", "Cash On Delivery"}
 
 
 def _is_paid_order(order: OrderModel) -> bool:
-    return str(order.payment_status or "").lower() in PAID_PAYMENT_STATUSES
+    return str(order.payment_status or "").lower() in {s.lower() for s in PAID_PAYMENT_STATUSES}
 
 
 def _expected_amount_paise(order: OrderModel) -> int:
     return int(round(float(order.total_amount or 0) * 100))
-
-
-async def _razorpay_call(func, *args, **kwargs):
-    return await asyncio.wait_for(
-        asyncio.to_thread(func, *args, **kwargs),
-        timeout=RAZORPAY_API_TIMEOUT_SECONDS
-    )
 
 
 async def _clear_user_cart(db: AsyncSession, user_id, now: datetime):
@@ -131,8 +113,6 @@ async def _finalize_paid_order(
 
     order.payment_status = "Paid"
     order.order_status = "confirmed"
-    if payment_id:
-        order.razorpay_payment_id = payment_id
     order.updated_at = now
 
     await _clear_user_cart(db, order.user_id, now)
@@ -149,47 +129,6 @@ async def _finalize_paid_order(
         )
 
     return {"success": True, "newly_paid": not was_paid, "stock_applied": bool(order.stock_applied)}
-
-
-def _captured_payment_from_response(payments: dict) -> Optional[dict]:
-    for status in ("captured", "authorized"):
-        for payment in payments.get("items", []) if payments else []:
-            if payment.get("status") == status:
-                return payment
-    return None
-
-
-async def check_and_sync_razorpay_payment(order: OrderModel, db: AsyncSession):
-    if order.payment_method == "cod" or str(order.payment_status).lower() == "refunded":
-        return order
-
-    if _is_paid_order(order):
-        await _finalize_paid_order(order, db)
-        return order
-
-    if is_test_mode() or not order.razorpay_order_id:
-        return order
-
-    try:
-        rz_order = await _razorpay_call(razorpay_client.order.fetch, order.razorpay_order_id)
-        expected_amount = _expected_amount_paise(order)
-        amount_paid = int(rz_order.get("amount_paid") or 0)
-        if rz_order.get("status") == "paid" or (expected_amount > 0 and amount_paid >= expected_amount):
-            payments = await _razorpay_call(razorpay_client.order.payments, order.razorpay_order_id)
-            payment = _captured_payment_from_response(payments)
-            payment_id = payment.get("id") if payment else f"pay_captured_{order.razorpay_order_id[6:]}"
-            await _finalize_paid_order(
-                order,
-                db,
-                payment_id=payment_id,
-                audit_action="ORDER_PAYMENT_CAPTURED_AUTO_SYNC",
-                audit_metadata={"payment_id": payment_id}
-            )
-            await db.commit()
-    except Exception as e:
-        await db.rollback()
-        logging.error(f"Error syncing order payment status for {order.order_number}: {e}")
-    return order
 
 
 async def _enrich_order_items(db: AsyncSession, orders_data):
@@ -214,6 +153,7 @@ async def _enrich_order_items(db: AsyncSession, orders_data):
 
 @router.post("/orders")
 async def create_order(order_data: OrderCreate, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    order_data.payment_method = "cod"
     if order_data.idempotency_key:
         existing = await db.execute(select(OrderModel).where(OrderModel.idempotency_key == order_data.idempotency_key))
         row = existing.scalar_one_or_none()
@@ -619,126 +559,6 @@ async def return_order(
 
 
 # ── Payment Routes ───────────────────────────────────────────────────────
-@router.post("/payment/razorpay/create-order")
-async def create_razorpay_order(order_id: str, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    validate_uuid(order_id)
-    result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id))
-    order = result.scalar_one_or_none()
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-
-    if is_test_mode():
-        test_order_id = f"order_test_{str(uuid.uuid4())[:16]}"
-        order.razorpay_order_id = test_order_id
-        order.updated_at = datetime.now(timezone.utc)
-        return {
-            "razorpay_order_id": test_order_id,
-            "amount": int(float(order.total_amount) * 100),
-            "currency": "INR",
-            "key_id": os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_dummy'),
-            "test_mode": True
-        }
-
-    try:
-        rz_order = await _razorpay_call(razorpay_client.order.create, {
-            "amount": int(float(order.total_amount) * 100),
-            "currency": "INR",
-            "receipt": order.order_number,
-            "notes": {"order_id": order_id}
-        })
-        order.razorpay_order_id = rz_order['id']
-        order.updated_at = datetime.now(timezone.utc)
-        return {
-            "razorpay_order_id": rz_order['id'],
-            "amount": rz_order['amount'],
-            "currency": rz_order['currency'],
-            "key_id": os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_dummy'),
-            "test_mode": False
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/payment/razorpay/verify")
-async def verify_razorpay_payment(payment_data: dict, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    order_id = payment_data.get('order_id')
-    if not order_id:
-        raise HTTPException(status_code=400, detail="order_id is required")
-    validate_uuid(order_id)
-
-    result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id))
-    order = result.scalar_one_or_none()
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found or access denied")
-    if payment_data.get("razorpay_order_id") and order.razorpay_order_id and payment_data.get("razorpay_order_id") != order.razorpay_order_id:
-        raise HTTPException(status_code=400, detail="Payment order mismatch")
-
-    if _is_paid_order(order) and order.razorpay_payment_id:
-        await _finalize_paid_order(order, db)
-        return {"success": True, "message": "Payment already verified"}
-
-    if not is_test_mode():
-        try:
-            await _razorpay_call(razorpay_client.utility.verify_payment_signature, payment_data)
-        except Exception:
-            raise HTTPException(status_code=400, detail="Payment signature verification failed")
-
-    finalize_result = await _finalize_paid_order(
-        order,
-        db,
-        payment_id=payment_data.get("razorpay_payment_id", "pay_dummy_123"),
-        audit_action="ORDER_PAYMENT_CAPTURED_VERIFY",
-        audit_metadata={"payment_id": payment_data.get("razorpay_payment_id")}
-    )
-    if finalize_result.get("newly_paid"):
-        await create_notification(
-            db,
-            str(current_user.id),
-            "Payment confirmed",
-            f"Payment for order {order.order_number} is confirmed.",
-            "payment"
-        )
-
-    try:
-        from email_templates import payment_success_email
-        import asyncio
-        if finalize_result.get("newly_paid"):
-            order_dict = row_to_dict(order)
-            subj, body, attachments = payment_success_email(current_user.full_name or current_user.email, order_dict)
-            asyncio.create_task(send_email(current_user.email, subj, body, attachments=attachments))
-    except Exception:
-        pass
-    return {"success": True, "message": "Payment verified and order confirmed"}
-
-
-@router.post("/payment/razorpay/reconcile")
-async def reconcile_razorpay_payment(payment_data: dict, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    order_id = payment_data.get('order_id')
-    if not order_id:
-        raise HTTPException(status_code=400, detail="order_id is required")
-    validate_uuid(order_id)
-
-    result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id))
-    order = result.scalar_one_or_none()
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found or access denied")
-
-    if order.payment_method != "cod" and not _is_paid_order(order):
-        order = await check_and_sync_razorpay_payment(order, db)
-    elif _is_paid_order(order):
-        await _finalize_paid_order(order, db)
-
-    paid = _is_paid_order(order)
-    return {
-        "success": True,
-        "paid": paid,
-        "order_id": str(order.id),
-        "order_number": order.order_number,
-        "payment_status": order.payment_status,
-        "order_status": order.order_status,
-    }
-
-
 @router.post("/payment/cod/confirm")
 async def confirm_cod_payment(order_id: str, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     validate_uuid(order_id)
@@ -760,197 +580,3 @@ async def confirm_cod_payment(order_id: str, current_user: UserSchema = Depends(
     await _clear_user_cart(db, current_user.id, now)
     await write_audit_log(db, "ORDER_COD_CONFIRMED", current_user.id, "order", order_id)
     return {"success": True, "message": "COD order confirmed"}
-
-
-@router.post("/payment/razorpay/pay-cod")
-async def pay_cod_online(payment_data: dict, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    order_id = payment_data.get('order_id')
-    if not order_id:
-        raise HTTPException(status_code=400, detail="order_id is required")
-    validate_uuid(order_id)
-    result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id))
-    order = result.scalar_one_or_none()
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-    if order.payment_method != "cod":
-        raise HTTPException(status_code=400, detail="This order is not a COD order")
-    if order.payment_status in ("completed", "Paid"):
-        raise HTTPException(status_code=400, detail="This order has already been paid")
-
-    if is_test_mode():
-        test_order_id = f"order_test_{str(uuid.uuid4())[:16]}"
-        order.razorpay_order_id = test_order_id
-        order.payment_method = "razorpay"
-        order.payment_status = "pending"
-        order.order_status = "pending_payment"
-        order.created_at = datetime.now(timezone.utc)
-        order.updated_at = datetime.now(timezone.utc)
-        await db.flush()
-        return {
-            "razorpay_order_id": test_order_id,
-            "amount": int(float(order.total_amount) * 100),
-            "currency": "INR",
-            "key_id": os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_dummy'),
-            "test_mode": True
-        }
-    try:
-        rz_order = await _razorpay_call(razorpay_client.order.create, {
-            "amount": int(float(order.total_amount) * 100),
-            "currency": "INR",
-            "receipt": f"COD-{order.order_number}",
-            "notes": {"order_id": order_id, "type": "cod_online"}
-        })
-        order.razorpay_order_id = rz_order['id']
-        order.payment_method = "razorpay"
-        order.payment_status = "pending"
-        order.order_status = "pending_payment"
-        order.created_at = datetime.now(timezone.utc)
-        order.updated_at = datetime.now(timezone.utc)
-        await db.flush()
-        return {
-            "razorpay_order_id": rz_order['id'],
-            "amount": rz_order['amount'],
-            "currency": rz_order['currency'],
-            "key_id": os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_dummy'),
-            "test_mode": False
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create payment: {str(e)}")
-
-
-@router.get("/payment/test-mode")
-async def check_test_mode(current_user: UserSchema = Depends(get_current_user)):
-    return {"test_mode": is_test_mode()}
-
-
-# ── Razorpay Webhook ─────────────────────────────────────────────────────
-@router.post("/payment/razorpay/webhook")
-async def razorpay_webhook(request: Request, db: AsyncSession = Depends(get_db)):
-    webhook_secret = os.environ.get('RAZORPAY_WEBHOOK_SECRET', '')
-    if not webhook_secret and os.environ.get('ENVIRONMENT') == 'production':
-        raise HTTPException(status_code=500, detail="Configuration error")
-
-    client_ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else "")
-    if client_ip:
-        client_ip = client_ip.split(",")[0].strip()
-    allowed_ips = set(ip.strip() for ip in os.environ.get("RAZORPAY_WEBHOOK_IPS", "").split(",") if ip.strip())
-    if allowed_ips and client_ip not in allowed_ips:
-        raise HTTPException(status_code=403, detail="Untrusted source")
-
-    body = await request.body()
-    signature = request.headers.get('X-Razorpay-Signature', '')
-    if webhook_secret:
-        import hmac, hashlib
-        expected_sig = hmac.new(webhook_secret.encode(), body, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(expected_sig, signature):
-            raise HTTPException(status_code=400, detail="Invalid signature")
-
-    try:
-        payload = await request.json()
-        event = payload.get('event', '')
-        now = datetime.now(timezone.utc)
-
-        if event == 'payment.captured':
-            payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
-            rz_order_id = payment_entity.get('order_id', '')
-            payment_id = payment_entity.get('id', '')
-            amount_paid = payment_entity.get('amount', 0)
-
-            result = await db.execute(select(OrderModel).where(OrderModel.razorpay_order_id == rz_order_id))
-            order = result.scalar_one_or_none()
-            if order:
-                if int(amount_paid) != _expected_amount_paise(order):
-                    return {"status": "amount_mismatch"}
-                await _finalize_paid_order(
-                    order,
-                    db,
-                    payment_id=payment_id,
-                    audit_action="ORDER_PAYMENT_CAPTURED_WEBHOOK",
-                    audit_metadata={"payment_id": payment_id}
-                )
-
-        elif event == 'payment.failed':
-            payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
-            rz_order_id = payment_entity.get('order_id', '')
-            error_description = payment_entity.get('error_description', 'Unknown payment failure reason')
-
-            result = await db.execute(select(OrderModel).where(OrderModel.razorpay_order_id == rz_order_id))
-            order = result.scalar_one_or_none()
-            if order:
-                if _is_paid_order(order):
-                    logger.info("Ignoring Razorpay failed event for already-paid order %s", order.order_number)
-                    return {"status": "ignored_already_paid"}
-                order.payment_status = "failed"
-                order.order_status = "failed"
-                order.updated_at = now
-
-                # Release stock if stock was somehow applied
-                if order.stock_applied:
-                    items_to_release = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
-                    if items_to_release:
-                        prod_ids = [item.get("product_id") for item in items_to_release]
-                        prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
-                        locked_products = {str(p.id): p for p in prod_res.scalars().all()}
-                        for item in items_to_release:
-                            pid = item.get("product_id")
-                            qty = int(item.get("quantity", 0))
-                            product = locked_products.get(str(pid))
-                            if product:
-                                product.stock_quantity = int(product.stock_quantity or 0) + qty
-                                product.units_sold = max(0, int(product.units_sold or 0) - qty)
-                                product.in_stock = True
-                                product.updated_at = now
-                    order.stock_applied = False
-
-                logger.info(f"Payment failed for Order {order.order_number} via Webhook. Error: {error_description}")
-                await write_audit_log(db, "ORDER_PAYMENT_FAILED_WEBHOOK", order.user_id, "order", str(order.id), {"error": error_description})
-
-        elif event == 'refund.processed':
-            refund_entity = payload.get('payload', {}).get('refund', {}).get('entity', {})
-            payment_id = refund_entity.get('payment_id', '')
-            refund_id = refund_entity.get('id', '')
-            status = refund_entity.get('status', '')
-
-            result = await db.execute(select(OrderModel).where(OrderModel.razorpay_payment_id == payment_id))
-            order = result.scalar_one_or_none()
-            if order:
-                order.payment_status = "refunded"
-                order.order_status = "refunded"
-                order.updated_at = now
-
-                # Release stock if not already released
-                if order.stock_applied:
-                    items_to_release = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
-                    if items_to_release:
-                        prod_ids = [item.get("product_id") for item in items_to_release]
-                        prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
-                        locked_products = {str(p.id): p for p in prod_res.scalars().all()}
-                        for item in items_to_release:
-                            pid = item.get("product_id")
-                            qty = int(item.get("quantity", 0))
-                            product = locked_products.get(str(pid))
-                            if product:
-                                product.stock_quantity = int(product.stock_quantity or 0) + qty
-                                product.units_sold = max(0, int(product.units_sold or 0) - qty)
-                                product.in_stock = True
-                                product.updated_at = now
-                    order.stock_applied = False
-
-                logger.info(f"Refund processed for Order {order.order_number} via Webhook. Refund ID: {refund_id}")
-                await write_audit_log(db, "ORDER_REFUND_PROCESSED_WEBHOOK", order.user_id, "order", str(order.id), {"refund_id": refund_id, "status": status})
-
-        elif event == 'refund.failed':
-            refund_entity = payload.get('payload', {}).get('refund', {}).get('entity', {})
-            payment_id = refund_entity.get('payment_id', '')
-            refund_id = refund_entity.get('id', '')
-
-            result = await db.execute(select(OrderModel).where(OrderModel.razorpay_payment_id == payment_id))
-            order = result.scalar_one_or_none()
-            if order:
-                logger.error(f"Refund FAILED for Order {order.order_number} via Webhook. Refund ID: {refund_id}")
-                await write_audit_log(db, "ORDER_REFUND_FAILED_WEBHOOK", order.user_id, "order", str(order.id), {"refund_id": refund_id})
-
-        return {"status": "ok"}
-    except Exception as exc:
-        logger.error("Webhook processing error: %s", exc)
-        raise HTTPException(status_code=500, detail="Processing error")

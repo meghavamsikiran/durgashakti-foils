@@ -1059,7 +1059,7 @@ const OrdersPage = () => {
                 <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment Method</h4>
                   <div className="text-xs text-slate-500 space-y-2 font-semibold">
-                    <p className="font-extrabold text-slate-900 uppercase tracking-wider">{selectedOrderForModal.payment_method || 'Razorpay'}</p>
+                    <p className="font-extrabold text-slate-900 uppercase tracking-wider">{selectedOrderForModal.payment_method || 'COD'}</p>
                     {selectedOrderForModal.payment_status === 'Paid' || selectedOrderForModal.payment_status === 'completed' ? (
                       <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1">
                         <p className="font-extrabold flex items-center gap-1 text-emerald-700">

@@ -35,11 +35,7 @@ async def list_payments(
     clause = None
     if search:
         like_term = f"%{search}%"
-        clause = or_(
-            OrderModel.order_number.ilike(like_term),
-            OrderModel.razorpay_payment_id.ilike(like_term),
-            OrderModel.razorpay_order_id.ilike(like_term)
-        )
+        clause = OrderModel.order_number.ilike(like_term)
         q = q.where(clause)
 
     # Date range filtering
@@ -104,10 +100,10 @@ async def list_payments(
         items.append({
             "id": str(o.id),
             "order_number": o.order_number,
-            "transaction_id": o.razorpay_payment_id or o.razorpay_order_id or "COD",
+            "transaction_id": "COD",
             "amount": float(o.total_amount),
             "status": o.payment_status,
-            "provider": o.payment_method or "Razorpay",
+            "provider": o.payment_method or "COD",
             "created_at": o.created_at.isoformat() if o.created_at else None
         })
     return {"items": items, "total": total, "page": page, "limit": limit}

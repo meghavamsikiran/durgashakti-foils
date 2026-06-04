@@ -774,7 +774,7 @@ const SettingsPage = () => {
                        <Cloud className="w-4 h-4 text-slate-500" />
                        <span className="text-xs font-bold text-slate-600">Payment Provider</span>
                     </div>
-                    <span className="text-[10px] font-black text-slate-800 uppercase">Razorpay Live</span>
+                    <span className="text-[10px] font-black text-slate-800 uppercase">COD Only</span>
                  </div>
               </div>
 

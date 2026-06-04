@@ -9,11 +9,7 @@ const REQUIRED_ENV = {
   },
 };
 
-const OPTIONAL_ENV = {
-  REACT_APP_RAZORPAY_KEY_ID: {
-    description: 'Razorpay key ID for payment integration',
-  },
-};
+const OPTIONAL_ENV = {};
 
 export const validateEnv = () => {
   const errors = [];

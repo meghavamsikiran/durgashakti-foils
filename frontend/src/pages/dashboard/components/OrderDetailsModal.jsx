@@ -16,7 +16,6 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [submittingReturn, setSubmittingReturn] = useState(false);
-  const [payingOnline, setPayingOnline] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
@@ -113,70 +112,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
     }
   };
 
-  const handlePayOnline = async () => {
-    if (payingOnline) return;
-    
-    if (!window.Razorpay) {
-      toast.error('Payment gateway not loaded. Refresh and try again.');
-      return;
-    }
-    
-    setPayingOnline(true);
-    try {
-      const isCod = order.payment_method === 'cod';
-      const response = isCod 
-        ? await paymentService.payCODOnline(order.id)
-        : await paymentService.createRazorpayOrder(order.id);
-      
-      const { razorpay_order_id, amount, currency, key_id } = response;
 
-      const options = {
-        key: key_id || process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: amount,
-        currency: currency || 'INR',
-        name: 'DurgaShakti Foils',
-        description: isCod 
-          ? `COD Payment - Order ${order.order_number}`
-          : `Prepaid Retry - Order ${order.order_number}`,
-        order_id: razorpay_order_id,
-        handler: async (paymentResponse) => {
-          try {
-            await paymentService.verifyRazorpayPayment({
-              order_id: order.id,
-              razorpay_order_id: paymentResponse.razorpay_order_id,
-              razorpay_payment_id: paymentResponse.razorpay_payment_id,
-              razorpay_signature: paymentResponse.razorpay_signature
-            });
-            window.location.reload();
-          } catch {
-            setPayingOnline(false);
-            window.location.reload();
-          }
-        },
-        prefill: {
-          name: order.shipping_address?.full_name || '',
-          email: '',
-          contact: order.shipping_address?.phone || ''
-        },
-        theme: { color: '#006e1b' },
-        modal: { 
-          ondismiss: () => {
-            setPayingOnline(false);
-            window.location.reload();
-          } 
-        }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', () => {
-        setPayingOnline(false);
-        window.location.reload();
-      });
-      rzp.open();
-    } catch {
-      setPayingOnline(false);
-    }
-  };
 
   const getExpectedDeliveryDate = (createdAt) => {
     if (!createdAt) return '—';
@@ -702,7 +638,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                     <div className="p-6 rounded-xl bg-primary/5 border border-primary/25 flex items-center justify-between">
                       <div>
                         <h3 className="text-[10px] font-mono tracking-wider font-semibold text-primary mb-1 uppercase">Payment Method</h3>
-                        <p className="font-black text-foreground font-mono uppercase tracking-tight">{order.payment_method || 'Razorpay'}</p>
+                        <p className="font-black text-foreground font-mono uppercase tracking-tight">{order.payment_method || 'COD'}</p>
                       </div>
                       <CreditCard className="w-8 h-8 text-primary/30" />
                     </div>
@@ -778,25 +714,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                    <ExternalLink className="w-4 h-4 mr-2" /> Download Invoice
                 </Button>
               )}
-              {order.payment_status !== 'Paid' && 
-               order.payment_status !== 'completed' && 
-               !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase()) && (
-                <div className="flex-1 flex flex-col items-center gap-1.5">
-                  <Button
-                    onClick={handlePayOnline}
-                    disabled={payingOnline}
-                    className="w-full h-12 bg-primary hover:bg-primary/95 text-primary-foreground font-black uppercase tracking-widest rounded-lg shadow-sm hover:shadow-emerald-glow flex items-center justify-center"
-                  >
-                    <Wallet className="w-4 h-4 mr-2" /> {payingOnline ? 'Processing...' : 'Pay Now'}
-                  </Button>
-                  {timeLeft && (
-                    <span className="flex items-center gap-1.5 text-xs font-black text-rose-600 animate-pulse">
-                      <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '4s' }} />
-                      Expires in: {timeLeft}
-                    </span>
-                  )}
-                </div>
-              )}
+
               {order.order_status === 'delivered' && (
                 <Button
                   variant="ghost"

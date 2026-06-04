@@ -23,7 +23,6 @@ const OrderDetailsPage = () => {
   const [returnFiles, setReturnFiles] = useState([]);
   const [returnPreviews, setReturnPreviews] = useState([]);
   const [submittingReturn, setSubmittingReturn] = useState(false);
-  const [payingOnline, setPayingOnline] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
@@ -166,70 +165,7 @@ const OrderDetailsPage = () => {
     }
   };
 
-  const handlePayOnline = async () => {
-    if (payingOnline) return;
-    
-    if (!window.Razorpay) {
-      toast.error('Payment gateway not loaded. Refresh and try again.');
-      return;
-    }
-    
-    setPayingOnline(true);
-    try {
-      const isCod = order.payment_method === 'cod';
-      const response = isCod 
-        ? await paymentService.payCODOnline(order.id)
-        : await paymentService.createRazorpayOrder(order.id);
-      
-      const { razorpay_order_id, amount, currency, key_id } = response;
 
-      const options = {
-        key: key_id || process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: amount,
-        currency: currency || 'INR',
-        name: 'DurgaShakti Foils',
-        description: isCod 
-          ? `COD Payment - Order ${order.order_number}`
-          : `Prepaid Retry - Order ${order.order_number}`,
-        order_id: razorpay_order_id,
-        handler: async (paymentResponse) => {
-          try {
-            await paymentService.verifyRazorpayPayment({
-              order_id: order.id,
-              razorpay_order_id: paymentResponse.razorpay_order_id,
-              razorpay_payment_id: paymentResponse.razorpay_payment_id,
-              razorpay_signature: paymentResponse.razorpay_signature
-            });
-            window.location.reload();
-          } catch {
-            setPayingOnline(false);
-            window.location.reload();
-          }
-        },
-        prefill: {
-          name: order.shipping_address?.full_name || '',
-          email: '',
-          contact: order.shipping_address?.phone || ''
-        },
-        theme: { color: '#006e1b' },
-        modal: { 
-          ondismiss: () => {
-            setPayingOnline(false);
-            window.location.reload();
-          } 
-        }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', () => {
-        setPayingOnline(false);
-        window.location.reload();
-      });
-      rzp.open();
-    } catch {
-      setPayingOnline(false);
-    }
-  };
 
   const getExpectedDeliveryDate = (createdAt) => {
     if (!createdAt) return '—';
@@ -679,39 +615,7 @@ const OrderDetailsPage = () => {
           </div>
         )}
 
-        {/* Retry Payment Warning Card */}
-        {order.payment_status !== 'Paid' && 
-         order.payment_status !== 'completed' && 
-         !['cancelled', 'refunded', 'failed', 'return_approved'].includes((order.order_status || '').toLowerCase()) && (
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm animate-in slide-in-from-top-2 duration-300">
-            <div className="space-y-1">
-              <h3 className="font-extrabold text-amber-900 text-sm flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-amber-700" />
-                {order.payment_method === 'cod' ? 'Pay Online Option Available' : 'Payment Retry Option Available'}
-              </h3>
-              <p className="text-xs text-amber-700 font-semibold leading-relaxed">
-                {order.payment_method === 'cod'
-                  ? 'You placed this order as Cash on Delivery. You can safely pay online now to complete your transaction.'
-                  : 'Your payment has not been completed. You can safely complete the payment online using Razorpay to process this order.'}
-              </p>
-              {timeLeft && (
-                <div className="pt-1">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-black text-rose-600 bg-rose-50 border border-rose-100/60 px-3 py-1.5 rounded-xl shadow-sm animate-pulse">
-                    <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '4s' }} />
-                    Expires in: {timeLeft}
-                  </span>
-                </div>
-              )}
-            </div>
-            <button 
-              onClick={handlePayOnline}
-              disabled={payingOnline}
-              className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[10px] px-6 py-3.5 rounded-xl shadow-md shadow-emerald-glow transition-all whitespace-nowrap"
-            >
-              {payingOnline ? 'Processing...' : 'Pay Now'}
-            </button>
-          </div>
-        )}
+
 
         {/* Elegant Horizontal/Responsive Stepper Timeline Card */}
         {!isReturning && (
