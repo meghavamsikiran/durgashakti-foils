@@ -96,14 +96,44 @@ const Home = () => {
 
       <section className="home-hero-stage relative isolate min-h-[620px] overflow-hidden bg-[#020807] md:min-h-[620px] flex items-center">
         {/* Background Image Container spanning right side */}
-        <div className="absolute top-0 bottom-0 right-0 z-0 w-full md:w-[60%] lg:w-[55%] select-none pointer-events-none">
+        <div className="absolute top-0 bottom-0 right-0 z-0 w-full md:w-[60%] lg:w-[55%] select-none">
           <img
             src="/homepage-hero-reference.png"
             alt="Durga Shakti Foils Premium Packing Solutions"
-            className="h-full w-full object-cover object-center md:object-right opacity-25 md:opacity-100 transition-opacity duration-700"
+            className="h-full w-full object-cover opacity-25 md:opacity-100 transition-opacity duration-700 pointer-events-none"
+            style={{ objectPosition: 'right 20% bottom' }}
           />
           {/* Smooth blend overlay to merge the image with the black background */}
-          <div className="absolute inset-y-0 left-0 w-64 bg-gradient-to-r from-[#020807] to-transparent hidden md:block" />
+          <div className="absolute inset-y-0 left-0 w-64 bg-gradient-to-r from-[#020807] to-transparent hidden md:block pointer-events-none" />
+
+          {/* Golden Trusted Badge Overlay (Desktop only) */}
+          <div className="absolute right-[8%] top-[18%] z-10 hidden md:block">
+            <div className="relative flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-[#d9ad30] via-[#ffe58f] to-[#b8860b] p-0.5 shadow-[0_12px_36px_rgba(217,173,48,0.25)]">
+              <div className="flex h-full w-full flex-col items-center justify-center rounded-full bg-[#050c0a] border border-[#d9ad30]/30 text-center">
+                {/* Curved SVG Text */}
+                <svg className="absolute inset-0 h-full w-full animate-[spin_40s_linear_infinite]" viewBox="0 0 100 100">
+                  <path id="badge-top-curve" d="M 22,50 A 28,28 0 0,1 78,50" fill="none" />
+                  <text className="fill-[#f6ca51] text-[6.5px] font-black tracking-[0.16em]">
+                    <textPath href="#badge-top-curve" startOffset="50%" textAnchor="middle">
+                      TRUSTED BY
+                    </textPath>
+                  </text>
+                  
+                  <path id="badge-bottom-curve" d="M 78,50 A 28,28 0 0,1 22,50" fill="none" />
+                  <text className="fill-[#f6ca51] text-[6.5px] font-black tracking-[0.16em]">
+                    <textPath href="#badge-bottom-curve" startOffset="50%" textAnchor="middle">
+                      BUSINESSES
+                    </textPath>
+                  </text>
+                </svg>
+                {/* Center text */}
+                <div className="z-10 leading-none">
+                  <div className="text-[20px] font-extrabold tracking-tight text-[#f6ca51]">1000+</div>
+                  <div className="mt-1 text-[8px] font-medium text-white/70 tracking-wide uppercase">Brands</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Mobile-only overlay for text readability */}
@@ -135,6 +165,16 @@ const Home = () => {
               >
                 Shop Now
                 <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/65">
+                  <ArrowRight className="h-3 w-3" />
+                </span>
+              </button>
+
+              <button
+                onClick={() => go('/shop')}
+                className="inline-flex h-10 items-center gap-3 rounded-lg border border-[#286c31]/90 bg-[#09150d]/55 px-6 text-sm font-black text-white shadow-[inset_0_0_18px_rgba(55,211,86,0.08)] transition hover:border-[#37d856] hover:bg-[#102416]/70 focus:outline-none focus:ring-2 focus:ring-[#37d856]/45"
+              >
+                Explore Products
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-[#d9ad30] text-[#d9ad30]">
                   <ArrowRight className="h-3 w-3" />
                 </span>
               </button>
