@@ -36,7 +36,14 @@ const DurgaMaaLoader = () => {
   return (
     <div 
       className="relative w-[104px] h-[83px] md:w-40 md:h-32 flex items-center justify-center overflow-hidden bg-transparent border-none outline-none select-none shadow-none pointer-events-none"
+      style={{ mixBlendMode: 'multiply' }}
     >
+      <style>{`
+        video::-webkit-media-controls-start-playback-button {
+          display: none !important;
+          -webkit-appearance: none;
+        }
+      `}</style>
       <video 
         ref={videoRef}
         src="/durgamaloader.mp4" 
@@ -52,6 +59,7 @@ const DurgaMaaLoader = () => {
           filter: 'contrast(1.25) brightness(1.15)',
           transform: 'scale(1.08)',
           backgroundColor: 'transparent',
+          mixBlendMode: 'multiply'
         }}
       />
     </div>
