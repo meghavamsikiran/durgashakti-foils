@@ -173,9 +173,7 @@ const Home = () => {
 
       <PremiumRange go={go} />
 
-      <ComparisonSection />
-
-      <IndustriesSection />
+      <ComparisonSection go={go} />
     </main>
   );
 };
@@ -237,50 +235,40 @@ const PremiumRange = ({ go }) => (
   </section>
 );
 
-const ComparisonSection = () => (
-  <section className="bg-[#020605]">
-    <img
-      src="/normal-vs-durgashakti-foil.png"
-      alt="Normal Foil vs Durga Shakti Foil comparison"
-      width="1774"
-      height="887"
-      loading="lazy"
-      decoding="async"
-      className="block h-auto w-full object-contain"
-    />
-  </section>
-);
-
-const industries = [
-  { name: 'Restaurants', icon: Utensils },
-  { name: 'Hotels', icon: Building2 },
-  { name: 'Takeaways', icon: ShoppingBag },
-  { name: 'Catering', icon: ChefHat },
-  { name: 'Hospitals', icon: Hospital },
-  { name: 'Institutions', icon: Landmark },
-  { name: 'Food Manufacturers', icon: Factory },
-  { name: 'Retail Stores', icon: Store }
-];
-
-const IndustriesSection = () => (
-  <section className="bg-[#020605] py-16 px-6 md:px-12 lg:px-[90px] border-t border-white/5">
-    <div className="mx-auto max-w-[1200px]">
-      <h2 className="text-[12px] font-black uppercase tracking-widest text-[#25d958] mb-8">
-        INDUSTRIES WE SERVE
-      </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
-        {industries.map((item) => (
-          <div
-            key={item.name}
-            className="group flex flex-col items-center justify-center p-6 rounded-xl border border-white/10 bg-[#070d0b]/80 text-center transition-all duration-300 hover:-translate-y-1 hover:border-[#25d958]/40 hover:bg-[#0b1411]/90 hover:shadow-[0_10px_20px_rgba(37,217,88,0.08)] cursor-pointer"
-          >
-            <div className="mb-4 text-[#25d958] transition-transform duration-300 group-hover:scale-110">
-              <item.icon className="h-10 w-10 stroke-[1.5]" />
-            </div>
-            <span className="text-[13px] font-bold text-white group-hover:text-[#25d958] transition-colors duration-300 leading-tight">
-              {item.name}
-            </span>
-          </div>
+const ComparisonSection = ({ go }) => (
+  <section className="bg-[#020605] relative select-none">
+    <div className="relative mx-auto max-w-[1774px] w-full">
+      <img
+        src="/normal-vs-durgashakti-foil.png"
+        alt="Normal Foil vs Durga Shakti Foil comparison and industries served"
+        width="1774"
+        height="887"
+        loading="lazy"
+        decoding="async"
+        className="block h-auto w-full object-contain"
+      />
+      
+      {/* Interactive Overlay Grid directly over the image's Industries section */}
+      <div 
+        className="absolute left-[2.8%] right-[2.8%] top-[65%] bottom-[8%] grid grid-cols-8 gap-[1.2%]"
+      >
+        {[
+          'Restaurants',
+          'Hotels',
+          'Takeaways',
+          'Catering',
+          'Hospitals',
+          'Institutions',
+          'Food Manufacturers',
+          'Retail Stores'
+        ].map((industry) => (
+          <button
+            key={industry}
+            onClick={() => go('/shop')}
+            title={`View products for ${industry}`}
+            className="w-full h-full rounded-[10px] border border-transparent bg-transparent transition-all duration-300 hover:border-[#25d958]/60 hover:bg-[#25d958]/5 hover:shadow-[0_8px_20px_rgba(37,217,88,0.12)] focus:outline-none focus:ring-1 focus:ring-[#25d958]/50"
+            aria-label={industry}
+          />
         ))}
       </div>
     </div>
