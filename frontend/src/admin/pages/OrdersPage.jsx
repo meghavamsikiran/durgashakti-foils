@@ -134,6 +134,7 @@ const OrdersPage = () => {
       setRows(cached.data?.items || []);
       setTotal(cached.data?.total || 0);
     } else {
+      setRows([]);
       setLoading(true);
     }
     try {
@@ -239,6 +240,23 @@ const OrdersPage = () => {
     }, 10000);
     return () => clearInterval(timer);
   }, [loadSilent, page]);
+
+  // Background pre-fetch for status filters on initial mount to enable instant tab switching
+  useEffect(() => {
+    const statuses = ['PENDING_PAYMENT', 'CONFIRMED', 'PACKAGING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURN_REQUESTED', 'CANCELLED', 'FAILED'];
+    const prefetch = async () => {
+      for (const s of statuses) {
+        try {
+          const params = { page: 1, limit: PAGE_SIZE, search: '', status_filter: s };
+          await adminService.getOrders(params);
+        } catch (e) {
+          // Ignore prefetch errors
+        }
+      }
+    };
+    const timer = setTimeout(prefetch, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handlePageChange = (newPage) => {
     setExpandedOrderId(null);
