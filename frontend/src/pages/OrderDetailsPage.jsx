@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star, Clock, RefreshCw } from 'lucide-react';
+import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star, Clock } from 'lucide-react';
 import { Button } from './../components/ui/button';
 import { formatImageUrl } from './../utils/api';
 import { useProgress } from './../components/ui/ProgressToast';
@@ -27,7 +27,6 @@ const OrderDetailsPage = () => {
   const [submittingReturn, setSubmittingReturn] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [retryingPayment, setRetryingPayment] = useState(false);
-  const [syncingPayment, setSyncingPayment] = useState(false);
 
   const fetchOrder = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -75,31 +74,6 @@ const OrderDetailsPage = () => {
     }
   }, [id, navigate]);
 
-  const handleSyncPayment = async () => {
-    if (!order || syncingPayment) return;
-    setSyncingPayment(true);
-    try {
-      const rememberedPaymentId = sessionStorage.getItem(`razorpay_payment_${id}`);
-      const result = await paymentService.syncRazorpayPayment({
-        order_id: id,
-        razorpay_order_id: order.razorpay_order_id,
-        razorpay_payment_id: rememberedPaymentId
-      });
-      await fetchOrder(true);
-      if (result?.success) {
-        localStorage.removeItem(PENDING_RAZORPAY_ORDER_KEY);
-        sessionStorage.removeItem(`razorpay_payment_${id}`);
-        toast.success('Payment confirmed.');
-      } else {
-        toast.info('Still waiting for Razorpay confirmation. We will keep checking automatically.');
-      }
-    } catch {
-      toast.info('Still waiting for Razorpay confirmation. We will keep checking automatically.');
-    } finally {
-      setSyncingPayment(false);
-    }
-  };
-
   const handleRetryPayment = async () => {
     if (retryingPayment) return;
     setRetryingPayment(true);
@@ -120,15 +94,22 @@ const OrderDetailsPage = () => {
         return;
       }
 
-      const rzpOrderId = order.razorpay_order_id;
-      const totalAmount = Number(order.total_amount);
+      let payableOrder = order;
+      let rzpOrderId = order.razorpay_order_id;
+      if (!rzpOrderId || (order.payment_method || '').toLowerCase() === 'cod') {
+        const created = await paymentService.createRazorpayOrderForExistingOrder(id);
+        payableOrder = created.order || order;
+        rzpOrderId = created.razorpay_order_id || payableOrder.razorpay_order_id;
+        setOrder(payableOrder);
+      }
+      const totalAmount = Number(payableOrder.total_amount || order.total_amount);
 
       const options = {
         key: process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_live_SsPZ6WqWCSv7VP',
         amount: Math.round(totalAmount * 100),
         currency: 'INR',
         name: 'DurgaShakti Foils',
-        description: `Order #${order.order_number}`,
+        description: `Order #${payableOrder.order_number || order.order_number}`,
         order_id: rzpOrderId,
         handler: async function (paymentResponse) {
           const paidPaymentId = paymentResponse?.razorpay_payment_id;
@@ -596,57 +577,73 @@ const OrderDetailsPage = () => {
           <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest">Payment Method</h3>
             <div className="text-xs text-slate-600 space-y-2.5">
-              <p className="font-extrabold text-slate-900 uppercase tracking-wider">{order.payment_method || 'Razorpay'}</p>
-              {(order.payment_status || '').toLowerCase() === 'paid' || (order.payment_status || '').toLowerCase() === 'completed' ? (
-                <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1 font-semibold">
-                  <p className="font-extrabold flex items-center gap-1.5 text-emerald-700">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Paid
-                  </p>
-                  {order.transaction_id && (
-                    <p className="font-mono text-slate-500 break-all select-all">ID: {order.transaction_id}</p>
-                  )}
-                  {order.transaction_date && (
-                    <p className="text-slate-500">Date: {new Date(order.transaction_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                  )}
-                </div>
-              ) : (
-                <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-100/60 space-y-2 font-semibold">
-                  <p className="font-extrabold flex items-center gap-1.5 text-amber-700">
-                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span> Pending Payment
-                  </p>
-                  <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">Status: {order.payment_status || 'Unpaid'}</p>
-                  <button
-                    onClick={handleSyncPayment}
-                    disabled={syncingPayment}
-                    className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-750 font-bold text-[9px] uppercase tracking-widest py-2 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-                  >
-                    <RefreshCw className={`w-3 h-3 text-slate-500 ${syncingPayment ? 'animate-spin' : ''}`} />
-                    {syncingPayment ? 'Checking Razorpay...' : 'Sync Payment Status'}
-                  </button>
-                  {timeLeft && timeLeft !== 'Expired' && (order.payment_method || '').toLowerCase() !== 'cod' && !['cancelled', 'failed'].includes((order.order_status || '').toLowerCase()) && (
-                    <div className="mt-2 space-y-2">
-                      <div className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-2 border border-amber-200">
-                        <Clock className="w-3.5 h-3.5 text-amber-600" />
-                        <span className="text-xs font-black text-amber-800 tabular-nums">{timeLeft}</span>
-                        <span className="text-[9px] font-bold text-amber-600">remaining to complete payment</span>
+              {(() => {
+                const paymentMethod = (order.payment_method || '').toLowerCase();
+                const paymentStatus = (order.payment_status || '').toLowerCase();
+                const isPaid = paymentStatus === 'paid' || paymentStatus === 'completed';
+                const isCod = paymentMethod === 'cod';
+                const canPayOnline = isCod && !isPaid && !['cancelled', 'failed', 'refunded', 'return_approved', 'delivered'].includes((order.order_status || '').toLowerCase());
+                return (
+                  <>
+                    <p className="font-extrabold text-slate-900 uppercase tracking-wider">{isCod ? 'Cash on Delivery' : 'Prepaid Online'}</p>
+                    {isPaid ? (
+                      <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1 font-semibold">
+                        <p className="font-extrabold flex items-center gap-1.5 text-emerald-700">
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Paid
+                        </p>
+                        {order.transaction_id && order.transaction_id !== 'COD' && (
+                          <p className="font-mono text-slate-500 break-all select-all">Txn: {order.transaction_id}</p>
+                        )}
                       </div>
-                      <button
-                        onClick={handleRetryPayment}
-                        disabled={retryingPayment}
-                        className="w-full bg-primary hover:bg-emerald-hover text-white font-black text-[10px] uppercase tracking-widest py-2.5 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-                      >
-                        <CreditCard className="w-3.5 h-3.5" />
-                        {retryingPayment ? 'Processing...' : 'Complete Payment Now'}
-                      </button>
-                    </div>
-                  )}
-                  {timeLeft === 'Expired' && (order.payment_method || '').toLowerCase() !== 'cod' && (
-                    <div className="mt-2 bg-rose-50 text-rose-700 text-[9px] font-bold rounded-lg px-3 py-2 border border-rose-200">
-                      Payment window has expired. This order will be automatically cancelled.
-                    </div>
-                  )}
-                </div>
-              )}
+                    ) : isCod ? (
+                      <div className="bg-slate-50 text-slate-700 text-[10px] rounded-xl p-3 border border-slate-200 space-y-2 font-semibold">
+                        <p className="font-extrabold flex items-center gap-1.5 text-slate-700">
+                          <span className="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Cash to be collected on delivery
+                        </p>
+                        {canPayOnline && (
+                          <button
+                            onClick={handleRetryPayment}
+                            disabled={retryingPayment}
+                            className="w-full bg-primary hover:bg-emerald-hover text-white font-black text-[10px] uppercase tracking-widest py-2.5 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" />
+                            {retryingPayment ? 'Processing...' : 'Pay Online'}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-100/60 space-y-2 font-semibold">
+                        <p className="font-extrabold flex items-center gap-1.5 text-amber-700">
+                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span> Confirming Payment
+                        </p>
+                        <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">Status updates automatically.</p>
+                        {timeLeft && timeLeft !== 'Expired' && !['cancelled', 'failed'].includes((order.order_status || '').toLowerCase()) && (
+                          <div className="mt-2 space-y-2">
+                            <div className="flex items-center gap-2 bg-white/80 rounded-lg px-3 py-2 border border-amber-200">
+                              <Clock className="w-3.5 h-3.5 text-amber-600" />
+                              <span className="text-xs font-black text-amber-800 tabular-nums">{timeLeft}</span>
+                              <span className="text-[9px] font-bold text-amber-600">remaining in payment window</span>
+                            </div>
+                            <button
+                              onClick={handleRetryPayment}
+                              disabled={retryingPayment}
+                              className="w-full bg-primary hover:bg-emerald-hover text-white font-black text-[10px] uppercase tracking-widest py-2.5 rounded-lg shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+                            >
+                              <CreditCard className="w-3.5 h-3.5" />
+                              {retryingPayment ? 'Processing...' : 'Complete Payment Now'}
+                            </button>
+                          </div>
+                        )}
+                        {timeLeft === 'Expired' && (
+                          <div className="mt-2 bg-rose-50 text-rose-700 text-[9px] font-bold rounded-lg px-3 py-2 border border-rose-200">
+                            Payment window has expired. This order will be automatically cancelled.
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
 

@@ -102,10 +102,10 @@ const PaymentsPage = () => {
 
   const stats = {
     total: metrics?.total_revenue || 0,
-    successCount: metrics?.total_orders || 0,
-    pending: metrics?.pending_orders || 0,
-    failed: 0, // Not provided by summary API currently
-    successRate: 100 // Placeholder
+    successCount: metrics?.paid_payments_count || 0,
+    pending: metrics?.pending_payment_amount || 0,
+    failed: metrics?.failed_payments_count || 0,
+    successRate: metrics?.payment_success_rate ?? 100
   };
 
   if (loading && rows.length === 0) return <PageLoader />;

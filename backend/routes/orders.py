@@ -813,6 +813,10 @@ class RazorpaySyncRequest(BaseModel):
     razorpay_payment_id: Optional[str] = None
 
 
+class ExistingOrderPaymentRequest(BaseModel):
+    order_id: str
+
+
 @router.post("/payment/razorpay/verify")
 async def verify_razorpay_payment(
     payload: RazorpayVerifyRequest,
@@ -869,6 +873,76 @@ async def verify_razorpay_payment(
         )
 
     return {"success": True, "message": "Payment verified successfully"}
+
+
+@router.post("/payment/razorpay/create-for-order")
+async def create_razorpay_order_for_existing_order(
+    payload: ExistingOrderPaymentRequest,
+    current_user: UserSchema = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    validate_uuid(payload.order_id)
+    res = await db.execute(
+        select(OrderModel)
+        .where(OrderModel.id == payload.order_id, OrderModel.user_id == current_user.id)
+        .with_for_update()
+    )
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if str(order.payment_status or "").lower() in {"paid", "completed"}:
+        return {
+            "success": True,
+            "message": "Order is already paid",
+            "order": row_to_dict(order),
+            "razorpay_order_id": order.razorpay_order_id,
+        }
+
+    if str(order.order_status or "").lower() in {"cancelled", "refunded", "return_approved", "delivered"}:
+        raise HTTPException(status_code=400, detail="This order can no longer be paid online")
+
+    amount_paise = _expected_amount_paise(order)
+    razorpay_order_id = order.razorpay_order_id
+    if not razorpay_order_id:
+        try:
+            client = _get_razorpay_client()
+            if client:
+                rz_order = await asyncio.to_thread(
+                    client.order.create,
+                    {
+                        "amount": amount_paise,
+                        "currency": "INR",
+                        "receipt": f"receipt_{order.order_number}",
+                    }
+                )
+                razorpay_order_id = rz_order["id"]
+            else:
+                razorpay_order_id = f"order_{uuid.uuid4().hex[:14]}"
+        except Exception as exc:
+            logger.warning("Failed to create Razorpay order for existing order %s: %s", order.order_number, exc)
+            razorpay_order_id = f"order_{uuid.uuid4().hex[:14]}"
+
+    order.payment_method = "online"
+    order.payment_status = "pending"
+    order.razorpay_order_id = razorpay_order_id
+    order.updated_at = datetime.now(timezone.utc)
+    await db.flush()
+    await write_audit_log(
+        db,
+        "PAYMENT_RAZORPAY_CREATED_FOR_EXISTING_ORDER",
+        current_user.id,
+        "order",
+        str(order.id),
+        {"razorpay_order_id": razorpay_order_id}
+    )
+
+    return {
+        "success": True,
+        "order": row_to_dict(order),
+        "razorpay_order_id": razorpay_order_id,
+        "amount": amount_paise,
+    }
 
 
 @router.post("/payment/razorpay/sync")

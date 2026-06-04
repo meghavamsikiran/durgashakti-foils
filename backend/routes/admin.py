@@ -653,6 +653,12 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
 
     await db.flush()
     await write_audit_log(db, "ORDER_STATUS_UPDATED", admin.id, "order", order_id, {"from": prev_status, "to": effective_status})
+    res_payload = {
+        "message": f"Order status updated to {effective_status}",
+        "order": row_to_dict(order),
+    }
+    if warning_message:
+        res_payload["warning"] = warning_message
 
     # ── Transactional Emails ─────────────────────────────────────────────
     try:

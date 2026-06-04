@@ -61,6 +61,34 @@ const statusConfigs = {
 const PAGE_SIZE = 15;
 const uiStatus = (status) => (status || '').toUpperCase();
 const isPaidStatus = (status) => ['paid', 'completed'].includes(String(status || '').toLowerCase());
+const STATUS_LABELS = {
+  PENDING_PAYMENT: 'Payment Pending',
+  PENDING: 'Placed',
+  PROCESSING: 'Processing',
+  PLACED: 'Placed',
+  CONFIRMED: 'Confirmed',
+  PACKAGING: 'Packed',
+  PACKED: 'Packed',
+  SHIPPED: 'Shipped',
+  IN_TRANSIT: 'In Transit',
+  OUT_FOR_DELIVERY: 'Out For Delivery',
+  DELIVERED: 'Delivered',
+  FAILED: 'Delivery Failed',
+  RETURNED: 'Returned',
+  CANCELLED: 'Cancelled',
+  RETURN_REQUESTED: 'Return Requested',
+  RETURN_APPROVED: 'Return Approved',
+  RETURN_REJECTED: 'Return Rejected',
+  REFUNDED: 'Refunded',
+};
+const statusLabel = (status) => STATUS_LABELS[uiStatus(status)] || uiStatus(status).replace(/_/g, ' ');
+const paymentMethodLabel = (order) => (String(order.payment_method || '').toLowerCase() === 'cod' ? 'COD' : 'Prepaid');
+const paymentStatusLabel = (order) => {
+  const value = String(order.payment_status || '').toLowerCase();
+  if (value === 'cash on delivery') return 'To Collect';
+  if (value === 'paid' || value === 'completed') return 'Paid';
+  return value ? value.replace(/_/g, ' ') : 'Pending';
+};
 
 const patchOrderStatus = (order, status, extraData = {}) => {
   const next = uiStatus(status);
@@ -288,7 +316,7 @@ const OrdersPage = () => {
       if (response?.data?.warning) {
         toast.warning(response.data.warning, { duration: 8000 });
       }
-      toast.success(`Order status updated to ${newStatus.toLowerCase().replace('_', ' ')}`, { id: toastId });
+      toast.success(`Order status updated to ${statusLabel(newStatus)}`, { id: toastId });
       loadSilent(page);
     } catch (err) {
       setRows(previousRows);
@@ -300,6 +328,7 @@ const OrdersPage = () => {
         next.delete(orderId);
         return next;
       });
+      setSubmitting(false);
     }
   };
 
@@ -440,7 +469,7 @@ const OrdersPage = () => {
               <Clock className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Packaging</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Packed</div>
               <div className="text-2xl font-black text-slate-900">{stats.packaging}</div>
             </div>
           </div>
@@ -473,7 +502,7 @@ const OrdersPage = () => {
                 : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'
             }`}
           >
-            {s.replace('_', ' ')}
+            {s === 'ALL' ? 'All' : statusLabel(s)}
           </button>
         ))}
       </div>
@@ -566,13 +595,16 @@ const OrdersPage = () => {
                          <div className="font-bold text-slate-800">{order.customer_name || 'Guest User'}</div>
                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
                            <div className={`w-1.5 h-1.5 rounded-full ${isPaidStatus(order.payment_status) ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-                           {order.payment_method} • {order.payment_status}
+                           <span>{paymentMethodLabel(order)} • {paymentStatusLabel(order)}</span>
+                           {order.transaction_id && order.transaction_id !== 'COD' && (
+                             <span className="font-mono normal-case tracking-normal select-all">{order.transaction_id}</span>
+                           )}
                          </div>
                        </td>
                        <td className="px-8 py-6 text-center">
                          <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${config.bg} ${config.color}`}>
                            <StatusIcon className="w-3 h-3" />
-                           {status.replace('_', ' ')}
+                           {statusLabel(status)}
                          </span>
                        </td>
                        <td className="px-8 py-6 text-right font-black text-slate-900 text-lg">
@@ -623,7 +655,7 @@ const OrdersPage = () => {
                                     RETURN_REJECTED: 'Reject',
                                     REFUNDED: 'Refund'
                                   };
-                                  const label = actionLabels[a] || a.replace('_', ' ');
+                                  const label = actionLabels[a] || statusLabel(a);
                                   const isDeliverWithCOD = a === 'DELIVERED' && order.payment_method === 'cod' && order.payment_status !== 'Paid' && order.payment_status !== 'completed';
 
                                   buttons.push(

@@ -13,6 +13,10 @@ const paymentService = {
     const response = await apiClient.post('/payment/razorpay/sync', syncData, { silent: true });
     return response.data;
   },
+  createRazorpayOrderForExistingOrder: async (orderId) => {
+    const response = await apiClient.post('/payment/razorpay/create-for-order', { order_id: orderId });
+    return response.data;
+  },
 };
 
 export default paymentService;

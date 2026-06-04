@@ -13,10 +13,23 @@ from datetime import datetime, timezone, timedelta
 router = APIRouter(prefix="/api")
 
 REVENUE_ORDER_STATUSES = [
-    "processing", "placed", "confirmed", "packaging", "shipped",
+    "processing", "placed", "confirmed", "packaging", "shipped", "in_transit",
     "out_for_delivery", "delivered", "return_requested", "return_rejected"
 ]
-REVENUE_PAYMENT_STATUSES = ["completed", "Paid"]
+REVENUE_PAYMENT_STATUSES = ["completed", "Paid", "paid"]
+
+
+def _payment_status_label(status: str | None) -> str:
+    value = str(status or "").lower()
+    if value in {"paid", "completed"}:
+        return "completed"
+    if value in {"failed", "cancelled", "refunded"}:
+        return "failed"
+    return "pending"
+
+
+def _payment_provider_label(method: str | None) -> str:
+    return "COD" if str(method or "").lower() == "cod" else "Prepaid"
 
 
 @router.get("/admin/payments")
@@ -35,7 +48,11 @@ async def list_payments(
     clause = None
     if search:
         like_term = f"%{search}%"
-        clause = OrderModel.order_number.ilike(like_term)
+        clause = or_(
+            OrderModel.order_number.ilike(like_term),
+            OrderModel.razorpay_payment_id.ilike(like_term),
+            OrderModel.razorpay_order_id.ilike(like_term),
+        )
         q = q.where(clause)
 
     # Date range filtering
@@ -97,13 +114,15 @@ async def list_payments(
     items = []
     for row in rows:
         o = row[0]
+        is_cod = str(o.payment_method or "").lower() == "cod"
         items.append({
             "id": str(o.id),
             "order_number": o.order_number,
-            "transaction_id": "COD",
+            "transaction_id": (o.razorpay_payment_id or o.razorpay_order_id or "COD") if is_cod else (o.razorpay_payment_id or o.razorpay_order_id),
             "amount": float(o.total_amount),
-            "status": o.payment_status,
-            "provider": o.payment_method or "COD",
+            "status": "pending" if is_cod and str(o.payment_status or "").lower() not in {"paid", "completed"} else _payment_status_label(o.payment_status),
+            "raw_status": o.payment_status,
+            "provider": _payment_provider_label(o.payment_method),
             "created_at": o.created_at.isoformat() if o.created_at else None
         })
     return {"items": items, "total": total, "page": page, "limit": limit}
@@ -281,6 +300,30 @@ async def get_analytics_summary(
                 top_p_res = await session.execute(select(ProductModel).order_by(ProductModel.units_sold.desc()).limit(1))
                 return top_p_res.scalar_one_or_none()
         tasks["top_product"] = fetch_top_product()
+
+    if has_financial:
+        async def fetch_payment_metrics():
+            async with database.async_session_factory() as session:
+                paid_clause = func.lower(func.coalesce(OrderModel.payment_status, "")).in_(["paid", "completed"])
+                pending_clause = func.lower(func.coalesce(OrderModel.payment_status, "")).in_(["pending", "pending_payment", "cash on delivery"])
+                failed_clause = func.lower(func.coalesce(OrderModel.payment_status, "")).in_(["failed", "cancelled"])
+                base_clause = OrderModel.id.isnot(None)
+                if start_dt:
+                    base_clause = base_clause & (OrderModel.created_at >= start_dt)
+                if end_dt:
+                    base_clause = base_clause & (OrderModel.created_at <= end_dt)
+                elif date_filter:
+                    base_clause = base_clause & (OrderModel.created_at >= date_filter)
+
+                q = select(
+                    func.sum(case((base_clause & paid_clause, 1), else_=0)),
+                    func.sum(case((base_clause & pending_clause, 1), else_=0)),
+                    func.sum(case((base_clause & failed_clause, 1), else_=0)),
+                    func.sum(case((base_clause & pending_clause, OrderModel.total_amount), else_=0.0)),
+                )
+                res = await session.execute(q)
+                return res.tuples().first()
+        tasks["payment_metrics"] = fetch_payment_metrics()
 
     if has_customers:
         async def fetch_customer_count():
@@ -519,6 +562,18 @@ async def get_analytics_summary(
         metrics["top_performer"] = top_performer
         metrics["fastest_mover"] = fastest_mover
         metrics["sales_velocity"] = sales_velocity
+    if has_financial:
+        payment_val = results.get("payment_metrics")
+        paid_count = int(payment_val[0]) if payment_val and payment_val[0] is not None else 0
+        pending_count = int(payment_val[1]) if payment_val and payment_val[1] is not None else 0
+        failed_count = int(payment_val[2]) if payment_val and payment_val[2] is not None else 0
+        pending_amount = round(float(payment_val[3]), 2) if payment_val and payment_val[3] is not None else 0.0
+        total_payment_events = paid_count + pending_count + failed_count
+        metrics["paid_payments_count"] = paid_count
+        metrics["pending_payments_count"] = pending_count
+        metrics["failed_payments_count"] = failed_count
+        metrics["pending_payment_amount"] = pending_amount
+        metrics["payment_success_rate"] = round((paid_count / total_payment_events * 100), 1) if total_payment_events else 100.0
     if has_audit:
         metrics["security_events_count"] = security_events_count
         metrics["destructive_actions_count"] = destructive_actions_count

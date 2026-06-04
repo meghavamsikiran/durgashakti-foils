@@ -481,6 +481,17 @@ def row_to_dict(row) -> dict:
         elif hasattr(val, 'is_finite'):  # Decimal
             val = float(val)
         d[col_name] = val
+    if hasattr(row, "razorpay_payment_id") or hasattr(row, "payment_method"):
+        method = str(getattr(row, "payment_method", "") or "").lower()
+        payment_id = getattr(row, "razorpay_payment_id", None)
+        if method == "cod":
+            d["transaction_id"] = payment_id or "COD"
+            d["payment_type"] = "COD"
+            d["payment_label"] = "Cash on Delivery"
+        else:
+            d["transaction_id"] = payment_id
+            d["payment_type"] = "PREPAID"
+            d["payment_label"] = "Prepaid"
     return d
 
 
