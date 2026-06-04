@@ -77,7 +77,7 @@ export const setupInterceptors = (apiClient) => {
           !navigator.onLine
         );
 
-        if (networkError) {
+        if (networkError && window.location.pathname !== '/') {
           if (!coldStartWarningShown || now - lastErrorTime > 300000) {
             coldStartWarningShown = true;
             lastErrorTime = now;

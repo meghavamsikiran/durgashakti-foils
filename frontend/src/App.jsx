@@ -70,6 +70,7 @@ function AppRoutes() {
   const { loading: authLoading } = useAuth();
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin');
+  const isHomePath = location.pathname === '/';
   const isShopPath = location.pathname === '/shop';
   const isLightPath = isShopPath || 
                       location.pathname.startsWith('/dashboard') || 
@@ -88,8 +89,8 @@ function AppRoutes() {
       <div className={`App ${themeClass}`}>
         <ScrollToTop />
         <RouteTransitionLoader />
-        {!isAdminPath && <Navbar />}
-        {!isAdminPath && <PopupBanner />}
+        {!isAdminPath && !isHomePath && <Navbar />}
+        {!isAdminPath && !isHomePath && <PopupBanner />}
         <Suspense fallback={<SuspenseTrigger />}>
           <Routes>
             {/* Public Routes */}

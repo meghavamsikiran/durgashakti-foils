@@ -17,3 +17,15 @@
 .shadow-glow {
   box-shadow: 0 0 20px rgba(0, 111, 238, 0.15);
 }
+
+.home-hero-stage {
+  background-size: 1920px 820px;
+  background-position: center top;
+}
+
+@media (max-width: 767px) {
+  .home-hero-stage {
+    background-size: auto 620px;
+    background-position: 55% top;
+  }
+}
