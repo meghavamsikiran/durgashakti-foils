@@ -57,12 +57,12 @@ def _normalize_refund_error(err: Optional[Exception]) -> str:
 
 def _is_online_payment_pending(order: OrderModel) -> bool:
     payment_status = str(order.payment_status or "").lower()
-    if payment_status in {"paid", "completed", "cash on delivery", "refunded", "refund_pending", "failed", "cancelled"}:
+    if payment_status in {"paid", "completed", "cash on delivery", "refunded", "refund_pending"}:
         return False
     return (
         str(order.payment_method or "").lower() != "cod"
         and not _is_paid_order(order)
-        and str(order.order_status or "").lower() not in {"refunded", "return_approved", "return_rejected", "cancelled", "failed"}
+        and str(order.order_status or "").lower() not in {"refunded", "return_approved", "return_rejected", "delivered"}
     )
 
 

@@ -768,7 +768,6 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
                 f"Your order {order.order_number} is now {readable_status}.",
                 "order"
             )
-            import asyncio
             from deps import send_email as _send
             from email_templates import (
                 order_shipped_email, order_delivered_email,
@@ -821,10 +820,28 @@ async def retry_order_refund(
     from routes.orders import trigger_razorpay_refund
     success, err_msg, refund_info = await trigger_razorpay_refund(order, db)
     if not success:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Razorpay refund could not be processed: {err_msg}"
+        order.order_status = "return_approved"
+        order.payment_status = "refund_pending"
+        order.updated_at = datetime.now(timezone.utc)
+        await db.flush()
+        await write_audit_log(
+            db,
+            "ORDER_RAZORPAY_REFUND_RETRY_PENDING",
+            admin.id,
+            "order",
+            order_id,
+            {
+                "prev_payment_status": prev_payment_status,
+                "prev_order_status": prev_order_status,
+                "razorpay_payment_id": order.razorpay_payment_id,
+                "error": err_msg,
+            }
         )
+        return {
+            "message": f"Razorpay refund is still pending: {err_msg}",
+            "warning": f"Razorpay refund is still pending: {err_msg}",
+            "order": row_to_dict(order),
+        }
 
     refund_status = str((refund_info or {}).get("status") or "").lower()
     order.payment_status = "refunded" if refund_status == "processed" else "refund_pending"

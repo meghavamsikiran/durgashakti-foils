@@ -77,10 +77,9 @@ async def lifespan(app: FastAPI):
     # Start background cleanup task for expired pending payment orders (timeout of 15 minutes)
     try:
         from database import async_session_factory
-        from models import OrderModel, ProductModel, UserModel
+        from models import OrderModel, ProductModel
         from sqlalchemy import select
-        from deps import send_email, create_notification
-        from email_templates import order_cancelled_email
+        from deps import create_notification
         from routes.orders import _reconcile_order_with_razorpay
         async def _payment_timeout_cleanup_loop():
             while True:
@@ -104,7 +103,10 @@ async def lifespan(app: FastAPI):
                                 )
                                 continue
 
-                            logger.info(f"Auto-cancelling expired pending order {order.order_number} (created at {order.created_at})")
+                            logger.info(
+                                "Marking online order %s as payment overdue after timeout; keeping payment retry available",
+                                order.order_number,
+                            )
                             
                             # Release stock if stock was applied
                             if order.stock_applied:
@@ -127,9 +129,10 @@ async def lifespan(app: FastAPI):
                                             product.in_stock = True
                                             product.updated_at = datetime.now(timezone.utc)
 
-                            # Update order status
-                            order.order_status = "cancelled"
-                            order.payment_status = "failed"
+                            # Online orders do not reserve stock until payment succeeds.
+                            # Keep them retryable instead of cancelling them permanently.
+                            order.order_status = "overdue"
+                            order.payment_status = "pending"
                             order.stock_applied = False
                             order.updated_at = datetime.now(timezone.utc)
 
@@ -138,31 +141,10 @@ async def lifespan(app: FastAPI):
                                 await create_notification(
                                     session,
                                     str(order.user_id),
-                                    "Order Cancelled (Payment Timeout)",
-                                    f"Your order {order.order_number} has been automatically cancelled because the payment was not completed within the 15-minute window.",
+                                    "Payment Pending",
+                                    f"Payment for order {order.order_number} is still pending. You can complete the payment from order details.",
                                     "order"
                                 )
-
-                                # Send cancellation email
-                                user_stmt = select(UserModel).where(UserModel.id == order.user_id)
-                                user_res = await session.execute(user_stmt)
-                                user = user_res.scalar_one_or_none()
-                                if user and user.email:
-                                    try:
-                                        subj, body = order_cancelled_email(
-                                            user.full_name or user.email,
-                                            str(order.order_number),
-                                            float(order.total_amount or 0)
-                                        )
-                                        # Customize template subject and body content for payment timeout
-                                        subj = f"Order Cancelled (Payment Timeout) - {order.order_number}"
-                                        body = body.replace(
-                                            "your order has been cancelled.",
-                                            "your order has been automatically cancelled because the payment was not completed within the 15-minute window."
-                                        )
-                                        asyncio.create_task(send_email(user.email, subj, body))
-                                    except Exception:
-                                        logger.exception(f"Failed to send email for auto-cancelled order {order.order_number}")
 
                         if expired_orders:
                             await session.commit()
