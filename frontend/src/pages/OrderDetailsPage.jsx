@@ -119,7 +119,18 @@ const OrderDetailsPage = () => {
         image: '/logo-durga.png',
         theme: {
           color: '#006e1b',
-          hide_topbar: false
+          hide_topbar: false,
+          backdrop_color: 'rgba(24, 28, 27, 0.55)'
+        },
+        modal: {
+          ondismiss: function () {
+            toast.info('Payment window closed. You can retry anytime within the time limit.');
+            setRetryingPayment(false);
+          },
+          width: 1200,
+          height: 900,
+          maxHeight: '95vh',
+          maxWidth: '95vw'
         },
         order_id: rzpOrderId,
         handler: async function (paymentResponse) {

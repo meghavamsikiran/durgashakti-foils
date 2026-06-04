@@ -285,6 +285,113 @@ h1, h2, h3, h4, h5, h6 {
     border-color: currentColor;
   }
 
+  /* ── RAZORPAY ADVANCED THEMING ────────────────────────────────────────── */
+  
+  /* Razorpay iframe container */
+  iframe[src*="checkout.razorpay.com"] {
+    min-width: 1000px !important;
+    max-width: 1200px !important;
+    min-height: 800px !important;
+    width: min(95vw, 1200px) !important;
+    height: min(95vh - 100px, 900px) !important;
+    border-radius: 28px !important;
+    border: 2px solid #e0e3e1 !important;
+    box-shadow: 0 40px 120px rgba(0, 110, 27, 0.15),
+                0 20px 60px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+    backdrop-filter: blur(2px) !important;
+  }
+
+  /* Razorpay modal backdrop */
+  div[role="dialog"] iframe[src*="checkout.razorpay.com"],
+  .razorpay-container {
+    filter: drop-shadow(0 40px 120px rgba(0, 110, 27, 0.18)) !important;
+  }
+
+  /* Override loading spinner and colors */
+  iframe[src*="checkout.razorpay.com"]::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #f7faf8 0%, #f1f4f2 50%, #ebefed 100%) !important;
+    border-radius: 28px !important;
+    z-index: -1;
+  }
+
+  /* Target Razorpay SVG elements and buttons */
+  iframe[src*="checkout.razorpay.com"] svg {
+    filter: hue-rotate(-35deg) saturate(1.4) brightness(1.1) !important;
+  }
+
+  /* Razorpay button and interactive elements */
+  iframe[src*="checkout.razorpay.com"] [data-button],
+  iframe[src*="checkout.razorpay.com"] button {
+    background: linear-gradient(135deg, #006e1b 0%, #005312 100%) !important;
+    box-shadow: 0 12px 32px rgba(11, 209, 61, 0.24) !important;
+  }
+
+  /* Razorpay focus and hover states */
+  iframe[src*="checkout.razorpay.com"] button:hover {
+    box-shadow: 0 16px 48px rgba(11, 209, 61, 0.32),
+                0 0 32px rgba(52, 228, 78, 0.2) !important;
+    transform: translateY(-2px) !important;
+  }
+
+  /* Loading spinner animation */
+  @keyframes razorpay-emerald-spin {
+    0% {
+      background: conic-gradient(#006e1b 0deg, #0bd13d 90deg, #006e1b 360deg);
+      transform: rotate(0deg);
+    }
+    100% {
+      background: conic-gradient(#006e1b 0deg, #0bd13d 90deg, #006e1b 360deg);
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Razorpay overlay */
+  body > div[style*="position"] iframe[src*="checkout.razorpay.com"] {
+    animation: fadeInScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  }
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Razorpay backdrop blur */
+  body > div[style*="background"][style*="rgba(0"] {
+    background: rgba(24, 28, 27, 0.55) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+  }
+
+  /* Emerald accent color replacement for default blue */
+  .razorpay-svg,
+  .razorpay-loader,
+  .razorpay-icon {
+    filter: hue-rotate(-35deg) saturate(1.8) !important;
+  }
+
+  /* Premium card styling inside Razorpay */
+  iframe[src*="checkout.razorpay.com"] [data-card],
+  iframe[src*="checkout.razorpay.com"] .card-container {
+    border: 1px solid #e0e3e1 !important;
+    border-radius: 16px !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f7faf8 100%) !important;
+    box-shadow: 0 8px 24px rgba(24, 28, 27, 0.06),
+                inset 0 1px 2px rgba(255, 255, 255, 0.8) !important;
+  }
+
   .admin-theme {
     --surface: #f7faf8;
     --surface-dim: #D7DBD9;

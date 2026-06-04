@@ -149,11 +149,9 @@ export const useCheckout = () => {
       try {
         const parsed = JSON.parse(pendingOnlineOrder);
         const isFresh = !parsed?.createdAt || Date.now() - Number(parsed.createdAt) < 30 * 60 * 1000;
-        if (parsed?.orderId && isFresh) {
-          navigate(`/order/${parsed.orderId}`);
-          return;
+        if (!parsed?.orderId || !isFresh) {
+          localStorage.removeItem(PENDING_RAZORPAY_ORDER_KEY);
         }
-        localStorage.removeItem(PENDING_RAZORPAY_ORDER_KEY);
       } catch {
         localStorage.removeItem(PENDING_RAZORPAY_ORDER_KEY);
       }
@@ -407,7 +405,17 @@ export const useCheckout = () => {
           image: "/logo-durga.png",
           theme: {
             color: '#006e1b',
-            hide_topbar: false
+            hide_topbar: false,
+            backdrop_color: 'rgba(24, 28, 27, 0.55)'
+          },
+          modal: {
+            ondismiss: function () {
+              toast.info('Payment window closed. You can retry anytime within the time limit.');
+            },
+            width: 1200,
+            height: 900,
+            maxHeight: '95vh',
+            maxWidth: '95vw'
           },
           order_id: rzpOrderId,
           prefill: {
