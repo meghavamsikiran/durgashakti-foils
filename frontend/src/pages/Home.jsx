@@ -198,7 +198,7 @@ const MetricStrip = () => (
 
 const PremiumRange = ({ go }) => (
   <section className="bg-white px-6 pb-10 pt-12 text-black md:px-12 lg:px-[90px]">
-    <div className="mx-auto max-w-[1160px] flex flex-col gap-6 lg:grid lg:grid-cols-[280px_repeat(4,minmax(0,1fr))] lg:items-center">
+    <div className="mx-auto max-w-[1160px] flex flex-col gap-6 lg:grid lg:grid-cols-[280px_1fr_1fr_1fr_1fr] lg:items-center">
       <div className="pr-5">
         <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-[#2fb54a]">Our Premium Range</p>
         <h2 className="font-serif text-[24px] md:text-[26px] font-bold leading-[1.08] text-[#101418]">
@@ -208,7 +208,7 @@ const PremiumRange = ({ go }) => (
         </h2>
       </div>
 
-      <div className="flex overflow-x-auto gap-4 pb-4 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-none snap-x snap-mandatory lg:grid lg:grid-cols-4 lg:overflow-visible lg:pb-0">
+      <div className="flex overflow-x-auto gap-4 pb-4 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-none snap-x snap-mandatory lg:grid lg:grid-cols-4 lg:col-span-4 lg:overflow-visible lg:pb-0">
         {categories.map((category) => (
           <button
             key={category.title}
