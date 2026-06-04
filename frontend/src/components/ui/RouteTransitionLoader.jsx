@@ -91,33 +91,8 @@ const RouteTransitionLoader = () => {
 
   if (!show) return null;
 
-  // Mobile-specific branded loader (circular ring, orange logo center, text below) - completely hidden on desktop
-  if (isMobile) {
-    return (
-      <div 
-        className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-50/95 md:hidden"
-      >
-        <div className="flex flex-col items-center justify-center gap-4">
-          <div className="relative w-14 h-14">
-            {/* Circular track */}
-            <div className="absolute inset-0 rounded-full border-[3.5px] border-slate-200" />
-            {/* Spinning indicator */}
-            <div className="absolute inset-0 rounded-full border-[3.5px] border-transparent border-t-primary animate-spin" />
-            {/* Branded orange logo in center */}
-            <img
-              src="/favicon.png"
-              alt=""
-              className="absolute inset-0 m-auto w-6 h-6 object-contain"
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Desktop loaders (Trishul top bar + Durga Maa Center video) - completely hidden on mobile viewports
   return (
-    <div className="hidden md:block">
+    <>
       {/* Trishul top progress bar sweep */}
       <TrishoolLoader />
       {/* Durga Maa centre animation overlay */}
@@ -127,7 +102,7 @@ const RouteTransitionLoader = () => {
       >
         <DurgaMaaLoader />
       </div>
-    </div>
+    </>
   );
 };
 
