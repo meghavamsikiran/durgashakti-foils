@@ -387,14 +387,19 @@ export const useCheckout = () => {
           },
           handler: async function (paymentResponse) {
             setLoading(true);
+            const paidPaymentId = paymentResponse?.razorpay_payment_id;
+            if (paidPaymentId) {
+              sessionStorage.setItem(`razorpay_payment_${orderId}`, paidPaymentId);
+            }
             try {
               const verifyPayload = {
                 razorpay_order_id: rzpOrderId,
-                razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                razorpay_payment_id: paidPaymentId,
                 razorpay_signature: paymentResponse.razorpay_signature
               };
               const verificationResult = await paymentService.verifyRazorpayPayment(verifyPayload);
               if (verificationResult && verificationResult.success) {
+                sessionStorage.removeItem(`razorpay_payment_${orderId}`);
                 toast.success('Payment verified successfully!');
                 await clearCart();
                 navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber}&payment_method=online`);

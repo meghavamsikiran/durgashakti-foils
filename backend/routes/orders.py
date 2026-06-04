@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
 
 PAID_PAYMENT_STATUSES = {"paid", "completed", "Cash On Delivery"}
+RAZORPAY_SUCCESS_STATUSES = {"captured", "authorized"}
 
 
 def _is_paid_order(order: OrderModel) -> bool:
@@ -36,6 +37,30 @@ def _is_paid_order(order: OrderModel) -> bool:
 
 def _expected_amount_paise(order: OrderModel) -> int:
     return int(round(float(order.total_amount or 0) * 100))
+
+
+def _is_online_payment_pending(order: OrderModel) -> bool:
+    return (
+        str(order.payment_method or "").lower() != "cod"
+        and not _is_paid_order(order)
+        and str(order.order_status or "").lower() not in {"refunded", "return_approved"}
+    )
+
+
+def _get_razorpay_client():
+    key_id = os.environ.get("RAZORPAY_KEY_ID")
+    key_secret = os.environ.get("RAZORPAY_KEY_SECRET")
+    if not key_id or not key_secret:
+        return None
+    lowered = f"{key_id} {key_secret}".lower()
+    if any(marker in lowered for marker in ("fake", "dummy")):
+        return None
+    try:
+        import razorpay
+        return razorpay.Client(auth=(key_id, key_secret))
+    except Exception:
+        logger.exception("Unable to initialize Razorpay client")
+        return None
 
 
 async def _clear_user_cart(db: AsyncSession, user_id, now: datetime):
@@ -113,7 +138,8 @@ async def _finalize_paid_order(
     now = datetime.now(timezone.utc)
     was_paid = _is_paid_order(order)
 
-    await _deduct_stock_once(order, db, now)
+    if not await _deduct_stock_once(order, db, now):
+        raise HTTPException(status_code=400, detail="Insufficient stock or error applying stock")
 
     order.payment_status = "Paid"
     order.order_status = "confirmed"
@@ -133,6 +159,163 @@ async def _finalize_paid_order(
         )
 
     return {"success": True, "newly_paid": not was_paid, "stock_applied": bool(order.stock_applied)}
+
+
+async def _send_razorpay_success_side_effects(
+    order: OrderModel,
+    db: AsyncSession,
+    *,
+    audit_action: str,
+    audit_metadata: Optional[dict] = None,
+    notification_title: str = "Payment successful",
+    notification_message: Optional[str] = None,
+) -> None:
+    try:
+        from email_templates import order_confirmation_email
+        from models import UserModel
+        user_res = await db.execute(select(UserModel).where(UserModel.id == order.user_id))
+        order_user = user_res.scalar_one_or_none()
+        if order_user:
+            subj, body = order_confirmation_email(order_user.full_name or order_user.email, row_to_dict(order))
+            asyncio.create_task(send_email(order_user.email, subj, body))
+    except Exception:
+        logger.warning("Failed to send Razorpay confirmation email for order %s", order.order_number)
+
+    await write_audit_log(
+        db,
+        audit_action,
+        order.user_id,
+        "order",
+        str(order.id),
+        audit_metadata or {}
+    )
+
+    await create_notification(
+        db,
+        str(order.user_id),
+        notification_title,
+        notification_message or f"Your payment for order {order.order_number} has been verified successfully.",
+        "payment"
+    )
+
+
+async def _apply_razorpay_payment_if_successful(
+    order: OrderModel,
+    db: AsyncSession,
+    payment_entity: dict,
+    *,
+    source: str,
+) -> bool:
+    if not payment_entity:
+        return False
+
+    status = str(payment_entity.get("status") or "").lower()
+    if status not in RAZORPAY_SUCCESS_STATUSES:
+        return False
+
+    expected_order_id = str(order.razorpay_order_id or "")
+    payment_order_id = str(payment_entity.get("order_id") or "")
+    if expected_order_id and payment_order_id and payment_order_id != expected_order_id:
+        logger.warning(
+            "Razorpay reconciliation rejected payment %s: order mismatch %s != %s",
+            payment_entity.get("id"),
+            payment_order_id,
+            expected_order_id,
+        )
+        return False
+
+    amount = payment_entity.get("amount")
+    if amount is not None and int(amount) != _expected_amount_paise(order):
+        logger.warning(
+            "Razorpay reconciliation rejected payment %s for order %s: amount %s != %s",
+            payment_entity.get("id"),
+            order.order_number,
+            amount,
+            _expected_amount_paise(order),
+        )
+        return False
+
+    payment_id = payment_entity.get("id")
+    order.razorpay_payment_id = payment_id or order.razorpay_payment_id
+    result = await _finalize_paid_order(
+        order,
+        db,
+        payment_id=payment_id,
+        audit_action=f"PAYMENT_RAZORPAY_RECONCILED_{source.upper()}",
+        audit_metadata={
+            "razorpay_order_id": payment_order_id or expected_order_id,
+            "razorpay_payment_id": payment_id,
+            "razorpay_status": status,
+        },
+    )
+
+    if result.get("newly_paid"):
+        await _send_razorpay_success_side_effects(
+            order,
+            db,
+            audit_action=f"PAYMENT_RAZORPAY_CONFIRMED_{source.upper()}",
+            audit_metadata={
+                "razorpay_order_id": payment_order_id or expected_order_id,
+                "razorpay_payment_id": payment_id,
+                "razorpay_status": status,
+            },
+            notification_title="Payment confirmed",
+            notification_message=f"Your payment for order {order.order_number} has been confirmed successfully.",
+        )
+    return True
+
+
+async def _fetch_razorpay_payment(payment_id: str) -> Optional[dict]:
+    client = _get_razorpay_client()
+    if not client or not payment_id:
+        return None
+    try:
+        return await asyncio.to_thread(client.payment.fetch, payment_id)
+    except Exception:
+        logger.exception("Failed to fetch Razorpay payment %s", payment_id)
+        return None
+
+
+async def _fetch_successful_razorpay_order_payment(razorpay_order_id: str) -> Optional[dict]:
+    client = _get_razorpay_client()
+    if not client or not razorpay_order_id:
+        return None
+    try:
+        result = await asyncio.to_thread(client.order.payments, razorpay_order_id)
+    except Exception:
+        logger.exception("Failed to fetch Razorpay payments for order %s", razorpay_order_id)
+        return None
+
+    payments = result.get("items", result) if isinstance(result, dict) else result
+    if not isinstance(payments, list):
+        return None
+    successful = [
+        p for p in payments
+        if str((p or {}).get("status") or "").lower() in RAZORPAY_SUCCESS_STATUSES
+    ]
+    if not successful:
+        return None
+    return sorted(successful, key=lambda p: p.get("created_at") or 0, reverse=True)[0]
+
+
+async def _reconcile_order_with_razorpay(
+    order: OrderModel,
+    db: AsyncSession,
+    *,
+    payment_id: Optional[str] = None,
+    source: str = "status_sync",
+) -> bool:
+    if not _is_online_payment_pending(order):
+        return _is_paid_order(order)
+
+    payment_entity = None
+    if payment_id:
+        payment_entity = await _fetch_razorpay_payment(payment_id)
+    if not payment_entity and order.razorpay_order_id:
+        payment_entity = await _fetch_successful_razorpay_order_payment(order.razorpay_order_id)
+    if not payment_entity:
+        return False
+    return await _apply_razorpay_payment_if_successful(order, db, payment_entity, source=source)
 
 
 async def _enrich_order_items(db: AsyncSession, orders_data):
@@ -450,10 +633,12 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
 @router.get("/orders/{order_id}")
 async def get_order(order_id: str, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     validate_uuid(order_id)
-    result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id))
+    result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id).with_for_update())
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    await _reconcile_order_with_razorpay(order, db, source="order_fetch")
 
     d = row_to_dict(order)
     return await _enrich_order_items(db, d)
@@ -621,6 +806,13 @@ class RazorpayVerifyRequest(BaseModel):
     razorpay_signature: str
 
 
+class RazorpaySyncRequest(BaseModel):
+    order_id: Optional[str] = None
+    order_number: Optional[str] = None
+    razorpay_order_id: Optional[str] = None
+    razorpay_payment_id: Optional[str] = None
+
+
 @router.post("/payment/razorpay/verify")
 async def verify_razorpay_payment(
     payload: RazorpayVerifyRequest,
@@ -646,53 +838,84 @@ async def verify_razorpay_payment(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    if order.order_status == "cancelled":
-        raise HTTPException(status_code=400, detail="Cannot verify cancelled order")
-
-    if order.order_status not in ["pending_payment", "pending"]:
+    if _is_paid_order(order):
         return {"success": True, "message": "Order already processed"}
+    if order.order_status not in ["pending_payment", "pending", "processing", "placed", "cancelled", "failed"]:
+        raise HTTPException(status_code=400, detail="Cannot verify order in current state")
 
-    now_utc = datetime.now(timezone.utc)
-    if not order.stock_applied:
-        success = await _deduct_stock_once(order, db, now_utc)
-        if not success:
-            raise HTTPException(status_code=400, detail="Insufficient stock or error applying stock")
-
-    order.payment_status = "Paid"
-    order.order_status = "confirmed"
     order.razorpay_payment_id = payload.razorpay_payment_id
     order.razorpay_signature = payload.razorpay_signature
-    order.updated_at = now_utc
 
-    await _clear_user_cart(db, order.user_id, now_utc)
-    await db.flush()
-
-    # Send confirmation email for online payment
-    try:
-        from email_templates import order_confirmation_email
-        from models import UserModel
-        user_res = await db.execute(select(UserModel).where(UserModel.id == order.user_id))
-        order_user = user_res.scalar_one_or_none()
-        if order_user:
-            subj, body = order_confirmation_email(order_user.full_name or order_user.email, row_to_dict(order))
-            asyncio.create_task(send_email(order_user.email, subj, body))
-    except Exception:
-        logger.warning("Failed to send confirmation email for order %s", order.razorpay_order_id)
-
-    await write_audit_log(db, "PAYMENT_RAZORPAY_VERIFIED", order.user_id, "order", str(order.id), {
-        "razorpay_order_id": payload.razorpay_order_id,
-        "razorpay_payment_id": payload.razorpay_payment_id
-    })
-
-    await create_notification(
+    result = await _finalize_paid_order(
+        order,
         db,
-        str(order.user_id),
-        "Payment successful",
-        f"Your payment for order {order.order_number} has been verified successfully.",
-        "payment"
+        payment_id=payload.razorpay_payment_id,
+        audit_action="PAYMENT_RAZORPAY_VERIFIED",
+        audit_metadata={
+            "razorpay_order_id": payload.razorpay_order_id,
+            "razorpay_payment_id": payload.razorpay_payment_id
+        },
     )
 
+    if result.get("newly_paid"):
+        await _send_razorpay_success_side_effects(
+            order,
+            db,
+            audit_action="PAYMENT_RAZORPAY_VERIFIED_SIDE_EFFECTS",
+            audit_metadata={
+                "razorpay_order_id": payload.razorpay_order_id,
+                "razorpay_payment_id": payload.razorpay_payment_id
+            },
+        )
+
     return {"success": True, "message": "Payment verified successfully"}
+
+
+@router.post("/payment/razorpay/sync")
+async def sync_razorpay_payment(
+    payload: RazorpaySyncRequest,
+    current_user: UserSchema = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    conditions = [OrderModel.user_id == current_user.id]
+    identifiers = []
+    if payload.order_id:
+        validate_uuid(payload.order_id)
+        identifiers.append(OrderModel.id == payload.order_id)
+    if payload.order_number:
+        identifiers.append(OrderModel.order_number == payload.order_number)
+    if payload.razorpay_order_id:
+        identifiers.append(OrderModel.razorpay_order_id == payload.razorpay_order_id)
+
+    if not identifiers:
+        raise HTTPException(status_code=400, detail="Provide order_id, order_number, or razorpay_order_id")
+
+    res = await db.execute(
+        select(OrderModel)
+        .where(*conditions, or_(*identifiers))
+        .with_for_update()
+    )
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    was_paid = _is_paid_order(order)
+    reconciled = await _reconcile_order_with_razorpay(
+        order,
+        db,
+        payment_id=payload.razorpay_payment_id,
+        source="manual_sync",
+    )
+
+    return {
+        "success": bool(reconciled or _is_paid_order(order)),
+        "reconciled": bool(reconciled and not was_paid),
+        "payment_status": order.payment_status,
+        "order_status": order.order_status,
+        "order_id": str(order.id),
+        "order_number": order.order_number,
+        "razorpay_payment_id": order.razorpay_payment_id,
+    }
 
 
 @router.post("/payment/razorpay/webhook")
@@ -750,49 +973,19 @@ async def razorpay_webhook(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    if order.order_status == "cancelled":
-        raise HTTPException(status_code=400, detail="Cannot capture cancelled order")
-
-    if order.order_status in ["confirmed", "completed", "Paid"] or order.payment_status in ["Paid", "paid"]:
+    if _is_paid_order(order):
         return {"status": "already_processed"}
 
-    now_utc = datetime.now(timezone.utc)
-    if not order.stock_applied:
-        success = await _deduct_stock_once(order, db, now_utc)
-        if not success:
-            raise HTTPException(status_code=400, detail="Insufficient stock or error applying stock")
+    if not entity or not entity.get("id") or not entity.get("status"):
+        entity = await _fetch_successful_razorpay_order_payment(rzp_order_id) or {}
 
-    order.payment_status = "Paid"
-    order.order_status = "confirmed"
-    order.razorpay_payment_id = entity.get("id")
-    order.updated_at = now_utc
-
-    await _clear_user_cart(db, order.user_id, now_utc)
-    await db.flush()
-
-    # Send confirmation email via webhook path
-    try:
-        from email_templates import order_confirmation_email
-        from models import UserModel
-        user_res = await db.execute(select(UserModel).where(UserModel.id == order.user_id))
-        order_user = user_res.scalar_one_or_none()
-        if order_user:
-            subj, body = order_confirmation_email(order_user.full_name or order_user.email, row_to_dict(order))
-            asyncio.create_task(send_email(order_user.email, subj, body))
-    except Exception:
-        logger.warning("Failed to send webhook confirmation email for order %s", rzp_order_id)
-
-    await write_audit_log(db, "PAYMENT_WEBHOOK_CAPTURED", order.user_id, "order", str(order.id), {
-        "razorpay_order_id": rzp_order_id,
-        "razorpay_payment_id": entity.get("id")
-    })
-
-    await create_notification(
+    reconciled = await _apply_razorpay_payment_if_successful(
+        order,
         db,
-        str(order.user_id),
-        "Payment captured",
-        f"Your payment for order {order.order_number} has been captured successfully.",
-        "payment"
+        entity,
+        source="webhook",
     )
+    if not reconciled:
+        raise HTTPException(status_code=400, detail="Payment is not captured or does not match the order")
 
     return {"status": "success"}

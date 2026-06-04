@@ -80,6 +80,7 @@ async def lifespan(app: FastAPI):
         from sqlalchemy import select
         from deps import send_email, create_notification
         from email_templates import order_cancelled_email
+        from routes.orders import _reconcile_order_with_razorpay
         async def _payment_timeout_cleanup_loop():
             while True:
                 try:
@@ -94,6 +95,14 @@ async def lifespan(app: FastAPI):
                         expired_orders = result.scalars().all()
 
                         for order in expired_orders:
+                            reconciled = await _reconcile_order_with_razorpay(order, session, source="timeout_cleanup")
+                            if reconciled:
+                                logger.info(
+                                    "Recovered paid Razorpay order %s during timeout cleanup; skipping cancellation",
+                                    order.order_number,
+                                )
+                                continue
+
                             logger.info(f"Auto-cancelling expired pending order {order.order_number} (created at {order.created_at})")
                             
                             # Release stock if stock was applied

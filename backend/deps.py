@@ -723,6 +723,7 @@ def require_permission(permission: str):
 # ── Shared DB Helpers ────────────────────────────────────────────────────
 async def write_audit_log(db: AsyncSession, action: str, actor_id: str, target_type: str, target_id: str, metadata: dict | None = None):
     try:
+        actor_id = str(actor_id) if actor_id is not None else None
         meta = (metadata or {}).copy()
         # Enrich metadata with actor snapshot when possible
         try:

@@ -30,7 +30,30 @@ const OrderDetailsPage = () => {
     if (!silent) setLoading(true);
     try {
       const res = await apiClient.get(`/orders/${id}`);
-      setOrder(res.data);
+      let orderData = res.data;
+      const isOnlinePending =
+        (orderData.payment_status || '').toLowerCase() !== 'paid' &&
+        (orderData.payment_status || '').toLowerCase() !== 'completed' &&
+        (orderData.payment_method || '').toLowerCase() !== 'cod' &&
+        !['cancelled', 'refunded', 'failed', 'return_approved'].includes((orderData.order_status || '').toLowerCase());
+      const rememberedPaymentId = sessionStorage.getItem(`razorpay_payment_${id}`);
+
+      if (isOnlinePending && rememberedPaymentId) {
+        try {
+          const syncResult = await paymentService.syncRazorpayPayment({
+            order_id: id,
+            razorpay_order_id: orderData.razorpay_order_id,
+            razorpay_payment_id: rememberedPaymentId
+          });
+          if (syncResult?.success) {
+            sessionStorage.removeItem(`razorpay_payment_${id}`);
+            const refreshed = await apiClient.get(`/orders/${id}`, { silent: true });
+            orderData = refreshed.data;
+          }
+        } catch {}
+      }
+
+      setOrder(orderData);
     } catch (err) {
       if (!silent) {
         toast.error('Failed to load order details');
@@ -72,14 +95,19 @@ const OrderDetailsPage = () => {
         description: `Order #${order.order_number}`,
         order_id: rzpOrderId,
         handler: async function (paymentResponse) {
+          const paidPaymentId = paymentResponse?.razorpay_payment_id;
+          if (paidPaymentId) {
+            sessionStorage.setItem(`razorpay_payment_${id}`, paidPaymentId);
+          }
           try {
             const verifyPayload = {
               razorpay_order_id: rzpOrderId,
-              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_payment_id: paidPaymentId,
               razorpay_signature: paymentResponse.razorpay_signature
             };
             const result = await paymentService.verifyRazorpayPayment(verifyPayload);
             if (result && result.success) {
+              sessionStorage.removeItem(`razorpay_payment_${id}`);
               toast.success('Payment verified successfully!');
               const res = await apiClient.get(`/orders/${id}`);
               setOrder(res.data);

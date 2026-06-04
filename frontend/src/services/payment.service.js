@@ -9,6 +9,10 @@ const paymentService = {
     const response = await apiClient.post('/payment/razorpay/verify', verificationData);
     return response.data;
   },
+  syncRazorpayPayment: async (syncData) => {
+    const response = await apiClient.post('/payment/razorpay/sync', syncData, { silent: true });
+    return response.data;
+  },
 };
 
 export default paymentService;
