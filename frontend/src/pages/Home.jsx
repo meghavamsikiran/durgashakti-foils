@@ -67,7 +67,7 @@ const Home = () => {
     <main className="min-h-screen bg-white text-white font-inter selection:bg-[#25d958]/30" data-testid="home-page">
       <section
         className="home-hero-stage relative isolate min-h-[620px] overflow-visible bg-[#020807] bg-no-repeat md:min-h-[604px]"
-        style={{ backgroundImage: "url('/homepage-hero-scene.png')" }}
+        style={{ backgroundImage: "url('/homepage-hero-reference.png')" }}
       >
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.86)_0%,rgba(0,0,0,0.74)_58%,rgba(0,0,0,0.28)_100%)] md:bg-[linear-gradient(90deg,rgba(0,0,0,0.2)_0%,rgba(0,0,0,0.08)_45%,rgba(0,0,0,0)_72%)]" />
 
@@ -137,10 +137,7 @@ const Home = () => {
 
       <PremiumRange go={go} />
 
-      <section className="border-b border-white/15 bg-[#020403]">
-        <HeatComparison />
-        <TrustPanel />
-      </section>
+      <ComparisonSection />
     </main>
   );
 };
@@ -202,32 +199,18 @@ const PremiumRange = ({ go }) => (
   </section>
 );
 
-const HeatComparison = () => (
-  <div className="mx-auto w-full max-w-[1536px] border-b border-white/10 bg-[#020605]">
+const ComparisonSection = () => (
+  <section className="bg-[#020605]">
     <img
-      src="/heat-comparison-exact.png"
-      alt="Thermal comparison between normal wrapping and Hot Wrap Foils"
-      width="2148"
-      height="732"
+      src="/normal-vs-durgashakti-foil.png"
+      alt="Normal Foil vs Durga Shakti Foil comparison and industries served"
+      width="1774"
+      height="887"
       loading="lazy"
       decoding="async"
       className="block h-auto w-full object-contain"
     />
-  </div>
-);
-
-const TrustPanel = () => (
-  <div className="mx-auto w-full max-w-[1536px] bg-[#020605]">
-    <img
-      src="/trusted-panel-exact.png"
-      alt="Trusted by thousands statistics and leading restaurant brands"
-      width="2173"
-      height="724"
-      loading="lazy"
-      decoding="async"
-      className="block h-auto w-full object-contain"
-    />
-  </div>
+  </section>
 );
 
 export default Home;
