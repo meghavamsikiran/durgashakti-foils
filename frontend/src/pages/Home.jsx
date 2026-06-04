@@ -197,40 +197,42 @@ const MetricStrip = () => (
 );
 
 const PremiumRange = ({ go }) => (
-  <section className="bg-white px-6 pb-10 pt-[76px] text-black md:px-12 lg:px-[90px]">
-    <div className="mx-auto grid max-w-[1160px] gap-4 lg:grid-cols-[280px_repeat(4,minmax(0,1fr))] lg:items-center">
+  <section className="bg-white px-6 pb-10 pt-12 text-black md:px-12 lg:px-[90px]">
+    <div className="mx-auto max-w-[1160px] flex flex-col gap-6 lg:grid lg:grid-cols-[280px_repeat(4,minmax(0,1fr))] lg:items-center">
       <div className="pr-5">
         <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-[#2fb54a]">Our Premium Range</p>
-        <h2 className="font-serif text-[26px] font-bold leading-[1.08] text-[#101418]">
+        <h2 className="font-serif text-[24px] md:text-[26px] font-bold leading-[1.08] text-[#101418]">
           Designed for Purity,
-          <br />
+          <br className="hidden md:inline" />
           Engineered for Performance
         </h2>
       </div>
 
-      {categories.map((category) => (
-        <button
-          key={category.title}
-          onClick={() => go('/shop')}
-          className="group relative h-[118px] overflow-hidden rounded-[10px] border border-slate-200 bg-[#fbfcfd] p-4 text-left shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:border-[#31c85a]/50 hover:shadow-[0_16px_32px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-[#25d958]/45"
-        >
-          <div className="relative z-10 max-w-[135px]">
-            <h3 className="text-[14px] font-black leading-tight text-[#161a1e]">{category.title}</h3>
-            <p className="mt-1 text-[11px] font-semibold leading-tight text-slate-600">{category.subtitle}</p>
-            <div className="mt-7 inline-flex items-center gap-1 text-[11px] font-black text-[#22a447]">
-              View Collection
-              <ArrowRight className="h-3 w-3 transition group-hover:translate-x-1" />
+      <div className="flex overflow-x-auto gap-4 pb-4 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-none snap-x snap-mandatory lg:grid lg:grid-cols-4 lg:overflow-visible lg:pb-0">
+        {categories.map((category) => (
+          <button
+            key={category.title}
+            onClick={() => go('/shop')}
+            className="group relative h-[118px] w-[240px] shrink-0 snap-start overflow-hidden rounded-[10px] border border-slate-200 bg-[#fbfcfd] p-4 text-left shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:border-[#31c85a]/50 hover:shadow-[0_16px_32px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-[#25d958]/45 lg:w-auto"
+          >
+            <div className="relative z-10 max-w-[135px]">
+              <h3 className="text-[14px] font-black leading-tight text-[#161a1e]">{category.title}</h3>
+              <p className="mt-1 text-[11px] font-semibold leading-tight text-slate-600">{category.subtitle}</p>
+              <div className="mt-7 inline-flex items-center gap-1 text-[11px] font-black text-[#22a447]">
+                View Collection
+                <ArrowRight className="h-3 w-3 transition group-hover:translate-x-1" />
+              </div>
             </div>
-          </div>
-          <img
-            src={category.image}
-            alt={category.alt}
-            className="absolute bottom-0 right-0 h-[92px] w-[92px] object-contain object-right-bottom transition duration-300 group-hover:scale-105"
-            loading="lazy"
-            decoding="async"
-          />
-        </button>
-      ))}
+            <img
+              src={category.image}
+              alt={category.alt}
+              className="absolute bottom-0 right-0 h-[92px] w-[92px] object-contain object-right-bottom transition duration-300 group-hover:scale-105"
+              loading="lazy"
+              decoding="async"
+            />
+          </button>
+        ))}
+      </div>
     </div>
   </section>
 );

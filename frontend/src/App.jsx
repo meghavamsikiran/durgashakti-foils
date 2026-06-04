@@ -85,7 +85,7 @@ function AppRoutes() {
   return (
     <CartProvider>
       <ProgressProvider>
-      <div className={`App ${themeClass}`}>
+      <div className={`App ${themeClass} pb-16 md:pb-0`}>
         <ScrollToTop />
         <RouteTransitionLoader />
         {!isAdminPath && <Navbar />}

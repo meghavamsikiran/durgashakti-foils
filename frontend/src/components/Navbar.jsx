@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, Menu, X, Search } from 'lucide-react';
+import { ShoppingCart, User, LogOut, Menu, X, Search, Home as HomeIcon, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { Button } from './ui/button';
@@ -606,6 +606,66 @@ const Navbar = () => {
         )}
       </div>
     </nav>
+
+    {/* Sticky Mobile Bottom Navigation Bar */}
+    <div className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-[#030504]/90 border-t border-white/10 backdrop-blur-md px-6 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.5)]">
+      <div className="flex items-center justify-between">
+        <Link 
+          to="/" 
+          className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
+            location.pathname === '/' ? 'text-[#25d958]' : 'text-white/60 hover:text-white'
+          }`}
+        >
+          <HomeIcon className="w-5 h-5" />
+          <span>Home</span>
+        </Link>
+        <Link 
+          to="/shop" 
+          className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
+            location.pathname === '/shop' ? 'text-[#25d958]' : 'text-white/60 hover:text-white'
+          }`}
+        >
+          <ShoppingBag className="w-5 h-5" />
+          <span>Shop</span>
+        </Link>
+        <button 
+          onClick={() => {
+            setIsMobileSearchOpen(prev => !prev);
+            setIsMenuOpen(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
+            isMobileSearchOpen ? 'text-[#25d958]' : 'text-white/60 hover:text-white'
+          }`}
+        >
+          <Search className="w-5 h-5" />
+          <span>Search</span>
+        </button>
+        <Link 
+          to="/cart" 
+          className={`relative flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
+            location.pathname === '/cart' ? 'text-[#25d958]' : 'text-white/60 hover:text-white'
+          }`}
+        >
+          <ShoppingCart className="w-5 h-5" />
+          <span>Cart</span>
+          {cartItemCount > 0 && (
+            <span className="absolute -top-1 -right-2 bg-[#25d958] text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">
+              {cartItemCount}
+            </span>
+          )}
+        </Link>
+        <Link 
+          to={user ? (isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard") : "/login"} 
+          className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
+            location.pathname.startsWith('/dashboard') || location.pathname === '/login' ? 'text-[#25d958]' : 'text-white/60 hover:text-white'
+          }`}
+        >
+          <User className="w-5 h-5" />
+          <span>{user ? 'Account' : 'Login'}</span>
+        </Link>
+      </div>
+    </div>
   </>
 );
 };

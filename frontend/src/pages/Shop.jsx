@@ -153,6 +153,8 @@ const Shop = () => {
     applyFilters();
   }, [applyFilters]);
 
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+
   const handleClearFilters = () => {
     setCategoryFilter('all');
     setPriceFilter('all');
@@ -188,9 +190,18 @@ const Shop = () => {
           </div>
         </div>
 
+        {/* Collapsible Mobile Filters Button */}
+        <button
+          onClick={() => setShowMobileFilters(!showMobileFilters)}
+          className="lg:hidden w-full flex items-center justify-center gap-2 py-3 bg-[#39c653] hover:bg-[#48d862] text-white font-extrabold rounded-xl shadow-sm mb-6 transition-all duration-200"
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          <span>{showMobileFilters ? 'HIDE FILTERS' : 'SHOW FILTERS'}</span>
+        </button>
+
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
-          <div className="lg:w-80 flex-shrink-0">
+          <div className={`lg:w-80 flex-shrink-0 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
             <div className="bg-white border border-border-subtle p-6 rounded-2xl shadow-sm sticky top-24">
               <div className="flex items-center justify-between mb-6 border-b border-border-subtle pb-4">
                 <div className="flex items-center gap-2">
