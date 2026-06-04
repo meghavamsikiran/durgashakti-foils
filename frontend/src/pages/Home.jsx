@@ -179,7 +179,7 @@ const FactoryFlow = ({ onNavigate }) => (
 );
 
 const HeatComparison = () => (
-  <div className="relative min-w-0 border-b border-white/10 bg-[#020605] lg:border-b-0 lg:border-r lg:border-white/15 p-6 sm:p-8 flex flex-col justify-between select-text">
+  <div className="relative min-w-0 border-b border-white/10 bg-[#020605] lg:border-b-0 lg:border-r lg:border-white/15 p-4 sm:p-8 flex flex-col justify-between select-text">
     <div className="mb-6">
       <p className="text-xs sm:text-sm font-serif text-white/60 tracking-wider">
         See The Difference. Feel The Confidence.
@@ -189,60 +189,60 @@ const HeatComparison = () => (
       </h2>
     </div>
 
-    <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 my-auto py-4">
+    <div className="flex flex-row items-center justify-between gap-1 sm:gap-4 my-auto py-4">
       <div className="flex-1 flex flex-col items-center">
-        <span className="inline-block py-1 px-3 sm:px-4 rounded-full bg-white/10 text-white font-extrabold text-[10px] sm:text-xs uppercase tracking-wider mb-4 text-center">
+        <span className="inline-block py-1 px-2.5 sm:px-4 rounded-full bg-white/10 text-white font-extrabold text-[9px] sm:text-xs uppercase tracking-wider mb-4 text-center">
           Normal Wrapping
         </span>
         
-        <div className="flex items-center justify-center gap-1 sm:gap-2 w-full">
-          <div className="flex items-center gap-1 shrink-0">
-            <div className="text-right flex flex-col justify-between h-24 sm:h-28 text-[9px] sm:text-[10px]">
+        <div className="flex items-center justify-center gap-0.5 sm:gap-2 w-full">
+          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+            <div className="text-right flex flex-col justify-between h-20 sm:h-28 text-[8px] sm:text-[10px]">
               <div>
-                <span className="block text-white/50 font-bold uppercase tracking-wider leading-none">Heat Loss</span>
+                <span className="block text-white/55 font-bold uppercase tracking-wider leading-none">Heat Loss</span>
                 <span className="block text-red-500 font-extrabold uppercase mt-0.5">High</span>
               </div>
-              <span className="text-white/30 font-mono font-bold leading-none mt-2">600</span>
+              <span className="text-white/30 font-mono font-bold leading-none mt-1 sm:mt-2">600</span>
               <span className="text-white/30 font-mono font-bold leading-none mb-1">300</span>
-              <div className="mt-2">
-                <span className="block text-white/50 font-bold uppercase tracking-wider leading-none">Freshness</span>
+              <div className="mt-1 sm:mt-2">
+                <span className="block text-white/55 font-bold uppercase tracking-wider leading-none">Freshness</span>
                 <span className="block text-red-500 font-extrabold uppercase mt-0.5">Low</span>
               </div>
             </div>
-            <img src="/scale-normal.png" alt="Normal wrapping temperature scale" className="h-24 sm:h-28 object-contain shrink-0" />
+            <img src="/scale-normal.png" alt="Normal wrapping temperature scale" className="h-20 sm:h-28 object-contain shrink-0" />
           </div>
 
-          <img src="/tray-normal.png" alt="Normal wrapping heat signature" className="w-24 sm:w-36 md:w-40 object-contain" />
+          <img src="/tray-normal.png" alt="Normal wrapping heat signature" className="w-20 xs:w-28 sm:w-36 md:w-40 object-contain" />
         </div>
       </div>
 
       <div className="flex flex-col items-center justify-center h-full gap-2 shrink-0">
-        <div className="w-px h-12 bg-white/20"></div>
-        <div className="w-8 h-8 rounded-full border border-white/20 bg-[#020605] text-white text-xs font-black flex items-center justify-center shadow-lg shadow-white/5">
+        <div className="w-px h-10 sm:h-12 bg-white/20"></div>
+        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-white/20 bg-[#020605] text-white text-[9px] sm:text-xs font-black flex items-center justify-center shadow-lg shadow-white/5">
           VS
         </div>
-        <div className="w-px h-12 bg-white/20"></div>
+        <div className="w-px h-10 sm:h-12 bg-white/20"></div>
       </div>
 
       <div className="flex-1 flex flex-col items-center">
-        <span className="inline-block py-1 px-3 sm:px-4 rounded-full bg-[#28a845] text-white font-extrabold text-[10px] sm:text-xs uppercase tracking-wider mb-4 text-center font-bold">
+        <span className="inline-block py-1 px-2.5 sm:px-4 rounded-full bg-[#006e1b] text-white font-extrabold text-[9px] sm:text-xs uppercase tracking-wider mb-4 text-center font-bold">
           Hot Wrap Foils
         </span>
 
-        <div className="flex items-center justify-center gap-1 sm:gap-2 w-full">
-          <img src="/tray-hot.png" alt="Hot Wrap Foils heat signature" className="w-24 sm:w-36 md:w-40 object-contain" />
+        <div className="flex items-center justify-center gap-0.5 sm:gap-2 w-full">
+          <img src="/tray-hot.png" alt="Hot Wrap Foils heat signature" className="w-20 xs:w-28 sm:w-36 md:w-40 object-contain" />
 
-          <div className="flex items-center gap-1 shrink-0">
-            <img src="/scale-hot.png" alt="Hot Wrap Foils temperature scale" className="h-24 sm:h-28 object-contain shrink-0" />
-            <div className="text-left flex flex-col justify-between h-24 sm:h-28 text-[9px] sm:text-[10px]">
+          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+            <img src="/scale-hot.png" alt="Hot Wrap Foils temperature scale" className="h-20 sm:h-28 object-contain shrink-0" />
+            <div className="text-left flex flex-col justify-between h-20 sm:h-28 text-[8px] sm:text-[10px]">
               <div>
-                <span className="block text-white/50 font-bold uppercase tracking-wider leading-none">Heat Retention</span>
+                <span className="block text-white/55 font-bold uppercase tracking-wider leading-none">Heat Retention</span>
                 <span className="block text-[#25d958] font-extrabold uppercase mt-0.5">High</span>
               </div>
-              <span className="text-white/30 font-mono font-bold leading-none mt-2">600</span>
+              <span className="text-white/30 font-mono font-bold leading-none mt-1 sm:mt-2">600</span>
               <span className="text-white/30 font-mono font-bold leading-none mb-1">300</span>
-              <div className="mt-2">
-                <span className="block text-white/50 font-bold uppercase tracking-wider leading-none">Freshness</span>
+              <div className="mt-1 sm:mt-2">
+                <span className="block text-white/55 font-bold uppercase tracking-wider leading-none">Freshness</span>
                 <span className="block text-[#25d958] font-extrabold uppercase mt-0.5">High</span>
               </div>
             </div>

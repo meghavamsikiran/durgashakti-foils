@@ -58,12 +58,12 @@ const AdminLayout = () => {
         >
           <Menu className="w-6 h-6" />
         </button>
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center py-1">
           <img
             src="/logo-durga.png"
             alt="Durga Shakti Foils"
-            className="h-7 w-auto object-contain"
-            style={{ maxWidth: '150px' }}
+            className="h-9 w-auto object-contain block"
+            style={{ maxWidth: '170px' }}
           />
         </Link>
         <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black text-xs">
@@ -83,13 +83,13 @@ const AdminLayout = () => {
       <aside className={`w-64 bg-[#0B1220] text-slate-350 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-50 border-r border-border-subtle/10 font-inter transition-transform duration-300 md:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="p-6 flex items-center justify-between border-b border-border-subtle/10 bg-[#0B1220]">
-          <Link to="/" className="flex items-center gap-2">
+        <div className="p-5 flex items-center justify-between border-b border-border-subtle/10 bg-[#0B1220]">
+          <Link to="/" className="flex items-center py-1">
             <img
               src="/logo-durga.png"
               alt="Durga Shakti Foils"
-              className="h-8 w-auto object-contain"
-              style={{ maxWidth: '180px' }}
+              className="h-10 w-auto object-contain block"
+              style={{ maxWidth: '190px' }}
             />
           </Link>
           <button 

@@ -386,12 +386,12 @@ const Navbar = () => {
                 <Menu className="w-6 h-6" />
               </button>
             )}
-            <Link to="/" className="flex items-center gap-2 font-manrope" data-testid="navbar-logo">
+            <Link to="/" className="flex items-center py-2 h-14" data-testid="navbar-logo">
               <img
                 src="/logo-durga.png"
                 alt="DurgaShakti Foils Pvt Ltd"
-                className="h-10 w-auto object-contain"
-                style={{ maxWidth: '220px' }}
+                className="h-11 w-auto object-contain block"
+                style={{ maxWidth: '240px' }}
               />
             </Link>
           </div>

@@ -20,7 +20,7 @@ const ProfileHeader = ({ user, activeTab, onMenuClick }) => {
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-8 h-8 rounded-lg bg-[#0B1220] text-white flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
             <LayoutDashboard className="w-4 h-4" />
           </div>
           <span className="text-[10px] font-mono tracking-wider font-semibold text-muted-foreground">Dashboard / {getTabLabel()}</span>

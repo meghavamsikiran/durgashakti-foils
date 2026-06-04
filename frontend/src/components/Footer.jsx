@@ -80,12 +80,12 @@ const Footer = () => {
       <div className="mx-auto max-w-[1536px] px-6 py-12 md:px-12 lg:px-[50px]">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.25fr_0.75fr_0.9fr_1.25fr]">
           <div>
-            <Link to="/" className="inline-block">
+            <Link to="/" className="inline-block py-1">
               <img
                 src="/logo-durga.png"
                 alt="Durga Shakti Foils"
-                className="h-10 w-auto object-contain"
-                style={{ maxWidth: '220px' }}
+                className="h-11 w-auto object-contain block"
+                style={{ maxWidth: '240px' }}
               />
             </Link>
             <p className="mt-5 max-w-sm text-sm font-medium leading-6 text-white/62">
