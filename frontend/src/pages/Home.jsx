@@ -250,7 +250,7 @@ const ComparisonSection = ({ go }) => (
       
       {/* Interactive Overlay Grid directly over the image's Industries section */}
       <div 
-        className="absolute left-[2.8%] right-[2.8%] top-[65%] bottom-[8%] grid grid-cols-8 gap-[1.2%]"
+        className="absolute left-[2.8%] right-[2.8%] top-[67.5%] bottom-[4.5%] grid grid-cols-8 gap-[1.2%]"
       >
         {[
           'Restaurants',
