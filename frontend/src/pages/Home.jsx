@@ -252,7 +252,7 @@ const ComparisonSection = ({ go }) => (
       
       {/* Interactive Overlay Grid directly over the image's Industries section */}
       <div 
-        className="absolute left-[2.8%] right-[2.8%] top-[67.5%] bottom-[4.5%] grid grid-cols-8 gap-[1.2%] items-center"
+        className="absolute left-[2.8%] right-[2.8%] top-[67.5%] bottom-[4.5%] grid grid-cols-8 gap-[1.2%]"
       >
         {[
           'Restaurants',
@@ -268,7 +268,7 @@ const ComparisonSection = ({ go }) => (
             key={industry}
             onClick={() => go('/')}
             title={`View products for ${industry}`}
-            className="w-full aspect-square max-w-[105px] mx-auto rounded-[10px] bg-transparent border border-transparent transition-all duration-300 relative after:absolute after:-inset-[8px] after:rounded-[14px] after:border-2 after:border-transparent after:transition-all after:duration-300 after:pointer-events-none hover:after:border-[#25d958] hover:after:shadow-[0_0_20px_rgba(37,217,88,0.65)] hover:bg-[#25d958]/5 focus:outline-none"
+            className="w-full h-full rounded-[10px] bg-transparent border border-transparent transition-all duration-300 relative after:absolute after:-inset-[8px] after:rounded-[14px] after:border-2 after:border-transparent after:transition-all after:duration-300 after:pointer-events-none hover:after:border-[#25d958] hover:after:shadow-[0_0_20px_rgba(37,217,88,0.65)] hover:bg-[#25d958]/5 focus:outline-none"
             aria-label={industry}
           />
         ))}
