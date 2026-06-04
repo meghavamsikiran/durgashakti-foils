@@ -70,7 +70,12 @@ function AppRoutes() {
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin');
   const isShopPath = location.pathname === '/shop';
-  const themeClass = isAdminPath ? 'admin-theme' : (isShopPath ? 'public-theme light-theme' : 'public-theme');
+  const isLightPath = isShopPath || 
+                      location.pathname.startsWith('/dashboard') || 
+                      location.pathname.startsWith('/checkout') || 
+                      location.pathname.startsWith('/order') || 
+                      location.pathname.startsWith('/review');
+  const themeClass = isAdminPath ? 'admin-theme' : (isLightPath ? 'public-theme light-theme' : 'public-theme');
 
   return (
     <AuthProvider>

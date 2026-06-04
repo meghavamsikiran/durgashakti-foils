@@ -22,12 +22,12 @@ const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, wishlistC
         <div className="p-5 md:p-6 bg-[#0B1220] text-white relative overflow-hidden border-b border-slate-800">
           <div className="relative z-10 flex flex-row items-center justify-between gap-4 xl:flex-col xl:items-start">
             <div className="flex flex-row items-center gap-4 xl:flex-col xl:items-start">
-              <div className="w-12 h-12 xl:w-14 xl:h-14 bg-white/10 rounded-lg flex items-center justify-center mb-0 xl:mb-3 flex-shrink-0 border border-white/10">
-                <User className="w-6 h-6 xl:w-7 xl:h-7 text-primary" />
+              <div className="w-12 h-12 xl:w-14 xl:h-14 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-full flex items-center justify-center mb-0 xl:mb-3 flex-shrink-0 border border-emerald-500/30 text-[#25d958]">
+                <User className="w-6 h-6 xl:w-7 xl:h-7" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-base xl:text-lg font-bold truncate font-manrope">{user?.full_name}</h2>
-                <p className="text-slate-500 text-[10px] xl:text-xs font-mono font-bold uppercase tracking-widest truncate">{user?.email}</p>
+                <h2 className="text-base xl:text-lg font-bold text-white tracking-tight truncate font-manrope">{user?.full_name}</h2>
+                <p className="text-slate-400 text-xs mt-0.5 truncate font-normal tracking-wide lowercase">{user?.email}</p>
               </div>
             </div>
             <button 
@@ -49,10 +49,10 @@ const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, wishlistC
                 setActiveTab(item.id);
                 setSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between p-3 md:p-3.5 rounded-lg transition-all ${
+              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${
                 activeTab === item.id 
-                  ? 'bg-[rgba(11,209,61,0.12)] text-[#16E34A] border-l-4 border-[#006e1b] pl-2.5 font-bold' 
-                  : 'text-slate-400 hover:bg-slate-900/60 hover:text-white font-medium'
+                  ? 'bg-[#25d958]/10 text-[#25d958] border-l-4 border-[#25d958] pl-3.5 font-bold shadow-md shadow-emerald-950/20' 
+                  : 'text-slate-400 hover:bg-slate-800/40 hover:text-white font-medium'
               }`}
             >
               <div className="flex items-center gap-3">

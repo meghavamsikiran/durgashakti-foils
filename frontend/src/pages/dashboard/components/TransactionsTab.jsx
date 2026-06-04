@@ -267,12 +267,12 @@ const TransactionsTab = ({ orders }) => {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-[#0B1220] text-slate-200 border-b border-border-subtle/10">
-                  <th className="px-5 py-4 text-[10px] font-mono tracking-wider font-semibold uppercase min-w-[300px]">Transaction</th>
-                  <th className="px-5 py-4 text-[10px] font-mono tracking-wider font-semibold uppercase">Date</th>
-                  <th className="px-5 py-4 text-[10px] font-mono tracking-wider font-semibold uppercase">Method</th>
-                  <th className="px-5 py-4 text-[10px] font-mono tracking-wider font-semibold uppercase">Status</th>
-                  <th className="px-5 py-4 text-right text-[10px] font-mono tracking-wider font-semibold uppercase">Amount</th>
+                <tr className="bg-slate-50/80 text-slate-500 border-b border-border-subtle/50">
+                  <th className="px-5 py-3.5 text-[11px] font-bold tracking-wider uppercase min-w-[300px]">Transaction</th>
+                  <th className="px-5 py-3.5 text-[11px] font-bold tracking-wider uppercase">Date</th>
+                  <th className="px-5 py-3.5 text-[11px] font-bold tracking-wider uppercase">Method</th>
+                  <th className="px-5 py-3.5 text-[11px] font-bold tracking-wider uppercase">Status</th>
+                  <th className="px-5 py-3.5 text-right text-[11px] font-bold tracking-wider uppercase">Amount</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
