@@ -132,6 +132,7 @@ const Dashboard = () => {
             onLogout={logout} 
             sidebarOpen={sidebarOpen}
             setSidebarOpen={setSidebarOpen}
+            navigate={navigate}
           />
           
           <main className="flex-1 min-w-0 w-full flex flex-col gap-6">

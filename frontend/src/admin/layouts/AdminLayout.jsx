@@ -50,11 +50,11 @@ const AdminLayout = () => {
 
   return (
     <div className="admin-shell min-h-screen bg-[#f7faf8] flex flex-col md:flex-row text-on-surface">
-      {/* Mobile Header */}
-      <header className="flex md:hidden items-center justify-between px-6 py-4 bg-white border-b border-border-subtle sticky top-0 z-30 shadow-sm">
+      {/* Mobile Header - Dark background to match the sidebar theme and ensure the logo is visible */}
+      <header className="flex md:hidden items-center justify-between px-6 py-4 bg-[#0B1220] border-b border-border-subtle/10 sticky top-0 z-30 shadow-sm">
         <button 
           onClick={() => setSidebarOpen(true)}
-          className="p-2 -ml-2 text-slate-600 focus:outline-none"
+          className="p-2 -ml-2 text-slate-300 hover:text-[#25d958] transition-colors focus:outline-none"
         >
           <Menu className="w-6 h-6" />
         </button>
@@ -66,7 +66,7 @@ const AdminLayout = () => {
             style={{ maxWidth: '170px' }}
           />
         </Link>
-        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black text-xs">
+        <div className="w-8 h-8 rounded-lg bg-[#25d958]/20 flex items-center justify-center text-[#25d958] font-black text-xs">
           {user?.full_name?.charAt(0) || 'A'}
         </div>
       </header>

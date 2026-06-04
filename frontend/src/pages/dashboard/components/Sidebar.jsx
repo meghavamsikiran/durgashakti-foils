@@ -3,7 +3,7 @@ import {
   Bell, Settings, MapPin, ShieldCheck, X 
 } from 'lucide-react';
 
-const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, wishlistCount, onLogout, sidebarOpen, setSidebarOpen }) => {
+const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, wishlistCount, onLogout, sidebarOpen, setSidebarOpen, navigate }) => {
   const menuItems = [
     { id: 'orders', label: 'My Orders', icon: Package },
     { id: 'transactions', label: 'Payments', icon: CreditCard },
@@ -48,6 +48,9 @@ const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, wishlistC
               onClick={() => {
                 setActiveTab(item.id);
                 setSidebarOpen(false);
+                if (navigate) {
+                  navigate(`/dashboard?tab=${item.id}`, { replace: true });
+                }
               }}
               className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${
                 activeTab === item.id 
