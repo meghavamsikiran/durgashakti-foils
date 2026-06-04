@@ -268,7 +268,7 @@ const ComparisonSection = ({ go }) => (
             key={industry}
             onClick={() => go('/')}
             title={`View products for ${industry}`}
-            className="w-full h-full rounded-[10px] bg-transparent border border-transparent transition-all duration-300 relative after:absolute after:-inset-[8px] after:rounded-[14px] after:border-2 after:border-transparent after:transition-all after:duration-300 after:pointer-events-none hover:after:border-[#25d958] hover:after:shadow-[0_0_20px_rgba(37,217,88,0.65)] hover:bg-[#25d958]/5 focus:outline-none"
+            className="w-full h-full bg-transparent border-none outline-none cursor-pointer"
             aria-label={industry}
           />
         ))}

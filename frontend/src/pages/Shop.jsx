@@ -169,7 +169,7 @@ const Shop = () => {
 
   return (
     <div className="min-h-screen bg-surface py-12 font-inter text-on-surface" data-testid="shop-page">
-      <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
+      <div className="mx-auto max-w-[1340px] px-6 md:px-12 lg:px-[90px]">
         {/* Premium Header Banner */}
         <div className="mb-12 rounded-3xl overflow-hidden relative border border-border-subtle p-8 md:p-12 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-xl">
           {/* Subtle grid and glow design details */}
