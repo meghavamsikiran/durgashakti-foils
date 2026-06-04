@@ -300,6 +300,35 @@ const OrdersPage = () => {
         next.delete(orderId);
         return next;
       });
+    }
+  };
+
+  const refundManual = async (orderId) => {
+    const previousRows = rows;
+    const previousModalOrder = selectedOrderForModal;
+    const toastId = toast.loading('Marking manual refund...');
+    try {
+      setPendingActionIds(prev => new Set(prev).add(orderId));
+      setSubmitting(true);
+      const response = await adminService.markRefundManual(orderId);
+      const serverOrder = response?.data?.order;
+      if (serverOrder) {
+        const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
+        setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
+        setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
+      }
+      toast.success('Order marked as manually refunded', { id: toastId });
+      loadSilent(page);
+    } catch (err) {
+      setRows(previousRows);
+      setSelectedOrderForModal(previousModalOrder);
+      toast.error(err.message, { id: toastId });
+    } finally {
+      setPendingActionIds(prev => {
+        const next = new Set(prev);
+        next.delete(orderId);
+        return next;
+      });
       setSubmitting(false);
     }
   };
@@ -550,78 +579,103 @@ const OrdersPage = () => {
                          ₹{Number(order.total_amount).toLocaleString('en-IN')}
                        </td>
                        <td className="px-8 py-6">
-                         <div className="flex items-center justify-center gap-2">
-                           {(() => {
-                             const allowedActions = actions.filter((a) => {
-                               if (a === 'CANCELLED') {
-                                 return hasPermission('cancel_orders');
-                               }
-                               return hasPermission('update_order_status');
-                             });
-                             return allowedActions.length > 0 ? allowedActions.map((a) => {
-                               const actionLabels = {
-                                 CONFIRMED: 'Confirm',
-                                 CANCELLED: 'Cancel',
-                                 PACKAGING: 'Mark Packed',
-                                 PACKED: 'Mark Packed',
-                                 SHIPPED: 'Mark Shipped',
-                                 IN_TRANSIT: 'Mark In Transit',
-                                 OUT_FOR_DELIVERY: 'Mark Out For Delivery',
-                                 DELIVERED: 'Mark Delivered',
-                                 FAILED: 'Mark Failed Delivery',
-                                 RETURNED: 'Mark Returned',
-                                 RETURN_APPROVED: 'Approve',
-                                 RETURN_REJECTED: 'Reject',
-                                 REFUNDED: 'Refund'
-                               };
-                               const label = actionLabels[a] || a.replace('_', ' ');
-                               const isDeliverWithCOD = a === 'DELIVERED' && order.payment_method === 'cod' && order.payment_status !== 'Paid' && order.payment_status !== 'completed';
+                          <div className="flex items-center justify-center gap-2">
+                            {(() => {
+                              const showRefundPendingButton = order.payment_status === 'refund_pending' && hasPermission('update_order_status');
+                              const allowedActions = actions.filter((a) => {
+                                if (a === 'CANCELLED') {
+                                  return hasPermission('cancel_orders');
+                                }
+                                return hasPermission('update_order_status');
+                              });
+                              const buttons = [];
+                              if (showRefundPendingButton) {
+                                buttons.push(
+                                  <button
+                                    key="REFUND_MANUAL"
+                                    disabled={isOrderPending}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      refundManual(order.id);
+                                    }}
+                                    className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                      isOrderPending ? 'opacity-60 cursor-wait' : ''
+                                    } border-emerald-100 text-emerald-600 hover:bg-emerald-50`}
+                                  >
+                                    {isOrderPending ? 'Updating' : 'Mark Refunded (Manual)'}
+                                  </button>
+                                );
+                              }
+                              if (allowedActions.length > 0) {
+                                allowedActions.forEach((a) => {
+                                  const actionLabels = {
+                                    CONFIRMED: 'Confirm',
+                                    CANCELLED: 'Cancel',
+                                    PACKAGING: 'Mark Packed',
+                                    PACKED: 'Mark Packed',
+                                    SHIPPED: 'Mark Shipped',
+                                    IN_TRANSIT: 'Mark In Transit',
+                                    OUT_FOR_DELIVERY: 'Mark Out For Delivery',
+                                    DELIVERED: 'Mark Delivered',
+                                    FAILED: 'Mark Failed Delivery',
+                                    RETURNED: 'Mark Returned',
+                                    RETURN_APPROVED: 'Approve',
+                                    RETURN_REJECTED: 'Reject',
+                                    REFUNDED: 'Refund'
+                                  };
+                                  const label = actionLabels[a] || a.replace('_', ' ');
+                                  const isDeliverWithCOD = a === 'DELIVERED' && order.payment_method === 'cod' && order.payment_status !== 'Paid' && order.payment_status !== 'completed';
 
-                               return (
-                                 <button
-                                   key={a}
-                                   disabled={isOrderPending}
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     if (a === 'SHIPPED') {
-                                       setTrackingModal({ orderId: order.id, status: a });
-                                       setTrackingForm({
-                                         carrier: order.carrier || 'India Post',
-                                         tracking_id: order.tracking_id || '',
-                                         expected_delivery_date: order.expected_delivery_date ? new Date(order.expected_delivery_date).toISOString().split('T')[0] : '',
-                                         shipment_notes: order.shipment_notes || '',
-                                         custom_carrier: ''
-                                       });
-                                     } else if (['RETURN_APPROVED', 'RETURN_REJECTED', 'CANCELLED'].includes(a)) {
-                                       setMessageModal({ orderId: order.id, status: a });
-                                       setAdminMessage('');
-                                     } else {
-                                       updateStatus(order.id, a, '', isDeliverWithCOD ? { mark_paid: true } : {});
-                                     }
-                                   }}
-                                   className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
-                                     isOrderPending
-                                       ? 'opacity-60 cursor-wait'
-                                       : ''
-                                   } ${
-                                     a === 'CANCELLED' || a === 'RETURN_REJECTED' || a === 'FAILED'
-                                       ? 'border-rose-100 text-rose-600 hover:bg-rose-50'
-                                     : a === 'DELIVERED' || a === 'RETURN_APPROVED' || a === 'CONFIRMED'
-                                       ? 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'
-                                       : 'border-primary/20 text-primary hover:bg-primary/10'
-                                   }`}
-                                 >
-                                   {isOrderPending ? 'Updating' : (isDeliverWithCOD ? 'Deliver & Mark Paid' : label)}
-                                 </button>
-                               );
-                             }) : (
-                               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500">
-                                 <CheckCircle2 className="w-3.5 h-3.5" />
-                                 <span className="text-[10px] font-black uppercase tracking-widest">{actions.length > 0 ? 'No Permission' : 'Finalized'}</span>
-                               </div>
-                             );
-                           })()}
-                         </div>
+                                  buttons.push(
+                                    <button
+                                      key={a}
+                                      disabled={isOrderPending}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (a === 'SHIPPED') {
+                                          setTrackingModal({ orderId: order.id, status: a });
+                                          setTrackingForm({
+                                            carrier: order.carrier || 'India Post',
+                                            tracking_id: order.tracking_id || '',
+                                            expected_delivery_date: order.expected_delivery_date ? new Date(order.expected_delivery_date).toISOString().split('T')[0] : '',
+                                            shipment_notes: order.shipment_notes || '',
+                                            custom_carrier: ''
+                                          });
+                                        } else if (['RETURN_APPROVED', 'RETURN_REJECTED', 'CANCELLED'].includes(a)) {
+                                          setMessageModal({ orderId: order.id, status: a });
+                                          setAdminMessage('');
+                                        } else {
+                                          updateStatus(order.id, a, '', isDeliverWithCOD ? { mark_paid: true } : {});
+                                        }
+                                      }}
+                                      className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                        isOrderPending ? 'opacity-60 cursor-wait' : ''
+                                      } ${
+                                        a === 'CANCELLED' || a === 'RETURN_REJECTED' || a === 'FAILED'
+                                          ? 'border-rose-100 text-rose-600 hover:bg-rose-50'
+                                          : a === 'DELIVERED' || a === 'RETURN_APPROVED' || a === 'CONFIRMED'
+                                          ? 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'
+                                          : 'border-primary/20 text-primary hover:bg-primary/10'
+                                      }`}
+                                    >
+                                      {isOrderPending ? 'Updating' : (isDeliverWithCOD ? 'Deliver & Mark Paid' : label)}
+                                    </button>
+                                  );
+                                });
+                              }
+
+                              if (buttons.length > 0) {
+                                return <div className="flex items-center justify-center gap-2">{buttons}</div>;
+                              }
+
+                              return (
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-500">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span className="text-[10px] font-black uppercase tracking-widest">{actions.length > 0 ? 'No Permission' : 'Finalized'}</span>
+                                </div>
+                              );
+                            })()}
+                          </div>
                        </td>
                        <td className="px-8 py-6 text-center">
                           {hasPermission('view_order_details') ? (
@@ -1331,7 +1385,17 @@ const OrdersPage = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="pt-5 border-t border-slate-100 flex justify-end">
+            <div className="pt-5 border-t border-slate-100 flex justify-end gap-3">
+              {selectedOrderForModal.payment_status === 'refund_pending' && hasPermission('update_order_status') && (
+                <button
+                  onClick={() => {
+                    refundManual(selectedOrderForModal.id);
+                  }}
+                  className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98]"
+                >
+                  Mark Refunded (Manual)
+                </button>
+              )}
               <button
                 onClick={() => setSelectedOrderForModal(null)}
                 className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all hover:scale-[1.02] transform active:scale-[0.98]"

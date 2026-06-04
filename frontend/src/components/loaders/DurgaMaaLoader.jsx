@@ -31,7 +31,8 @@ const DurgaMaaLoader = () => {
 
     const render = () => {
       if (video && video.readyState >= 2) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       }
       animationFrameId = requestAnimationFrame(render);
@@ -52,7 +53,7 @@ const DurgaMaaLoader = () => {
   return (
     <div 
       className="relative w-[104px] h-[83px] md:w-40 md:h-32 flex items-center justify-center overflow-hidden bg-transparent border-none outline-none select-none shadow-none pointer-events-none"
-      style={{ mixBlendMode: 'multiply' }}
+      style={{ isolation: 'isolate', backgroundColor: 'transparent' }}
     >
       <video
         ref={videoRef}
@@ -68,10 +69,10 @@ const DurgaMaaLoader = () => {
         ref={canvasRef}
         width={160}
         height={128}
-        className="w-full h-full object-contain bg-transparent"
+        className="w-full h-full object-cover"
         style={{ 
           mixBlendMode: 'multiply',
-          filter: 'contrast(1.25) brightness(1.15)',
+          filter: 'contrast(1.25) brightness(1.15) opacity(0.99)',
         }}
       />
     </div>

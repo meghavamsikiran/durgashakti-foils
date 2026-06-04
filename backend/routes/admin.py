@@ -729,12 +729,67 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     except Exception:
         pass
 
-    res_payload = {"message": "Order status updated", "order": row_to_dict(order)}
-    if warning_message:
-        res_payload["warning"] = warning_message
-    if refund_warning:
-        res_payload["warning"] = refund_warning
     return res_payload
+
+
+@router.put("/admin/orders/{order_id}/refund-manual")
+async def mark_refund_manual(
+    order_id: str,
+    admin: UserSchema = Depends(require_permission("update_order_status")),
+    db: AsyncSession = Depends(get_db)
+):
+    validate_uuid(order_id)
+    res = await db.execute(select(OrderModel).where(OrderModel.id == order_id))
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.payment_status != "refund_pending":
+        raise HTTPException(status_code=400, detail="Refund is not pending for this order")
+
+    prev_payment_status = order.payment_status
+    prev_order_status = order.order_status
+
+    order.payment_status = "refunded"
+    order.order_status = "refunded"
+    order.updated_at = datetime.now(timezone.utc)
+
+    await db.flush()
+    await write_audit_log(
+        db,
+        "ORDER_MANUAL_REFUND_MARKED",
+        admin.id,
+        "order",
+        order_id,
+        {"prev_payment_status": prev_payment_status, "prev_order_status": prev_order_status}
+    )
+
+    try:
+        from sqlalchemy import select as _sel
+        from models import UserModel as _UM
+        user_res = await db.execute(_sel(_UM).where(_UM.id == order.user_id))
+        cust = user_res.scalar_one_or_none()
+        if cust:
+            await create_notification(
+                db,
+                str(cust.id),
+                "Order Refunded",
+                f"Your refund for order {order.order_number} has been processed.",
+                "order"
+            )
+            import asyncio
+            from deps import send_email as _send
+            from email_templates import return_approved_email
+            cust_name = cust.full_name or cust.email
+            subj, body = return_approved_email(cust_name, str(order.order_number), float(order.total_amount or 0))
+            if subj and body:
+                asyncio.create_task(_send(cust.email, subj, body))
+    except Exception:
+        pass
+
+    return {"message": "Order marked as manually refunded", "order": row_to_dict(order)}
+
+
 
 
 class BulkShipInput(BaseModel):
