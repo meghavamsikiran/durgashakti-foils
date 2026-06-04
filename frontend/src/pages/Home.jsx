@@ -252,7 +252,7 @@ const ComparisonSection = ({ go }) => (
       
       {/* Interactive Overlay Grid directly over the image's Industries section */}
       <div 
-        className="absolute left-[2.8%] right-[2.8%] top-[67.5%] bottom-[4.5%] grid grid-cols-8 gap-[1.2%]"
+        className="absolute left-[2.8%] right-[2.8%] top-[67.5%] bottom-[4.5%] grid grid-cols-8 gap-[1.2%] items-center"
       >
         {[
           'Restaurants',
@@ -266,9 +266,9 @@ const ComparisonSection = ({ go }) => (
         ].map((industry) => (
           <button
             key={industry}
-            onClick={() => go('/shop')}
+            onClick={() => go('/')}
             title={`View products for ${industry}`}
-            className="w-full h-full rounded-[10px] border border-transparent bg-transparent transition-all duration-300 hover:border-[#25d958]/60 hover:bg-[#25d958]/5 hover:shadow-[0_8px_20px_rgba(37,217,88,0.12)] focus:outline-none focus:ring-1 focus:ring-[#25d958]/50"
+            className="w-full aspect-square max-w-[105px] mx-auto rounded-[10px] border border-transparent bg-transparent transition-all duration-300 hover:border-[#25d958]/60 hover:bg-[#25d958]/5 hover:shadow-[0_8px_20px_rgba(37,217,88,0.12)] focus:outline-none focus:ring-1 focus:ring-[#25d958]/50"
             aria-label={industry}
           />
         ))}

@@ -659,7 +659,9 @@ const ProductsPage = () => {
                       setImageUploading(true);
                       try {
                         const res = await adminService.uploadProductImage(imageFile);
-                        setForm({...form, image_url: `${process.env.REACT_APP_BACKEND_URL || 'https://durgashakti-foils-1.onrender.com'}${res.data.url}`});
+                        const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://durgashakti-foils-1.onrender.com';
+                        const absoluteUrl = res.data.url.startsWith("http") ? res.data.url : `${backendUrl}${res.data.url}`;
+                        setForm({...form, image_url: absoluteUrl});
                         setImageFile(null);
                         toast.success('Asset synced');
                       } catch (err) { toast.error(err.message); }

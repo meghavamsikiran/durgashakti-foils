@@ -97,7 +97,7 @@ const Footer = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={label}
-                    className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition"
+                    className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition-all duration-300 hover:bg-primary hover:text-white hover:border-primary hover:scale-110 active:scale-95 transform shadow-[0_0_15px_rgba(32,220,91,0)] hover:shadow-[0_0_15px_rgba(32,220,91,0.45)]"
                   >
                     <Icon className="h-4 w-4" />
                   </a>
