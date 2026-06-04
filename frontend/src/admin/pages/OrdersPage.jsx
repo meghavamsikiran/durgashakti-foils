@@ -137,7 +137,6 @@ const OrdersPage = () => {
   const [courierFilter, setCourierFilter] = useState('');
   const [trackingFilter, setTrackingFilter] = useState('');
   const [shipmentStatusFilter, setShipmentStatusFilter] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [adminMessage, setAdminMessage] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [selectedOrderForModal, setSelectedOrderForModal] = useState(null);
@@ -401,89 +400,47 @@ const OrdersPage = () => {
             />
           </div>
 
-          <div className="relative">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-semibold transition-all shadow-sm ${
-                showFilters || courierFilter || shipmentStatusFilter || dateFilter
-                  ? 'bg-primary/10 border-primary text-primary'
-                  : 'bg-white border-slate-200 text-slate-750 hover:bg-slate-50'
-              }`}
-            >
-              <Filter className="w-4 h-4" />
-              <span>Filters</span>
-              {(courierFilter || shipmentStatusFilter || dateFilter) && (
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              )}
-            </button>
+          <select
+            value={courierFilter}
+            onChange={(e) => setCourierFilter(e.target.value)}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none"
+          >
+            <option value="">All Couriers</option>
+            <option value="India Post">India Post</option>
+            <option value="Speed Post">Speed Post</option>
+            <option value="DTDC">DTDC</option>
+            <option value="Blue Dart">Blue Dart</option>
+            <option value="Delhivery">Delhivery</option>
+            <option value="Ecom Express">Ecom Express</option>
+            <option value="XpressBees">XpressBees</option>
+            <option value="Professional Couriers">Professional Couriers</option>
+            <option value="Shadowfax">Shadowfax</option>
+            <option value="Ekart">Ekart</option>
+          </select>
 
-            {showFilters && (
-              <>
-                <div className="fixed inset-0 z-[999]" onClick={() => setShowFilters(false)} />
-                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-slate-200 shadow-xl p-5 z-[1000] space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">Filter Options</span>
-                    {(courierFilter || shipmentStatusFilter || dateFilter) && (
-                      <button
-                        onClick={() => {
-                          setCourierFilter('');
-                          setShipmentStatusFilter('');
-                          setDateFilter(null);
-                        }}
-                        className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700"
-                      >
-                        Reset All
-                      </button>
-                    )}
-                  </div>
+          <select
+            value={shipmentStatusFilter}
+            onChange={(e) => setShipmentStatusFilter(e.target.value)}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none"
+          >
+            <option value="">All Shipment Statuses</option>
+            <option value="packed">Packed</option>
+            <option value="shipped">Shipped</option>
+            <option value="in_transit">In Transit</option>
+            <option value="out_for_delivery">Out For Delivery</option>
+            <option value="delivered">Delivered</option>
+            <option value="failed">Failed Delivery</option>
+            <option value="returned">Returned</option>
+          </select>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Courier</label>
-                    <select
-                      value={courierFilter}
-                      onChange={(e) => setCourierFilter(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-semibold outline-none transition-colors"
-                    >
-                      <option value="">All Couriers</option>
-                      <option value="India Post">India Post</option>
-                      <option value="Speed Post">Speed Post</option>
-                      <option value="DTDC">DTDC</option>
-                      <option value="Blue Dart">Blue Dart</option>
-                      <option value="Delhivery">Delhivery</option>
-                      <option value="Ecom Express">Ecom Express</option>
-                      <option value="XpressBees">XpressBees</option>
-                      <option value="Professional Couriers">Professional Couriers</option>
-                      <option value="Shadowfax">Shadowfax</option>
-                      <option value="Ekart">Ekart</option>
-                    </select>
-                  </div>
+          <input
+            placeholder="Filter Tracking ID..."
+            value={trackingFilter}
+            onChange={(e) => setTrackingFilter(e.target.value)}
+            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-40"
+          />
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Shipment Status</label>
-                    <select
-                      value={shipmentStatusFilter}
-                      onChange={(e) => setShipmentStatusFilter(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-semibold outline-none transition-colors"
-                    >
-                      <option value="">All Shipment Statuses</option>
-                      <option value="packed">Packed</option>
-                      <option value="shipped">Shipped</option>
-                      <option value="in_transit">In Transit</option>
-                      <option value="out_for_delivery">Out For Delivery</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="failed">Failed Delivery</option>
-                      <option value="returned">Returned</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Date Range</label>
-                    <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} />
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} />
         </div>
       </div>
 
@@ -529,7 +486,7 @@ const OrdersPage = () => {
       )}
 
       <div className="bg-slate-50 p-1 rounded-2xl flex flex-nowrap items-center gap-1 border border-slate-200 overflow-x-auto">
-        {['ALL', 'PENDING_PAYMENT', 'CONFIRMED', 'PACKAGING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURN_REJECTED', 'REFUNDED', 'CANCELLED', 'FAILED'].map((s) => (
+        {['ALL', 'PENDING_PAYMENT', 'CONFIRMED', 'PACKAGING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURN_REQUESTED', 'CANCELLED', 'FAILED'].map((s) => (
           <button
             key={s}
             onClick={() => {
@@ -1244,65 +1201,6 @@ const OrdersPage = () => {
                     { label: 'Shipped', active: isShipped, date: isShipped ? (selectedOrderForModal.shipped_at || selectedOrderForModal.updated_at) : null },
                     { label: 'Delivered', active: isDelivered, date: isDelivered ? (selectedOrderForModal.delivered_at || selectedOrderForModal.updated_at) : null },
                   ];
-
-                  if (['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status)) {
-                    const isReturnRequested = ['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
-                    const isReturnApproved = ['return_approved', 'refunded'].includes(status);
-                    const isRefunded = ['refunded'].includes(status);
-                    const isReturnRejected = status === 'return_rejected';
-
-                    const returnSteps = [
-                      { label: 'Return Requested', active: isReturnRequested, date: selectedOrderForModal.updated_at },
-                      { 
-                        label: isReturnRejected ? 'Return Rejected' : 'Return Approved', 
-                        active: isReturnApproved || isReturnRejected, 
-                        date: (isReturnApproved || isReturnRejected) ? selectedOrderForModal.updated_at : null,
-                        isRejected: isReturnRejected 
-                      },
-                      ...(!isReturnRejected ? [{
-                        label: 'Refund Processed', 
-                        active: isRefunded, 
-                        date: isRefunded ? selectedOrderForModal.updated_at : null 
-                      }] : [])
-                    ];
-
-                    return (
-                      <div className="relative pt-4 pb-2">
-                        {/* Line Background */}
-                        <div className="absolute top-[28px] left-[15%] right-[15%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
-                        {/* Active Line */}
-                        <div
-                          className={`absolute top-[28px] left-[15%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ${isReturnRejected ? 'bg-rose-500' : 'bg-primary'}`}
-                          style={{
-                            width: isReturnRejected ? '70%' : isRefunded ? '70%' : isReturnApproved ? '35%' : '0%'
-                          }}
-                        />
-
-                        {/* Dots */}
-                        <div className="relative flex justify-between px-[10%]">
-                          {returnSteps.map((step, idx) => (
-                            <div key={idx} className="flex flex-col items-center w-[25%] text-center">
-                              <div className={`w-7 h-7 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all ${
-                                step.active 
-                                  ? (step.isRejected ? 'bg-rose-600 text-white ring-4 ring-rose-100' : 'bg-primary text-white ring-4 ring-primary/10') 
-                                  : 'bg-slate-200 text-slate-400'
-                              }`}>
-                                {step.active ? (step.isRejected ? <X className="w-3 h-3 stroke-[3px]" /> : <Check className="w-3 h-3 stroke-[3px]" />) : <span className="text-[9px] font-bold">{idx + 1}</span>}
-                              </div>
-                              <p className={`text-[11px] mt-2 ${step.active ? (step.isRejected ? 'text-rose-600 font-extrabold' : 'text-primary font-extrabold') : 'text-slate-400 font-bold'}`}>
-                                {step.label}
-                              </p>
-                              {step.date && (
-                                <p className="text-[9px] font-bold text-slate-400 mt-0.5">
-                                  {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                                </p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  }
 
                   if (status === 'cancelled') {
                     return (
