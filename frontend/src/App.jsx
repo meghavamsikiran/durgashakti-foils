@@ -69,12 +69,14 @@ function ScrollToTop() {
 function AppRoutes() {
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin');
+  const isShopPath = location.pathname === '/shop';
+  const themeClass = isAdminPath ? 'admin-theme' : (isShopPath ? 'public-theme light-theme' : 'public-theme');
 
   return (
     <AuthProvider>
       <CartProvider>
         <ProgressProvider>
-        <div className={`App ${isAdminPath ? 'admin-theme' : 'public-theme'}`}>
+        <div className={`App ${themeClass}`}>
           <ScrollToTop />
           <RouteTransitionLoader />
           {!isAdminPath && <Navbar />}

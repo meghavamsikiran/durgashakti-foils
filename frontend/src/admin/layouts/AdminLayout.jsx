@@ -58,10 +58,14 @@ const AdminLayout = () => {
         >
           <Menu className="w-6 h-6" />
         </button>
-        <div className="flex items-center gap-2">
-          <img src="/favicon.png" alt="Durga Maa" className="w-6 h-6 object-contain" />
-          <span className="font-bold text-base tracking-tight text-ink-slate">Durga Shakti</span>
-        </div>
+        <Link to="/" className="flex items-center gap-2">
+          <img
+            src="/logo-durga.png"
+            alt="Durga Shakti Foils"
+            className="h-7 w-auto object-contain"
+            style={{ maxWidth: '150px' }}
+          />
+        </Link>
         <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black text-xs">
           {user?.full_name?.charAt(0) || 'A'}
         </div>
@@ -80,10 +84,14 @@ const AdminLayout = () => {
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="p-6 flex items-center justify-between border-b border-border-subtle/10 bg-[#0B1220]">
-          <div className="flex items-center gap-3">
-            <img src="/favicon.png" alt="Durga Maa" className="w-8 h-8 object-contain drop-shadow-md" />
-            <span className="font-black text-lg tracking-tighter text-white uppercase">Durga Shakti<span className="text-primary ml-1 font-extrabold">Foils</span></span>
-          </div>
+          <Link to="/" className="flex items-center gap-2">
+            <img
+              src="/logo-durga.png"
+              alt="Durga Shakti Foils"
+              className="h-8 w-auto object-contain"
+              style={{ maxWidth: '180px' }}
+            />
+          </Link>
           <button 
             onClick={() => setSidebarOpen(false)}
             className="md:hidden p-1 text-slate-400 hover:text-white"

@@ -430,3 +430,63 @@ h1, h2, h3, h4, h5, h6 {
   animation: spin-slow 16s linear infinite;
 }
 
+/* Shop Page Light Theme Styling Overrides */
+.public-theme.light-theme {
+  background: #f8faf9 !important;
+  color: #030504 !important;
+}
+
+.public-theme.light-theme .bg-surface {
+  background-color: #f3f7f4 !important;
+  color: #030504 !important;
+}
+
+.public-theme.light-theme .bg-white {
+  background-color: #ffffff !important;
+  color: #030504 !important;
+}
+
+.public-theme.light-theme .bg-slate-50 {
+  background-color: #f8faf9 !important;
+}
+
+.public-theme.light-theme .bg-card {
+  background-color: #ffffff !important;
+  color: #030504 !important;
+}
+
+.public-theme.light-theme .text-on-surface,
+.public-theme.light-theme .text-ink-slate {
+  color: #030504 !important;
+}
+
+.public-theme.light-theme .text-on-surface-variant,
+.public-theme.light-theme .text-text-muted {
+  color: #55665c !important;
+}
+
+.public-theme.light-theme .border-border-subtle {
+  border-color: #cad8ce !important;
+}
+
+.public-theme.light-theme input,
+.public-theme.light-theme textarea,
+.public-theme.light-theme select {
+  border-color: #cad8ce !important;
+  background-color: #ffffff !important;
+  color: #030504 !important;
+}
+
+.public-theme.light-theme input::placeholder,
+.public-theme.light-theme textarea::placeholder {
+  color: #8fa195 !important;
+}
+
+.public-theme.light-theme .bg-slate-900 {
+  background-color: #0d1e15 !important;
+  color: #ffffff !important;
+}
+
+.public-theme.light-theme .bg-gradient-to-r {
+  background-image: linear-gradient(to right, #0a1711, #132b1f, #0a1711) !important;
+}

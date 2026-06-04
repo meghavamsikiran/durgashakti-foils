@@ -179,32 +179,172 @@ const FactoryFlow = ({ onNavigate }) => (
 );
 
 const HeatComparison = () => (
-  <div className="min-w-0 border-b border-white/10 bg-[#020605] lg:border-b-0 lg:border-r lg:border-white/15">
+  <div className="relative min-w-0 border-b border-white/10 bg-[#020605] lg:border-b-0 lg:border-r lg:border-white/15 overflow-hidden select-text">
     <img
-      src="/heat-comparison-exact.png"
+      src="/heat-comparison-base.png"
       alt="Thermal comparison between normal wrapping and Hot Wrap Foils"
       width="2148"
       height="732"
       loading="eager"
       fetchPriority="high"
       decoding="sync"
-      className="block h-auto w-full"
+      className="block h-auto w-full pointer-events-none select-none"
     />
+    
+    {/* Absolute HTML Text Overlays for select-copyable text */}
+    
+    {/* Top Header */}
+    <div className="absolute top-[4.5%] left-[5%] text-left">
+      <p className="text-[1.8vw] lg:text-[0.9vw] font-serif text-white/70 tracking-wide">
+        See The Difference. Feel The Confidence.
+      </p>
+      <h2 className="text-[2.8vw] lg:text-[1.4vw] font-serif font-black text-[#25d958] mt-0.5">
+        See Why Food Stays Hot
+      </h2>
+    </div>
+
+    {/* Left Tray Header: Normal Wrapping */}
+    <div className="absolute top-[32%] left-[23.5%] w-[18%] text-center">
+      <span className="inline-block w-full py-1 lg:py-1.5 px-3 rounded-full bg-white/10 text-white font-extrabold text-[1.4vw] lg:text-[0.7vw] uppercase tracking-wider">
+        Normal Wrapping
+      </span>
+    </div>
+
+    {/* Right Tray Header: Hot Wrap Foils */}
+    <div className="absolute top-[32%] right-[23.5%] w-[18%] text-center">
+      <span className="inline-block w-full py-1 lg:py-1.5 px-3 rounded-full bg-[#28a845] text-white font-extrabold text-[1.4vw] lg:text-[0.7vw] uppercase tracking-wider">
+        Hot Wrap Foils
+      </span>
+    </div>
+
+    {/* Left Labels: Heat Loss & Freshness */}
+    <div className="absolute top-[46%] left-[4.5%] flex flex-col gap-[3vw] lg:gap-[1.5vw] text-left">
+      <div>
+        <span className="block text-white/50 font-bold text-[1.2vw] lg:text-[0.6vw] uppercase tracking-wider">Heat Loss</span>
+        <span className="block text-red-500 font-extrabold text-[1.8vw] lg:text-[0.9vw] uppercase">High</span>
+      </div>
+      <div>
+        <span className="block text-white/50 font-bold text-[1.2vw] lg:text-[0.6vw] uppercase tracking-wider">Freshness</span>
+        <span className="block text-red-500 font-extrabold text-[1.8vw] lg:text-[0.9vw] uppercase">Low</span>
+      </div>
+    </div>
+
+    {/* Left Scale Bar Numbers (80° at top, 30° at bottom) */}
+    <div className="absolute top-[43%] left-[11%] text-right font-mono font-bold text-[1vw] lg:text-[0.55vw] text-white/40">80°</div>
+    <div className="absolute bottom-[23%] left-[11%] text-right font-mono font-bold text-[1vw] lg:text-[0.55vw] text-white/40">30°</div>
+
+    {/* Right Scale Bar Numbers (80° at top, 30° at bottom) */}
+    <div className="absolute top-[43%] right-[20.8%] text-left font-mono font-bold text-[1vw] lg:text-[0.55vw] text-white/40">80°</div>
+    <div className="absolute bottom-[23%] right-[20.8%] text-left font-mono font-bold text-[1vw] lg:text-[0.55vw] text-white/40">30°</div>
+
+    {/* Right Labels: Heat Retention & Freshness */}
+    <div className="absolute top-[46%] right-[4.5%] flex flex-col gap-[3vw] lg:gap-[1.5vw] text-right">
+      <div>
+        <span className="block text-white/50 font-bold text-[1.2vw] lg:text-[0.6vw] uppercase tracking-wider">Heat Retention</span>
+        <span className="block text-[#25d958] font-extrabold text-[1.8vw] lg:text-[0.9vw] uppercase">High</span>
+      </div>
+      <div>
+        <span className="block text-white/50 font-bold text-[1.2vw] lg:text-[0.6vw] uppercase tracking-wider">Freshness</span>
+        <span className="block text-[#25d958] font-extrabold text-[1.8vw] lg:text-[0.9vw] uppercase">High</span>
+      </div>
+    </div>
+
+    {/* Center VS Text inside the circle */}
+    <div className="absolute top-[50%] left-[50%] -translate-x-[50%] -translate-y-[50%] text-center">
+      <span className="text-black font-black text-[2vw] lg:text-[1vw] uppercase select-all">VS</span>
+    </div>
+
+    {/* Bottom Caption */}
+    <div className="absolute bottom-[3.5%] left-0 right-0 text-center px-4">
+      <p className="text-[1.8vw] lg:text-[0.85vw] font-medium text-white/80 select-all">
+        Advanced Heat Lock Technology keeps your food hot, fresh and flavorful for longer.
+      </p>
+    </div>
   </div>
 );
 
 const TrustPanel = () => (
-  <div className="min-w-0 bg-[#020605]">
+  <div className="relative min-w-0 bg-[#020605] overflow-hidden select-text">
     <img
-      src="/trusted-panel-exact.png"
+      src="/trusted-panel-base.png"
       alt="Trusted by thousands statistics and leading restaurant brands"
       width="2173"
       height="724"
       loading="eager"
       fetchPriority="high"
       decoding="sync"
-      className="block h-auto w-full"
+      className="block h-auto w-full pointer-events-none select-none"
     />
+
+    {/* Top Header */}
+    <div className="absolute top-[4.5%] left-[5%] text-left">
+      <h2 className="text-[2.8vw] lg:text-[1.4vw] font-serif font-black text-white">
+        Trusted By Thousands. Every Day.
+      </h2>
+    </div>
+
+    {/* 4 Responsive Cards */}
+    <div className="absolute top-[23%] left-[4.5%] right-[4.5%] grid grid-cols-4 gap-[2vw]">
+      {/* Card 1 */}
+      <div className="border border-white/10 bg-white/[0.045] rounded-xl p-[2vw] lg:p-[1.5vw] flex items-center justify-between shadow-lg">
+        <div className="min-w-0">
+          <div className="text-[3vw] lg:text-[1.6vw] font-black leading-none text-[#25d958] font-manrope">1000+</div>
+          <div className="text-[1.2vw] lg:text-[0.65vw] font-semibold text-white/70 uppercase tracking-wider mt-1 truncate">Businesses Served</div>
+        </div>
+        <div className="h-[3vw] w-[3vw] lg:h-[2vw] lg:w-[2vw] text-[#25d958] flex items-center justify-center shrink-0">
+          <svg className="w-full h-full" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Card 2 */}
+      <div className="border border-white/10 bg-white/[0.045] rounded-xl p-[2vw] lg:p-[1.5vw] flex items-center justify-between shadow-lg">
+        <div className="min-w-0">
+          <div className="text-[3vw] lg:text-[1.6vw] font-black leading-none text-[#25d958] font-manrope">50+</div>
+          <div className="text-[1.2vw] lg:text-[0.65vw] font-semibold text-white/70 uppercase tracking-wider mt-1 truncate">Cities Across India</div>
+        </div>
+        <div className="h-[3vw] w-[3vw] lg:h-[2vw] lg:w-[2vw] text-[#25d958] flex items-center justify-center shrink-0">
+          <svg className="w-full h-full" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Card 3 */}
+      <div className="border border-white/10 bg-white/[0.045] rounded-xl p-[2vw] lg:p-[1.5vw] flex items-center justify-between shadow-lg">
+        <div className="min-w-0">
+          <div className="text-[3vw] lg:text-[1.6vw] font-black leading-none text-[#25d958] font-manrope">99%</div>
+          <div className="text-[1.2vw] lg:text-[0.65vw] font-semibold text-white/70 uppercase tracking-wider mt-1 truncate">Customer Satisfaction</div>
+        </div>
+        <div className="h-[3vw] w-[3vw] lg:h-[2vw] lg:w-[2vw] text-[#25d958] flex items-center justify-center shrink-0">
+          <svg className="w-full h-full" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Card 4 */}
+      <div className="border border-white/10 bg-white/[0.045] rounded-xl p-[2vw] lg:p-[1.5vw] flex items-center justify-between shadow-lg">
+        <div className="min-w-0">
+          <div className="text-[3vw] lg:text-[1.6vw] font-black leading-none text-[#25d958] font-manrope">100%</div>
+          <div className="text-[1.2vw] lg:text-[0.65vw] font-semibold text-white/70 uppercase tracking-wider mt-1 truncate">Food Grade Certified</div>
+        </div>
+        <div className="h-[3vw] w-[3vw] lg:h-[2vw] lg:w-[2vw] text-[#25d958] flex items-center justify-center shrink-0">
+          <svg className="w-full h-full" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    {/* Trusted By Leading Brands title */}
+    <div className="absolute top-[67%] left-[5%] text-left">
+      <p className="text-[1.8vw] lg:text-[0.9vw] font-semibold text-white/70 uppercase tracking-wider select-all">
+        Trusted By Leading Brands
+      </p>
+    </div>
   </div>
 );
 

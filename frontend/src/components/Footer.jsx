@@ -80,20 +80,13 @@ const Footer = () => {
       <div className="mx-auto max-w-[1536px] px-6 py-12 md:px-12 lg:px-[50px]">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.25fr_0.75fr_0.9fr_1.25fr]">
           <div>
-            <Link to="/" className="inline-flex items-center gap-3">
+            <Link to="/" className="inline-block">
               <img
-                src="/favicon.png"
+                src="/logo-durga.png"
                 alt="Durga Shakti Foils"
-                className="h-10 w-10 object-contain brightness-110"
+                className="h-10 w-auto object-contain"
+                style={{ maxWidth: '220px' }}
               />
-              <span>
-                <span className="block font-manrope text-xl font-bold leading-none text-white">
-                  {profile.companyName}
-                </span>
-                <span className="mt-1 block text-xs font-semibold text-white/70">
-                  Wrap Purity, Seal Freshness
-                </span>
-              </span>
             </Link>
             <p className="mt-5 max-w-sm text-sm font-medium leading-6 text-white/62">
               Premium food-grade aluminium foils manufactured for everyday freshness, safer kitchens,

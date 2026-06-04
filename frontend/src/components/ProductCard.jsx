@@ -157,16 +157,13 @@ const ProductCard = ({ product }) => {
     }
   };
 
-  const handleNotifyMe = (e) => {
-    e.stopPropagation();
-    toast.success(`🔔 We will email you once this item is back in stock!`);
-  };
+
   return (
     <>
       <motion.div
         whileHover={{ y: -5 }}
         transition={{ duration: 0.2 }}
-        className="group relative overflow-hidden bg-white border border-border-subtle rounded-xl hover:border-primary hover:shadow-emerald-glow transition-all duration-300 cursor-pointer flex flex-col h-full min-h-[548px]"
+        className="group relative overflow-hidden bg-white border border-border-subtle rounded-xl hover:border-primary hover:shadow-emerald-glow transition-all duration-300 cursor-pointer flex flex-col h-full"
         onClick={() => navigate(`/product/${product.id}`)}
         data-testid={`product-card-${product.id}`}
       >
@@ -182,10 +179,10 @@ const ProductCard = ({ product }) => {
           <button
             onClick={handleToggleWishlist}
             disabled={wishlisting}
-            className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md transition-all shadow-sm z-10 
+            className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md transition-all duration-200 shadow-sm z-10 
               ${isWishlisted 
-                ? 'bg-rose-500 text-white shadow-rose-200' 
-                : 'bg-white/80 text-slate-500 hover:text-rose-500 hover:bg-white'}`}
+                ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20' 
+                : 'bg-white/90 text-rose-500/70 hover:text-rose-600 hover:bg-white hover:scale-110'}`}
             data-testid="wishlist-toggle"
           >
             <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''} ${wishlisting ? 'animate-pulse' : ''}`} />
@@ -220,7 +217,7 @@ const ProductCard = ({ product }) => {
           )}
         </div>
 
-        <div className="p-5 flex flex-col justify-between flex-1 min-h-[292px]">
+        <div className="p-5 flex flex-col justify-between flex-1">
           <div>
             <div className="mb-1.5 flex items-center justify-between">
               <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle">
@@ -273,7 +270,7 @@ const ProductCard = ({ product }) => {
             <div className="pt-4" onClick={(e) => e.stopPropagation()}>
               {isUnavailable ? (
                 <Button
-                  onClick={handleNotifyMe}
+                  onClick={(e) => { e.stopPropagation(); toast.success('🔔 We will email you once this item is back in stock!'); }}
                   className="w-full border border-border-subtle bg-white hover:bg-slate-50 text-slate-700 h-10 rounded-lg font-bold transition-all shadow-sm text-[10px] flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Bell className="w-3 h-3 text-slate-500" />
