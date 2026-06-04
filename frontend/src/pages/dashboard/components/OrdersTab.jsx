@@ -16,6 +16,38 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const ORDERS_PER_PAGE = 5;
+  const statusOptions = [
+    { value: 'all', label: 'All Statuses' },
+    { value: 'pending', label: 'Placed' },
+    { value: 'pending_payment', label: 'Payment Pending' },
+    { value: 'confirmed', label: 'Confirmed' },
+    { value: 'processing', label: 'Processing' },
+    { value: 'packaging', label: 'Packed' },
+    { value: 'shipped', label: 'Shipped' },
+    { value: 'in_transit', label: 'In Transit' },
+    { value: 'out_for_delivery', label: 'Out For Delivery' },
+    { value: 'delivered', label: 'Delivered' },
+    { value: 'return_requested', label: 'Return Requested' },
+    { value: 'return_approved', label: 'Return Approved' },
+    { value: 'return_rejected', label: 'Return Rejected' },
+    { value: 'refunded', label: 'Refunded' },
+    { value: 'returned', label: 'Returned' },
+    { value: 'cancelled', label: 'Cancelled' },
+    { value: 'failed', label: 'Delivery Failed' },
+  ];
+
+  const getPaymentMethodLabel = (order) => (
+    (order.payment_method || '').toLowerCase() === 'cod' ? 'COD' : 'Prepaid'
+  );
+
+  const getPaymentStatusLabel = (order) => {
+    const status = (order.payment_status || '').toLowerCase();
+    if (status === 'cash on delivery') return 'To Collect';
+    if (status === 'paid' || status === 'completed') return 'Paid';
+    if (status === 'refund_pending') return 'Refund Initiated';
+    if (status === 'refunded') return 'Refunded';
+    return status ? status.replace(/_/g, ' ') : 'Pending';
+  };
 
   const getStatusBadge = (status) => {
     const s = (status || 'pending').toLowerCase();
@@ -27,14 +59,16 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
       packaging: { bg: 'bg-cyan-50 text-cyan-600', label: 'Packed' },
       packed: { bg: 'bg-cyan-50 text-cyan-600', label: 'Packed' },
       shipped: { bg: 'bg-secondary-container text-secondary', label: 'Shipped' },
+      in_transit: { bg: 'bg-blue-50 text-blue-600', label: 'In Transit' },
       out_for_delivery: { bg: 'bg-amber-50 text-amber-600', label: 'Out For Delivery' },
       delivered: { bg: 'bg-emerald-50 text-emerald-600', label: 'Delivered' },
-      failed: { bg: 'bg-rose-50 text-rose-600', label: 'Failed' },
+      failed: { bg: 'bg-rose-50 text-rose-600', label: 'Delivery Failed' },
       cancelled: { bg: 'bg-rose-50 text-rose-600', label: 'Cancelled' },
       return_requested: { bg: 'bg-orange-50 text-orange-600', label: 'Return Requested' },
       return_approved: { bg: 'bg-teal-50 text-teal-600', label: 'Return Approved' },
       return_rejected: { bg: 'bg-red-50 text-red-600', label: 'Return Rejected' },
       refunded: { bg: 'bg-slate-100 text-slate-600', label: 'Refunded' },
+      returned: { bg: 'bg-purple-50 text-purple-600', label: 'Returned' },
     };
     return config[s] || { bg: 'bg-slate-50 text-slate-600', label: s };
   };
@@ -50,7 +84,11 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
       );
       const badge = getStatusBadge(order.order_status);
       const matchesStatus = (badge.label || '').toLowerCase().includes(query) || (order.order_status || '').toLowerCase().includes(query);
-      matchesSearch = matchesOrderNumber || matchesProducts || matchesStatus;
+      const matchesPayment =
+        (order.transaction_id || '').toLowerCase().includes(query) ||
+        getPaymentMethodLabel(order).toLowerCase().includes(query) ||
+        getPaymentStatusLabel(order).toLowerCase().includes(query);
+      matchesSearch = matchesOrderNumber || matchesProducts || matchesStatus || matchesPayment;
     }
 
     // 2. Status Filter
@@ -118,7 +156,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by order number, product name, or status..."
+              placeholder="Search by order, product, status, or payment ID..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -155,13 +193,9 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                         }}
                         className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
                       >
-                        <option value="all">All Statuses</option>
-                        <option value="pending">Placed / Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="out_for_delivery">Out for Delivery</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="cancelled">Cancelled</option>
+                        {statusOptions.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
                       </select>
                     </div>
                     <div>
@@ -264,16 +298,29 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
               <div key={order.id} className="p-6 rounded-xl border border-border-subtle hover:border-primary/50 hover:shadow-emerald-glow transition-all bg-surface-container-lowest shadow-sm">
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex flex-wrap items-center gap-3 mb-3">
                       <span className="text-xs font-mono font-semibold tracking-normal text-muted-foreground">Order #{order.order_number}</span>
                       <span className={`px-2.5 py-1 rounded-sm text-[10px] font-mono tracking-wider font-semibold ${badge.bg}`}>
                         {badge.label}
+                      </span>
+                      <span className={`px-2.5 py-1 rounded-sm text-[10px] font-mono tracking-wider font-semibold ${
+                        (order.payment_method || '').toLowerCase() === 'cod'
+                          ? 'bg-slate-100 text-slate-800'
+                          : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                      }`}>
+                        {getPaymentMethodLabel(order)} • {getPaymentStatusLabel(order)}
                       </span>
                     </div>
                     <h3 className="text-lg font-black text-foreground mb-1">
                       {(order.items || []).map(item => item.product_name).join(', ')}
                     </h3>
                     <p className="text-xs text-muted-foreground font-mono">Placed on {order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A'}</p>
+                    {order.transaction_id && (
+                      <p className="text-[11px] text-muted-foreground font-mono mt-1.5 flex items-center gap-1.5">
+                        <span>{order.transaction_id === 'COD' ? 'Payment:' : 'Payment ID:'}</span>
+                        <span className="font-extrabold text-foreground bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] select-all">{order.transaction_id}</span>
+                      </p>
+                    )}
 
                   </div>
                   <div className="text-left md:text-right flex-shrink-0">

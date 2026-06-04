@@ -497,6 +497,8 @@ async def get_all_orders(
             OrderModel.customer_name.ilike(like_term),
             OrderModel.tracking_id.ilike(like_term),
             OrderModel.tracking_number.ilike(like_term),
+            OrderModel.razorpay_payment_id.ilike(like_term),
+            OrderModel.razorpay_order_id.ilike(like_term),
             func.cast(OrderModel.user_id, String).ilike(like_term),
         )
         filters.append(clause)
@@ -536,7 +538,9 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
         raise HTTPException(status_code=400, detail=f"Cannot transition from {prev_status} to {new_status}")
 
     now = datetime.now(timezone.utc)
-    if order.payment_method != "cod" and order.payment_status not in ("Paid", "completed"):
+    payment_method_lower = str(order.payment_method or "").lower()
+    payment_status_lower = str(order.payment_status or "").lower()
+    if payment_method_lower != "cod" and payment_status_lower not in ("paid", "completed", "refund_pending", "refunded"):
         if new_status not in ("cancelled", "overdue"):
             raise HTTPException(status_code=400, detail="Cannot advance unpaid order")
 
@@ -581,8 +585,19 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     effective_status = new_status
     refund_warning = None
     if new_status == "return_approved":
-        effective_status = "refunded"
-        order.payment_status = "refunded"
+        effective_status = "return_approved"
+        payment_status = str(order.payment_status or "").lower()
+        if payment_method_lower != "cod" and payment_status in ("paid", "completed"):
+            from routes.orders import trigger_razorpay_refund
+            success, err_msg, refund_info = await trigger_razorpay_refund(order, db)
+            if not success:
+                raise HTTPException(status_code=400, detail=f"Automatic refund failed: {err_msg}")
+            refund_status = str((refund_info or {}).get("status") or "").lower()
+            order.payment_status = "refunded" if refund_status == "processed" else "refund_pending"
+            if order.payment_status == "refund_pending":
+                refund_warning = "Refund has been initiated with Razorpay and is pending bank confirmation."
+        elif payment_method_lower != "cod" and payment_status not in ("refunded", "refund_pending"):
+            raise HTTPException(status_code=400, detail="Cannot approve return before prepaid payment is captured")
     if new_status == "return_rejected":
         effective_status = "return_rejected"
 
@@ -641,7 +656,7 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     elif new_status == "delivered":
         order.delivered_at = now
         order.shipment_status = "delivered"
-        if order.payment_method == "cod" and status_data.get("mark_paid", True):
+        if payment_method_lower == "cod" and status_data.get("mark_paid", True):
             order.payment_status = "Paid"
     elif new_status == "failed":
         order.shipment_status = "failed"
@@ -659,6 +674,8 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     }
     if warning_message:
         res_payload["warning"] = warning_message
+    if refund_warning:
+        res_payload["warning"] = refund_warning
 
     # ── Transactional Emails ─────────────────────────────────────────────
     try:
@@ -690,7 +707,7 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
                 subj, body = order_shipped_email(cust_name, order_dict)
             elif effective_status == "delivered":
                 subj, body, att = order_delivered_email(cust_name, order_dict)
-            elif effective_status in ("refunded", "return_approved") and new_status == "return_approved":
+            elif effective_status == "return_approved" and new_status == "return_approved":
                 subj, body = return_approved_email(cust_name, str(order.order_number), float(order.total_amount or 0))
             elif effective_status == "return_rejected":
                 subj, body = return_rejected_email(cust_name, str(order.order_number), status_data.get("admin_message", ""))

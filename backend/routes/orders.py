@@ -40,10 +40,13 @@ def _expected_amount_paise(order: OrderModel) -> int:
 
 
 def _is_online_payment_pending(order: OrderModel) -> bool:
+    payment_status = str(order.payment_status or "").lower()
+    if payment_status in {"paid", "completed", "cash on delivery", "refunded", "refund_pending", "failed", "cancelled"}:
+        return False
     return (
         str(order.payment_method or "").lower() != "cod"
         and not _is_paid_order(order)
-        and str(order.order_status or "").lower() not in {"refunded", "return_approved"}
+        and str(order.order_status or "").lower() not in {"refunded", "return_approved", "return_rejected", "cancelled", "failed"}
     )
 
 
@@ -61,6 +64,80 @@ def _get_razorpay_client():
     except Exception:
         logger.exception("Unable to initialize Razorpay client")
         return None
+
+
+async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[bool, Optional[str], Optional[dict]]:
+    """Trigger an optimum-speed Razorpay refund for a prepaid captured payment."""
+    if str(order.payment_method or "").lower() == "cod":
+        return False, "COD orders cannot be refunded online automatically.", None
+
+    payment_id = order.razorpay_payment_id
+    if not payment_id:
+        return False, "No Razorpay payment ID found for this order.", None
+
+    client = _get_razorpay_client()
+    if not client:
+        key_id = os.environ.get("RAZORPAY_KEY_ID")
+        is_fake = not key_id or "fake" in key_id.lower() or "dummy" in key_id.lower() or "test" in key_id.lower()
+        if is_fake:
+            logger.info("Mocking successful Razorpay refund for payment_id %s", payment_id)
+            return True, "Mock Refund Successful", {
+                "id": f"rfnd_mock_{uuid.uuid4().hex[:12]}",
+                "status": "processed",
+                "speed_requested": "optimum",
+                "speed_processed": "instant",
+                "payment_id": payment_id,
+                "amount": _expected_amount_paise(order),
+            }
+        return False, "Razorpay client could not be initialized.", None
+
+    try:
+        amount_paise = _expected_amount_paise(order)
+        existing_refunds = await asyncio.to_thread(client.payment.fetch_multiple_refund, payment_id)
+        existing_items = existing_refunds.get("items", []) if isinstance(existing_refunds, dict) else []
+        usable_refunds = [
+            refund for refund in existing_items
+            if str((refund or {}).get("status") or "").lower() in {"pending", "processed"}
+        ]
+        refunded_amount = sum(int((refund or {}).get("amount") or 0) for refund in usable_refunds)
+        if refunded_amount >= amount_paise and usable_refunds:
+            latest_refund = sorted(usable_refunds, key=lambda r: r.get("created_at") or 0, reverse=True)[0]
+            logger.info("Existing Razorpay refund covers order %s: %s", order.order_number, latest_refund)
+            return True, None, latest_refund
+
+        refund_resp = await asyncio.to_thread(
+            client.payment.refund,
+            payment_id,
+            {
+                "amount": amount_paise,
+                "speed": "optimum",
+                "receipt": f"refund_{order.order_number}",
+                "notes": {
+                    "order_number": order.order_number,
+                    "reason": "Return Approved",
+                },
+            },
+        )
+        logger.info("Razorpay refund successful: %s", refund_resp)
+        await write_audit_log(
+            db,
+            "PAYMENT_RAZORPAY_REFUND_CREATED",
+            str(order.user_id or "system"),
+            "order",
+            str(order.id),
+            {
+                "razorpay_payment_id": payment_id,
+                "razorpay_refund_id": refund_resp.get("id"),
+                "refund_status": refund_resp.get("status"),
+                "speed_requested": refund_resp.get("speed_requested"),
+                "speed_processed": refund_resp.get("speed_processed"),
+                "amount": refund_resp.get("amount"),
+            },
+        )
+        return True, None, refund_resp
+    except Exception as exc:
+        logger.exception("Failed to trigger Razorpay refund for order %s", order.order_number)
+        return False, str(exc), None
 
 
 async def _clear_user_cart(db: AsyncSession, user_id, now: datetime):

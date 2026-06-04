@@ -16,14 +16,20 @@ REVENUE_ORDER_STATUSES = [
     "processing", "placed", "confirmed", "packaging", "shipped", "in_transit",
     "out_for_delivery", "delivered", "return_requested", "return_rejected"
 ]
-REVENUE_PAYMENT_STATUSES = ["completed", "Paid", "paid"]
+REVENUE_PAYMENT_STATUSES = ["completed", "Paid", "paid", "cash on delivery"]
 
 
 def _payment_status_label(status: str | None) -> str:
     value = str(status or "").lower()
     if value in {"paid", "completed"}:
         return "completed"
-    if value in {"failed", "cancelled", "refunded"}:
+    if value == "cash on delivery":
+        return "cod"
+    if value == "refund_pending":
+        return "refund_pending"
+    if value == "refunded":
+        return "refunded"
+    if value in {"failed", "cancelled"}:
         return "failed"
     return "pending"
 

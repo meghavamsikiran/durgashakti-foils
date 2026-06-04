@@ -11,6 +11,19 @@ import PageLoader from './../components/ui/PageLoader';
 import { useCart } from './../contexts/CartContext';
 
 const PENDING_RAZORPAY_ORDER_KEY = 'pending_razorpay_order';
+const isPaidPaymentStatus = (status) => ['paid', 'completed'].includes((status || '').toLowerCase());
+const isRefundPaymentStatus = (status) => ['refund_pending', 'refunded'].includes((status || '').toLowerCase());
+const isOnlinePaymentPendingOrder = (orderData) => {
+  const paymentStatus = (orderData?.payment_status || '').toLowerCase();
+  const orderStatus = (orderData?.order_status || '').toLowerCase();
+  return (
+    !isPaidPaymentStatus(paymentStatus) &&
+    !isRefundPaymentStatus(paymentStatus) &&
+    !['failed', 'cancelled'].includes(paymentStatus) &&
+    (orderData?.payment_method || '').toLowerCase() !== 'cod' &&
+    !['cancelled', 'failed', 'refunded', 'return_approved', 'return_rejected'].includes(orderStatus)
+  );
+};
 
 const OrderDetailsPage = () => {
   const { id } = useParams();
@@ -33,11 +46,7 @@ const OrderDetailsPage = () => {
     try {
       const res = await apiClient.get(`/orders/${id}`);
       let orderData = res.data;
-      const isOnlinePending =
-        (orderData.payment_status || '').toLowerCase() !== 'paid' &&
-        (orderData.payment_status || '').toLowerCase() !== 'completed' &&
-        (orderData.payment_method || '').toLowerCase() !== 'cod' &&
-        !['refunded', 'return_approved'].includes((orderData.order_status || '').toLowerCase());
+      const isOnlinePending = isOnlinePaymentPendingOrder(orderData);
       const rememberedPaymentId = sessionStorage.getItem(`razorpay_payment_${id}`);
 
       if (isOnlinePending) {
@@ -55,10 +64,7 @@ const OrderDetailsPage = () => {
         } catch {}
       }
 
-      if (
-        (orderData.payment_status || '').toLowerCase() === 'paid' ||
-        (orderData.payment_status || '').toLowerCase() === 'completed'
-      ) {
+      if (isPaidPaymentStatus(orderData.payment_status) || isRefundPaymentStatus(orderData.payment_status)) {
         localStorage.removeItem(PENDING_RAZORPAY_ORDER_KEY);
         sessionStorage.removeItem(`razorpay_payment_${id}`);
       }
@@ -164,11 +170,7 @@ const OrderDetailsPage = () => {
   useEffect(() => {
     if (!order) return;
     
-    const isOnlinePending = 
-      (order.payment_status || '').toLowerCase() !== 'paid' &&
-      (order.payment_status || '').toLowerCase() !== 'completed' &&
-      (order.payment_method || '').toLowerCase() !== 'cod' &&
-      !['refunded', 'return_approved'].includes((order.order_status || '').toLowerCase());
+    const isOnlinePending = isOnlinePaymentPendingOrder(order);
 
     if (!isOnlinePending) {
       setTimeLeft(null);
@@ -220,8 +222,8 @@ const OrderDetailsPage = () => {
         const res = await apiClient.get(`/orders/${id}`);
         const updated = res.data;
         if (
-          (updated.payment_status || '').toLowerCase() === 'paid' ||
-          (updated.payment_status || '').toLowerCase() === 'completed' ||
+          isPaidPaymentStatus(updated.payment_status) ||
+          isRefundPaymentStatus(updated.payment_status) ||
           updated.order_status === 'confirmed' ||
           updated.order_status === 'cancelled'
         ) {
@@ -245,11 +247,7 @@ const OrderDetailsPage = () => {
   useEffect(() => {
     if (!order) return;
     
-    const isOnlinePending = 
-      (order.payment_status || '').toLowerCase() !== 'paid' &&
-      (order.payment_status || '').toLowerCase() !== 'completed' &&
-      (order.payment_method || '').toLowerCase() !== 'cod' &&
-      !['refunded', 'return_approved'].includes((order.order_status || '').toLowerCase());
+    const isOnlinePending = isOnlinePaymentPendingOrder(order);
 
     if (!isOnlinePending) return;
 
@@ -580,13 +578,34 @@ const OrderDetailsPage = () => {
               {(() => {
                 const paymentMethod = (order.payment_method || '').toLowerCase();
                 const paymentStatus = (order.payment_status || '').toLowerCase();
-                const isPaid = paymentStatus === 'paid' || paymentStatus === 'completed';
+                const isPaid = isPaidPaymentStatus(paymentStatus);
+                const isRefundPending = paymentStatus === 'refund_pending';
+                const isRefunded = paymentStatus === 'refunded';
                 const isCod = paymentMethod === 'cod';
-                const canPayOnline = isCod && !isPaid && !['cancelled', 'failed', 'refunded', 'return_approved', 'delivered'].includes((order.order_status || '').toLowerCase());
+                const canPayOnline = isCod && !isPaid && !isRefundPending && !isRefunded && !['cancelled', 'failed', 'refunded', 'return_approved', 'delivered'].includes((order.order_status || '').toLowerCase());
                 return (
                   <>
                     <p className="font-extrabold text-slate-900 uppercase tracking-wider">{isCod ? 'Cash on Delivery' : 'Prepaid Online'}</p>
-                    {isPaid ? (
+                    {isRefunded ? (
+                      <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1 font-semibold">
+                        <p className="font-extrabold flex items-center gap-1.5 text-emerald-700">
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Refund Processed
+                        </p>
+                        {order.transaction_id && order.transaction_id !== 'COD' && (
+                          <p className="font-mono text-slate-500 break-all select-all">Paid Txn: {order.transaction_id}</p>
+                        )}
+                      </div>
+                    ) : isRefundPending ? (
+                      <div className="bg-sky-50 text-sky-800 text-[10px] rounded-xl p-3 border border-sky-100/80 space-y-1 font-semibold">
+                        <p className="font-extrabold flex items-center gap-1.5 text-sky-700">
+                          <span className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse"></span> Refund Initiated
+                        </p>
+                        <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">Razorpay is processing the refund.</p>
+                        {order.transaction_id && order.transaction_id !== 'COD' && (
+                          <p className="font-mono text-slate-500 break-all select-all">Paid Txn: {order.transaction_id}</p>
+                        )}
+                      </div>
+                    ) : isPaid ? (
                       <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1 font-semibold">
                         <p className="font-extrabold flex items-center gap-1.5 text-emerald-700">
                           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Paid
@@ -839,7 +858,8 @@ const OrderDetailsPage = () => {
 
             {(() => {
               const status = (order.order_status || '').toLowerCase();
-              const isPaid = order.payment_status?.toLowerCase() === 'paid' || order.payment_status?.toLowerCase() === 'completed' || order.payment_method?.toLowerCase() === 'cod';
+              const paymentStatus = (order.payment_status || '').toLowerCase();
+              const isPaid = isPaidPaymentStatus(paymentStatus) || isRefundPaymentStatus(paymentStatus) || order.payment_method?.toLowerCase() === 'cod';
               const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
               const isPacked = ['packaging', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
               const isShipped = ['shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
@@ -912,6 +932,74 @@ const OrderDetailsPage = () => {
           </div>
         )}
 
+        {(() => {
+          const status = (order.order_status || '').toLowerCase();
+          const paymentStatus = (order.payment_status || '').toLowerCase();
+          const showReturnTimeline = ['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status) || isRefundPaymentStatus(paymentStatus);
+          if (!showReturnTimeline || isReturning) return null;
+          const isRejected = status === 'return_rejected';
+          const isApproved = ['return_approved', 'refunded'].includes(status) || isRefundPaymentStatus(paymentStatus);
+          const isRefundStarted = isApproved && !isRejected;
+          const isRefunded = paymentStatus === 'refunded' || status === 'refunded';
+          const returnSteps = [
+            { label: 'Return Requested', active: true, date: order.updated_at },
+            {
+              label: isRejected ? 'Return Rejected' : 'Return Approved',
+              active: isApproved || isRejected,
+              date: (isApproved || isRejected) ? order.updated_at : null,
+              rejected: isRejected,
+            },
+            ...(!isRejected ? [{
+              label: isRefunded ? 'Refund Processed' : 'Refund Initiated',
+              active: isRefundStarted,
+              date: isRefundStarted ? order.updated_at : null,
+            }] : []),
+          ];
+
+          return (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+              <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-50">
+                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Return Timeline</h3>
+                <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                  isRejected ? 'bg-rose-100 text-rose-800' : isRefunded ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'
+                }`}>
+                  {isRejected ? 'Return Rejected' : isRefunded ? 'Refund Processed' : isApproved ? 'Refund Initiated' : 'Return Requested'}
+                </span>
+              </div>
+              <div className="relative pt-6 pb-2 overflow-x-auto">
+                <div className="min-w-[560px] relative">
+                  <div className="absolute top-[16px] left-[16%] right-[16%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
+                  <div
+                    className={`absolute top-[16px] left-[16%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out ${isRejected ? 'bg-rose-500' : 'bg-primary'}`}
+                    style={{ width: isRefundStarted || isRejected ? '68%' : '34%' }}
+                  />
+                  <div className="relative flex justify-between px-[10%]">
+                    {returnSteps.map((step, idx) => (
+                      <div key={step.label} className="flex flex-col items-center w-1/3 text-center">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all duration-300 ${
+                          step.active
+                            ? step.rejected ? 'bg-rose-600 text-white ring-4 ring-rose-100' : 'bg-primary text-white ring-4 ring-primary/10'
+                            : 'bg-slate-200 text-slate-400'
+                        }`}>
+                          {step.active ? (step.rejected ? <X className="w-3.5 h-3.5 stroke-[3px]" /> : <Check className="w-3.5 h-3.5 stroke-[3px]" />) : <span className="text-[10px] font-bold">{idx + 1}</span>}
+                        </div>
+                        <p className={`text-[10px] mt-2.5 leading-tight font-black ${step.active ? step.rejected ? 'text-rose-600' : 'text-primary' : 'text-slate-400'}`}>
+                          {step.label}
+                        </p>
+                        {step.date && (
+                          <p className="text-[8px] font-bold text-slate-400 mt-1">
+                            {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Courier Details Card */}
         {order.tracking_id && (
           <div className="bg-sky-50/50 border border-sky-100 rounded-2xl p-5 mb-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-300">
@@ -973,7 +1061,7 @@ const OrderDetailsPage = () => {
                   : order.order_status === 'return_requested'
                   ? 'Return Pending Approval'
                   : order.order_status === 'return_approved'
-                  ? 'Return complete'
+                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Refund Processed' : 'Return Approved')
                   : order.order_status === 'return_rejected'
                   ? 'Return Request Declined'
                   : `Preparing shipment • Est. Delivery ${getExpectedDeliveryDate(order.created_at)}`
@@ -987,7 +1075,7 @@ const OrderDetailsPage = () => {
                   : order.order_status === 'return_requested'
                   ? 'Our team is reviewing your return request and proof media.'
                   : order.order_status === 'return_approved' || order.order_status === 'refunded'
-                  ? 'Your return was accepted and a refund has been initiated.'
+                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Your return was accepted and the refund has been processed.' : 'Your return was accepted and the refund has been initiated.')
                   : 'We are packaging and preparing your items for courier pickup.'
                 }
               </p>

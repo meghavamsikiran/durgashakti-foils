@@ -510,7 +510,8 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                       
                       {(() => {
                         const status = (order.order_status || '').toLowerCase();
-                        const isPaid = order.payment_status?.toLowerCase() === 'paid' || order.payment_status?.toLowerCase() === 'completed' || order.payment_method?.toLowerCase() === 'cod';
+                        const paymentStatus = (order.payment_status || '').toLowerCase();
+                        const isPaid = ['paid', 'completed', 'refund_pending', 'refunded'].includes(paymentStatus) || order.payment_method?.toLowerCase() === 'cod';
                         const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
                         const isPacked = ['packaging', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
                         const isShipped = ['shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
@@ -638,7 +639,26 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                     <div className="p-6 rounded-xl bg-primary/5 border border-primary/25 flex items-center justify-between">
                       <div>
                         <h3 className="text-[10px] font-mono tracking-wider font-semibold text-primary mb-1 uppercase">Payment Method</h3>
-                        <p className="font-black text-foreground font-mono uppercase tracking-tight">{order.payment_method || 'COD'}</p>
+                        {(() => {
+                          const isCod = (order.payment_method || '').toLowerCase() === 'cod';
+                          const status = (order.payment_status || '').toLowerCase();
+                          const statusLabel =
+                            status === 'cash on delivery' ? 'To Collect' :
+                            status === 'paid' || status === 'completed' ? 'Paid' :
+                            status === 'refund_pending' ? 'Refund Initiated' :
+                            status === 'refunded' ? 'Refunded' :
+                            status ? status.replace(/_/g, ' ') : 'Pending';
+                          return (
+                            <div className="space-y-1">
+                              <p className="font-black text-foreground font-mono uppercase tracking-tight">{isCod ? 'COD' : 'Prepaid'} • {statusLabel}</p>
+                              {order.transaction_id && (
+                                <p className="text-[10px] font-mono text-muted-foreground break-all select-all">
+                                  {order.transaction_id === 'COD' ? 'Payment: COD' : `Payment ID: ${order.transaction_id}`}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                       <CreditCard className="w-8 h-8 text-primary/30" />
                     </div>

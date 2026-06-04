@@ -60,7 +60,7 @@ const statusConfigs = {
 
 const PAGE_SIZE = 15;
 const uiStatus = (status) => (status || '').toUpperCase();
-const isPaidStatus = (status) => ['paid', 'completed'].includes(String(status || '').toLowerCase());
+const isPaidStatus = (status) => ['paid', 'completed', 'refunded', 'refund_pending'].includes(String(status || '').toLowerCase());
 const STATUS_LABELS = {
   PENDING_PAYMENT: 'Payment Pending',
   PENDING: 'Placed',
@@ -87,6 +87,8 @@ const paymentStatusLabel = (order) => {
   const value = String(order.payment_status || '').toLowerCase();
   if (value === 'cash on delivery') return 'To Collect';
   if (value === 'paid' || value === 'completed') return 'Paid';
+  if (value === 'refund_pending') return 'Refund Initiated';
+  if (value === 'refunded') return 'Refunded';
   return value ? value.replace(/_/g, ' ') : 'Pending';
 };
 
@@ -135,8 +137,8 @@ const OrdersPage = () => {
   const [bulkShipModal, setBulkShipModal] = useState(false);
   const [bulkShipForm, setBulkShipForm] = useState({ courier: 'India Post', custom_carrier: '', expected_delivery_date: '', shipment_notes: '', pasted_text: '' });
   const [courierFilter, setCourierFilter] = useState('');
-  const [trackingFilter, setTrackingFilter] = useState('');
   const [shipmentStatusFilter, setShipmentStatusFilter] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [adminMessage, setAdminMessage] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [selectedOrderForModal, setSelectedOrderForModal] = useState(null);
@@ -154,7 +156,6 @@ const OrdersPage = () => {
       params.end_date = dateFilter.end_date;
     }
     if (courierFilter) params.courier = courierFilter;
-    if (trackingFilter) params.tracking_number = trackingFilter;
     if (shipmentStatusFilter) params.shipment_status = shipmentStatusFilter;
 
     const cached = adminService.getCached('/admin/orders', params);
@@ -175,7 +176,7 @@ const OrdersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, filter, dateFilter, courierFilter, trackingFilter, shipmentStatusFilter]);
+  }, [search, filter, dateFilter, courierFilter, shipmentStatusFilter]);
 
   const loadSilent = useCallback(async (p = 1) => {
     try {
@@ -186,7 +187,6 @@ const OrdersPage = () => {
         params.end_date = dateFilter.end_date;
       }
       if (courierFilter) params.courier = courierFilter;
-      if (trackingFilter) params.tracking_number = trackingFilter;
       if (shipmentStatusFilter) params.shipment_status = shipmentStatusFilter;
 
       const response = await apiClient.get('/admin/orders', { params, silent: true });
@@ -199,7 +199,7 @@ const OrdersPage = () => {
     } catch (err) {
       // Ignore background errors
     }
-  }, [search, filter, dateFilter, courierFilter, trackingFilter, shipmentStatusFilter]);
+  }, [search, filter, dateFilter, courierFilter, shipmentStatusFilter]);
 
   useEffect(() => {
     if (!selectedOrderForModal) {
@@ -259,7 +259,7 @@ const OrdersPage = () => {
       return;
     }
     load(1);
-  }, [search, filter, load, dateFilter, courierFilter, trackingFilter, shipmentStatusFilter]);
+  }, [search, filter, load, dateFilter, courierFilter, shipmentStatusFilter]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time order dashboard
   useEffect(() => {
@@ -271,7 +271,7 @@ const OrdersPage = () => {
 
   // Background pre-fetch for status filters on initial mount to enable instant tab switching
   useEffect(() => {
-    const statuses = ['PENDING_PAYMENT', 'CONFIRMED', 'PACKAGING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURN_REQUESTED', 'CANCELLED', 'FAILED'];
+    const statuses = ['PENDING_PAYMENT', 'CONFIRMED', 'PACKAGING', 'SHIPPED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURN_REJECTED', 'REFUNDED', 'RETURNED', 'CANCELLED', 'FAILED'];
     const prefetch = async () => {
       for (const s of statuses) {
         try {
@@ -393,54 +393,96 @@ const OrdersPage = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
               type="text"
-              placeholder="Search Customer, Order, Tracking..."
+              placeholder="Search customer, order, payment ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64"
             />
           </div>
 
-          <select
-            value={courierFilter}
-            onChange={(e) => setCourierFilter(e.target.value)}
-            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none"
-          >
-            <option value="">All Couriers</option>
-            <option value="India Post">India Post</option>
-            <option value="Speed Post">Speed Post</option>
-            <option value="DTDC">DTDC</option>
-            <option value="Blue Dart">Blue Dart</option>
-            <option value="Delhivery">Delhivery</option>
-            <option value="Ecom Express">Ecom Express</option>
-            <option value="XpressBees">XpressBees</option>
-            <option value="Professional Couriers">Professional Couriers</option>
-            <option value="Shadowfax">Shadowfax</option>
-            <option value="Ekart">Ekart</option>
-          </select>
+          <div className="relative">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-semibold transition-all shadow-sm ${
+                showFilters || courierFilter || shipmentStatusFilter || dateFilter
+                  ? 'bg-primary/10 border-primary text-primary'
+                  : 'bg-white border-slate-200 text-slate-750 hover:bg-slate-50'
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              <span>Filter</span>
+              {(courierFilter || shipmentStatusFilter || dateFilter) && (
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              )}
+            </button>
 
-          <select
-            value={shipmentStatusFilter}
-            onChange={(e) => setShipmentStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none"
-          >
-            <option value="">All Shipment Statuses</option>
-            <option value="packed">Packed</option>
-            <option value="shipped">Shipped</option>
-            <option value="in_transit">In Transit</option>
-            <option value="out_for_delivery">Out For Delivery</option>
-            <option value="delivered">Delivered</option>
-            <option value="failed">Failed Delivery</option>
-            <option value="returned">Returned</option>
-          </select>
+            {showFilters && (
+              <>
+                <div className="fixed inset-0 z-[999]" onClick={() => setShowFilters(false)} />
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-slate-200 shadow-xl p-5 z-[1000] space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">Filter Options</span>
+                    {(courierFilter || shipmentStatusFilter || dateFilter) && (
+                      <button
+                        onClick={() => {
+                          setCourierFilter('');
+                          setShipmentStatusFilter('');
+                          setDateFilter(null);
+                        }}
+                        className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
 
-          <input
-            placeholder="Filter Tracking ID..."
-            value={trackingFilter}
-            onChange={(e) => setTrackingFilter(e.target.value)}
-            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-40"
-          />
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Courier</label>
+                    <select
+                      value={courierFilter}
+                      onChange={(e) => setCourierFilter(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-semibold outline-none transition-colors"
+                    >
+                      <option value="">All Couriers</option>
+                      <option value="India Post">India Post</option>
+                      <option value="Speed Post">Speed Post</option>
+                      <option value="DTDC">DTDC</option>
+                      <option value="Blue Dart">Blue Dart</option>
+                      <option value="Delhivery">Delhivery</option>
+                      <option value="Ecom Express">Ecom Express</option>
+                      <option value="XpressBees">XpressBees</option>
+                      <option value="Professional Couriers">Professional Couriers</option>
+                      <option value="Shadowfax">Shadowfax</option>
+                      <option value="Ekart">Ekart</option>
+                    </select>
+                  </div>
 
-          <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} />
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Shipment Status</label>
+                    <select
+                      value={shipmentStatusFilter}
+                      onChange={(e) => setShipmentStatusFilter(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-semibold outline-none transition-colors"
+                    >
+                      <option value="">All Shipment Statuses</option>
+                      <option value="packed">Packed</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="in_transit">In Transit</option>
+                      <option value="out_for_delivery">Out For Delivery</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="failed">Delivery Failed</option>
+                      <option value="returned">Returned</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Date Range</label>
+                    <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -486,7 +528,7 @@ const OrdersPage = () => {
       )}
 
       <div className="bg-slate-50 p-1 rounded-2xl flex flex-nowrap items-center gap-1 border border-slate-200 overflow-x-auto">
-        {['ALL', 'PENDING_PAYMENT', 'CONFIRMED', 'PACKAGING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURN_REQUESTED', 'CANCELLED', 'FAILED'].map((s) => (
+        {['ALL', 'PENDING_PAYMENT', 'CONFIRMED', 'PACKAGING', 'SHIPPED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURN_REJECTED', 'REFUNDED', 'RETURNED', 'CANCELLED', 'FAILED'].map((s) => (
           <button
             key={s}
             onClick={() => {
@@ -656,7 +698,8 @@ const OrdersPage = () => {
                                     REFUNDED: 'Refund'
                                   };
                                   const label = actionLabels[a] || statusLabel(a);
-                                  const isDeliverWithCOD = a === 'DELIVERED' && order.payment_method === 'cod' && order.payment_status !== 'Paid' && order.payment_status !== 'completed';
+                                  const paymentStatusValue = String(order.payment_status || '').toLowerCase();
+                                  const isDeliverWithCOD = a === 'DELIVERED' && String(order.payment_method || '').toLowerCase() === 'cod' && !['paid', 'completed', 'cash on delivery'].includes(paymentStatusValue);
 
                                   buttons.push(
                                     <button
@@ -1091,33 +1134,55 @@ const OrdersPage = () => {
                 <div className="space-y-2 pt-4 md:pt-0 md:pl-6">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment Method</h4>
                   <div className="text-xs text-slate-500 space-y-2 font-semibold">
-                    <p className="font-extrabold text-slate-900 uppercase tracking-wider">{selectedOrderForModal.payment_method || 'COD'}</p>
-                    {selectedOrderForModal.payment_status === 'Paid' || selectedOrderForModal.payment_status === 'completed' ? (
-                      <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1">
-                        <p className="font-extrabold flex items-center gap-1 text-emerald-700">
-                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Paid
-                        </p>
-                        {selectedOrderForModal.transaction_id && (
-                          <p className="font-mono text-slate-500 break-all select-all">Txn: {selectedOrderForModal.transaction_id}</p>
-                        )}
-                        {selectedOrderForModal.transaction_date && (
-                          <p className="text-slate-500">Date: {new Date(selectedOrderForModal.transaction_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-100/60 space-y-1">
-                        <p className="font-extrabold flex items-center gap-1.5 text-amber-700">
-                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span> Pending Payment
-                        </p>
-                        <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">Status: {selectedOrderForModal.payment_status || 'Unpaid'}</p>
-                        {timeLeft && (
-                          <p className="flex items-center gap-1 text-[9px] font-black text-rose-600 animate-pulse mt-1">
-                            <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '4s' }} />
-                            Expires in: {timeLeft}
+                    {(() => {
+                      const isCod = String(selectedOrderForModal.payment_method || '').toLowerCase() === 'cod';
+                      const paymentStatus = String(selectedOrderForModal.payment_status || '').toLowerCase();
+                      const paidLike = ['paid', 'completed', 'cash on delivery', 'refund_pending', 'refunded'].includes(paymentStatus) || isCod;
+                      const statusLabel =
+                        paymentStatus === 'cash on delivery' ? 'To Collect' :
+                        paymentStatus === 'paid' || paymentStatus === 'completed' ? 'Paid' :
+                        paymentStatus === 'refund_pending' ? 'Refund Initiated' :
+                        paymentStatus === 'refunded' ? 'Refunded' :
+                        paymentStatus ? paymentStatus.replace(/_/g, ' ') : 'Pending';
+                      const isRefund = ['refund_pending', 'refunded'].includes(paymentStatus);
+                      const tone = isRefund
+                        ? 'bg-sky-50 text-sky-800 border-sky-100/80'
+                        : paidLike
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-100/60'
+                          : 'bg-amber-50 text-amber-800 border-amber-100/60';
+                      const dot = isRefund ? 'bg-sky-500' : paidLike ? 'bg-emerald-500' : 'bg-amber-500';
+                      const labelTone = isRefund ? 'text-sky-700' : paidLike ? 'text-emerald-700' : 'text-amber-700';
+                      return (
+                        <>
+                          <p className="font-extrabold text-slate-900 uppercase tracking-wider">
+                            {isCod ? 'COD' : 'Prepaid Online'}
                           </p>
-                        )}
-                      </div>
-                    )}
+                          <div className={`${tone} text-[10px] rounded-xl p-3 border space-y-1`}>
+                            <p className={`font-extrabold flex items-center gap-1.5 capitalize ${labelTone}`}>
+                              <span className={`w-1.5 h-1.5 ${dot} rounded-full ${!paidLike ? 'animate-pulse' : ''}`}></span>
+                              {statusLabel}
+                            </p>
+                            <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">
+                              {isCod ? 'Payment: COD' : 'Payment: Prepaid'}
+                            </p>
+                            {selectedOrderForModal.transaction_id && (
+                              <p className="font-mono text-slate-500 break-all select-all">
+                                {selectedOrderForModal.transaction_id === 'COD' ? 'Txn: COD' : `Txn: ${selectedOrderForModal.transaction_id}`}
+                              </p>
+                            )}
+                            {selectedOrderForModal.transaction_date && (
+                              <p className="text-slate-500">Date: {new Date(selectedOrderForModal.transaction_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                            )}
+                            {!paidLike && timeLeft && (
+                              <p className="flex items-center gap-1 text-[9px] font-black text-rose-600 animate-pulse mt-1">
+                                <Clock className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '4s' }} />
+                                Expires in: {timeLeft}
+                              </p>
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -1191,14 +1256,18 @@ const OrdersPage = () => {
 
                 {(() => {
                   const status = (selectedOrderForModal.status || selectedOrderForModal.order_status || '').toLowerCase();
-                  const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
-                  const isShipped = ['shipped', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                  const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                  const isShipped = ['shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                  const isInTransit = ['in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
+                  const isOutForDelivery = ['out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
                   const isDelivered = ['delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
 
                   const steps = [
                     { label: 'Placed', active: true, date: selectedOrderForModal.created_at },
                     { label: 'Confirmed', active: isConfirmed, date: isConfirmed ? selectedOrderForModal.created_at : null },
                     { label: 'Shipped', active: isShipped, date: isShipped ? (selectedOrderForModal.shipped_at || selectedOrderForModal.updated_at) : null },
+                    { label: 'In Transit', active: isInTransit, date: null },
+                    { label: 'Out For Delivery', active: isOutForDelivery, date: null },
                     { label: 'Delivered', active: isDelivered, date: isDelivered ? (selectedOrderForModal.delivered_at || selectedOrderForModal.updated_at) : null },
                   ];
 
@@ -1222,14 +1291,14 @@ const OrdersPage = () => {
                       <div
                         className="absolute top-[28px] left-[10%] h-1 bg-primary -translate-y-1/2 rounded-full transition-all duration-700"
                         style={{
-                          width: isDelivered ? '80%' : isShipped ? '53.33%' : isConfirmed ? '26.66%' : '0%'
+                          width: isDelivered ? '80%' : isOutForDelivery ? '64%' : isInTransit ? '48%' : isShipped ? '32%' : isConfirmed ? '16%' : '0%'
                         }}
                       />
 
                       {/* Dots */}
                       <div className="relative flex justify-between">
                         {steps.map((step, idx) => (
-                          <div key={idx} className="flex flex-col items-center w-[25%] text-center">
+                          <div key={idx} className="flex flex-col items-center w-1/6 text-center">
                             <div className={`w-7 h-7 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all ${
                               step.active ? 'bg-primary text-white ring-4 ring-primary/10' : 'bg-slate-200 text-slate-400'
                             }`}>

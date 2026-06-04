@@ -134,14 +134,16 @@ const CustomerDetailPage = () => {
       packaging: { bg: 'bg-cyan-50 text-cyan-600', label: 'Packed' },
       packed: { bg: 'bg-cyan-50 text-cyan-600', label: 'Packed' },
       shipped: { bg: 'bg-secondary-container text-secondary', label: 'Shipped' },
+      in_transit: { bg: 'bg-blue-50 text-blue-600', label: 'In Transit' },
       out_for_delivery: { bg: 'bg-amber-50 text-amber-600', label: 'Out For Delivery' },
       delivered: { bg: 'bg-emerald-50 text-emerald-600', label: 'Delivered' },
-      failed: { bg: 'bg-rose-50 text-rose-600', label: 'Failed' },
+      failed: { bg: 'bg-rose-50 text-rose-600', label: 'Delivery Failed' },
       cancelled: { bg: 'bg-rose-50 text-rose-600', label: 'Cancelled' },
       return_requested: { bg: 'bg-orange-50 text-orange-600', label: 'Return Requested' },
       return_approved: { bg: 'bg-teal-50 text-teal-600', label: 'Return Approved' },
       return_rejected: { bg: 'bg-red-50 text-red-600', label: 'Return Rejected' },
       refunded: { bg: 'bg-slate-100 text-slate-600', label: 'Refunded' },
+      returned: { bg: 'bg-purple-50 text-purple-600', label: 'Returned' },
     };
     return config[s] || { bg: 'bg-slate-50 text-slate-600', label: s };
   };
