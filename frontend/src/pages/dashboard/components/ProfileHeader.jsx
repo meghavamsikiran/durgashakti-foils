@@ -10,7 +10,6 @@ const ProfileHeader = ({ user, activeTab, onMenuClick }) => {
       case 'cards': return 'Security Vault';
       case 'wishlist': return 'Favorites';
       case 'addresses': return 'Shipping Network';
-      case 'notifications': return 'Alert Center';
       case 'settings': return 'Profile';
       default: return 'Overview';
     }

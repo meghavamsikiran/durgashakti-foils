@@ -758,19 +758,42 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
 
                           {order.return_image_url && (
                             <div>
-                              <span className="text-[9px] font-mono tracking-wider font-semibold text-muted-foreground block mb-1">Uploaded Proof</span>
-                              <a
-                                href={formatImageUrl(order.return_image_url)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-block relative rounded-lg border border-border-subtle overflow-hidden bg-surface shadow-sm w-20 h-20 hover:ring-2 hover:ring-primary/40 transition-all"
-                              >
-                                <img 
-                                  src={formatImageUrl(order.return_image_url)} 
-                                  alt="Proof" 
-                                  className="w-full h-full object-cover"
-                                />
-                              </a>
+                              <span className="text-[9px] font-mono tracking-wider font-semibold text-muted-foreground block mb-2">Uploaded Proof</span>
+                              <div className="flex flex-wrap gap-2">
+                                {order.return_image_url.split(',').map((url, idx) => {
+                                  const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
+                                  const fullUrl = formatImageUrl(url);
+                                  return (
+                                    <div key={idx} className="relative rounded-xl border border-border-subtle overflow-hidden bg-surface shadow-sm w-20 h-20 hover:ring-2 hover:ring-primary/40 transition-all flex items-center justify-center group cursor-pointer">
+                                      {isVideo ? (
+                                        <a
+                                          href={fullUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="w-full h-full block relative"
+                                        >
+                                          <video src={fullUrl} className="w-full h-full object-cover" muted autoPlay loop playsInline />
+                                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/50 transition-colors">
+                                            <div className="w-7 h-7 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center text-white border border-white/20">
+                                              <svg className="w-3 h-3 fill-current ml-0.5" viewBox="0 0 24 24">
+                                                <path d="M8 5v14l11-7z" />
+                                              </svg>
+                                            </div>
+                                          </div>
+                                        </a>
+                                      ) : (
+                                        <a href={fullUrl} target="_blank" rel="noreferrer" className="w-full h-full block">
+                                          <img 
+                                            src={fullUrl} 
+                                            alt="Proof" 
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </a>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                         </div>

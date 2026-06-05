@@ -5,7 +5,6 @@ import PageLoader from '../components/ui/PageLoader';
 import { useOrders } from '../hooks/useOrders';
 import { useWishlist } from '../hooks/useWishlist';
 import { useAddresses } from '../hooks/useAddresses';
-import { useNotifications } from '../hooks/useNotifications';
 import authService from '../services/auth.service';
 
 import Sidebar from './dashboard/components/Sidebar';
@@ -13,7 +12,6 @@ import ProfileHeader from './dashboard/components/ProfileHeader';
 import OrdersTab from './dashboard/components/OrdersTab';
 import WishlistTab from './dashboard/components/WishlistTab';
 import AddressesTab from './dashboard/components/AddressesTab';
-import NotificationsTab from './dashboard/components/NotificationsTab';
 import SettingsTab from './dashboard/components/SettingsTab';
 import TransactionsTab from './dashboard/components/TransactionsTab';
 
@@ -42,7 +40,7 @@ const Dashboard = () => {
   const { orders, loading: ordersLoading, error: ordersError, fetchOrders, cancelOrder, returnOrder } = useOrders();
   const { wishlist, loading: wishlistLoading, toggleWishlist, clearWishlist } = useWishlist();
   const { addresses, loading: addressesLoading, addAddress, updateAddress, deleteAddress } = useAddresses();
-  const { notifications, loading: notificationsLoading, unreadCount, markAllAsRead } = useNotifications();
+
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -97,8 +95,7 @@ const Dashboard = () => {
         return <WishlistTab wishlist={wishlist} loading={wishlistLoading} onToggleWishlist={toggleWishlist} onClearWishlist={clearWishlist} />;
       case 'addresses':
         return <AddressesTab addresses={addresses} loading={addressesLoading} onAddAddress={addAddress} onUpdateAddress={updateAddress} onDeleteAddress={deleteAddress} />;
-      case 'notifications':
-        return <NotificationsTab notifications={notifications} loading={notificationsLoading} onMarkAllAsRead={markAllAsRead} />;
+
       case 'settings':
         return <SettingsTab user={user} onUpdateProfile={handleUpdateProfile} />;
       default:
@@ -122,7 +119,7 @@ const Dashboard = () => {
             user={user} 
             activeTab={activeTab} 
             setActiveTab={setActiveTab} 
-            unreadNotifications={unreadCount}
+
             wishlistCount={wishlist?.length || 0}
             onLogout={logout} 
             sidebarOpen={sidebarOpen}

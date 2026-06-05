@@ -1871,9 +1871,23 @@ const OrdersPage = () => {
                           const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
                           const fullUrl = formatImageUrl(url);
                           return (
-                            <div key={idx} className="relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-primary transition-all w-20 h-20 flex items-center justify-center group cursor-pointer">
+                             <div key={idx} className="relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-primary transition-all w-20 h-20 flex items-center justify-center group cursor-pointer">
                               {isVideo ? (
-                                <video src={fullUrl} controls className="w-full h-full object-cover" />
+                                <a
+                                  href={fullUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="w-full h-full block relative"
+                                >
+                                  <video src={fullUrl} className="w-full h-full object-cover" muted autoPlay loop playsInline />
+                                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/50 transition-colors">
+                                    <div className="w-7 h-7 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center text-white border border-white/20">
+                                      <svg className="w-3 h-3 fill-current ml-0.5" viewBox="0 0 24 24">
+                                        <path d="M8 5v14l11-7z" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </a>
                               ) : (
                                 <a
                                   href={fullUrl}

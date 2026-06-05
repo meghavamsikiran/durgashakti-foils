@@ -172,8 +172,8 @@ const Home = () => {
 
       {/* Comparison Section */}
       <section className="relative bg-[#080d0b] py-20 border-b border-white/5">
-        <div className="max-w-[1440px] mx-auto px-6 md:px-12">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_1.1fr_1.25fr] gap-8 xl:gap-12 items-center">
+        <div className="max-w-[1600px] mx-auto px-6 md:px-12 lg:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr_1.35fr] gap-8 xl:gap-16 items-center">
             {/* Normal Foil Image Container */}
             <div className="flex flex-col items-center w-full">
               <div className="w-full rounded-2xl overflow-hidden shadow-2xl transition-transform duration-500 hover:scale-[1.02]">

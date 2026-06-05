@@ -9,7 +9,6 @@ const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, wishlistC
     { id: 'transactions', label: 'Payments', icon: CreditCard },
     { id: 'wishlist', label: 'Wishlist', icon: Heart, badge: wishlistCount },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
-    { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadNotifications },
     { id: 'settings', label: 'Profile', icon: User },
   ];
 
