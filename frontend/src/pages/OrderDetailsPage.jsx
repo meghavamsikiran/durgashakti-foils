@@ -12,7 +12,7 @@ import { useCart } from './../contexts/CartContext';
 
 const PENDING_RAZORPAY_ORDER_KEY = 'pending_razorpay_order';
 const isPaidPaymentStatus = (status) => ['paid', 'completed'].includes((status || '').toLowerCase());
-const isRefundPaymentStatus = (status) => ['refund_pending', 'refunded'].includes((status || '').toLowerCase());
+const isRefundPaymentStatus = (status) => ['refund_pending', 'refund_failed', 'refunded'].includes((status || '').toLowerCase());
 const isOnlinePaymentPendingOrder = (orderData) => {
   const paymentStatus = (orderData?.payment_status || '').toLowerCase();
   const orderStatus = (orderData?.order_status || '').toLowerCase();
@@ -596,9 +596,10 @@ const OrderDetailsPage = () => {
                 const paymentStatus = (order.payment_status || '').toLowerCase();
                 const isPaid = isPaidPaymentStatus(paymentStatus);
                 const isRefundPending = paymentStatus === 'refund_pending';
+                const isRefundFailed = paymentStatus === 'refund_failed';
                 const isRefunded = paymentStatus === 'refunded';
                 const isCod = paymentMethod === 'cod';
-                const canPayOnline = isCod && !isPaid && !isRefundPending && !isRefunded && !['cancelled', 'failed', 'refunded', 'return_approved', 'delivered'].includes((order.order_status || '').toLowerCase());
+                const canPayOnline = isCod && !isPaid && !isRefundPending && !isRefundFailed && !isRefunded && !['cancelled', 'failed', 'refunded', 'return_approved', 'delivered'].includes((order.order_status || '').toLowerCase());
                 return (
                   <>
                     <p className="font-extrabold text-slate-900 uppercase tracking-wider">{isCod ? 'Cash on Delivery' : 'Prepaid Online'}</p>
@@ -609,6 +610,15 @@ const OrderDetailsPage = () => {
                         </p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
                           <p className="font-mono text-slate-500 break-all select-all">Paid Txn: {order.transaction_id}</p>
+                        )}
+                      </div>
+                    ) : isRefundFailed ? (
+                      <div className="bg-rose-50 text-rose-800 text-[10px] rounded-xl p-3 border border-rose-100/80 space-y-1 font-semibold">
+                        <p className="font-extrabold flex items-center gap-1.5 text-rose-700">
+                          <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Refund Failed
+                        </p>
+                        {order.refund_error && (
+                          <p className="text-rose-700 leading-snug">{order.refund_error}</p>
                         )}
                       </div>
                     ) : isRefundPending ? (
@@ -955,9 +965,10 @@ const OrderDetailsPage = () => {
           if (!showReturnTimeline || isReturning) return null;
           const isRejected = status === 'return_rejected';
           const isApproved = ['return_approved', 'refunded'].includes(status) || isRefundPaymentStatus(paymentStatus);
+          const isRefundFailed = paymentStatus === 'refund_failed';
           const isRefunded = paymentStatus === 'refunded' || status === 'refunded';
-          const isRefundInitiated = !isRejected && (paymentStatus === 'refund_pending' || isRefunded || status === 'return_approved');
-          const progressWidth = isRejected ? '76%' : isRefunded ? '76%' : isRefundInitiated ? '51%' : isApproved ? '25%' : '0%';
+          const isRefundInitiated = !isRejected && (paymentStatus === 'refund_pending' || isRefundFailed || isRefunded || status === 'return_approved');
+          const progressWidth = isRejected ? '76%' : isRefunded || isRefundFailed ? '76%' : isRefundInitiated ? '51%' : isApproved ? '25%' : '0%';
           const returnSteps = [
             { label: 'Return Requested', active: true, date: order.updated_at },
             {
@@ -973,9 +984,10 @@ const OrderDetailsPage = () => {
                 date: isRefundInitiated ? order.updated_at : null,
               },
               {
-                label: 'Refund Credited',
-                active: isRefunded,
-                date: isRefunded ? order.updated_at : null,
+                label: isRefundFailed ? 'Refund Failed' : 'Refund Credited',
+                active: isRefunded || isRefundFailed,
+                date: (isRefunded || isRefundFailed) ? order.updated_at : null,
+                rejected: isRefundFailed,
               }
             ] : []),
           ];
@@ -985,16 +997,16 @@ const OrderDetailsPage = () => {
               <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-50">
                 <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Return Timeline</h3>
                 <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-                  isRejected ? 'bg-rose-100 text-rose-800' : isRefunded ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'
+                  isRejected || isRefundFailed ? 'bg-rose-100 text-rose-800' : isRefunded ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'
                 }`}>
-                  {isRejected ? 'Return Rejected' : isRefunded ? 'Refund Credited' : isApproved ? 'Refund Initiated' : 'Return Requested'}
+                  {isRejected ? 'Return Rejected' : isRefundFailed ? 'Refund Failed' : isRefunded ? 'Refund Credited' : isApproved ? 'Refund Initiated' : 'Return Requested'}
                 </span>
               </div>
               <div className="relative pt-6 pb-2 overflow-x-auto">
                 <div className="min-w-[560px] relative">
                   <div className="absolute top-[16px] left-[12%] right-[12%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
                   <div
-                    className={`absolute top-[16px] left-[12%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out ${isRejected ? 'bg-rose-500' : 'bg-primary'}`}
+                    className={`absolute top-[16px] left-[12%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out ${isRejected || isRefundFailed ? 'bg-rose-500' : 'bg-primary'}`}
                     style={{ width: progressWidth }}
                   />
                   <div className="relative flex justify-between px-[8%]">
@@ -1085,7 +1097,7 @@ const OrderDetailsPage = () => {
                   : order.order_status === 'return_requested'
                   ? 'Return Pending Approval'
                   : order.order_status === 'return_approved'
-                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Refund Credited' : 'Return Approved')
+                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Refund Credited' : (order.payment_status || '').toLowerCase() === 'refund_failed' ? 'Refund Failed' : 'Return Approved')
                   : order.order_status === 'return_rejected'
                   ? 'Return Request Declined'
                   : `Preparing shipment • Est. Delivery ${getExpectedDeliveryDate(order.created_at)}`
@@ -1099,7 +1111,7 @@ const OrderDetailsPage = () => {
                   : order.order_status === 'return_requested'
                   ? 'Our team is reviewing your return request and proof media.'
                   : order.order_status === 'return_approved' || order.order_status === 'refunded'
-                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Your return was accepted and the refund has been credited.' : 'Your return was accepted and the refund has been initiated.')
+                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Your return was accepted and the refund has been credited.' : (order.payment_status || '').toLowerCase() === 'refund_failed' ? (order.refund_error || 'Your refund could not be completed. Our team will retry it after resolving the payment gateway issue.') : 'Your return was accepted and the refund has been initiated.')
                   : 'We are packaging and preparing your items for courier pickup.'
                 }
               </p>

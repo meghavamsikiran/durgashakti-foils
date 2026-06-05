@@ -308,6 +308,58 @@ h1, h2, h3, h4, h5, h6 {
     filter: drop-shadow(0 40px 120px rgba(0, 110, 27, 0.18)) !important;
   }
 
+  body.razorpay-premium-launching::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 50% 42%, rgba(11, 209, 61, 0.18), transparent 24rem),
+      linear-gradient(135deg, rgba(11, 18, 32, 0.82), rgba(24, 28, 27, 0.68));
+    backdrop-filter: blur(18px) saturate(1.1);
+    -webkit-backdrop-filter: blur(18px) saturate(1.1);
+    animation: razorpayBackdropIgnite 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  body.razorpay-premium-launching::after {
+    content: '';
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 1000000;
+    width: min(76vw, 760px);
+    height: min(58vh, 420px);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    border-radius: 24px;
+    border: 1px solid rgba(221, 229, 223, 0.32);
+    background:
+      linear-gradient(115deg, transparent 0%, rgba(255,255,255,0.2) 20%, transparent 42%) -120% 0 / 220% 100%,
+      linear-gradient(145deg, rgba(255,255,255,0.9), rgba(235,239,237,0.74)),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.2) 0 1px, rgba(0,0,0,0.03) 1px 2px);
+    box-shadow:
+      0 44px 120px rgba(0, 0, 0, 0.34),
+      0 0 80px rgba(11, 209, 61, 0.2),
+      inset 0 1px 0 rgba(255,255,255,0.88);
+    animation: razorpayPanelPrime 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards, metallicSweep 1.2s ease-in-out infinite;
+  }
+
+  @keyframes razorpayBackdropIgnite {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes razorpayPanelPrime {
+    from { opacity: 0; transform: translate(-50%, -46%) scale(0.94); filter: blur(8px); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
+  }
+
+  @keyframes metallicSweep {
+    from { background-position: 120% 0, 0 0, 0 0; }
+    to { background-position: -120% 0, 0 0, 0 0; }
+  }
+
   /* Override loading spinner and colors */
   iframe[src*="checkout.razorpay.com"]::before {
     content: '';
@@ -370,9 +422,11 @@ h1, h2, h3, h4, h5, h6 {
 
   /* Razorpay backdrop blur */
   body > div[style*="background"][style*="rgba(0"] {
-    background: rgba(24, 28, 27, 0.55) !important;
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
+    background:
+      radial-gradient(circle at 50% 38%, rgba(11, 209, 61, 0.16), transparent 34rem),
+      rgba(11, 18, 32, 0.72) !important;
+    backdrop-filter: blur(16px) saturate(1.08) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(1.08) !important;
   }
 
   /* Emerald accent color replacement for default blue */

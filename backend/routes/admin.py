@@ -34,6 +34,113 @@ import asyncio
 
 router = APIRouter(prefix="/api")
 
+REFUND_AUDIT_ACTIONS = {
+    "PAYMENT_RAZORPAY_REFUND_CREATED",
+    "PAYMENT_RAZORPAY_REFUND_INITIATED",
+    "PAYMENT_RAZORPAY_REFUND_PENDING",
+    "PAYMENT_RAZORPAY_REFUND_FAILED",
+    "PAYMENT_RAZORPAY_REFUND_RECONCILED",
+    "PAYMENT_RAZORPAY_REFUND_WEBHOOK",
+    "ORDER_RAZORPAY_REFUND_RETRY_PENDING",
+    "ORDER_RAZORPAY_REFUND_RETRY_FAILED",
+    "ORDER_RAZORPAY_REFUND_RETRY_INITIATED",
+    "ORDER_RAZORPAY_REFUND_RETRIED",
+    "ORDER_REFUND_STATUS_CORRECTED_PENDING_CONFIRMATION",
+}
+
+
+def _payment_status_lower(order: OrderModel) -> str:
+    return str(order.payment_status or "").lower()
+
+
+def _is_refund_bank_confirmed(meta: dict | None) -> bool:
+    if not isinstance(meta, dict):
+        return False
+    if meta.get("has_bank_reference") is True:
+        return True
+    acquirer_data = meta.get("acquirer_data") or {}
+    if isinstance(acquirer_data, dict):
+        for key in ("arn", "rrn", "utr", "bank_reference_number", "bank_transaction_id"):
+            if str(acquirer_data.get(key) or "").strip():
+                return True
+    return False
+
+
+async def _latest_refund_logs_for_orders(db: AsyncSession, order_ids: list[str]) -> dict[str, AuditLogModel]:
+    if not order_ids:
+        return {}
+    res = await db.execute(
+        select(AuditLogModel)
+        .where(
+            AuditLogModel.target_type == "order",
+            AuditLogModel.target_id.in_(order_ids),
+            AuditLogModel.action.in_(list(REFUND_AUDIT_ACTIONS)),
+        )
+        .order_by(AuditLogModel.created_at.desc())
+    )
+    latest: dict[str, AuditLogModel] = {}
+    for log in res.scalars().all():
+        latest.setdefault(str(log.target_id), log)
+    return latest
+
+
+async def _normalize_refund_rows(db: AsyncSession, orders: list[OrderModel]) -> dict[str, AuditLogModel]:
+    refund_orders = [
+        order for order in orders
+        if _payment_status_lower(order) in {"refund_pending", "refund_failed", "refunded"}
+        or str(order.order_status or "").lower() in {"return_approved", "refunded"}
+    ]
+    latest_logs = await _latest_refund_logs_for_orders(db, [str(order.id) for order in refund_orders])
+    now = datetime.now(timezone.utc)
+
+    for order in refund_orders:
+        latest = latest_logs.get(str(order.id))
+        meta = latest.metadata_ if latest else {}
+        payment_status = _payment_status_lower(order)
+        order_status = str(order.order_status or "").lower()
+
+        if payment_status == "refunded" or order_status == "refunded":
+            if not _is_refund_bank_confirmed(meta):
+                order.payment_status = "refund_pending"
+                order.order_status = "return_approved"
+                order.updated_at = now
+                await write_audit_log(
+                    db,
+                    "ORDER_REFUND_STATUS_CORRECTED_PENDING_CONFIRMATION",
+                    "system",
+                    "order",
+                    str(order.id),
+                    {
+                        "reason": "Refund was previously marked credited before bank confirmation was available.",
+                        "latest_refund_audit_action": latest.action if latest else None,
+                        "latest_refund_audit_metadata": meta,
+                    },
+                )
+    if refund_orders:
+        await db.flush()
+    return latest_logs
+
+
+def _order_response_dict(order: OrderModel, latest_refund_log: AuditLogModel | None = None) -> dict:
+    data = row_to_dict(order)
+    payment_status = str(data.get("payment_status") or "").lower()
+    meta = latest_refund_log.metadata_ if latest_refund_log else {}
+    error = meta.get("error") if isinstance(meta, dict) else None
+
+    if payment_status == "refund_failed":
+        data["refund_display_status"] = "failed"
+        data["refund_status_label"] = "Refund Failed"
+        data["refund_error"] = error or "Razorpay refund failed. Please retry after resolving the issue."
+    elif payment_status == "refund_pending":
+        data["refund_display_status"] = "initiated"
+        data["refund_status_label"] = "Refund Initiated"
+        data["refund_error"] = error if error and str(latest_refund_log.action or "").endswith("_FAILED") else None
+    elif payment_status == "refunded":
+        data["refund_display_status"] = "credited"
+        data["refund_status_label"] = "Refund Credited"
+        data["refund_error"] = None
+    return data
+
 def generate_tracking_url(courier: str, tracking_number: str) -> str:
     if not tracking_number:
         return ""
@@ -75,7 +182,7 @@ async def _process_return_refund_background(order_id: str, actor_id: str = "syst
             order = res.scalar_one_or_none()
             if not order:
                 return
-            if str(order.payment_status or "").lower() not in {"paid", "completed", "refund_pending"}:
+            if str(order.payment_status or "").lower() not in {"paid", "completed", "refund_pending", "refund_failed"}:
                 return
             if str(order.payment_method or "").lower() == "cod":
                 return
@@ -100,12 +207,13 @@ async def _process_return_refund_background(order_id: str, actor_id: str = "syst
                     },
                 )
             else:
-                order.payment_status = "refund_pending"
+                order.payment_status = "refund_failed"
                 if str(order.order_status or "").lower() == "return_requested":
                     order.order_status = "return_approved"
+                order.updated_at = datetime.now(timezone.utc)
                 await write_audit_log(
                     session,
-                    "PAYMENT_RAZORPAY_REFUND_PENDING",
+                    "PAYMENT_RAZORPAY_REFUND_FAILED",
                     actor_id,
                     "order",
                     order_id,
@@ -578,17 +686,8 @@ async def get_all_orders(
     q = select(OrderModel).where(*filters).order_by(OrderModel.updated_at.desc()).offset(offset).limit(limit)
     res = await db.execute(q)
     orders = res.scalars().all()
-    pending_refund_orders = [
-        order for order in orders
-        if str(order.payment_status or "").lower() == "refund_pending"
-    ]
-    if pending_refund_orders:
-        from routes.orders import reconcile_order_refund_with_razorpay
-        await asyncio.gather(*[
-            reconcile_order_refund_with_razorpay(order, db, source="admin_orders_list")
-            for order in pending_refund_orders
-        ])
-    items = [row_to_dict(order) for order in orders]
+    latest_refund_logs = await _normalize_refund_rows(db, orders)
+    items = [_order_response_dict(order, latest_refund_logs.get(str(order.id))) for order in orders]
     return {"items": items, "total": total, "page": page, "limit": limit}
 
 
@@ -599,10 +698,6 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     order = res.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-
-    if str(order.payment_status or "").lower() == "refund_pending":
-        from routes.orders import reconcile_order_refund_with_razorpay
-        await reconcile_order_refund_with_razorpay(order, db, source="admin_status_update")
 
     prev_status = (order.order_status or "processing").lower()
     new_status = normalize_order_status(status_data.get("status"))
@@ -616,7 +711,7 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     now = datetime.now(timezone.utc)
     payment_method_lower = str(order.payment_method or "").lower()
     payment_status_lower = str(order.payment_status or "").lower()
-    if payment_method_lower != "cod" and payment_status_lower not in ("paid", "completed", "refund_pending", "refunded"):
+    if payment_method_lower != "cod" and payment_status_lower not in ("paid", "completed", "refund_pending", "refund_failed", "refunded"):
         if new_status not in ("cancelled", "overdue"):
             raise HTTPException(status_code=400, detail="Cannot advance unpaid order")
 
@@ -682,7 +777,7 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
                 order.payment_status = "refund_pending"
                 refund_warning = f"Return approved but automatic refund failed: {err_msg}. You can retry or mark as manually refunded from order details."
                 logger.warning("Refund failed for order %s: %s", order.order_number, err_msg)
-        elif payment_method_lower != "cod" and payment_status not in ("refunded", "refund_pending"):
+        elif payment_method_lower != "cod" and payment_status not in ("refunded", "refund_pending", "refund_failed"):
             raise HTTPException(status_code=400, detail="Cannot approve return before prepaid payment is captured")
     if new_status == "return_rejected":
         effective_status = "return_rejected"
@@ -756,7 +851,7 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     await write_audit_log(db, "ORDER_STATUS_UPDATED", admin.id, "order", order_id, {"from": prev_status, "to": effective_status})
     res_payload = {
         "message": f"Order status updated to {effective_status}",
-        "order": row_to_dict(order),
+        "order": _order_response_dict(order),
     }
     if warning_message:
         res_payload["warning"] = warning_message
@@ -824,8 +919,8 @@ async def retry_order_refund(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    if str(order.payment_status or "").lower() != "refund_pending":
-        raise HTTPException(status_code=400, detail="Refund is not pending for this order")
+    if str(order.payment_status or "").lower() not in {"refund_pending", "refund_failed"}:
+        raise HTTPException(status_code=400, detail="Refund is not pending or failed for this order.")
 
     prev_payment_status = order.payment_status
     prev_order_status = order.order_status
@@ -834,12 +929,12 @@ async def retry_order_refund(
     success, err_msg, refund_info = await trigger_razorpay_refund(order, db)
     if not success:
         order.order_status = "return_approved"
-        order.payment_status = "refund_pending"
+        order.payment_status = "refund_failed"
         order.updated_at = datetime.now(timezone.utc)
         await db.flush()
         await write_audit_log(
             db,
-            "ORDER_RAZORPAY_REFUND_RETRY_PENDING",
+            "ORDER_RAZORPAY_REFUND_RETRY_FAILED",
             admin.id,
             "order",
             order_id,
@@ -850,10 +945,12 @@ async def retry_order_refund(
                 "error": err_msg,
             }
         )
+        response_order = _order_response_dict(order)
+        response_order["refund_error"] = err_msg
         return {
-            "message": f"Razorpay refund is still pending: {err_msg}",
-            "warning": f"Razorpay refund is still pending: {err_msg}",
-            "order": row_to_dict(order),
+            "message": f"Razorpay refund failed: {err_msg}",
+            "warning": f"Razorpay refund failed: {err_msg}",
+            "order": response_order,
         }
 
     refund_status = str((refund_info or {}).get("status") or "").lower()
@@ -878,7 +975,7 @@ async def retry_order_refund(
     )
 
     message = "Razorpay refund has been initiated and is pending bank confirmation."
-    return {"message": message, "order": row_to_dict(order)}
+    return {"message": message, "order": _order_response_dict(order)}
 
 
 

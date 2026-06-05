@@ -9,7 +9,7 @@ import hashlib
 import json
 from typing import Optional, List
 from database import get_db
-from models import OrderModel, ProductModel, CartModel, SettingModel
+from models import OrderModel, ProductModel, CartModel, SettingModel, AuditLogModel
 from deps import (
     UserSchema, OrderCreate, get_current_user, row_to_dict,
     write_audit_log, send_email, create_notification,
@@ -29,6 +29,19 @@ router = APIRouter(prefix="/api")
 
 PAID_PAYMENT_STATUSES = {"paid", "completed", "Cash On Delivery"}
 RAZORPAY_SUCCESS_STATUSES = {"captured", "authorized"}
+REFUND_AUDIT_ACTIONS = {
+    "PAYMENT_RAZORPAY_REFUND_CREATED",
+    "PAYMENT_RAZORPAY_REFUND_INITIATED",
+    "PAYMENT_RAZORPAY_REFUND_PENDING",
+    "PAYMENT_RAZORPAY_REFUND_FAILED",
+    "PAYMENT_RAZORPAY_REFUND_RECONCILED",
+    "PAYMENT_RAZORPAY_REFUND_WEBHOOK",
+    "ORDER_RAZORPAY_REFUND_RETRY_PENDING",
+    "ORDER_RAZORPAY_REFUND_RETRY_FAILED",
+    "ORDER_RAZORPAY_REFUND_RETRY_INITIATED",
+    "ORDER_RAZORPAY_REFUND_RETRIED",
+    "ORDER_REFUND_STATUS_CORRECTED_PENDING_CONFIRMATION",
+}
 
 
 def _is_paid_order(order: OrderModel) -> bool:
@@ -67,6 +80,94 @@ def _refund_has_bank_reference(refund: Optional[dict]) -> bool:
         "bank_transaction_id",
     }
     return any(str(acquirer_data.get(key) or "").strip() for key in reference_keys)
+
+
+def _audit_meta_has_bank_reference(meta: Optional[dict]) -> bool:
+    if not isinstance(meta, dict):
+        return False
+    if meta.get("has_bank_reference") is True:
+        return True
+    return _refund_has_bank_reference({"acquirer_data": meta.get("acquirer_data") or {}})
+
+
+async def _latest_refund_audit(db: AsyncSession, order_id: str) -> Optional[AuditLogModel]:
+    res = await db.execute(
+        select(AuditLogModel)
+        .where(
+            AuditLogModel.target_type == "order",
+            AuditLogModel.target_id == str(order_id),
+            AuditLogModel.action.in_(list(REFUND_AUDIT_ACTIONS)),
+        )
+        .order_by(AuditLogModel.created_at.desc())
+        .limit(1)
+    )
+    return res.scalar_one_or_none()
+
+
+async def normalize_unconfirmed_refund(order: OrderModel, db: AsyncSession) -> bool:
+    payment_status = str(order.payment_status or "").lower()
+    order_status = str(order.order_status or "").lower()
+    if payment_status != "refunded" and order_status != "refunded":
+        return False
+
+    latest = await _latest_refund_audit(db, str(order.id))
+    if latest and _audit_meta_has_bank_reference(latest.metadata_):
+        return False
+
+    prev_payment_status = order.payment_status
+    prev_order_status = order.order_status
+    order.payment_status = "refund_pending"
+    order.order_status = "return_approved"
+    order.updated_at = datetime.now(timezone.utc)
+    await write_audit_log(
+        db,
+        "ORDER_REFUND_STATUS_CORRECTED_PENDING_CONFIRMATION",
+        "system",
+        "order",
+        str(order.id),
+        {
+            "reason": "Refund was previously marked credited before bank confirmation was available.",
+            "prev_payment_status": prev_payment_status,
+            "prev_order_status": prev_order_status,
+            "latest_refund_audit_action": latest.action if latest else None,
+            "latest_refund_audit_metadata": latest.metadata_ if latest else None,
+        },
+    )
+    await db.flush()
+    return True
+
+
+async def refund_response_fields(order: OrderModel, db: AsyncSession) -> dict:
+    payment_status = str(order.payment_status or "").lower()
+    latest = await _latest_refund_audit(db, str(order.id))
+    meta = latest.metadata_ if latest else {}
+    error = meta.get("error") if isinstance(meta, dict) else None
+    if payment_status == "refund_failed":
+        return {
+            "refund_display_status": "failed",
+            "refund_status_label": "Refund Failed",
+            "refund_error": error or "Razorpay refund failed. Please contact support or wait while we retry.",
+        }
+    if payment_status == "refund_pending":
+        return {
+            "refund_display_status": "initiated",
+            "refund_status_label": "Refund Initiated",
+            "refund_error": error if latest and latest.action.endswith("_FAILED") else None,
+        }
+    if payment_status == "refunded":
+        return {
+            "refund_display_status": "credited",
+            "refund_status_label": "Refund Credited",
+            "refund_error": None,
+        }
+    return {}
+
+
+async def order_response_dict(order: OrderModel, db: AsyncSession) -> dict:
+    await normalize_unconfirmed_refund(order, db)
+    data = row_to_dict(order)
+    data.update(await refund_response_fields(order, db))
+    return data
 
 
 def _is_online_payment_pending(order: OrderModel) -> bool:
@@ -293,6 +394,14 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
                     "has_bank_reference": _refund_has_bank_reference(latest_refund),
                 },
             )
+            if order.user_id:
+                await create_notification(
+                    db,
+                    str(order.user_id),
+                    "Refund credited",
+                    f"Your refund for order {order.order_number} has been credited.",
+                    "order",
+                )
             logger.info("Reconciled Razorpay refund for order %s from %s", order.order_number, source)
             return True
     except Exception:
@@ -863,16 +972,7 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
         select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.updated_at.desc()).limit(1000)
     )
     orders = result.scalars().all()
-    pending_refund_orders = [
-        order for order in orders
-        if str(order.payment_status or "").lower() == "refund_pending"
-    ]
-    if pending_refund_orders:
-        await asyncio.gather(*[
-            reconcile_order_refund_with_razorpay(order, db, source="user_orders_list")
-            for order in pending_refund_orders
-        ])
-    orders_dict = [row_to_dict(o) for o in orders]
+    orders_dict = [await order_response_dict(o, db) for o in orders]
     return await _enrich_order_items(db, orders_dict)
 
 
@@ -887,7 +987,7 @@ async def get_order(order_id: str, current_user: UserSchema = Depends(get_curren
     await _reconcile_order_with_razorpay(order, db, source="order_fetch")
     await reconcile_order_refund_with_razorpay(order, db, source="order_fetch")
 
-    d = row_to_dict(order)
+    d = await order_response_dict(order, db)
     return await _enrich_order_items(db, d)
 
 
@@ -1284,9 +1384,14 @@ async def razorpay_webhook(
             raise HTTPException(status_code=404, detail="Order not found")
 
         refund_status = str(refund_entity.get("status") or "").lower()
-        order.payment_status = "refund_pending"
-        if str(order.order_status or "").lower() == "return_requested":
-            order.order_status = "return_approved"
+        bank_confirmed = _refund_has_bank_reference(refund_entity)
+        if (event == "refund.processed" or refund_status == "processed") and bank_confirmed:
+            order.payment_status = "refunded"
+            order.order_status = "refunded"
+        else:
+            order.payment_status = "refund_pending"
+            if str(order.order_status or "").lower() == "return_requested":
+                order.order_status = "return_approved"
         order.updated_at = datetime.now(timezone.utc)
         await write_audit_log(
             db,
@@ -1300,12 +1405,21 @@ async def razorpay_webhook(
                 "razorpay_refund_id": refund_entity.get("id"),
                 "refund_status": refund_status,
                 "amount": refund_entity.get("amount"),
+                "acquirer_data": refund_entity.get("acquirer_data"),
+                "has_bank_reference": bank_confirmed,
             },
         )
-        return {
-            "status": "pending",
-            "message": "Refund update received from Razorpay. The order remains pending until bank confirmation is available.",
-        }
+        if order.payment_status == "refunded":
+            if order.user_id:
+                await create_notification(
+                    db,
+                    str(order.user_id),
+                    "Refund credited",
+                    f"Your refund for order {order.order_number} has been credited.",
+                    "order",
+                )
+            return {"status": "success", "message": "Refund credited confirmation received from Razorpay."}
+        return {"status": "pending", "message": "Refund update received from Razorpay. The order remains pending until bank confirmation is available."}
 
     if event not in ["payment.captured", "order.paid"]:
         return {"status": "ignored"}

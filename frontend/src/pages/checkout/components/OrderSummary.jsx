@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, LockKeyhole } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { useCart } from '../../../contexts/CartContext';
 import { calculateCheckoutPricing } from '../../../utils/checkoutPricing';
@@ -33,8 +33,9 @@ const OrderSummary = ({
   } = calculateCheckoutPricing(total, shippingSettings, paymentMethod, appliedCoupons);
 
   return (
-    <div className="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
-      <h3 className="text-xl font-black text-slate-900 mb-6 uppercase tracking-tighter">Order Summary</h3>
+    <div className="relative overflow-hidden bg-white rounded-2xl p-6 md:p-8 border border-border-subtle shadow-[0_28px_80px_rgba(15,23,42,0.08)]">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
+      <h3 className="text-xl font-black text-slate-950 mb-6 tracking-tight">Order Summary</h3>
       <div className="space-y-4 mb-8">
         {cart.items?.map((item) => {
           const product = products[item.product_id] || item.product;
@@ -165,14 +166,18 @@ const OrderSummary = ({
         <Button 
           onClick={onPlaceOrder}
           disabled={loading}
-          className="w-full h-16 rounded-2xl mt-8 text-lg font-black uppercase tracking-widest shadow-2xl shadow-emerald-glow"
+          className="group relative overflow-hidden w-full h-16 rounded-xl mt-8 text-sm font-black uppercase tracking-[0.18em] bg-primary hover:bg-[#005312] text-white shadow-2xl shadow-emerald-glow active:scale-[0.98] transition-all"
         >
+          <span className="absolute inset-0 bg-[linear-gradient(115deg,transparent,rgba(255,255,255,0.24),transparent)] translate-x-[-120%] group-hover:translate-x-[120%] transition-transform duration-700" />
           {loading ? (
-            <Loader2 className="animate-spin w-6 h-6" />
+            <Loader2 className="relative animate-spin w-6 h-6" />
           ) : paymentMethod === 'cod' ? (
-            'Place your Order'
+            <span className="relative">Place Order</span>
           ) : (
-            `Pay ₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            <span className="relative flex items-center justify-center gap-2">
+              <LockKeyhole className="w-4 h-4" />
+              Launch Secure Payment
+            </span>
           )}
         </Button>
       )}

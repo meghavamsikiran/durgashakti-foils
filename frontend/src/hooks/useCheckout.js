@@ -396,6 +396,12 @@ export const useCheckout = () => {
           createdAt: Date.now()
         }));
 
+        const clearRazorpayLaunchState = () => {
+          document.body.classList.remove('razorpay-premium-launching');
+        };
+
+        document.body.classList.add('razorpay-premium-launching');
+
         const options = {
           key: process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_live_SsPZ6WqWCSv7VP',
           amount: Math.round(totalAmount * 100),
@@ -406,11 +412,23 @@ export const useCheckout = () => {
           theme: {
             color: '#006e1b',
             hide_topbar: false,
-            backdrop_color: 'rgba(24, 28, 27, 0.55)'
+            backdrop_color: 'rgba(11, 18, 32, 0.72)'
+          },
+          retry: {
+            enabled: true,
+            max_count: 3
+          },
+          timeout: 900,
+          readonly: {
+            email: false,
+            contact: false
           },
           modal: {
             ondismiss: function () {
-              toast.info('Payment window closed. You can retry anytime within the time limit.');
+              clearRazorpayLaunchState();
+              toast.info('Payment window closed. You can complete the payment from the order details page.');
+              navigate(`/order/${orderId}`);
+              orderInProgress.current = false;
             },
             width: 1200,
             height: 900,
@@ -424,6 +442,7 @@ export const useCheckout = () => {
             contact: shippingInfo.phone || ''
           },
           handler: async function (paymentResponse) {
+            clearRazorpayLaunchState();
             setLoading(true);
             const paidPaymentId = paymentResponse?.razorpay_payment_id;
             if (paidPaymentId) {
@@ -457,22 +476,17 @@ export const useCheckout = () => {
               orderInProgress.current = false;
             }
           },
-          modal: {
-            ondismiss: function () {
-              toast.info('Payment window closed. You can complete the payment from the order details page.');
-              navigate(`/order/${orderId}`);
-              orderInProgress.current = false;
-            }
-          }
         };
 
         const rzp = new window.Razorpay(options);
         rzp.on('payment.failed', function (resp) {
+          clearRazorpayLaunchState();
           toast.error(resp.error?.description || 'Payment failed.');
           navigate(`/order/${orderId}`);
           orderInProgress.current = false;
         });
         rzp.open();
+        setTimeout(clearRazorpayLaunchState, 1500);
         setLoading(false);
         return;
       }

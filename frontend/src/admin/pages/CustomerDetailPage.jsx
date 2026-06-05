@@ -142,7 +142,8 @@ const CustomerDetailPage = () => {
       return_requested: { bg: 'bg-orange-50 text-orange-600', label: 'Return Requested' },
       return_approved: { bg: 'bg-teal-50 text-teal-600', label: 'Return Approved' },
       return_rejected: { bg: 'bg-red-50 text-red-600', label: 'Return Rejected' },
-      refunded: { bg: 'bg-slate-100 text-slate-600', label: 'Refunded' },
+      refund_failed: { bg: 'bg-red-50 text-red-600', label: 'Refund Failed' },
+      refunded: { bg: 'bg-slate-100 text-slate-600', label: 'Refund Credited' },
       returned: { bg: 'bg-purple-50 text-purple-600', label: 'Returned' },
     };
     return config[s] || { bg: 'bg-slate-50 text-slate-600', label: s };

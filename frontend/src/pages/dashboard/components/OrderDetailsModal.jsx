@@ -511,7 +511,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                       {(() => {
                         const status = (order.order_status || '').toLowerCase();
                         const paymentStatus = (order.payment_status || '').toLowerCase();
-                        const isPaid = ['paid', 'completed', 'refund_pending', 'refunded'].includes(paymentStatus) || order.payment_method?.toLowerCase() === 'cod';
+                        const isPaid = ['paid', 'completed', 'refund_pending', 'refund_failed', 'refunded'].includes(paymentStatus) || order.payment_method?.toLowerCase() === 'cod';
                         const isConfirmed = ['confirmed', 'packaging', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
                         const isPacked = ['packaging', 'packed', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
                         const isShipped = ['shipped', 'in_transit', 'out_for_delivery', 'delivered', 'return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
@@ -533,7 +533,8 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                         if (['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status)) {
                           const isReturnRequested = ['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
                           const isReturnApproved = ['return_approved', 'refunded'].includes(status);
-                          const isRefundInitiated = paymentStatus === 'refund_pending' || paymentStatus === 'refunded' || status === 'refunded';
+                          const isRefundFailed = paymentStatus === 'refund_failed';
+                          const isRefundInitiated = paymentStatus === 'refund_pending' || isRefundFailed || paymentStatus === 'refunded' || status === 'refunded';
                           const isRefunded = status === 'refunded' || paymentStatus === 'refunded';
                           const isReturnRejected = status === 'return_rejected';
 
@@ -552,9 +553,10 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                                 date: isRefundInitiated ? order.updated_at : null
                               },
                               {
-                                label: 'Refund Credited',
-                                active: isRefunded,
-                                date: isRefunded ? order.updated_at : null
+                                label: isRefundFailed ? 'Refund Failed' : 'Refund Credited',
+                                active: isRefunded || isRefundFailed,
+                                date: (isRefunded || isRefundFailed) ? order.updated_at : null,
+                                isRejected: isRefundFailed
                               }
                             ] : [])
                           ];
@@ -698,6 +700,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                             status === 'cash on delivery' ? 'To Collect' :
                             status === 'paid' || status === 'completed' ? 'Paid' :
                             status === 'refund_pending' ? 'Refund Initiated' :
+                            status === 'refund_failed' ? 'Refund Failed' :
                             status === 'refunded' ? 'Refund Credited' :
                             status ? status.replace(/_/g, ' ') : 'Pending';
                           return (
@@ -706,6 +709,11 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                               {order.transaction_id && (
                                 <p className="text-[10px] font-mono text-muted-foreground break-all select-all">
                                   {order.transaction_id === 'COD' ? 'Payment: COD' : `Payment ID: ${order.transaction_id}`}
+                                </p>
+                              )}
+                              {order.refund_error && (
+                                <p className="text-[10px] font-semibold text-rose-600 leading-snug">
+                                  {order.refund_error}
                                 </p>
                               )}
                             </div>

@@ -45,6 +45,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
     if (status === 'cash on delivery') return 'To Collect';
     if (status === 'paid' || status === 'completed') return 'Paid';
     if (status === 'refund_pending') return 'Refund Initiated';
+    if (status === 'refund_failed') return 'Refund Failed';
     if (status === 'refunded') return 'Refund Credited';
     return status ? status.replace(/_/g, ' ') : 'Pending';
   };
@@ -67,6 +68,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
       return_requested: { bg: 'bg-orange-50 text-orange-600', label: 'Return Requested' },
       return_approved: { bg: 'bg-teal-50 text-teal-600', label: 'Return Approved' },
       return_rejected: { bg: 'bg-red-50 text-red-600', label: 'Return Rejected' },
+      refund_failed: { bg: 'bg-red-50 text-red-600', label: 'Refund Failed' },
       refunded: { bg: 'bg-slate-100 text-slate-600', label: 'Refund Credited' },
       returned: { bg: 'bg-purple-50 text-purple-600', label: 'Returned' },
     };

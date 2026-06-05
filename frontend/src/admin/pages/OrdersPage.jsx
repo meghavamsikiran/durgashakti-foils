@@ -60,7 +60,7 @@ const statusConfigs = {
 
 const PAGE_SIZE = 15;
 const uiStatus = (status) => (status || '').toUpperCase();
-const isPaidStatus = (status) => ['paid', 'completed', 'refunded', 'refund_pending'].includes(String(status || '').toLowerCase());
+const isPaidStatus = (status) => ['paid', 'completed', 'refunded', 'refund_pending', 'refund_failed'].includes(String(status || '').toLowerCase());
 const STATUS_LABELS = {
   PENDING_PAYMENT: 'Payment Pending',
   PENDING: 'Placed',
@@ -88,6 +88,7 @@ const paymentStatusLabel = (order) => {
   if (value === 'cash on delivery') return 'To Collect';
   if (value === 'paid' || value === 'completed') return 'Paid';
   if (value === 'refund_pending') return 'Refund Initiated';
+  if (value === 'refund_failed') return 'Refund Failed';
   if (value === 'refunded') return 'Refund Credited';
   return value ? value.replace(/_/g, ' ') : 'Pending';
 };
@@ -258,17 +259,17 @@ const OrdersPage = () => {
     load(1);
   }, [search, filter, load, dateFilter, courierFilter]);
 
-  // Periodic silent polling in the background (every 10 seconds) for real-time order dashboard
+  // Periodic silent polling in the background. Keep it light so row actions stay responsive.
   useEffect(() => {
     const timer = setInterval(() => {
       loadSilent(page);
-    }, 10000);
+    }, 30000);
     return () => clearInterval(timer);
   }, [loadSilent, page]);
 
-  // Background pre-fetch for status filters on initial mount to enable instant tab switching
+  // Background pre-fetch for the most used status filters only; avoid flooding the admin API.
   useEffect(() => {
-    const statuses = ['PENDING_PAYMENT', 'CONFIRMED', 'PACKAGING', 'SHIPPED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURN_REJECTED', 'REFUNDED', 'RETURNED', 'CANCELLED', 'FAILED'];
+    const statuses = ['CONFIRMED', 'PACKAGING', 'SHIPPED', 'RETURN_REQUESTED', 'RETURN_APPROVED'];
     const prefetch = async () => {
       for (const s of statuses) {
         try {
@@ -279,7 +280,7 @@ const OrdersPage = () => {
         }
       }
     };
-    const timer = setTimeout(prefetch, 500);
+    const timer = setTimeout(prefetch, 2500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -314,7 +315,7 @@ const OrdersPage = () => {
         toast.warning(response.data.warning, { duration: 8000 });
       }
       toast.success(`Order status updated to ${statusLabel(newStatus)}`, { id: toastId });
-      loadSilent(page);
+      setTimeout(() => loadSilent(page), 800);
     } catch (err) {
       setRows(previousRows);
       setSelectedOrderForModal(previousModalOrder);
@@ -350,11 +351,12 @@ const OrdersPage = () => {
         setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
       }
       toast.success(response?.data?.message || 'Razorpay refund has been initiated and is pending bank confirmation.', { id: toastId });
-      loadSilent(page);
+      setTimeout(() => loadSilent(page), 800);
     } catch (err) {
       setRows(previousRows);
       setSelectedOrderForModal(previousModalOrder);
-      toast.error(err.message, { id: toastId });
+      const detail = err?.data?.detail || err?.response?.data?.detail || err?.message;
+      toast.error(detail || 'Razorpay refund could not be retried. Please try again.', { id: toastId });
     } finally {
       setPendingActionIds(prev => {
         const next = new Set(prev);
@@ -620,12 +622,17 @@ const OrdersPage = () => {
                        <td className="px-8 py-6">
                          <div className="font-bold text-slate-800">{order.customer_name || 'Guest User'}</div>
                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
-                           <div className={`w-1.5 h-1.5 rounded-full ${isPaidStatus(order.payment_status) ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+                           <div className={`w-1.5 h-1.5 rounded-full ${String(order.payment_status || '').toLowerCase() === 'refund_failed' ? 'bg-rose-500' : isPaidStatus(order.payment_status) ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
                            <span>{paymentMethodLabel(order)} • {paymentStatusLabel(order)}</span>
                            {order.transaction_id && order.transaction_id !== 'COD' && (
                              <span className="font-mono normal-case tracking-normal select-all">{order.transaction_id}</span>
                            )}
                          </div>
+                         {order.refund_error && (
+                           <div className="mt-2 max-w-sm text-[10px] leading-snug font-semibold text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-2.5 py-1.5">
+                             {order.refund_error}
+                           </div>
+                         )}
                        </td>
                        <td className="px-8 py-6 text-center">
                          <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${config.bg} ${config.color}`}>
@@ -639,7 +646,8 @@ const OrdersPage = () => {
                        <td className="px-8 py-6">
                           <div className="flex items-center justify-center gap-2">
                             {(() => {
-                              const showRefundPendingButton = order.payment_status === 'refund_pending' && hasPermission('update_order_status');
+                              const refundPaymentStatus = String(order.payment_status || '').toLowerCase();
+                              const showRefundPendingButton = ['refund_pending', 'refund_failed'].includes(refundPaymentStatus) && hasPermission('update_order_status');
                               const allowedActions = actions.filter((a) => {
                                 if (a === 'CANCELLED') {
                                   return hasPermission('cancel_orders');
@@ -658,9 +666,9 @@ const OrdersPage = () => {
                                     }}
                                     className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
                                       isOrderPending ? 'opacity-60 cursor-wait' : ''
-                                    } border-emerald-100 text-emerald-600 hover:bg-emerald-50`}
+                                    } ${refundPaymentStatus === 'refund_failed' ? 'border-rose-100 text-rose-700 hover:bg-rose-50' : 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'}`}
                                   >
-                                    {isOrderPending ? 'Retrying' : 'Retry Refund'}
+                                    {isOrderPending ? 'Retrying' : refundPaymentStatus === 'refund_failed' ? 'Retry Failed Refund' : 'Retry Refund'}
                                   </button>
                                 );
                               }
@@ -1121,21 +1129,25 @@ const OrdersPage = () => {
                     {(() => {
                       const isCod = String(selectedOrderForModal.payment_method || '').toLowerCase() === 'cod';
                       const paymentStatus = String(selectedOrderForModal.payment_status || '').toLowerCase();
-                      const paidLike = ['paid', 'completed', 'cash on delivery', 'refund_pending', 'refunded'].includes(paymentStatus) || isCod;
+                      const paidLike = ['paid', 'completed', 'cash on delivery', 'refund_pending', 'refund_failed', 'refunded'].includes(paymentStatus) || isCod;
                       const statusLabel =
                         paymentStatus === 'cash on delivery' ? 'To Collect' :
                         paymentStatus === 'paid' || paymentStatus === 'completed' ? 'Paid' :
                         paymentStatus === 'refund_pending' ? 'Refund Initiated' :
+                        paymentStatus === 'refund_failed' ? 'Refund Failed' :
                         paymentStatus === 'refunded' ? 'Refund Credited' :
                         paymentStatus ? paymentStatus.replace(/_/g, ' ') : 'Pending';
-                      const isRefund = ['refund_pending', 'refunded'].includes(paymentStatus);
-                      const tone = isRefund
+                      const isRefund = ['refund_pending', 'refunded', 'refund_failed'].includes(paymentStatus);
+                      const isRefundFailed = paymentStatus === 'refund_failed';
+                      const tone = isRefundFailed
+                        ? 'bg-rose-50 text-rose-800 border-rose-100/80'
+                        : isRefund
                         ? 'bg-sky-50 text-sky-800 border-sky-100/80'
                         : paidLike
                           ? 'bg-emerald-50 text-emerald-800 border-emerald-100/60'
                           : 'bg-amber-50 text-amber-800 border-amber-100/60';
-                      const dot = isRefund ? 'bg-sky-500' : paidLike ? 'bg-emerald-500' : 'bg-amber-500';
-                      const labelTone = isRefund ? 'text-sky-700' : paidLike ? 'text-emerald-700' : 'text-amber-700';
+                      const dot = isRefundFailed ? 'bg-rose-500' : isRefund ? 'bg-sky-500' : paidLike ? 'bg-emerald-500' : 'bg-amber-500';
+                      const labelTone = isRefundFailed ? 'text-rose-700' : isRefund ? 'text-sky-700' : paidLike ? 'text-emerald-700' : 'text-amber-700';
                       return (
                         <>
                           <p className="font-extrabold text-slate-900 uppercase tracking-wider">
@@ -1156,6 +1168,11 @@ const OrdersPage = () => {
                             )}
                             {selectedOrderForModal.transaction_date && (
                               <p className="text-slate-500">Date: {new Date(selectedOrderForModal.transaction_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                            )}
+                            {selectedOrderForModal.refund_error && (
+                              <p className="text-rose-700 normal-case tracking-normal leading-snug font-semibold">
+                                {selectedOrderForModal.refund_error}
+                              </p>
                             )}
                             {!paidLike && timeLeft && (
                               <p className="flex items-center gap-1 text-[9px] font-black text-rose-600 animate-pulse mt-1">
