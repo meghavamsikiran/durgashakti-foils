@@ -172,21 +172,21 @@ const Home = () => {
 
       {/* Comparison Section */}
       <section className="relative bg-[#080d0b] py-20 border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr_1fr] gap-10 items-center">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.25fr_1.1fr_1.25fr] gap-8 xl:gap-12 items-center">
             {/* Normal Foil Image Container */}
-            <div className="flex flex-col items-center">
-              <div className="w-full aspect-square rounded-2xl bg-black border border-white/5 flex items-center justify-center overflow-hidden">
+            <div className="flex flex-col items-center w-full">
+              <div className="w-full rounded-2xl overflow-hidden shadow-2xl transition-transform duration-500 hover:scale-[1.02]">
                 <img
-                  src="/media__1780688276908.jpg"
+                  src="/media__1780688276832.jpg"
                   alt="Normal Foil wrap test"
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                  className="w-full h-auto block"
                 />
               </div>
             </div>
 
             {/* Comparison Table */}
-            <div className="order-first lg:order-none">
+            <div className="order-first lg:order-none w-full">
               <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-black text-center mb-8 tracking-tight">
                 Normal Foil vs <span className="text-brand-green">Durga Shakti Foil</span>
               </h2>
@@ -213,12 +213,12 @@ const Home = () => {
             </div>
 
             {/* Durga Shakti Foil Image Container */}
-            <div className="flex flex-col items-center">
-              <div className="w-full aspect-square rounded-2xl bg-black border border-brand-green/20 flex items-center justify-center overflow-hidden">
+            <div className="flex flex-col items-center w-full">
+              <div className="w-full rounded-2xl overflow-hidden shadow-2xl transition-transform duration-500 hover:scale-[1.02]">
                 <img
-                  src="/media__1780688276832.jpg"
+                  src="/media__1780688276908.jpg"
                   alt="Durga Shakti Foil heat lock test"
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                  className="w-full h-auto block"
                 />
               </div>
             </div>

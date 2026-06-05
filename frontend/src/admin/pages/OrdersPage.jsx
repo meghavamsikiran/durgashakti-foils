@@ -1787,6 +1787,27 @@ const OrdersPage = () => {
                                     </p>
                                   )}
                                 </div>
+                                <div className="pt-2 border-t border-slate-200/50 flex flex-wrap gap-2">
+                                  {item.self_shipping_details.tracking_url ? (
+                                    <a
+                                      href={item.self_shipping_details.tracking_url.startsWith('http') ? item.self_shipping_details.tracking_url : `https://${item.self_shipping_details.tracking_url}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 bg-indigo-650 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
+                                    >
+                                      Track Return Shipment
+                                    </a>
+                                  ) : (
+                                    <a
+                                      href={`https://www.google.com/search?q=track+${encodeURIComponent(item.self_shipping_details.courier_name)}+${encodeURIComponent(item.self_shipping_details.tracking_number)}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 bg-indigo-650 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
+                                    >
+                                      Track Return Shipment
+                                    </a>
+                                  )}
+                                </div>
                                 {item.self_shipping_details.notes && (
                                   <p className="text-[10px] text-slate-500 italic">Notes: {item.self_shipping_details.notes}</p>
                                 )}

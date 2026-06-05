@@ -1321,10 +1321,33 @@ const OrderDetailsPage = () => {
                           <p className="text-[10px] text-slate-600 font-medium">Reason: <span className="font-bold">{item.return_reason}</span></p>
                         )}
                         {item.self_shipping_details && (
-                          <div className="text-[10px] text-slate-500 space-y-0.5 font-semibold">
-                            <p>Courier: <span className="font-extrabold text-slate-800">{item.self_shipping_details.courier_name}</span></p>
-                            <p>Tracking: <span className="font-mono font-extrabold text-slate-800">{item.self_shipping_details.tracking_number}</span></p>
-                            {item.self_shipping_details.courier_cost > 0 && <p>Courier Cost: <span className="font-bold text-slate-850">₹{item.self_shipping_details.courier_cost}</span></p>}
+                          <div className="text-[10px] text-slate-500 space-y-1.5 font-semibold">
+                            <div>
+                              <p>Courier: <span className="font-extrabold text-slate-800">{item.self_shipping_details.courier_name}</span></p>
+                              <p>Tracking: <span className="font-mono font-extrabold text-slate-800">{item.self_shipping_details.tracking_number}</span></p>
+                              {item.self_shipping_details.courier_cost > 0 && <p>Courier Cost: <span className="font-bold text-slate-850">₹{item.self_shipping_details.courier_cost}</span></p>}
+                            </div>
+                            <div className="pt-1.5 border-t border-slate-100 flex flex-wrap gap-2">
+                              {item.self_shipping_details.tracking_url ? (
+                                <a
+                                  href={item.self_shipping_details.tracking_url.startsWith('http') ? item.self_shipping_details.tracking_url : `https://${item.self_shipping_details.tracking_url}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-150 font-black uppercase tracking-widest text-[8px] px-3 py-1.5 rounded-lg transition-all"
+                                >
+                                  Track Return Shipment
+                                </a>
+                              ) : (
+                                <a
+                                  href={`https://www.google.com/search?q=track+${encodeURIComponent(item.self_shipping_details.courier_name)}+${encodeURIComponent(item.self_shipping_details.tracking_number)}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-150 font-black uppercase tracking-widest text-[8px] px-3 py-1.5 rounded-lg transition-all"
+                                >
+                                  Track Return Shipment
+                                </a>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
