@@ -1,33 +1,47 @@
-# BRIEFING — 2026-06-04T21:54:11+05:30
+# BRIEFING — 2026-06-05T15:46:00Z
 
 ## Mission
-Explore the codebase at d:\archive and provide a comprehensive analysis of the existing architecture, the order flow, payment models, and tests, as well as Razorpay integration recommendations.
+Conduct a white-box exploration of backend and frontend code to identify logic bugs, security vulnerabilities, and calculation discrepancies in Cart, Checkout, Coupons, Taxes, Shipping, COD, and Refunds, as well as database concurrency and order transitions.
 
 ## 🔒 My Identity
-- Archetype: Explorer
-- Roles: Read-only investigator, analyzer
+- Archetype: explorer
+- Roles: Teamwork explorer
 - Working directory: d:\archive\.agents\explorer_1
-- Original parent: 399a6b1a-ed6b-40f5-958e-b4dcf1988c40
-- Milestone: Codebase exploration and Razorpay recommendations
+- Original parent: ef3d0c71-086b-470c-88c1-27b3ff95e0fe
+- Milestone: DISCOVERY
 
 ## 🔒 Key Constraints
-- Read-only investigation — do NOT implement or modify code
-- Write analysis report to `d:\archive\.agents\explorer_1\analysis.md`
-- Communication Guideline: Files for content delivery, messages for coordination.
+- Read-only investigation — do NOT implement
+- Provide analysis in analysis.md and handoff in handoff.md
 
 ## Current Parent
-- Conversation ID: 399a6b1a-ed6b-40f5-958e-b4dcf1988c40
-- Updated: yes (completed task)
+- Conversation ID: ef3d0c71-086b-470c-88c1-27b3ff95e0fe
+- Updated: not yet
 
 ## Investigation State
-- **Explored paths**: `backend`, `frontend`, `tests`
-- **Key findings**: Backend uses FastAPI, SQLAlchemy, PostgreSQL. Frontend uses React. Currently COD-only. Webhook/SDK for Razorpay is recommended. 15-minute timeout background loop exists in `backend/server.py`.
+- **Explored paths**:
+  - backend/routes/orders.py
+  - backend/routes/coupons.py
+  - backend/routes/cart.py
+  - backend/routes/admin.py
+  - backend/models.py
+  - backend/database.py
+  - frontend/src/hooks/useCheckout.js
+  - frontend/src/utils/checkoutPricing.js
+  - frontend/src/utils/productPricing.js
+  - frontend/src/pages/Checkout.jsx
+  - frontend/src/pages/checkout/components/OrderSummary.jsx
+  - frontend/src/admin/pages/OrdersPage.jsx
+- **Key findings**:
+  - Coupon validation lacks transaction/row locking when reading, which allows concurrent coupon usage beyond max limits.
+  - Razorpay external HTTP API calls are performed inside a `with_for_update` database transaction block, leading to database connection pool starvation and resource locking.
+  - Stock is not reserved during the pending payment stage for online orders, allowing multiple users to pay for the same product, leading to stock conflicts during verification.
+  - Calculation discrepancies (floating-point precision mismatches) exist between the frontend pricing calculations (which do not round intermediate tax values) and the backend (which rounds cgst, sgst, and taxable amount to 2 decimal places).
 - **Unexplored areas**: None.
 
 ## Key Decisions Made
-- Completed exploration and output analysis/handoff files in working directory.
+- Organized findings by severity and impact to complete analysis.md.
 
 ## Artifact Index
-- d:\archive\.agents\explorer_1\analysis.md — Comprehensive analysis of codebase and Razorpay integration recommendations
-- d:\archive\.agents\explorer_1\handoff.md — Handoff report following the Handoff Protocol
-- d:\archive\.agents\explorer_1\progress.md — Progress heartbeat tracker
+- d:\archive\.agents\explorer_1\analysis.md — structured report of vulnerabilities and calculation issues.
+- d:\archive\.agents\explorer_1\handoff.md — handoff report for the implementer agent.

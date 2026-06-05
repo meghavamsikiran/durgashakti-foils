@@ -94,41 +94,21 @@ const Home = () => {
           }}
         />
 
-        {/* Marquee Info Bar */}
-        <div className="relative border-b border-white/5 bg-black/40 overflow-hidden z-20">
-          <div className="flex animate-marquee whitespace-nowrap py-2.5 text-[10px] tracking-[0.2em] text-brand-amber font-extrabold">
-            <div className="flex shrink-0">
-              {[...Array(10)].map((_, i) => (
-                <span key={i} className="px-10">
-                  ✦ EXPERIENCE PURITY & PERFECTION WITH DURGA SHAKTI PREMIUM FOILS ✦
-                </span>
-              ))}
-            </div>
-            <div className="flex shrink-0">
-              {[...Array(10)].map((_, i) => (
-                <span key={`dup-${i}`} className="px-10">
-                  ✦ EXPERIENCE PURITY & PERFECTION WITH DURGA SHAKTI PREMIUM FOILS ✦
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* Hero Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 pt-16 md:pt-24 pb-20 grid md:grid-cols-2 gap-8 items-center">
-          <div className="relative z-20">
+        <div className="relative z-10 max-w-full px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-32 pt-16 md:pt-24 pb-20 grid md:grid-cols-[1.2fr_0.8fr] gap-8 items-center">
+          <div className="relative z-20 w-full lg:max-w-[850px] xl:max-w-[950px]">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-green/30 bg-brand-green/10 text-brand-green text-[11px] font-bold tracking-wide">
-              <ShieldCheck className="w-3.5 h-3.5" />
+               <ShieldCheck className="w-3.5 h-3.5" />
               100% FOOD GRADE CERTIFIED
             </div>
             
-            <h1 className="font-display mt-6 text-4xl md:text-5xl lg:text-6xl font-black leading-[1.05] tracking-tight">
+            <h1 className="font-display mt-6 text-4xl md:text-5xl lg:text-6xl font-black leading-[1.05] tracking-tight text-left">
               <span className="block">Wrap it Right,</span>
               <span className="block text-brand-yellow">Keep it Hot,</span>
               <span className="block text-brand-green">Keep it Fresh!</span>
             </h1>
 
-            <p className="mt-6 text-slate-300 max-w-md text-sm md:text-base leading-relaxed">
+            <p className="mt-6 text-slate-300 text-sm md:text-base leading-relaxed text-left max-w-2xl">
               Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminium foil engineered for commercial strength and clinical hygiene.
             </p>
 

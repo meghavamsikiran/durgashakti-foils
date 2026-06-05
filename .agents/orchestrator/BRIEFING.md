@@ -58,11 +58,14 @@ Design and coordinate the secure, fault-tolerant Razorpay payment gateway integr
 | implementation_orch | self | Implementation Track Orchestrator | failed | b3cda3ab-24e1-4bc2-b02e-8e9c3dfa16b5 |
 | implementation_orch_2 | self | Resumed Implementation Track Orchestrator | completed | ef596f94-5173-407c-b674-51f844106cc7 |
 | challenger_tier5_orch | self | Tier 5 Adversarial Hardening Orchestrator | in-progress | ab834a91-f96d-4fc8-921d-622bc22db4c6 |
+| worker_production_ready | teamwork_preview_worker | Implement 4 critical production-readiness fixes | completed | e501e638-ccbf-4af3-b5b7-0f6ad5c77bec |
+| reviewer_m6 | teamwork_preview_reviewer | Verify fixes and run test suite | completed | 57f1ce58-c90f-4225-94f7-e7dae3a89ba0 |
+| auditor_m6_final | teamwork_preview_auditor | Run forensic audit and execute test suite | in-progress | e405d782-b3b5-4f31-978c-bd188779ff61 |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 5 / 16
-- Pending subagents: ab834a91-f96d-4fc8-921d-622bc22db4c6
+- Spawn count: 8 / 16
+- Pending subagents: ab834a91-f96d-4fc8-921d-622bc22db4c6, e405d782-b3b5-4f31-978c-bd188779ff61
 - Predecessor: none
 - Successor: not yet spawned
 

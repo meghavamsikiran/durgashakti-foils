@@ -341,37 +341,6 @@ const Navbar = () => {
 
   return (
     <>
-      <div className="w-full bg-[#050807] text-white overflow-hidden py-2 relative border-b border-white/10">
-        <div className="flex whitespace-nowrap animate-marquee">
-          <div className="flex">
-            {bannerItems.map((item, index) => {
-              const showFavicon = bannerConfig.use_favicon !== false;
-              return (
-                <span key={item.id} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
-                  {showFavicon && (
-                     <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm brightness-0 invert" />
-                  )}
-                  {item.text}
-                </span>
-              );
-            })}
-          </div>
-          <div className="flex">
-            {bannerItems.map((item, index) => {
-              const showFavicon = bannerConfig.use_favicon !== false;
-              return (
-                <span key={`dup-${item.id}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
-                  {showFavicon && (
-                     <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm brightness-0 invert" />
-                  )}
-                  {item.text}
-                </span>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-      
       <nav className="sticky top-0 z-50 border-b border-white/10 bg-[#030504] text-white shadow-[0_16px_40px_rgba(0,0,0,0.22)]">
       <div className="w-full px-4 md:px-8 lg:px-12">
         <div className="flex items-center justify-between h-16">

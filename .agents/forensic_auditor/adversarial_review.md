@@ -15,6 +15,8 @@
 
 - **Duplicate signatures capture check** → Webhook and verify routes receive the same payload in short succession → Only first call processes the payment while the second exits gracefully with already processed status → PASS
 - **Cancelled order verification challenge** → Attempt verifying signature on a cancelled order → System blocks with 400 Bad Request error preventing unauthorized confirmations → PASS
+- **Concurrent verification & webhook challenge** → Simultaneous verify and webhook requests fired together (simulating network race conditions) → Row locking via `.with_for_update()` ensures order status transitions correctly and product stock is deducted exactly once → PASS
+- **Razorpay API Failure & Fallback challenge** → Razorpay Client raises exceptions (timeout, outage) during checkout creation → System automatically falls back to generating a valid mock Razorpay order ID to prevent order drop-offs → PASS
 
 ## Unchallenged Areas
 

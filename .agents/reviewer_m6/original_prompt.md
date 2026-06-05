@@ -1,19 +1,16 @@
-## 2026-06-04T17:36:14Z
+## 2026-06-05T15:53:25Z
+You are the Retail App Code Reviewer and Quality Gate. Inspect the changes made to the following files:
+1. `backend/routes/orders.py`
+2. `backend/routes/admin.py`
+3. `frontend/src/utils/checkoutPricing.js`
 
-You are a teamwork_preview_reviewer.
-Your working directory is: d:\archive\.agents\reviewer_m6
-Your task is to review and verify the implementation and tests for Milestone 6: E2E Verification.
+Specifically check:
+- Coupon limit validation checks within lock.
+- Razorpay API database lock release in background refund task.
+- Online payment stock reservation / auto-refund on stock validation failure.
+- Frontend CGST/SGST rounding alignment.
 
-Please:
-1. Examine the code changes made in:
-   - `backend/routes/orders.py`
-   - `tests/test_payment_e2e.py`
-   - Any other files modified by the worker.
-2. Verify they are correct, complete, robust, and do not violate any integrity requirements (e.g. check for any hardcoded values, dummy implementations, or cheating).
-3. Run the E2E test command:
-   `poetry run pytest -v tests/test_payment_e2e.py`
-4. Confirm that all 71 tests pass successfully and output the exact results/summary of the tests.
-5. Provide a detailed handoff report of your review.
+Run the test suite:
+`.venv\Scripts\pytest tests/test_payment_e2e.py tests/test_razorpay_adversarial.py`
 
-MANDATORY INTEGRITY WARNING:
-DO NOT CHEAT. All implementations must be genuine. DO NOT hardcode test results, create dummy/facade implementations, or circumvent the intended task. A Forensic Auditor will independently verify your work. Integrity violations WILL be detected and your work WILL be rejected.
+Verify that all tests pass, that layout is compliant with `PROJECT.md`, and that there are no hardcoded bypasses or facade overrides. Write your detailed review report to `d:/archive/.agents/reviewer_m6/handoff.md` containing Observation, Logic Chain, Caveats, Conclusion, and Verification Method.

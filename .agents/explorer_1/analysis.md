@@ -1,116 +1,191 @@
-# Architecture, Order Flow, Payment Models, and Tests Analysis
+# Audit Report — White-box Exploration of DurgaShakti Foils
 
-## 1. Backend Architecture & Framework
-- **Framework**: FastAPI (async).
-- **Database**: PostgreSQL (via Supabase) with SQLAlchemy ORM and `asyncpg` async driver.
-- **Key Files**:
-  - `backend/server.py`: Server entrypoint, middleware (CORS, rate limiting, maintenance, security headers), background tasks (`_payment_timeout_cleanup_loop`, `_audit_cleanup_loop`), routes mounting.
-  - `backend/database.py`: Database engine/session initialization, table creation, migrations.
-  - `backend/models.py`: SQLAlchemy ORM database models, including:
-    - `UserModel` (`users` table): User details, roles, permissions.
-    - `ProductModel` (`products` table): Product variant schema, prices, category, stock count.
-    - `OrderModel` (`orders` table): Items snapshot, coupon metadata, tracking details.
-  - `backend/deps.py`: Contains JWT auth logic, Pydantic request validation schemas (`OrderCreate`, `ShippingAddress`, etc.), and helper functions (e.g. email sending, audit logging, order status transition map).
-- **Core Endpoints (Orders/Payment)**:
-  - `POST /api/orders`: Validates cart items, stock, coupon codes, calculates shipping/CGST/SGST/COD fees, creates an order in database, deducts stock (if COD).
-  - `GET /api/orders`: Retrieves all orders for the current user.
-  - `GET /api/orders/{order_id}`: Retrieves a single order details.
-  - `POST /api/orders/{order_id}/cancel`: Cancels pending/processing orders, releases stock.
-  - `POST /api/orders/{order_id}/return`: Initiates a return request with mandatory proof upload.
-  - `POST /api/payment/cod/confirm`: Confirms a Cash on Delivery order, clears the cart.
+This report documents the security vulnerabilities, logic bugs, calculation discrepancies, and concurrency issues identified during a white-box audit of the backend (FastAPI) and frontend (React/Context hooks).
 
 ---
 
-## 2. Frontend Architecture & Framework
-- **Framework**: React.js with Tailwind CSS, configured using CRACO (`craco.config.js`).
-- **Key Files**:
-  - `frontend/src/pages/Checkout.jsx`: Checkout stepper component managing address selection and payment choice.
-  - `frontend/src/hooks/useCheckout.js`: Handles state for checkout items, calculations, coupon applications, and checkout step validations.
-  - `frontend/src/pages/OrderDetailsPage.jsx`: Renders shipping breakdown, item timeline tracking, invoice downloads, and return forms.
-  - `frontend/src/utils/api.js`: Centrally routes API requests, maps backend endpoints (including legacy/planned Razorpay integration hooks).
+## 1. Concurrency: Coupon Usage Limit Race Condition
+
+### Module
+Coupons & Order Checkout (`backend/routes/coupons.py` and `backend/routes/orders.py`)
+
+### Severity
+High
+
+### Root Cause
+Coupon validation is performed at order creation time using `validate_coupons_logic` (line 870 in `backend/routes/orders.py`), which executes a `SELECT` query on the `CouponModel` table without acquiring any database row locks (no `.with_for_update()`).
+Later, in the same transaction block, coupon usage is incremented:
+```python
+c_res = await db.execute(select(CouponModel).where(CouponModel.code == code_upper).with_for_update())
+coupon_to_update = c_res.scalar_one_or_none()
+if coupon_to_update:
+    coupon_to_update.total_uses = coupon_to_update.total_uses + 1
+```
+While `with_for_update()` is correctly used during the update, there is NO check within the locked write block to verify if `total_uses` has reached `max_usage_count` or if the user's usage count has exceeded `per_customer_usage_limit`. 
+
+### Reproduction Steps
+1. Create a coupon with `max_usage_count = 1`.
+2. Two users (or one user submitting two concurrent requests) checkout at the same time using that coupon code.
+3. Both requests call `validate_coupons_logic` concurrently. Since the coupon has `total_uses = 0`, both validations succeed.
+4. Both requests proceed to the order creation phase, acquire locks sequentially, and increment the coupon uses without re-validating the limits.
+5. The coupon is used twice, bypassing `max_usage_count`.
+
+### Risk
+High. Bad actors can stack or reuse single-use or limited coupons concurrently to obtain massive discounts multiple times, draining company revenue.
+
+### Impact
+Financial losses, abuse of limited promotional campaigns, and incorrect analytics.
+
+### Exact Fix
+In `backend/routes/orders.py`, during the coupon usage update block, re-validate the usage limits inside the locked row transaction block before committing the order.
+Alternatively, lock the coupon rows during the initial validation step, or raise an exception if `coupon_to_update.total_uses >= coupon_to_update.max_usage_count` or customer limits are breached during the update step.
+
+### Code Changes Required
+In `backend/routes/orders.py` around line 1014, modify the update logic:
+```python
+c_res = await db.execute(select(CouponModel).where(CouponModel.code == code_upper).with_for_update())
+coupon_to_update = c_res.scalar_one_or_none()
+if coupon_to_update:
+    # Re-validate limits inside lock
+    if coupon_to_update.max_usage_count is not None and coupon_to_update.total_uses >= coupon_to_update.max_usage_count:
+        raise HTTPException(status_code=400, detail=f"Coupon {coupon_to_update.code} limit reached.")
+    
+    # Re-validate customer limits if applicable
+    # ...
+    coupon_to_update.total_uses = coupon_to_update.total_uses + 1
+```
+
+### Test Cases
+- Concurrent Checkout Coupon Test: Send 5 concurrent checkout requests with a single-use coupon and assert only 1 succeeds while 4 fail with a 400 error.
+
+### Verification Steps
+- Inspect `backend/routes/orders.py` to ensure coupon limit checks are executed within the row lock block.
 
 ---
 
-## 3. Order Creation & Status Transitions
-- **Current Creation Flow**:
-  - When placing an order, the frontend client (`useCheckout.js` calling `orderService.createOrder`) prepares the item list, total amount, shipping info, and payment method (forces `cod`).
-  - The backend receives `OrderCreate` schema, recalculates totals dynamically from db, applies coupons and taxes, generates a 3-7-7 numeric format order number, and persists the record.
-  - If COD, stock is deducted atomically. If Online, order status remains `pending_payment` and stock is not deducted yet.
-- **Status State Machine**:
-  - Defined in `backend/deps.py:ORDER_STATUS_TRANSITIONS`:
-    - `pending_payment` -> `confirmed`, `cancelled`, `overdue`
-    - `pending` -> `confirmed`, `cancelled`
-    - `confirmed` -> `packaging`, `cancelled`
-    - `packaging` -> `shipped`, `cancelled`
-    - `shipped` -> `in_transit`, `out_for_delivery`, `cancelled`
-    - `in_transit` -> `out_for_delivery`, `failed`, `cancelled`
-    - `out_for_delivery` -> `delivered`, `failed`, `cancelled`
-    - `delivered` -> []
-    - `cancelled` -> []
-    - `returned` -> []
-    - `return_requested` -> `return_approved`, `return_rejected`
+## 2. Performance: Razorpay External HTTP Call Inside Database Lock
+
+### Module
+Order Status Updates / Background Refund Queue (`backend/routes/admin.py`)
+
+### Severity
+High
+
+### Root Cause
+In `backend/routes/admin.py`, order status transitions to `return_approved` trigger the background task `_process_return_refund_background`:
+```python
+async with database.async_session_factory() as session:
+    res = await session.execute(
+        select(OrderModel)
+        .where(OrderModel.id == order_id)
+        .with_for_update()
+    )
+    order = res.scalar_one_or_none()
+    ...
+    success, err_msg, refund_info = await trigger_razorpay_refund(order, session)
+```
+Inside `trigger_razorpay_refund` (`backend/routes/orders.py`), an external API request is made to Razorpay. Because this is an external HTTP call, it is slow and can hang or take several seconds. Holding a database row lock (`with_for_update`) during an external network call blocks other processes (like customer updates, webhooks, or admin dashboards) from accessing that order, and wastes database connection pool resources.
+
+### Reproduction Steps
+1. An admin approves a return for an order, launching `_process_return_refund_background`.
+2. The background task locks the order row in the database.
+3. The task makes an external HTTP request to Razorpay's refund API.
+4. If Razorpay is slow or times out, the row lock remains held.
+5. Concurrently, a webhook or user request tries to read or update the order, resulting in a hang or database connection timeout.
+
+### Risk
+High. Under high load or during payment provider degradation, this will exhaust the database connection pool, causing application-wide downtime.
+
+### Impact
+Severe performance degradation, API gateway timeouts, and database connection pool starvation.
+
+### Exact Fix
+Release the database lock before making the external HTTP request. Once the HTTP request finishes, start a new transaction, acquire the row lock, check the state, and commit the database updates.
+
+### Code Changes Required
+In `_process_return_refund_background` or `trigger_razorpay_refund`, do not invoke `trigger_razorpay_refund` inside the database lock block. Or fetch the order without `with_for_update()`, initiate the refund, and then perform `with_for_update()` to apply the refund results.
+
+### Test Cases
+- Verify database lock duration by mocking a slow Razorpay response (e.g. 5 seconds delay) and checking if the order row remains locked.
 
 ---
 
-## 4. Test Suites & Layout Compliance
-- **Backend Tests**: Located in `backend/tests/test_core.py`. Consists of 13 unit tests verifying:
-  - Password hashing & JWT token life-cycle validation.
-  - Indian phone format validation and Gmail alias authentication.
-  - Search sanitization, role check utilities.
-  - Order status normalization and valid state transitions.
-  - Dynamic category discount calculations.
-- **Test Command**: Run `pytest` inside the `backend` directory.
-- **Frontend Tests**: None configured in `frontend/src/` (runs `craco test` via package scripts, but no tests are collected).
-- **Layout Compliance**: Source code resides in `backend` and `frontend` root folders. `.agents/` contains only agent progress/handoff logs, respecting workspace layout conventions.
+## 3. Concurrency: Online Payment Stock Reservation Vulnerability
+
+### Module
+Order Creation / Online Payment Verification (`backend/routes/orders.py`)
+
+### Severity
+High
+
+### Root Cause
+Stock deduction occurs at order creation ONLY for COD orders. For online payments, stock deduction is deferred until payment is verified or reconciled (`_finalize_paid_order`).
+If a product has 1 item in stock, two users can add it to their cart and initiate online payment. Both orders will successfully be created in the database with status `pending_payment`. Both users will proceed to pay on Razorpay. The first payment captured will successfully transition to `Paid` and deduct stock. The second payment captured will fail to deduct stock in `_finalize_paid_order`, raising an `HTTPException` and rolling back the transaction. The second user's payment is taken, but their order remains `pending_payment` on the backend without any automatic refund mechanism.
+
+### Reproduction Steps
+1. A product has a stock quantity of 1.
+2. User A and User B place online payment orders for the product at the same time. Both orders are successfully created.
+3. Both users pay on Razorpay.
+4. User A's verification webhook finishes first, confirming the order and reducing stock to 0.
+5. User B's verification webhook fails with `400 Insufficient stock`. User B's money is debited, but their order status remains `pending_payment`.
+
+### Risk
+High. Results in double charging / over-selling without auto-refund, violating user trust and consumer protection laws.
+
+### Impact
+Customer complaints, operational overhead for manual refunds, and discrepancies between payment capture and inventory.
+
+### Exact Fix
+Implement temporary stock reservation upon order creation (e.g. reserve stock for 15 minutes). If payment fails or expires, release the stock. Alternatively, if payment verification fails due to insufficient stock, catch the exception, change order status to `failed`, and trigger an automatic Razorpay refund.
+
+### Code Changes Required
+In `backend/routes/orders.py`, wrap the stock deduction failure inside `_finalize_paid_order` or the webhook handler to trigger an automatic refund of the captured payment if stock is exhausted.
+
+### Test Cases
+- Multi-user Checkout Out of Stock: Simulating concurrent online payments on a low-stock product, asserting the second transaction triggers an automatic refund.
 
 ---
 
-## 5. Razorpay Integration Recommendations
+## 4. Calculation: Frontend/Backend Rounding Mismatches
 
-To properly integrate Razorpay for prepaid payments, the following additions are recommended:
+### Module
+Checkout Pricing Calculation (`frontend/src/utils/checkoutPricing.js` vs `backend/routes/orders.py`)
 
-### A. Backend Architecture & API Enhancements
-1. **Model Updates**: Add fields to `OrderModel` in `backend/models.py`:
-   - `razorpay_order_id` (String, nullable)
-   - `razorpay_payment_id` (String, nullable)
-   - `razorpay_signature` (String, nullable)
-2. **Order Creation Route modification**:
-   - Do not override `order_data.payment_method = "cod"` if the user selects "online".
-   - Initialize Razorpay Client: `import razorpay; client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))`
-   - Create a Razorpay order matching the calculated `grand_total` (in paise):
-     ```python
-     rz_order = client.order.create({
-         "amount": int(grand_total * 100),
-         "currency": "INR",
-         "receipt": order.order_number
-     })
-     order.razorpay_order_id = rz_order["id"]
-     ```
-   - Return the `razorpay_order_id` to the frontend client.
-3. **Verification Endpoint**: Implement `POST /api/payment/razorpay/verify`:
-   - Accept `razorpay_payment_id`, `razorpay_order_id`, and `razorpay_signature`.
-   - Verify the signature:
-     ```python
-     client.utility.verify_payment_signature({
-         'razorpay_order_id': order_id,
-         'razorpay_payment_id': payment_id,
-         'razorpay_signature': signature
-     })
-     ```
-   - If verified, call `_finalize_paid_order(...)` to set status to `confirmed` / payment to `Paid`, deduct stock, clear cart, and record audit log.
-4. **Webhook Endpoint**: Implement `POST /api/payment/razorpay/webhook`:
-   - Verify incoming webhook signature using `client.utility.verify_webhook_signature(...)`.
-   - Process events:
-     - `payment.captured` / `order.paid`: Safe fallback to call `_finalize_paid_order(...)`.
-     - `payment.failed`: Cancel order, log failure, release stock if applied.
-     - `refund.processed`: Set order status/payment status to refunded, audit transaction.
+### Severity
+Medium
 
-### B. Client-side Frontend Integration
-1. **Razorpay Checkout Load**:
-   - Dynamically load script `"https://checkout.razorpay.com/v1/checkout.js"`.
-2. **Checkout hook update**:
-   - In `useCheckout.js`, if payment method is "online", call `createOrder` -> retrieve `razorpay_order_id` -> launch Razorpay handler.
-   - On payment success, invoke `paymentService.verifyRazorpayPayment(...)` and route to `order-success`.
-3. **15-minute Countdown & UI Expiration**:
-   - Display countdown timer dynamically on `OrderDetailsPage.jsx` when order status is `pending_payment`.
-   - If countdown hits zero, render order as `Expired` / `Cancelled` and disable the checkout payment retry option.
+### Root Cause
+The backend rounds intermediate tax values to two decimal places:
+```python
+taxable_amount = round(max(0.0, server_total - discount_amount), 2)
+cgst_amount = round(taxable_amount * 0.09, 2)
+sgst_amount = round(taxable_amount * 0.09, 2)
+```
+The frontend calculates these fields without intermediate rounding, only applying rounding on the grand total using `toFixed(2)` or `Math.round(totalAmount * 100)`.
+For certain values (e.g., fractional subtotal or discount amounts), the sum of unrounded taxes differs from the sum of rounded taxes by a few paise (e.g., frontend displays ₹118.06 but backend processes ₹118.05).
+
+### Reproduction Steps
+1. Check out with a taxable subtotal of 100.05.
+2. The backend calculates `cgst = 9.00`, `sgst = 9.00`, and `grand_total = 118.05`.
+3. The frontend calculates `cgst = 9.0045`, `sgst = 9.0045`, and `grand_total = 118.059`.
+4. The frontend displays the total as `₹118.06`.
+
+### Risk
+Medium. Causes visual jump / mismatch between checkout screen and payment window/invoice.
+
+### Impact
+Confusing UX and minor discrepancies in financial auditing.
+
+### Exact Fix
+Align the frontend utility (`frontend/src/utils/checkoutPricing.js`) to round intermediate values (`taxableAmount`, `cgst`, and `sgst`) to two decimal places, matching the backend logic.
+
+### Code Changes Required
+In `frontend/src/utils/checkoutPricing.js` around line 63:
+```javascript
+  const cgst = Math.round(taxableAmount * 0.09 * 100) / 100;
+  const sgst = Math.round(taxableAmount * 0.09 * 100) / 100;
+  const grandTotal = Number((taxableAmount + shipping + cgst + sgst + codCharge).toFixed(2));
+```
+
+### Test Cases
+- Compare frontend pricing results with backend pricing calculation for subtotals containing decimals (e.g., .05, .45, .85).
