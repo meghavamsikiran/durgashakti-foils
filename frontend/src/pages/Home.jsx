@@ -102,29 +102,18 @@ const Home = () => {
         .delay-400 { animation-delay: 400ms; }
       `}</style>
 
-      <section className="relative isolate min-h-[600px] md:h-[calc(100vh-110px)] md:min-h-[580px] md:max-h-[720px] overflow-visible bg-[#020807] flex items-center">
-        {/* Background */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src="/homepage-hero-bg.jpg"
-            alt="Durga Shakti Foils"
-            className="w-full h-full object-cover object-right opacity-100 transition-opacity duration-700"
-          />
-          <div className="absolute inset-0 bg-black/55 z-[1]" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#020807_0%,rgba(2,8,7,0.85)_45%,transparent_85%)] z-[2]" />
-        </div>
-
-        {/* Content */}
-        <div className="relative z-10 w-full max-w-[1600px] mx-auto px-6 lg:px-12 xl:px-16 pt-12 pb-24 md:pb-12">
-          <div className="w-full lg:w-[55%] xl:w-[50%]">
+      <section className="relative isolate min-h-[600px] md:h-[calc(100vh-110px)] md:min-h-[580px] md:max-h-[720px] bg-[#020807] overflow-visible flex items-center">
+        <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-12 xl:px-16 pt-12 pb-24 md:pb-12 h-full flex flex-col md:flex-row md:items-center gap-8 md:gap-12">
+          {/* Left Column - Content */}
+          <div className="w-full md:w-[50%] lg:w-[45%] flex flex-col justify-center z-10">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#16823a]/80 bg-[#03140d]/80 text-[#2fda54] text-xs font-extrabold uppercase tracking-wide shadow-[0_0_20px_rgba(47,218,84,0.18)] animate-fade-in-up">
+            <div className="inline-flex items-center gap-2 self-start px-4 py-1.5 rounded-full border border-[#16823a]/80 bg-[#03140d]/80 text-[#2fda54] text-xs font-extrabold uppercase tracking-wide shadow-[0_0_20px_rgba(47,218,84,0.18)] animate-fade-in-up">
               <BadgeCheck className="h-4 w-4" strokeWidth={2.2} />
               100% FOOD GRADE CERTIFIED
             </div>
 
             {/* Heading */}
-            <h1 className="mt-6 font-serif text-[clamp(2.35rem,4.5vw,3.85rem)] font-bold leading-[1.05] tracking-tight text-white drop-shadow-[0_3px_14px_rgba(0,0,0,0.35)] animate-fade-in-up delay-100">
+            <h1 className="mt-6 font-serif text-[clamp(2.2rem,4vw,3.6rem)] font-bold leading-[1.08] tracking-tight text-white drop-shadow-[0_3px_14px_rgba(0,0,0,0.35)] animate-fade-in-up delay-100">
               Wrap it Right,
               <br />
               <span className="text-[#f6ca51]">Keep it Hot,</span>
@@ -157,23 +146,32 @@ const Home = () => {
             </div>
 
             {/* Features */}
-            <div className="flex gap-10 mt-12 animate-fade-in-up delay-400">
+            <div className="flex gap-8 mt-12 animate-fade-in-up delay-400">
               {heroFeatures.map((feature) => (
                 <div key={feature.title} className="min-w-0">
                   <div
-                    className={`mb-3 flex h-11 w-11 items-center justify-center rounded-full border bg-black/30 transition-transform duration-300 hover:scale-110 ${
+                    className={`mb-3 flex h-10 w-10 items-center justify-center rounded-full border bg-black/30 transition-transform duration-300 hover:scale-110 ${
                       feature.tone === 'gold'
                         ? 'border-[#d9ad30] text-[#d9ad30]'
                         : 'border-[#31d856] text-[#31d856]'
                     }`}
                   >
-                    <feature.icon className="h-5 w-5" strokeWidth={1.8} />
+                    <feature.icon className="h-4.5 w-4.5" strokeWidth={1.8} />
                   </div>
-                  <div className="text-[13px] font-black leading-tight text-white">{feature.title}</div>
-                  <div className="mt-1 text-[12px] font-medium leading-tight text-white/80">{feature.subtitle}</div>
+                  <div className="text-[12px] font-black leading-tight text-white">{feature.title}</div>
+                  <div className="mt-1 text-[11px] font-medium leading-tight text-white/80">{feature.subtitle}</div>
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Right Column - Image */}
+          <div className="w-full md:w-[50%] lg:w-[55%] h-[300px] md:h-[90%] flex items-center justify-center z-0">
+            <img
+              src="/homepage-hero-bg.jpg"
+              alt="Durga Shakti Foils"
+              className="max-w-full max-h-full object-contain select-none pointer-events-none"
+            />
           </div>
         </div>
 
