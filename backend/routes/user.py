@@ -5,7 +5,7 @@ from sqlalchemy import select, update, delete, func
 from database import get_db
 from models import UserModel, AddressModel, NotificationModel, ProductModel, ProductReviewModel, SettingModel
 from deps import (
-    UserSchema, UserAddress, SavedCard, WishlistItem,
+    UserSchema, UserAddress, WishlistItem,
     get_current_user, row_to_dict, validate_uuid, is_valid_uuid,
     apply_effective_product_pricing, attach_applicable_product_coupons
 )
@@ -187,52 +187,3 @@ async def mark_notifications_read(current_user: UserSchema = Depends(get_current
     await db.execute(update(NotificationModel).where(NotificationModel.user_id == current_user.id).values(is_read=True))
     return {"status": "ok"}
 
-
-# ── Saved Cards ──────────────────────────────────────────────────────────
-@router.get("/user/cards")
-async def get_saved_cards(current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(UserModel).where(UserModel.id == current_user.id))
-    user = result.scalar_one()
-    return user.saved_cards or []
-
-
-@router.post("/user/cards")
-async def add_card(card: SavedCard, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(UserModel).where(UserModel.id == current_user.id))
-    user = result.scalar_one()
-    cards = list(user.saved_cards or [])
-    cards.append(card.model_dump())
-    user.saved_cards = cards
-    await db.flush()
-    return card
-
-
-@router.put("/user/cards/{card_id}")
-async def update_card(card_id: str, card: SavedCard, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(UserModel).where(UserModel.id == current_user.id))
-    user = result.scalar_one()
-    cards = list(user.saved_cards or [])
-    if not any(existing.get("id") == card_id for existing in cards):
-        raise HTTPException(status_code=404, detail="Card not found")
-
-    updated_card = card.model_dump()
-    updated_card["id"] = card_id
-    user.saved_cards = [
-        updated_card if existing.get("id") == card_id else existing
-        for existing in cards
-    ]
-    await db.flush()
-    return updated_card
-
-
-@router.delete("/user/cards/{card_id}")
-async def delete_card(card_id: str, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(UserModel).where(UserModel.id == current_user.id))
-    user = result.scalar_one()
-    cards = list(user.saved_cards or [])
-    updated_cards = [card for card in cards if card.get("id") != card_id]
-    if len(updated_cards) == len(cards):
-        raise HTTPException(status_code=404, detail="Card not found")
-    user.saved_cards = updated_cards
-    await db.flush()
-    return {"status": "ok"}

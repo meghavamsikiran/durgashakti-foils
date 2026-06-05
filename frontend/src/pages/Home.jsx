@@ -104,17 +104,17 @@ const Home = () => {
 
       <section className="home-hero-stage relative isolate min-h-[620px] md:min-h-[760px] lg:min-h-[820px] overflow-visible bg-[#020807] flex flex-col md:flex-row md:items-center">
         {/* Hero Background Image - Absolute on desktop, relative flow on mobile to prevent text overlay */}
-        <div className="relative md:absolute w-full md:w-[60%] md:right-0 md:left-auto h-[260px] sm:h-[340px] md:h-full z-0 select-none pointer-events-none mt-6 md:mt-0 order-2 md:order-none">
+        <div className="relative md:absolute w-full md:w-[75%] md:right-0 md:left-auto h-[260px] sm:h-[340px] md:h-full z-0 select-none pointer-events-none mt-6 md:mt-0 order-2 md:order-none">
           <img
             src="/homepage-hero-bg.jpg"
             alt="Durga Shakti Foils Premium Packing Solutions"
             className="h-full w-full object-cover opacity-100 transition-opacity duration-700"
-            style={{ objectPosition: 'center' }}
+            style={{ objectPosition: 'right center' }}
           />
         </div>
 
         {/* Smooth gradient overlay to ensure text readability on the left (desktop only) */}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,#020807_0%,#020807_35%,rgba(2,8,7,0.4)_65%,rgba(2,8,7,0)_100%)] z-[1] hidden md:block" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#020807_0%,#020807_32%,rgba(2,8,7,0.6)_55%,rgba(2,8,7,0.2)_75%,rgba(2,8,7,0)_100%)] z-[1] hidden md:block" />
 
         <div className="relative z-10 mx-auto flex w-full max-w-[1340px] px-6 pb-4 pt-14 md:px-12 lg:px-[90px] order-1 md:order-none">
           <div className="max-w-[455px]">

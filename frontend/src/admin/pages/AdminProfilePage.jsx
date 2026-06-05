@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Save, Lock } from 'lucide-react';
+import { User, Save, Lock, Trash } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import authService from '../../services/auth.service';
+import adminService from '../services/admin.service';
 import { toast } from 'sonner';
 
 const AdminProfilePage = () => {
@@ -23,6 +24,35 @@ const AdminProfilePage = () => {
       });
     }
   }, [user]);
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const toastId = toast.loading('Uploading profile picture...');
+    try {
+      const response = await adminService.uploadProductImage(file);
+      const url = response.data.url;
+      
+      // Auto-save the new profile picture URL
+      await authService.updateProfile({ ...profileForm, profile_pic: url });
+      await refreshUser();
+      toast.success('Profile picture updated successfully.', { id: toastId });
+    } catch (err) {
+      toast.error(err.message || 'Failed to upload image', { id: toastId });
+    }
+  };
+
+  const handleLogoDelete = async () => {
+    const toastId = toast.loading('Removing profile picture...');
+    try {
+      await authService.updateProfile({ ...profileForm, profile_pic: "" });
+      await refreshUser();
+      toast.success('Profile picture removed.', { id: toastId });
+    } catch (err) {
+      toast.error(err.message || 'Failed to remove image', { id: toastId });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,6 +116,46 @@ const AdminProfilePage = () => {
               </span>
             )}
           </div>
+
+          {/* Superadmin Circular Profile Pic Upload Section */}
+          {isSuperAdmin && (
+            <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-slate-100">
+              <div className="relative group shrink-0">
+                <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/20 bg-slate-50 flex items-center justify-center shadow-inner">
+                  <img 
+                    src={user?.permissions?.profile_pic || '/logo-durga.png'} 
+                    alt="Super Admin Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {user?.permissions?.profile_pic && (
+                  <button
+                    type="button"
+                    onClick={handleLogoDelete}
+                    className="absolute -top-1 -right-1 bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-full shadow-sm transition-all active:scale-90 border border-rose-100"
+                    title="Remove Profile Picture"
+                  >
+                    <Trash className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+              <div className="space-y-1.5 text-center sm:text-left">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-tight">Superadmin Profile Picture</h3>
+                <p className="text-[10px] text-slate-500 max-w-sm font-medium">This circular photo serves as your system profile picture and is visible only to you.</p>
+                <div className="flex items-center justify-center sm:justify-start gap-3 mt-1">
+                  <label className="cursor-pointer bg-primary/10 text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border border-primary/20 shadow-sm active:scale-95">
+                    Upload Photo
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleLogoUpload}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1">

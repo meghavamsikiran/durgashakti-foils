@@ -128,9 +128,17 @@ const AdminLayout = () => {
 
         <div className="p-4 border-t border-border-subtle/10 bg-[#0B1220]">
           <div className="flex items-center gap-3 px-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black text-xs uppercase">
-              {user?.full_name?.charAt(0) || 'A'}
-            </div>
+            {user?.role === 'SUPER_ADMIN' && user?.permissions?.profile_pic ? (
+              <img 
+                src={user.permissions.profile_pic} 
+                alt="Super Admin" 
+                className="w-8 h-8 rounded-full object-cover border border-primary/20" 
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black text-xs uppercase">
+                {user?.full_name?.charAt(0) || 'A'}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-white truncate">{user?.full_name || 'Administrator'}</p>
               <p className="text-[10px] text-slate-500 truncate uppercase tracking-widest font-mono">{user?.role || 'Admin'}</p>

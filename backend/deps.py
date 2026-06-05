@@ -162,6 +162,7 @@ class UserProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
+    profile_pic: Optional[str] = None
 
     @field_validator("email")
     @classmethod
@@ -350,15 +351,6 @@ class ProductBulkCreateRequest(BaseModel):
     features: List[str] = []
     variants: List[VariantInput]
     is_active: bool = True
-
-class SavedCard(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    brand: str
-    last4: str
-    expiry_month: str
-    expiry_year: str
-    holder_name: str
-
 class WishlistItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     product_id: str

@@ -6,7 +6,6 @@ import { useOrders } from '../hooks/useOrders';
 import { useWishlist } from '../hooks/useWishlist';
 import { useAddresses } from '../hooks/useAddresses';
 import { useNotifications } from '../hooks/useNotifications';
-import { useSavedCards } from '../hooks/useSavedCards';
 import authService from '../services/auth.service';
 
 import Sidebar from './dashboard/components/Sidebar';
@@ -15,7 +14,6 @@ import OrdersTab from './dashboard/components/OrdersTab';
 import WishlistTab from './dashboard/components/WishlistTab';
 import AddressesTab from './dashboard/components/AddressesTab';
 import NotificationsTab from './dashboard/components/NotificationsTab';
-import SavedCardsTab from './dashboard/components/SavedCardsTab';
 import SettingsTab from './dashboard/components/SettingsTab';
 import TransactionsTab from './dashboard/components/TransactionsTab';
 
@@ -45,7 +43,6 @@ const Dashboard = () => {
   const { wishlist, loading: wishlistLoading, toggleWishlist, clearWishlist } = useWishlist();
   const { addresses, loading: addressesLoading, addAddress, updateAddress, deleteAddress } = useAddresses();
   const { notifications, loading: notificationsLoading, unreadCount, markAllAsRead } = useNotifications();
-  const { cards, loading: cardsLoading, saveCard, updateCard, deleteCard } = useSavedCards();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -96,8 +93,6 @@ const Dashboard = () => {
         return <OrdersTab orders={orders} loading={ordersLoading} error={ordersError} onRetry={fetchOrders} onCancelOrder={cancelOrder} />;
       case 'transactions':
         return <TransactionsTab orders={orders} />;
-      case 'cards':
-        return <SavedCardsTab cards={cards} loading={cardsLoading} onSaveCard={saveCard} onUpdateCard={updateCard} onDeleteCard={deleteCard} />;
       case 'wishlist':
         return <WishlistTab wishlist={wishlist} loading={wishlistLoading} onToggleWishlist={toggleWishlist} onClearWishlist={clearWishlist} />;
       case 'addresses':

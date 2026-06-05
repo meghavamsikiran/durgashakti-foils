@@ -200,11 +200,29 @@ async def update_profile(data: UserProfileUpdate, current_user: UserSchema = Dep
             raise HTTPException(status_code=400, detail="Email already in use")
         update_data['email'] = data.email
 
-    if not update_data:
-        return current_user
-    await db.execute(update(UserModel).where(UserModel.id == current_user.id).values(**update_data))
+    if update_data:
+        await db.execute(update(UserModel).where(UserModel.id == current_user.id).values(**update_data))
+
     result = await db.execute(select(UserModel).where(UserModel.id == current_user.id))
     row = result.scalar_one()
+
+    modified = False
+    if current_user.role == "SUPER_ADMIN" and data.profile_pic is not None:
+        perms = dict(row.permissions or {})
+        if data.profile_pic == "":
+            if "profile_pic" in perms:
+                perms.pop("profile_pic")
+                row.permissions = perms
+                modified = True
+        else:
+            if perms.get("profile_pic") != data.profile_pic:
+                perms["profile_pic"] = data.profile_pic
+                row.permissions = perms
+                modified = True
+
+    if update_data or modified:
+        await db.flush()
+
     d = row_to_dict(row)
     d.pop('password', None)
     return UserSchema(**d)

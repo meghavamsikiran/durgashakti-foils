@@ -1,13 +1,12 @@
 import { 
   User, LogOut, Package, CreditCard, Heart, 
-  Bell, Settings, MapPin, ShieldCheck, X 
+  Bell, Settings, MapPin, X 
 } from 'lucide-react';
 
 const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, wishlistCount, onLogout, sidebarOpen, setSidebarOpen, navigate }) => {
   const menuItems = [
     { id: 'orders', label: 'My Orders', icon: Package },
     { id: 'transactions', label: 'Payments', icon: CreditCard },
-    { id: 'cards', label: 'Saved Cards', icon: ShieldCheck },
     { id: 'wishlist', label: 'Wishlist', icon: Heart, badge: wishlistCount },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
     { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadNotifications },
