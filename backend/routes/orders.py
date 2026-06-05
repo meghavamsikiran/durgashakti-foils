@@ -532,15 +532,15 @@ async def _send_razorpay_success_side_effects(
     notification_message: Optional[str] = None,
 ) -> None:
     try:
-        from email_templates import order_confirmation_email
+        from email_templates import order_receipt_email
         from models import UserModel
         user_res = await db.execute(select(UserModel).where(UserModel.id == order.user_id))
         order_user = user_res.scalar_one_or_none()
         if order_user:
-            subj, body = order_confirmation_email(order_user.full_name or order_user.email, row_to_dict(order))
-            asyncio.create_task(send_email(order_user.email, subj, body))
+            subj, body, attachments = order_receipt_email(order_user.full_name or order_user.email, row_to_dict(order))
+            asyncio.create_task(send_email(order_user.email, subj, body, attachments))
     except Exception:
-        logger.warning("Failed to send Razorpay confirmation email for order %s", order.order_number)
+        logger.warning("Failed to send paid order receipt email for order %s", order.order_number)
 
     await write_audit_log(
         db,
@@ -770,6 +770,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
     coupon_codes_list = order_data.coupon_codes or []
     discount_amount = 0.0
     free_shipping = False
+    applied_coupon_details = []
 
     if coupon_codes_list:
         from routes.coupons import validate_coupons_logic
@@ -782,6 +783,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         
         discount_amount = float(val_res.get("discount_amount", 0.0))
         free_shipping = bool(val_res.get("free_shipping", False))
+        applied_coupon_details = val_res.get("applied_coupons") or []
 
     taxable_amount = round(max(0.0, server_total - discount_amount), 2)
     cgst_amount = round(taxable_amount * 0.09, 2)
@@ -852,6 +854,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
     shipping_address_dict["shipping_metadata"] = {
         "subtotal": server_total,
         "discount_amount": discount_amount,
+        "applied_coupons": applied_coupon_details,
         "shipping_cost": shipping_cost,
         "cgst_amount": cgst_amount,
         "sgst_amount": sgst_amount,
@@ -973,10 +976,10 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
 
     if order_data.payment_method == "cod":
         try:
-            from email_templates import order_confirmation_email
-            subj, body = order_confirmation_email(current_user.full_name or current_user.email, row_to_dict(order))
+            from email_templates import order_receipt_email
+            subj, body, attachments = order_receipt_email(current_user.full_name or current_user.email, row_to_dict(order))
             import asyncio
-            asyncio.create_task(send_email(current_user.email, subj, body))
+            asyncio.create_task(send_email(current_user.email, subj, body, attachments))
         except Exception:
             pass
 

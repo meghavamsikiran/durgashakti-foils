@@ -232,14 +232,14 @@ class ShippingAddress(BaseModel):
 
 class OrderItemSchema(BaseModel):
     product_id: str
-    product_name: str
+    product_name: str = ""
     image_url: Optional[str] = None
     quantity: int = Field(ge=1)
-    price: float
+    price: float = 0.0
 
 class OrderCreate(BaseModel):
     items: List[OrderItemSchema]
-    total_amount: float
+    total_amount: float = 0.0
     payment_method: str
     shipping_address: ShippingAddress
     idempotency_key: Optional[str] = None

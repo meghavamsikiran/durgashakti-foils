@@ -392,9 +392,25 @@ def _order_rows(order: dict, metadata: dict) -> tuple[list[dict], int, float, fl
     discount = float(metadata.get("discount_amount") or order.get("discount_amount") or 0)
     if discount > 0:
         discount_gst = round(discount * 0.18, 2)
+        applied_coupons = metadata.get("applied_coupons") or []
+        coupon_descriptions: list[str] = []
+        for coupon in applied_coupons:
+            code = _safe_text(coupon.get("code"))
+            ctype = _safe_text(coupon.get("discount_type")).lower()
+            value = float(coupon.get("discount_value") or 0)
+            if ctype == "percentage":
+                label = f"{value:g}% off"
+            elif ctype == "flat":
+                label = f"Flat {_money(value)} off"
+            elif ctype == "free_shipping":
+                label = "Free shipping"
+            else:
+                label = ctype.replace("_", " ").title() or "Discount"
+            coupon_descriptions.append(f"{code} ({label})" if code else label)
+        discount_description = ", ".join(coupon_descriptions) or ", ".join(order.get("coupon_codes") or [])
         rows.append({
             "item": "Coupon Discount",
-            "description": ", ".join(order.get("coupon_codes") or []),
+            "description": discount_description,
             "hsn": "",
             "qty": 1,
             "unit": "Disc",
@@ -480,7 +496,12 @@ def _draw_party_blocks(c: canvas.Canvas, order: dict, invoice_no: str, created: 
     for key, line in zip(["y17", "y18"], ship_lines[:2]):
         _draw_text(c, _px("x9"), _py(key), line, FS["fs7"], DARK, FONT, max_width=_sx(360))
 
-    txn_id = _safe_text(order.get("transaction_id") or "N/A (COD)")
+    payment_method = _safe_text(order.get("payment_method")).lower()
+    txn_id = _safe_text(
+        order.get("transaction_id")
+        or order.get("razorpay_payment_id")
+        or ("N/A (COD)" if payment_method == "cod" else "Pending")
+    )
     _draw_text(c, _px("x9"), _py("y11"), f"Transaction ID: {txn_id}", FS["fs7"], DARK, FONT_BOLD, max_width=_sx(360))
 
 

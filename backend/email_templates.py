@@ -1,5 +1,6 @@
 """Transactional email templates for DurgaShakti Foils."""
 from datetime import datetime, timezone, timedelta
+from html import escape
 
 LOGO_URL = "https://durgashakti-foils.vercel.app/logo-orange.png"
 BRAND_COLOR = "#006e1b"
@@ -38,17 +39,17 @@ def _base(content: str, title: str) -> str:
 
 
 def _badge(text: str, color: str = "#10b981") -> str:
-    return f'<span style="display:inline-block;background:{color};color:#fff;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:0.5px;">{text}</span>'
+    return f'<span style="display:inline-block;background:{color};color:#fff;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:0.5px;">{escape(str(text))}</span>'
 
 
 def _section_title(text: str) -> str:
-    return f'<h2 style="margin:0 0 20px;color:{BRAND_DARK};font-size:18px;font-weight:700;border-left:4px solid {BRAND_COLOR};padding-left:12px;">{text}</h2>'
+    return f'<h2 style="margin:0 0 20px;color:{BRAND_DARK};font-size:18px;font-weight:700;border-left:4px solid {BRAND_COLOR};padding-left:12px;">{escape(str(text))}</h2>'
 
 
 def _order_items_table(items: list) -> str:
     rows = ""
     for item in items:
-        name = item.get("product_name", "Product")
+        name = escape(str(item.get("product_name") or item.get("name") or "Product"))
         qty = item.get("quantity", 1)
         price = float(item.get("price", 0))
         rows += f"""<tr>
@@ -70,15 +71,44 @@ def _order_items_table(items: list) -> str:
 
 def _info_row(label: str, value: str) -> str:
     return f"""<tr>
-      <td style="padding:8px 0;color:#6b7280;font-size:13px;width:40%;">{label}</td>
-      <td style="padding:8px 0;color:#111827;font-size:13px;font-weight:600;">{value}</td>
+      <td style="padding:8px 0;color:#6b7280;font-size:13px;width:40%;">{escape(str(label))}</td>
+      <td style="padding:8px 0;color:#111827;font-size:13px;font-weight:600;">{escape(str(value))}</td>
     </tr>"""
 
 
 def _cta_button(text: str, url: str) -> str:
     return f"""<div style="text-align:center;margin:28px 0;">
-      <a href="{url}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:{BRAND_COLOR};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:0.3px;box-shadow:0 10px 30px -5px rgba(11,209,61,0.18);">{text}</a>
+      <a href="{escape(str(url), quote=True)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:{BRAND_COLOR};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:0.3px;box-shadow:0 10px 30px -5px rgba(11,209,61,0.18);">{escape(str(text))}</a>
     </div>"""
+
+
+def _money(value) -> str:
+    try:
+        return f"Rs {float(value or 0):.2f}"
+    except (TypeError, ValueError):
+        return "Rs 0.00"
+
+
+def _coupon_summary(order: dict) -> str:
+    metadata = (order.get("shipping_address") or {}).get("shipping_metadata") or {}
+    coupons = metadata.get("applied_coupons") or []
+    if coupons:
+        parts = []
+        for coupon in coupons:
+            code = coupon.get("code", "")
+            ctype = str(coupon.get("discount_type") or "").lower()
+            value = float(coupon.get("discount_value") or 0)
+            if ctype == "percentage":
+                label = f"{value:g}% off"
+            elif ctype == "flat":
+                label = f"flat {_money(value)} off"
+            elif ctype == "free_shipping":
+                label = "free shipping"
+            else:
+                label = ctype.replace("_", " ") or "discount"
+            parts.append(f"{code} ({label})")
+        return ", ".join(parts)
+    return ", ".join(str(code) for code in (order.get("coupon_codes") or []))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -177,6 +207,59 @@ def payment_success_email(name: str, order: dict) -> tuple[str, str, list]:
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. PAYMENT FAILED
 # ─────────────────────────────────────────────────────────────────────────────
+def order_receipt_email(name: str, order: dict) -> tuple[str, str, list]:
+    """Single customer receipt email for COD and prepaid orders."""
+    first = escape((name.split()[0] if name else "Customer"))
+    order_num = order.get("order_number", "N/A")
+    total = float(order.get("total_amount", 0))
+    payment_method = str(order.get("payment_method") or "").lower()
+    payment_id = order.get("razorpay_payment_id") or order.get("transaction_id") or ("COD" if payment_method == "cod" else "Prepaid")
+    payment_label = "Cash on Delivery" if payment_method == "cod" else "Prepaid Online"
+    metadata = (order.get("shipping_address") or {}).get("shipping_metadata") or {}
+    subtotal = float(metadata.get("subtotal") or 0)
+    discount = float(metadata.get("discount_amount") or order.get("discount_amount") or 0)
+    shipping = float(metadata.get("shipping_cost") or 0)
+    cgst = float(metadata.get("cgst_amount") or 0)
+    sgst = float(metadata.get("sgst_amount") or 0)
+    cod_charge = float(metadata.get("cod_charge") or 0)
+    coupon_summary = _coupon_summary(order)
+    content = f"""
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:48px;margin-bottom:8px;">&#9989;</div>
+      {_badge("Order Confirmed", "#10b981")}
+      <p style="font-size:22px;font-weight:800;color:{BRAND_DARK};margin:12px 0 4px;">Thank you, {first}!</p>
+      <p style="color:#6b7280;font-size:14px;">Your order is confirmed. Your GST tax invoice is attached as a PDF.</p>
+    </div>
+    <div style="background:{BRAND_SURFACE};border:1px solid {BRAND_BORDER};border-left:5px solid {BRAND_COLOR};border-radius:12px;padding:24px;margin-bottom:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        {_info_row("Order Number", order_num)}
+        {_info_row("Payment Method", payment_label)}
+        {_info_row("Payment ID", payment_id)}
+        {_info_row("Date & Time", datetime.now(timezone.utc).strftime("%d %B %Y, %I:%M %p UTC"))}
+      </table>
+    </div>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:18px;margin-bottom:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        {_info_row("Subtotal", _money(subtotal))}
+        {f'{_info_row("Coupon", coupon_summary)}' if coupon_summary else ''}
+        {f'{_info_row("Discount", "-" + _money(discount))}' if discount > 0 else ''}
+        {_info_row("CGST", _money(cgst))}
+        {_info_row("SGST", _money(sgst))}
+        {_info_row("Shipping", _money(shipping))}
+        {f'{_info_row("COD Charge", _money(cod_charge))}' if cod_charge > 0 else ''}
+        {_info_row("Invoice Total", _money(total))}
+      </table>
+    </div>
+    {_cta_button("View Order", f"{SITE_URL}/order/{order_num}")}"""
+    attachments = []
+    try:
+        from invoice_service import build_tax_invoice_attachment
+        attachments.append(build_tax_invoice_attachment(order))
+    except Exception as e:
+        print("Failed to generate tax invoice PDF:", e)
+    return f"Order receipt with tax invoice - {order_num}", _base(content, "Order Receipt"), attachments
+
+
 def payment_failed_email(name: str, order_num: str, reason: str = "") -> tuple[str, str]:
     first = name.split()[0] if name else "Customer"
     content = f"""

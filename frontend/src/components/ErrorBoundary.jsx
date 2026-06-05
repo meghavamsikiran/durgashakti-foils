@@ -1,13 +1,24 @@
 import React from 'react';
+import { AlertTriangle, Home, RotateCcw } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, source: 'render' };
   }
 
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
+  }
+
+  componentDidMount() {
+    window.addEventListener('error', this.handleGlobalError);
+    window.addEventListener('unhandledrejection', this.handleUnhandledRejection);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('error', this.handleGlobalError);
+    window.removeEventListener('unhandledrejection', this.handleUnhandledRejection);
   }
 
   componentDidCatch(error, errorInfo) {
@@ -16,42 +27,59 @@ class ErrorBoundary extends React.Component {
     // Future: Send to Sentry/LogRocket here
   }
 
+  handleGlobalError = (event) => {
+    this.setState({
+      hasError: true,
+      error: event.error || new Error(event.message || 'Unexpected application error'),
+      source: 'global',
+    });
+  };
+
+  handleUnhandledRejection = (event) => {
+    this.setState({
+      hasError: true,
+      error: event.reason instanceof Error ? event.reason : new Error(String(event.reason || 'Unhandled async error')),
+      source: 'async',
+    });
+  };
+
   handleRetry = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, source: 'render' });
   };
 
   handleGoHome = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, source: 'render' });
     window.location.href = '/';
   };
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background px-6">
-          <div className="max-w-md w-full text-center space-y-6">
-            <div className="w-16 h-16 mx-auto rounded-full bg-destructive/10 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-              </svg>
+        <div className="min-h-screen flex items-center justify-center bg-[#f7faf8] px-6 py-12">
+          <div className="max-w-lg w-full text-center space-y-7 rounded-xl border border-slate-200 bg-white px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.10)]">
+            <div className="w-16 h-16 mx-auto rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center">
+              <AlertTriangle className="w-8 h-8 text-amber-600" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-foreground mb-2">Something went wrong</h2>
-              <p className="text-sm text-muted-foreground">
-                An unexpected error occurred. Please try again or return to the home page.
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-emerald-700 font-black mb-2">DurgaShakti Foils</p>
+              <h2 className="text-2xl font-black text-slate-950 mb-2">We hit an unexpected issue</h2>
+              <p className="text-sm text-slate-500 font-medium leading-6">
+                The page could not continue safely. Please retry, or return home and continue from a fresh screen.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 onClick={this.handleRetry}
-                className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-black text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors"
               >
+                <RotateCcw className="w-4 h-4" />
                 Try Again
               </button>
               <button
                 onClick={this.handleGoHome}
-                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-2.5 text-sm font-medium text-foreground shadow-sm hover:bg-accent transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-6 py-3 text-sm font-black text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
               >
+                <Home className="w-4 h-4" />
                 Go Home
               </button>
             </div>
