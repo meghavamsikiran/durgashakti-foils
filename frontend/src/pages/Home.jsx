@@ -2,281 +2,276 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
-  BadgeCheck,
-  Layers,
   Leaf,
-  Recycle,
-  Ruler,
+  Flame,
   ShieldCheck,
-  ThermometerSun,
+  Layers,
+  Ruler,
+  Thermometer,
+  Recycle,
+  Check,
+  X,
   Utensils,
   Building2,
   ShoppingBag,
-  ChefHat,
-  Hospital,
+  Soup,
+  HeartPulse,
   Landmark,
   Factory,
   Store
 } from 'lucide-react';
 
 const metrics = [
-  { value: '11', label: 'Microns\nThickness', icon: Layers },
-  { value: '72', label: 'Meters\nLength', icon: Ruler },
-  { value: '100%', label: 'Virgin\nAluminium', icon: Leaf },
-  { value: 'Heat', label: 'Lock\nTechnology', icon: ThermometerSun },
-  { value: 'Eco', label: 'Friendly\nRecyclable', icon: Recycle }
+  { icon: Layers, num: '11', unit: 'Microns', sub: 'Thickness', color: 'text-brand-green' },
+  { icon: Ruler, num: '72', unit: 'Meters', sub: 'Length', color: 'text-brand-green' },
+  { icon: Leaf, num: '100%', unit: 'Virgin', sub: 'Aluminium', color: 'text-brand-green' },
+  { icon: Thermometer, num: 'Heat', unit: 'Lock', sub: 'Technology', color: 'text-brand-amber' },
+  { icon: Recycle, num: 'Eco', unit: 'Friendly', sub: 'Recyclable', color: 'text-brand-green' }
 ];
 
-const heroFeatures = [
-  { title: '100% Pure', subtitle: 'Virgin Aluminium', icon: Leaf, tone: 'green' },
-  { title: 'Heat Lock', subtitle: 'Technology', icon: ThermometerSun, tone: 'gold' },
-  { title: 'Safe for Food', subtitle: 'Always', icon: ShieldCheck, tone: 'green' }
+const features = [
+  { icon: Leaf, title: '100% Pure', sub: 'Virgin Aluminium', color: 'text-brand-green' },
+  { icon: Flame, title: 'Heat Lock', sub: 'Technology', color: 'text-brand-amber' },
+  { icon: ShieldCheck, title: 'Safe for Food', sub: 'Always', color: 'text-brand-green' }
 ];
 
-const categories = [
-  {
-    title: 'Aluminium Foil Rolls',
-    subtitle: '6m - 72m',
-    image: '/foil-rolls-card.png',
-    alt: 'Aluminium foil rolls'
-  },
-  {
-    title: 'Pre-Cut Sheets',
-    subtitle: 'Convenient & Hygiene',
-    image: '/pre-cut-sheets-card.png',
-    alt: 'Pre-cut foil sheets'
-  },
-  {
-    title: 'Foil Containers',
-    subtitle: 'Strong & Leak Proof',
-    image: '/foil-containers-card.png',
-    alt: 'Foil containers'
-  },
-  {
-    title: 'Foil Dispensers',
-    subtitle: 'Easy - Clean - Efficient',
-    image: '/foil-dispensers-card.png',
-    alt: 'Foil dispenser'
-  }
+const comparisonRows = [
+  { feature: 'Heat Retention', normal: <X className="w-5 h-5 text-brand-red mx-auto" />, durga: <Check className="w-5 h-5 text-brand-green mx-auto" /> },
+  { feature: 'Leak Protection', normal: <X className="w-5 h-5 text-brand-red mx-auto" />, durga: <Check className="w-5 h-5 text-brand-green mx-auto" /> },
+  { feature: 'Food Freshness', normal: <span className="text-slate-400">Medium</span>, durga: <span className="text-brand-green font-semibold">High</span> },
+  { feature: 'Strength', normal: <span className="text-slate-400">Low</span>, durga: <span className="text-brand-green font-semibold">High</span> },
+  { feature: 'Food Safety', normal: <span className="text-slate-400">Basic</span>, durga: <span className="text-brand-green font-semibold">Certified</span> }
+];
+
+const industries = [
+  { icon: Utensils, label: 'Restaurants' },
+  { icon: Building2, label: 'Hotels' },
+  { icon: ShoppingBag, label: 'Takeaways' },
+  { icon: Soup, label: 'Catering' },
+  { icon: HeartPulse, label: 'Hospitals' },
+  { icon: Landmark, label: 'Institutions' },
+  { icon: Factory, label: 'Food Manufacturers' },
+  { icon: Store, label: 'Retail Stores' }
 ];
 
 const Home = () => {
   const navigate = useNavigate();
 
-  const go = (to) => {
-    if (to.startsWith('#')) {
-      document.querySelector(to)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-    navigate(to);
-  };
-
   return (
-    <main className="min-h-screen bg-white text-white font-inter selection:bg-[#25d958]/30" data-testid="home-page">
+    <main className="min-h-screen bg-[#0c1310] text-white font-inter selection:bg-brand-green/30" data-testid="home-page">
       <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        .text-brand-green { color: oklch(0.78 0.22 145); }
+        .bg-brand-green { background-color: oklch(0.78 0.22 145); }
+        .text-brand-yellow { color: oklch(0.85 0.18 90); }
+        .text-brand-amber { color: oklch(0.78 0.17 70); }
+        .text-brand-red { color: oklch(0.62 0.22 25); }
+        .border-brand-green { border-color: oklch(0.78 0.22 145); }
+
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
         }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+        .animate-marquee {
+          animation: marquee 30s linear infinite;
         }
-        .animate-fade-in-up {
-          opacity: 0;
-          animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        .font-display {
+          font-family: 'Playfair Display', serif;
         }
-        .animate-fade-in {
-          opacity: 0;
-          animation: fadeIn 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .delay-100 { animation-delay: 100ms; }
-        .delay-200 { animation-delay: 200ms; }
-        .delay-300 { animation-delay: 300ms; }
-        .delay-400 { animation-delay: 400ms; }
       `}</style>
 
-      <section className="home-hero-stage relative isolate min-h-[620px] md:min-h-[720px] lg:min-h-[820px] overflow-visible bg-[#020807] flex flex-col md:flex-row md:items-center">
-        {/* Hero Background Image - Absolute on desktop, relative flow on mobile to prevent text overlay */}
-        <div className="relative md:absolute w-full md:w-[50%] lg:w-[55%] xl:w-[68%] 2xl:w-[72%] md:right-0 md:left-auto h-[260px] sm:h-[340px] md:h-full z-0 select-none pointer-events-none mt-6 md:mt-0 order-2 md:order-none">
-          <img
-            src="/homepage-hero-bg.jpg"
-            alt="Durga Shakti Foils Premium Packing Solutions"
-            className="h-full w-full object-cover opacity-100 transition-opacity duration-700"
-            style={{ objectPosition: 'right 28% top' }}
-          />
-        </div>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-[#0a0f0d] border-b border-white/5">
+        <img
+          src="/hero-products.png"
+          alt="Durga Shakti Foils Premium Packing Solutions"
+          className="absolute right-0 bottom-0 z-0 pointer-events-none w-full md:w-[70%] lg:w-[65%] h-auto object-contain hidden md:block"
+        />
+        <div
+          className="absolute inset-0 z-0 pointer-events-none hidden md:block"
+          style={{
+            background:
+              'linear-gradient(to right, #0a0f0d 0%, #0a0f0d 38%, rgba(10,15,13,0.7) 50%, rgba(10,15,13,0.15) 75%, rgba(10,15,13,0) 100%)'
+          }}
+        />
 
-        {/* Smooth gradient overlay to ensure text readability on the left (desktop only) */}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,#020807_0%,#020807_32%,rgba(2,8,7,0.6)_55%,rgba(2,8,7,0.2)_75%,rgba(2,8,7,0)_100%)] z-[1] hidden md:block" />
-
-        <div className="relative z-10 flex w-full max-w-full px-6 pb-4 pt-14 md:px-10 lg:px-16 xl:px-32 2xl:px-40 order-1 md:order-none">
-          <div className="max-w-[380px] md:max-w-[400px] lg:max-w-[440px] xl:max-w-[620px]">
-            {/* Badge */}
-            <div className="mb-4 inline-flex h-7 items-center gap-2 rounded-full border border-[#16823a]/80 bg-[#03140d]/80 px-3 text-[11px] font-extrabold uppercase tracking-wide text-[#2fda54] shadow-[0_0_20px_rgba(47,218,84,0.18)] animate-fade-in-up">
-              <BadgeCheck className="h-3.5 w-3.5" strokeWidth={2.2} />
-              100% Food Grade Certified
-            </div>
-
-            {/* Heading */}
-            <h1 className="font-serif text-[clamp(1.6rem,2.8vw,2.2rem)] md:text-[clamp(1.8rem,3vw,2.4rem)] lg:text-[clamp(2.1rem,3.2vw,2.6rem)] xl:text-[clamp(3rem,4.5vw,4.5rem)] font-bold leading-[1.05] tracking-normal text-[#b9cbc6] drop-shadow-[0_3px_14px_rgba(0,0,0,0.35)] animate-fade-in-up delay-100">
-              Wrap it Right,
-              <br />
-              <span className="text-[#f6ca51]">Keep it Hot,</span>
-              <br />
-              <span className="text-[#25d958]">Keep it Fresh!</span>
-            </h1>
-
-            <p className="mt-5 max-w-[360px] lg:max-w-[420px] xl:max-w-[500px] text-[13px] xl:text-[15px] font-medium leading-[1.65] text-white/80 animate-fade-in-up delay-200">
-              Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminium foil engineered for commercial strength and clinical hygiene.
-            </p>
-
-            <div className="mt-7 flex flex-wrap gap-4 animate-fade-in-up delay-300">
-              <button
-                onClick={() => go('/shop')}
-                data-testid="hero-shop-now-button"
-                className="inline-flex h-10 items-center gap-3 rounded-lg bg-[#38d25a] px-6 text-sm font-black text-white shadow-[0_12px_24px_rgba(56,210,90,0.28)] transition hover:-translate-y-0.5 hover:bg-[#28c94e] focus:outline-none focus:ring-2 focus:ring-[#7cff94]/70"
-              >
-                Shop Now
-                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/65">
-                  <ArrowRight className="h-3 w-3" />
+        {/* Marquee Info Bar */}
+        <div className="relative border-b border-white/5 bg-black/40 overflow-hidden z-20">
+          <div className="flex animate-marquee whitespace-nowrap py-2.5 text-[10px] tracking-[0.2em] text-brand-amber font-extrabold">
+            <div className="flex shrink-0">
+              {[...Array(10)].map((_, i) => (
+                <span key={i} className="px-10">
+                  ✦ EXPERIENCE PURITY & PERFECTION WITH DURGA SHAKTI PREMIUM FOILS ✦
                 </span>
-              </button>
+              ))}
             </div>
-
-            <div className="mt-9 hidden max-w-[340px] lg:max-w-[440px] grid-cols-3 gap-6 md:grid animate-fade-in-up delay-400">
-              {heroFeatures.map((feature) => (
-                <div key={feature.title} className="min-w-0">
-                  <div
-                    className={`mb-3 flex h-11 w-11 items-center justify-center rounded-full border bg-black/30 transition-transform duration-300 hover:scale-110 ${
-                      feature.tone === 'gold'
-                        ? 'border-[#d9ad30] text-[#d9ad30]'
-                        : 'border-[#31d856] text-[#31d856]'
-                    }`}
-                  >
-                    <feature.icon className="h-6 w-6" strokeWidth={1.8} />
-                  </div>
-                  <div className="text-[13px] font-black leading-tight text-white">{feature.title}</div>
-                  <div className="mt-1 text-[12px] font-medium leading-tight text-white/80">{feature.subtitle}</div>
-                </div>
+            <div className="flex shrink-0">
+              {[...Array(10)].map((_, i) => (
+                <span key={`dup-${i}`} className="px-10">
+                  ✦ EXPERIENCE PURITY & PERFECTION WITH DURGA SHAKTI PREMIUM FOILS ✦
+                </span>
               ))}
             </div>
           </div>
         </div>
 
-        <MetricStrip />
+        {/* Hero Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 pt-16 md:pt-24 pb-20 grid md:grid-cols-2 gap-8 items-center">
+          <div className="relative z-20">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-green/30 bg-brand-green/10 text-brand-green text-[11px] font-bold tracking-wide">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              100% FOOD GRADE CERTIFIED
+            </div>
+            
+            <h1 className="font-display mt-6 text-4xl md:text-5xl lg:text-6xl font-black leading-[1.05] tracking-tight">
+              <span className="block">Wrap it Right,</span>
+              <span className="block text-brand-yellow">Keep it Hot,</span>
+              <span className="block text-brand-green">Keep it Fresh!</span>
+            </h1>
+
+            <p className="mt-6 text-slate-300 max-w-md text-sm md:text-base leading-relaxed">
+              Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminium foil engineered for commercial strength and clinical hygiene.
+            </p>
+
+            <button
+              onClick={() => navigate('/shop')}
+              className="mt-8 group inline-flex items-center gap-3 bg-brand-green text-black font-extrabold px-7 py-3.5 rounded-full hover:shadow-[0_10px_30px_rgba(56,210,90,0.3)] transition-all transform hover:-translate-y-0.5"
+            >
+              Shop Now
+              <span className="w-6 h-6 rounded-full border border-black/20 flex items-center justify-center group-hover:translate-x-0.5 transition-transform">
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            </button>
+
+            {/* Feature Badges */}
+            <div className="mt-12 flex flex-wrap gap-8">
+              {features.map((f, i) => (
+                <div key={i} className="flex flex-col items-start gap-2">
+                  <div className={`w-11 h-11 rounded-full border border-white/10 bg-white/5 flex items-center justify-center ${f.color}`}>
+                    <f.icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black leading-tight text-white">{f.title}</div>
+                    <div className="text-[10px] text-slate-400 font-semibold">{f.sub}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="md:hidden mt-4">
+            <img
+              src="/hero-products.png"
+              alt="Premium Foil Products"
+              className="w-full h-auto object-contain mx-auto"
+            />
+          </div>
+        </div>
+
+        {/* Stats Strip */}
+        <section className="relative z-10 max-w-7xl mx-auto px-6 pb-16">
+          <div className="rounded-2xl bg-[#0c1816]/80 backdrop-blur-md border border-white/10 px-6 py-6 grid grid-cols-2 md:grid-cols-5 gap-6">
+            {metrics.map((s, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <s.icon className={`w-8 h-8 shrink-0 ${s.color}`} />
+                <div>
+                  <div className="flex items-baseline gap-1">
+                    <span className={`text-2xl font-black tracking-tight ${s.color}`}>{s.num}</span>
+                    <span className="text-[10px] text-slate-400 font-extrabold uppercase">{s.unit}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-semibold">{s.sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* Comparison Section */}
+      <section className="relative bg-[#080d0b] py-20 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-[10px] tracking-[0.25em] font-extrabold text-brand-green mb-8 uppercase">
+            SEE THE DIFFERENCE. FEEL THE CONFIDENCE.
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr_1fr] gap-10 items-center">
+            {/* Normal Foil Image Container */}
+            <div className="flex flex-col items-center">
+              <div className="w-full aspect-square rounded-2xl bg-black border border-white/5 flex items-center justify-center overflow-hidden">
+                <img
+                  src="/tray-normal-foil.png"
+                  alt="Normal Foil wrap test"
+                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                />
+              </div>
+              <div className="mt-4 px-5 py-2 rounded-lg border border-white/10 bg-white/5 text-xs font-bold text-slate-300">
+                Normal Foil
+              </div>
+            </div>
+
+            {/* Comparison Table */}
+            <div className="order-first lg:order-none">
+              <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-black text-center mb-8 tracking-tight">
+                Normal Foil vs <span className="text-brand-green">Durga Shakti Foil</span>
+              </h2>
+              <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 bg-white/5 text-slate-300">
+                      <th className="text-left px-6 py-4 font-bold text-brand-green uppercase tracking-wider text-xs">Feature</th>
+                      <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs text-center">Normal Foil</th>
+                      <th className="px-6 py-4 font-bold uppercase tracking-wider text-xs text-center text-brand-green">Durga Shakti Foil</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparisonRows.map((r, i) => (
+                      <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4 font-semibold text-slate-200">{r.feature}</td>
+                        <td className="px-6 py-4 text-center">{r.normal}</td>
+                        <td className="px-6 py-4 text-center">{r.durga}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Durga Shakti Foil Image Container */}
+            <div className="flex flex-col items-center">
+              <div className="w-full aspect-square rounded-2xl bg-black border border-brand-green/20 flex items-center justify-center overflow-hidden">
+                <img
+                  src="/tray-hot-foil.png"
+                  alt="Durga Shakti Foil heat lock test"
+                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                />
+              </div>
+              <div className="mt-4 px-5 py-2 rounded-lg border border-brand-green/30 bg-brand-green/10 text-xs font-bold text-brand-green">
+                Durga Shakti Foil
+              </div>
+            </div>
+          </div>
+
+          {/* Industries served */}
+          <div className="mt-24 border-t border-white/10 pt-16">
+            <div className="text-[10px] tracking-[0.25em] font-extrabold text-brand-green mb-10 uppercase">
+              INDUSTRIES WE SERVE
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-5">
+              {industries.map((ind, i) => (
+                <div
+                  key={i}
+                  className="group aspect-square rounded-2xl border border-white/5 bg-white/5 hover:border-brand-green/40 hover:bg-brand-green/5 transition-all duration-300 flex flex-col items-center justify-center gap-3 p-4 cursor-pointer"
+                  onClick={() => navigate('/shop')}
+                >
+                  <ind.icon className="w-8 h-8 text-brand-green/90 group-hover:scale-110 transition-transform duration-300" strokeWidth={1.5} />
+                  <div className="text-[11px] sm:text-xs text-center text-slate-300 font-bold leading-tight">{ind.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </section>
-
-      <PremiumRange go={go} />
-
-      <ComparisonSection go={go} />
     </main>
   );
 };
-
-const MetricStrip = () => (
-  <div className="relative md:absolute inset-x-0 bottom-0 md:bottom-[-38px] z-20 px-6 md:px-12 mt-6 md:mt-0 pb-12 md:pb-0 order-3 md:order-none">
-    <div className="mx-auto max-w-[1024px] rounded-lg border border-white/10 bg-[#0c1817]/95 px-7 py-5 shadow-[0_22px_55px_rgba(0,0,0,0.48)] backdrop-blur-md">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5 md:divide-x md:divide-white/15">
-        {metrics.map((metric, index) => (
-          <div key={metric.value} className={`flex items-center gap-4 ${index > 0 ? 'md:pl-7' : ''}`}>
-            <metric.icon className="h-9 w-9 shrink-0 text-[#b9f7c5]" strokeWidth={1.45} />
-            <div className="min-w-0">
-              <div className="text-[24px] font-black leading-none text-[#25d958]">{metric.value}</div>
-              <div className="mt-1 whitespace-pre-line text-[12px] font-semibold leading-[1.15] text-white/90">{metric.label}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const PremiumRange = ({ go }) => (
-  <section className="bg-white px-6 pb-12 pt-16 md:pt-28 text-black md:px-12 lg:px-[90px]">
-    <div className="mx-auto max-w-[1160px] flex flex-col gap-6 lg:grid lg:grid-cols-[280px_1fr_1fr_1fr_1fr] lg:items-center">
-      <div className="pr-5">
-        <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-[#2fb54a]">Our Premium Range</p>
-        <h2 className="font-serif text-[24px] md:text-[26px] font-bold leading-[1.08] text-[#101418]">
-          Designed for Purity,
-          <br className="hidden md:inline" />
-          Engineered for Performance
-        </h2>
-      </div>
-
-      <div className="flex overflow-x-auto gap-4 pb-4 -mx-6 px-6 md:mx-0 md:px-0 scrollbar-none snap-x snap-mandatory lg:grid lg:grid-cols-4 lg:col-span-4 lg:overflow-visible lg:pb-0">
-        {categories.map((category) => (
-          <button
-            key={category.title}
-            onClick={() => go('/shop')}
-            className="group relative h-[118px] w-[240px] shrink-0 snap-start overflow-hidden rounded-[10px] border border-slate-200 bg-[#fbfcfd] p-4 text-left shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:border-[#31c85a]/50 hover:shadow-[0_16px_32px_rgba(15,23,42,0.08)] focus:outline-none focus:ring-2 focus:ring-[#25d958]/45 lg:w-auto"
-          >
-            <div className="relative z-10 max-w-[135px]">
-              <h3 className="text-[14px] font-black leading-tight text-[#161a1e]">{category.title}</h3>
-              <p className="mt-1 text-[11px] font-semibold leading-tight text-slate-600">{category.subtitle}</p>
-              <div className="mt-7 inline-flex items-center gap-1 text-[11px] font-black text-[#22a447]">
-                View Collection
-                <ArrowRight className="h-3 w-3 transition group-hover:translate-x-1" />
-              </div>
-            </div>
-            <img
-              src={category.image}
-              alt={category.alt}
-              className="absolute bottom-0 right-0 h-[92px] w-[92px] object-contain object-right-bottom transition duration-300 group-hover:scale-105"
-              loading="lazy"
-              decoding="async"
-            />
-          </button>
-        ))}
-      </div>
-    </div>
-  </section>
-);
-
-const ComparisonSection = ({ go }) => (
-  <section className="bg-[#020605] relative select-none">
-    <div className="relative mx-auto max-w-[1774px] w-full">
-      <img
-        src="/normal-vs-durgashakti-foil.png"
-        alt="Normal Foil vs Durga Shakti Foil comparison and industries served"
-        width="1774"
-        height="887"
-        loading="lazy"
-        decoding="async"
-        className="block h-auto w-full object-contain"
-      />
-      
-      {/* Interactive Overlay Grid directly over the image's Industries section */}
-      <div 
-        className="absolute left-[2.8%] right-[2.8%] top-[67.5%] bottom-[4.5%] grid grid-cols-8 gap-[1.2%]"
-      >
-        {[
-          'Restaurants',
-          'Hotels',
-          'Takeaways',
-          'Catering',
-          'Hospitals',
-          'Institutions',
-          'Food Manufacturers',
-          'Retail Stores'
-        ].map((industry) => (
-          <button
-            key={industry}
-            onClick={() => go('/')}
-            title={`View products for ${industry}`}
-            className="w-full h-full bg-transparent border-none outline-none cursor-pointer"
-            aria-label={industry}
-          />
-        ))}
-      </div>
-    </div>
-  </section>
-);
 
 export default Home;
