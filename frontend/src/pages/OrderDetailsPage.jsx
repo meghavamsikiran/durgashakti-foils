@@ -1341,13 +1341,19 @@ const OrderDetailsPage = () => {
                     View your item
                   </button>
                   
-                  {order.order_status === 'delivered' && order.items.some(i => !i.return_status) && (
+                  {order.order_status === 'delivered' && order.items.some(i => !i.return_status) && order.payment_method?.toLowerCase() !== 'cod' && (
                     <button 
                       onClick={() => setIsReturning(item.product_id)}
                       className="w-full bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 font-bold text-slate-750 text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all text-center uppercase tracking-widest text-[9px]"
                     >
                       Return items
                     </button>
+                  )}
+
+                  {order.payment_method?.toLowerCase() === 'cod' && (
+                    <div className="bg-slate-50 border border-slate-200 text-slate-500 rounded-xl p-3.5 text-[9px] font-black uppercase tracking-wider text-center leading-normal">
+                      Returns not allowed for COD
+                    </div>
                   )}
 
                   {(item.return_status === 'RETURN_APPROVED' || item.return_status === 'return_approved') && (

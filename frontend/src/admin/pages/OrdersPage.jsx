@@ -1793,6 +1793,13 @@ const OrdersPage = () => {
                               </div>
                             )}
 
+                            {item.return_status === 'RETURN_APPROVED' && (
+                              <div className="text-[10px] text-amber-800 font-extrabold bg-amber-50 p-3 rounded-xl border border-amber-100 flex flex-col gap-1">
+                                <p className="uppercase tracking-wider font-black">Self-Shipping Status</p>
+                                <p className="font-semibold text-slate-600">Self Shipping by customer is pending. The customer has a maximum of 3 days to submit courier/tracking details.</p>
+                              </div>
+                            )}
+
                             <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-50">
                               {item.return_status === 'RETURN_REQUESTED' && (
                                 <>

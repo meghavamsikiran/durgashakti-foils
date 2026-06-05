@@ -1201,24 +1201,72 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         await _queue_order_receipt_email_once(order, db)
 
     return row_to_dict(order)
+async def enforce_return_deadlines(db: AsyncSession):
+    now = datetime.now(timezone.utc)
+    limit = now - timedelta(days=3)
+    
+    stmt = select(OrderModel).where(
+        OrderModel.order_status == "return_approved"
+    )
+    res = await db.execute(stmt)
+    orders = res.scalars().all()
+    
+    modified = False
+    for order in orders:
+        updated_at = order.updated_at
+        if updated_at.tzinfo is None:
+            updated_at = updated_at.replace(tzinfo=timezone.utc)
+        else:
+            updated_at = updated_at.astimezone(timezone.utc)
+        
+        if updated_at < limit:
+            updated_items = []
+            for item in (order.items or []):
+                if item.get("return_status") == "RETURN_APPROVED":
+                    item["return_status"] = "RETURN_REJECTED"
+                    if "audit_timeline" not in item:
+                        item["audit_timeline"] = []
+                    item["audit_timeline"].append({
+                        "status": "RETURN_REJECTED",
+                        "timestamp": now.isoformat(),
+                        "remarks": "Return cancelled automatically: customer failed to self-ship within the 3-day deadline."
+                    })
+                updated_items.append(item)
+            
+            order.items = updated_items
+            flag_modified(order, "items")
+            order.order_status = "return_rejected"
+            order.admin_message = "Return request cancelled: Customer failed to self-ship items within the 3-day deadline."
+            order.updated_at = now
+            modified = True
+            
+            await write_audit_log(
+                db,
+                "RETURN_AUTO_CANCELLED_DEADLINE_EXPIRED",
+                None,
+                "order",
+                str(order.id),
+                {"reason": "Customer failed to self-ship within 3 days."}
+            )
+            
+    if modified:
+        await db.commit()
+
+
 @router.get("/orders")
 async def get_user_orders(current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    await enforce_return_deadlines(db)
     result = await db.execute(
         select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.updated_at.desc()).limit(1000)
     )
     orders = result.scalars().all()
-    for o in orders:
-        if str(o.payment_status or "").lower() == "refund_pending":
-            try:
-                await reconcile_order_refund_with_razorpay(o, db, source="user_list_fetch")
-            except Exception:
-                pass
     orders_dict = [await order_response_dict(o, db) for o in orders]
     return await _enrich_order_items(db, orders_dict)
 
 
 @router.get("/orders/{order_id}")
 async def get_order(order_id: str, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    await enforce_return_deadlines(db)
     validate_uuid(order_id)
     result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id).with_for_update())
     order = result.scalar_one_or_none()
@@ -1314,6 +1362,8 @@ async def return_order(
         raise HTTPException(status_code=404, detail="Order not found")
     if (order.order_status or "").lower() != "delivered":
         raise HTTPException(status_code=400, detail="Only delivered orders can be returned")
+    if str(order.payment_method or "").lower() == "cod":
+        raise HTTPException(status_code=400, detail="Returns are not allowed for Cash on Delivery (COD) orders.")
 
     delivered_date = order.delivered_at or order.updated_at
     if delivered_date:
