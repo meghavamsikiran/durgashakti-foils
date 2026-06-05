@@ -102,18 +102,30 @@ const Home = () => {
         .delay-400 { animation-delay: 400ms; }
       `}</style>
 
-      <section className="relative isolate min-h-[600px] md:h-[calc(100vh-110px)] md:min-h-[580px] md:max-h-[720px] bg-[#020807] overflow-visible flex items-center">
-        <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-12 xl:px-16 pt-12 pb-24 md:pb-12 h-full flex flex-col md:flex-row md:items-center gap-8 md:gap-12">
-          {/* Left Column - Content */}
-          <div className="w-full md:w-[50%] lg:w-[45%] flex flex-col justify-center z-10">
+      <section className="home-hero-stage relative isolate min-h-[620px] md:min-h-[760px] lg:min-h-[820px] overflow-visible bg-[#020807] flex flex-col md:flex-row md:items-center">
+        {/* Hero Background Image - Absolute on desktop, relative flow on mobile to prevent text overlay */}
+        <div className="relative md:absolute w-full md:w-[75%] md:right-0 md:left-auto h-[260px] sm:h-[340px] md:h-full z-0 select-none pointer-events-none mt-6 md:mt-0 order-2 md:order-none">
+          <img
+            src="/homepage-hero-bg.jpg"
+            alt="Durga Shakti Foils Premium Packing Solutions"
+            className="h-full w-full object-cover opacity-100 transition-opacity duration-700"
+            style={{ objectPosition: 'right 35% bottom' }}
+          />
+        </div>
+
+        {/* Smooth gradient overlay to ensure text readability on the left (desktop only) */}
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,#020807_0%,#020807_32%,rgba(2,8,7,0.6)_55%,rgba(2,8,7,0.2)_75%,rgba(2,8,7,0)_100%)] z-[1] hidden md:block" />
+
+        <div className="relative z-10 mx-auto flex w-full max-w-[1340px] px-6 pb-4 pt-14 md:px-12 lg:px-[90px] order-1 md:order-none">
+          <div className="max-w-[455px]">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 self-start px-4 py-1.5 rounded-full border border-[#16823a]/80 bg-[#03140d]/80 text-[#2fda54] text-xs font-extrabold uppercase tracking-wide shadow-[0_0_20px_rgba(47,218,84,0.18)] animate-fade-in-up">
-              <BadgeCheck className="h-4 w-4" strokeWidth={2.2} />
-              100% FOOD GRADE CERTIFIED
+            <div className="mb-4 inline-flex h-7 items-center gap-2 rounded-full border border-[#16823a]/80 bg-[#03140d]/80 px-3 text-[11px] font-extrabold uppercase tracking-wide text-[#2fda54] shadow-[0_0_20px_rgba(47,218,84,0.18)] animate-fade-in-up">
+              <BadgeCheck className="h-3.5 w-3.5" strokeWidth={2.2} />
+              100% Food Grade Certified
             </div>
 
             {/* Heading */}
-            <h1 className="mt-6 font-serif text-[clamp(2.2rem,4vw,3.6rem)] font-bold leading-[1.08] tracking-tight text-white drop-shadow-[0_3px_14px_rgba(0,0,0,0.35)] animate-fade-in-up delay-100">
+            <h1 className="font-serif text-[clamp(2.35rem,4.2vw,3.55rem)] font-bold leading-[1.04] tracking-normal text-[#b9cbc6] drop-shadow-[0_3px_14px_rgba(0,0,0,0.35)] animate-fade-in-up delay-100">
               Wrap it Right,
               <br />
               <span className="text-[#f6ca51]">Keep it Hot,</span>
@@ -121,76 +133,44 @@ const Home = () => {
               <span className="text-[#25d958]">Keep it Fresh!</span>
             </h1>
 
-            {/* Description */}
-            <p className="mt-6 max-w-xl text-sm md:text-base font-medium leading-relaxed text-white/80 animate-fade-in-up delay-200">
+            <p className="mt-5 max-w-[405px] text-[14px] font-medium leading-[1.65] text-white/80 animate-fade-in-up delay-200">
               Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminium foil engineered for commercial strength and clinical hygiene.
             </p>
 
-            {/* Buttons */}
-            <div className="flex flex-wrap gap-4 mt-8 animate-fade-in-up delay-300">
+            <div className="mt-7 flex flex-wrap gap-4 animate-fade-in-up delay-300">
               <button
                 onClick={() => go('/shop')}
                 data-testid="hero-shop-now-button"
-                className="px-8 py-3 rounded-lg bg-[#38d25a] hover:bg-[#28c94e] text-white text-sm font-black shadow-[0_12px_24px_rgba(56,210,90,0.28)] transition hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[#7cff94]/70"
+                className="inline-flex h-10 items-center gap-3 rounded-lg bg-[#38d25a] px-6 text-sm font-black text-white shadow-[0_12px_24px_rgba(56,210,90,0.28)] transition hover:-translate-y-0.5 hover:bg-[#28c94e] focus:outline-none focus:ring-2 focus:ring-[#7cff94]/70"
               >
                 Shop Now
-              </button>
-
-              <button
-                onClick={() => go('/shop')}
-                data-testid="hero-explore-button"
-                className="px-8 py-3 rounded-lg border border-white/30 hover:border-white text-white hover:bg-white/10 text-sm font-semibold transition hover:-translate-y-0.5"
-              >
-                Explore Products
+                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/65">
+                  <ArrowRight className="h-3 w-3" />
+                </span>
               </button>
             </div>
 
-            {/* Features */}
-            <div className="flex gap-8 mt-12 animate-fade-in-up delay-400">
+            <div className="mt-9 hidden max-w-[370px] grid-cols-3 gap-6 md:grid animate-fade-in-up delay-400">
               {heroFeatures.map((feature) => (
                 <div key={feature.title} className="min-w-0">
                   <div
-                    className={`mb-3 flex h-10 w-10 items-center justify-center rounded-full border bg-black/30 transition-transform duration-300 hover:scale-110 ${
+                    className={`mb-3 flex h-11 w-11 items-center justify-center rounded-full border bg-black/30 transition-transform duration-300 hover:scale-110 ${
                       feature.tone === 'gold'
                         ? 'border-[#d9ad30] text-[#d9ad30]'
                         : 'border-[#31d856] text-[#31d856]'
                     }`}
                   >
-                    <feature.icon className="h-4.5 w-4.5" strokeWidth={1.8} />
+                    <feature.icon className="h-6 w-6" strokeWidth={1.8} />
                   </div>
-                  <div className="text-[12px] font-black leading-tight text-white">{feature.title}</div>
-                  <div className="mt-1 text-[11px] font-medium leading-tight text-white/80">{feature.subtitle}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right Column - Image */}
-          <div className="w-full md:w-[50%] lg:w-[55%] h-[300px] md:h-[90%] flex items-center justify-center z-0">
-            <img
-              src="/homepage-hero-bg.jpg"
-              alt="Durga Shakti Foils"
-              className="max-w-full max-h-full object-contain select-none pointer-events-none"
-            />
-          </div>
-        </div>
-
-        {/* Bottom Metrics Bar */}
-        <div className="absolute inset-x-0 bottom-0 md:bottom-[-42px] z-20 px-4 md:px-8 lg:px-12 mt-6 md:mt-0 pb-12 md:pb-0 order-3 md:order-none">
-          <div className="max-w-[1180px] mx-auto rounded-[24px] border border-white/10 bg-[#0c1817]/95 px-8 py-6 shadow-[0_22px_55px_rgba(0,0,0,0.48)] backdrop-blur-md">
-            <div className="grid grid-cols-2 gap-6 md:grid-cols-5 md:divide-x md:divide-white/15">
-              {metrics.map((metric, index) => (
-                <div key={metric.value} className={`flex items-center gap-4 ${index > 0 ? 'md:pl-6' : ''}`}>
-                  <metric.icon className="h-8 w-8 shrink-0 text-[#b9f7c5]" strokeWidth={1.45} />
-                  <div className="min-w-0">
-                    <div className="text-[22px] font-black leading-none text-[#25d958]">{metric.value}</div>
-                    <div className="mt-1 whitespace-pre-line text-[11px] font-semibold leading-[1.15] text-white/90">{metric.label}</div>
-                  </div>
+                  <div className="text-[13px] font-black leading-tight text-white">{feature.title}</div>
+                  <div className="mt-1 text-[12px] font-medium leading-tight text-white/80">{feature.subtitle}</div>
                 </div>
               ))}
             </div>
           </div>
         </div>
+
+        <MetricStrip />
       </section>
 
       <PremiumRange go={go} />
@@ -219,7 +199,7 @@ const MetricStrip = () => (
 );
 
 const PremiumRange = ({ go }) => (
-  <section className="bg-white px-6 pb-10 pt-12 text-black md:px-12 lg:px-[90px]">
+  <section className="bg-white px-6 pb-12 pt-16 md:pt-28 text-black md:px-12 lg:px-[90px]">
     <div className="mx-auto max-w-[1160px] flex flex-col gap-6 lg:grid lg:grid-cols-[280px_1fr_1fr_1fr_1fr] lg:items-center">
       <div className="pr-5">
         <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-[#2fb54a]">Our Premium Range</p>
