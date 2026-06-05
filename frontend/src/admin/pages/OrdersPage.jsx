@@ -388,9 +388,11 @@ const OrdersPage = () => {
 
   const handleOpenRefundModal = async (orderId, productId, item) => {
     const calc = item.refund_calculations || {};
-    const initialAmount = calc.refundable_amount || 0;
-    setRefundModal({ orderId, productId, item, initialAmount });
-    setRefundAmountInput(String(initialAmount));
+    const initialAmount = parseFloat(calc.refundable_amount || 0);
+    const courierCost = parseFloat(item.self_shipping_details?.courier_cost || 0);
+    const totalRefundDefault = initialAmount + courierCost;
+    setRefundModal({ orderId, productId, item, initialAmount, courierCost, totalRefundDefault, isOrderLevel: false });
+    setRefundAmountInput(String(totalRefundDefault));
     setUpiVpaInput('');
     setIsFetchingVpa(true);
     try {
@@ -405,15 +407,76 @@ const OrdersPage = () => {
     }
   };
 
+  const handleOpenOrderRefundModal = async (order) => {
+    const refundItems = (order.items || []).filter(i => i.return_status === 'REFUND_COMPLETED' || i.return_status === 'RETURN_RECEIVED');
+    const itemsToSum = refundItems.length > 0 ? refundItems : (order.items || []);
+    
+    const initialAmount = itemsToSum.reduce((sum, i) => sum + parseFloat(i.refund_calculations?.refundable_amount || 0), 0);
+    const courierCost = itemsToSum.reduce((sum, i) => sum + parseFloat(i.self_shipping_details?.courier_cost || 0), 0);
+    const totalRefundDefault = initialAmount + courierCost;
+
+    setRefundModal({
+      orderId: order.id,
+      isOrderLevel: true,
+      refundItems: itemsToSum,
+      initialAmount,
+      courierCost,
+      totalRefundDefault,
+      order
+    });
+    setRefundAmountInput(String(totalRefundDefault));
+    setUpiVpaInput('');
+    setIsFetchingVpa(true);
+    try {
+      const response = await apiClient.get(`/admin/orders/${order.id}/payment-vpa`);
+      if (response.data?.vpa) {
+        setUpiVpaInput(response.data.vpa);
+      }
+    } catch (err) {
+      // Ignore
+    } finally {
+      setIsFetchingVpa(false);
+    }
+  };
+
   const handleConfirmManualRefundItem = async (restock = true) => {
     if (!refundModal) return;
-    const { orderId, productId } = refundModal;
+    const { orderId, productId, isOrderLevel } = refundModal;
     const amountVal = parseFloat(refundAmountInput);
     if (isNaN(amountVal) || amountVal < 0) {
       toast.error("Please enter a valid refund amount.");
       return;
     }
     
+    if (isOrderLevel) {
+      const toastId = toast.loading('Confirming manual refund...');
+      try {
+        setPendingActionIds(prev => new Set(prev).add(orderId));
+        setSubmitting(true);
+        const response = await apiClient.put(`/admin/orders/${orderId}/confirm-manual-refund`);
+        const serverOrder = response?.data?.order;
+        if (serverOrder) {
+          const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
+          setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
+          setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
+        }
+        toast.success(response?.data?.message || 'Manual refund confirmed successfully.', { id: toastId });
+        setRefundModal(null);
+        setTimeout(() => loadSilent(page), 800);
+      } catch (err) {
+        const detail = err?.data?.detail || err?.response?.data?.detail || err?.message;
+        toast.error(detail || 'Failed to confirm manual refund.', { id: toastId });
+      } finally {
+        setPendingActionIds(prev => {
+          const next = new Set(prev);
+          next.delete(orderId);
+          return next;
+        });
+        setSubmitting(false);
+      }
+      return;
+    }
+
     const toastId = toast.loading('Confirming manual refund payout...');
     try {
       const response = await apiClient.post(
@@ -809,7 +872,7 @@ const OrdersPage = () => {
                                     disabled={isOrderPending}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      retryRefund(order.id);
+                                      handleOpenOrderRefundModal(order);
                                     }}
                                     className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
                                       isOrderPending ? 'opacity-60 cursor-wait' : ''
@@ -1806,13 +1869,99 @@ const OrdersPage = () => {
                   )}
                 </div>
               )}
+
+              {/* Return Tracking Timeline */}
+              {selectedOrderForModal.items?.some(i => i.return_status) && (() => {
+                const returnedItems = (selectedOrderForModal.items || []).filter(i => i.return_status);
+                const hasApproved = returnedItems.some(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
+                const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
+                const hasReceived = returnedItems.some(i => ['RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
+                const hasRefunded = returnedItems.some(i => i.return_status === 'REFUND_COMPLETED') || selectedOrderForModal.payment_status === 'refunded' || selectedOrderForModal.order_status === 'refunded';
+                const isRejected = returnedItems.some(i => i.return_status === 'RETURN_REJECTED') || selectedOrderForModal.order_status === 'return_rejected';
+                const isRefundFailed = selectedOrderForModal.payment_status === 'refund_failed';
+
+                let returnSteps = [];
+                let progressWidth = '0%';
+                let timelineTitle = 'Return Request Timeline';
+
+                if (isRejected) {
+                  returnSteps = [
+                    { label: 'Return Requested', active: true, date: selectedOrderForModal.updated_at },
+                    { label: 'Return Rejected', active: true, date: selectedOrderForModal.updated_at, rejected: true }
+                  ];
+                  progressWidth = '100%';
+                  timelineTitle = 'Return Request Declined';
+                } else if (hasRefunded || hasReceived || isRefundFailed) {
+                  const isRefundInitiated = selectedOrderForModal.payment_status === 'refund_pending' || isRefundFailed || hasRefunded;
+                  const isRefundCredited = hasRefunded || selectedOrderForModal.payment_status === 'refunded';
+                  returnSteps = [
+                    { label: 'Return Received', active: true, date: selectedOrderForModal.updated_at },
+                    { label: 'Refund Initiated', active: isRefundInitiated, date: isRefundInitiated ? selectedOrderForModal.updated_at : null },
+                    { label: isRefundFailed ? 'Refund Failed' : 'Refund Credited', active: isRefundCredited, date: isRefundCredited ? selectedOrderForModal.updated_at : null, rejected: isRefundFailed }
+                  ];
+                  progressWidth = isRefundCredited ? '100%' : isRefundInitiated ? '50%' : '0%';
+                  timelineTitle = 'Refund Process Timeline';
+                } else {
+                  returnSteps = [
+                    { label: 'Return Requested', active: true, date: selectedOrderForModal.created_at },
+                    { label: 'Approved for Return', active: hasApproved, date: hasApproved ? selectedOrderForModal.updated_at : null },
+                    { label: 'Self Shipped by User', active: hasSelfShipped, date: null },
+                    { label: 'Physically Received', active: hasReceived, date: null }
+                  ];
+                  progressWidth = hasReceived ? '100%' : hasSelfShipped ? '66.6%' : hasApproved ? '33.3%' : '0%';
+                  timelineTitle = 'Self-Shipment Tracking Timeline';
+                }
+
+                return (
+                  <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 shadow-sm">
+                    <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-200">
+                      <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">{timelineTitle}</h3>
+                    </div>
+                    <div className="relative pt-6 pb-2 overflow-x-auto">
+                      <div className="relative" style={{ minWidth: returnSteps.length === 2 ? '300px' : '560px' }}>
+                        <div className="absolute top-[16px] left-[12%] right-[12%] h-1 bg-slate-250 -translate-y-1/2 rounded-full" />
+                        <div
+                          className={`absolute top-[16px] left-[12%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out bg-primary`}
+                          style={{ width: `calc(${progressWidth} * 0.76)` }}
+                        />
+                        <div className="relative flex justify-between px-[8%]">
+                          {returnSteps.map((step, idx) => (
+                            <div key={step.label} className="flex flex-col items-center text-center" style={{ width: `${100 / returnSteps.length}%` }}>
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all duration-300 ${
+                                step.active
+                                  ? step.rejected ? 'bg-rose-600 text-white ring-4 ring-rose-100' : 'bg-primary text-white ring-4 ring-primary/10'
+                                  : 'bg-slate-200 text-slate-400'
+                              }`}>
+                                {step.active ? (step.rejected ? <XCircle className="w-3.5 h-3.5 stroke-[3px]" /> : <Check className="w-3.5 h-3.5 stroke-[3px]" />) : <span className="text-[10px] font-bold">{idx + 1}</span>}
+                              </div>
+                              <p className={`text-[10px] mt-2.5 leading-tight font-black ${step.active ? step.rejected ? 'text-rose-600' : 'text-primary' : 'text-slate-400'}`}>
+                                {step.label}
+                              </p>
+                              {step.date && (
+                                <p className="text-[8px] font-bold text-slate-400 mt-1">
+                                  {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Modal Footer */}
             <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
               {selectedOrderForModal.payment_status === 'refund_pending' && (() => {
-                const refundItems = (selectedOrderForModal.items || []).filter(i => i.return_status === 'REFUND_COMPLETED');
-                const totalRefundAmount = refundItems.reduce((sum, i) => sum + parseFloat(i.refund_calculations?.refundable_amount || 0), 0);
+                const refundItems = (selectedOrderForModal.items || []).filter(i => i.return_status === 'REFUND_COMPLETED' || i.return_status === 'RETURN_RECEIVED');
+                const itemsToSum = refundItems.length > 0 ? refundItems : (selectedOrderForModal.items || []);
+                const totalRefundAmount = itemsToSum.reduce((sum, i) => {
+                  const itemAmount = parseFloat(i.refund_calculations?.refundable_amount || 0);
+                  const courierCost = parseFloat(i.self_shipping_details?.courier_cost || 0);
+                  return sum + itemAmount + courierCost;
+                }, 0);
                 return (
                   <div className="text-[10px] text-slate-500 font-extrabold text-left w-full sm:w-auto">
                     Refund: <span className="font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 select-all">₹{totalRefundAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -1825,9 +1974,7 @@ const OrdersPage = () => {
                 {selectedOrderForModal.payment_status === 'refund_pending' && hasPermission('update_order_status') && (
                   <button
                     onClick={() => {
-                      if (window.confirm("Confirm that you have manually settled the refund amount to the customer via UPI/bank transfer.")) {
-                        confirmManualRefund(selectedOrderForModal.id);
-                      }
+                      handleOpenOrderRefundModal(selectedOrderForModal);
                     }}
                     className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98] shadow-md shadow-emerald-glow"
                   >
@@ -1871,26 +2018,61 @@ const OrdersPage = () => {
                 </p>
               </div>
 
-              {/* Product info */}
+              {/* Product / Order info */}
               <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/60 space-y-1 text-slate-700">
-                <p className="text-xs font-bold">Product: <span className="font-semibold text-slate-600">{refundModal.item?.product_name}</span></p>
-                <p className="text-xs font-bold">Calculated Value: <span className="font-mono text-slate-600">₹{refundModal.initialAmount}</span></p>
-                {refundModal.item?.self_shipping_details?.courier_cost > 0 && (
-                  <p className="text-xs font-bold">
-                    Self-Ship Courier Cost: <span className="font-mono text-slate-600">₹{refundModal.item.self_shipping_details.courier_cost}</span>
-                  </p>
-                )}
-                {refundModal.item?.self_shipping_details?.invoice_url && (
-                  <p className="text-xs mt-1">
-                    <a
-                      href={formatImageUrl(refundModal.item.self_shipping_details.invoice_url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline font-bold inline-flex items-center gap-1"
-                    >
-                      View Self-Ship Invoice / Receipt
-                    </a>
-                  </p>
+                {refundModal.isOrderLevel ? (
+                  <>
+                    <p className="text-xs font-bold">
+                      Order: <span className="font-semibold text-slate-650">{refundModal.order?.order_number}</span>
+                    </p>
+                    <p className="text-xs font-bold">
+                      Calculated Value: <span className="font-mono text-slate-600">₹{parseFloat(refundModal.initialAmount || 0).toFixed(2)}</span>
+                    </p>
+                    {refundModal.courierCost > 0 && (
+                      <p className="text-xs font-bold">
+                        Self-Ship Courier Cost: <span className="font-mono text-slate-600">₹{parseFloat(refundModal.courierCost || 0).toFixed(2)}</span>
+                      </p>
+                    )}
+                    {(refundModal.refundItems || []).some(i => i.self_shipping_details?.invoice_url) && (
+                      <div className="mt-2 space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Self-Ship Receipts:</span>
+                        {(refundModal.refundItems || []).filter(i => i.self_shipping_details?.invoice_url).map((i, idx) => (
+                          <p key={idx} className="text-xs">
+                            <a
+                              href={formatImageUrl(i.self_shipping_details.invoice_url)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline font-bold inline-flex items-center gap-1"
+                            >
+                              Receipt for {i.product_name}
+                            </a>
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-bold">Product: <span className="font-semibold text-slate-600">{refundModal.item?.product_name}</span></p>
+                    <p className="text-xs font-bold">Calculated Value: <span className="font-mono text-slate-600">₹{refundModal.initialAmount}</span></p>
+                    {refundModal.item?.self_shipping_details?.courier_cost > 0 && (
+                      <p className="text-xs font-bold">
+                        Self-Ship Courier Cost: <span className="font-mono text-slate-600">₹{refundModal.item.self_shipping_details.courier_cost}</span>
+                      </p>
+                    )}
+                    {refundModal.item?.self_shipping_details?.invoice_url && (
+                      <p className="text-xs mt-1">
+                        <a
+                          href={formatImageUrl(refundModal.item.self_shipping_details.invoice_url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline font-bold inline-flex items-center gap-1"
+                        >
+                          View Self-Ship Invoice / Receipt
+                        </a>
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
 

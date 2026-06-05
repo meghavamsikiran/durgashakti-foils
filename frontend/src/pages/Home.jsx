@@ -178,7 +178,7 @@ const Home = () => {
             <div className="flex flex-col items-center">
               <div className="w-full aspect-square rounded-2xl bg-black border border-white/5 flex items-center justify-center overflow-hidden">
                 <img
-                  src="/tray-normal-foil.png"
+                  src="/media__1780688276908.jpg"
                   alt="Normal Foil wrap test"
                   className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                 />
@@ -216,7 +216,7 @@ const Home = () => {
             <div className="flex flex-col items-center">
               <div className="w-full aspect-square rounded-2xl bg-black border border-brand-green/20 flex items-center justify-center overflow-hidden">
                 <img
-                  src="/tray-hot-foil.png"
+                  src="/media__1780688276832.jpg"
                   alt="Durga Shakti Foil heat lock test"
                   className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                 />
