@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func, or_, and_, String
 from typing import Optional, List
+from sqlalchemy.orm.attributes import flag_modified
 from pydantic import BaseModel
 from urllib.parse import quote
 from database import get_db
@@ -2138,6 +2139,7 @@ async def admin_item_return_action(
         raise HTTPException(status_code=404, detail="Item not found in order")
 
     order.items = updated_items
+    flag_modified(order, "items")
     order.updated_at = datetime.now(timezone.utc)
     
     # Check overall status
@@ -2149,7 +2151,7 @@ async def admin_item_return_action(
         else:
             order.order_status = "return_rejected"
             
-    await db.flush()
+    await db.commit()
     await write_audit_log(
         db,
         "ITEM_RETURN_ACTION",
@@ -2197,8 +2199,9 @@ async def admin_item_receive(
         raise HTTPException(status_code=404, detail="Item not found in order")
 
     order.items = updated_items
+    flag_modified(order, "items")
     order.updated_at = datetime.now(timezone.utc)
-    await db.flush()
+    await db.commit()
     await write_audit_log(
         db,
         "ITEM_RETURN_RECEIVED",
@@ -2278,6 +2281,7 @@ async def admin_item_process_refund(
         refund_warning = f"Manual refund of ₹{refund_amount} required (COD/manual)."
 
     order.items = updated_items
+    flag_modified(order, "items")
     order.updated_at = datetime.now(timezone.utc)
     
     # Transition overall order status if all returned items are refunded
@@ -2286,7 +2290,7 @@ async def admin_item_process_refund(
         order.order_status = "refunded"
         order.payment_status = "refunded"
         
-    await db.flush()
+    await db.commit()
     await write_audit_log(
         db,
         "ITEM_REFUND_PROCESSED",

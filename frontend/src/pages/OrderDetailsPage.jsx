@@ -56,7 +56,8 @@ const OrderDetailsPage = () => {
     if (isReturning && order?.items) {
       const initial = {};
       order.items.forEach(item => {
-        initial[item.product_id] = { selected: false, quantity: 1 };
+        const isPreselected = isReturning === true ? false : (isReturning === item.product_id);
+        initial[item.product_id] = { selected: isPreselected, quantity: 1 };
       });
       setSelectedItemsForReturn(initial);
     }
@@ -862,7 +863,12 @@ const OrderDetailsPage = () => {
                             className="w-4 h-4 text-primary rounded border-slate-350 focus:ring-primary/20"
                           />
                           {item.image_url && (
-                            <img src={formatImageUrl(item.image_url)} alt="" className="w-10 h-10 rounded-lg object-cover bg-slate-50 border border-slate-100" />
+                            <img 
+                              src={formatImageUrl(item.image_url)} 
+                              onError={(e) => { e.target.src = '/logo-durga.png'; }}
+                              alt="" 
+                              className="w-10 h-10 rounded-lg object-cover bg-slate-50 border border-slate-100" 
+                            />
                           )}
                           <div>
                             <p className="text-xs font-bold text-slate-800">{item.product_name}</p>
@@ -1254,6 +1260,7 @@ const OrderDetailsPage = () => {
                 <div className="flex gap-5 flex-1 min-w-0">
                   <img 
                     src={formatImageUrl(item.image_url)} 
+                    onError={(e) => { e.target.src = '/logo-durga.png'; }}
                     alt={item.product_name} 
                     className="w-24 h-24 rounded-xl object-cover bg-slate-50 border border-slate-200 shrink-0 shadow-sm" 
                   />
@@ -1317,7 +1324,7 @@ const OrderDetailsPage = () => {
                   
                   {order.order_status === 'delivered' && order.items.some(i => !i.return_status) && (
                     <button 
-                      onClick={() => setIsReturning(true)}
+                      onClick={() => setIsReturning(item.product_id)}
                       className="w-full bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 font-bold text-slate-750 text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all text-center uppercase tracking-widest text-[9px]"
                     >
                       Return items
@@ -1384,7 +1391,12 @@ const OrderDetailsPage = () => {
                           <video src={`${fullUrl}#t=0.001`} controls className="w-full h-full object-cover" preload="metadata" />
                         ) : (
                           <a href={fullUrl} target="_blank" rel="noreferrer" className="w-full h-full">
-                            <img src={fullUrl} alt="Proof" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                            <img 
+                              src={fullUrl} 
+                              onError={(e) => { e.target.src = '/logo-durga.png'; }}
+                              alt="Proof" 
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                            />
                           </a>
                         )}
                       </div>

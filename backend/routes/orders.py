@@ -8,6 +8,7 @@ import hmac
 import hashlib
 import json
 from typing import Optional, List
+from sqlalchemy.orm.attributes import flag_modified
 from database import get_db
 from models import OrderModel, ProductModel, CartModel, SettingModel, AuditLogModel, ProcessedWebhookModel
 from deps import (
@@ -1413,10 +1414,12 @@ async def return_order(
         raise HTTPException(status_code=400, detail="No valid items selected for return")
 
     order.items = updated_items
+    flag_modified(order, "items")
     order.order_status = "return_requested"
     order.return_reason = reason
     order.return_image_url = ",".join(uploaded_urls) if uploaded_urls else None
     order.updated_at = datetime.now(timezone.utc)
+    await db.commit()
     
     await create_notification(
         db,
@@ -1492,7 +1495,9 @@ async def self_ship_item(
         raise HTTPException(status_code=404, detail="Item not found in order")
         
     order.items = updated_items
+    flag_modified(order, "items")
     order.updated_at = datetime.now(timezone.utc)
+    await db.commit()
     
     await create_notification(
         db,

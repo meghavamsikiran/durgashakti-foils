@@ -1555,108 +1555,116 @@ const OrdersPage = () => {
                           <div className="text-xs font-bold text-slate-800 bg-white p-3 rounded-xl border border-slate-100/60 leading-relaxed shadow-sm">{selectedOrderForModal.admin_message}</div>
                         </div>
                       )}
-                      <div className="mt-4 space-y-3.5">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Items In This Return Request</div>
-                        <div className="space-y-3">
-                          {selectedOrderForModal.items?.filter(item => item.return_status).map((item, idx) => (
-                            <div key={idx} className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                  {item.image_url && (
-                                    <img src={formatImageUrl(item.image_url)} alt="" className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" />
-                                  )}
-                                  <div className="min-w-0">
-                                    <p className="text-xs font-black text-slate-900 truncate">{item.product_name}</p>
-                                    <p className="text-[10px] text-slate-400 font-extrabold">Price: ₹{item.price} • Return Qty: {item.returned_quantity || 1}</p>
-                                  </div>
+                    </div>
+
+                    <div className="mt-4 space-y-3.5">
+                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Items In This Return Request</div>
+                      <div className="space-y-3">
+                        {selectedOrderForModal.items?.filter(item => item.return_status).map((item, idx) => (
+                          <div key={idx} className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                {item.image_url && (
+                                  <img 
+                                    src={formatImageUrl(item.image_url)} 
+                                    onError={(e) => { e.target.src = '/logo-durga.png'; }}
+                                    alt="" 
+                                    className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" 
+                                  />
+                                )}
+                                <div className="min-w-0">
+                                  <p className="text-xs font-black text-slate-900 truncate">{item.product_name}</p>
+                                  <p className="text-[10px] text-slate-400 font-extrabold">Price: ₹{item.price} • Return Qty: {item.returned_quantity || 1}</p>
                                 </div>
-                                <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                                  item.return_status === 'RETURN_REQUESTED' ? 'bg-amber-100 text-amber-800' :
-                                  item.return_status === 'RETURN_APPROVED' ? 'bg-sky-100 text-sky-800' :
-                                  item.return_status === 'SELF_SHIPPED' ? 'bg-indigo-100 text-indigo-800' :
-                                  item.return_status === 'RETURN_RECEIVED' ? 'bg-purple-100 text-purple-800' :
-                                  item.return_status === 'REFUND_COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
-                                  'bg-rose-100 text-rose-800'
-                                }`}>
-                                  {item.return_status.replace('_', ' ')}
-                                </span>
                               </div>
-
-                              {item.refund_calculations && (
-                                <div className="text-[10px] font-extrabold text-slate-500 bg-slate-50 p-2.5 rounded-xl flex flex-wrap gap-x-4 gap-y-1">
-                                  <span>Taxable: ₹{item.refund_calculations.taxable_amount}</span>
-                                  <span>CGST 9%: ₹{item.refund_calculations.cgst_amount}</span>
-                                  <span>SGST 9%: ₹{item.refund_calculations.sgst_amount}</span>
-                                  <span>Discount Share: -₹{item.refund_calculations.coupon_discount_share}</span>
-                                  <span className="text-primary font-black">Est. Refundable: ₹{item.refund_calculations.refundable_amount}</span>
-                                </div>
-                              )}
-
-                              {item.self_shipping_details && (
-                                <div className="text-[10px] text-slate-650 font-bold bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1.5">
-                                  <p className="text-[9px] text-indigo-700 font-black uppercase tracking-wider">Self-Shipping Proof Details</p>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <p>Courier: <span className="font-extrabold text-slate-900">{item.self_shipping_details.courier_name}</span></p>
-                                    <p>Tracking #: <span className="font-mono font-extrabold text-slate-900 select-all">{item.self_shipping_details.tracking_number}</span></p>
-                                    {item.self_shipping_details.courier_cost > 0 && <p>Courier Cost: <span className="font-extrabold text-slate-900">₹{item.self_shipping_details.courier_cost}</span></p>}
-                                    {item.self_shipping_details.courier_invoice_url && (
-                                      <p>
-                                        Invoice/Receipt: {' '}
-                                        <a href={formatImageUrl(item.self_shipping_details.courier_invoice_url)} target="_blank" rel="noreferrer" className="text-primary font-black underline">
-                                          View Attachment
-                                        </a>
-                                      </p>
-                                    )}
-                                  </div>
-                                  {item.self_shipping_details.notes && (
-                                    <p className="text-[10px] text-slate-500 italic">Notes: {item.self_shipping_details.notes}</p>
-                                  )}
-                                </div>
-                              )}
-
-                              <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-50">
-                                {item.return_status === 'RETURN_REQUESTED' && (
-                                  <>
-                                    <button
-                                      onClick={() => handleItemReturnAction(selectedOrderForModal.id, item.product_id, 'approve')}
-                                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
-                                    >
-                                      Approve Return
-                                    </button>
-                                    <button
-                                      onClick={() => handleItemReturnAction(selectedOrderForModal.id, item.product_id, 'reject')}
-                                      className="bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
-                                    >
-                                      Reject Return
-                                    </button>
-                                  </>
-                                )}
-
-                                {(item.return_status === 'SELF_SHIPPED' || item.return_status === 'RETURN_APPROVED') && (
-                                  <button
-                                    onClick={() => handleItemReceive(selectedOrderForModal.id, item.product_id)}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
-                                  >
-                                    Mark Received
-                                  </button>
-                                )}
-
-                                {(item.return_status === 'RETURN_RECEIVED' || item.return_status === 'SELF_SHIPPED') && (
-                                  <button
-                                    onClick={() => handleItemProcessRefund(selectedOrderForModal.id, item.product_id, true)}
-                                    className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-emerald-glow"
-                                  >
-                                    Process Refund & Restock
-                                  </button>
-                                )}
-                              </div>
+                              <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                                item.return_status === 'RETURN_REQUESTED' ? 'bg-amber-100 text-amber-800' :
+                                item.return_status === 'RETURN_APPROVED' ? 'bg-sky-100 text-sky-800' :
+                                item.return_status === 'SELF_SHIPPED' ? 'bg-indigo-100 text-indigo-800' :
+                                item.return_status === 'RETURN_RECEIVED' ? 'bg-purple-100 text-purple-800' :
+                                item.return_status === 'REFUND_COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
+                                'bg-rose-100 text-rose-800'
+                              }`}>
+                                {item.return_status.replace('_', ' ')}
+                              </span>
                             </div>
-                          ))}
-                        </div>
+
+                            {item.refund_calculations && (
+                              <div className="text-[10px] font-extrabold text-slate-500 bg-slate-50 p-2.5 rounded-xl flex flex-wrap gap-x-4 gap-y-1">
+                                <span>Taxable: ₹{item.refund_calculations.taxable_amount}</span>
+                                <span>CGST 9%: ₹{item.refund_calculations.cgst_amount}</span>
+                                <span>SGST 9%: ₹{item.refund_calculations.sgst_amount}</span>
+                                <span>Discount Share: -₹{item.refund_calculations.coupon_discount_share}</span>
+                                <span className="text-primary font-black">Est. Refundable: ₹{item.refund_calculations.refundable_amount}</span>
+                              </div>
+                            )}
+
+                            {item.self_shipping_details && (
+                              <div className="text-[10px] text-slate-650 font-bold bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1.5">
+                                <p className="text-[9px] text-indigo-700 font-black uppercase tracking-wider">Self-Shipping Proof Details</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <p>Courier: <span className="font-extrabold text-slate-900">{item.self_shipping_details.courier_name}</span></p>
+                                  <p>Tracking #: <span className="font-mono font-extrabold text-slate-900 select-all">{item.self_shipping_details.tracking_number}</span></p>
+                                  {item.self_shipping_details.courier_cost > 0 && <p>Courier Cost: <span className="font-extrabold text-slate-900">₹{item.self_shipping_details.courier_cost}</span></p>}
+                                  {item.self_shipping_details.courier_invoice_url && (
+                                    <p>
+                                      Invoice/Receipt: {' '}
+                                      <a href={formatImageUrl(item.self_shipping_details.courier_invoice_url)} target="_blank" rel="noreferrer" className="text-primary font-black underline">
+                                        View Attachment
+                                      </a>
+                                    </p>
+                                  )}
+                                </div>
+                                {item.self_shipping_details.notes && (
+                                  <p className="text-[10px] text-slate-500 italic">Notes: {item.self_shipping_details.notes}</p>
+                                )}
+                              </div>
+                            )}
+
+                            <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-50">
+                              {item.return_status === 'RETURN_REQUESTED' && (
+                                <>
+                                  <button
+                                    onClick={() => handleItemReturnAction(selectedOrderForModal.id, item.product_id, 'approve')}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
+                                  >
+                                    Approve Return
+                                  </button>
+                                  <button
+                                    onClick={() => handleItemReturnAction(selectedOrderForModal.id, item.product_id, 'reject')}
+                                    className="bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
+                                  >
+                                    Reject Return
+                                  </button>
+                                </>
+                              )}
+
+                              {(item.return_status === 'SELF_SHIPPED' || item.return_status === 'RETURN_APPROVED') && (
+                                <button
+                                  onClick={() => handleItemReceive(selectedOrderForModal.id, item.product_id)}
+                                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
+                                >
+                                  Mark Received
+                                </button>
+                              )}
+
+                              {(item.return_status === 'RETURN_RECEIVED' || item.return_status === 'SELF_SHIPPED') && (
+                                <button
+                                  onClick={() => handleItemProcessRefund(selectedOrderForModal.id, item.product_id, true)}
+                                  className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-emerald-glow"
+                                >
+                                  Process Refund & Restock
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
+                    </div>
                   </div>
 
+                  {selectedOrderForModal.return_image_url && (
+                    <div className="w-full md:w-44 shrink-0 space-y-2">
                       <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Uploaded Return Proof</div>
                       <div className="flex flex-wrap gap-2">
                         {selectedOrderForModal.return_image_url.split(',').map((url, idx) => {
@@ -1675,6 +1683,7 @@ const OrdersPage = () => {
                                 >
                                   <img
                                     src={fullUrl}
+                                    onError={(e) => { e.target.src = '/logo-durga.png'; }}
                                     alt="Proof"
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                   />
