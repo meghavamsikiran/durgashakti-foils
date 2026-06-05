@@ -53,7 +53,8 @@ ALLOWED_MEDIA_TYPES = {
     "video/mp4": ".mp4",
     "video/webm": ".webm",
     "video/ogg": ".ogg",
-    "video/quicktime": ".mov"
+    "video/quicktime": ".mov",
+    "application/pdf": ".pdf"
 }
 
 

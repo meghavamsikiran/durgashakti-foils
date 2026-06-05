@@ -433,6 +433,33 @@ const OrdersPage = () => {
     }
   };
 
+  const confirmManualRefund = async (orderId) => {
+    const toastId = toast.loading('Confirming manual refund...');
+    try {
+      setPendingActionIds(prev => new Set(prev).add(orderId));
+      setSubmitting(true);
+      const response = await apiClient.put(`/admin/orders/${orderId}/confirm-manual-refund`);
+      const serverOrder = response?.data?.order;
+      if (serverOrder) {
+        const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
+        setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
+        setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
+      }
+      toast.success(response?.data?.message || 'Manual refund confirmed successfully.', { id: toastId });
+      setTimeout(() => loadSilent(page), 800);
+    } catch (err) {
+      const detail = err?.data?.detail || err?.response?.data?.detail || err?.message;
+      toast.error(detail || 'Failed to confirm manual refund.', { id: toastId });
+    } finally {
+      setPendingActionIds(prev => {
+        const next = new Set(prev);
+        next.delete(orderId);
+        return next;
+      });
+      setSubmitting(false);
+    }
+  };
+
   const filtered = rows;
   const totalFilteredPages = Math.ceil(total / PAGE_SIZE);
   const paginatedOrders = filtered;
@@ -1240,13 +1267,26 @@ const OrdersPage = () => {
                               </div>
                             )}
                             {/* Manual Payout reference placeholder helper */}
-                            {selectedOrderForModal.payment_status === 'refund_pending' && (
-                              <div className="pt-1.5 mt-1 border-t border-dashed border-sky-200 text-sky-900 leading-snug">
-                                <p className="text-[8px] font-black uppercase text-sky-700">Manual Refund Payout Details</p>
-                                <p>UPI ID: <span className="font-mono font-extrabold bg-white px-1 py-0.5 rounded border border-sky-100 select-all">{selectedOrderForModal.shipping_address?.phone || 'customer'}@paytm</span></p>
-                                <p className="text-[8px] text-sky-600 font-medium mt-1">Please scan the self-shipping invoice receipt QR code to settle manually.</p>
-                              </div>
-                            )}
+                            {selectedOrderForModal.payment_status === 'refund_pending' && (() => {
+                              const refundItems = (selectedOrderForModal.items || []).filter(i => i.return_status === 'REFUND_COMPLETED');
+                              const totalRefundAmount = refundItems.reduce((sum, i) => sum + parseFloat(i.refund_calculations?.refundable_amount || 0), 0);
+                              const selfShipCost = refundItems.reduce((sum, i) => sum + parseFloat(i.self_shipping_details?.courier_cost || 0), 0);
+                              return (
+                                <div className="pt-1.5 mt-1 border-t border-dashed border-sky-200 text-sky-900 leading-snug space-y-1.5">
+                                  <p className="text-[8px] font-black uppercase text-sky-700">Manual Refund Payout Details</p>
+                                  {totalRefundAmount > 0 && (
+                                    <p className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
+                                      Refund Amount: ₹{totalRefundAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </p>
+                                  )}
+                                  {selfShipCost > 0 && (
+                                    <p className="text-[10px] text-slate-600">Self-Ship Courier Cost: ₹{selfShipCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                  )}
+                                  <p>Customer Phone: <span className="font-mono font-extrabold bg-white px-1 py-0.5 rounded border border-sky-100 select-all">{selectedOrderForModal.shipping_address?.phone || 'N/A'}</span></p>
+                                  <p className="text-[8px] text-sky-600 font-medium mt-1">Please settle the refund amount manually via UPI / bank transfer and click "Confirm Manual Refund Paid" below.</p>
+                                </div>
+                              );
+                            })()}
                             {selectedOrderForModal.transaction_date && (
                               <p className="text-slate-500">Date: {new Date(selectedOrderForModal.transaction_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                             )}
@@ -1716,17 +1756,23 @@ const OrdersPage = () => {
 
             {/* Modal Footer */}
             <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
-              {selectedOrderForModal.payment_status === 'refund_pending' && (
-                <div className="text-[10px] text-slate-500 font-extrabold text-left w-full sm:w-auto">
-                  Settle to: <span className="font-mono text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 select-all">{selectedOrderForModal.shipping_address?.phone || 'customer'}@paytm</span>
-                </div>
-              )}
+              {selectedOrderForModal.payment_status === 'refund_pending' && (() => {
+                const refundItems = (selectedOrderForModal.items || []).filter(i => i.return_status === 'REFUND_COMPLETED');
+                const totalRefundAmount = refundItems.reduce((sum, i) => sum + parseFloat(i.refund_calculations?.refundable_amount || 0), 0);
+                return (
+                  <div className="text-[10px] text-slate-500 font-extrabold text-left w-full sm:w-auto">
+                    Refund: <span className="font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 select-all">₹{totalRefundAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    {' → '}
+                    <span className="font-mono text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 select-all">{selectedOrderForModal.shipping_address?.phone || 'customer'}</span>
+                  </div>
+                );
+              })()}
               <div className="flex gap-3 justify-end w-full sm:w-auto shrink-0">
                 {selectedOrderForModal.payment_status === 'refund_pending' && hasPermission('update_order_status') && (
                   <button
                     onClick={() => {
-                      if (window.confirm("Complete manual refund? Make sure you have paid the self-shipment receipt invoice amount via UPI.")) {
-                        retryRefund(selectedOrderForModal.id);
+                      if (window.confirm("Confirm that you have manually settled the refund amount to the customer via UPI/bank transfer.")) {
+                        confirmManualRefund(selectedOrderForModal.id);
                       }
                     }}
                     className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98] shadow-md shadow-emerald-glow"

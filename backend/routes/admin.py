@@ -1005,6 +1005,43 @@ async def retry_order_refund(
     return {"message": message, "order": _order_response_dict(order)}
 
 
+@router.put("/admin/orders/{order_id}/confirm-manual-refund")
+async def confirm_manual_refund(
+    order_id: str,
+    admin: UserSchema = Depends(require_permission("update_order_status")),
+    db: AsyncSession = Depends(get_db)
+):
+    """Mark a manual refund as completed after admin has paid the customer via UPI/bank transfer."""
+    validate_uuid(order_id)
+    res = await db.execute(select(OrderModel).where(OrderModel.id == order_id))
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if str(order.payment_status or "").lower() not in {"refund_pending", "refund_failed"}:
+        raise HTTPException(status_code=400, detail="Refund is not pending for this order.")
+
+    prev_payment_status = order.payment_status
+    order.payment_status = "refunded"
+    order.order_status = "refunded"
+    order.updated_at = datetime.now(timezone.utc)
+
+    await db.flush()
+    await write_audit_log(
+        db,
+        "MANUAL_REFUND_CONFIRMED",
+        admin.id,
+        "order",
+        order_id,
+        {
+            "prev_payment_status": prev_payment_status,
+            "confirmed_by": str(admin.id),
+        }
+    )
+
+    return {"message": "Manual refund has been confirmed and marked as completed.", "order": _order_response_dict(order)}
+
+
 
 
 class BulkShipInput(BaseModel):
@@ -2269,11 +2306,13 @@ async def admin_item_process_refund(
     # Process Payment Refund
     payment_method_lower = str(order.payment_method or "").lower()
     refund_warning = None
+    razorpay_refund_succeeded = False
     
     if payment_method_lower != "cod" and refund_amount > 0:
         from routes.orders import trigger_razorpay_partial_refund
         success, err_msg, refund_info = await trigger_razorpay_partial_refund(order, refund_amount, db)
         if success:
+            razorpay_refund_succeeded = True
             refund_warning = f"Refund of ₹{refund_amount} initiated via Razorpay."
         else:
             refund_warning = f"Manual refund of ₹{refund_amount} required. Razorpay refund failed: {err_msg}"
@@ -2287,8 +2326,14 @@ async def admin_item_process_refund(
     # Transition overall order status if all returned items are refunded
     has_active_returns = any(item.get("return_status") in ("RETURN_REQUESTED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED") for item in order.items)
     if not has_active_returns:
-        order.order_status = "refunded"
-        order.payment_status = "refunded"
+        if razorpay_refund_succeeded:
+            # Razorpay handled the refund automatically
+            order.order_status = "refunded"
+            order.payment_status = "refunded"
+        else:
+            # Manual refund required — admin must confirm payment separately
+            order.order_status = "refunded"
+            order.payment_status = "refund_pending"
         
     await db.commit()
     await write_audit_log(

@@ -1350,7 +1350,7 @@ const OrderDetailsPage = () => {
                     </button>
                   )}
 
-                  {(item.return_status === 'RETURN_APPROVED' || item.return_status === 'return_approved' || (order.order_status === 'return_approved' && item.return_status === 'RETURN_REQUESTED')) && (
+                  {(item.return_status === 'RETURN_APPROVED' || item.return_status === 'return_approved') && (
                     <button
                       onClick={() => setSelfShipModal(item)}
                       className="w-full bg-emerald-600 hover:bg-emerald-700 font-black text-white text-[9px] px-4 py-2.5 rounded-xl shadow-md transition-all text-center uppercase tracking-widest"
