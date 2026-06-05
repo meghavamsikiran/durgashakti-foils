@@ -169,6 +169,8 @@ class OrderModel(Base):
     delivered_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False, index=True)
     updated_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    receipt_email_sent = Column(Boolean, default=False, nullable=False, server_default=text("'false'"))
+
 
 
 # ── Carts ────────────────────────────────────────────────────────────────
@@ -230,6 +232,15 @@ class PasswordResetModel(Base):
     expiry = Column(DateTime(timezone=True), nullable=False)
     failed_attempts = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+# ── Processed Webhooks ───────────────────────────────────────────────────
+class ProcessedWebhookModel(Base):
+    __tablename__ = "processed_webhooks"
+
+    event_id = Column(String(255), primary_key=True)
+    processed_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+
 
 
 # ── Stock History ────────────────────────────────────────────────────────

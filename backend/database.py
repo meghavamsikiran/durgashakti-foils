@@ -133,6 +133,7 @@ async def create_tables(background_migrations: bool = False):
         "ALTER TABLE categories ADD COLUMN IF NOT EXISTS global_discount_percent NUMERIC(5, 2) NOT NULL DEFAULT 0.0;",
         "ALTER TABLE categories ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();",
         "ALTER TABLE categories ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;",
+
         "CREATE INDEX IF NOT EXISTS ix_categories_name ON categories(name);",
         """INSERT INTO categories (id, name, is_active, created_at)
             SELECT md5(LOWER(product_categories.name))::uuid, product_categories.name, TRUE, NOW()
@@ -173,6 +174,12 @@ async def create_tables(background_migrations: bool = False):
             WHERE (tracking_url LIKE '%indiapost.gov.in%' OR tracking_url LIKE '%17track.net%')
               AND tracking_number IS NOT NULL
               AND tracking_number <> '';""",
+        # --- processed_webhooks and order receipt email ---
+        """CREATE TABLE IF NOT EXISTS processed_webhooks (
+            event_id VARCHAR(255) PRIMARY KEY,
+            processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );""",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS receipt_email_sent BOOLEAN DEFAULT FALSE NOT NULL;",
     ]
 
     if background_migrations:

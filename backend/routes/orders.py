@@ -9,7 +9,7 @@ import hashlib
 import json
 from typing import Optional, List
 from database import get_db
-from models import OrderModel, ProductModel, CartModel, SettingModel, AuditLogModel
+from models import OrderModel, ProductModel, CartModel, SettingModel, AuditLogModel, ProcessedWebhookModel
 from deps import (
     UserSchema, OrderCreate, get_current_user, row_to_dict,
     write_audit_log, send_email, create_notification,
@@ -564,11 +564,26 @@ async def _finalize_paid_order(
 
 
 async def _queue_order_receipt_email_once(order: OrderModel, db: AsyncSession) -> bool:
+    res = await db.execute(
+        select(OrderModel)
+        .where(OrderModel.id == order.id)
+        .with_for_update()
+    )
+    locked_order = res.scalar_one_or_none()
+    if not locked_order:
+        return False
+
+    if locked_order.receipt_email_sent:
+        return False
+
+    locked_order.receipt_email_sent = True
+    await db.flush()
+
     existing = await db.execute(
         select(AuditLogModel.id)
         .where(
             AuditLogModel.target_type == "order",
-            AuditLogModel.target_id == str(order.id),
+            AuditLogModel.target_id == str(locked_order.id),
             AuditLogModel.action == ORDER_RECEIPT_EMAIL_AUDIT_ACTION,
         )
         .limit(1)
@@ -577,7 +592,7 @@ async def _queue_order_receipt_email_once(order: OrderModel, db: AsyncSession) -
         return False
 
     from models import UserModel
-    user_res = await db.execute(select(UserModel).where(UserModel.id == order.user_id))
+    user_res = await db.execute(select(UserModel).where(UserModel.id == locked_order.user_id))
     order_user = user_res.scalar_one_or_none()
     if not order_user:
         return False
@@ -585,18 +600,18 @@ async def _queue_order_receipt_email_once(order: OrderModel, db: AsyncSession) -
     await write_audit_log(
         db,
         ORDER_RECEIPT_EMAIL_AUDIT_ACTION,
-        str(order.user_id or "system"),
+        str(locked_order.user_id or "system"),
         "order",
-        str(order.id),
-        {"order_number": order.order_number, "payment_status": order.payment_status},
+        str(locked_order.id),
+        {"order_number": locked_order.order_number, "payment_status": locked_order.payment_status},
     )
     try:
         from email_templates import order_receipt_email
-        subj, body, attachments = order_receipt_email(order_user.full_name or order_user.email, row_to_dict(order))
+        subj, body, attachments = order_receipt_email(order_user.full_name or order_user.email, row_to_dict(locked_order))
         asyncio.create_task(send_email(order_user.email, subj, body, attachments))
         return True
     except Exception:
-        logger.exception("Failed to queue paid order receipt email for order %s", order.order_number)
+        logger.exception("Failed to queue paid order receipt email for order %s", locked_order.order_number)
         return False
 
 
@@ -1461,6 +1476,22 @@ async def razorpay_webhook(
         raise HTTPException(status_code=400, detail="Invalid webhook signature")
 
     payload = json.loads(body_bytes.decode("utf-8"))
+    
+    event_id = payload.get("id")
+    if event_id:
+        try:
+            async with db.begin_nested():
+                check_webhook = await db.execute(
+                    select(ProcessedWebhookModel).where(ProcessedWebhookModel.event_id == event_id)
+                )
+                if check_webhook.scalar_one_or_none():
+                    logger.info(f"Webhook event {event_id} already processed.")
+                    return {"status": "already_processed"}
+                db.add(ProcessedWebhookModel(event_id=event_id))
+        except Exception:
+            logger.info(f"Webhook event {event_id} already processed (concurrency exception).")
+            return {"status": "already_processed"}
+
     event = payload.get("event")
     if event in {"refund.processed", "refund.created"}:
         inner_payload = payload.get("payload", {})

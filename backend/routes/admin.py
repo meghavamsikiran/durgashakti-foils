@@ -745,20 +745,25 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
         order.stock_applied = True
 
     if new_status in {"cancelled", "refunded", "return_approved"} and applied:
-        items_to_release = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
-        if items_to_release:
-            prod_ids = [item.get("product_id") for item in items_to_release]
-            p_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
-            locked_products = {str(p.id): p for p in p_res.scalars().all()}
-            for item in items_to_release:
-                pid = item.get("product_id")
-                qty = int(item.get("quantity", 0))
-                p = locked_products.get(str(pid))
-                if p:
-                    p.stock_quantity = int(p.stock_quantity or 0) + qty
-                    p.units_sold = max(0, int(p.units_sold or 0) - qty)
-                    p.in_stock = True
-                    p.updated_at = now
+        should_release = True
+        if new_status == "return_approved":
+            should_release = bool(status_data.get("restock", False))
+            
+        if should_release:
+            items_to_release = [item for item in (order.items or []) if item.get("product_id") and is_valid_uuid(item.get("product_id")) and int(item.get("quantity", 0)) > 0]
+            if items_to_release:
+                prod_ids = [item.get("product_id") for item in items_to_release]
+                p_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+                locked_products = {str(p.id): p for p in p_res.scalars().all()}
+                for item in items_to_release:
+                    pid = item.get("product_id")
+                    qty = int(item.get("quantity", 0))
+                    p = locked_products.get(str(pid))
+                    if p:
+                        p.stock_quantity = int(p.stock_quantity or 0) + qty
+                        p.units_sold = max(0, int(p.units_sold or 0) - qty)
+                        p.in_stock = True
+                        p.updated_at = now
         order.stock_applied = False
 
     effective_status = new_status
