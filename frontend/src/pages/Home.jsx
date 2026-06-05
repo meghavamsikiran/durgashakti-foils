@@ -109,7 +109,7 @@ const Home = () => {
             src="/homepage-hero-bg.jpg"
             alt="Durga Shakti Foils Premium Packing Solutions"
             className="h-full w-full object-cover opacity-100 transition-opacity duration-700"
-            style={{ objectPosition: 'right 35% bottom' }}
+            style={{ objectPosition: 'right 35% center' }}
           />
         </div>
 
@@ -117,7 +117,7 @@ const Home = () => {
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#020807_0%,#020807_32%,rgba(2,8,7,0.6)_55%,rgba(2,8,7,0.2)_75%,rgba(2,8,7,0)_100%)] z-[1] hidden md:block" />
 
         <div className="relative z-10 flex w-full max-w-full px-6 pb-4 pt-14 md:px-10 lg:px-20 xl:px-32 2xl:px-40 order-1 md:order-none">
-          <div className="max-w-[420px] lg:max-w-[540px] xl:max-w-[640px]">
+          <div className="max-w-[400px] lg:max-w-[500px] xl:max-w-[620px]">
             {/* Badge */}
             <div className="mb-4 inline-flex h-7 items-center gap-2 rounded-full border border-[#16823a]/80 bg-[#03140d]/80 px-3 text-[11px] font-extrabold uppercase tracking-wide text-[#2fda54] shadow-[0_0_20px_rgba(47,218,84,0.18)] animate-fade-in-up">
               <BadgeCheck className="h-3.5 w-3.5" strokeWidth={2.2} />
@@ -125,7 +125,7 @@ const Home = () => {
             </div>
 
             {/* Heading */}
-            <h1 className="font-serif text-[clamp(2.1rem,3.8vw,3.2rem)] md:text-[clamp(2.35rem,4.5vw,4.5rem)] font-bold leading-[1.05] tracking-normal text-[#b9cbc6] drop-shadow-[0_3px_14px_rgba(0,0,0,0.35)] animate-fade-in-up delay-100">
+            <h1 className="font-serif text-[clamp(1.8rem,3vw,2.5rem)] md:text-[clamp(2.1rem,3.2vw,3rem)] lg:text-[clamp(2.4rem,3.5vw,3.4rem)] xl:text-[clamp(3.2rem,4.8vw,4.8rem)] font-bold leading-[1.05] tracking-normal text-[#b9cbc6] drop-shadow-[0_3px_14px_rgba(0,0,0,0.35)] animate-fade-in-up delay-100">
               Wrap it Right,
               <br />
               <span className="text-[#f6ca51]">Keep it Hot,</span>
