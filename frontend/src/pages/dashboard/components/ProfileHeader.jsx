@@ -33,7 +33,9 @@ const ProfileHeader = ({ user, activeTab, onMenuClick }) => {
       <div className="flex items-center gap-4">
         <div className="hidden md:block text-right">
           <p className="text-sm font-black text-foreground">{user?.full_name}</p>
-          <p className="text-[10px] font-mono tracking-wider text-muted-foreground uppercase">{user?.role || 'Customer'}</p>
+          {user?.role && user.role !== 'customer' && (
+            <p className="text-[10px] font-mono tracking-wider text-muted-foreground uppercase">{user.role}</p>
+          )}
         </div>
         <div className="w-12 h-12 rounded-lg bg-primary text-white flex items-center justify-center font-black text-xl shadow-emerald-glow">
           {user?.full_name?.charAt(0) || 'U'}
