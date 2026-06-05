@@ -1094,57 +1094,76 @@ const OrderDetailsPage = () => {
         {(() => {
           const status = (order.order_status || '').toLowerCase();
           const paymentStatus = (order.payment_status || '').toLowerCase();
-          const showReturnTimeline = ['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status) || isRefundPaymentStatus(paymentStatus);
-          if (!showReturnTimeline || isReturning) return null;
-          const isRejected = status === 'return_rejected';
-          const isApproved = ['return_approved', 'refunded'].includes(status) || isRefundPaymentStatus(paymentStatus);
+          
+          // Identify specific item return statuses
+          const returnedItems = order.items?.filter(item => item.return_status) || [];
+          const hasRequested = returnedItems.some(i => i.return_status === 'RETURN_REQUESTED');
+          const hasApproved = returnedItems.some(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
+          const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
+          const hasReceived = returnedItems.some(i => ['RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
+          const hasRefunded = returnedItems.some(i => i.return_status === 'REFUND_COMPLETED') || paymentStatus === 'refunded' || status === 'refunded';
+          const isRejected = returnedItems.some(i => i.return_status === 'RETURN_REJECTED') || status === 'return_rejected';
           const isRefundFailed = paymentStatus === 'refund_failed';
-          const isRefunded = paymentStatus === 'refunded' || status === 'refunded';
-          const isRefundInitiated = !isRejected && (paymentStatus === 'refund_pending' || isRefundFailed || isRefunded || status === 'return_approved');
-          const progressWidth = isRejected ? '76%' : isRefunded || isRefundFailed ? '76%' : isRefundInitiated ? '51%' : isApproved ? '25%' : '0%';
-          const returnSteps = [
-            { label: 'Return Requested', active: true, date: order.updated_at },
-            {
-              label: isRejected ? 'Return Rejected' : 'Return Approved',
-              active: isApproved || isRejected,
-              date: (isApproved || isRejected) ? order.updated_at : null,
-              rejected: isRejected,
-            },
-            ...(!isRejected ? [
-              {
-                label: 'Refund Initiated',
-                active: isRefundInitiated,
-                date: isRefundInitiated ? order.updated_at : null,
-              },
-              {
-                label: isRefundFailed ? 'Refund Failed' : 'Refund Credited',
-                active: isRefunded || isRefundFailed,
-                date: (isRefunded || isRefundFailed) ? order.updated_at : null,
-                rejected: isRefundFailed,
-              }
-            ] : []),
-          ];
+
+          // Show return timeline if any item has been requested, approved, shipped, received, or refunded
+          const showTimeline = returnedItems.length > 0 && !isReturning;
+          if (!showTimeline) return null;
+
+          // Steps list config
+          let returnSteps = [];
+          let progressWidth = '0%';
+          let timelineTitle = 'Return Request Timeline';
+
+          if (isRejected) {
+            returnSteps = [
+              { label: 'Return Requested', active: true, date: order.updated_at },
+              { label: 'Return Rejected', active: true, date: order.updated_at, rejected: true }
+            ];
+            progressWidth = '100%';
+            timelineTitle = 'Return Request Declined';
+          } else if (hasRefunded || hasReceived || isRefundFailed) {
+            // Refund Timeline (Visible after admin receives returned order)
+            const isRefundInitiated = paymentStatus === 'refund_pending' || isRefundFailed || hasRefunded;
+            const isRefundCredited = hasRefunded || paymentStatus === 'refunded';
+            returnSteps = [
+              { label: 'Return Received', active: true, date: order.updated_at },
+              { label: 'Refund Initiated', active: isRefundInitiated, date: isRefundInitiated ? order.updated_at : null },
+              { label: isRefundFailed ? 'Refund Failed' : 'Refund Credited', active: isRefundCredited, date: isRefundCredited ? order.updated_at : null, rejected: isRefundFailed }
+            ];
+            progressWidth = isRefundCredited ? '100%' : isRefundInitiated ? '50%' : '0%';
+            timelineTitle = 'Refund Process Timeline';
+          } else {
+            // Self Shipment & Tracking Timeline
+            returnSteps = [
+              { label: 'Return Requested', active: true, date: order.created_at },
+              { label: 'Approved for Return', active: hasApproved, date: hasApproved ? order.updated_at : null },
+              { label: 'Self Shipped by User', active: hasSelfShipped, date: null },
+              { label: 'Physically Received', active: hasReceived, date: null }
+            ];
+            progressWidth = hasReceived ? '100%' : hasSelfShipped ? '66.6%' : hasApproved ? '33.3%' : '0%';
+            timelineTitle = 'Self-Shipment Tracking Timeline';
+          }
 
           return (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
               <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-50">
-                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">Return Timeline</h3>
+                <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">{timelineTitle}</h3>
                 <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-                  isRejected || isRefundFailed ? 'bg-rose-100 text-rose-800' : isRefunded ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'
+                  isRejected || isRefundFailed ? 'bg-rose-100 text-rose-800' : hasRefunded ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'
                 }`}>
-                  {isRejected ? 'Return Rejected' : isRefundFailed ? 'Refund Failed' : isRefunded ? 'Refund Credited' : isApproved ? 'Refund Initiated' : 'Return Requested'}
+                  {isRejected ? 'Return Rejected' : isRefundFailed ? 'Refund Failed' : hasRefunded ? 'Refund Credited' : hasReceived ? 'Return Received' : hasSelfShipped ? 'Self Shipped' : hasApproved ? 'Approved' : 'Requested'}
                 </span>
               </div>
               <div className="relative pt-6 pb-2 overflow-x-auto">
-                <div className="min-w-[560px] relative">
+                <div className="relative" style={{ minWidth: returnSteps.length === 2 ? '300px' : '560px' }}>
                   <div className="absolute top-[16px] left-[12%] right-[12%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
                   <div
                     className={`absolute top-[16px] left-[12%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out ${isRejected || isRefundFailed ? 'bg-rose-500' : 'bg-primary'}`}
-                    style={{ width: progressWidth }}
+                    style={{ width: `calc(${progressWidth} * 0.76)` }}
                   />
                   <div className="relative flex justify-between px-[8%]">
                     {returnSteps.map((step, idx) => (
-                      <div key={step.label} className="flex flex-col items-center w-1/4 text-center">
+                      <div key={step.label} className="flex flex-col items-center text-center" style={{ width: `${100 / returnSteps.length}%` }}>
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all duration-300 ${
                           step.active
                             ? step.rejected ? 'bg-rose-600 text-white ring-4 ring-rose-100' : 'bg-primary text-white ring-4 ring-primary/10'
@@ -1462,10 +1481,11 @@ const OrderDetailsPage = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Courier Cost (Optional)</label>
+                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Courier Cost *</label>
                     <input
                       type="number"
                       step="0.01"
+                      required
                       placeholder="₹0.00"
                       value={courierCost}
                       onChange={(e) => setCourierCost(e.target.value)}
@@ -1473,10 +1493,11 @@ const OrderDetailsPage = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Invoice / Receipt File (Optional)</label>
+                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Invoice / Receipt File *</label>
                     <div className="relative w-full h-11 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors flex items-center justify-center cursor-pointer text-xs font-bold text-slate-700">
                       <input
                         type="file"
+                        required
                         accept="image/*,application/pdf"
                         onChange={(e) => setInvoiceFile(e.target.files[0])}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"

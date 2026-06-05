@@ -1219,7 +1219,7 @@ const OrdersPage = () => {
                           <p className="font-extrabold text-slate-900 uppercase tracking-wider">
                             {isCod ? 'COD' : 'Prepaid Online'}
                           </p>
-                          <div className={`${tone} text-[10px] rounded-xl p-3 border space-y-1`}>
+                          <div className={`${tone} text-[10px] rounded-xl p-3 border space-y-1.5`}>
                             <p className={`font-extrabold flex items-center gap-1.5 capitalize ${labelTone}`}>
                               <span className={`w-1.5 h-1.5 ${dot} rounded-full ${!paidLike ? 'animate-pulse' : ''}`}></span>
                               {statusLabel}
@@ -1231,6 +1231,21 @@ const OrdersPage = () => {
                               <p className="font-mono text-slate-500 break-all select-all">
                                 {selectedOrderForModal.transaction_id === 'COD' ? 'Txn: COD' : `Txn: ${selectedOrderForModal.transaction_id}`}
                               </p>
+                            )}
+                            {/* Display Customer Payout/UPI Details if present */}
+                            {selectedOrderForModal.razorpay_payment_id && (
+                              <div className="pt-1 mt-1 border-t border-slate-200/50 space-y-0.5 text-slate-600 font-extrabold">
+                                <p className="text-[8px] text-slate-400 font-black uppercase">Customer Razorpay ID</p>
+                                <p className="font-mono text-slate-800">{selectedOrderForModal.razorpay_payment_id}</p>
+                              </div>
+                            )}
+                            {/* Manual Payout reference placeholder helper */}
+                            {selectedOrderForModal.payment_status === 'refund_pending' && (
+                              <div className="pt-1.5 mt-1 border-t border-dashed border-sky-200 text-sky-900 leading-snug">
+                                <p className="text-[8px] font-black uppercase text-sky-700">Manual Refund Payout Details</p>
+                                <p>UPI ID: <span className="font-mono font-extrabold bg-white px-1 py-0.5 rounded border border-sky-100 select-all">{selectedOrderForModal.shipping_address?.phone || 'customer'}@paytm</span></p>
+                                <p className="text-[8px] text-sky-600 font-medium mt-1">Please scan the self-shipping invoice receipt QR code to settle manually.</p>
+                              </div>
                             )}
                             {selectedOrderForModal.transaction_date && (
                               <p className="text-slate-500">Date: {new Date(selectedOrderForModal.transaction_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
@@ -1700,23 +1715,32 @@ const OrdersPage = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="pt-5 border-t border-slate-100 flex justify-end gap-3">
-              {selectedOrderForModal.payment_status === 'refund_pending' && hasPermission('update_order_status') && (
-                <button
-                  onClick={() => {
-                    retryRefund(selectedOrderForModal.id);
-                  }}
-                  className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98]"
-                >
-                  Retry Razorpay Refund
-                </button>
+            <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
+              {selectedOrderForModal.payment_status === 'refund_pending' && (
+                <div className="text-[10px] text-slate-500 font-extrabold text-left w-full sm:w-auto">
+                  Settle to: <span className="font-mono text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 select-all">{selectedOrderForModal.shipping_address?.phone || 'customer'}@paytm</span>
+                </div>
               )}
-              <button
-                onClick={() => setSelectedOrderForModal(null)}
-                className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all hover:scale-[1.02] transform active:scale-[0.98]"
-              >
-                Close
-              </button>
+              <div className="flex gap-3 justify-end w-full sm:w-auto shrink-0">
+                {selectedOrderForModal.payment_status === 'refund_pending' && hasPermission('update_order_status') && (
+                  <button
+                    onClick={() => {
+                      if (window.confirm("Complete manual refund? Make sure you have paid the self-shipment receipt invoice amount via UPI.")) {
+                        retryRefund(selectedOrderForModal.id);
+                      }
+                    }}
+                    className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98] shadow-md shadow-emerald-glow"
+                  >
+                    Confirm Manual Refund Paid
+                  </button>
+                )}
+                <button
+                  onClick={() => setSelectedOrderForModal(null)}
+                  className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all hover:scale-[1.02] transform active:scale-[0.98]"
+                >
+                  Close
+                </button>
+              </div>
             </div>
 
           </div>
