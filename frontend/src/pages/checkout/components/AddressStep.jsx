@@ -72,6 +72,15 @@ const AddressStep = ({
     } catch (err) {}
   };
 
+  if (addressesLoading) {
+    return (
+      <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200 flex flex-col items-center justify-center min-h-[300px]">
+        <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
+        <p className="text-slate-500 text-xs font-black uppercase tracking-wider">Loading saved addresses...</p>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       key="shipping"
