@@ -102,9 +102,9 @@ const Home = () => {
         .delay-400 { animation-delay: 400ms; }
       `}</style>
 
-      <section className="home-hero-stage relative isolate min-h-[620px] md:min-h-[760px] lg:min-h-[820px] overflow-visible bg-[#020807] flex flex-col md:flex-row md:items-center">
+      <section className="home-hero-stage relative isolate min-h-[620px] md:min-h-[720px] lg:min-h-[820px] overflow-visible bg-[#020807] flex flex-col md:flex-row md:items-center">
         {/* Hero Background Image - Absolute on desktop, relative flow on mobile to prevent text overlay */}
-        <div className="relative md:absolute w-full md:w-[75%] md:right-0 md:left-auto h-[260px] sm:h-[340px] md:h-full z-0 select-none pointer-events-none mt-6 md:mt-0 order-2 md:order-none">
+        <div className="relative md:absolute w-full md:w-[55%] lg:w-[62%] xl:w-[68%] 2xl:w-[72%] md:right-0 md:left-auto h-[260px] sm:h-[340px] md:h-full z-0 select-none pointer-events-none mt-6 md:mt-0 order-2 md:order-none">
           <img
             src="/homepage-hero-bg.jpg"
             alt="Durga Shakti Foils Premium Packing Solutions"
@@ -116,8 +116,8 @@ const Home = () => {
         {/* Smooth gradient overlay to ensure text readability on the left (desktop only) */}
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#020807_0%,#020807_32%,rgba(2,8,7,0.6)_55%,rgba(2,8,7,0.2)_75%,rgba(2,8,7,0)_100%)] z-[1] hidden md:block" />
 
-        <div className="relative z-10 flex w-full max-w-full px-6 pb-4 pt-14 md:px-16 lg:px-24 xl:px-32 2xl:px-40 order-1 md:order-none">
-          <div className="max-w-[455px] lg:max-w-[580px] xl:max-w-[680px]">
+        <div className="relative z-10 flex w-full max-w-full px-6 pb-4 pt-14 md:px-10 lg:px-20 xl:px-32 2xl:px-40 order-1 md:order-none">
+          <div className="max-w-[420px] lg:max-w-[540px] xl:max-w-[640px]">
             {/* Badge */}
             <div className="mb-4 inline-flex h-7 items-center gap-2 rounded-full border border-[#16823a]/80 bg-[#03140d]/80 px-3 text-[11px] font-extrabold uppercase tracking-wide text-[#2fda54] shadow-[0_0_20px_rgba(47,218,84,0.18)] animate-fade-in-up">
               <BadgeCheck className="h-3.5 w-3.5" strokeWidth={2.2} />
@@ -125,7 +125,7 @@ const Home = () => {
             </div>
 
             {/* Heading */}
-            <h1 className="font-serif text-[clamp(2.35rem,5.2vw,4.85rem)] font-bold leading-[1.04] tracking-normal text-[#b9cbc6] drop-shadow-[0_3px_14px_rgba(0,0,0,0.35)] animate-fade-in-up delay-100">
+            <h1 className="font-serif text-[clamp(2.1rem,3.8vw,3.2rem)] md:text-[clamp(2.35rem,4.5vw,4.5rem)] font-bold leading-[1.05] tracking-normal text-[#b9cbc6] drop-shadow-[0_3px_14px_rgba(0,0,0,0.35)] animate-fade-in-up delay-100">
               Wrap it Right,
               <br />
               <span className="text-[#f6ca51]">Keep it Hot,</span>
@@ -133,7 +133,7 @@ const Home = () => {
               <span className="text-[#25d958]">Keep it Fresh!</span>
             </h1>
 
-            <p className="mt-5 max-w-[405px] lg:max-w-[520px] text-[14px] lg:text-[16px] font-medium leading-[1.65] lg:leading-[1.7] text-white/80 animate-fade-in-up delay-200">
+            <p className="mt-5 max-w-[380px] lg:max-w-[460px] text-[13px] lg:text-[15px] font-medium leading-[1.65] text-white/80 animate-fade-in-up delay-200">
               Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminium foil engineered for commercial strength and clinical hygiene.
             </p>
 
@@ -150,7 +150,7 @@ const Home = () => {
               </button>
             </div>
 
-            <div className="mt-9 hidden max-w-[370px] lg:max-w-[480px] grid-cols-3 gap-6 md:grid animate-fade-in-up delay-400">
+            <div className="mt-9 hidden max-w-[340px] lg:max-w-[440px] grid-cols-3 gap-6 md:grid animate-fade-in-up delay-400">
               {heroFeatures.map((feature) => (
                 <div key={feature.title} className="min-w-0">
                   <div
