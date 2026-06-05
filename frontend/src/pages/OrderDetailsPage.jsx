@@ -605,7 +605,7 @@ const OrderDetailsPage = () => {
                     {isRefunded ? (
                       <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1 font-semibold">
                         <p className="font-extrabold flex items-center gap-1.5 text-emerald-700">
-                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Refund Processed
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Refund Credited
                         </p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
                           <p className="font-mono text-slate-500 break-all select-all">Paid Txn: {order.transaction_id}</p>
@@ -955,8 +955,9 @@ const OrderDetailsPage = () => {
           if (!showReturnTimeline || isReturning) return null;
           const isRejected = status === 'return_rejected';
           const isApproved = ['return_approved', 'refunded'].includes(status) || isRefundPaymentStatus(paymentStatus);
-          const isRefundStarted = isApproved && !isRejected;
           const isRefunded = paymentStatus === 'refunded' || status === 'refunded';
+          const isRefundInitiated = !isRejected && (paymentStatus === 'refund_pending' || isRefunded || status === 'return_approved');
+          const progressWidth = isRejected ? '76%' : isRefunded ? '76%' : isRefundInitiated ? '51%' : isApproved ? '25%' : '0%';
           const returnSteps = [
             { label: 'Return Requested', active: true, date: order.updated_at },
             {
@@ -965,11 +966,18 @@ const OrderDetailsPage = () => {
               date: (isApproved || isRejected) ? order.updated_at : null,
               rejected: isRejected,
             },
-            ...(!isRejected ? [{
-              label: isRefunded ? 'Refund Processed' : 'Refund Initiated',
-              active: isRefundStarted,
-              date: isRefundStarted ? order.updated_at : null,
-            }] : []),
+            ...(!isRejected ? [
+              {
+                label: 'Refund Initiated',
+                active: isRefundInitiated,
+                date: isRefundInitiated ? order.updated_at : null,
+              },
+              {
+                label: 'Refund Credited',
+                active: isRefunded,
+                date: isRefunded ? order.updated_at : null,
+              }
+            ] : []),
           ];
 
           return (
@@ -979,19 +987,19 @@ const OrderDetailsPage = () => {
                 <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                   isRejected ? 'bg-rose-100 text-rose-800' : isRefunded ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'
                 }`}>
-                  {isRejected ? 'Return Rejected' : isRefunded ? 'Refund Processed' : isApproved ? 'Refund Initiated' : 'Return Requested'}
+                  {isRejected ? 'Return Rejected' : isRefunded ? 'Refund Credited' : isApproved ? 'Refund Initiated' : 'Return Requested'}
                 </span>
               </div>
               <div className="relative pt-6 pb-2 overflow-x-auto">
                 <div className="min-w-[560px] relative">
-                  <div className="absolute top-[16px] left-[16%] right-[16%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
+                  <div className="absolute top-[16px] left-[12%] right-[12%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
                   <div
-                    className={`absolute top-[16px] left-[16%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out ${isRejected ? 'bg-rose-500' : 'bg-primary'}`}
-                    style={{ width: isRefundStarted || isRejected ? '68%' : '34%' }}
+                    className={`absolute top-[16px] left-[12%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out ${isRejected ? 'bg-rose-500' : 'bg-primary'}`}
+                    style={{ width: progressWidth }}
                   />
-                  <div className="relative flex justify-between px-[10%]">
+                  <div className="relative flex justify-between px-[8%]">
                     {returnSteps.map((step, idx) => (
-                      <div key={step.label} className="flex flex-col items-center w-1/3 text-center">
+                      <div key={step.label} className="flex flex-col items-center w-1/4 text-center">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all duration-300 ${
                           step.active
                             ? step.rejected ? 'bg-rose-600 text-white ring-4 ring-rose-100' : 'bg-primary text-white ring-4 ring-primary/10'
@@ -1077,7 +1085,7 @@ const OrderDetailsPage = () => {
                   : order.order_status === 'return_requested'
                   ? 'Return Pending Approval'
                   : order.order_status === 'return_approved'
-                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Refund Processed' : 'Return Approved')
+                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Refund Credited' : 'Return Approved')
                   : order.order_status === 'return_rejected'
                   ? 'Return Request Declined'
                   : `Preparing shipment • Est. Delivery ${getExpectedDeliveryDate(order.created_at)}`
@@ -1091,7 +1099,7 @@ const OrderDetailsPage = () => {
                   : order.order_status === 'return_requested'
                   ? 'Our team is reviewing your return request and proof media.'
                   : order.order_status === 'return_approved' || order.order_status === 'refunded'
-                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Your return was accepted and the refund has been processed.' : 'Your return was accepted and the refund has been initiated.')
+                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Your return was accepted and the refund has been credited.' : 'Your return was accepted and the refund has been initiated.')
                   : 'We are packaging and preparing your items for courier pickup.'
                 }
               </p>

@@ -163,6 +163,120 @@ async def test_razorpay_refund_error_normalization():
     assert "insufficient balance" in message.lower()
     assert "add funds" in message.lower()
 
+def test_razorpay_refund_bank_reference_detection():
+    from routes.orders import _refund_has_bank_reference
+
+    assert _refund_has_bank_reference({"acquirer_data": {"rrn": "123456789012"}})
+    assert _refund_has_bank_reference({"acquirer_data": {"arn": "ARN123456"}})
+    assert not _refund_has_bank_reference({"status": "processed", "acquirer_data": {}})
+    assert not _refund_has_bank_reference({"status": "processed"})
+
+@pytest.mark.anyio
+async def test_razorpay_reconcile_keeps_refund_pending_without_bank_reference(db_session, monkeypatch):
+    import routes.orders as orders_module
+
+    class FakePaymentClient:
+        @staticmethod
+        def fetch(payment_id):
+            return {
+                "id": payment_id,
+                "status": "refunded",
+                "amount_refunded": 45000,
+                "refund_status": "full",
+            }
+
+        @staticmethod
+        def fetch_multiple_refund(payment_id):
+            return {
+                "items": [{
+                    "id": "rfnd_without_reference",
+                    "status": "processed",
+                    "amount": 45000,
+                    "created_at": 1717500000,
+                    "acquirer_data": {},
+                }]
+            }
+
+    class FakeRazorpayClient:
+        payment = FakePaymentClient()
+
+    monkeypatch.setattr(orders_module, "_get_razorpay_client", lambda: FakeRazorpayClient())
+    order = OrderModel(
+        id=uuid.uuid4(),
+        order_number=f"refund-pending-{uuid.uuid4().hex[:8]}",
+        user_id=None,
+        customer_name="Refund Tester",
+        items=[],
+        total_amount=450.0,
+        payment_method="online",
+        payment_status="refund_pending",
+        order_status="return_approved",
+        stock_applied=False,
+        shipping_address={},
+        razorpay_payment_id="pay_refund_pending",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    reconciled = await orders_module.reconcile_order_refund_with_razorpay(order, db_session)
+
+    assert reconciled is False
+    assert order.payment_status == "refund_pending"
+    assert order.order_status == "return_approved"
+
+@pytest.mark.anyio
+async def test_razorpay_reconcile_marks_refunded_with_bank_reference(db_session, monkeypatch):
+    import routes.orders as orders_module
+
+    class FakePaymentClient:
+        @staticmethod
+        def fetch(payment_id):
+            return {
+                "id": payment_id,
+                "status": "refunded",
+                "amount_refunded": 45000,
+                "refund_status": "full",
+            }
+
+        @staticmethod
+        def fetch_multiple_refund(payment_id):
+            return {
+                "items": [{
+                    "id": "rfnd_with_reference",
+                    "status": "processed",
+                    "amount": 45000,
+                    "created_at": 1717500000,
+                    "acquirer_data": {"rrn": "123456789012"},
+                }]
+            }
+
+    class FakeRazorpayClient:
+        payment = FakePaymentClient()
+
+    monkeypatch.setattr(orders_module, "_get_razorpay_client", lambda: FakeRazorpayClient())
+    order = OrderModel(
+        id=uuid.uuid4(),
+        order_number=f"refund-final-{uuid.uuid4().hex[:8]}",
+        user_id=None,
+        customer_name="Refund Tester",
+        items=[],
+        total_amount=450.0,
+        payment_method="online",
+        payment_status="refund_pending",
+        order_status="return_approved",
+        stock_applied=False,
+        shipping_address={},
+        razorpay_payment_id="pay_refund_final",
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    reconciled = await orders_module.reconcile_order_refund_with_razorpay(order, db_session)
+
+    assert reconciled is True
+    assert order.payment_status == "refunded"
+    assert order.order_status == "refunded"
+
 @pytest.mark.anyio
 async def test_signature_verification_invalid_formats(client, auth_headers, test_product, db_session):
     payload = {

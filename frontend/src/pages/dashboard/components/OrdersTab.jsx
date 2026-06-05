@@ -30,7 +30,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
     { value: 'return_requested', label: 'Return Requested' },
     { value: 'return_approved', label: 'Return Approved' },
     { value: 'return_rejected', label: 'Return Rejected' },
-    { value: 'refunded', label: 'Refunded' },
+    { value: 'refunded', label: 'Refund Credited' },
     { value: 'returned', label: 'Returned' },
     { value: 'cancelled', label: 'Cancelled' },
     { value: 'failed', label: 'Delivery Failed' },
@@ -45,7 +45,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
     if (status === 'cash on delivery') return 'To Collect';
     if (status === 'paid' || status === 'completed') return 'Paid';
     if (status === 'refund_pending') return 'Refund Initiated';
-    if (status === 'refunded') return 'Refunded';
+    if (status === 'refunded') return 'Refund Credited';
     return status ? status.replace(/_/g, ' ') : 'Pending';
   };
 
@@ -67,7 +67,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
       return_requested: { bg: 'bg-orange-50 text-orange-600', label: 'Return Requested' },
       return_approved: { bg: 'bg-teal-50 text-teal-600', label: 'Return Approved' },
       return_rejected: { bg: 'bg-red-50 text-red-600', label: 'Return Rejected' },
-      refunded: { bg: 'bg-slate-100 text-slate-600', label: 'Refunded' },
+      refunded: { bg: 'bg-slate-100 text-slate-600', label: 'Refund Credited' },
       returned: { bg: 'bg-purple-50 text-purple-600', label: 'Returned' },
     };
     return config[s] || { bg: 'bg-slate-50 text-slate-600', label: s };

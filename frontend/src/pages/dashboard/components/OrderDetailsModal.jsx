@@ -533,7 +533,8 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                         if (['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status)) {
                           const isReturnRequested = ['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
                           const isReturnApproved = ['return_approved', 'refunded'].includes(status);
-                          const isRefunded = ['refunded'].includes(status) || (order.payment_status || '').toLowerCase() === 'refunded';
+                          const isRefundInitiated = paymentStatus === 'refund_pending' || paymentStatus === 'refunded' || status === 'refunded';
+                          const isRefunded = status === 'refunded' || paymentStatus === 'refunded';
                           const isReturnRejected = status === 'return_rejected';
 
                           const returnSteps = [
@@ -544,11 +545,18 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                               date: (isReturnApproved || isReturnRejected) ? order.updated_at : null,
                               isRejected: isReturnRejected 
                             },
-                            ...(!isReturnRejected ? [{
-                              label: 'Refund Processed', 
-                              active: isRefunded, 
-                              date: isRefunded ? order.updated_at : null 
-                            }] : [])
+                            ...(!isReturnRejected ? [
+                              {
+                                label: 'Refund Initiated',
+                                active: isRefundInitiated,
+                                date: isRefundInitiated ? order.updated_at : null
+                              },
+                              {
+                                label: 'Refund Credited',
+                                active: isRefunded,
+                                date: isRefunded ? order.updated_at : null
+                              }
+                            ] : [])
                           ];
 
                           return (
@@ -690,7 +698,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                             status === 'cash on delivery' ? 'To Collect' :
                             status === 'paid' || status === 'completed' ? 'Paid' :
                             status === 'refund_pending' ? 'Refund Initiated' :
-                            status === 'refunded' ? 'Refunded' :
+                            status === 'refunded' ? 'Refund Credited' :
                             status ? status.replace(/_/g, ' ') : 'Pending';
                           return (
                             <div className="space-y-1">

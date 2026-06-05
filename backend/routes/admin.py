@@ -83,9 +83,22 @@ async def _process_return_refund_background(order_id: str, actor_id: str = "syst
             success, err_msg, refund_info = await trigger_razorpay_refund(order, session)
             if success:
                 refund_status = str((refund_info or {}).get("status") or "").lower()
-                order.payment_status = "refunded" if refund_status == "processed" else "refund_pending"
-                order.order_status = "refunded" if order.payment_status == "refunded" else "return_approved"
+                order.payment_status = "refund_pending"
+                order.order_status = "return_approved"
                 order.updated_at = datetime.now(timezone.utc)
+                await write_audit_log(
+                    session,
+                    "PAYMENT_RAZORPAY_REFUND_INITIATED",
+                    actor_id,
+                    "order",
+                    order_id,
+                    {
+                        "razorpay_payment_id": order.razorpay_payment_id,
+                        "razorpay_refund_id": (refund_info or {}).get("id"),
+                        "refund_status": refund_status,
+                        "amount": (refund_info or {}).get("amount"),
+                    },
+                )
             else:
                 order.payment_status = "refund_pending"
                 if str(order.order_status or "").lower() == "return_requested":
@@ -844,14 +857,14 @@ async def retry_order_refund(
         }
 
     refund_status = str((refund_info or {}).get("status") or "").lower()
-    order.payment_status = "refunded" if refund_status == "processed" else "refund_pending"
-    order.order_status = "refunded" if order.payment_status == "refunded" else "return_approved"
+    order.payment_status = "refund_pending"
+    order.order_status = "return_approved"
     order.updated_at = datetime.now(timezone.utc)
 
     await db.flush()
     await write_audit_log(
         db,
-        "ORDER_RAZORPAY_REFUND_RETRIED",
+        "ORDER_RAZORPAY_REFUND_RETRY_INITIATED",
         admin.id,
         "order",
         order_id,
@@ -864,28 +877,7 @@ async def retry_order_refund(
         }
     )
 
-    if order.payment_status == "refunded":
-        from sqlalchemy import select as _sel
-        from models import UserModel as _UM
-        user_res = await db.execute(_sel(_UM).where(_UM.id == order.user_id))
-        cust = user_res.scalar_one_or_none()
-        if cust:
-            await create_notification(
-                db,
-                str(cust.id),
-                "Order Refunded",
-                f"Your refund for order {order.order_number} has been processed.",
-                "order"
-            )
-            import asyncio
-            from deps import send_email as _send
-            from email_templates import return_approved_email
-            cust_name = cust.full_name or cust.email
-            subj, body = return_approved_email(cust_name, str(order.order_number), float(order.total_amount or 0))
-            if subj and body:
-                asyncio.create_task(_send(cust.email, subj, body))
-
-    message = "Razorpay refund processed" if order.payment_status == "refunded" else "Razorpay refund initiated and pending bank confirmation"
+    message = "Razorpay refund has been initiated and is pending bank confirmation."
     return {"message": message, "order": row_to_dict(order)}
 
 

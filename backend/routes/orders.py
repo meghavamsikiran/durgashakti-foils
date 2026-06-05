@@ -55,6 +55,20 @@ def _normalize_refund_error(err: Optional[Exception]) -> str:
     return msg
 
 
+def _refund_has_bank_reference(refund: Optional[dict]) -> bool:
+    acquirer_data = (refund or {}).get("acquirer_data") or {}
+    if not isinstance(acquirer_data, dict):
+        return False
+    reference_keys = {
+        "arn",
+        "rrn",
+        "utr",
+        "bank_reference_number",
+        "bank_transaction_id",
+    }
+    return any(str(acquirer_data.get(key) or "").strip() for key in reference_keys)
+
+
 def _is_online_payment_pending(order: OrderModel) -> bool:
     payment_status = str(order.payment_status or "").lower()
     if payment_status in {"paid", "completed", "cash on delivery", "refunded", "refund_pending"}:
@@ -223,14 +237,32 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
             if str((refund or {}).get("status") or "").lower() == "processed"
         )
         latest_refund = sorted(refund_items, key=lambda r: r.get("created_at") or 0, reverse=True)[0] if refund_items else {}
+        processed_refunds = [
+            refund for refund in refund_items
+            if str((refund or {}).get("status") or "").lower() == "processed"
+        ]
+        processed_refunds_with_reference = [
+            refund for refund in processed_refunds
+            if _refund_has_bank_reference(refund)
+        ]
+        processed_amount_with_reference = sum(
+            int((refund or {}).get("amount") or 0)
+            for refund in processed_refunds_with_reference
+        )
 
         is_fully_refunded = (
             expected_amount > 0
             and (
-                amount_refunded >= expected_amount
-                or processed_amount >= expected_amount
-                or refund_status == "full"
-                or payment_state == "refunded"
+                processed_amount_with_reference >= expected_amount
+                or (
+                    _refund_has_bank_reference(latest_refund)
+                    and (
+                        amount_refunded >= expected_amount
+                        or processed_amount >= expected_amount
+                        or refund_status == "full"
+                        or payment_state == "refunded"
+                    )
+                )
             )
         )
         if not is_fully_refunded:
@@ -257,6 +289,8 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
                     "refund_status": latest_refund.get("status") or refund_status,
                     "amount_refunded": amount_refunded,
                     "processed_amount": processed_amount,
+                    "processed_amount_with_reference": processed_amount_with_reference,
+                    "has_bank_reference": _refund_has_bank_reference(latest_refund),
                 },
             )
             logger.info("Reconciled Razorpay refund for order %s from %s", order.order_number, source)
@@ -1250,31 +1284,28 @@ async def razorpay_webhook(
             raise HTTPException(status_code=404, detail="Order not found")
 
         refund_status = str(refund_entity.get("status") or "").lower()
-        if event == "refund.processed" or refund_status == "processed":
-            order.payment_status = "refunded"
-            order.order_status = "refunded"
-            order.updated_at = datetime.now(timezone.utc)
-            await write_audit_log(
-                db,
-                "PAYMENT_RAZORPAY_REFUND_WEBHOOK",
-                str(order.user_id or "system"),
-                "order",
-                str(order.id),
-                {
-                    "event": event,
-                    "razorpay_payment_id": payment_id,
-                    "razorpay_refund_id": refund_entity.get("id"),
-                    "refund_status": refund_status,
-                    "amount": refund_entity.get("amount"),
-                },
-            )
-            return {"status": "success"}
-
         order.payment_status = "refund_pending"
         if str(order.order_status or "").lower() == "return_requested":
             order.order_status = "return_approved"
         order.updated_at = datetime.now(timezone.utc)
-        return {"status": "pending"}
+        await write_audit_log(
+            db,
+            "PAYMENT_RAZORPAY_REFUND_WEBHOOK",
+            str(order.user_id or "system"),
+            "order",
+            str(order.id),
+            {
+                "event": event,
+                "razorpay_payment_id": payment_id,
+                "razorpay_refund_id": refund_entity.get("id"),
+                "refund_status": refund_status,
+                "amount": refund_entity.get("amount"),
+            },
+        )
+        return {
+            "status": "pending",
+            "message": "Refund update received from Razorpay. The order remains pending until bank confirmation is available.",
+        }
 
     if event not in ["payment.captured", "order.paid"]:
         return {"status": "ignored"}

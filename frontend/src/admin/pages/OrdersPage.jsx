@@ -79,7 +79,7 @@ const STATUS_LABELS = {
   RETURN_REQUESTED: 'Return Requested',
   RETURN_APPROVED: 'Return Approved',
   RETURN_REJECTED: 'Return Rejected',
-  REFUNDED: 'Refunded',
+  REFUNDED: 'Refund Credited',
 };
 const statusLabel = (status) => STATUS_LABELS[uiStatus(status)] || uiStatus(status).replace(/_/g, ' ');
 const paymentMethodLabel = (order) => (String(order.payment_method || '').toLowerCase() === 'cod' ? 'COD' : 'Prepaid');
@@ -88,7 +88,7 @@ const paymentStatusLabel = (order) => {
   if (value === 'cash on delivery') return 'To Collect';
   if (value === 'paid' || value === 'completed') return 'Paid';
   if (value === 'refund_pending') return 'Refund Initiated';
-  if (value === 'refunded') return 'Refunded';
+  if (value === 'refunded') return 'Refund Credited';
   return value ? value.replace(/_/g, ' ') : 'Pending';
 };
 
@@ -323,7 +323,7 @@ const OrdersPage = () => {
         if (lower.includes('insufficient balance') || lower.includes('your account does not have enough balance') || lower.includes('insufficient funds')) {
           toast.error('Razorpay account has insufficient balance to process the refund. Add funds in Razorpay dashboard or capture new payments before retrying.', { id: toastId, duration: 10000 });
         } else {
-          toast.error(detail || 'Network error while retrying refund', { id: toastId });
+          toast.error(detail || 'Unable to update the order status. Please try again.', { id: toastId });
         }
     } finally {
       setPendingActionIds(prev => {
@@ -338,7 +338,7 @@ const OrdersPage = () => {
   const retryRefund = async (orderId) => {
     const previousRows = rows;
     const previousModalOrder = selectedOrderForModal;
-    const toastId = toast.loading('Retrying Razorpay refund...');
+    const toastId = toast.loading('Initiating Razorpay refund...');
     try {
       setPendingActionIds(prev => new Set(prev).add(orderId));
       setSubmitting(true);
@@ -349,7 +349,7 @@ const OrdersPage = () => {
         setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
         setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
       }
-      toast.success(response?.data?.message || 'Razorpay refund updated', { id: toastId });
+      toast.success(response?.data?.message || 'Razorpay refund has been initiated and is pending bank confirmation.', { id: toastId });
       loadSilent(page);
     } catch (err) {
       setRows(previousRows);
@@ -1126,7 +1126,7 @@ const OrdersPage = () => {
                         paymentStatus === 'cash on delivery' ? 'To Collect' :
                         paymentStatus === 'paid' || paymentStatus === 'completed' ? 'Paid' :
                         paymentStatus === 'refund_pending' ? 'Refund Initiated' :
-                        paymentStatus === 'refunded' ? 'Refunded' :
+                        paymentStatus === 'refunded' ? 'Refund Credited' :
                         paymentStatus ? paymentStatus.replace(/_/g, ' ') : 'Pending';
                       const isRefund = ['refund_pending', 'refunded'].includes(paymentStatus);
                       const tone = isRefund
@@ -1258,8 +1258,11 @@ const OrdersPage = () => {
                   if (['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status)) {
                     const isReturnRequested = ['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
                     const isReturnApproved = ['return_approved', 'refunded'].includes(status);
-                    const isRefunded = ['refunded'].includes(status) || (selectedOrderForModal.payment_status || '').toLowerCase() === 'refunded';
+                    const paymentStatus = (selectedOrderForModal.payment_status || '').toLowerCase();
+                    const isRefundInitiated = paymentStatus === 'refund_pending' || paymentStatus === 'refunded' || status === 'refunded';
+                    const isRefunded = status === 'refunded' || paymentStatus === 'refunded';
                     const isReturnRejected = status === 'return_rejected';
+                    const returnProgressWidth = isReturnRejected ? '70%' : isRefunded ? '70%' : isRefundInitiated ? '47%' : isReturnApproved ? '23%' : '0%';
 
                     const returnSteps = [
                       { label: 'Return Requested', active: isReturnRequested, date: selectedOrderForModal.updated_at },
@@ -1269,29 +1272,34 @@ const OrdersPage = () => {
                         date: (isReturnApproved || isReturnRejected) ? selectedOrderForModal.updated_at : null,
                         isRejected: isReturnRejected 
                       },
-                      ...(!isReturnRejected ? [{
-                        label: 'Refund Processed', 
-                        active: isRefunded, 
-                        date: isRefunded ? selectedOrderForModal.updated_at : null 
-                      }] : [])
+                      ...(!isReturnRejected ? [
+                        {
+                          label: 'Refund Initiated',
+                          active: isRefundInitiated,
+                          date: isRefundInitiated ? selectedOrderForModal.updated_at : null
+                        },
+                        {
+                          label: 'Refund Credited',
+                          active: isRefunded,
+                          date: isRefunded ? selectedOrderForModal.updated_at : null
+                        }
+                      ] : [])
                     ];
 
                     return (
                       <div className="relative pt-4 pb-2">
                         {/* Line Background */}
-                        <div className="absolute top-[28px] left-[15%] right-[15%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
+                        <div className="absolute top-[28px] left-[12%] right-[12%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
                         {/* Active Line */}
                         <div
-                          className={`absolute top-[28px] left-[15%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ${isReturnRejected ? 'bg-rose-500' : 'bg-primary'}`}
-                          style={{
-                            width: isReturnRejected ? '70%' : isRefunded ? '70%' : isReturnApproved ? '35%' : '0%'
-                          }}
+                          className={`absolute top-[28px] left-[12%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ${isReturnRejected ? 'bg-rose-500' : 'bg-primary'}`}
+                          style={{ width: returnProgressWidth }}
                         />
 
                         {/* Dots */}
-                        <div className="relative flex justify-between px-[10%]">
+                        <div className="relative flex justify-between px-[8%]">
                           {returnSteps.map((step, idx) => (
-                            <div key={idx} className="flex flex-col items-center w-[25%] text-center">
+                            <div key={idx} className="flex flex-col items-center w-1/4 text-center">
                               <div className={`w-7 h-7 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all ${
                                 step.active 
                                   ? (step.isRejected ? 'bg-rose-600 text-white ring-4 ring-rose-100' : 'bg-primary text-white ring-4 ring-primary/10') 
