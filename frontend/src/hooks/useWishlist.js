@@ -8,26 +8,33 @@ export const useWishlist = () => {
   const [loading, setLoading] = useState(false);
   const { refreshUser } = useAuth();
 
-  const fetchWishlist = useCallback(async () => {
-    setLoading(true);
+  const fetchWishlist = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const data = await wishlistService.getWishlist();
       setWishlist(data || []);
     } catch (err) {
       // Handled by interceptor
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   const toggleWishlist = async (productId) => {
+    const previousWishlist = [...wishlist];
+    // Optimistic update: instantly remove item from UI state
+    setWishlist(prev => prev.filter(item => String(item.id) !== String(productId)));
+    toast.success('Removed from wishlist');
+
     try {
       await wishlistService.toggleWishlist(productId);
-      fetchWishlist();
       if (refreshUser) refreshUser();
-      toast.success('Wishlist updated');
+      // Silently refetch in the background to ensure synchronization
+      await fetchWishlist(true);
     } catch (err) {
-      // Handled by interceptor
+      // Rollback on failure
+      setWishlist(previousWishlist);
+      toast.error('Failed to update wishlist');
     }
   };
 

@@ -176,7 +176,7 @@ const OrderSummary = ({
           ) : (
             <span className="relative flex items-center justify-center gap-2">
               <LockKeyhole className="w-4 h-4" />
-              Launch Secure Payment
+              Place Order
             </span>
           )}
         </Button>

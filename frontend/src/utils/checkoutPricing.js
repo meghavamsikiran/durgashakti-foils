@@ -60,9 +60,9 @@ export const calculateCheckoutPricing = (subtotal, settings = {}, paymentMethod 
     ? config.defaultShippingCharge
     : 0;
   const codCharge = paymentMethod === 'cod' ? config.codCharge : 0;
-  const cgst = taxableAmount * 0.09;
-  const sgst = taxableAmount * 0.09;
-  const grandTotal = taxableAmount + shipping + cgst + sgst + codCharge;
+  const cgst = Math.round(taxableAmount * 0.09 * 100) / 100;
+  const sgst = Math.round(taxableAmount * 0.09 * 100) / 100;
+  const grandTotal = Number((taxableAmount + shipping + cgst + sgst + codCharge).toFixed(2));
 
   return { config, shipping, codCharge, cgst, sgst, grandTotal, discountAmount, freeShippingApplied };
 };

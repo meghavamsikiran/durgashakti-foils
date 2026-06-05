@@ -541,7 +541,43 @@ async def _finalize_paid_order(
     was_paid = _is_paid_order(order)
 
     if not await _deduct_stock_once(order, db, now):
-        raise HTTPException(status_code=400, detail="Insufficient stock or error applying stock")
+        success, err_msg, refund_info = await trigger_razorpay_refund(order, db)
+        if success:
+            order.order_status = "failed"
+            order.payment_status = "refund_pending"
+            order.updated_at = datetime.now(timezone.utc)
+            await write_audit_log(
+                db,
+                "PAYMENT_RAZORPAY_REFUND_INITIATED",
+                order.user_id,
+                "order",
+                str(order.id),
+                {
+                    "razorpay_payment_id": order.razorpay_payment_id,
+                    "razorpay_refund_id": (refund_info or {}).get("id"),
+                    "refund_status": str((refund_info or {}).get("status") or "").lower(),
+                    "amount": (refund_info or {}).get("amount"),
+                    "reason": "Insufficient stock",
+                }
+            )
+        else:
+            order.order_status = "failed"
+            order.payment_status = "refund_failed"
+            order.updated_at = datetime.now(timezone.utc)
+            await write_audit_log(
+                db,
+                "PAYMENT_RAZORPAY_REFUND_FAILED",
+                order.user_id,
+                "order",
+                str(order.id),
+                {
+                    "razorpay_payment_id": order.razorpay_payment_id,
+                    "error": err_msg,
+                    "reason": "Insufficient stock",
+                }
+            )
+        await db.commit()
+        raise HTTPException(status_code=400, detail="Insufficient stock, payment refunded automatically.")
 
     order.payment_status = "Paid"
     order.order_status = "confirmed"
@@ -1011,6 +1047,26 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
             c_res = await db.execute(select(CouponModel).where(CouponModel.code == code_upper).with_for_update())
             coupon_to_update = c_res.scalar_one_or_none()
             if coupon_to_update:
+                if coupon_to_update.max_usage_count is not None and coupon_to_update.total_uses >= coupon_to_update.max_usage_count:
+                    raise HTTPException(status_code=400, detail="Coupon usage limit reached")
+                
+                # Check user per-customer usage limit
+                per_customer_limit = coupon_to_update.per_customer_usage_limit if coupon_to_update.is_reusable else 1
+                if per_customer_limit is not None:
+                    other_orders_res = await db.execute(
+                        select(OrderModel).where(
+                            OrderModel.user_id == order.user_id,
+                            OrderModel.id != order.id,
+                            OrderModel.coupon_codes.contains([coupon_to_update.code])
+                        )
+                    )
+                    other_orders_count = len(other_orders_res.scalars().all())
+                    if other_orders_count >= per_customer_limit:
+                        raise HTTPException(
+                            status_code=400,
+                            detail="You have already redeemed this coupon code on a past order."
+                        )
+
                 coupon_to_update.total_uses = coupon_to_update.total_uses + 1
                 c_discount = 0.0
                 if coupon_to_update.discount_type == "percentage":
@@ -1281,11 +1337,14 @@ async def verify_razorpay_payment(
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    secret = os.environ.get("RAZORPAY_KEY_SECRET", "88I55VYE6171aOyU0pJFNYX6")
+    secret = os.environ.get("RAZORPAY_KEY_SECRET")
+    if not secret:
+        logger.error("RAZORPAY_KEY_SECRET environment variable is not set")
+        raise HTTPException(status_code=500, detail="Razorpay integration not configured")
     msg = f"{payload.razorpay_order_id}|{payload.razorpay_payment_id}".encode("utf-8")
     expected = hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
     if not hmac.compare_digest(expected, payload.razorpay_signature):
-        logger.error(f"Razorpay verify signature failure. Expected: {expected}, Got: {payload.razorpay_signature}")
+        logger.error("Razorpay verify signature failure.")
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     res = await db.execute(
@@ -1460,7 +1519,10 @@ async def razorpay_webhook(
     if not x_razorpay_signature:
         raise HTTPException(status_code=400, detail="Missing webhook signature")
 
-    secret = os.environ.get("RAZORPAY_WEBHOOK_SECRET") or os.environ.get("RAZORPAY_WEBHOOK_SECRE") or "test_webhook_secret_key"
+    secret = os.environ.get("RAZORPAY_WEBHOOK_SECRET") or os.environ.get("RAZORPAY_WEBHOOK_SECRE")
+    if not secret:
+        logger.error("RAZORPAY_WEBHOOK_SECRET environment variable is not set")
+        raise HTTPException(status_code=500, detail="Razorpay webhook integration not configured")
     expected = hmac.new(secret.encode("utf-8"), body_bytes, hashlib.sha256).hexdigest()
     verified = hmac.compare_digest(expected, x_razorpay_signature)
     
@@ -1472,7 +1534,7 @@ async def razorpay_webhook(
                 verified = True
                 
     if not verified:
-        logger.error(f"Webhook signature verification failed. X-Razorpay-Signature: {x_razorpay_signature}")
+        logger.error("Webhook signature verification failed.")
         raise HTTPException(status_code=400, detail="Invalid webhook signature")
 
     payload = json.loads(body_bytes.decode("utf-8"))

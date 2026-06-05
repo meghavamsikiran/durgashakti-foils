@@ -1,8 +1,56 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CreditCard, ArrowUpRight, ArrowDownLeft, Search, Filter } from 'lucide-react';
+import { CreditCard, ArrowUpRight, ArrowDownLeft, Search, Filter, ChevronDown } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import TablePagination from '../../../components/ui/TablePagination';
+
+const CustomSelect = ({ value, onChange, options }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find(opt => opt.value === value) || options[0];
+  const containerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  return (
+    <div className="relative w-full text-slate-800" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-2.5 text-sm bg-white text-left focus:outline-none focus:ring-2 focus:ring-primary/25 font-semibold transition-all shadow-sm"
+      >
+        <span className="truncate">{selectedOption?.label}</span>
+        <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="absolute left-0 right-0 mt-1.5 max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl z-50 py-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              className={`w-full text-left px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-slate-50 ${
+                option.value === value ? 'text-primary bg-primary/5 font-bold' : 'text-slate-700'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const TransactionsTab = ({ orders }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -14,6 +62,24 @@ const TransactionsTab = ({ orders }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const PAGE_SIZE = 10;
+
+  const methodOptions = [
+    { value: 'all', label: 'All Methods' },
+    { value: 'cod', label: 'Cash On Delivery (COD)' },
+  ];
+  const statusOptions = [
+    { value: 'all', label: 'All Statuses' },
+    { value: 'paid', label: 'Paid / Completed' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'failed', label: 'Failed / Refunded' },
+  ];
+  const timeframeOptions = [
+    { value: 'all', label: 'All Time' },
+    { value: 'today', label: 'Today' },
+    { value: 'this_month', label: 'This Month' },
+    { value: 'last_month', label: 'Last Month' },
+    { value: 'custom', label: 'Date Range' },
+  ];
 
   const transactions = (orders || []).map((order) => ({
     id: order.id,
@@ -143,50 +209,36 @@ const TransactionsTab = ({ orders }) => {
                     <h3 className="text-sm font-black text-slate-900">Transaction Filters</h3>
                     <div>
                       <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Payment Method</label>
-                      <select
+                      <CustomSelect
                         value={methodFilter}
-                        onChange={(e) => {
-                          setMethodFilter(e.target.value);
+                        onChange={(val) => {
+                          setMethodFilter(val);
                           setCurrentPage(1);
                         }}
-                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
-                      >
-                        <option value="all">All Methods</option>
-                        <option value="cod">Cash On Delivery (COD)</option>
-                      </select>
+                        options={methodOptions}
+                      />
                     </div>
                     <div>
                       <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Payment Status</label>
-                      <select
+                      <CustomSelect
                         value={statusFilter}
-                        onChange={(e) => {
-                          setStatusFilter(e.target.value);
+                        onChange={(val) => {
+                          setStatusFilter(val);
                           setCurrentPage(1);
                         }}
-                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
-                      >
-                        <option value="all">All Statuses</option>
-                        <option value="paid">Paid / Completed</option>
-                        <option value="pending">Pending</option>
-                        <option value="failed">Failed / Refunded</option>
-                      </select>
+                        options={statusOptions}
+                      />
                     </div>
                     <div>
                       <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Timeframe</label>
-                      <select
+                      <CustomSelect
                         value={timeframeFilter}
-                        onChange={(e) => {
-                          setTimeframeFilter(e.target.value);
+                        onChange={(val) => {
+                          setTimeframeFilter(val);
                           setCurrentPage(1);
                         }}
-                        className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25"
-                      >
-                        <option value="all">All Time</option>
-                        <option value="today">Today</option>
-                        <option value="this_month">This Month</option>
-                        <option value="last_month">Last Month</option>
-                        <option value="custom">Date Range</option>
-                      </select>
+                        options={timeframeOptions}
+                      />
                     </div>
                     {timeframeFilter === 'custom' && (
                       <div className="space-y-2 mt-2">

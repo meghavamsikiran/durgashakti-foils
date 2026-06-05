@@ -181,11 +181,11 @@ async def _process_return_refund_background(order_id: str, actor_id: str = "syst
             return
         from routes.orders import trigger_razorpay_refund
 
+        # 1. Fetch order without lock to validate status and trigger external call
         async with database.async_session_factory() as session:
             res = await session.execute(
                 select(OrderModel)
                 .where(OrderModel.id == order_id)
-                .with_for_update()
             )
             order = res.scalar_one_or_none()
             if not order:
@@ -196,6 +196,19 @@ async def _process_return_refund_background(order_id: str, actor_id: str = "syst
                 return
 
             success, err_msg, refund_info = await trigger_razorpay_refund(order, session)
+            await session.commit()
+
+        # 2. Start new database transaction, query order with lock, update status and write audit logs
+        async with database.async_session_factory() as session:
+            res = await session.execute(
+                select(OrderModel)
+                .where(OrderModel.id == order_id)
+                .with_for_update()
+            )
+            order = res.scalar_one_or_none()
+            if not order:
+                return
+
             if success:
                 refund_status = str((refund_info or {}).get("status") or "").lower()
                 order.payment_status = "refund_pending"

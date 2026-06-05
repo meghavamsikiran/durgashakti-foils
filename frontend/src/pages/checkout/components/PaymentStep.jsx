@@ -122,7 +122,7 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
                 <p className="text-sm font-semibold text-slate-300 mt-1">
                   {paymentMethod === 'cod'
                     ? 'Cash handling is supported by direct order verification.'
-                    : 'Online payments are paired with order-level reconciliation and refund audit tracking.'}
+                    : 'Please do not refresh the page, close the browser, or navigate away while the payment is processing to ensure secure transaction authorization.'}
                 </p>
               </div>
             </div>

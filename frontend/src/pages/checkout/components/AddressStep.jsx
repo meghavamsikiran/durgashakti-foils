@@ -26,9 +26,17 @@ const AddressStep = ({
   setShippingInfo,
   onContinue 
 }) => {
-  const [showAddressSelector, setShowAddressSelector] = useState(false);
+  const [showAddressSelector, setShowAddressSelector] = useState(savedAddresses && savedAddresses.length > 0);
+  const [hasInitializedSelector, setHasInitializedSelector] = useState(false);
   const { lookup, loading: checkingPincode } = usePincodeLookup();
   const { detect, loading: detectingLocation } = useGeoLocationAddress();
+
+  React.useEffect(() => {
+    if (savedAddresses && savedAddresses.length > 0 && !hasInitializedSelector) {
+      setShowAddressSelector(true);
+      setHasInitializedSelector(true);
+    }
+  }, [savedAddresses, hasInitializedSelector]);
 
   const onInputChange = (event) => {
     const { name, value } = event.target;
@@ -74,41 +82,41 @@ const AddressStep = ({
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
         <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tighter">Shipping Details</h2>
-        <Button 
-          type="button"
-          variant="outline" 
-          size="sm" 
-          onClick={() => {
-            const next = !showAddressSelector;
-            setShowAddressSelector(next);
-            if (!next) {
-              setShippingInfo({
-                label: 'Home',
-                full_name: '',
-                phone: '',
-                alternate_phone: '',
-                address_line1: '',
-                address_line2: '',
-                city: '',
-                state: '',
-                pincode: ''
-              });
-            }
-          }}
-          className="rounded-full font-bold uppercase tracking-widest text-[10px] h-10 px-5 ring-1 ring-slate-200 border-slate-200 bg-white text-slate-600 hover:border-primary hover:text-primary transition-all"
-        >
-          {showAddressSelector ? (
-            <ArrowLeft className="w-3 h-3 mr-2" />
-          ) : savedAddresses.length > 0 ? (
-            <ArrowRight className="w-3 h-3 mr-2" />
-          ) : (
-            <Plus className="w-3 h-3 mr-2" />
-          )}
-          {showAddressSelector ? 'Enter New Address' : savedAddresses.length > 0 ? 'Select Saved Address' : 'Add Address'}
-          {addressesLoading && savedAddresses.length > 0 && (
-            <Loader2 className="w-3 h-3 ml-2 text-slate-400 animate-spin" />
-          )}
-        </Button>
+        {savedAddresses && savedAddresses.length > 0 && (
+          <Button 
+            type="button"
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              const next = !showAddressSelector;
+              setShowAddressSelector(next);
+              if (!next) {
+                setShippingInfo({
+                  label: 'Home',
+                  full_name: '',
+                  phone: '',
+                  alternate_phone: '',
+                  address_line1: '',
+                  address_line2: '',
+                  city: '',
+                  state: '',
+                  pincode: ''
+                });
+              }
+            }}
+            className="rounded-full font-bold uppercase tracking-widest text-[10px] h-10 px-5 ring-1 ring-slate-200 border-slate-200 bg-white text-slate-600 hover:border-primary hover:text-primary transition-all"
+          >
+            {showAddressSelector ? (
+              <ArrowLeft className="w-3 h-3 mr-2" />
+            ) : (
+              <ArrowRight className="w-3 h-3 mr-2" />
+            )}
+            {showAddressSelector ? 'Enter New Address' : 'Select Saved Address'}
+            {addressesLoading && (
+              <Loader2 className="w-3 h-3 ml-2 text-slate-400 animate-spin" />
+            )}
+          </Button>
+        )}
       </div>
       
       <div className="space-y-6">
