@@ -336,6 +336,77 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
         return False, _normalize_refund_error(exc), None
 
 
+async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: AsyncSession) -> tuple[bool, Optional[str], Optional[dict]]:
+    """Trigger an optimum-speed Razorpay partial refund for a prepaid captured payment."""
+    if str(order.payment_method or "").lower() == "cod":
+        return False, "COD orders cannot be refunded online automatically.", None
+
+    payment_id = order.razorpay_payment_id
+    if not payment_id:
+        return False, "No Razorpay payment ID found for this order.", None
+
+    client = _get_razorpay_client()
+    amount_paise = int(round(amount * 100))
+    if amount_paise <= 0:
+        return False, "Refund amount is zero or negative.", None
+
+    if not client:
+        key_id = os.environ.get("RAZORPAY_KEY_ID")
+        is_fake = not key_id or "fake" in key_id.lower() or "dummy" in key_id.lower() or "test" in key_id.lower()
+        if is_fake:
+            logger.info("Mocking successful Razorpay partial refund for payment_id %s, amount: %s paise", payment_id, amount_paise)
+            return True, "Mock Refund Successful", {
+                "id": f"rfnd_mock_{uuid.uuid4().hex[:12]}",
+                "status": "processed",
+                "speed_requested": "optimum",
+                "speed_processed": "instant",
+                "payment_id": payment_id,
+                "amount": amount_paise,
+            }
+        return False, "Razorpay client could not be initialized.", None
+
+    try:
+        payment_info = await asyncio.to_thread(client.payment.fetch, payment_id)
+        payment_status = str(payment_info.get("status") or "").lower()
+        captured_amount = int(payment_info.get("amount") or 0)
+        logger.info(
+            "Razorpay payment %s: status=%s, amount=%d paise, requesting refund of %d paise",
+            payment_id, payment_status, captured_amount, amount_paise
+        )
+
+        if payment_status not in ("captured", "refunded"):
+            return False, f"Payment is in '{payment_status}' state, not 'captured' or 'refunded'.", None
+
+        existing_refunds = await asyncio.to_thread(client.payment.fetch_multiple_refund, payment_id)
+        existing_items = existing_refunds.get("items", []) if isinstance(existing_refunds, dict) else []
+        refunded_amount = sum(int((refund or {}).get("amount") or 0) for refund in existing_items if str((refund or {}).get("status") or "").lower() == "processed")
+        
+        remaining_capt = captured_amount - refunded_amount
+        actual_refund_paise = min(amount_paise, remaining_capt)
+        
+        if actual_refund_paise <= 0:
+            return False, "The payment has already been fully refunded or no remaining balance exists.", None
+
+        refund_resp = await asyncio.to_thread(
+            client.payment.refund,
+            payment_id,
+            {
+                "amount": actual_refund_paise,
+                "speed": "optimum",
+                "receipt": f"refund_{order.order_number}_{uuid.uuid4().hex[:8]}",
+                "notes": {
+                    "order_number": order.order_number,
+                    "reason": "Partial Item Return Approved",
+                },
+            },
+        )
+        logger.info("Razorpay partial refund successful: %s", refund_resp)
+        return True, None, refund_resp
+    except Exception as e:
+        logger.exception("Failed to process Razorpay partial refund for payment %s", payment_id)
+        return False, str(e), None
+
+
 async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSession, source: str = "order_fetch") -> bool:
     """Update local refund state when Razorpay has processed a pending refund."""
     payment_status = str(order.payment_status or "").lower()
@@ -1228,9 +1299,11 @@ async def return_order(
     order_id: str,
     reason: str = Form(...),
     image: List[UploadFile] = File(None),
+    items: str = Form(None), # JSON string: [{"product_id": "...", "quantity": 1}]
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    import json
     validate_uuid(order_id)
     result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id))
     order = result.scalar_one_or_none()
@@ -1249,6 +1322,20 @@ async def return_order(
         now_utc = datetime.now(timezone.utc)
         if now_utc > cutoff_date:
             raise HTTPException(status_code=400, detail="Return window has closed.")
+
+    returning_items_list = []
+    if items:
+        try:
+            returning_items_list = json.loads(items)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid items format")
+    else:
+        # Fallback to returning all items if items parameter not sent
+        for item in (order.items or []):
+            returning_items_list.append({
+                "product_id": item.get("product_id"),
+                "quantity": item.get("quantity", 1)
+            })
 
     uploaded_urls = []
     if image:
@@ -1269,10 +1356,68 @@ async def return_order(
             url = await upload_media(raw, content_type, prefix=f"return_{order_id}")
             uploaded_urls.append(url)
 
+    # Calculate item-level returns and update
+    metadata = order.shipping_address.get("shipping_metadata", {}) if order.shipping_address else {}
+    original_subtotal = float(metadata.get("subtotal") or order.total_amount)
+    original_discount = float(metadata.get("discount_amount") or 0.0)
+
+    updated_items = []
+    any_updated = False
+    for item in (order.items or []):
+        matched = None
+        for ri in returning_items_list:
+            if str(ri.get("product_id")) == str(item.get("product_id")):
+                matched = ri
+                break
+        
+        if matched:
+            ret_qty = int(matched.get("quantity", item.get("quantity", 1)))
+            if ret_qty <= 0 or ret_qty > int(item.get("quantity", 1)):
+                raise HTTPException(status_code=400, detail=f"Invalid return quantity for {item.get('product_name')}")
+            
+            item["return_status"] = "RETURN_REQUESTED"
+            item["returned_quantity"] = ret_qty
+            item["return_reason"] = reason
+            item["return_proof_images"] = uploaded_urls
+            item["audit_timeline"] = [{
+                "status": "RETURN_REQUESTED",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "remarks": f"Return requested for qty {ret_qty}. Reason: {reason}"
+            }]
+            
+            # Recalculate tax and discount shares for this item
+            price = float(item.get("price") or 0.0)
+            returned_item_subtotal = price * ret_qty
+            coupon_discount_share = 0.0
+            if original_subtotal > 0:
+                coupon_discount_share = round((returned_item_subtotal / original_subtotal) * original_discount, 2)
+            coupon_discount_share = min(coupon_discount_share, returned_item_subtotal)
+            
+            taxable_amount = round(max(0.0, returned_item_subtotal - coupon_discount_share), 2)
+            cgst_amount = round(taxable_amount * 0.09, 2)
+            sgst_amount = round(taxable_amount * 0.09, 2)
+            refundable_amount = round(taxable_amount + cgst_amount + sgst_amount, 2)
+            
+            item["refund_calculations"] = {
+                "taxable_amount": taxable_amount,
+                "cgst_amount": cgst_amount,
+                "sgst_amount": sgst_amount,
+                "coupon_discount_share": coupon_discount_share,
+                "refundable_amount": refundable_amount,
+                "shipping_reimbursement": 0.0
+            }
+            any_updated = True
+        updated_items.append(item)
+
+    if not any_updated:
+        raise HTTPException(status_code=400, detail="No valid items selected for return")
+
+    order.items = updated_items
     order.order_status = "return_requested"
     order.return_reason = reason
     order.return_image_url = ",".join(uploaded_urls) if uploaded_urls else None
     order.updated_at = datetime.now(timezone.utc)
+    
     await create_notification(
         db,
         str(current_user.id),
@@ -1288,6 +1433,75 @@ async def return_order(
     except Exception:
         pass
     return {"message": "Return request submitted successfully"}
+
+
+@router.post("/orders/{order_id}/items/{product_id}/self-ship")
+async def self_ship_item(
+    order_id: str,
+    product_id: str,
+    courier_name: str = Form(...),
+    tracking_number: str = Form(...),
+    tracking_url: Optional[str] = Form(None),
+    courier_cost: Optional[float] = Form(None),
+    notes: Optional[str] = Form(None),
+    invoice: Optional[UploadFile] = File(None),
+    current_user: UserSchema = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    validate_uuid(order_id)
+    result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id))
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    updated_items = []
+    found_item = False
+    for item in (order.items or []):
+        if str(item.get("product_id")) == product_id:
+            found_item = True
+            current_status = item.get("return_status")
+            if current_status not in ("RETURN_APPROVED", "SELF_SHIPPING_PENDING", "return_approved"):
+                raise HTTPException(status_code=400, detail="Item is not approved for return or already shipped")
+                
+            uploaded_invoice_url = None
+            if invoice and invoice.filename:
+                content_type = (invoice.content_type or '').lower()
+                raw = await invoice.read()
+                from storage_service import upload_media
+                uploaded_invoice_url = await upload_media(raw, content_type, prefix=f"self_ship_{order_id}_{product_id}")
+                
+            item["return_status"] = "SELF_SHIPPED"
+            item["self_shipping_details"] = {
+                "courier_name": courier_name,
+                "tracking_number": tracking_number,
+                "tracking_url": tracking_url,
+                "courier_invoice_url": uploaded_invoice_url,
+                "courier_cost": courier_cost or 0.0,
+                "notes": notes
+            }
+            if "audit_timeline" not in item:
+                item["audit_timeline"] = []
+            item["audit_timeline"].append({
+                "status": "SELF_SHIPPED",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "remarks": f"Self shipped via {courier_name}. Tracking: {tracking_number}"
+            })
+        updated_items.append(item)
+        
+    if not found_item:
+        raise HTTPException(status_code=404, detail="Item not found in order")
+        
+    order.items = updated_items
+    order.updated_at = datetime.now(timezone.utc)
+    
+    await create_notification(
+        db,
+        str(current_user.id),
+        "Item self shipped",
+        f"You submitted tracking details for your returned item in order {order.order_number}.",
+        "order"
+    )
+    return {"message": "Self shipping details submitted successfully"}
 
 
 # ── Payment Routes ───────────────────────────────────────────────────────

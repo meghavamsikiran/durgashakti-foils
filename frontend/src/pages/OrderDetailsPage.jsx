@@ -41,6 +41,67 @@ const OrderDetailsPage = () => {
   const [timeLeft, setTimeLeft] = useState(null);
   const [retryingPayment, setRetryingPayment] = useState(false);
 
+  // Item-level returns and self-shipping states
+  const [selectedItemsForReturn, setSelectedItemsForReturn] = useState({});
+  const [selfShipModal, setSelfShipModal] = useState(null);
+  const [courierName, setCourierName] = useState('');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [trackingUrl, setTrackingUrl] = useState('');
+  const [courierCost, setCourierCost] = useState('');
+  const [notes, setNotes] = useState('');
+  const [invoiceFile, setInvoiceFile] = useState(null);
+  const [submittingSelfShip, setSubmittingSelfShip] = useState(false);
+
+  React.useEffect(() => {
+    if (isReturning && order?.items) {
+      const initial = {};
+      order.items.forEach(item => {
+        initial[item.product_id] = { selected: false, quantity: 1 };
+      });
+      setSelectedItemsForReturn(initial);
+    }
+  }, [isReturning, order]);
+
+  const handleSubmitSelfShip = async (e) => {
+    e.preventDefault();
+    if (!courierName || !trackingNumber) {
+      toast.error('Courier name and Tracking number are required');
+      return;
+    }
+    setSubmittingSelfShip(true);
+    try {
+      const formData = new FormData();
+      formData.append('courier_name', courierName);
+      formData.append('tracking_number', trackingNumber);
+      if (trackingUrl) formData.append('tracking_url', trackingUrl);
+      if (courierCost) formData.append('courier_cost', parseFloat(courierCost));
+      if (notes) formData.append('notes', notes);
+      if (invoiceFile) {
+        formData.append('invoice', invoiceFile);
+      }
+      
+      await apiClient.post(`/orders/${id}/items/${selfShipModal.product_id}/self-ship`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('Self shipping details submitted successfully');
+      setSelfShipModal(null);
+      setCourierName('');
+      setTrackingNumber('');
+      setTrackingUrl('');
+      setCourierCost('');
+      setNotes('');
+      setInvoiceFile(null);
+      
+      // Reload order
+      const res = await apiClient.get(`/orders/${id}`);
+      setOrder(res.data);
+    } catch (err) {
+      // Handled by interceptor
+    } finally {
+      setSubmittingSelfShip(false);
+    }
+  };
+
   const fetchOrder = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
@@ -310,6 +371,19 @@ const OrderDetailsPage = () => {
   const handleSubmitReturn = async (e) => {
     e.preventDefault();
     if (!reason) return;
+
+    const selectedList = Object.keys(selectedItemsForReturn)
+      .filter(key => selectedItemsForReturn[key].selected)
+      .map(key => ({
+        product_id: key,
+        quantity: selectedItemsForReturn[key].quantity
+      }));
+      
+    if (selectedList.length === 0) {
+      toast.error('Please select at least one item to return');
+      return;
+    }
+
     if (returnFiles.length === 0) {
       toast.error('At least one proof image/video is mandatory for returns');
       return;
@@ -319,6 +393,7 @@ const OrderDetailsPage = () => {
       const formData = new FormData();
       const finalReason = reason === 'Other' ? `Other: ${otherDetails}` : reason;
       formData.append('reason', finalReason);
+      formData.append('items', JSON.stringify(selectedList));
       returnFiles.forEach(file => {
         formData.append('image', file);
       });
@@ -767,6 +842,58 @@ const OrderDetailsPage = () => {
             </div>
 
             <form onSubmit={handleSubmitReturn} className="space-y-5">
+              <div className="space-y-3">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Select Items to Return</label>
+                <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1">
+                  {order.items.filter(item => !item.return_status).map((item) => {
+                    const returnInfo = selectedItemsForReturn[item.product_id] || { selected: false, quantity: 1 };
+                    return (
+                      <div key={item.product_id} className="flex items-center justify-between p-3 border border-slate-100 rounded-xl hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={returnInfo.selected}
+                            onChange={(e) => {
+                              setSelectedItemsForReturn(prev => ({
+                                ...prev,
+                                [item.product_id]: { ...returnInfo, selected: e.target.checked }
+                              }));
+                            }}
+                            className="w-4 h-4 text-primary rounded border-slate-350 focus:ring-primary/20"
+                          />
+                          {item.image_url && (
+                            <img src={formatImageUrl(item.image_url)} alt="" className="w-10 h-10 rounded-lg object-cover bg-slate-50 border border-slate-100" />
+                          )}
+                          <div>
+                            <p className="text-xs font-bold text-slate-800">{item.product_name}</p>
+                            <p className="text-[10px] text-slate-400 font-bold">₹{item.price} • Original Qty: {item.quantity}</p>
+                          </div>
+                        </div>
+                        {returnInfo.selected && (
+                          <div className="flex items-center gap-1.5 font-bold">
+                            <span className="text-[10px] text-slate-400 font-extrabold uppercase">Qty:</span>
+                            <select
+                              value={returnInfo.quantity}
+                              onChange={(e) => {
+                                setSelectedItemsForReturn(prev => ({
+                                  ...prev,
+                                  [item.product_id]: { ...returnInfo, quantity: parseInt(e.target.value) }
+                                }));
+                              }}
+                              className="px-2 py-1 rounded-lg border border-slate-200 text-xs font-bold bg-white focus:outline-none"
+                            >
+                              {[...Array(item.quantity)].map((_, i) => (
+                                <option key={i+1} value={i+1}>{i+1}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Reason for Return</label>
                 <select
@@ -1148,6 +1275,34 @@ const OrderDetailsPage = () => {
                         <Wallet className="w-3.5 h-3.5 text-white" /> Buy it again
                       </button>
                     </div>
+
+                    {item.return_status && (
+                      <div className="mt-3 p-3 bg-slate-50 border border-slate-150 rounded-xl space-y-2 max-w-md">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                            item.return_status === 'RETURN_REQUESTED' ? 'bg-amber-100 text-amber-800' :
+                            item.return_status === 'RETURN_APPROVED' ? 'bg-sky-100 text-sky-800' :
+                            item.return_status === 'SELF_SHIPPED' ? 'bg-indigo-100 text-indigo-800' :
+                            item.return_status === 'RETURN_RECEIVED' ? 'bg-purple-100 text-purple-800' :
+                            item.return_status === 'REFUND_COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
+                            'bg-rose-100 text-rose-800'
+                          }`}>
+                            {item.return_status.replace('_', ' ')}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-extrabold">Qty Returned: {item.returned_quantity}</span>
+                        </div>
+                        {item.return_reason && (
+                          <p className="text-[10px] text-slate-600 font-medium">Reason: <span className="font-bold">{item.return_reason}</span></p>
+                        )}
+                        {item.self_shipping_details && (
+                          <div className="text-[10px] text-slate-500 space-y-0.5 font-semibold">
+                            <p>Courier: <span className="font-extrabold text-slate-800">{item.self_shipping_details.courier_name}</span></p>
+                            <p>Tracking: <span className="font-mono font-extrabold text-slate-800">{item.self_shipping_details.tracking_number}</span></p>
+                            {item.self_shipping_details.courier_cost > 0 && <p>Courier Cost: <span className="font-bold text-slate-850">₹{item.self_shipping_details.courier_cost}</span></p>}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1160,12 +1315,21 @@ const OrderDetailsPage = () => {
                     View your item
                   </button>
                   
-                  {order.order_status === 'delivered' && (
+                  {order.order_status === 'delivered' && order.items.some(i => !i.return_status) && (
                     <button 
                       onClick={() => setIsReturning(true)}
                       className="w-full bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 font-bold text-slate-750 text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all text-center uppercase tracking-widest text-[9px]"
                     >
                       Return items
+                    </button>
+                  )}
+
+                  {(item.return_status === 'RETURN_APPROVED' || item.return_status === 'return_approved' || (order.order_status === 'return_approved' && item.return_status === 'RETURN_REQUESTED')) && (
+                    <button
+                      onClick={() => setSelfShipModal(item)}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 font-black text-white text-[9px] px-4 py-2.5 rounded-xl shadow-md transition-all text-center uppercase tracking-widest"
+                    >
+                      Self-Ship Return
                     </button>
                   )}
 
@@ -1229,6 +1393,115 @@ const OrderDetailsPage = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {selfShipModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 max-w-md w-full animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-5">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Self-Ship Return Courier Info</h3>
+                  <p className="text-[10px] text-slate-400 font-extrabold mt-0.5">{selfShipModal.product_name}</p>
+                </div>
+                <button 
+                  onClick={() => setSelfShipModal(null)}
+                  className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmitSelfShip} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Courier / Carrier Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. BlueDart, DTDC, India Post"
+                    value={courierName}
+                    onChange={(e) => setCourierName(e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Tracking Number / Waybill ID *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter shipment tracking number"
+                    value={trackingNumber}
+                    onChange={(e) => setTrackingNumber(e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Tracking URL (Optional)</label>
+                  <input
+                    type="url"
+                    placeholder="https://..."
+                    value={trackingUrl}
+                    onChange={(e) => setTrackingUrl(e.target.value)}
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Courier Cost (Optional)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="₹0.00"
+                      value={courierCost}
+                      onChange={(e) => setCourierCost(e.target.value)}
+                      className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Invoice / Receipt File (Optional)</label>
+                    <div className="relative w-full h-11 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors flex items-center justify-center cursor-pointer text-xs font-bold text-slate-700">
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={(e) => setInvoiceFile(e.target.files[0])}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <span>{invoiceFile ? invoiceFile.name.substring(0, 15) : 'Select Receipt'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Notes / Remarks</label>
+                  <textarea
+                    placeholder="Any comments, details, or issues faced during shipping..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full p-3 min-h-[60px] rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-2.5 pt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelfShipModal(null)}
+                    className="flex-1 h-11 rounded-xl font-black uppercase tracking-widest border border-slate-200 text-[9px] text-slate-600 hover:bg-slate-105"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingSelfShip}
+                    className="flex-1 h-11 rounded-xl font-black uppercase tracking-widest text-[9px] bg-primary hover:bg-emerald-hover text-white shadow-md transition-all"
+                  >
+                    {submittingSelfShip ? 'Submitting...' : 'Submit Details'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 

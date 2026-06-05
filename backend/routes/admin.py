@@ -2092,3 +2092,207 @@ async def export_audit_logs(admin: UserSchema = Depends(require_permission("view
         )
     }
     return StreamingResponse(out, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers=headers)
+
+
+class ItemReturnActionInput(BaseModel):
+    action: str  # "approve" or "reject"
+    remarks: Optional[str] = None
+
+
+@router.post("/admin/orders/{order_id}/items/{product_id}/return-action")
+async def admin_item_return_action(
+    order_id: str,
+    product_id: str,
+    payload: ItemReturnActionInput,
+    admin: UserSchema = Depends(require_permission("update_order_status")),
+    db: AsyncSession = Depends(get_db)
+):
+    validate_uuid(order_id)
+    res = await db.execute(select(OrderModel).where(OrderModel.id == order_id))
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    updated_items = []
+    found_item = False
+    action_upper = payload.action.upper()
+    
+    for item in (order.items or []):
+        if str(item.get("product_id")) == product_id:
+            found_item = True
+            if item.get("return_status") != "RETURN_REQUESTED":
+                raise HTTPException(status_code=400, detail="Item return is not requested or already processed")
+            
+            new_status = "RETURN_APPROVED" if action_upper == "APPROVE" else "RETURN_REJECTED"
+            item["return_status"] = new_status
+            if "audit_timeline" not in item:
+                item["audit_timeline"] = []
+            item["audit_timeline"].append({
+                "status": new_status,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "remarks": payload.remarks or f"Return {payload.action}d by admin"
+            })
+        updated_items.append(item)
+
+    if not found_item:
+        raise HTTPException(status_code=404, detail="Item not found in order")
+
+    order.items = updated_items
+    order.updated_at = datetime.now(timezone.utc)
+    
+    # Check overall status
+    has_pending = any(item.get("return_status") == "RETURN_REQUESTED" for item in order.items)
+    if not has_pending:
+        any_approved = any(item.get("return_status") == "RETURN_APPROVED" for item in order.items)
+        if any_approved:
+            order.order_status = "return_approved"
+        else:
+            order.order_status = "return_rejected"
+            
+    await db.flush()
+    await write_audit_log(
+        db,
+        "ITEM_RETURN_ACTION",
+        admin.id,
+        "order",
+        order_id,
+        {"product_id": product_id, "action": payload.action, "remarks": payload.remarks}
+    )
+    return {"message": f"Item return {payload.action}d successfully", "order": _order_response_dict(order)}
+
+
+@router.post("/admin/orders/{order_id}/items/{product_id}/receive")
+async def admin_item_receive(
+    order_id: str,
+    product_id: str,
+    admin: UserSchema = Depends(require_permission("update_order_status")),
+    db: AsyncSession = Depends(get_db)
+):
+    validate_uuid(order_id)
+    res = await db.execute(select(OrderModel).where(OrderModel.id == order_id))
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    updated_items = []
+    found_item = False
+    for item in (order.items or []):
+        if str(item.get("product_id")) == product_id:
+            found_item = True
+            current_status = item.get("return_status")
+            if current_status not in ("SELF_SHIPPED", "RETURN_APPROVED"):
+                raise HTTPException(status_code=400, detail="Item is not shipped or return not approved")
+            
+            item["return_status"] = "RETURN_RECEIVED"
+            if "audit_timeline" not in item:
+                item["audit_timeline"] = []
+            item["audit_timeline"].append({
+                "status": "RETURN_RECEIVED",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "remarks": "Item physically received at warehouse"
+            })
+        updated_items.append(item)
+
+    if not found_item:
+        raise HTTPException(status_code=404, detail="Item not found in order")
+
+    order.items = updated_items
+    order.updated_at = datetime.now(timezone.utc)
+    await db.flush()
+    await write_audit_log(
+        db,
+        "ITEM_RETURN_RECEIVED",
+        admin.id,
+        "order",
+        order_id,
+        {"product_id": product_id}
+    )
+    return {"message": "Item marked as received", "order": _order_response_dict(order)}
+
+
+@router.post("/admin/orders/{order_id}/items/{product_id}/process-refund")
+async def admin_item_process_refund(
+    order_id: str,
+    product_id: str,
+    restock: bool = True,
+    admin: UserSchema = Depends(require_permission("update_order_status")),
+    db: AsyncSession = Depends(get_db)
+):
+    validate_uuid(order_id)
+    res = await db.execute(select(OrderModel).where(OrderModel.id == order_id))
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    updated_items = []
+    found_item = False
+    refund_amount = 0.0
+    returned_qty = 0
+    
+    for item in (order.items or []):
+        if str(item.get("product_id")) == product_id:
+            found_item = True
+            current_status = item.get("return_status")
+            if current_status not in ("RETURN_RECEIVED", "RETURN_APPROVED", "SELF_SHIPPED"):
+                raise HTTPException(status_code=400, detail="Item is not in an appropriate status for refund")
+            
+            calc = item.get("refund_calculations") or {}
+            refund_amount = float(calc.get("refundable_amount") or 0.0)
+            returned_qty = int(item.get("returned_quantity") or 1)
+            
+            item["return_status"] = "REFUND_COMPLETED"
+            if "audit_timeline" not in item:
+                item["audit_timeline"] = []
+            item["audit_timeline"].append({
+                "status": "REFUND_COMPLETED",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "remarks": f"Refund of ₹{refund_amount} completed successfully"
+            })
+        updated_items.append(item)
+
+    if not found_item:
+        raise HTTPException(status_code=404, detail="Item not found in order")
+
+    # Restock if requested
+    if restock and returned_qty > 0:
+        p_res = await db.execute(select(ProductModel).where(ProductModel.id == uuid.UUID(product_id)).with_for_update())
+        product = p_res.scalar_one_or_none()
+        if product:
+            product.stock_quantity = int(product.stock_quantity or 0) + returned_qty
+            product.units_sold = max(0, int(product.units_sold or 0) - returned_qty)
+            product.in_stock = True
+            product.updated_at = datetime.now(timezone.utc)
+
+    # Process Payment Refund
+    payment_method_lower = str(order.payment_method or "").lower()
+    refund_warning = None
+    
+    if payment_method_lower != "cod" and refund_amount > 0:
+        from routes.orders import trigger_razorpay_partial_refund
+        success, err_msg, refund_info = await trigger_razorpay_partial_refund(order, refund_amount, db)
+        if success:
+            refund_warning = f"Refund of ₹{refund_amount} initiated via Razorpay."
+        else:
+            refund_warning = f"Manual refund of ₹{refund_amount} required. Razorpay refund failed: {err_msg}"
+    else:
+        refund_warning = f"Manual refund of ₹{refund_amount} required (COD/manual)."
+
+    order.items = updated_items
+    order.updated_at = datetime.now(timezone.utc)
+    
+    # Transition overall order status if all returned items are refunded
+    has_active_returns = any(item.get("return_status") in ("RETURN_REQUESTED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED") for item in order.items)
+    if not has_active_returns:
+        order.order_status = "refunded"
+        order.payment_status = "refunded"
+        
+    await db.flush()
+    await write_audit_log(
+        db,
+        "ITEM_REFUND_PROCESSED",
+        admin.id,
+        "order",
+        order_id,
+        {"product_id": product_id, "amount": refund_amount, "restock": restock, "warning": refund_warning}
+    )
+    return {"message": "Refund processed successfully", "warning": refund_warning, "order": _order_response_dict(order)}
