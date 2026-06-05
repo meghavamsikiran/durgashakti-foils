@@ -232,6 +232,21 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
             payment_id, payment_status, captured_amount,
         )
 
+        # If Razorpay already reports the payment as refunded, treat this
+        # as an already-processed refund and return the latest refund info
+        # so callers can reconcile local state instead of attempting a new
+        # refund (which would fail).
+        if payment_status == "refunded":
+            try:
+                existing_refunds = await asyncio.to_thread(client.payment.fetch_multiple_refund, payment_id)
+                items = existing_refunds.get("items", []) if isinstance(existing_refunds, dict) else []
+                latest_refund = sorted(items, key=lambda r: r.get("created_at") or 0, reverse=True)[0] if items else None
+                logger.info("Razorpay payment %s already refunded: %s", payment_id, latest_refund)
+                return True, None, latest_refund
+            except Exception:
+                # If fetching refunds fails, fall through to the generic error below
+                logger.exception("Failed to fetch refunds for already-refunded payment %s", payment_id)
+
         # Payment must be captured before it can be refunded
         if payment_status != "captured":
             return False, (
