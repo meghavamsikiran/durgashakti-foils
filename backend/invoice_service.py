@@ -361,6 +361,27 @@ def _address_lines(addr: dict, order: dict) -> tuple[str, list[str], str, str, s
     return customer_name, address_lines, phone, gstin, state
 
 
+def _coupon_descriptions(order: dict, metadata: dict) -> list[str]:
+    applied_coupons = metadata.get("applied_coupons") or []
+    descriptions: list[str] = []
+    for coupon in applied_coupons:
+        code = _safe_text(coupon.get("code"))
+        ctype = _safe_text(coupon.get("discount_type")).lower()
+        value = float(coupon.get("discount_value") or 0)
+        if ctype == "percentage":
+            label = f"{value:g}% off"
+        elif ctype == "flat":
+            label = f"Flat {_money(value)} off"
+        elif ctype == "free_shipping":
+            label = "Free shipping"
+        else:
+            label = ctype.replace("_", " ").title() or "Discount"
+        descriptions.append(f"{code} ({label})" if code else label)
+    if descriptions:
+        return descriptions
+    return [_safe_text(code) for code in (order.get("coupon_codes") or []) if _safe_text(code)]
+
+
 def _order_rows(order: dict, metadata: dict) -> tuple[list[dict], int, float, float, float]:
     rows: list[dict] = []
     total_qty = 0
@@ -392,22 +413,7 @@ def _order_rows(order: dict, metadata: dict) -> tuple[list[dict], int, float, fl
     discount = float(metadata.get("discount_amount") or order.get("discount_amount") or 0)
     if discount > 0:
         discount_gst = round(discount * 0.18, 2)
-        applied_coupons = metadata.get("applied_coupons") or []
-        coupon_descriptions: list[str] = []
-        for coupon in applied_coupons:
-            code = _safe_text(coupon.get("code"))
-            ctype = _safe_text(coupon.get("discount_type")).lower()
-            value = float(coupon.get("discount_value") or 0)
-            if ctype == "percentage":
-                label = f"{value:g}% off"
-            elif ctype == "flat":
-                label = f"Flat {_money(value)} off"
-            elif ctype == "free_shipping":
-                label = "Free shipping"
-            else:
-                label = ctype.replace("_", " ").title() or "Discount"
-            coupon_descriptions.append(f"{code} ({label})" if code else label)
-        discount_description = ", ".join(coupon_descriptions) or ", ".join(order.get("coupon_codes") or [])
+        discount_description = ", ".join(_coupon_descriptions(order, metadata))
         rows.append({
             "item": "Coupon Discount",
             "description": discount_description,
@@ -597,7 +603,7 @@ def _draw_footer(c: canvas.Canvas, order: dict, metadata: dict, taxable_total: f
 
     summary = [
         ("Sub Total", taxable_total),
-        ("Coupon Discount", -discount),
+        (f"Coupon Discount ({', '.join(_coupon_descriptions(order, metadata))})" if discount > 0 and _coupon_descriptions(order, metadata) else "Coupon Discount", -discount),
         ("Shipping Charges", shipping),
         ("COD Charges", cod),
         ("SGST@9%", sgst),

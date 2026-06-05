@@ -15,21 +15,21 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
     id: 'online',
     name: 'Online Payment (Prepaid)',
     icon: CreditCard,
-    description: 'Pay securely online using Cards, UPI, NetBanking, Wallets, or scan a QR code.'
+    description: 'Pay securely online using cards, UPI, netbanking, wallets, or scan a QR code.'
   }];
-  
+
   if (codEnabled) {
     paymentMethods.push({
       id: 'cod',
       name: 'Cash on Delivery',
       icon: Truck,
-      description: `Pay with cash (plus ₹${codCharge} COD service charge) when your order arrives.`
+      description: `Pay with cash (plus Rs ${codCharge} COD service charge) when your order arrives.`
     });
   }
 
   const protectionItems = paymentMethod === 'cod'
     ? ['Verified delivery handoff', 'Direct support coverage', 'Tamper-aware packaging']
-    : ['PCI-grade Razorpay checkout', 'UPI, cards, wallets, netbanking', 'Refund tracking with bank confirmation'];
+    : ['Secure payment checkout', 'UPI, cards, wallets, netbanking', 'Refund tracking with bank confirmation'];
 
   return (
     <motion.div
@@ -37,18 +37,17 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="relative overflow-hidden bg-white rounded-2xl p-6 md:p-8 shadow-[0_28px_80px_rgba(15,23,42,0.08)] border border-border-subtle"
+      className="relative overflow-hidden bg-white rounded-lg p-6 md:p-8 shadow-[0_28px_80px_rgba(15,23,42,0.08)] border border-border-subtle"
     >
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
-      <div className="absolute -right-24 -top-28 w-80 h-80 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-      <div className="absolute left-0 bottom-0 right-0 h-32 bg-[linear-gradient(135deg,transparent,rgba(215,219,217,0.42),transparent)] pointer-events-none" />
+      <div className="absolute left-0 bottom-0 right-0 h-28 bg-[linear-gradient(135deg,transparent,rgba(215,219,217,0.36),transparent)] pointer-events-none" />
 
       <div className="relative flex flex-col md:flex-row md:items-start md:justify-between gap-5 mb-8">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-primary font-black mb-2">Secure Settlement</p>
           <h2 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tight">Payment Selection</h2>
           <p className="text-sm text-slate-500 font-semibold mt-2 max-w-xl">
-            Choose the payment rail for this order. Online payments open the secure Razorpay checkout with bank-confirmed refund tracking.
+            Choose how you want to complete this order. Online payments are verified against your DurgaShakti order and followed by one receipt with the tax invoice.
           </p>
         </div>
         <Button
@@ -66,7 +65,7 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
           return (
             <label
               key={method.id}
-              className={`group relative overflow-hidden flex items-center gap-4 p-5 md:p-6 border rounded-xl cursor-pointer transition-all min-h-[96px] ${
+              className={`group relative overflow-hidden flex items-center gap-4 p-5 md:p-6 border rounded-lg cursor-pointer transition-all min-h-[96px] ${
                 isSelected
                   ? 'border-primary bg-[linear-gradient(135deg,rgba(11,209,61,0.11),rgba(255,255,255,0.92))] shadow-emerald-glow'
                   : 'border-border-subtle bg-white hover:border-primary/40 hover:shadow-[0_18px_46px_rgba(15,23,42,0.07)]'
@@ -84,7 +83,7 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
                 onChange={() => selectPaymentMethod(method.id)}
                 className="relative w-5 h-5 border-slate-300 focus:ring-primary text-primary cursor-pointer"
               />
-              <div className={`relative p-3 rounded-xl text-white shadow-lg ${isSelected ? 'bg-primary shadow-emerald-glow' : 'bg-slate-900'}`}>
+              <div className={`relative p-3 rounded-lg text-white shadow-lg ${isSelected ? 'bg-primary shadow-emerald-glow' : 'bg-slate-900'}`}>
                 <method.icon className="w-6 h-6" />
               </div>
               <div className="relative flex-1 min-w-0">
@@ -109,13 +108,13 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
         })}
       </div>
 
-      <div className="relative mt-8 overflow-hidden rounded-2xl bg-[#0B1220] text-white border border-white/10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(11,209,61,0.2),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_42%)]" />
+      <div className="relative mt-8 overflow-hidden rounded-lg bg-[#0B1220] text-white border border-white/10">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),transparent_42%)]" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
         <div className="relative p-6 md:p-7">
           <div className="flex items-start justify-between gap-4 mb-5">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shadow-emerald-glow">
+              <div className="w-11 h-11 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center shadow-emerald-glow">
                 <Shield className="w-5 h-5 text-[#34e44e]" />
               </div>
               <div>
@@ -123,7 +122,7 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
                 <p className="text-sm font-semibold text-slate-300 mt-1">
                   {paymentMethod === 'cod'
                     ? 'Cash handling is supported by direct order verification.'
-                    : 'Razorpay checkout is paired with order-level reconciliation and refund audit tracking.'}
+                    : 'Online payments are paired with order-level reconciliation and refund audit tracking.'}
                 </p>
               </div>
             </div>

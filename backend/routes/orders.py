@@ -42,10 +42,22 @@ REFUND_AUDIT_ACTIONS = {
     "ORDER_RAZORPAY_REFUND_RETRIED",
     "ORDER_REFUND_STATUS_CORRECTED_PENDING_CONFIRMATION",
 }
+ORDER_RECEIPT_EMAIL_AUDIT_ACTION = "ORDER_RECEIPT_EMAIL_QUEUED"
 
 
 def _is_paid_order(order: OrderModel) -> bool:
     return str(order.payment_status or "").lower() in {s.lower() for s in PAID_PAYMENT_STATUSES}
+
+
+def _is_terminal_order_for_payment_capture(order: OrderModel) -> bool:
+    return str(order.order_status or "").lower() in {
+        "cancelled",
+        "failed",
+        "refunded",
+        "return_approved",
+        "return_rejected",
+        "delivered",
+    }
 
 
 def _expected_amount_paise(order: OrderModel) -> int:
@@ -177,7 +189,7 @@ def _is_online_payment_pending(order: OrderModel) -> bool:
     return (
         str(order.payment_method or "").lower() != "cod"
         and not _is_paid_order(order)
-        and str(order.order_status or "").lower() not in {"refunded", "return_approved", "return_rejected", "delivered"}
+        and str(order.order_status or "").lower() not in {"cancelled", "failed", "refunded", "return_approved", "return_rejected", "delivered"}
     )
 
 
@@ -387,6 +399,7 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
         if order.payment_status != "refunded" or order.order_status != "refunded":
             prev_payment_status = order.payment_status
             prev_order_status = order.order_status
+            stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
             order.payment_status = "refunded"
             order.order_status = "refunded"
             order.updated_at = datetime.now(timezone.utc)
@@ -407,6 +420,7 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
                     "processed_amount": processed_amount,
                     "processed_amount_with_reference": processed_amount_with_reference,
                     "has_bank_reference": _refund_has_bank_reference(latest_refund),
+                    "stock_released": stock_released,
                 },
             )
             if order.user_id:
@@ -432,6 +446,33 @@ async def _clear_user_cart(db: AsyncSession, user_id, now: datetime):
         .where(CartModel.user_id == user_id)
         .values(items=[], updated_at=now)
     )
+
+
+async def _release_stock_once(order: OrderModel, db: AsyncSession, now: datetime) -> bool:
+    if not order.stock_applied:
+        return False
+
+    items_to_release = [
+        item for item in (order.items or [])
+        if item.get("product_id")
+        and is_valid_uuid(item.get("product_id"))
+        and int(item.get("quantity", 0)) > 0
+    ]
+    if items_to_release:
+        prod_ids = [item.get("product_id") for item in items_to_release]
+        prod_res = await db.execute(select(ProductModel).where(ProductModel.id.in_(prod_ids)).with_for_update())
+        locked_products = {str(p.id): p for p in prod_res.scalars().all()}
+        for item in items_to_release:
+            pid = item.get("product_id")
+            qty = int(item.get("quantity", 0))
+            product = locked_products.get(str(pid))
+            if product:
+                product.stock_quantity = int(product.stock_quantity or 0) + qty
+                product.units_sold = max(0, int(product.units_sold or 0) - qty)
+                product.in_stock = True
+                product.updated_at = now
+    order.stock_applied = False
+    return True
 
 
 async def _deduct_stock_once(order: OrderModel, db: AsyncSession, now: datetime) -> bool:
@@ -522,6 +563,43 @@ async def _finalize_paid_order(
     return {"success": True, "newly_paid": not was_paid, "stock_applied": bool(order.stock_applied)}
 
 
+async def _queue_order_receipt_email_once(order: OrderModel, db: AsyncSession) -> bool:
+    existing = await db.execute(
+        select(AuditLogModel.id)
+        .where(
+            AuditLogModel.target_type == "order",
+            AuditLogModel.target_id == str(order.id),
+            AuditLogModel.action == ORDER_RECEIPT_EMAIL_AUDIT_ACTION,
+        )
+        .limit(1)
+    )
+    if existing.scalar_one_or_none():
+        return False
+
+    from models import UserModel
+    user_res = await db.execute(select(UserModel).where(UserModel.id == order.user_id))
+    order_user = user_res.scalar_one_or_none()
+    if not order_user:
+        return False
+
+    await write_audit_log(
+        db,
+        ORDER_RECEIPT_EMAIL_AUDIT_ACTION,
+        str(order.user_id or "system"),
+        "order",
+        str(order.id),
+        {"order_number": order.order_number, "payment_status": order.payment_status},
+    )
+    try:
+        from email_templates import order_receipt_email
+        subj, body, attachments = order_receipt_email(order_user.full_name or order_user.email, row_to_dict(order))
+        asyncio.create_task(send_email(order_user.email, subj, body, attachments))
+        return True
+    except Exception:
+        logger.exception("Failed to queue paid order receipt email for order %s", order.order_number)
+        return False
+
+
 async def _send_razorpay_success_side_effects(
     order: OrderModel,
     db: AsyncSession,
@@ -531,16 +609,7 @@ async def _send_razorpay_success_side_effects(
     notification_title: str = "Payment successful",
     notification_message: Optional[str] = None,
 ) -> None:
-    try:
-        from email_templates import order_receipt_email
-        from models import UserModel
-        user_res = await db.execute(select(UserModel).where(UserModel.id == order.user_id))
-        order_user = user_res.scalar_one_or_none()
-        if order_user:
-            subj, body, attachments = order_receipt_email(order_user.full_name or order_user.email, row_to_dict(order))
-            asyncio.create_task(send_email(order_user.email, subj, body, attachments))
-    except Exception:
-        logger.warning("Failed to send paid order receipt email for order %s", order.order_number)
+    await _queue_order_receipt_email_once(order, db)
 
     await write_audit_log(
         db,
@@ -568,6 +637,15 @@ async def _apply_razorpay_payment_if_successful(
     source: str,
 ) -> bool:
     if not payment_entity:
+        return False
+
+    if _is_terminal_order_for_payment_capture(order):
+        logger.warning(
+            "Ignoring captured Razorpay payment %s for terminal order %s in status %s",
+            payment_entity.get("id"),
+            order.order_number,
+            order.order_status,
+        )
         return False
 
     status = str(payment_entity.get("status") or "").lower()
@@ -975,13 +1053,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
             raise
 
     if order_data.payment_method == "cod":
-        try:
-            from email_templates import order_receipt_email
-            subj, body, attachments = order_receipt_email(current_user.full_name or current_user.email, row_to_dict(order))
-            import asyncio
-            asyncio.create_task(send_email(current_user.email, subj, body, attachments))
-        except Exception:
-            pass
+        await _queue_order_receipt_email_once(order, db)
 
     return row_to_dict(order)
 @router.get("/orders")
@@ -1215,7 +1287,7 @@ async def verify_razorpay_payment(
 
     if _is_paid_order(order):
         return {"success": True, "message": "Order already processed"}
-    if order.order_status not in ["pending_payment", "pending", "processing", "placed", "cancelled", "failed"]:
+    if order.order_status not in ["pending_payment", "pending", "processing", "placed"]:
         raise HTTPException(status_code=400, detail="Cannot verify order in current state")
 
     order.razorpay_payment_id = payload.razorpay_payment_id
@@ -1410,9 +1482,11 @@ async def razorpay_webhook(
         refund_status = str(refund_entity.get("status") or "").lower()
         bank_confirmed = _refund_has_bank_reference(refund_entity)
         if (event == "refund.processed" or refund_status == "processed") and bank_confirmed:
+            stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
             order.payment_status = "refunded"
             order.order_status = "refunded"
         else:
+            stock_released = False
             order.payment_status = "refund_pending"
             if str(order.order_status or "").lower() == "return_requested":
                 order.order_status = "return_approved"
@@ -1431,6 +1505,7 @@ async def razorpay_webhook(
                 "amount": refund_entity.get("amount"),
                 "acquirer_data": refund_entity.get("acquirer_data"),
                 "has_bank_reference": bank_confirmed,
+                "stock_released": stock_released,
             },
         )
         if order.payment_status == "refunded":

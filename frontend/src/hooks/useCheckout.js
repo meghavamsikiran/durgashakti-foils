@@ -378,7 +378,7 @@ export const useCheckout = () => {
       if (paymentMethod === 'online') {
         const scriptLoaded = await loadRazorpayScript();
         if (!scriptLoaded) {
-          toast.error("Failed to load Razorpay SDK. Please check your network connection.");
+          toast.error("Failed to load the secure payment window. Please check your network connection.");
           setLoading(false);
           orderInProgress.current = false;
           return;
@@ -438,7 +438,6 @@ export const useCheckout = () => {
           order_id: rzpOrderId,
           prefill: {
             name: user.full_name || '',
-            email: user.email || '',
             contact: shippingInfo.phone || ''
           },
           handler: async function (paymentResponse) {

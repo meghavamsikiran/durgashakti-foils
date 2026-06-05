@@ -126,7 +126,7 @@ async def list_payments(
             "order_number": o.order_number,
             "transaction_id": (o.razorpay_payment_id or o.razorpay_order_id or "COD") if is_cod else (o.razorpay_payment_id or o.razorpay_order_id),
             "amount": float(o.total_amount),
-            "status": "pending" if is_cod and str(o.payment_status or "").lower() not in {"paid", "completed"} else _payment_status_label(o.payment_status),
+            "status": _payment_status_label(o.payment_status),
             "raw_status": o.payment_status,
             "provider": _payment_provider_label(o.payment_method),
             "created_at": o.created_at.isoformat() if o.created_at else None
@@ -310,9 +310,12 @@ async def get_analytics_summary(
     if has_financial:
         async def fetch_payment_metrics():
             async with database.async_session_factory() as session:
-                paid_clause = func.lower(func.coalesce(OrderModel.payment_status, "")).in_(["paid", "completed"])
-                pending_clause = func.lower(func.coalesce(OrderModel.payment_status, "")).in_(["pending", "pending_payment", "cash on delivery"])
-                failed_clause = func.lower(func.coalesce(OrderModel.payment_status, "")).in_(["failed", "cancelled"])
+                normalized_status = func.lower(func.coalesce(OrderModel.payment_status, ""))
+                paid_clause = normalized_status.in_(["paid", "completed"])
+                cod_clause = normalized_status == "cash on delivery"
+                pending_clause = normalized_status.in_(["pending", "pending_payment", "overdue"])
+                failed_clause = normalized_status.in_(["failed", "cancelled", "refund_failed"])
+                refund_clause = normalized_status.in_(["refund_pending", "refunded"])
                 base_clause = OrderModel.id.isnot(None)
                 if start_dt:
                     base_clause = base_clause & (OrderModel.created_at >= start_dt)
@@ -326,6 +329,8 @@ async def get_analytics_summary(
                     func.sum(case((base_clause & pending_clause, 1), else_=0)),
                     func.sum(case((base_clause & failed_clause, 1), else_=0)),
                     func.sum(case((base_clause & pending_clause, OrderModel.total_amount), else_=0.0)),
+                    func.sum(case((base_clause & cod_clause, 1), else_=0)),
+                    func.sum(case((base_clause & refund_clause, 1), else_=0)),
                 )
                 res = await session.execute(q)
                 return res.tuples().first()
@@ -579,6 +584,10 @@ async def get_analytics_summary(
         metrics["pending_payments_count"] = pending_count
         metrics["failed_payments_count"] = failed_count
         metrics["pending_payment_amount"] = pending_amount
+        cod_count = int(payment_val[4]) if payment_val and len(payment_val) > 4 and payment_val[4] is not None else 0
+        refund_count = int(payment_val[5]) if payment_val and len(payment_val) > 5 and payment_val[5] is not None else 0
+        metrics["cod_payments_count"] = cod_count
+        metrics["refund_payments_count"] = refund_count
         metrics["payment_success_rate"] = round((paid_count / total_payment_events * 100), 1) if total_payment_events else 100.0
     if has_audit:
         metrics["security_events_count"] = security_events_count

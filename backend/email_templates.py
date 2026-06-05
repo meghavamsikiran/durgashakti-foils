@@ -210,7 +210,7 @@ def payment_success_email(name: str, order: dict) -> tuple[str, str, list]:
 def order_receipt_email(name: str, order: dict) -> tuple[str, str, list]:
     """Single customer receipt email for COD and prepaid orders."""
     first = escape((name.split()[0] if name else "Customer"))
-    order_num = order.get("order_number", "N/A")
+    order_num = escape(str(order.get("order_number", "N/A")))
     total = float(order.get("total_amount", 0))
     payment_method = str(order.get("payment_method") or "").lower()
     payment_id = order.get("razorpay_payment_id") or order.get("transaction_id") or ("COD" if payment_method == "cod" else "Prepaid")
@@ -225,10 +225,10 @@ def order_receipt_email(name: str, order: dict) -> tuple[str, str, list]:
     coupon_summary = _coupon_summary(order)
     content = f"""
     <div style="text-align:center;margin-bottom:28px;">
-      <div style="font-size:48px;margin-bottom:8px;">&#9989;</div>
+      <div style="font-size:42px;margin-bottom:8px;line-height:1;">&#10003;</div>
       {_badge("Order Confirmed", "#10b981")}
       <p style="font-size:22px;font-weight:800;color:{BRAND_DARK};margin:12px 0 4px;">Thank you, {first}!</p>
-      <p style="color:#6b7280;font-size:14px;">Your order is confirmed. Your GST tax invoice is attached as a PDF.</p>
+      <p style="color:#6b7280;font-size:14px;line-height:1.6;">Your order is confirmed. This is the single DurgaShakti receipt for your payment and order, with the GST tax invoice attached as a PDF.</p>
     </div>
     <div style="background:{BRAND_SURFACE};border:1px solid {BRAND_BORDER};border-left:5px solid {BRAND_COLOR};border-radius:12px;padding:24px;margin-bottom:24px;">
       <table width="100%" cellpadding="0" cellspacing="0">
@@ -250,6 +250,7 @@ def order_receipt_email(name: str, order: dict) -> tuple[str, str, list]:
         {_info_row("Invoice Total", _money(total))}
       </table>
     </div>
+    <p style="margin:0 0 18px;color:#64748b;font-size:12px;line-height:1.6;text-align:center;">Keep the attached PDF for GST, warranty, return, and accounting records.</p>
     {_cta_button("View Order", f"{SITE_URL}/order/{order_num}")}"""
     attachments = []
     try:
@@ -257,7 +258,7 @@ def order_receipt_email(name: str, order: dict) -> tuple[str, str, list]:
         attachments.append(build_tax_invoice_attachment(order))
     except Exception as e:
         print("Failed to generate tax invoice PDF:", e)
-    return f"Order receipt with tax invoice - {order_num}", _base(content, "Order Receipt"), attachments
+    return f"Order receipt and tax invoice - {order_num}", _base(content, "Order Receipt"), attachments
 
 
 def payment_failed_email(name: str, order_num: str, reason: str = "") -> tuple[str, str]:
