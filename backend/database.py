@@ -180,6 +180,7 @@ async def create_tables(background_migrations: bool = False):
             processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );""",
         "ALTER TABLE orders ADD COLUMN IF NOT EXISTS receipt_email_sent BOOLEAN DEFAULT FALSE NOT NULL;",
+        "CREATE INDEX IF NOT EXISTS ix_audit_logs_target_type_id ON audit_logs(target_type, target_id);",
     ]
 
     if background_migrations:

@@ -84,6 +84,8 @@ const Home = () => {
         <img
           src="/hero-products.png"
           alt="Durga Shakti Foils Premium Packing Solutions"
+          loading="eager"
+          fetchpriority="high"
           className="absolute right-0 bottom-0 z-0 pointer-events-none w-full md:w-[70%] lg:w-[65%] h-auto object-contain hidden md:block"
         />
         <div
@@ -142,6 +144,8 @@ const Home = () => {
             <img
               src="/hero-products.png"
               alt="Premium Foil Products"
+              loading="eager"
+              fetchpriority="high"
               className="w-full h-auto object-contain mx-auto"
             />
           </div>
@@ -169,10 +173,6 @@ const Home = () => {
       {/* Comparison Section */}
       <section className="relative bg-[#080d0b] py-20 border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-[10px] tracking-[0.25em] font-extrabold text-brand-green mb-8 uppercase">
-            SEE THE DIFFERENCE. FEEL THE CONFIDENCE.
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr_1fr] gap-10 items-center">
             {/* Normal Foil Image Container */}
             <div className="flex flex-col items-center">
@@ -182,9 +182,6 @@ const Home = () => {
                   alt="Normal Foil wrap test"
                   className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                 />
-              </div>
-              <div className="mt-4 px-5 py-2 rounded-lg border border-white/10 bg-white/5 text-xs font-bold text-slate-300">
-                Normal Foil
               </div>
             </div>
 
@@ -223,9 +220,6 @@ const Home = () => {
                   alt="Durga Shakti Foil heat lock test"
                   className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                 />
-              </div>
-              <div className="mt-4 px-5 py-2 rounded-lg border border-brand-green/30 bg-brand-green/10 text-xs font-bold text-brand-green">
-                Durga Shakti Foil
               </div>
             </div>
           </div>

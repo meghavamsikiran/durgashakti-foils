@@ -73,7 +73,7 @@ export const useCheckout = () => {
   const [products, setProducts] = useState({});
   const [loading, setLoading] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState('shipping');
-  const [paymentMethod, setPaymentMethod] = useState('online');
+  const [paymentMethod, setPaymentMethod] = useState(() => localStorage.getItem('preferredPaymentMethod') || 'online');
   const [codEnabled, setCodEnabled] = useState(true);
   const [shippingSettings, setShippingSettings] = useState(null);
   const [savedAddresses, setSavedAddresses] = useState([]);

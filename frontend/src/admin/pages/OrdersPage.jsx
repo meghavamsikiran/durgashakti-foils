@@ -146,6 +146,11 @@ const OrdersPage = () => {
   const [timeLeft, setTimeLeft] = useState(null);
   const skipNextLoadRef = React.useRef(false);
 
+  const [refundModal, setRefundModal] = useState(null); // { orderId, productId, item, initialAmount }
+  const [refundAmountInput, setRefundAmountInput] = useState('');
+  const [upiVpaInput, setUpiVpaInput] = useState('');
+  const [isFetchingVpa, setIsFetchingVpa] = useState(false);
+
   const load = useCallback(async (p = 1, nextFilter = filter) => {
     const params = { page: p, limit: PAGE_SIZE, search };
     if (nextFilter !== 'ALL') {
@@ -378,6 +383,55 @@ const OrdersPage = () => {
       setTimeout(() => loadSilent(page), 800);
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to mark item as received', { id: toastId });
+    }
+  };
+
+  const handleOpenRefundModal = async (orderId, productId, item) => {
+    const calc = item.refund_calculations || {};
+    const initialAmount = calc.refundable_amount || 0;
+    setRefundModal({ orderId, productId, item, initialAmount });
+    setRefundAmountInput(String(initialAmount));
+    setUpiVpaInput('');
+    setIsFetchingVpa(true);
+    try {
+      const response = await apiClient.get(`/admin/orders/${orderId}/payment-vpa`);
+      if (response.data?.vpa) {
+        setUpiVpaInput(response.data.vpa);
+      }
+    } catch (err) {
+      // Ignore errors fetching VPA
+    } finally {
+      setIsFetchingVpa(false);
+    }
+  };
+
+  const handleConfirmManualRefundItem = async (restock = true) => {
+    if (!refundModal) return;
+    const { orderId, productId } = refundModal;
+    const amountVal = parseFloat(refundAmountInput);
+    if (isNaN(amountVal) || amountVal < 0) {
+      toast.error("Please enter a valid refund amount.");
+      return;
+    }
+    
+    const toastId = toast.loading('Confirming manual refund payout...');
+    try {
+      const response = await apiClient.post(
+        `/admin/orders/${orderId}/items/${productId}/process-refund?restock=${restock}&manual_amount=${amountVal}&is_manual=true`
+      );
+      
+      const serverOrder = response?.data?.order;
+      if (serverOrder) {
+        const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
+        setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
+        setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
+      }
+      
+      toast.success('Manual refund confirmed successfully!', { id: toastId });
+      setRefundModal(null);
+      setTimeout(() => loadSilent(page), 800);
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to process manual refund', { id: toastId });
     }
   };
 
@@ -1694,23 +1748,23 @@ const OrdersPage = () => {
                                 </>
                               )}
 
-                              {(item.return_status === 'SELF_SHIPPED' || item.return_status === 'RETURN_APPROVED') && (
-                                <button
-                                  onClick={() => handleItemReceive(selectedOrderForModal.id, item.product_id)}
-                                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
-                                >
-                                  Mark Received
-                                </button>
-                              )}
+                              {item.return_status === 'SELF_SHIPPED' && (
+                                 <button
+                                   onClick={() => handleItemReceive(selectedOrderForModal.id, item.product_id)}
+                                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
+                                 >
+                                   Mark Received
+                                 </button>
+                               )}
 
-                              {(item.return_status === 'RETURN_RECEIVED' || item.return_status === 'SELF_SHIPPED') && (
-                                <button
-                                  onClick={() => handleItemProcessRefund(selectedOrderForModal.id, item.product_id, true)}
-                                  className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-emerald-glow"
-                                >
-                                  Process Refund & Restock
-                                </button>
-                              )}
+                               {item.return_status === 'RETURN_RECEIVED' && (
+                                 <button
+                                   onClick={() => handleOpenRefundModal(selectedOrderForModal.id, item.product_id, item)}
+                                   className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-emerald-glow"
+                                 >
+                                   Process Refund & Restock
+                                 </button>
+                               )}
                             </div>
                           </div>
                         ))}
@@ -1789,6 +1843,128 @@ const OrdersPage = () => {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Manual Refund Payout Modal */}
+      {refundModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 md:p-8 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-slate-800">
+            <button
+              onClick={() => setRefundModal(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-650 transition-colors cursor-pointer"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="space-y-6">
+              <div>
+                <span className="text-[10px] font-mono font-black uppercase tracking-[0.2em] text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+                  Manual Payout
+                </span>
+                <h3 className="text-xl font-black text-slate-900 mt-3 tracking-tight uppercase">Refund Settlement</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-1">
+                  Decide the refund amount, scan the generated UPI QR code to make the manual transfer, and confirm once complete.
+                </p>
+              </div>
+
+              {/* Product info */}
+              <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/60 space-y-1 text-slate-700">
+                <p className="text-xs font-bold">Product: <span className="font-semibold text-slate-600">{refundModal.item?.product_name}</span></p>
+                <p className="text-xs font-bold">Calculated Value: <span className="font-mono text-slate-600">₹{refundModal.initialAmount}</span></p>
+                {refundModal.item?.self_shipping_details?.courier_cost > 0 && (
+                  <p className="text-xs font-bold">
+                    Self-Ship Courier Cost: <span className="font-mono text-slate-600">₹{refundModal.item.self_shipping_details.courier_cost}</span>
+                  </p>
+                )}
+                {refundModal.item?.self_shipping_details?.invoice_url && (
+                  <p className="text-xs mt-1">
+                    <a
+                      href={formatImageUrl(refundModal.item.self_shipping_details.invoice_url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline font-bold inline-flex items-center gap-1"
+                    >
+                      View Self-Ship Invoice / Receipt
+                    </a>
+                  </p>
+                )}
+              </div>
+
+              {/* Amount input */}
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">
+                  Refund Payout Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={refundAmountInput}
+                  onChange={(e) => setRefundAmountInput(e.target.value)}
+                  className="w-full h-11 px-4 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-slate-350 bg-slate-50/50"
+                  placeholder="Enter payout amount"
+                />
+              </div>
+
+              {/* UPI ID input */}
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5 flex items-center justify-between">
+                  <span>Customer UPI ID / VPA</span>
+                  {isFetchingVpa && <span className="text-primary animate-pulse normal-case font-bold">Fetching...</span>}
+                </label>
+                <input
+                  type="text"
+                  value={upiVpaInput}
+                  onChange={(e) => setUpiVpaInput(e.target.value)}
+                  className="w-full h-11 px-4 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-slate-350 bg-slate-50/50"
+                  placeholder="Enter UPI VPA (e.g. user@okaxis)"
+                />
+              </div>
+
+              {/* QR Code section */}
+              <div className="flex flex-col items-center justify-center py-4 border-t border-slate-200">
+                {upiVpaInput ? (() => {
+                  const amt = parseFloat(refundAmountInput) || 0;
+                  const upiUri = `upi://pay?pa=${upiVpaInput}&pn=Customer&am=${amt.toFixed(2)}&cu=INR`;
+                  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(upiUri)}`;
+                  return (
+                    <>
+                      <div className="w-44 h-44 border-2 border-slate-200 p-2 rounded-2xl bg-white shadow-sm flex items-center justify-center">
+                        <img src={qrSrc} alt="Refund QR Code" className="w-full h-full object-contain" />
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-bold text-center mt-3 max-w-[280px] leading-relaxed">
+                        Scan QR with any UPI app (GPay, PhonePe, Paytm) to automatically populate UPI ID and refund amount of ₹{amt.toFixed(2)}.
+                      </p>
+                    </>
+                  );
+                })() : (
+                  <div className="w-full py-8 text-center text-xs text-slate-400 font-semibold bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    Enter UPI VPA to generate the payment QR code
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setRefundModal(null)}
+                  className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleConfirmManualRefundItem(true)}
+                  className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer shadow-md shadow-emerald-glow"
+                  disabled={!upiVpaInput || !refundAmountInput}
+                >
+                  Confirm Refund Paid
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -40,6 +40,12 @@ const Cart = () => {
   const [removingProductId, setRemovingProductId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 4;
+  const [paymentMethod, setPaymentMethod] = useState(() => localStorage.getItem('preferredPaymentMethod') || 'online');
+
+  const handlePaymentMethodChange = (method) => {
+    setPaymentMethod(method);
+    localStorage.setItem('preferredPaymentMethod', method);
+  };
 
   const fetchShippingSettings = async () => {
     const hasCached = !!apiClient.getCachedDataSync('/settings/public');
@@ -360,10 +366,11 @@ const Cart = () => {
                   const {
                     config,
                     shipping: calculatedShipping,
+                    codCharge,
                     cgst,
                     sgst,
                     grandTotal
-                  } = calculateCheckoutPricing(total, shippingSettings);
+                  } = calculateCheckoutPricing(total, shippingSettings, paymentMethod);
 
                   return (
                     <>
@@ -371,6 +378,37 @@ const Cart = () => {
                         <div className="bg-primary/5 border border-primary/20 text-primary text-[11px] rounded-lg p-3.5 mb-5 font-bold flex items-center gap-2 animate-pulse font-mono tracking-wide">
                           <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
                           <span>ADD ₹{(config.freeShippingThreshold - total).toFixed(2)} MORE FOR FREE SHIPPING!</span>
+                        </div>
+                      )}
+
+                      {/* Payment Option Selector */}
+                      {config.codEnabled && (
+                        <div className="mb-5 py-3.5 border-t border-b border-dashed border-slate-200">
+                          <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5">Payment Option Preference</span>
+                          <div className="flex gap-4">
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="cart_payment_method"
+                                value="online"
+                                checked={paymentMethod === 'online'}
+                                onChange={() => handlePaymentMethodChange('online')}
+                                className="w-4 h-4 text-primary focus:ring-primary cursor-pointer"
+                              />
+                              UPI / Online
+                            </label>
+                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="cart_payment_method"
+                                value="cod"
+                                checked={paymentMethod === 'cod'}
+                                onChange={() => handlePaymentMethodChange('cod')}
+                                className="w-4 h-4 text-primary focus:ring-primary cursor-pointer"
+                              />
+                              Cash on Delivery (COD)
+                            </label>
+                          </div>
                         </div>
                       )}
 
@@ -385,6 +423,12 @@ const Cart = () => {
                             {calculatedShipping > 0 ? `₹${calculatedShipping.toFixed(2)}` : 'FREE'}
                           </span>
                         </div>
+                        {codCharge > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-on-surface-variant text-sm font-semibold">COD Handling Fee</span>
+                            <span className="font-bold text-slate-800 font-mono">₹{codCharge.toFixed(2)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between">
                           <span className="text-on-surface-variant text-sm font-semibold">SGST (9%)</span>
                           <span className="font-bold text-slate-800 font-mono">₹{sgst.toFixed(2)}</span>

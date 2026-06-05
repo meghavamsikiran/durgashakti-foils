@@ -1042,6 +1042,40 @@ async def confirm_manual_refund(
     return {"message": "Manual refund has been confirmed and marked as completed.", "order": _order_response_dict(order)}
 
 
+@router.get("/admin/orders/{order_id}/payment-vpa")
+async def get_order_payment_vpa(
+    order_id: str,
+    admin: UserSchema = Depends(require_permission("view_orders")),
+    db: AsyncSession = Depends(get_db)
+):
+    """Fetch the original payment VPA details from Razorpay for QR generation."""
+    validate_uuid(order_id)
+    res = await db.execute(select(OrderModel).where(OrderModel.id == order_id))
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    if not order.razorpay_payment_id:
+        return {"vpa": None, "method": order.payment_method}
+        
+    from routes.orders import _get_razorpay_client
+    client = _get_razorpay_client()
+    if not client:
+        return {"vpa": "mock_customer@upi", "method": "upi"}
+        
+    try:
+        payment_info = await asyncio.to_thread(client.payment.fetch, order.razorpay_payment_id)
+        return {
+            "vpa": payment_info.get("vpa"),
+            "method": payment_info.get("method"),
+            "email": payment_info.get("email"),
+            "contact": payment_info.get("contact")
+        }
+    except Exception as e:
+        logger.error(f"Failed to fetch payment details from Razorpay: {e}")
+        return {"vpa": None, "method": "unknown", "error": str(e)}
+
+
 
 
 class BulkShipInput(BaseModel):
@@ -2255,6 +2289,8 @@ async def admin_item_process_refund(
     order_id: str,
     product_id: str,
     restock: bool = True,
+    manual_amount: Optional[float] = None,
+    is_manual: bool = False,
     admin: UserSchema = Depends(require_permission("update_order_status")),
     db: AsyncSession = Depends(get_db)
 ):
@@ -2277,7 +2313,12 @@ async def admin_item_process_refund(
                 raise HTTPException(status_code=400, detail="Item is not in an appropriate status for refund")
             
             calc = item.get("refund_calculations") or {}
-            refund_amount = float(calc.get("refundable_amount") or 0.0)
+            if manual_amount is not None:
+                refund_amount = float(manual_amount)
+                calc["refundable_amount"] = refund_amount
+                item["refund_calculations"] = calc
+            else:
+                refund_amount = float(calc.get("refundable_amount") or 0.0)
             returned_qty = int(item.get("returned_quantity") or 1)
             
             item["return_status"] = "REFUND_COMPLETED"
@@ -2286,7 +2327,7 @@ async def admin_item_process_refund(
             item["audit_timeline"].append({
                 "status": "REFUND_COMPLETED",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "remarks": f"Refund of ₹{refund_amount} completed successfully"
+                "remarks": f"Refund of ₹{refund_amount} completed successfully (Manual: {is_manual})"
             })
         updated_items.append(item)
 
@@ -2308,7 +2349,10 @@ async def admin_item_process_refund(
     refund_warning = None
     razorpay_refund_succeeded = False
     
-    if payment_method_lower != "cod" and refund_amount > 0:
+    if is_manual:
+        razorpay_refund_succeeded = True  # Treat manual as successful to set payment status to refunded
+        refund_warning = f"Manual refund of ₹{refund_amount} processed and confirmed by admin."
+    elif payment_method_lower != "cod" and refund_amount > 0:
         from routes.orders import trigger_razorpay_partial_refund
         success, err_msg, refund_info = await trigger_razorpay_partial_refund(order, refund_amount, db)
         if success:
@@ -2327,11 +2371,11 @@ async def admin_item_process_refund(
     has_active_returns = any(item.get("return_status") in ("RETURN_REQUESTED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED") for item in order.items)
     if not has_active_returns:
         if razorpay_refund_succeeded:
-            # Razorpay handled the refund automatically
+            # Automatic or confirmed manual refund
             order.order_status = "refunded"
             order.payment_status = "refunded"
         else:
-            # Manual refund required — admin must confirm payment separately
+            # Manual refund pending
             order.order_status = "refunded"
             order.payment_status = "refund_pending"
         

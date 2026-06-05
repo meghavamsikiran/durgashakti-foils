@@ -152,6 +152,8 @@ async def normalize_unconfirmed_refund(order: OrderModel, db: AsyncSession) -> b
 
 async def refund_response_fields(order: OrderModel, db: AsyncSession) -> dict:
     payment_status = str(order.payment_status or "").lower()
+    if payment_status not in {"refund_failed", "refund_pending", "refunded"}:
+        return {}
     latest = await _latest_refund_audit(db, str(order.id))
     meta = latest.metadata_ if latest else {}
     error = meta.get("error") if isinstance(meta, dict) else None
