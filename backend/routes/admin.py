@@ -85,6 +85,14 @@ async def _latest_refund_logs_for_orders(db: AsyncSession, order_ids: list[str])
 
 
 async def _normalize_refund_rows(db: AsyncSession, orders: list[OrderModel]) -> dict[str, AuditLogModel]:
+    from routes.orders import reconcile_order_refund_with_razorpay
+    for order in orders:
+        if _payment_status_lower(order) == "refund_pending":
+            try:
+                await reconcile_order_refund_with_razorpay(order, db, source="admin_list_fetch")
+            except Exception:
+                pass
+
     refund_orders = [
         order for order in orders
         if _payment_status_lower(order) in {"refund_pending", "refund_failed", "refunded"}

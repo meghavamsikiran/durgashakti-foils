@@ -987,6 +987,12 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
         select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.updated_at.desc()).limit(1000)
     )
     orders = result.scalars().all()
+    for o in orders:
+        if str(o.payment_status or "").lower() == "refund_pending":
+            try:
+                await reconcile_order_refund_with_razorpay(o, db, source="user_list_fetch")
+            except Exception:
+                pass
     orders_dict = [await order_response_dict(o, db) for o in orders]
     return await _enrich_order_items(db, orders_dict)
 

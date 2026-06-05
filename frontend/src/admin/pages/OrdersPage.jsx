@@ -194,6 +194,11 @@ const OrdersPage = () => {
       }));
       setRows(items);
       setTotal(response.data.total || 0);
+      setSelectedOrderForModal((prev) => {
+        if (!prev) return null;
+        const updated = items.find((item) => item.id === prev.id);
+        return updated ? updated : prev;
+      });
     } catch (err) {
       // Ignore background errors
     }
@@ -260,12 +265,18 @@ const OrdersPage = () => {
   }, [search, filter, load, dateFilter, courierFilter]);
 
   // Periodic silent polling in the background. Keep it light so row actions stay responsive.
+  // Polls every 4 seconds if there is a pending refund, otherwise every 30 seconds.
   useEffect(() => {
+    const hasPendingRefund = rows.some(
+      (order) => String(order.payment_status || '').toLowerCase() === 'refund_pending'
+    );
+    const interval = hasPendingRefund ? 4000 : 30000;
+
     const timer = setInterval(() => {
       loadSilent(page);
-    }, 30000);
+    }, interval);
     return () => clearInterval(timer);
-  }, [loadSilent, page]);
+  }, [loadSilent, page, rows]);
 
   // Background pre-fetch for the most used status filters only; avoid flooding the admin API.
   useEffect(() => {

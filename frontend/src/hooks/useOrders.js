@@ -68,13 +68,19 @@ export const useOrders = () => {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Periodic silent polling in the background (every 10 seconds) for real-time responsiveness
+  // Periodic silent polling in the background for real-time responsiveness
+  // Polls every 4 seconds if there is a pending refund, otherwise every 10 seconds.
   useEffect(() => {
+    const hasPendingRefund = orders.some(
+      (order) => String(order.payment_status || '').toLowerCase() === 'refund_pending'
+    );
+    const interval = hasPendingRefund ? 4000 : 10000;
+
     const timer = setInterval(() => {
       fetchOrdersSilent();
-    }, 10000);
+    }, interval);
     return () => clearInterval(timer);
-  }, [fetchOrdersSilent]);
+  }, [fetchOrdersSilent, orders]);
 
   return { orders, loading, error, fetchOrders, cancelOrder, returnOrder };
 };
