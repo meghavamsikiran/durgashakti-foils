@@ -1510,72 +1510,7 @@ const OrdersPage = () => {
                     { label: 'Delivered', active: isDelivered, date: isDelivered ? (selectedOrderForModal.delivered_at || selectedOrderForModal.updated_at) : null },
                   ];
 
-                  if (['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status)) {
-                    const isReturnRequested = ['return_requested', 'return_approved', 'return_rejected', 'refunded'].includes(status);
-                    const isReturnApproved = ['return_approved', 'refunded'].includes(status);
-                    const paymentStatus = (selectedOrderForModal.payment_status || '').toLowerCase();
-                    const isRefundInitiated = paymentStatus === 'refund_pending' || paymentStatus === 'refunded' || status === 'refunded';
-                    const isRefunded = status === 'refunded' || paymentStatus === 'refunded';
-                    const isReturnRejected = status === 'return_rejected';
-                    const returnProgressWidth = isReturnRejected ? '70%' : isRefunded ? '70%' : isRefundInitiated ? '47%' : isReturnApproved ? '23%' : '0%';
 
-                    const returnSteps = [
-                      { label: 'Return Requested', active: isReturnRequested, date: selectedOrderForModal.updated_at },
-                      { 
-                        label: isReturnRejected ? 'Return Rejected' : 'Return Approved', 
-                        active: isReturnApproved || isReturnRejected, 
-                        date: (isReturnApproved || isReturnRejected) ? selectedOrderForModal.updated_at : null,
-                        isRejected: isReturnRejected 
-                      },
-                      ...(!isReturnRejected ? [
-                        {
-                          label: 'Refund Initiated',
-                          active: isRefundInitiated,
-                          date: isRefundInitiated ? selectedOrderForModal.updated_at : null
-                        },
-                        {
-                          label: 'Refund Credited',
-                          active: isRefunded,
-                          date: isRefunded ? selectedOrderForModal.updated_at : null
-                        }
-                      ] : [])
-                    ];
-
-                    return (
-                      <div className="relative pt-4 pb-2">
-                        {/* Line Background */}
-                        <div className="absolute top-[28px] left-[12%] right-[12%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
-                        {/* Active Line */}
-                        <div
-                          className={`absolute top-[28px] left-[12%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ${isReturnRejected ? 'bg-rose-500' : 'bg-primary'}`}
-                          style={{ width: returnProgressWidth }}
-                        />
-
-                        {/* Dots */}
-                        <div className="relative flex justify-between px-[8%]">
-                          {returnSteps.map((step, idx) => (
-                            <div key={idx} className="flex flex-col items-center w-1/4 text-center">
-                              <div className={`w-7 h-7 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all ${
-                                step.active 
-                                  ? (step.isRejected ? 'bg-rose-600 text-white ring-4 ring-rose-100' : 'bg-primary text-white ring-4 ring-primary/10') 
-                                  : 'bg-slate-200 text-slate-400'
-                              }`}>
-                                {step.active ? (step.isRejected ? <X className="w-3 h-3 stroke-[3px]" /> : <Check className="w-3 h-3 stroke-[3px]" />) : <span className="text-[9px] font-bold">{idx + 1}</span>}
-                              </div>
-                              <p className={`text-[11px] mt-2 ${step.active ? (step.isRejected ? 'text-rose-600 font-extrabold' : 'text-primary font-extrabold') : 'text-slate-400 font-bold'}`}>
-                                {step.label}
-                              </p>
-                              {step.date && (
-                                <p className="text-[9px] font-bold text-slate-400 mt-0.5">
-                                  {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                                </p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  }
 
                   if (status === 'cancelled') {
                     return (
