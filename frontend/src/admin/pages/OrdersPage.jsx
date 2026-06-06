@@ -469,7 +469,7 @@ const OrdersPage = () => {
     const calc = item.refund_calculations || {};
     const initialAmount = parseFloat(calc.refundable_amount || 0);
     const courierCost = item.return_status === 'REFUND_COMPLETED' ? 0 : parseFloat(item.self_shipping_details?.courier_cost || 0);
-    const totalRefundDefault = initialAmount + courierCost;
+    const totalRefundDefault = Math.round((initialAmount + courierCost) * 100) / 100;
     setRefundModal({ orderId, productId, item, initialAmount, courierCost, totalRefundDefault, isOrderLevel: false });
     setRefundAmountInput(String(totalRefundDefault));
     setUpiVpaInput('');
@@ -492,7 +492,7 @@ const OrdersPage = () => {
     
     const initialAmount = itemsToSum.reduce((sum, i) => sum + parseFloat(i.refund_calculations?.refundable_amount || 0), 0);
     const courierCost = itemsToSum.reduce((sum, i) => sum + (i.return_status === 'REFUND_COMPLETED' ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0)), 0);
-    const totalRefundDefault = initialAmount + courierCost;
+    const totalRefundDefault = Math.round((initialAmount + courierCost) * 100) / 100;
 
     setRefundModal({
       orderId: order.id,
