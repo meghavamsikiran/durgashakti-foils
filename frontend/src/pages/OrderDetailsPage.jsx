@@ -320,7 +320,7 @@ const OrderDetailsPage = () => {
 
   useEffect(() => {
     fetchOrder(false);
-  }, [id]);
+  }, [id, fetchOrder]);
 
   // Poll active/non-terminal orders every 5 seconds to get updates instantly
   useEffect(() => {

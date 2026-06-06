@@ -313,7 +313,7 @@ const OrdersPage = () => {
     }, 1000);
 
     return () => clearInterval(countdown);
-  }, [refundModal, upiVpaInput, refundAmountInput]);
+  }, [refundModal, upiVpaInput, refundAmountInput, handleConfirmManualRefundItem]);
 
   // Background pre-fetch for the most used status filters only; avoid flooding the admin API.
   useEffect(() => {
