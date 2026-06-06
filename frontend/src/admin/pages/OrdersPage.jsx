@@ -943,7 +943,7 @@ const OrdersPage = () => {
                                       isOrderPending ? 'opacity-60 cursor-wait' : ''
                                     } ${refundPaymentStatus === 'refund_failed' ? 'border-rose-100 text-rose-700 hover:bg-rose-50' : 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'}`}
                                   >
-                                    {isOrderPending ? 'Retrying' : refundPaymentStatus === 'refund_failed' ? 'Retry Failed Refund' : 'Retry Refund'}
+                                    {isOrderPending ? 'Confirming' : 'Confirm Refund'}
                                   </button>
                                 );
                               }
@@ -1930,8 +1930,8 @@ const OrdersPage = () => {
                   progressWidth = '100%';
                   timelineTitle = 'Return Request Declined';
                 } else if (hasRefunded || hasReceived || isRefundFailed) {
-                  const isRefundInitiated = selectedOrderForModal.payment_status === 'refund_pending' || isRefundFailed || hasRefunded;
-                  const isRefundCredited = hasRefunded || selectedOrderForModal.payment_status === 'refunded';
+                  const isRefundInitiated = selectedOrderForModal.payment_status === 'refund_pending' || isRefundFailed || selectedOrderForModal.payment_status === 'refunded' || selectedOrderForModal.order_status === 'refunded';
+                  const isRefundCredited = selectedOrderForModal.payment_status === 'refunded' || selectedOrderForModal.order_status === 'refunded';
                   returnSteps = [
                     { label: 'Return Received', active: true, date: selectedOrderForModal.updated_at },
                     { label: 'Refund Initiated', active: isRefundInitiated, date: isRefundInitiated ? selectedOrderForModal.updated_at : null },
