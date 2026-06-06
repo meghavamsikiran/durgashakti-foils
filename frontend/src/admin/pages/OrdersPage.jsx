@@ -348,31 +348,7 @@ const OrdersPage = () => {
     }
   }, [refundModal, refundAmountInput, page, loadSilent]);
 
-  const [autoConfirmTimer, setAutoConfirmTimer] = useState(null);
 
-  // Auto-confirm countdown hook for simulated manual refund QR modal
-  useEffect(() => {
-    if (!refundModal || !upiVpaInput || !refundAmountInput) {
-      setAutoConfirmTimer(null);
-      return;
-    }
-    
-    setAutoConfirmTimer(7);
-    const countdown = setInterval(() => {
-      setAutoConfirmTimer((prev) => {
-        if (prev === null) return null;
-        if (prev <= 1) {
-          clearInterval(countdown);
-          // Trigger automatic confirmation click
-          handleConfirmManualRefundItem(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(countdown);
-  }, [refundModal, upiVpaInput, refundAmountInput, handleConfirmManualRefundItem]);
 
   // Background pre-fetch for the most used status filters only; avoid flooding the admin API.
   useEffect(() => {
@@ -2155,13 +2131,6 @@ const OrdersPage = () => {
                     <>
                       <div className="w-44 h-44 border-2 border-slate-200 p-2 rounded-2xl bg-white shadow-sm flex items-center justify-center relative">
                         <img src={qrSrc} alt="Refund QR Code" className="w-full h-full object-contain" />
-                        {autoConfirmTimer !== null && autoConfirmTimer > 0 && (
-                          <div className="absolute inset-0 bg-white/95 flex flex-col items-center justify-center p-4 text-center rounded-2xl animate-fade-in">
-                            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Verifying Payment</span>
-                            <span className="text-3xl font-black text-primary mt-1">{autoConfirmTimer}s</span>
-                            <span className="text-[9px] text-slate-400 font-semibold mt-1">Simulating callback auto-capture...</span>
-                          </div>
-                        )}
                       </div>
                       <p className="text-[10px] text-slate-400 font-bold text-center mt-3 max-w-[280px] leading-relaxed">
                         Scan QR with any UPI app (GPay, PhonePe, Paytm) to automatically populate UPI ID and refund amount of ₹{amt.toFixed(2)}.
@@ -2188,7 +2157,7 @@ const OrdersPage = () => {
                   className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer shadow-md shadow-emerald-glow flex items-center justify-center gap-1.5"
                   disabled={!upiVpaInput || !refundAmountInput}
                 >
-                  Confirm Refund Paid {autoConfirmTimer !== null && autoConfirmTimer > 0 && `(${autoConfirmTimer})`}
+                  Confirm Refund Paid
                 </button>
               </div>
             </div>
