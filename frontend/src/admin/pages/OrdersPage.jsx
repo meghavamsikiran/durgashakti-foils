@@ -471,7 +471,7 @@ const OrdersPage = () => {
     }
   };
 
-  const handleConfirmManualRefundItem = async (restock = true) => {
+  const handleConfirmManualRefundItem = useCallback(async (restock = true) => {
     if (!refundModal) return;
     const { orderId, productId, isOrderLevel } = refundModal;
     const amountVal = parseFloat(refundAmountInput);
@@ -528,7 +528,7 @@ const OrdersPage = () => {
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to process manual refund', { id: toastId });
     }
-  };
+  }, [refundModal, refundAmountInput, page, loadSilent]);
 
   const handleItemProcessRefund = async (orderId, productId, restock = true) => {
     const toastId = toast.loading('Processing refund...');
