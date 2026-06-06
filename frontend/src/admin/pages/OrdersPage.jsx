@@ -2003,7 +2003,11 @@ const OrdersPage = () => {
                 );
               })()}
               <div className="flex gap-3 justify-end w-full sm:w-auto shrink-0">
-                {selectedOrderForModal.payment_status === 'refund_pending' && hasPermission('update_order_status') && (
+                {selectedOrderForModal.payment_status === 'refund_pending' &&
+                 (String(selectedOrderForModal.payment_method || '').toLowerCase() === 'cod' ||
+                  selectedOrderForModal.refund_error ||
+                  String(selectedOrderForModal.payment_status || '').toLowerCase() === 'refund_failed') &&
+                 hasPermission('update_order_status') && (
                   <button
                     onClick={() => {
                       handleOpenOrderRefundModal(selectedOrderForModal);
