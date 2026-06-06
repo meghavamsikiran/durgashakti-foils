@@ -12,42 +12,42 @@ async def restore():
         {
             "name": "Premium Aluminum Foil - 72m",
             "description": "High-quality 11 micron foil, perfect for home and commercial use.",
-            "size": "72m", "thickness": "11 micron", "price": 199.0, "image_url": "/uploads/foil_72m.png",
+            "size": "72m", "thickness": "11 micron", "price": 199.0, "image_url": "/uploads/foil_72m.avif",
             "features": ["11 Micron Thickness", "Food Grade", "Easy Dispenser"],
             "stock_quantity": 500, "in_stock": True, "category": "Premium"
         },
         {
             "name": "Heavy Duty Catering Foil - 1KG",
             "description": "Extra thick 18 micron foil for heavy-duty catering and industrial wrapping.",
-            "size": "1KG", "thickness": "18 micron", "price": 499.0, "image_url": "/uploads/foil_1kg.png",
+            "size": "1KG", "thickness": "18 micron", "price": 499.0, "image_url": "/uploads/foil_1kg.avif",
             "features": ["18 Micron Thickness", "Commercial Grade", "High Heat Resistance"],
             "stock_quantity": 200, "in_stock": True, "category": "Catering"
         },
         {
             "name": "Kitchen Foil - 9m",
             "description": "Compact and convenient 9m foil for daily kitchen needs.",
-            "size": "9m", "thickness": "11 micron", "price": 129.0, "image_url": "/uploads/foil_9m.png",
+            "size": "9m", "thickness": "11 micron", "price": 129.0, "image_url": "/uploads/foil_9m.avif",
             "features": ["Daily Use", "Travel Friendly", "Eco-friendly Packaging"],
             "stock_quantity": 1000, "in_stock": True, "category": "Standard"
         },
         {
             "name": "Premium Foil - 18m",
             "description": "Standard length premium foil for everyday wrapping and freshness.",
-            "size": "18m", "thickness": "11 micron", "price": 169.0, "image_url": "/uploads/foil_18m.png",
+            "size": "18m", "thickness": "11 micron", "price": 169.0, "image_url": "/uploads/foil_18m.avif",
             "features": ["Strong & Flexible", "Moisture Proof", "Preserves Freshness"],
             "stock_quantity": 750, "in_stock": True, "category": "Premium"
         },
         {
             "name": "Standard Foil - 25m",
             "description": "Reliable 25m foil roll for general household applications.",
-            "size": "25m", "thickness": "11 micron", "price": 229.0, "image_url": "/uploads/foil_25m.png",
+            "size": "25m", "thickness": "11 micron", "price": 229.0, "image_url": "/uploads/foil_25m.avif",
             "features": ["Long Lasting", "Multipurpose", "Odorless"],
             "stock_quantity": 600, "in_stock": True, "category": "Standard"
         },
         {
             "name": "Bulk Catering Foil - 10KG",
             "description": "Giant 10kg industrial roll for large restaurants and bulk packing.",
-            "size": "10KG", "thickness": "18 micron", "price": 3499.0, "image_url": "/uploads/foil_10kg.png",
+            "size": "10KG", "thickness": "18 micron", "price": 3499.0, "image_url": "/uploads/foil_10kg.avif",
             "features": ["Massive Quantity", "Professional Grade", "Maximum Strength"],
             "stock_quantity": 50, "in_stock": True, "category": "Catering"
         }

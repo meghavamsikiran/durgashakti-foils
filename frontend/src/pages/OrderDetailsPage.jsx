@@ -178,7 +178,7 @@ const OrderDetailsPage = () => {
         currency: 'INR',
         name: 'DurgaShakti Foils',
         description: `Order #${payableOrder.order_number || order.order_number}`,
-        image: '/logo-durga.png',
+        image: '/logo-durga.avif',
         theme: {
           color: '#006e1b',
           hide_topbar: false,
@@ -320,18 +320,21 @@ const OrderDetailsPage = () => {
 
   useEffect(() => {
     fetchOrder(false);
-  }, [fetchOrder]);
+  }, [id]);
 
+  // Poll active/non-terminal orders every 5 seconds to get updates instantly
   useEffect(() => {
     if (!order) return;
-    
-    const isOnlinePending = isOnlinePaymentPendingOrder(order);
 
-    if (!isOnlinePending) return;
+    const isTerminal = ['cancelled', 'failed', 'refunded', 'return_rejected', 'delivered'].includes(
+      (order.order_status || '').toLowerCase()
+    );
+
+    if (isTerminal) return;
 
     const pollTimer = setInterval(() => {
       fetchOrder(true);
-    }, 4000);
+    }, 5000);
 
     return () => clearInterval(pollTimer);
   }, [order, fetchOrder]);
@@ -865,7 +868,7 @@ const OrderDetailsPage = () => {
                           {item.image_url && (
                             <img 
                               src={formatImageUrl(item.image_url)} 
-                              onError={(e) => { e.target.src = '/logo-durga.png'; }}
+                              onError={(e) => { e.target.src = '/logo-durga.avif'; }}
                               alt="" 
                               className="w-10 h-10 rounded-lg object-cover bg-slate-50 border border-slate-100" 
                             />
@@ -1123,8 +1126,8 @@ const OrderDetailsPage = () => {
             timelineTitle = 'Return Request Declined';
           } else if (hasRefunded || hasReceived || isRefundFailed) {
             // Refund Timeline (Visible after admin receives returned order)
-            const isRefundInitiated = paymentStatus === 'refund_pending' || isRefundFailed || hasRefunded;
-            const isRefundCredited = hasRefunded || paymentStatus === 'refunded';
+            const isRefundInitiated = paymentStatus === 'refund_pending' || isRefundFailed || paymentStatus === 'refunded';
+            const isRefundCredited = paymentStatus === 'refunded';
             returnSteps = [
               { label: 'Return Received', active: true, date: order.updated_at },
               { label: 'Refund Initiated', active: isRefundInitiated, date: isRefundInitiated ? order.updated_at : null },
@@ -1218,20 +1221,29 @@ const OrderDetailsPage = () => {
                 </div>
               </div>
             </div>
-            {order.tracking_url ? (
-              <a 
-                href={order.tracking_url} 
-                target="_blank" 
-                rel="noreferrer"
-                className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[9px] px-5 py-3 rounded-xl shadow-md shadow-emerald-glow transition-all whitespace-nowrap text-center"
-              >
-                Track Shipment
-              </a>
-            ) : (
-              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl">
-                No Direct Tracking Link
-              </span>
-            )}
+            {(() => {
+              const trackingNum = order.tracking_number || order.tracking_id;
+              const cleanNum = trackingNum ? String(trackingNum).trim() : '';
+              const carrier = String(order.courier_name || order.carrier || '').toLowerCase();
+              let targetUrl = order.tracking_url;
+              if (cleanNum && (carrier.includes('india post') || carrier.includes('speed post') || !targetUrl)) {
+                targetUrl = `https://t.17track.net/en#nums=${cleanNum}`;
+              }
+              return targetUrl ? (
+                <a 
+                  href={targetUrl} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[9px] px-5 py-3 rounded-xl shadow-md shadow-emerald-glow transition-all whitespace-nowrap text-center"
+                >
+                  Track Shipment
+                </a>
+              ) : (
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl">
+                  No Direct Tracking Link
+                </span>
+              );
+            })()}
           </div>
         )}
 
@@ -1279,9 +1291,10 @@ const OrderDetailsPage = () => {
                 <div className="flex gap-5 flex-1 min-w-0">
                   <img 
                     src={formatImageUrl(item.image_url)} 
-                    onError={(e) => { e.target.src = '/logo-durga.png'; }}
+                    onError={(e) => { e.target.src = '/logo-durga.avif'; }}
                     alt={item.product_name} 
-                    className="w-24 h-24 rounded-xl object-cover bg-slate-50 border border-slate-200 shrink-0 shadow-sm" 
+                    className="w-24 h-24 rounded-xl object-cover bg-slate-50 border border-slate-200 shrink-0 shadow-sm"
+                    loading="lazy"
                   />
                   <div className="space-y-1.5 min-w-0">
                     <h4 className="font-extrabold text-slate-900 text-sm hover:text-primary transition-colors cursor-pointer leading-snug">
@@ -1324,29 +1337,25 @@ const OrderDetailsPage = () => {
                           <div className="text-[10px] text-slate-500 space-y-1.5 font-semibold">
                             <div>
                               <p>Courier: <span className="font-extrabold text-slate-800">{item.self_shipping_details.courier_name}</span></p>
-                              <p>Tracking: <span className="font-mono font-extrabold text-slate-800">{item.self_shipping_details.tracking_number}</span></p>
+                              <p>Tracking: <span className="font-mono text-slate-800">{item.self_shipping_details.tracking_number}</span></p>
                               {item.self_shipping_details.courier_cost > 0 && <p>Courier Cost: <span className="font-bold text-slate-850">₹{item.self_shipping_details.courier_cost}</span></p>}
                             </div>
                             <div className="pt-1.5 border-t border-slate-100 flex flex-wrap gap-2">
-                              {item.self_shipping_details.tracking_url ? (
-                                <a
-                                  href={item.self_shipping_details.tracking_url.startsWith('http') ? item.self_shipping_details.tracking_url : `https://${item.self_shipping_details.tracking_url}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-150 font-black uppercase tracking-widest text-[8px] px-3 py-1.5 rounded-lg transition-all"
-                                >
-                                  Track Return Shipment
-                                </a>
-                              ) : (
-                                <a
-                                  href={`https://www.google.com/search?q=track+${encodeURIComponent(item.self_shipping_details.courier_name)}+${encodeURIComponent(item.self_shipping_details.tracking_number)}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-150 font-black uppercase tracking-widest text-[8px] px-3 py-1.5 rounded-lg transition-all"
-                                >
-                                  Track Return Shipment
-                                </a>
-                              )}
+                              {(() => {
+                                const rawNum = item.self_shipping_details.tracking_number;
+                                const cleanNum = rawNum ? String(rawNum).trim() : '';
+                                const trackUrl = cleanNum ? `https://t.17track.net/en#nums=${cleanNum}` : '';
+                                return (
+                                  <a
+                                    href={trackUrl || '#'}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-150 font-black uppercase tracking-widest text-[8px] px-3 py-1.5 rounded-lg transition-all"
+                                  >
+                                    Track Return Shipment
+                                  </a>
+                                );
+                              })()}
                             </div>
                           </div>
                         )}
@@ -1455,7 +1464,7 @@ const OrderDetailsPage = () => {
                           <a href={fullUrl} target="_blank" rel="noreferrer" className="w-full h-full">
                             <img 
                               src={fullUrl} 
-                              onError={(e) => { e.target.src = '/logo-durga.png'; }}
+                              onError={(e) => { e.target.src = '/logo-durga.avif'; }}
                               alt="Proof" 
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
                             />

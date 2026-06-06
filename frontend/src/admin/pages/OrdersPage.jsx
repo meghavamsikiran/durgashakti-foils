@@ -138,6 +138,8 @@ const OrdersPage = () => {
   const [bulkShipModal, setBulkShipModal] = useState(false);
   const [bulkShipForm, setBulkShipForm] = useState({ courier: 'India Post', custom_carrier: '', expected_delivery_date: '', shipment_notes: '', pasted_text: '' });
   const [courierFilter, setCourierFilter] = useState('');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [adminMessage, setAdminMessage] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
@@ -161,6 +163,8 @@ const OrdersPage = () => {
       params.end_date = dateFilter.end_date;
     }
     if (courierFilter) params.courier = courierFilter;
+    if (paymentStatusFilter) params.payment_status = paymentStatusFilter;
+    if (paymentMethodFilter) params.payment_method = paymentMethodFilter;
 
     const cached = adminService.getCached('/admin/orders', params);
     if (cached) {
@@ -180,7 +184,7 @@ const OrdersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, filter, dateFilter, courierFilter]);
+  }, [search, filter, dateFilter, courierFilter, paymentStatusFilter, paymentMethodFilter]);
 
   const loadSilent = useCallback(async (p = 1) => {
     try {
@@ -191,6 +195,8 @@ const OrdersPage = () => {
         params.end_date = dateFilter.end_date;
       }
       if (courierFilter) params.courier = courierFilter;
+      if (paymentStatusFilter) params.payment_status = paymentStatusFilter;
+      if (paymentMethodFilter) params.payment_method = paymentMethodFilter;
 
       const response = await apiClient.get('/admin/orders', { params, silent: true });
       const items = (response.data.items || []).map((order) => ({
@@ -207,7 +213,7 @@ const OrdersPage = () => {
     } catch (err) {
       // Ignore background errors
     }
-  }, [search, filter, dateFilter, courierFilter]);
+  }, [search, filter, dateFilter, courierFilter, paymentStatusFilter, paymentMethodFilter]);
 
   useEffect(() => {
     if (!selectedOrderForModal) {
@@ -267,7 +273,7 @@ const OrdersPage = () => {
       return;
     }
     load(1);
-  }, [search, filter, load, dateFilter, courierFilter]);
+  }, [search, filter, load, dateFilter, courierFilter, paymentStatusFilter, paymentMethodFilter]);
 
   // Periodic silent polling in the background. Keep it light so row actions stay responsive.
   // Polls every 4 seconds if there is a pending refund, otherwise every 30 seconds.
@@ -282,6 +288,32 @@ const OrdersPage = () => {
     }, interval);
     return () => clearInterval(timer);
   }, [loadSilent, page, rows]);
+
+  const [autoConfirmTimer, setAutoConfirmTimer] = useState(null);
+
+  // Auto-confirm countdown hook for simulated manual refund QR modal
+  useEffect(() => {
+    if (!refundModal || !upiVpaInput || !refundAmountInput) {
+      setAutoConfirmTimer(null);
+      return;
+    }
+    
+    setAutoConfirmTimer(7);
+    const countdown = setInterval(() => {
+      setAutoConfirmTimer((prev) => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          clearInterval(countdown);
+          // Trigger automatic confirmation click
+          handleConfirmManualRefundItem(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdown);
+  }, [refundModal, upiVpaInput, refundAmountInput]);
 
   // Background pre-fetch for the most used status filters only; avoid flooding the admin API.
   useEffect(() => {
@@ -619,14 +651,14 @@ const OrdersPage = () => {
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-semibold transition-all shadow-sm ${
-                showFilters || courierFilter || dateFilter
+                showFilters || courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter
                   ? 'bg-primary/10 border-primary text-primary'
                   : 'bg-white border-slate-200 text-slate-750 hover:bg-slate-50'
               }`}
             >
               <Filter className="w-4 h-4" />
               <span>Filter</span>
-              {(courierFilter || dateFilter) && (
+              {(courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter) && (
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               )}
             </button>
@@ -637,10 +669,12 @@ const OrdersPage = () => {
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-slate-200 shadow-xl p-5 z-[1000] space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                     <span className="text-xs font-black uppercase tracking-widest text-slate-500">Filter Options</span>
-                    {(courierFilter || dateFilter) && (
+                    {(courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter) && (
                       <button
                         onClick={() => {
                           setCourierFilter('');
+                          setPaymentStatusFilter('');
+                          setPaymentMethodFilter('');
                           setDateFilter(null);
                         }}
                         className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700"
@@ -668,6 +702,37 @@ const OrdersPage = () => {
                       <option value="Professional Couriers">Professional Couriers</option>
                       <option value="Shadowfax">Shadowfax</option>
                       <option value="Ekart">Ekart</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payment Status</label>
+                    <select
+                      value={paymentStatusFilter}
+                      onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-semibold outline-none transition-colors"
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                      <option value="refund_pending">Refund Initiated</option>
+                      <option value="refunded">Refund Credited</option>
+                      <option value="refund_failed">Refund Failed</option>
+                      <option value="failed">Failed</option>
+                      <option value="Cash On Delivery">Cash On Delivery</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payment Method</label>
+                    <select
+                      value={paymentMethodFilter}
+                      onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-semibold outline-none transition-colors"
+                    >
+                      <option value="">All Methods</option>
+                      <option value="online">Prepaid (Online)</option>
+                      <option value="cod">Cash on Delivery (COD)</option>
                     </select>
                   </div>
 
@@ -1674,7 +1739,7 @@ const OrdersPage = () => {
                                 {item.image_url && (
                                   <img 
                                     src={formatImageUrl(item.image_url)} 
-                                    onError={(e) => { e.target.src = '/logo-durga.png'; }}
+                                    onError={(e) => { e.target.src = '/logo-durga.avif'; }}
                                     alt="" 
                                     className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" 
                                   />
@@ -1723,25 +1788,21 @@ const OrdersPage = () => {
                                   )}
                                 </div>
                                 <div className="pt-2 border-t border-slate-200/50 flex flex-wrap gap-2">
-                                  {item.self_shipping_details.tracking_url ? (
-                                    <a
-                                      href={item.self_shipping_details.tracking_url.startsWith('http') ? item.self_shipping_details.tracking_url : `https://${item.self_shipping_details.tracking_url}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center gap-1 bg-indigo-650 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
-                                    >
-                                      Track Return Shipment
-                                    </a>
-                                  ) : (
-                                    <a
-                                      href={`https://www.google.com/search?q=track+${encodeURIComponent(item.self_shipping_details.courier_name)}+${encodeURIComponent(item.self_shipping_details.tracking_number)}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center gap-1 bg-indigo-650 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
-                                    >
-                                      Track Return Shipment
-                                    </a>
-                                  )}
+                                  {(() => {
+                                    const rawNum = item.self_shipping_details.tracking_number;
+                                    const cleanNum = rawNum ? String(rawNum).trim() : '';
+                                    const trackUrl = cleanNum ? `https://t.17track.net/en#nums=${cleanNum}` : '';
+                                    return (
+                                      <a
+                                        href={trackUrl || '#'}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-sm"
+                                      >
+                                        Track Return Shipment
+                                      </a>
+                                    );
+                                  })()}
                                 </div>
                                 {item.self_shipping_details.notes && (
                                   <p className="text-[10px] text-slate-500 italic">Notes: {item.self_shipping_details.notes}</p>
@@ -1832,7 +1893,7 @@ const OrdersPage = () => {
                                 >
                                   <img
                                     src={fullUrl}
-                                    onError={(e) => { e.target.src = '/logo-durga.png'; }}
+                                    onError={(e) => { e.target.src = '/logo-durga.avif'; }}
                                     alt="Proof"
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                   />
@@ -2092,8 +2153,15 @@ const OrdersPage = () => {
                   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(upiUri)}`;
                   return (
                     <>
-                      <div className="w-44 h-44 border-2 border-slate-200 p-2 rounded-2xl bg-white shadow-sm flex items-center justify-center">
+                      <div className="w-44 h-44 border-2 border-slate-200 p-2 rounded-2xl bg-white shadow-sm flex items-center justify-center relative">
                         <img src={qrSrc} alt="Refund QR Code" className="w-full h-full object-contain" />
+                        {autoConfirmTimer !== null && autoConfirmTimer > 0 && (
+                          <div className="absolute inset-0 bg-white/95 flex flex-col items-center justify-center p-4 text-center rounded-2xl animate-fade-in">
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Verifying Payment</span>
+                            <span className="text-3xl font-black text-primary mt-1">{autoConfirmTimer}s</span>
+                            <span className="text-[9px] text-slate-400 font-semibold mt-1">Simulating callback auto-capture...</span>
+                          </div>
+                        )}
                       </div>
                       <p className="text-[10px] text-slate-400 font-bold text-center mt-3 max-w-[280px] leading-relaxed">
                         Scan QR with any UPI app (GPay, PhonePe, Paytm) to automatically populate UPI ID and refund amount of ₹{amt.toFixed(2)}.
@@ -2117,10 +2185,10 @@ const OrdersPage = () => {
                 </button>
                 <button
                   onClick={() => handleConfirmManualRefundItem(true)}
-                  className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer shadow-md shadow-emerald-glow"
+                  className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer shadow-md shadow-emerald-glow flex items-center justify-center gap-1.5"
                   disabled={!upiVpaInput || !refundAmountInput}
                 >
-                  Confirm Refund Paid
+                  Confirm Refund Paid {autoConfirmTimer !== null && autoConfirmTimer > 0 && `(${autoConfirmTimer})`}
                 </button>
               </div>
             </div>

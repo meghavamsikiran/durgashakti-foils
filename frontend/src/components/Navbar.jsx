@@ -349,7 +349,7 @@ const Navbar = () => {
               return (
                 <span key={item.id} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                   {showFavicon && (
-                     <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm brightness-0 invert" />
+                     <img src="/favicon.avif" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm brightness-0 invert" />
                   )}
                   {item.text}
                 </span>
@@ -362,7 +362,7 @@ const Navbar = () => {
               return (
                 <span key={`dup-${item.id}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                   {showFavicon && (
-                     <img src="/favicon.png" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm brightness-0 invert" />
+                     <img src="/favicon.avif" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm brightness-0 invert" />
                   )}
                   {item.text}
                 </span>
@@ -388,7 +388,7 @@ const Navbar = () => {
             )}
             <Link to="/" className="flex items-center py-2 h-14" data-testid="navbar-logo">
               <img
-                src="/logo-durga.png"
+                src="/logo-durga.avif"
                 alt="DurgaShakti Foils Pvt Ltd"
                 className="h-11 w-auto object-contain block"
                 style={{ maxWidth: '240px' }}

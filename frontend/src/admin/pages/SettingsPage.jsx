@@ -448,7 +448,7 @@ const SettingsPage = () => {
                            </span>
                            {(!bannerUseFavicon || showFaviconSpacer1) && (
                               <span className="mx-4 text-xs font-black text-primary flex items-center gap-2">
-                                 {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
+                                 {bannerUseFavicon ? <img src="/favicon.avif" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
                               </span>
                            )}
                            {(bannerText2 || bannerTimerEnabled) && (
@@ -458,7 +458,7 @@ const SettingsPage = () => {
                            )}
                            {(bannerText2 || bannerTimerEnabled) && (!bannerUseFavicon || showFaviconSpacer2) && (
                               <span className="mx-4 text-xs font-black text-primary flex items-center gap-2">
-                                 {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
+                                 {bannerUseFavicon ? <img src="/favicon.avif" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
                               </span>
                            )}
                            {/* Duplicate for smooth scrolling illusion */}
@@ -467,7 +467,7 @@ const SettingsPage = () => {
                            </span>
                            {(!bannerUseFavicon || showFaviconSpacer1) && (
                               <span className="mx-4 text-xs font-black text-primary flex items-center gap-2">
-                                 {bannerUseFavicon ? <img src="/favicon.png" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
+                                 {bannerUseFavicon ? <img src="/favicon.avif" className="w-5 h-5 object-contain opacity-80" alt="Favicon" /> : <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />}
                               </span>
                            )}
                            {(bannerText2 || bannerTimerEnabled) && (

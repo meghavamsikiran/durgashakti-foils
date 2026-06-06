@@ -2,7 +2,7 @@
 from datetime import datetime, timezone, timedelta
 from html import escape
 
-LOGO_URL = "https://durgashakti-foils.vercel.app/logo-orange.png"
+LOGO_URL = "https://durgashakti-foils.vercel.app/logo-orange.avif"
 BRAND_COLOR = "#006e1b"
 BRAND_HOVER = "#16E34A"
 BRAND_DARK = "#181c1b"

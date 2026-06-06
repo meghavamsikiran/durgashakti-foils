@@ -13,7 +13,7 @@ const SuspenseTrigger = () => {
         <div className="absolute inset-0 rounded-full border-[3.5px] border-slate-200/70" />
         <div className="absolute inset-0 rounded-full border-[3.5px] border-transparent border-t-primary animate-spin" />
         <img
-          src="/favicon.png"
+          src="/favicon.avif"
           alt="Durga Shakti"
           className="w-7 h-7 object-contain opacity-90"
         />

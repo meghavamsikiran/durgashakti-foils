@@ -381,36 +381,7 @@ const Cart = () => {
                         </div>
                       )}
 
-                      {/* Payment Option Selector */}
-                      {config.codEnabled && (
-                        <div className="mb-5 py-3.5 border-t border-b border-dashed border-slate-200">
-                          <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5">Payment Option Preference</span>
-                          <div className="flex gap-4">
-                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="cart_payment_method"
-                                value="online"
-                                checked={paymentMethod === 'online'}
-                                onChange={() => handlePaymentMethodChange('online')}
-                                className="w-4 h-4 text-primary focus:ring-primary cursor-pointer"
-                              />
-                              UPI / Online
-                            </label>
-                            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="cart_payment_method"
-                                value="cod"
-                                checked={paymentMethod === 'cod'}
-                                onChange={() => handlePaymentMethodChange('cod')}
-                                className="w-4 h-4 text-primary focus:ring-primary cursor-pointer"
-                              />
-                              Cash on Delivery (COD)
-                            </label>
-                          </div>
-                        </div>
-                      )}
+                      {/* Payment Option Selector removed as requested */}
 
                       <div className="space-y-4 mb-6 font-inter">
                         <div className="flex justify-between">

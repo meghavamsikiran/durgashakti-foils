@@ -632,11 +632,14 @@ async def get_all_orders(
     courier: Optional[str] = Query(None),
     tracking_number: Optional[str] = Query(None),
     shipment_status: Optional[str] = Query(None),
+    payment_status: Optional[str] = Query(None),
+    payment_method: Optional[str] = Query(None),
     admin: UserSchema = Depends(require_permission("view_orders")),
     db: AsyncSession = Depends(get_db)
 ):
-    from routes.orders import enforce_return_deadlines
+    from routes.orders import enforce_return_deadlines, enforce_payment_timeouts
     await enforce_return_deadlines(db)
+    await enforce_payment_timeouts(db)
     search = sanitize_search_term(search)
     
     # Pre-parse date parameters
@@ -676,6 +679,10 @@ async def get_all_orders(
         ))
     if shipment_status:
         filters.append(func.lower(OrderModel.shipment_status) == shipment_status.lower())
+    if payment_status:
+        filters.append(func.lower(OrderModel.payment_status) == payment_status.lower())
+    if payment_method:
+        filters.append(func.lower(OrderModel.payment_method) == payment_method.lower())
     if search:
         like_term = f"%{search}%"
         clause = or_(
@@ -1020,6 +1027,10 @@ async def confirm_manual_refund(
     order.order_status = "refunded"
     order.updated_at = datetime.now(timezone.utc)
 
+    # Trigger stock release if it was not released yet
+    from routes.orders import _release_stock_once
+    await _release_stock_once(order, db, datetime.now(timezone.utc))
+
     await db.flush()
     await write_audit_log(
         db,
@@ -1032,6 +1043,31 @@ async def confirm_manual_refund(
             "confirmed_by": str(admin.id),
         }
     )
+
+    # Send Notification and Email Invoice to user
+    try:
+        from sqlalchemy import select as _sel
+        from models import UserModel as _UM
+        user_res = await db.execute(_sel(_UM).where(_UM.id == order.user_id))
+        cust = user_res.scalar_one_or_none()
+        if cust:
+            await create_notification(
+                db,
+                str(cust.id),
+                "Refund credited",
+                f"Your refund for order {order.order_number} has been credited successfully.",
+                "order"
+            )
+            from deps import send_email, row_to_dict
+            from email_templates import order_receipt_email
+            # Fetch enriched order details to generate tax invoice correctly
+            from routes.orders import _enrich_order_items
+            enriched_order = await _enrich_order_items(db, row_to_dict(order))
+            subj, body, att = order_receipt_email(cust.full_name or cust.email, enriched_order)
+            subj = f"Refund Credited & Updated Tax Invoice - {order.order_number}"
+            asyncio.create_task(send_email(cust.email, subj, body, attachments=att))
+    except Exception as exc:
+        logger.exception("Failed to send manual refund confirmation side effects: %s", exc)
 
     return {"message": "Manual refund has been confirmed and marked as completed.", "order": _order_response_dict(order)}
 

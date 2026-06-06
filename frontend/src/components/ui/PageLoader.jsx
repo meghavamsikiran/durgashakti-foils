@@ -41,7 +41,7 @@ const PageLoader = () => {
           <div className="absolute inset-0 rounded-full border-[3.5px] border-transparent border-t-primary animate-spin" />
           {/* Branded orange logo in center */}
           <img
-            src="/favicon.png"
+            src="/favicon.avif"
             alt="Durga Shakti"
             className="w-7 h-7 object-contain opacity-90 animate-pulse"
           />

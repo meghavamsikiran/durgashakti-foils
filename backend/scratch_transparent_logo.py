@@ -19,4 +19,4 @@ def make_background_transparent(image_path, threshold=20):
     print(f"Successfully made background of {image_path} transparent.")
 
 if __name__ == "__main__":
-    make_background_transparent("frontend/public/logo-durga.png")
+    make_background_transparent("frontend/public/logo-durga.avif")

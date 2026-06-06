@@ -898,7 +898,7 @@ async def _enrich_order_items(db: AsyncSession, orders_data):
         for order in orders:
             for item in order.get("items", []):
                 if not item.get("image_url") and item.get("product_id"):
-                    item["image_url"] = product_image_map.get(item["product_id"]) or "/uploads/foil_9m.png"
+                    item["image_url"] = product_image_map.get(item["product_id"]) or "/uploads/foil_9m.avif"
     return orders_data if is_list else orders[0]
 
 
@@ -1201,13 +1201,16 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         await _queue_order_receipt_email_once(order, db)
 
     return row_to_dict(order)
-async def enforce_return_deadlines(db: AsyncSession):
+async def enforce_return_deadlines(db: AsyncSession, user_id: Optional[str] = None):
     now = datetime.now(timezone.utc)
     limit = now - timedelta(days=3)
     
     stmt = select(OrderModel).where(
         OrderModel.order_status == "return_approved"
     )
+    if user_id:
+        stmt = stmt.where(OrderModel.user_id == user_id)
+        
     res = await db.execute(stmt)
     orders = res.scalars().all()
     
@@ -1253,9 +1256,54 @@ async def enforce_return_deadlines(db: AsyncSession):
         await db.commit()
 
 
+async def enforce_payment_timeouts(db: AsyncSession, user_id: Optional[str] = None):
+    """Automatically cancel pending online orders older than 15 minutes."""
+    now = datetime.now(timezone.utc)
+    limit = now - timedelta(minutes=15)
+    
+    stmt = select(OrderModel).where(
+        OrderModel.payment_method == "online",
+        OrderModel.payment_status == "pending",
+        OrderModel.order_status == "pending_payment"
+    )
+    if user_id:
+        stmt = stmt.where(OrderModel.user_id == user_id)
+        
+    res = await db.execute(stmt)
+    orders = res.scalars().all()
+    
+    modified = False
+    for order in orders:
+        created_at = order.created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        else:
+            created_at = created_at.astimezone(timezone.utc)
+            
+        if created_at < limit:
+            order.order_status = "cancelled"
+            order.payment_status = "failed"
+            order.admin_message = "Payment session expired (15-minute timeout)."
+            order.updated_at = now
+            modified = True
+            
+            await write_audit_log(
+                db,
+                "PAYMENT_TIMEOUT_EXPIRED",
+                None,
+                "order",
+                str(order.id),
+                {"reason": "Payment pending for more than 15 minutes."}
+            )
+            
+    if modified:
+        await db.commit()
+
+
 @router.get("/orders")
 async def get_user_orders(current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    await enforce_return_deadlines(db)
+    await enforce_return_deadlines(db, user_id=str(current_user.id))
+    await enforce_payment_timeouts(db, user_id=str(current_user.id))
     result = await db.execute(
         select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.updated_at.desc()).limit(1000)
     )
@@ -1266,7 +1314,8 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
 
 @router.get("/orders/{order_id}")
 async def get_order(order_id: str, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    await enforce_return_deadlines(db)
+    await enforce_return_deadlines(db, user_id=str(current_user.id))
+    await enforce_payment_timeouts(db, user_id=str(current_user.id))
     validate_uuid(order_id)
     result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id).with_for_update())
     order = result.scalar_one_or_none()
