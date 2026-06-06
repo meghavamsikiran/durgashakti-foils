@@ -786,27 +786,9 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     should_schedule_refund = False
     if new_status == "return_approved":
         effective_status = "return_approved"
-        payment_status = str(order.payment_status or "").lower()
-        if payment_method_lower != "cod" and payment_status in ("paid", "completed"):
-            order.payment_status = "refund_pending"
-            should_schedule_refund = True
-            refund_warning = "Return approved. Razorpay refund is processing in the background and will update automatically."
-        elif False:
-            from routes.orders import trigger_razorpay_refund
-            success, err_msg, refund_info = await trigger_razorpay_refund(order, db)
-            if success:
-                refund_status = str((refund_info or {}).get("status") or "").lower()
-                order.payment_status = "refunded" if refund_status == "processed" else "refund_pending"
-                if order.payment_status == "refund_pending":
-                    refund_warning = "Refund has been initiated with Razorpay and is pending bank confirmation."
-            else:
-                # Refund failed but don't block return approval — mark as
-                # refund_pending so admin can retry or process manually later.
-                order.payment_status = "refund_pending"
-                refund_warning = f"Return approved but automatic refund failed: {err_msg}. You can retry or mark as manually refunded from order details."
-                logger.warning("Refund failed for order %s: %s", order.order_number, err_msg)
-        elif payment_method_lower != "cod" and payment_status not in ("refunded", "refund_pending", "refund_failed"):
-            raise HTTPException(status_code=400, detail="Cannot approve return before prepaid payment is captured")
+        # Disable automatic refund on return approval; the refund must only be initiated
+        # when the admin receives the item and clicks 'Process Refund' manually.
+        pass
     if new_status == "return_rejected":
         effective_status = "return_rejected"
 
@@ -2372,7 +2354,11 @@ async def admin_item_process_refund(
                 calc["refundable_amount"] = refund_amount
                 item["refund_calculations"] = calc
             else:
-                refund_amount = float(calc.get("refundable_amount") or 0.0)
+                item_refund = float(calc.get("refundable_amount") or 0.0)
+                courier_cost = float(item.get("self_shipping_details", {}).get("courier_cost") or 0.0)
+                refund_amount = item_refund + courier_cost
+                calc["refundable_amount"] = refund_amount
+                item["refund_calculations"] = calc
             returned_qty = int(item.get("returned_quantity") or 1)
             
             item["return_status"] = "REFUND_COMPLETED"
