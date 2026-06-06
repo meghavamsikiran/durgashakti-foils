@@ -1073,7 +1073,13 @@ async def confirm_manual_refund(
             if not refunded_items:
                 refunded_items = enriched_order.get("items", [])
                 
-            item_refund_total = sum(float(i.get("refund_calculations", {}).get("refundable_amount") or 0.0) for i in refunded_items)
+            item_refund_total = sum(
+                (float(i.get("refund_calculations", {}).get("refundable_amount") or 0.0) -
+                 float(i.get("self_shipping_details", {}).get("courier_cost") or 0.0))
+                if i.get("return_status") == "REFUND_COMPLETED"
+                else float(i.get("refund_calculations", {}).get("refundable_amount") or 0.0)
+                for i in refunded_items
+            )
             courier_total = sum(float(i.get("self_shipping_details", {}).get("courier_cost") or 0.0) for i in refunded_items)
             
             subj, body, att = refund_credited_email(

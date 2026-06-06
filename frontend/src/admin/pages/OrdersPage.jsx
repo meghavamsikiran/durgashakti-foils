@@ -188,7 +188,7 @@ const OrdersPage = () => {
 
   const loadSilent = useCallback(async (p = 1) => {
     try {
-      const params = { page: p, limit: PAGE_SIZE, search };
+      const params = { page: p, limit: PAGE_SIZE, search, _t: Date.now() };
       if (filter !== 'ALL') params.status_filter = filter;
       if (dateFilter && dateFilter.start_date && dateFilter.end_date) {
         params.start_date = dateFilter.start_date;
@@ -198,7 +198,15 @@ const OrdersPage = () => {
       if (paymentStatusFilter) params.payment_status = paymentStatusFilter;
       if (paymentMethodFilter) params.payment_method = paymentMethodFilter;
 
-      const response = await apiClient.get('/admin/orders', { params, silent: true });
+      const response = await apiClient.get('/admin/orders', {
+        params,
+        silent: true,
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       const items = (response.data.items || []).map((order) => ({
         ...order,
         status: (order.order_status || '').toUpperCase(),
@@ -304,6 +312,7 @@ const OrdersPage = () => {
         setPendingActionIds(prev => new Set(prev).add(orderId));
         setSubmitting(true);
         const response = await apiClient.put(`/admin/orders/${orderId}/confirm-manual-refund`);
+        apiClient.invalidateCache('/admin/orders');
         const serverOrder = response?.data?.order;
         if (serverOrder) {
           const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
@@ -332,6 +341,7 @@ const OrdersPage = () => {
       const response = await apiClient.post(
         `/admin/orders/${orderId}/items/${productId}/process-refund?restock=${restock}&manual_amount=${amountVal}&is_manual=true`
       );
+      apiClient.invalidateCache('/admin/orders');
       
       const serverOrder = response?.data?.order;
       if (serverOrder) {
@@ -423,6 +433,7 @@ const OrdersPage = () => {
     const toastId = toast.loading(`${action === 'approve' ? 'Approving' : 'Rejecting'} item return...`);
     try {
       const response = await apiClient.post(`/admin/orders/${orderId}/items/${productId}/return-action`, { action, remarks });
+      apiClient.invalidateCache('/admin/orders');
       const serverOrder = response?.data?.order;
       if (serverOrder) {
         const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
@@ -440,6 +451,7 @@ const OrdersPage = () => {
     const toastId = toast.loading('Marking item as received...');
     try {
       const response = await apiClient.post(`/admin/orders/${orderId}/items/${productId}/receive`);
+      apiClient.invalidateCache('/admin/orders');
       const serverOrder = response?.data?.order;
       if (serverOrder) {
         const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
@@ -456,7 +468,7 @@ const OrdersPage = () => {
   const handleOpenRefundModal = async (orderId, productId, item) => {
     const calc = item.refund_calculations || {};
     const initialAmount = parseFloat(calc.refundable_amount || 0);
-    const courierCost = parseFloat(item.self_shipping_details?.courier_cost || 0);
+    const courierCost = item.return_status === 'REFUND_COMPLETED' ? 0 : parseFloat(item.self_shipping_details?.courier_cost || 0);
     const totalRefundDefault = initialAmount + courierCost;
     setRefundModal({ orderId, productId, item, initialAmount, courierCost, totalRefundDefault, isOrderLevel: false });
     setRefundAmountInput(String(totalRefundDefault));
@@ -479,7 +491,7 @@ const OrdersPage = () => {
     const itemsToSum = refundItems.length > 0 ? refundItems : (order.items || []);
     
     const initialAmount = itemsToSum.reduce((sum, i) => sum + parseFloat(i.refund_calculations?.refundable_amount || 0), 0);
-    const courierCost = itemsToSum.reduce((sum, i) => sum + parseFloat(i.self_shipping_details?.courier_cost || 0), 0);
+    const courierCost = itemsToSum.reduce((sum, i) => sum + (i.return_status === 'REFUND_COMPLETED' ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0)), 0);
     const totalRefundDefault = initialAmount + courierCost;
 
     setRefundModal({
@@ -510,6 +522,7 @@ const OrdersPage = () => {
     const toastId = toast.loading('Processing refund...');
     try {
       const response = await apiClient.post(`/admin/orders/${orderId}/items/${productId}/process-refund?restock=${restock}`);
+      apiClient.invalidateCache('/admin/orders');
       const serverOrder = response?.data?.order;
       if (serverOrder) {
         const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
@@ -564,6 +577,7 @@ const OrdersPage = () => {
       setPendingActionIds(prev => new Set(prev).add(orderId));
       setSubmitting(true);
       const response = await apiClient.put(`/admin/orders/${orderId}/confirm-manual-refund`);
+      apiClient.invalidateCache('/admin/orders');
       const serverOrder = response?.data?.order;
       if (serverOrder) {
         const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
@@ -1428,7 +1442,7 @@ const OrdersPage = () => {
                             {selectedOrderForModal.payment_status === 'refund_pending' && (() => {
                               const refundItems = (selectedOrderForModal.items || []).filter(i => i.return_status === 'REFUND_COMPLETED');
                               const totalRefundAmount = refundItems.reduce((sum, i) => sum + parseFloat(i.refund_calculations?.refundable_amount || 0), 0);
-                              const selfShipCost = refundItems.reduce((sum, i) => sum + parseFloat(i.self_shipping_details?.courier_cost || 0), 0);
+                              const selfShipCost = refundItems.reduce((sum, i) => sum + (i.return_status === 'REFUND_COMPLETED' ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0)), 0);
                               return (
                                 <div className="pt-1.5 mt-1 border-t border-dashed border-sky-200 text-sky-900 leading-snug space-y-1.5">
                                   <p className="text-[8px] font-black uppercase text-sky-700">Manual Refund Payout Details</p>
@@ -1973,7 +1987,7 @@ const OrdersPage = () => {
                 const itemsToSum = refundItems.length > 0 ? refundItems : (selectedOrderForModal.items || []);
                 const totalRefundAmount = itemsToSum.reduce((sum, i) => {
                   const itemAmount = parseFloat(i.refund_calculations?.refundable_amount || 0);
-                  const courierCost = parseFloat(i.self_shipping_details?.courier_cost || 0);
+                  const courierCost = i.return_status === 'REFUND_COMPLETED' ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0);
                   return sum + itemAmount + courierCost;
                 }, 0);
                 return (
@@ -2125,10 +2139,26 @@ const OrdersPage = () => {
               <div className="flex flex-col items-center justify-center py-4 border-t border-slate-200">
                 {upiVpaInput ? (() => {
                   const amt = parseFloat(refundAmountInput) || 0;
+                  const itemRefund = refundModal.initialAmount || 0;
+                  const courierRefund = refundModal.courierCost || 0;
                   const upiUri = `upi://pay?pa=${upiVpaInput}&pn=Customer&am=${amt.toFixed(2)}&cu=INR`;
                   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(upiUri)}`;
                   return (
                     <>
+                      <div className="w-full bg-slate-50 border border-slate-200/50 rounded-2xl p-4 mb-4 text-xs font-semibold text-slate-650 space-y-2 max-w-[280px]">
+                        <div className="flex justify-between">
+                          <span>Item Refund:</span>
+                          <span className="font-bold text-slate-800">₹{itemRefund.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Courier Reimbursement:</span>
+                          <span className="font-bold text-slate-800">₹{courierRefund.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-slate-250 pt-2 font-black text-slate-900 text-sm">
+                          <span>Total Refund Payout:</span>
+                          <span className="text-emerald-600">₹{amt.toFixed(2)}</span>
+                        </div>
+                      </div>
                       <div className="w-44 h-44 border-2 border-slate-200 p-2 rounded-2xl bg-white shadow-sm flex items-center justify-center relative">
                         <img src={qrSrc} alt="Refund QR Code" className="w-full h-full object-contain" />
                       </div>
