@@ -528,6 +528,8 @@ const OrdersPage = () => {
     } finally {
       setIsFetchingVpa(false);
     }
+  };
+
   const handleItemProcessRefund = async (orderId, productId, restock = true) => {
     const toastId = toast.loading('Processing refund...');
     try {
