@@ -912,7 +912,10 @@ const OrdersPage = () => {
                           <div className="flex items-center justify-center gap-2">
                             {(() => {
                               const refundPaymentStatus = String(order.payment_status || '').toLowerCase();
-                              const showRefundPendingButton = ['refund_pending', 'refund_failed'].includes(refundPaymentStatus) && hasPermission('update_order_status');
+                              const isCod = String(order.payment_method || '').toLowerCase() === 'cod';
+                              const showRefundPendingButton = ['refund_pending', 'refund_failed'].includes(refundPaymentStatus) &&
+                                (isCod || order.refund_error || refundPaymentStatus === 'refund_failed') &&
+                                hasPermission('update_order_status');
                               const allowedActions = actions.filter((a) => {
                                 if (a === 'CANCELLED') {
                                   return hasPermission('cancel_orders');
