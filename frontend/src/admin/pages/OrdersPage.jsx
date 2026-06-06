@@ -289,6 +289,65 @@ const OrdersPage = () => {
     return () => clearInterval(timer);
   }, [loadSilent, page, rows]);
 
+  const handleConfirmManualRefundItem = useCallback(async (restock = true) => {
+    if (!refundModal) return;
+    const { orderId, productId, isOrderLevel } = refundModal;
+    const amountVal = parseFloat(refundAmountInput);
+    if (isNaN(amountVal) || amountVal < 0) {
+      toast.error("Please enter a valid refund amount.");
+      return;
+    }
+    
+    if (isOrderLevel) {
+      const toastId = toast.loading('Confirming manual refund...');
+      try {
+        setPendingActionIds(prev => new Set(prev).add(orderId));
+        setSubmitting(true);
+        const response = await apiClient.put(`/admin/orders/${orderId}/confirm-manual-refund`);
+        const serverOrder = response?.data?.order;
+        if (serverOrder) {
+          const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
+          setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
+          setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
+        }
+        toast.success(response?.data?.message || 'Manual refund confirmed successfully.', { id: toastId });
+        setRefundModal(null);
+        setTimeout(() => loadSilent(page), 800);
+      } catch (err) {
+        const detail = err?.data?.detail || err?.response?.data?.detail || err?.message;
+        toast.error(detail || 'Failed to confirm manual refund.', { id: toastId });
+      } finally {
+        setPendingActionIds(prev => {
+          const next = new Set(prev);
+          next.delete(orderId);
+          return next;
+        });
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    const toastId = toast.loading('Confirming manual refund payout...');
+    try {
+      const response = await apiClient.post(
+        `/admin/orders/${orderId}/items/${productId}/process-refund?restock=${restock}&manual_amount=${amountVal}&is_manual=true`
+      );
+      
+      const serverOrder = response?.data?.order;
+      if (serverOrder) {
+        const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
+        setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
+        setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
+      }
+      
+      toast.success('Manual refund confirmed successfully!', { id: toastId });
+      setRefundModal(null);
+      setTimeout(() => loadSilent(page), 800);
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to process manual refund', { id: toastId });
+    }
+  }, [refundModal, refundAmountInput, page, loadSilent]);
+
   const [autoConfirmTimer, setAutoConfirmTimer] = useState(null);
 
   // Auto-confirm countdown hook for simulated manual refund QR modal
@@ -469,67 +528,6 @@ const OrdersPage = () => {
     } finally {
       setIsFetchingVpa(false);
     }
-  };
-
-  const handleConfirmManualRefundItem = useCallback(async (restock = true) => {
-    if (!refundModal) return;
-    const { orderId, productId, isOrderLevel } = refundModal;
-    const amountVal = parseFloat(refundAmountInput);
-    if (isNaN(amountVal) || amountVal < 0) {
-      toast.error("Please enter a valid refund amount.");
-      return;
-    }
-    
-    if (isOrderLevel) {
-      const toastId = toast.loading('Confirming manual refund...');
-      try {
-        setPendingActionIds(prev => new Set(prev).add(orderId));
-        setSubmitting(true);
-        const response = await apiClient.put(`/admin/orders/${orderId}/confirm-manual-refund`);
-        const serverOrder = response?.data?.order;
-        if (serverOrder) {
-          const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
-          setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
-          setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
-        }
-        toast.success(response?.data?.message || 'Manual refund confirmed successfully.', { id: toastId });
-        setRefundModal(null);
-        setTimeout(() => loadSilent(page), 800);
-      } catch (err) {
-        const detail = err?.data?.detail || err?.response?.data?.detail || err?.message;
-        toast.error(detail || 'Failed to confirm manual refund.', { id: toastId });
-      } finally {
-        setPendingActionIds(prev => {
-          const next = new Set(prev);
-          next.delete(orderId);
-          return next;
-        });
-        setSubmitting(false);
-      }
-      return;
-    }
-
-    const toastId = toast.loading('Confirming manual refund payout...');
-    try {
-      const response = await apiClient.post(
-        `/admin/orders/${orderId}/items/${productId}/process-refund?restock=${restock}&manual_amount=${amountVal}&is_manual=true`
-      );
-      
-      const serverOrder = response?.data?.order;
-      if (serverOrder) {
-        const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
-        setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
-        setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
-      }
-      
-      toast.success('Manual refund confirmed successfully!', { id: toastId });
-      setRefundModal(null);
-      setTimeout(() => loadSilent(page), 800);
-    } catch (err) {
-      toast.error(err?.response?.data?.detail || 'Failed to process manual refund', { id: toastId });
-    }
-  }, [refundModal, refundAmountInput, page, loadSilent]);
-
   const handleItemProcessRefund = async (orderId, productId, restock = true) => {
     const toastId = toast.loading('Processing refund...');
     try {
