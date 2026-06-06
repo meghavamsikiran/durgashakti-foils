@@ -1836,7 +1836,11 @@ const OrdersPage = () => {
 
                                {item.return_status === 'RETURN_RECEIVED' && (
                                  <button
-                                   onClick={() => handleOpenRefundModal(selectedOrderForModal.id, item.product_id, item)}
+                                   onClick={() => {
+                                     if (window.confirm("Are you sure you want to initiate an automatic Razorpay refund for this item?")) {
+                                       handleItemProcessRefund(selectedOrderForModal.id, item.product_id, true);
+                                     }
+                                   }}
                                    className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-emerald-glow"
                                  >
                                    Process Refund & Restock
