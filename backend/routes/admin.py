@@ -1059,12 +1059,30 @@ async def confirm_manual_refund(
                 "order"
             )
             from deps import send_email, row_to_dict
-            from email_templates import order_receipt_email
-            # Fetch enriched order details to generate tax invoice correctly
+            from email_templates import refund_credited_email
+            
+            # Enrich items
+            order_dict = row_to_dict(order)
             from routes.orders import _enrich_order_items
-            enriched_order = await _enrich_order_items(db, row_to_dict(order))
-            subj, body, att = order_receipt_email(cust.full_name or cust.email, enriched_order)
-            subj = f"Refund Credited & Updated Tax Invoice - {order.order_number}"
+            enriched_order = await _enrich_order_items(db, order_dict)
+            
+            # Identify refunded items
+            refunded_items = [i for i in enriched_order.get("items", []) if i.get("return_status") == "REFUND_COMPLETED"]
+            if not refunded_items:
+                refunded_items = [i for i in enriched_order.get("items", []) if i.get("return_status")]
+            if not refunded_items:
+                refunded_items = enriched_order.get("items", [])
+                
+            item_refund_total = sum(float(i.get("refund_calculations", {}).get("refundable_amount") or 0.0) for i in refunded_items)
+            courier_total = sum(float(i.get("self_shipping_details", {}).get("courier_cost") or 0.0) for i in refunded_items)
+            
+            subj, body, att = refund_credited_email(
+                cust.full_name or cust.email,
+                enriched_order,
+                refunded_items,
+                item_refund_total,
+                courier_total
+            )
             asyncio.create_task(send_email(cust.email, subj, body, attachments=att))
     except Exception as exc:
         logger.exception("Failed to send manual refund confirmation side effects: %s", exc)

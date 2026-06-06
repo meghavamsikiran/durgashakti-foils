@@ -664,3 +664,167 @@ def build_tax_invoice_attachment(order: dict) -> dict:
         "filename": f"Tax Invoice_{invoice_no}.pdf",
         "content": f"data:application/pdf;base64,{base64.b64encode(pdf_bytes).decode('ascii')}",
     }
+
+
+def build_credit_note_pdf(order: dict, refunded_items: list, item_refund_total: float, courier_total: float) -> bytes:
+    """Generate a one-page Credit Note PDF using the DSF bill template structure."""
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=(PAGE_WIDTH, PAGE_HEIGHT))
+
+    if TEMPLATE_PATH.exists():
+        c.drawImage(ImageReader(str(TEMPLATE_PATH)), 0, 0, width=PAGE_WIDTH, height=PAGE_HEIGHT, mask="auto")
+    else:
+        c.setFillColor(colors.white)
+        c.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, stroke=0, fill=1)
+
+    created = _parse_dt(order.get("updated_at") or order.get("created_at"))
+    invoice_no = _safe_text(order.get("invoice_number"), _invoice_number(order))
+    
+    # Custom Header for Credit Note
+    _draw_text(c, _px("x2"), _py("y2"), "CREDIT NOTE", FS["fs0"], MUTED, FONT, max_width=_sx(230))
+    _draw_text(c, _px("x3"), _py("y3"), COMPANY_PHONE, FS["fs1"], WHITE, FONT, max_width=_sx(150))
+    _draw_text(c, _px("x3") + _sx(205), _py("y3"), COMPANY_EMAIL, FS["fs1"], WHITE, FONT, max_width=_sx(260))
+    _draw_text(c, _px("x4"), _py("y4"), COMPANY_ADDRESS_LINES[0], FS["fs1"], WHITE, FONT, max_width=_sx(220))
+    _draw_text(c, _px("x4"), _py("y3"), COMPANY_ADDRESS_LINES[1], FS["fs1"], WHITE, FONT, max_width=_sx(220))
+    _draw_text(c, _px("x4"), _py("y5"), COMPANY_ADDRESS_LINES[2], FS["fs1"], WHITE, FONT, max_width=_sx(140))
+    _draw_text(c, _px("x5"), _py("y6"), COMPANY_NAME, FS["fs2"], WHITE, FONT, max_width=_sx(530))
+    _draw_text(c, _px("x5"), _py("y7"), f"GSTIN: {COMPANY_GSTIN}", FS["fs3"], WHITE, FONT, max_width=_sx(280))
+    _draw_text(c, _px("x5"), _py("y8"), f"State: {COMPANY_STATE}", FS["fs3"], WHITE, FONT, max_width=_sx(260))
+    _draw_text(c, _px("x6"), _py("y9"), "Credit Note", FS["fs4"], DARK, FONT_BOLD, max_width=_sx(310))
+
+    # Party Blocks
+    addr = order.get("shipping_address") or {}
+    customer_name, address_lines, phone, gstin, state = _address_lines(addr, order)
+    _draw_text(c, _px("x7"), _py("ya"), "Bill To:", FS["fs5"], GREEN, FONT_BOLD)
+    _draw_text(c, _px("x7"), _py("yb"), customer_name, FS["fs6"], DARK, FONT_BOLD, max_width=_sx(430))
+    y_keys = ["yc", "yd", "ye", "yf", "y10"]
+    expanded_address = []
+    for line in address_lines:
+        expanded_address.extend(_wrap_text(line, _sx(470), FONT, FS["fs7"]))
+    for key, line in zip(y_keys, expanded_address[: len(y_keys)]):
+        _draw_text(c, _px("x7"), _py(key), line, FS["fs7"], DARK, FONT, max_width=_sx(490))
+
+    _draw_text(c, _px("x7"), _py("y11"), f"Contact No.: {phone or 'N/A'}", FS["fs7"], DARK, FONT_BOLD, max_width=_sx(460))
+    _draw_text(c, _px("x7"), _py("y12"), f"GSTIN Number: {gstin}", FS["fs7"], DARK, FONT_BOLD, max_width=_sx(460))
+    _draw_text(c, _px("x7"), _py("y13"), f"State: {state}", FS["fs7"], DARK, FONT_BOLD, max_width=_sx(460))
+
+    # Credit Note details
+    cn_number = f"CN-{invoice_no}"
+    _draw_text(c, _px("x8"), _py("ya"), "Credit Note No.:", FS["fs7"], DARK, FONT_BOLD)
+    _draw_text(c, _px("x8") + _sx(180), _py("ya"), cn_number, FS["fs7"], DARK, FONT, max_width=_sx(170))
+    _draw_text(c, _px("x8"), _py("y14"), "Date:", FS["fs7"], DARK, FONT_BOLD)
+    _draw_text(c, _px("x8") + _sx(100), _py("y14"), created.strftime("%d/%m/%Y"), FS["fs7"], DARK, FONT)
+    _draw_text(c, _px("x8"), _py("y15"), "Original Invoice:", FS["fs7"], DARK, FONT_BOLD)
+    _draw_text(c, _px("x8") + _sx(190), _py("y15"), invoice_no, FS["fs7"], DARK, FONT, max_width=_sx(180))
+
+    # Items table headers
+    headers = [
+        ("#", _px("x7")),
+        ("Refunded Item(s)", _px("xb")),
+        ("HSN", _px("xd")),
+        ("Quantity", _sx(388)),
+        ("Unit", _sx(474)),
+        ("Refund / Unit", _sx(568)),
+        ("GST (18%)", _sx(692)),
+        ("Refund Subtotal", RIGHT_COLUMN_X - _sx(45)),
+    ]
+    for label, x in headers:
+        _draw_text(c, x, _py("y19"), label, FS["fs7"] * 0.92, WHITE, FONT_BOLD, max_width=_sx(112))
+
+    # Item rows
+    rows = []
+    total_qty = 0
+    for idx, item in enumerate(refunded_items):
+        qty = int(item.get("returned_quantity") or 1)
+        calc = item.get("refund_calculations") or {}
+        refundable_amt = float(calc.get("refundable_amount") or 0.0)
+        
+        # Calculate taxable share back from refundable_amount (which includes 18% GST)
+        taxable_val = round(refundable_amt / 1.18, 2)
+        gst_val = round(refundable_amt - taxable_val, 2)
+        unit_price = round(taxable_val / qty, 2) if qty > 0 else taxable_val
+        total_qty += qty
+        
+        rows.append({
+            "item": _safe_text(item.get("product_name"), "Product"),
+            "description": f"Return Reason: {_safe_text(item.get('return_status_description') or item.get('return_reason') or item.get('reason'))}",
+            "hsn": _safe_text(item.get("hsn") or item.get("hsn_code"), "76071991"),
+            "qty": qty,
+            "unit": "Rol",
+            "price": unit_price,
+            "gst": gst_val,
+            "amount": refundable_amt,
+        })
+
+    # Add Courier Reimbursement as a service item
+    if courier_total > 0:
+        rows.append({
+            "item": "Courier Cost Reimbursement",
+            "description": "Self-shipping shipping fee reimbursement",
+            "hsn": "996812",
+            "qty": 1,
+            "unit": "Svc",
+            "price": courier_total,
+            "gst": 0.0,
+            "amount": courier_total,
+        })
+        total_qty += 1
+
+    row_keys = ["y1a", "y1d", "y1e", "y1f", "y20"]
+    for idx, row in enumerate(rows[: len(row_keys)]):
+        base_y = _py(row_keys[idx])
+        name_y = base_y + _sx(6.8)
+        desc_y = base_y - _sx(5.5)
+        _draw_text(c, _px("xa"), base_y, str(idx + 1), FS["fs7"], DARK, FONT, max_width=_sx(24))
+        _draw_text(c, _px("xb"), name_y, row["item"], FS["fs7"] * 0.95, DARK, FONT_BOLD, max_width=_sx(205))
+        if row.get("description"):
+            _draw_text(c, _px("xc"), desc_y, f"({row['description']})", FS["fs8"], DARK, FONT, max_width=_sx(210))
+        _draw_text(c, _px("xd"), base_y, row["hsn"], FS["fs7"], DARK, FONT, max_width=_sx(85))
+        _draw_text(c, _sx(460), base_y, str(row["qty"]), FS["fs7"], DARK, FONT, align="right")
+        _draw_text(c, _sx(490), base_y, row["unit"], FS["fs7"], DARK, FONT, max_width=_sx(52))
+        _draw_text(c, _sx(633), base_y, _money(row["price"]), FS["fs7"], DARK, FONT, align="right", max_width=_sx(95))
+        _draw_text(c, _sx(748), base_y, _money(row["gst"]), FS["fs7"], DARK, FONT, align="right", max_width=_sx(125))
+        _draw_text(c, RIGHT_COLUMN_X, base_y, _money(row["amount"]), FS["fs7"], DARK, FONT, align="right", max_width=_sx(105))
+
+    total_credit = item_refund_total + courier_total
+    
+    _draw_text(c, _px("xb"), _py("y21"), "Total", FS["fs7"], WHITE, FONT_BOLD)
+    _draw_text(c, _sx(460), _py("y21"), str(total_qty), FS["fs7"], WHITE, FONT_BOLD, align="right")
+    _draw_text(c, RIGHT_COLUMN_X, _py("y21"), _money(total_credit), FS["fs7"], WHITE, FONT_BOLD, align="right", max_width=_sx(105))
+
+    # Bank Details / Note
+    _draw_text(c, _px("x7"), _py("y22"), "Refund Information:", FS["fs5"], GREEN, FONT_BOLD)
+    _draw_text(c, _px("x7"), _py("y23"), "This is a credit note and refund confirmation for your return.", FS["fs7"], DARK, FONT)
+    _draw_text(c, _px("x7"), _py("y24"), f"Refund Method: {order.get('payment_method', 'Online').upper()}", FS["fs7"], DARK, FONT)
+    _draw_text(c, _px("x7"), _py("y25"), f"Transaction ID: {order.get('transaction_id') or order.get('razorpay_payment_id') or 'N/A'}", FS["fs7"], DARK, FONT)
+
+    _draw_text(c, _px("x7"), _py("y27"), "Refund Amount In Words", FS["fs5"], GREEN, FONT_BOLD)
+    _draw_text(c, _px("x7"), _py("y28"), _number_to_words(total_credit), FS["fs7"], DARK, FONT, max_width=_sx(470))
+
+    _draw_text(c, _px("xa"), _py("y3b"), f"For : {COMPANY_NAME}", FS["fs7"], DARK, FONT, max_width=_sx(360))
+    _draw_text(c, _px("xe"), _py("y3c"), "Authorized Signatory", FS["fs9"], DARK, FONT_BOLD, max_width=_sx(260))
+
+    # Summary box
+    summary = [
+        ("Item Refund Subtotal", item_refund_total),
+        ("Courier Shipping Refund", courier_total),
+        ("Total Refund Credited", total_credit),
+    ]
+    y_keys = ["y3d", "y3e", "y3f"]
+    for key, (label, value) in zip(y_keys, summary):
+        color = WHITE if label == "Total Refund Credited" else DARK
+        font = FONT_BOLD if label == "Total Refund Credited" else FONT
+        _draw_text(c, _px("xf"), _py(key), label, FS["fs7"], color, font, max_width=_sx(180))
+        _draw_text(c, RIGHT_COLUMN_X, _py(key), _money(value), FS["fs7"], color, font, align="right", max_width=_sx(130))
+
+    c.save()
+    return buffer.getvalue()
+
+
+def build_credit_note_attachment(order: dict, refunded_items: list, item_refund_total: float, courier_total: float) -> dict:
+    pdf_bytes = build_credit_note_pdf(order, refunded_items, item_refund_total, courier_total)
+    invoice_no = _safe_text(order.get("invoice_number"), _invoice_number(order))
+    return {
+        "filename": f"Credit Note_{invoice_no}.pdf",
+        "content": f"data:application/pdf;base64,{base64.b64encode(pdf_bytes).decode('ascii')}",
+    }
