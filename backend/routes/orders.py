@@ -585,14 +585,17 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
             # Check if any processed refund has a bank reference (ARN/RRN/UTR)
             has_bank_reference = len(processed_refunds_with_reference) > 0
 
-            # Delay transitioning to 'refunded' by 120 seconds to simulate banking delay and allow test/UPI users to see the 'Refund Initiated' state
+            # Delay transitioning to 'refunded' to simulate banking delay and allow test/UPI users to see the 'Refund Initiated' state
             is_new_refund = False
             latest_refund_created_at = (latest_refund or {}).get("created_at")
             if latest_refund_created_at and not os.environ.get("PYTEST_CURRENT_TEST"):
                 try:
+                    key_id = os.environ.get("RAZORPAY_KEY_ID") or ""
+                    is_test_mode = "test" in key_id.lower()
+                    delay = 120 if is_test_mode else 86400  # 2 minutes for test mode, 24 hours for live mode
                     current_ts = int(datetime.now(timezone.utc).timestamp())
                     refund_age = current_ts - int(latest_refund_created_at)
-                    if refund_age < 120:  # 2 minutes
+                    if refund_age < delay:
                         is_new_refund = True
                 except Exception:
                     pass
@@ -2076,9 +2079,12 @@ async def razorpay_webhook(
         refund_created_at = refund_entity.get("created_at")
         if refund_created_at and not os.environ.get("PYTEST_CURRENT_TEST"):
             try:
+                key_id = os.environ.get("RAZORPAY_KEY_ID") or ""
+                is_test_mode = "test" in key_id.lower()
+                delay = 120 if is_test_mode else 86400  # 2 minutes for test mode, 24 hours for live mode
                 current_ts = int(datetime.now(timezone.utc).timestamp())
                 refund_age = current_ts - int(refund_created_at)
-                if refund_age < 120:  # 2 minutes
+                if refund_age < delay:
                     is_new_refund = True
             except Exception:
                 pass
