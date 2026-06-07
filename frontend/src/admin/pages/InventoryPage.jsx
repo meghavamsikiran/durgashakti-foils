@@ -171,12 +171,11 @@ const InventoryPage = () => {
   if (loading && rows.length === 0) return <PageLoader message="Loading Inventory..." />;
 
   return (
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-200">
+    <div className="space-y-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2.5 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <Boxes className="w-7 h-7 text-primary" />
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <Boxes className="w-5 h-5 text-primary" />
             Product Stock
           </h1>
           <p className="text-xs text-slate-500 mt-0.5 font-medium">Monitor and update your product stock levels.</p>
@@ -275,40 +274,40 @@ const InventoryPage = () => {
 
       {hasPermission('view_analytics') && metrics && (
         <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white py-2 px-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5 hover:shadow-md transition-shadow">
             <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
               <IndianRupee className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Stock Value</div>
-              <div className="text-lg font-black text-slate-900 leading-none mt-0.5">₹{(stats.totalValue / 1000).toFixed(1)}k</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Stock Value</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">₹{(stats.totalValue / 1000).toFixed(1)}k</div>
             </div>
           </div>
-          <div className="bg-white py-2 px-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5 hover:shadow-md transition-shadow">
             <div className="w-8 h-8 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
               <TrendingDown className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Low Stock</div>
-              <div className="text-lg font-black text-slate-900 leading-none mt-0.5">{stats.outOfStock + stats.lowStock}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Low Stock</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.outOfStock + stats.lowStock}</div>
             </div>
           </div>
-          <div className="bg-white py-2 px-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5 hover:shadow-md transition-shadow">
             <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
               <BarChart3 className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Units Sold</div>
-              <div className="text-lg font-black text-slate-900 leading-none mt-0.5">{stats.soldVolume}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Units Sold</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.soldVolume}</div>
             </div>
           </div>
-          <div className="bg-white py-2 px-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5 hover:shadow-md transition-shadow">
             <div className="w-8 h-8 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
               <Zap className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Sales Velocity</div>
-              <div className="text-lg font-black text-slate-900 leading-none mt-0.5">{stats.salesVelocity}<span className="text-[9px] text-slate-500 ml-1 font-bold tracking-widest">U/DAY</span></div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Sales Velocity</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.salesVelocity}<span className="text-[9px] text-slate-500 ml-1 font-bold tracking-widest">U/DAY</span></div>
             </div>
           </div>
         </div>
