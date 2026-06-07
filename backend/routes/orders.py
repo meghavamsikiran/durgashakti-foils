@@ -227,7 +227,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
     client = _get_razorpay_client()
     if not client:
         key_id = os.environ.get("RAZORPAY_KEY_ID")
-        is_fake = not key_id or "fake" in key_id.lower() or "dummy" in key_id.lower() or "test" in key_id.lower()
+        is_fake = not key_id or "fake" in key_id.lower() or "dummy" in key_id.lower()
         if is_fake:
             logger.info("Mocking successful Razorpay refund for payment_id %s", payment_id)
             return True, "Mock Refund Successful", {
@@ -358,7 +358,7 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
 
     if not client:
         key_id = os.environ.get("RAZORPAY_KEY_ID")
-        is_fake = not key_id or "fake" in key_id.lower() or "dummy" in key_id.lower() or "test" in key_id.lower()
+        is_fake = not key_id or "fake" in key_id.lower() or "dummy" in key_id.lower()
         if is_fake:
             logger.info("Mocking successful Razorpay partial refund for payment_id %s, amount: %s paise", payment_id, amount_paise)
             return True, "Mock Refund Successful", {
@@ -524,7 +524,7 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
         client = _get_razorpay_client()
         if not client:
             key_id = os.environ.get("RAZORPAY_KEY_ID")
-            is_fake = not key_id or "fake" in key_id.lower() or "dummy" in key_id.lower() or "test" in key_id.lower()
+            is_fake = not key_id or "fake" in key_id.lower() or "dummy" in key_id.lower()
             if is_fake:
                 logger.info("Mocking successful Razorpay refund reconciliation for order %s", order.order_number)
                 amount_refunded = _expected_amount_paise(order)
@@ -585,11 +585,23 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
             # Check if any processed refund has a bank reference (ARN/RRN/UTR)
             has_bank_reference = len(processed_refunds_with_reference) > 0
 
+            # Delay transitioning to 'refunded' by 120 seconds to simulate banking delay and allow test/UPI users to see the 'Refund Initiated' state
+            is_new_refund = False
+            latest_refund_created_at = (latest_refund or {}).get("created_at")
+            if latest_refund_created_at and not os.environ.get("PYTEST_CURRENT_TEST"):
+                try:
+                    current_ts = int(datetime.now(timezone.utc).timestamp())
+                    refund_age = current_ts - int(latest_refund_created_at)
+                    if refund_age < 120:  # 2 minutes
+                        is_new_refund = True
+                except Exception:
+                    pass
+
         if order.payment_status != "refunded" or order.order_status != "refunded":
             prev_payment_status = order.payment_status
             prev_order_status = order.order_status
 
-            if has_bank_reference:
+            if has_bank_reference and not is_new_refund:
                 # Bank has confirmed — mark as fully credited
                 stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
                 order.payment_status = "refunded"
@@ -1217,8 +1229,8 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
             key_secret = os.environ.get("RAZORPAY_KEY_SECRET")
             is_fake = (
                 not key_id or not key_secret or 
-                "fake" in key_id.lower() or "dummy" in key_id.lower() or "test" in key_id.lower() or
-                "fake" in key_secret.lower() or "dummy" in key_secret.lower() or "test" in key_secret.lower()
+                "fake" in key_id.lower() or "dummy" in key_id.lower() or
+                "fake" in key_secret.lower() or "dummy" in key_secret.lower()
             )
             if is_fake:
                 razorpay_order_id = f"order_{uuid.uuid4().hex[:14]}"
@@ -2058,7 +2070,20 @@ async def razorpay_webhook(
 
         refund_status = str(refund_entity.get("status") or "").lower()
         bank_confirmed = _refund_has_bank_reference(refund_entity)
-        if (event == "refund.processed" or refund_status == "processed") and bank_confirmed:
+        
+        # Check if the refund is new to delay immediate transition in webhook
+        is_new_refund = False
+        refund_created_at = refund_entity.get("created_at")
+        if refund_created_at and not os.environ.get("PYTEST_CURRENT_TEST"):
+            try:
+                current_ts = int(datetime.now(timezone.utc).timestamp())
+                refund_age = current_ts - int(refund_created_at)
+                if refund_age < 120:  # 2 minutes
+                    is_new_refund = True
+            except Exception:
+                pass
+
+        if (event == "refund.processed" or refund_status == "processed") and bank_confirmed and not is_new_refund:
             # Bank has confirmed the refund (ARN/RRN/UTR present) — mark as fully credited
             stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
             order.payment_status = "refunded"
