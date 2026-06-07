@@ -387,6 +387,7 @@ const InquiriesPage = () => {
               </div>
             </div>
           )}
+        </div>
       </div>
 
       {/* Table */}
