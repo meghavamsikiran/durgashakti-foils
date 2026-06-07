@@ -843,11 +843,39 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     should_schedule_refund = False
     if new_status == "return_approved":
         effective_status = "return_approved"
-        # Disable automatic refund on return approval; the refund must only be initiated
-        # when the admin receives the item and clicks 'Process Refund' manually.
-        pass
+        # Sync all pending return items to approved
+        updated_items = []
+        for item in (order.items or []):
+            if item.get("return_status") == "RETURN_REQUESTED":
+                item["return_status"] = "RETURN_APPROVED"
+                if "audit_timeline" not in item:
+                    item["audit_timeline"] = []
+                item["audit_timeline"].append({
+                    "status": "RETURN_APPROVED",
+                    "timestamp": now.isoformat(),
+                    "remarks": status_data.get("admin_message") or "Return approved by order-level status change"
+                })
+            updated_items.append(item)
+        order.items = updated_items
+        flag_modified(order, "items")
+        
     if new_status == "return_rejected":
         effective_status = "return_rejected"
+        # Sync all pending return items to rejected
+        updated_items = []
+        for item in (order.items or []):
+            if item.get("return_status") == "RETURN_REQUESTED":
+                item["return_status"] = "RETURN_REJECTED"
+                if "audit_timeline" not in item:
+                    item["audit_timeline"] = []
+                item["audit_timeline"].append({
+                    "status": "RETURN_REJECTED",
+                    "timestamp": now.isoformat(),
+                    "remarks": status_data.get("admin_message") or "Return rejected by order-level status change"
+                })
+            updated_items.append(item)
+        order.items = updated_items
+        flag_modified(order, "items")
 
     order.order_status = effective_status
     order.updated_at = now
