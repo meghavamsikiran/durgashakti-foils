@@ -2466,11 +2466,12 @@ async def admin_item_process_refund(
             order.order_status = "refunded"
             order.payment_status = "refunded"
         elif razorpay_refund_succeeded:
-            order.order_status = "refunded"
+            order.order_status = "return_approved"
             order.payment_status = "refund_pending"
         else:
-            order.order_status = "refunded"
-            order.payment_status = "refund_pending"
+            order.order_status = "return_approved"
+            order.payment_status = "refund_failed"
+        
         
     await db.commit()
     await write_audit_log(
