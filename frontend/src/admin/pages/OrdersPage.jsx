@@ -446,6 +446,8 @@ const OrdersPage = () => {
         setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
         setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
       }
+      setMessageModal(null);
+      setAdminMessage('');
       toast.success(`Item return ${action}d successfully`, { id: toastId });
       setTimeout(() => loadSilent(page), 800);
     } catch (err) {
@@ -649,30 +651,31 @@ const OrdersPage = () => {
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-semibold transition-all shadow-sm ${
-                showFilters || courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter
+                showFilters || courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter || filter !== 'ALL'
                   ? 'bg-primary/10 border-primary text-primary'
                   : 'bg-white border-slate-200 text-slate-750 hover:bg-slate-50'
               }`}
             >
               <Filter className="w-4 h-4" />
               <span>Filter</span>
-              {(courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter) && (
+              {(courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter || filter !== 'ALL') && (
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               )}
             </button>
-
+ 
             {showFilters && (
               <>
                 <div className="fixed inset-0 z-[999]" onClick={() => setShowFilters(false)} />
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-slate-200 shadow-xl p-5 z-[1000] space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                     <span className="text-xs font-black uppercase tracking-widest text-slate-500">Filter Options</span>
-                    {(courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter) && (
+                    {(courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter || filter !== 'ALL') && (
                       <button
                         onClick={() => {
                           setCourierFilter('');
                           setPaymentStatusFilter('');
                           setPaymentMethodFilter('');
+                          setFilter('ALL');
                           setDateFilter(null);
                         }}
                         className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700"
@@ -681,7 +684,35 @@ const OrdersPage = () => {
                       </button>
                     )}
                   </div>
-
+ 
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Order Status</label>
+                    <select
+                      value={filter}
+                      onChange={(e) => {
+                        setPage(1);
+                        setFilter(e.target.value || 'ALL');
+                      }}
+                      className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-semibold outline-none transition-colors"
+                    >
+                      <option value="ALL">All Statuses</option>
+                      <option value="PENDING">Placed</option>
+                      <option value="CONFIRMED">Confirmed</option>
+                      <option value="PACKAGING">Packed</option>
+                      <option value="SHIPPED">Shipped</option>
+                      <option value="IN_TRANSIT">In Transit</option>
+                      <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+                      <option value="DELIVERED">Delivered</option>
+                      <option value="RETURN_REQUESTED">Return Requested</option>
+                      <option value="RETURN_APPROVED">Return Approved</option>
+                      <option value="RETURN_REJECTED">Return Rejected</option>
+                      <option value="REFUNDED">Refund Credited</option>
+                      <option value="RETURNED">Returned</option>
+                      <option value="CANCELLED">Cancelled</option>
+                      <option value="FAILED">Failed</option>
+                    </select>
+                  </div>
+ 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Courier</label>
                     <select
@@ -702,7 +733,7 @@ const OrdersPage = () => {
                       <option value="Ekart">Ekart</option>
                     </select>
                   </div>
-
+ 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payment Status</label>
                     <select
@@ -717,10 +748,9 @@ const OrdersPage = () => {
                       <option value="refunded">Refund Credited</option>
                       <option value="refund_failed">Refund Failed</option>
                       <option value="failed">Failed</option>
-                      <option value="Cash On Delivery">Cash On Delivery</option>
                     </select>
                   </div>
-
+ 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payment Method</label>
                     <select
@@ -733,7 +763,7 @@ const OrdersPage = () => {
                       <option value="cod">Cash on Delivery (COD)</option>
                     </select>
                   </div>
-
+ 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Date Range</label>
                     <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} />
@@ -786,27 +816,7 @@ const OrdersPage = () => {
         </div>
       )}
 
-      <div className="bg-slate-50 p-1 rounded-2xl flex flex-nowrap items-center gap-1 border border-slate-200 overflow-x-auto">
-        {['ALL', 'PENDING_PAYMENT', 'CONFIRMED', 'PACKAGING', 'SHIPPED', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'RETURN_REQUESTED', 'RETURN_APPROVED', 'RETURN_REJECTED', 'REFUNDED', 'RETURNED', 'CANCELLED', 'FAILED'].map((s) => (
-          <button
-            key={s}
-            onClick={() => {
-              setExpandedOrderId(null);
-              setPage(1);
-              skipNextLoadRef.current = true;
-              setFilter(s);
-              load(1, s);
-            }}
-            className={`shrink-0 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-tighter transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
-              filter === s
-                ? 'bg-white text-primary shadow-sm ring-1 ring-slate-200'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'
-            }`}
-          >
-            {s === 'ALL' ? 'All' : statusLabel(s)}
-          </button>
-        ))}
-      </div>
+      {/* Horizontal tabs removed to optimize loading speed and unify filters */}
 
       {selectedOrderIds.size > 0 && (
         <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-300">
@@ -978,8 +988,8 @@ const OrdersPage = () => {
                                     DELIVERED: 'Mark Delivered',
                                     FAILED: 'Mark Failed Delivery',
                                     RETURNED: 'Mark Returned',
-                                    RETURN_APPROVED: 'Approve',
-                                    RETURN_REJECTED: 'Reject',
+                                    RETURN_APPROVED: 'Approve Return',
+                                    RETURN_REJECTED: 'Reject Return',
                                     REFUNDED: 'Refund'
                                   };
                                   const label = actionLabels[a] || statusLabel(a);
@@ -1069,25 +1079,27 @@ const OrdersPage = () => {
           totalItems={total}
           pageSize={PAGE_SIZE}
         />
-      </div>
-
-      {messageModal && (
+      </div>      {messageModal && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6">
             <div>
               <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
-                {messageModal.status === 'RETURN_APPROVED' ? 'Approve Return' : messageModal.status === 'RETURN_REJECTED' ? 'Reject Return' : 'Cancel Order'}
+                {messageModal.status === 'RETURN_APPROVED' || messageModal.action === 'approve'
+                  ? 'Approve Return'
+                  : messageModal.status === 'RETURN_REJECTED' || messageModal.action === 'reject'
+                  ? 'Reject Return'
+                  : 'Cancel Order'}
               </h3>
               <p className="text-xs text-slate-500 mt-1">Provide a custom message or reason to deliver respectively to the customer.</p>
             </div>
-
+ 
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Message to Customer</label>
               <textarea
                 placeholder={
-                  messageModal.status === 'RETURN_APPROVED'
+                  messageModal.status === 'RETURN_APPROVED' || messageModal.action === 'approve'
                     ? "E.g., Your return has been approved. Refund has been initiated."
-                    : messageModal.status === 'RETURN_REJECTED'
+                    : messageModal.status === 'RETURN_REJECTED' || messageModal.action === 'reject'
                     ? "E.g., Rejection reason: The photo proof does not show any defective quality issues."
                     : "E.g., Order cancelled due to stock unavailability."
                 }
@@ -1097,16 +1109,25 @@ const OrdersPage = () => {
                 className="w-full p-4 min-h-[100px] rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none resize-none"
               />
             </div>
-
+ 
             <div className="flex gap-3">
               <button
-                onClick={() => setMessageModal(null)}
+                onClick={() => {
+                  setMessageModal(null);
+                  setAdminMessage('');
+                }}
                 className="flex-1 h-12 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
               >
                 Go Back
               </button>
               <button
-                onClick={() => updateStatus(messageModal.orderId, messageModal.status, adminMessage)}
+                onClick={() => {
+                  if (messageModal.action) {
+                    handleItemReturnAction(messageModal.orderId, messageModal.productId, messageModal.action, adminMessage);
+                  } else {
+                    updateStatus(messageModal.orderId, messageModal.status, adminMessage);
+                  }
+                }}
                 disabled={!adminMessage.trim()}
                 className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow disabled:opacity-50 transition-all"
               >
@@ -1115,7 +1136,7 @@ const OrdersPage = () => {
             </div>
           </div>
         </div>
-      )}
+      )}  )}
 
       {bulkShipModal && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
@@ -1858,13 +1879,27 @@ const OrdersPage = () => {
                               {item.return_status === 'RETURN_REQUESTED' && (
                                 <>
                                   <button
-                                    onClick={() => handleItemReturnAction(selectedOrderForModal.id, item.product_id, 'approve')}
+                                    onClick={() => {
+                                      setMessageModal({
+                                        orderId: selectedOrderForModal.id,
+                                        productId: item.product_id,
+                                        action: 'approve'
+                                      });
+                                      setAdminMessage('');
+                                    }}
                                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
                                   >
                                     Approve Return
                                   </button>
                                   <button
-                                    onClick={() => handleItemReturnAction(selectedOrderForModal.id, item.product_id, 'reject')}
+                                    onClick={() => {
+                                      setMessageModal({
+                                        orderId: selectedOrderForModal.id,
+                                        productId: item.product_id,
+                                        action: 'reject'
+                                      });
+                                      setAdminMessage('');
+                                    }}
                                     className="bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
                                   >
                                     Reject Return
