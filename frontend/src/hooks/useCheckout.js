@@ -77,16 +77,18 @@ export const useCheckout = () => {
   const [codEnabled, setCodEnabled] = useState(true);
   const [shippingSettings, setShippingSettings] = useState(null);
   const [savedAddresses, setSavedAddresses] = useState(() => {
-    return addressService.getCached ? addressService.getCached() : [];
+    const cached = addressService.getCached ? addressService.getCached() : [];
+    return Array.isArray(cached) ? cached : [];
   });
   const [addressesLoading, setAddressesLoading] = useState(() => {
     const cached = addressService.getCached ? addressService.getCached() : null;
-    return !cached || cached.length === 0;
+    return !Array.isArray(cached) || cached.length === 0;
   });
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [shippingInfo, setShippingInfo] = useState(() => {
     const list = addressService.getCached ? addressService.getCached() : [];
-    const def = list.find(a => a.is_default) || list[0];
+    const arr = Array.isArray(list) ? list : [];
+    const def = arr.find(a => a.is_default) || arr[0];
     if (def) {
       return {
         label: def.label || 'Home',
@@ -116,7 +118,8 @@ export const useCheckout = () => {
   // Update selected address ID on cache load initial state
   useEffect(() => {
     const list = addressService.getCached ? addressService.getCached() : [];
-    const def = list.find(a => a.is_default) || list[0];
+    const arr = Array.isArray(list) ? list : [];
+    const def = arr.find(a => a.is_default) || arr[0];
     if (def && !selectedAddressId) {
       setSelectedAddressId(def.id);
     }
