@@ -58,6 +58,9 @@ const statusConfigs = {
   REFUNDED: { color: 'text-slate-600', bg: 'bg-slate-50', icon: IndianRupee },
   REFUND_PENDING: { color: 'text-sky-600', bg: 'bg-sky-50', icon: Clock },
   REFUND_FAILED: { color: 'text-rose-600', bg: 'bg-rose-50', icon: AlertCircle },
+  RETURN_APPROVED_PENDING_SHIP: { color: 'text-teal-600', bg: 'bg-teal-50 border border-teal-100', icon: CheckCircle2 },
+  SELF_SHIPPED: { color: 'text-indigo-600', bg: 'bg-indigo-50 border border-indigo-100', icon: Truck },
+  RETURN_RECEIVED: { color: 'text-purple-600', bg: 'bg-purple-50 border border-purple-100', icon: CheckCircle2 },
 };
 
 const PAGE_SIZE = 15;
@@ -84,6 +87,9 @@ const STATUS_LABELS = {
   REFUNDED: 'Refund Credited',
   REFUND_PENDING: 'Refund Initiated',
   REFUND_FAILED: 'Refund Failed',
+  RETURN_APPROVED_PENDING_SHIP: 'Return Approved (Self-Ship Pending)',
+  SELF_SHIPPED: 'Self-Shipped by Customer',
+  RETURN_RECEIVED: 'Return Received',
 };
 const getDisplayStatus = (order) => {
   if (!order) return 'PENDING';
@@ -93,6 +99,17 @@ const getDisplayStatus = (order) => {
   if (payStatus === 'refund_pending') return 'REFUND_PENDING';
   if (payStatus === 'refund_failed') return 'REFUND_FAILED';
   if (payStatus === 'refunded') return 'REFUNDED';
+  
+  if (ordStatus === 'RETURN_APPROVED') {
+    const items = order.items || [];
+    const hasReceived = items.some(i => i.return_status === 'RETURN_RECEIVED');
+    const hasSelfShipped = items.some(i => i.return_status === 'SELF_SHIPPED');
+    const hasApproved = items.some(i => i.return_status === 'RETURN_APPROVED');
+    
+    if (hasReceived) return 'RETURN_RECEIVED';
+    if (hasSelfShipped) return 'SELF_SHIPPED';
+    if (hasApproved) return 'RETURN_APPROVED_PENDING_SHIP';
+  }
   
   return ordStatus;
 };

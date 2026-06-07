@@ -1019,9 +1019,21 @@ const OrderDetailsPage = () => {
               <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                 order.order_status === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
                 order.order_status === 'cancelled' ? 'bg-rose-100 text-rose-800' :
-                (order.order_status === 'return_approved' && (order.payment_status || '').toLowerCase() === 'refund_pending') ? 'bg-sky-100 text-sky-800 border border-sky-200 animate-pulse' :
-                (order.order_status === 'return_approved' && (order.payment_status || '').toLowerCase() === 'refund_failed') ? 'bg-rose-100 text-rose-800 border border-rose-200' :
-                'bg-primary/10 text-primary'
+                (() => {
+                  const s = (order.order_status || '').toLowerCase();
+                  const p = (order.payment_status || '').toLowerCase();
+                  if (s === 'return_approved') {
+                    if (p === 'refunded') return 'bg-emerald-105 text-emerald-800';
+                    if (p === 'refund_failed') return 'bg-rose-100 text-rose-800 border border-rose-200';
+                    if (p === 'refund_pending') return 'bg-sky-100 text-sky-850 border border-sky-200 animate-pulse';
+                    
+                    const items = order.items || [];
+                    if (items.some(i => i.return_status === 'RETURN_RECEIVED')) return 'bg-purple-100 text-purple-800 border border-purple-200';
+                    if (items.some(i => i.return_status === 'SELF_SHIPPED')) return 'bg-indigo-100 text-indigo-800 border border-indigo-200';
+                    return 'bg-teal-100 text-teal-800 border border-teal-200';
+                  }
+                  return 'bg-primary/10 text-primary';
+                })()
               }`}>
                 {(() => {
                   const s = (order.order_status || '').toLowerCase();
@@ -1030,6 +1042,11 @@ const OrderDetailsPage = () => {
                     if (p === 'refunded') return 'Refund Credited';
                     if (p === 'refund_failed') return 'Refund Failed';
                     if (p === 'refund_pending') return 'Refund Initiated';
+                    
+                    const items = order.items || [];
+                    if (items.some(i => i.return_status === 'RETURN_RECEIVED')) return 'Return Received';
+                    if (items.some(i => i.return_status === 'SELF_SHIPPED')) return 'Self-Shipped (Verification Pending)';
+                    return 'Return Approved (Self-Ship Pending)';
                   }
                   return order.order_status?.replace('_', ' ');
                 })()}
@@ -1279,7 +1296,17 @@ const OrderDetailsPage = () => {
                   : order.order_status === 'return_requested'
                   ? 'Return Pending Approval'
                   : order.order_status === 'return_approved'
-                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Refund Credited' : (order.payment_status || '').toLowerCase() === 'refund_failed' ? 'Refund Failed' : (order.payment_status || '').toLowerCase() === 'refund_pending' ? 'Refund Initiated' : 'Return Approved')
+                  ? (() => {
+                      const pay = (order.payment_status || '').toLowerCase();
+                      if (pay === 'refunded') return 'Refund Credited';
+                      if (pay === 'refund_failed') return 'Refund Failed';
+                      if (pay === 'refund_pending') return 'Refund Initiated';
+                      
+                      const items = order.items || [];
+                      if (items.some(i => i.return_status === 'RETURN_RECEIVED')) return 'Return Received';
+                      if (items.some(i => i.return_status === 'SELF_SHIPPED')) return 'Self-Shipped (Receipt Verification Pending)';
+                      return 'Return Approved (Self-Ship Pending)';
+                    })()
                   : order.order_status === 'return_rejected'
                   ? 'Return Request Declined'
                   : `Preparing shipment • Est. Delivery ${getExpectedDeliveryDate(order.created_at)}`
@@ -1293,7 +1320,17 @@ const OrderDetailsPage = () => {
                   : order.order_status === 'return_requested'
                   ? 'Our team is reviewing your return request and proof media.'
                   : order.order_status === 'return_approved' || order.order_status === 'refunded'
-                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Your return was accepted and the refund has been credited.' : (order.payment_status || '').toLowerCase() === 'refund_failed' ? (order.refund_error || 'Your refund could not be completed. Our team will retry it after resolving the payment gateway issue.') : 'Your return was accepted and the refund has been initiated.')
+                  ? (() => {
+                      const pay = (order.payment_status || '').toLowerCase();
+                      if (pay === 'refunded') return 'Your return was accepted and the refund has been credited.';
+                      if (pay === 'refund_failed') return order.refund_error || 'Your refund could not be completed. Our team will retry it after resolving the payment gateway issue.';
+                      if (pay === 'refund_pending') return 'Your return was accepted and the refund has been initiated.';
+                      
+                      const items = order.items || [];
+                      if (items.some(i => i.return_status === 'RETURN_RECEIVED')) return 'We have physically received your return. Your refund is processing.';
+                      if (items.some(i => i.return_status === 'SELF_SHIPPED')) return 'We have received your shipment tracking details. Verification is in progress.';
+                      return 'Your return request was approved. Please self-ship the return package to the store.';
+                    })()
                   : 'We are packaging and preparing your items for courier pickup.'
                 }
               </p>
