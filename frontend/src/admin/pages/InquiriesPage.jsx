@@ -400,60 +400,62 @@ const InquiriesPage = () => {
             {total} Total
           </span>
         </div>
-        <AdminTable
-          columns={[
-            { key: 'name', title: 'Customer' },
-            { key: 'contact', title: 'Contact Info' },
-            { key: 'message', title: 'Message Preview' },
-            { key: 'status', title: 'Status' },
-            { key: 'created_at', title: 'Received On' },
-            { key: 'actions', title: 'Actions' },
-          ]}
-          rows={inquiries.map(item => ({
-            ...item,
-            name: <span className="font-bold text-slate-900">{item.name}</span>,
-            contact: (
-              <div className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-slate-400" /> {item.email}
-                </span>
-                {item.phone && (
-                  <span className="text-xs text-slate-500 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-slate-400" /> {item.phone}
+        <div className="overflow-x-auto overflow-y-auto admin-table-container-standard">
+          <AdminTable
+            columns={[
+              { key: 'name', title: 'Customer' },
+              { key: 'contact', title: 'Contact Info' },
+              { key: 'message', title: 'Message Preview' },
+              { key: 'status', title: 'Status' },
+              { key: 'created_at', title: 'Received On' },
+              { key: 'actions', title: 'Actions' },
+            ]}
+            rows={inquiries.map(item => ({
+              ...item,
+              name: <span className="font-bold text-slate-900">{item.name}</span>,
+              contact: (
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-slate-400" /> {item.email}
                   </span>
-                )}
-              </div>
-            ),
-            created_at: (
-              <span className="text-sm text-slate-600 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-              </span>
-            ),
-            message: <span className="text-sm text-slate-600 truncate max-w-[200px] block">{item.message}</span>,
-            status: (
-              <select
-                value={item.status || 'pending'}
-                onChange={(e) => handleUpdateStatus(item.id, e.target.value)}
-                className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative ${getStatusStyle(item.status || 'pending')}`}
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
-              >
-                <option value="pending">Pending</option>
-                <option value="in_progress">In Progress</option>
-                <option value="replied">Replied</option>
-                <option value="resolved">Closed</option>
-              </select>
-            ),
-            actions: (
-              <button 
-                onClick={() => setSelectedInquiry(item)}
-                className="bg-slate-100 hover:bg-primary hover:text-white text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm active:scale-95"
-              >
-                Review
-              </button>
-            )
-          }))}
-        />
+                  {item.phone && (
+                    <span className="text-xs text-slate-500 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-slate-400" /> {item.phone}
+                    </span>
+                  )}
+                </div>
+              ),
+              created_at: (
+                <span className="text-sm text-slate-600 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+              ),
+              message: <span className="text-sm text-slate-600 truncate max-w-[200px] block">{item.message}</span>,
+              status: (
+                <select
+                  value={item.status || 'pending'}
+                  onChange={(e) => handleUpdateStatus(item.id, e.target.value)}
+                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative ${getStatusStyle(item.status || 'pending')}`}
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="replied">Replied</option>
+                  <option value="resolved">Closed</option>
+                </select>
+              ),
+              actions: (
+                <button 
+                  onClick={() => setSelectedInquiry(item)}
+                  className="bg-slate-100 hover:bg-primary hover:text-white text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm active:scale-95"
+                >
+                  Review
+                </button>
+              )
+            }))}
+          />
+        </div>
         <TablePagination
           currentPage={page}
           totalPages={Math.ceil(total / PAGE_SIZE)}

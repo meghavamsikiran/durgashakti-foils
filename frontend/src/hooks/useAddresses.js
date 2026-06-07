@@ -3,8 +3,14 @@ import addressService from '../services/address.service';
 import { toast } from 'sonner';
 
 export const useAddresses = () => {
-  const [addresses, setAddresses] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [addresses, setAddresses] = useState(() => {
+    const cached = addressService.getCached ? addressService.getCached() : null;
+    return cached || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = addressService.getCached ? addressService.getCached() : null;
+    return !cached;
+  });
 
   const fetchAddresses = useCallback(async () => {
     setLoading(true);

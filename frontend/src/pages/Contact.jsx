@@ -328,7 +328,7 @@ const Contact = () => {
                 height="100%" 
                 style={{ border: 0, minHeight: '100%', flexGrow: 1 }} 
                 allowFullScreen="" 
-                loading="lazy" 
+                loading="eager" 
                 referrerPolicy="no-referrer-when-downgrade"
               />
               
