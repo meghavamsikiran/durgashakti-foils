@@ -2311,6 +2311,53 @@ async def admin_item_return_action(
             order.order_status = "return_rejected"
             
     await db.commit()
+    
+    # Send email and notification to customer
+    if order.user_id:
+        try:
+            from models import UserModel
+            u_res = await db.execute(select(UserModel).where(UserModel.id == order.user_id))
+            cust = u_res.scalar_one_or_none()
+            if cust:
+                from deps import send_email, create_notification
+                from email_templates import return_approved_email, return_rejected_email
+                if action_upper == "APPROVE":
+                    has_return_request = any(item.get("return_status") for item in (order.items or []))
+                    items_to_sum = (order.items or []) if not has_return_request else [
+                        item for item in (order.items or [])
+                        if item.get("return_status") in ("RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED", "REFUND_INITIATED", "REFUND_COMPLETED")
+                    ]
+                    total_refund_amount = sum(
+                        float(item.get("refund_calculations", {}).get("refundable_amount") or 0.0) +
+                        float(item.get("self_shipping_details", {}).get("courier_cost") or 0.0)
+                        for item in items_to_sum
+                    )
+                    
+                    # Send customer notification
+                    await create_notification(
+                        db,
+                        str(order.user_id),
+                        "Return Approved",
+                        f"Your return request for order {order.order_number} has been approved. Refund will process in 5-7 business days.",
+                        "order"
+                    )
+                    
+                    # Send professional email explaining the 5-7 business days timeline
+                    subj, body = return_approved_email(cust.full_name or cust.email, order.order_number, total_refund_amount)
+                    await send_email(cust.email, subj, body)
+                else:
+                    await create_notification(
+                        db,
+                        str(order.user_id),
+                        "Return Rejected",
+                        f"Your return request for order {order.order_number} has been rejected.",
+                        "order"
+                    )
+                    subj, body = return_rejected_email(cust.full_name or cust.email, order.order_number, payload.remarks or "")
+                    await send_email(cust.email, subj, body)
+        except Exception:
+            logger.exception("Failed to send return action email/notification")
+
     await write_audit_log(
         db,
         "ITEM_RETURN_ACTION",

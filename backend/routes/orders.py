@@ -126,7 +126,11 @@ async def normalize_unconfirmed_refund(order: OrderModel, db: AsyncSession) -> b
         return False
 
     latest = await _latest_refund_audit(db, str(order.id))
-    if latest and _audit_meta_has_bank_reference(latest.metadata_):
+    if latest and (
+        _audit_meta_has_bank_reference(latest.metadata_) 
+        or str(latest.metadata_.get("refund_status") or "").lower() == "processed"
+        or "RECONCILED" in latest.action
+    ):
         return False
 
     prev_payment_status = order.payment_status
@@ -514,19 +518,10 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
         )
 
         is_fully_refunded = (
-            expected_amount > 0
-            and (
-                processed_amount_with_reference >= expected_amount
-                or (
-                    _refund_has_bank_reference(latest_refund)
-                    and (
-                        amount_refunded >= expected_amount
-                        or processed_amount >= expected_amount
-                        or refund_status == "full"
-                        or payment_state == "refunded"
-                    )
-                )
-            )
+            amount_refunded > 0 
+            or processed_amount > 0 
+            or refund_status in ("full", "partial") 
+            or payment_state == "refunded"
         )
         if not is_fully_refunded:
             return False
