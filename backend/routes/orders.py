@@ -1432,9 +1432,17 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
 async def get_order(order_id: str, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     await enforce_return_deadlines(db, user_id=str(current_user.id))
     await enforce_payment_timeouts(db, user_id=str(current_user.id))
-    validate_uuid(order_id)
-    result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id).with_for_update())
-    order = result.scalar_one_or_none()
+    
+    # Try finding by UUID id first, if not a valid UUID try finding by order_number
+    order = None
+    if is_valid_uuid(order_id):
+        result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id).with_for_update())
+        order = result.scalar_one_or_none()
+    
+    if not order:
+        result = await db.execute(select(OrderModel).where(OrderModel.order_number == order_id, OrderModel.user_id == current_user.id).with_for_update())
+        order = result.scalar_one_or_none()
+        
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
@@ -1447,9 +1455,15 @@ async def get_order(order_id: str, current_user: UserSchema = Depends(get_curren
 
 @router.get("/orders/{order_id}/invoice")
 async def download_order_invoice(order_id: str, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    validate_uuid(order_id)
-    result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id))
-    order = result.scalar_one_or_none()
+    order = None
+    if is_valid_uuid(order_id):
+        result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id))
+        order = result.scalar_one_or_none()
+    
+    if not order:
+        result = await db.execute(select(OrderModel).where(OrderModel.order_number == order_id, OrderModel.user_id == current_user.id))
+        order = result.scalar_one_or_none()
+        
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     order_dict = await _enrich_order_items(db, row_to_dict(order))

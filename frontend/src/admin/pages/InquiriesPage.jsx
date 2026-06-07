@@ -263,19 +263,15 @@ const InquiriesPage = () => {
   if (loading && inquiries.length === 0) return <PageLoader />;
 
   return (
-    <div className="space-y-8 max-w-[1500px] mx-auto">
+    <div className="space-y-3 max-w-[1500px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200/60">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2.5 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center shadow-lg shadow-emerald-glow text-white">
-              <MessageSquare className="w-6 h-6" />
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900" style={{ fontFamily: 'Manrope, sans-serif' }}>
-              Customer Inquiries
-            </h1>
-          </div>
-          <p className="text-slate-500 font-medium">Manage and respond to messages submitted through the Contact Us form.</p>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-primary" />
+            Customer Inquiries
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5 font-medium">Manage and respond to messages submitted through the Contact Us form.</p>
         </div>
         <div className="relative" ref={filterRef}>
           <button
