@@ -1387,7 +1387,7 @@ async def enforce_payment_timeouts(db: AsyncSession, user_id: Optional[str] = No
     stmt = select(OrderModel).where(
         OrderModel.payment_method == "online",
         OrderModel.payment_status == "pending",
-        OrderModel.order_status == "pending_payment"
+        OrderModel.order_status.in_(["pending_payment", "confirmed"])
     )
     if user_id:
         stmt = stmt.where(OrderModel.user_id == user_id)

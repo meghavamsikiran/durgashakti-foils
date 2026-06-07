@@ -472,7 +472,7 @@ const OrdersPage = () => {
         toast.warning(response.data.warning, { duration: 8000 });
       }
       toast.success(`Order status updated to ${statusLabel(newStatus)}`, { id: toastId });
-      setTimeout(() => loadSilent(page), 800);
+      loadSilent(page);
     } catch (err) {
       setRows(previousRows);
       setSelectedOrderForModal(previousModalOrder);
