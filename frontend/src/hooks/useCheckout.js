@@ -80,7 +80,8 @@ export const useCheckout = () => {
     return addressService.getCached ? addressService.getCached() : [];
   });
   const [addressesLoading, setAddressesLoading] = useState(() => {
-    return !addressService.getCached || !addressService.getCached();
+    const cached = addressService.getCached ? addressService.getCached() : null;
+    return !cached || cached.length === 0;
   });
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [shippingInfo, setShippingInfo] = useState(() => {
