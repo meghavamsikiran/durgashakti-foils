@@ -138,15 +138,15 @@ const ReviewsPage = () => {
   const activeFilterCount = (status !== 'all' ? 1 : 0) + (rating !== 'all' ? 1 : 0) + (dateRange !== 'all' ? 1 : 0);
 
   return (
-    <div className="min-h-[calc(100vh-8rem)] flex flex-col space-y-6">
+    <div className="space-y-4">
       {/* ── Header ── */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-200">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <Star className="w-8 h-8 text-primary" />
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <Star className="w-5 h-5 text-primary" />
             Reviews
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">Moderate customer reviews and reply as Durga Shakti Foils.</p>
+          <p className="text-xs text-slate-500 mt-0.5 font-medium">Moderate customer reviews and reply as Durga Shakti Foils.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative">

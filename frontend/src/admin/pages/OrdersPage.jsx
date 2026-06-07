@@ -688,14 +688,14 @@ const OrdersPage = () => {
   if (loading && rows.length === 0) return <PageLoader />;
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
+    <div className="space-y-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2.5 border-b border-slate-200">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <ShoppingBag className="w-8 h-8 text-primary" />
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5 text-primary" />
             Orders
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">View and manage customer orders.</p>
+          <p className="text-xs text-slate-500 mt-0.5 font-medium">View and manage customer orders.</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -706,14 +706,14 @@ const OrdersPage = () => {
               placeholder="Search customer, order, payment ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64"
+              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64"
             />
           </div>
 
           <div className="relative">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-semibold transition-all shadow-sm ${
+              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-xs font-semibold transition-all shadow-sm h-[40px] ${
                 showFilters || courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter || filter !== 'ALL'
                   ? 'bg-primary/10 border-primary text-primary'
                   : 'bg-white border-slate-200 text-slate-750 hover:bg-slate-50'
@@ -725,7 +725,7 @@ const OrdersPage = () => {
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               )}
             </button>
- 
+
             {showFilters && (
               <>
                 <div className="fixed inset-0 z-[999]" onClick={() => setShowFilters(false)} />
@@ -747,7 +747,7 @@ const OrdersPage = () => {
                       </button>
                     )}
                   </div>
- 
+
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Order Status</label>
                     <select
@@ -774,7 +774,7 @@ const OrdersPage = () => {
                       <option value="FAILED">Failed</option>
                     </select>
                   </div>
- 
+
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Courier</label>
                     <select
@@ -795,7 +795,7 @@ const OrdersPage = () => {
                       <option value="Ekart">Ekart</option>
                     </select>
                   </div>
- 
+
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payment Status</label>
                     <select
@@ -812,7 +812,7 @@ const OrdersPage = () => {
                       <option value="failed">Failed</option>
                     </select>
                   </div>
- 
+
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payment Method</label>
                     <select
@@ -825,7 +825,7 @@ const OrdersPage = () => {
                       <option value="cod">Cash on Delivery (COD)</option>
                     </select>
                   </div>
- 
+
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Date Range</label>
                     <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} />
@@ -839,40 +839,40 @@ const OrdersPage = () => {
 
       {hasPermission('view_analytics') && (
         <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
-              <ShoppingBag className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
+              <ShoppingBag className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Total Orders</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.total}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total Orders</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.total}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-5 h-5 text-primary" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Confirmed</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.confirmed}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Confirmed</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.confirmed}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
-              <Clock className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Packed</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.packaging}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Packed</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.packaging}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
-              <Truck className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
+              <Truck className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Delivered</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.delivered}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Delivered</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.delivered}</div>
             </div>
           </div>
         </div>

@@ -171,14 +171,15 @@ const InventoryPage = () => {
   if (loading && rows.length === 0) return <PageLoader message="Loading Inventory..." />;
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-200">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <Boxes className="w-8 h-8 text-primary" />
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2.5">
+            <Boxes className="w-7 h-7 text-primary" />
             Product Stock
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">Monitor and update your product stock levels.</p>
+          <p className="text-xs text-slate-500 mt-0.5 font-medium">Monitor and update your product stock levels.</p>
         </div>
         
         <div className="flex items-center gap-3 relative">
@@ -189,7 +190,7 @@ const InventoryPage = () => {
               placeholder="Search Products..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
+              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64"
             />
           </div>
 
@@ -197,7 +198,7 @@ const InventoryPage = () => {
             <button
               type="button"
               onClick={() => setFilterOpen((prev) => !prev)}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-[40px]"
             >
               <Filter className="w-4 h-4 text-slate-600" />
               <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
@@ -212,7 +213,7 @@ const InventoryPage = () => {
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                      className="w-full rounded-xl border border-slate-200 p-2 text-sm bg-white"
                     >
                       <option value="all">All Categories</option>
                       {categoryOptions.map(cat => (
@@ -223,7 +224,7 @@ const InventoryPage = () => {
                     <select
                       value={activeFilter}
                       onChange={(e) => setActiveFilter(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                      className="w-full rounded-xl border border-slate-200 p-2 text-sm bg-white"
                     >
                       <option value="all">All</option>
                       <option value="active">Active</option>
@@ -233,7 +234,7 @@ const InventoryPage = () => {
                     <select
                       value={stockFilter}
                       onChange={(e) => setStockFilter(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                      className="w-full rounded-xl border border-slate-200 p-2 text-sm bg-white"
                     >
                       <option value="all">All Stock</option>
                       <option value="in">In Stock</option>
@@ -266,7 +267,7 @@ const InventoryPage = () => {
             )}
           </div>
 
-          <Button onClick={load} variant="outline" className="rounded-xl p-2.5 bg-white hover:bg-slate-50 border-slate-200 shadow-sm">
+          <Button onClick={load} variant="outline" className="rounded-xl h-[40px] px-3 bg-white hover:bg-slate-50 border-slate-200 shadow-sm">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
@@ -274,40 +275,40 @@ const InventoryPage = () => {
 
       {hasPermission('view_analytics') && metrics && (
         <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
-            <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
-              <IndianRupee className="w-5 h-5" />
+          <div className="bg-white py-2 px-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+            <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
+              <IndianRupee className="w-4 h-4" />
             </div>
             <div>
               <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Stock Value</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">₹{(stats.totalValue / 1000).toFixed(1)}k</div>
+              <div className="text-lg font-black text-slate-900 leading-none mt-0.5">₹{(stats.totalValue / 1000).toFixed(1)}k</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
-            <div className="w-9 h-9 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
-              <TrendingDown className="w-5 h-5" />
+          <div className="bg-white py-2 px-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+            <div className="w-8 h-8 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
+              <TrendingDown className="w-4 h-4" />
             </div>
             <div>
               <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Low Stock</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.outOfStock + stats.lowStock}</div>
+              <div className="text-lg font-black text-slate-900 leading-none mt-0.5">{stats.outOfStock + stats.lowStock}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
-            <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
-              <BarChart3 className="w-5 h-5" />
+          <div className="bg-white py-2 px-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+            <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
+              <BarChart3 className="w-4 h-4" />
             </div>
             <div>
               <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Units Sold</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.soldVolume}</div>
+              <div className="text-lg font-black text-slate-900 leading-none mt-0.5">{stats.soldVolume}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
-            <div className="w-9 h-9 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
-              <Zap className="w-5 h-5" />
+          <div className="bg-white py-2 px-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+            <div className="w-8 h-8 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4" />
             </div>
             <div>
               <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Sales Velocity</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.salesVelocity}<span className="text-[9px] text-slate-500 ml-1 font-bold tracking-widest">U/DAY</span></div>
+              <div className="text-lg font-black text-slate-900 leading-none mt-0.5">{stats.salesVelocity}<span className="text-[9px] text-slate-500 ml-1 font-bold tracking-widest">U/DAY</span></div>
             </div>
           </div>
         </div>

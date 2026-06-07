@@ -10,6 +10,52 @@ import PageLoader from '../../components/ui/PageLoader';
 import DateFilterPopover from '../../components/ui/DateFilterPopover';
 import apiClient from '../../services/core/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
+const DATE_PRESETS = [
+  { key: 'today', label: 'Today' },
+  { key: 'last7', label: 'Last 7 Days' },
+  { key: 'thisWeek', label: 'This Week' },
+  { key: 'thisMonth', label: 'This Month' },
+  { key: 'thisYear', label: 'This Year' },
+  { key: 'custom', label: 'Custom Range' },
+];
+
+function toISODateStart(d) {
+  const dt = new Date(d);
+  dt.setHours(0, 0, 0, 0);
+  return dt.toISOString();
+}
+
+function toISODateEnd(d) {
+  const dt = new Date(d);
+  dt.setHours(23, 59, 59, 999);
+  return dt.toISOString();
+}
+
+function rangeForPreset(key) {
+  const now = new Date();
+  const start = new Date();
+  switch (key) {
+    case 'today':
+      return { start: toISODateStart(now), end: toISODateEnd(now) };
+    case 'last7':
+      start.setDate(now.getDate() - 6);
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
+    case 'thisWeek': {
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+      start.setDate(diff);
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
+    }
+    case 'thisMonth':
+      start.setDate(1);
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
+    case 'thisYear':
+      start.setMonth(0, 1);
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
+    default:
+      return null;
+  }
+}
 
 const PaymentsPage = () => {
   const { hasPermission } = useAuth();
@@ -23,6 +69,10 @@ const PaymentsPage = () => {
     return !cached;
   });
   const [filter, setFilter] = useState('all');
+  const [tempStatus, setTempStatus] = useState('all');
+  const [tempDatePreset, setTempDatePreset] = useState('');
+  const [tempCustomStart, setTempCustomStart] = useState('');
+  const [tempCustomEnd, setTempCustomEnd] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState(null);
@@ -123,14 +173,14 @@ const PaymentsPage = () => {
   if (loading && rows.length === 0) return <PageLoader />;
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
+    <div className="space-y-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-200">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <CreditCard className="w-8 h-8 text-primary" />
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-primary" />
             Financial Audit
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">Monitor transactional health and revenue clearance.</p>
+          <p className="text-xs text-slate-500 mt-0.5 font-medium">Monitor transactional health and revenue clearance.</p>
         </div>
         
         <div className="flex items-center gap-3 relative">
@@ -144,53 +194,146 @@ const PaymentsPage = () => {
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
-          <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} />
-
           <div className="relative">
             <button
               type="button"
-              onClick={() => setFilterOpen((prev) => !prev)}
+              onClick={() => {
+                setTempStatus(filter);
+                setTempDatePreset(dateFilter?.label || '');
+                setTempCustomStart(dateFilter?.label === 'custom' ? (dateFilter.start_date || '').slice(0, 10) : '');
+                setTempCustomEnd(dateFilter?.label === 'custom' ? (dateFilter.end_date || '').slice(0, 10) : '');
+                setFilterOpen((prev) => !prev);
+              }}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
             >
               <Filter className="w-4 h-4 text-slate-600" />
               <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
+              {(filter !== 'all' || dateFilter) && (
+                <span className="ml-1 px-1.5 py-0.5 text-[9px] bg-primary text-white rounded-full font-black">
+                  Active
+                </span>
+              )}
             </button>
             {filterOpen && (
               <>
                 <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setFilterOpen(false)} />
-                <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 md:absolute md:translate-y-0 md:inset-auto md:right-0 md:mt-2 w-auto md:w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50">
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-black text-slate-900">Payment Filters</h3>
-                    <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Transaction Status</label>
-                    <select
-                      value={filter}
-                      onChange={(e) => setFilter(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 p-2 text-sm bg-white"
-                    >
-                      <option value="all">All Statuses</option>
-                      <option value="completed">Completed / Paid</option>
-                      <option value="pending">Pending</option>
-                      <option value="failed">Failed</option>
-                      <option value="refund initiated">Refund Initiated</option>
-                      <option value="refund credited">Refund Credited</option>
-                    </select>
-                    <div className="flex justify-between gap-2 pt-2">
+                <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 md:absolute md:translate-y-0 md:inset-auto md:right-0 md:mt-2 w-auto md:w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <h3 className="text-sm font-black text-slate-900">Payment Filters</h3>
                       <button
                         type="button"
                         onClick={() => {
+                          setTempStatus('all');
+                          setTempDatePreset('');
+                          setTempCustomStart('');
+                          setTempCustomEnd('');
                           setFilter('all');
+                          setDateFilter(null);
                           setFilterOpen(false);
                         }}
-                        className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest"
+                        className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline"
                       >
-                        Clear
+                        Reset All
+                      </button>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Transaction Status</label>
+                      <select
+                        value={tempStatus}
+                        onChange={(e) => setTempStatus(e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs bg-white bg-[image:none]"
+                      >
+                        <option value="all">All Statuses</option>
+                        <option value="completed">Completed / Paid</option>
+                        <option value="pending">Pending</option>
+                        <option value="failed">Failed</option>
+                        <option value="refund initiated">Refund Initiated</option>
+                        <option value="refund credited">Refund Credited</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Date Preset</label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {DATE_PRESETS.map(p => (
+                          <button
+                            type="button"
+                            key={p.key}
+                            onClick={() => {
+                              setTempDatePreset(p.key);
+                            }}
+                            className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center border transition-all ${
+                              tempDatePreset === p.key 
+                                ? 'bg-primary text-white border-primary' 
+                                : 'bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100'
+                            }`}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {tempDatePreset === 'custom' && (
+                      <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-2">
+                        <div>
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Start Date</label>
+                          <input 
+                            type="date" 
+                            value={tempCustomStart} 
+                            onChange={(e) => setTempCustomStart(e.target.value)} 
+                            className="w-full mt-1 p-1.5 rounded-lg border border-slate-200 text-xs" 
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">End Date</label>
+                          <input 
+                            type="date" 
+                            value={tempCustomEnd} 
+                            onChange={(e) => setTempCustomEnd(e.target.value)} 
+                            className="w-full mt-1 p-1.5 rounded-lg border border-slate-200 text-xs" 
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setFilterOpen(false)}
+                        className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest hover:bg-slate-50"
+                      >
+                        Cancel
                       </button>
                       <button
                         type="button"
-                        onClick={() => { setFilterOpen(false); }}
+                        onClick={() => {
+                          setFilter(tempStatus);
+                          if (tempDatePreset) {
+                            if (tempDatePreset === 'custom') {
+                              if (tempCustomStart && tempCustomEnd) {
+                                const s = new Date(tempCustomStart);
+                                const e = new Date(tempCustomEnd);
+                                if (s <= e) {
+                                  setDateFilter({ start_date: toISODateStart(s), end_date: toISODateEnd(e), label: 'custom' });
+                                }
+                              }
+                            } else {
+                              const r = rangeForPreset(tempDatePreset);
+                              if (r) {
+                                setDateFilter({ start_date: r.start, end_date: r.end, label: tempDatePreset });
+                              }
+                            }
+                          } else {
+                            setDateFilter(null);
+                          }
+                          setFilterOpen(false);
+                        }}
                         className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest"
                       >
-                        Apply
+                        Apply Filters
                       </button>
                     </div>
                   </div>
@@ -203,40 +346,40 @@ const PaymentsPage = () => {
 
       {hasPermission('view_analytics') && metrics && (
         <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
-              <IndianRupee className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
+              <IndianRupee className="w-4.5 h-4.5" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Net Settled</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">₹{stats.total.toLocaleString('en-IN')}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Net Settled</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">₹{stats.total.toLocaleString('en-IN')}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
-              <AlertCircle className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
+              <AlertCircle className="w-4.5 h-4.5" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Escrow/Pending</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">₹{stats.pending.toLocaleString('en-IN')}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Escrow/Pending</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">₹{stats.pending.toLocaleString('en-IN')}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4.5 h-4.5" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Success Rate</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{Math.round(stats.successRate)}%</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Success Rate</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{Math.round(stats.successRate)}%</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
-              <AlertCircle className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
+              <AlertCircle className="w-4.5 h-4.5" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Failed Events</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.failed}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Failed Events</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.failed}</div>
             </div>
           </div>
         </div>

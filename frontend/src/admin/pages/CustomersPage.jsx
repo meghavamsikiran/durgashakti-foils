@@ -177,17 +177,17 @@ const CustomersPage = () => {
   if (loading && rows.length === 0) return <PageLoader />;
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
+    <div className="space-y-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2.5 border-b border-slate-200">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <UserCheck className="w-8 h-8 text-primary" />
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-primary" />
             Customer Intelligence
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">Analyze buyer behavior and lifetime value metrics.</p>
+          <p className="text-xs text-slate-500 mt-0.5 font-medium">Analyze buyer behavior and lifetime value metrics.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <div className="grid grid-cols-2 sm:flex w-full sm:w-auto bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+          <div className="grid grid-cols-2 sm:flex w-full sm:w-auto bg-white border border-slate-200 rounded-xl p-1 shadow-sm h-[40px] items-center">
             {[
               { id: 'all', label: 'All' },
               { id: 'loyal', label: 'Loyal Customers' }
@@ -195,7 +195,7 @@ const CustomersPage = () => {
               <button
                 key={item.id}
                 onClick={() => handleSegmentChange(item.id)}
-                className={`text-center px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${
+                className={`text-center px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                   item.id === 'loyal' && !loyaltyEnabled
                     ? 'text-slate-300 cursor-not-allowed'
                     : segment === item.id ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-50'
@@ -212,7 +212,7 @@ const CustomersPage = () => {
               placeholder="Search Customers..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-80 transition-all focus:w-96"
+              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-80 transition-all focus:w-96"
             />
           </div>
         </div>
@@ -220,40 +220,40 @@ const CustomersPage = () => {
 
       {hasPermission('view_analytics') && metrics && (
         <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
+              <Users className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Total Database</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.total}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total Database</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.total}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
-              <Star className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
+              <Star className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Loyal Users</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.loyal}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Loyal Users</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.loyal}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
-              <IndianRupee className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
+              <IndianRupee className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Liable Lifetime</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">₹{stats.revenue.toLocaleString('en-IN')}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Liable Lifetime</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">₹{stats.revenue.toLocaleString('en-IN')}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
-              <Star className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
+              <Star className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Average LTV</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">₹{Math.round(stats.avg).toLocaleString('en-IN')}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Average LTV</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">₹{Math.round(stats.avg).toLocaleString('en-IN')}</div>
             </div>
           </div>
         </div>

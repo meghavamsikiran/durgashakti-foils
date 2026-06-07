@@ -427,14 +427,14 @@ const ProductsPage = () => {
   if (loading && rows.length === 0) return <PageLoader />;
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
+    <div className="space-y-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2.5 border-b border-slate-200">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <Package className="w-8 h-8 text-primary" />
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <Package className="w-5 h-5 text-primary" />
             Product Catalog
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">Manage inventories and item specifications.</p>
+          <p className="text-xs text-slate-500 mt-0.5 font-medium">Manage inventories and item specifications.</p>
         </div>
 
         <div className="flex items-center gap-3 relative">
@@ -445,14 +445,14 @@ const ProductsPage = () => {
               placeholder="Search Items..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
+              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
           <div className="relative">
             <button
               type="button"
               onClick={() => setFilterOpen((prev) => !prev)}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-[40px]"
             >
               <Filter className="w-4 h-4 text-slate-600" />
               <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
@@ -467,7 +467,7 @@ const ProductsPage = () => {
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                      className="w-full rounded-xl border border-slate-200 p-2 text-sm bg-white"
                     >
                       <option value="all">All Categories</option>
                       {filterCategoryOptions.map((cat) => (
@@ -478,7 +478,7 @@ const ProductsPage = () => {
                     <select
                       value={activeFilter}
                       onChange={(e) => setActiveFilter(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                      className="w-full rounded-xl border border-slate-200 p-2 text-sm bg-white"
                     >
                       <option value="all">All</option>
                       <option value="active">Active</option>
@@ -488,7 +488,7 @@ const ProductsPage = () => {
                     <select
                       value={stockFilter}
                       onChange={(e) => setStockFilter(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 p-2 text-sm"
+                      className="w-full rounded-xl border border-slate-200 p-2 text-sm bg-white"
                     >
                       <option value="all">All Stock</option>
                       <option value="in">In Stock</option>
@@ -520,7 +520,7 @@ const ProductsPage = () => {
             )}
           </div>
           {isSuperAdmin && !showForm && (
-            <Button onClick={() => { resetForm(); setShowForm(true); }} className="rounded-xl flex items-center gap-2 px-6">
+            <Button onClick={() => { resetForm(); setShowForm(true); }} className="rounded-xl flex items-center gap-2 px-6 h-[40px]">
               <Plus className="w-4 h-4" />
               Add Item
             </Button>
@@ -530,44 +530,44 @@ const ProductsPage = () => {
 
       {hasPermission('view_analytics') && metrics && (
         <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
-            <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
-              <Zap className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5 hover:shadow-md transition-shadow">
+            <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Fastest Mover</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Fastest Mover</div>
               <div className="text-xs font-black text-slate-900 leading-tight truncate" title={stats.fastestMover}>
                 {stats.fastestMover}
               </div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
-            <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
-              <Trophy className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5 hover:shadow-md transition-shadow">
+            <div className="w-8 h-8 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
+              <Trophy className="w-4 h-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Top Performer</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Top Performer</div>
               <div className="text-xs font-black text-slate-900 leading-tight truncate" title={stats.topPerformer}>
                 {stats.topPerformer}
               </div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
-            <div className="w-9 h-9 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
-              <IndianRupee className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5 hover:shadow-md transition-shadow">
+            <div className="w-8 h-8 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
+              <IndianRupee className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Stock Value</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">₹{Math.round(stats.value/1000)}k</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Stock Value</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">₹{Math.round(stats.value/1000)}k</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
-            <div className="w-9 h-9 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
-              <AlertCircle className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5 hover:shadow-md transition-shadow">
+            <div className="w-8 h-8 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
+              <AlertCircle className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Low Stock</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.lowStock}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Low Stock</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.lowStock}</div>
             </div>
           </div>
         </div>
