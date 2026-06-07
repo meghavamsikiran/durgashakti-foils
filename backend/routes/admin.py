@@ -2581,6 +2581,9 @@ async def admin_item_process_refund(
             product.in_stock = True
             product.updated_at = datetime.now(timezone.utc)
 
+    # Release any database row locks by committing the transaction before calling Razorpay
+    await db.commit()
+
     # Process Payment Refund
     payment_method_lower = str(order.payment_method or "").lower()
     refund_warning = None
