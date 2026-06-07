@@ -54,6 +54,59 @@ async def lifespan(app: FastAPI):
     from storage_service import ensure_bucket_exists
     asyncio.create_task(ensure_bucket_exists())
     logger.info("Supabase storage bucket verification scheduled in the background.")
+
+    # Start background task to repair historical returns (sync items with order status)
+    try:
+        from database import async_session_factory
+        from models import OrderModel
+        from sqlalchemy import select
+        from sqlalchemy.orm.attributes import flag_modified
+
+        async def _repair_historical_returns():
+            await asyncio.sleep(5)
+            logger.info("Running background repair task for historical return order items...")
+            try:
+                async with async_session_factory() as session:
+                    res = await session.execute(
+                        select(OrderModel).where(
+                            OrderModel.order_status.in_(["return_approved", "return_rejected"])
+                        )
+                    )
+                    orders = res.scalars().all()
+                    repaired_count = 0
+                    now = datetime.now(timezone.utc)
+                    for order in orders:
+                        status_upper = "RETURN_APPROVED" if order.order_status == "return_approved" else "RETURN_REJECTED"
+                        updated_items = []
+                        modified = False
+                        for item in (order.items or []):
+                            if item.get("return_status") == "RETURN_REQUESTED":
+                                item["return_status"] = status_upper
+                                if "audit_timeline" not in item:
+                                    item["audit_timeline"] = []
+                                item["audit_timeline"].append({
+                                    "status": status_upper,
+                                    "timestamp": now.isoformat(),
+                                    "remarks": "Synced with order-level status via background startup repair task"
+                                })
+                                modified = True
+                            updated_items.append(item)
+                        if modified:
+                            order.items = updated_items
+                            flag_modified(order, "items")
+                            repaired_count += 1
+                            logger.info("Repaired return status for items in order %s", order.order_number)
+                    if repaired_count > 0:
+                        await session.commit()
+                        logger.info("Successfully repaired %d historical return orders in DB", repaired_count)
+                    else:
+                        logger.info("No historical return orders needed repair")
+            except Exception:
+                logger.exception("Background historical returns repair task failed")
+
+        asyncio.create_task(_repair_historical_returns())
+    except Exception:
+        logger.exception("Failed to initialize background historical returns repair task")
     # Start background cleanup task for audit logs (delete entries older than 6 months)
     try:
         from database import async_session_factory
