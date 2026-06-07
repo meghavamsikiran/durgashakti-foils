@@ -1383,7 +1383,7 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
     await enforce_return_deadlines(db, user_id=str(current_user.id))
     await enforce_payment_timeouts(db, user_id=str(current_user.id))
     result = await db.execute(
-        select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.updated_at.desc()).limit(1000)
+        select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.created_at.desc()).limit(1000)
     )
     orders = result.scalars().all()
     orders_dict = [await order_response_dict(o, db, normalize=False) for o in orders]
