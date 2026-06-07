@@ -491,8 +491,10 @@ const OrdersPage = () => {
   };
 
   const handleOpenOrderRefundModal = async (order) => {
-    const refundItems = (order.items || []).filter(i => ['REFUND_COMPLETED', 'REFUND_INITIATED', 'RETURN_RECEIVED'].includes(i.return_status));
-    const itemsToSum = refundItems.length > 0 ? refundItems : (order.items || []);
+    const hasReturnRequest = (order.items || []).some(i => i.return_status);
+    const itemsToSum = hasReturnRequest
+      ? (order.items || []).filter(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status))
+      : (order.items || []);
     
     const initialAmount = itemsToSum.reduce((sum, i) => sum + parseFloat(i.refund_calculations?.refundable_amount || 0), 0);
     const courierCost = itemsToSum.reduce((sum, i) => sum + (['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(i.return_status) ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0)), 0);
@@ -1781,17 +1783,26 @@ const OrdersPage = () => {
                               }`}>
                                 {item.return_status.replace('_', ' ')}
                               </span>
-                            </div>
-
-                            {item.refund_calculations && (
-                              <div className="text-[10px] font-extrabold text-slate-500 bg-slate-50 p-2.5 rounded-xl flex flex-wrap gap-x-4 gap-y-1">
-                                <span>Taxable: ₹{Number(item.refund_calculations.taxable_amount || 0).toFixed(2)}</span>
-                                <span>CGST 9%: ₹{Number(item.refund_calculations.cgst_amount || 0).toFixed(2)}</span>
-                                <span>SGST 9%: ₹{Number(item.refund_calculations.sgst_amount || 0).toFixed(2)}</span>
-                                <span>Discount Share: -₹{Number(item.refund_calculations.coupon_discount_share || 0).toFixed(2)}</span>
-                                <span className="text-primary font-black">Est. Refundable: ₹{Number(item.refund_calculations.refundable_amount || 0).toFixed(2)}</span>
-                              </div>
-                            )}
+                                     {item.refund_calculations && (() => {
+                              const prodRefund = Number(item.refund_calculations.refundable_amount || 0);
+                              const courierRefund = Number(item.self_shipping_details?.courier_cost || 0);
+                              const isRefunded = ['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(item.return_status);
+                              const actualProductRefund = isRefunded ? Math.max(0, prodRefund - courierRefund) : prodRefund;
+                              const totalRefundable = isRefunded ? prodRefund : (prodRefund + courierRefund);
+                              
+                              return (
+                                <div className="text-[10px] font-extrabold text-slate-500 bg-slate-50 p-2.5 rounded-xl flex flex-wrap gap-x-4 gap-y-1 w-full">
+                                  <span>Taxable: ₹{Number(item.refund_calculations.taxable_amount || 0).toFixed(2)}</span>
+                                  <span>CGST 9%: ₹{Number(item.refund_calculations.cgst_amount || 0).toFixed(2)}</span>
+                                  <span>SGST 9%: ₹{Number(item.refund_calculations.sgst_amount || 0).toFixed(2)}</span>
+                                  <span>Discount Share: -₹{Number(item.refund_calculations.coupon_discount_share || 0).toFixed(2)}</span>
+                                  <span className="text-primary font-black w-full mt-1 border-t border-slate-200/50 pt-1">
+                                    Est. Refundable: ₹{totalRefundable.toFixed(2)} 
+                                    {courierRefund > 0 ? ` (Product: ₹${actualProductRefund.toFixed(2)} + Courier: ₹${courierRefund.toFixed(2)})` : ''}
+                                  </span>
+                                </div>
+                              );
+                            })()}
 
                             {item.self_shipping_details && (
                               <div className="text-[10px] text-slate-650 font-bold bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1.5">
@@ -2019,8 +2030,10 @@ const OrdersPage = () => {
             {/* Modal Footer */}
             <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
               {selectedOrderForModal.payment_status === 'refund_pending' && (() => {
-                const refundItems = (selectedOrderForModal.items || []).filter(i => ['REFUND_COMPLETED', 'REFUND_INITIATED', 'RETURN_RECEIVED'].includes(i.return_status));
-                const itemsToSum = refundItems.length > 0 ? refundItems : (selectedOrderForModal.items || []);
+                const hasReturnRequest = (selectedOrderForModal.items || []).some(i => i.return_status);
+                const itemsToSum = hasReturnRequest
+                  ? (selectedOrderForModal.items || []).filter(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status))
+                  : (selectedOrderForModal.items || []);
                 const totalRefundAmount = itemsToSum.reduce((sum, i) => {
                   const itemAmount = parseFloat(i.refund_calculations?.refundable_amount || 0);
                   const courierCost = ['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(i.return_status) ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0);

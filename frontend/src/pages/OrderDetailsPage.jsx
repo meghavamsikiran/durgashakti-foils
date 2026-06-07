@@ -1333,6 +1333,26 @@ const OrderDetailsPage = () => {
                         {item.return_reason && (
                           <p className="text-[10px] text-slate-600 font-medium">Reason: <span className="font-bold">{item.return_reason}</span></p>
                         )}
+                        {item.refund_calculations && (() => {
+                          const prodRefund = Number(item.refund_calculations.refundable_amount || 0);
+                          const courierRefund = Number(item.self_shipping_details?.courier_cost || 0);
+                          const isRefunded = ['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(item.return_status);
+                          const actualProductRefund = isRefunded ? Math.max(0, prodRefund - courierRefund) : prodRefund;
+                          const totalRefundable = isRefunded ? prodRefund : (prodRefund + courierRefund);
+                          
+                          return (
+                            <div className="text-[10px] font-extrabold text-slate-500 bg-white p-2.5 rounded-xl border border-slate-100 flex flex-wrap gap-x-4 gap-y-1">
+                              <span>Taxable: ₹{Number(item.refund_calculations.taxable_amount || 0).toFixed(2)}</span>
+                              <span>CGST 9%: ₹{Number(item.refund_calculations.cgst_amount || 0).toFixed(2)}</span>
+                              <span>SGST 9%: ₹{Number(item.refund_calculations.sgst_amount || 0).toFixed(2)}</span>
+                              <span>Discount Share: -₹{Number(item.refund_calculations.coupon_discount_share || 0).toFixed(2)}</span>
+                              <span className="text-primary font-black w-full mt-1 border-t border-slate-200/50 pt-1">
+                                Est. Refundable: ₹{totalRefundable.toFixed(2)} 
+                                {courierRefund > 0 ? ` (Product: ₹${actualProductRefund.toFixed(2)} + Courier: ₹${courierRefund.toFixed(2)})` : ''}
+                              </span>
+                            </div>
+                          );
+                        })()}
                         {item.self_shipping_details && (
                           <div className="text-[10px] text-slate-500 space-y-1.5 font-semibold">
                             <div>
