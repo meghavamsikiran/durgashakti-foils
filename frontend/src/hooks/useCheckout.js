@@ -132,11 +132,18 @@ export const useCheckout = () => {
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   const fetchAddresses = useCallback(async () => {
-    setAddressesLoading(true);
+    const cached = addressService.getCached ? addressService.getCached() : null;
+    if (!Array.isArray(cached) || cached.length === 0) {
+      setAddressesLoading(true);
+    }
     try {
       const data = await addressService.getAddresses();
       setSavedAddresses(data);
-      setSelectedAddressId(null);
+      setSelectedAddressId(prev => {
+        if (prev && data.some(a => a.id === prev)) return prev;
+        const def = data.find(a => a.is_default) || data[0];
+        return def ? def.id : null;
+      });
     } catch (err) {
       // Silent — addresses are optional at this point
     } finally {

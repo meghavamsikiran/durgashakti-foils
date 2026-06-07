@@ -13,7 +13,10 @@ export const useAddresses = () => {
   });
 
   const fetchAddresses = useCallback(async () => {
-    setLoading(true);
+    const cached = addressService.getCached ? addressService.getCached() : null;
+    if (!cached || cached.length === 0) {
+      setLoading(true);
+    }
     try {
       const data = await addressService.getAddresses();
       setAddresses(data || []);

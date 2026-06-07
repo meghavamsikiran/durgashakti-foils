@@ -4,19 +4,28 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 
 export const useWishlist = () => {
-  const [wishlist, setWishlist] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [wishlist, setWishlist] = useState(() => {
+    const cached = wishlistService.getCached ? wishlistService.getCached() : null;
+    return cached || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = wishlistService.getCached ? wishlistService.getCached() : null;
+    return !cached;
+  });
   const { refreshUser } = useAuth();
 
   const fetchWishlist = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
+    const cached = wishlistService.getCached ? wishlistService.getCached() : null;
+    if (!silent && (!cached || cached.length === 0)) {
+      setLoading(true);
+    }
     try {
       const data = await wishlistService.getWishlist();
       setWishlist(data || []);
     } catch (err) {
       // Handled by interceptor
     } finally {
-      if (!silent) setLoading(false);
+      setLoading(false);
     }
   }, []);
 
