@@ -1115,7 +1115,7 @@ const OrdersPage = () => {
           pageSize={PAGE_SIZE}
         />
       </div>      {messageModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
+        <div className="fixed inset-[-10px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6">
             <div>
               <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
@@ -1127,7 +1127,7 @@ const OrdersPage = () => {
               </h3>
               <p className="text-xs text-slate-500 mt-1">Provide a custom message or reason to deliver respectively to the customer.</p>
             </div>
- 
+
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Message to Customer</label>
               <textarea
@@ -1144,7 +1144,7 @@ const OrdersPage = () => {
                 className="w-full p-4 min-h-[100px] rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none resize-none"
               />
             </div>
- 
+
             <div className="flex gap-3">
               <button
                 onClick={() => {
@@ -1171,10 +1171,10 @@ const OrdersPage = () => {
             </div>
           </div>
         </div>
-      )}  )}
+      )}
 
       {bulkShipModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
+        <div className="fixed inset-[-10px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
           <div className="bg-white rounded-3xl p-8 max-w-lg w-full border border-slate-100 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
             <div>
               <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Bulk Shipping Details</h3>
@@ -1270,7 +1270,7 @@ const OrdersPage = () => {
                 <div className="space-y-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Paste Tracking Numbers (ORDER - TRACKING)</label>
                   <textarea
-                    placeholder="E.g.&#10;ORD1001 - TRACK001&#10;ORD1002 - TRACK002"
+                    placeholder="E.g. ORD1001 - TRACK001 ORD1002 - TRACK002"
                     value={bulkShipForm.pasted_text}
                     onChange={(e) => setBulkShipForm({ ...bulkShipForm, pasted_text: e.target.value })}
                     className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-mono bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none resize-none h-32"
@@ -1326,7 +1326,7 @@ const OrdersPage = () => {
       )}
 
       {trackingModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
+        <div className="fixed inset-[-10px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6">
             <div>
               <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Shipment Details</h3>
@@ -1426,7 +1426,7 @@ const OrdersPage = () => {
       )}
 
       {selectedOrderForModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur animate-in fade-in duration-300">
+        <div className="fixed inset-[-10px] z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] p-8 max-w-5xl w-full border border-slate-100 shadow-2xl flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-300">
 
             {/* Modal Header */}
@@ -2179,7 +2179,7 @@ const OrdersPage = () => {
 
       {/* Manual Refund Payout Modal */}
       {refundModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-center justify-center p-4">
+        <div className="fixed inset-[-10px] bg-black/60 backdrop-blur-sm z-[999999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 md:p-8 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-slate-800">
             <button
               onClick={() => setRefundModal(null)}
