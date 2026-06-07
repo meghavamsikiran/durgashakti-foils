@@ -1384,8 +1384,11 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
     
     # Reconcile any refund_pending orders so customer order list reflects latest states instantly
     pending_refunds = [o for o in orders if str(o.payment_status or "").lower() == "refund_pending"]
-    if pending_refunds:
-        await asyncio.gather(*[reconcile_order_refund_with_razorpay(o, db, source="orders_list") for o in pending_refunds])
+    for o in pending_refunds[:3]:
+        try:
+            await reconcile_order_refund_with_razorpay(o, db, source="orders_list")
+        except Exception:
+            logger.exception("Failed to reconcile refund for order %s in orders list", o.order_number)
         
     orders_dict = [await order_response_dict(o, db, normalize=False) for o in orders]
     return await _enrich_order_items(db, orders_dict)
