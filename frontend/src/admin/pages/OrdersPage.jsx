@@ -1783,7 +1783,9 @@ const OrdersPage = () => {
                               }`}>
                                 {item.return_status.replace('_', ' ')}
                               </span>
-                                     {item.refund_calculations && (() => {
+                            </div>
+
+                            {item.refund_calculations && (() => {
                               const prodRefund = Number(item.refund_calculations.refundable_amount || 0);
                               const courierRefund = Number(item.self_shipping_details?.courier_cost || 0);
                               const isRefunded = ['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(item.return_status);
