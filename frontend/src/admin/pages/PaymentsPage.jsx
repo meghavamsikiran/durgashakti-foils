@@ -23,6 +23,7 @@ const PaymentsPage = () => {
     return !cached;
   });
   const [filter, setFilter] = useState('all');
+  const [filterOpen, setFilterOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState(null);
   const [metrics, setMetrics] = useState(() => {
@@ -97,7 +98,18 @@ const PaymentsPage = () => {
     return () => clearInterval(timer);
   }, [loadSilent, page]);
 
-  const filtered = rows.filter(r => filter === 'all' || r.status === filter);
+  const filtered = rows.filter(r => {
+    if (filter === 'all') return true;
+    const sLower = String(r.status || '').toLowerCase();
+    const fLower = String(filter).toLowerCase();
+    if (fLower === 'refund initiated') {
+      return sLower === 'refund initiated' || sLower === 'refund_initiated';
+    }
+    if (fLower === 'refund credited') {
+      return sLower === 'refund credited' || sLower === 'refund_credited';
+    }
+    return sLower === fLower;
+  });
   const paginatedPayments = filtered;
 
   const stats = {
@@ -121,7 +133,7 @@ const PaymentsPage = () => {
           <p className="text-slate-500 mt-1 font-medium">Monitor transactional health and revenue clearance.</p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 relative">
           <div className="relative group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input 
@@ -133,6 +145,59 @@ const PaymentsPage = () => {
             />
           </div>
           <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} />
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setFilterOpen((prev) => !prev)}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+            >
+              <Filter className="w-4 h-4 text-slate-600" />
+              <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
+            </button>
+            {filterOpen && (
+              <>
+                <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setFilterOpen(false)} />
+                <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 md:absolute md:translate-y-0 md:inset-auto md:right-0 md:mt-2 w-auto md:w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50">
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-black text-slate-900">Payment Filters</h3>
+                    <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Transaction Status</label>
+                    <select
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 p-2 text-sm bg-white"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="completed">Completed / Paid</option>
+                      <option value="pending">Pending</option>
+                      <option value="failed">Failed</option>
+                      <option value="refund initiated">Refund Initiated</option>
+                      <option value="refund credited">Refund Credited</option>
+                    </select>
+                    <div className="flex justify-between gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFilter('all');
+                          setFilterOpen(false);
+                        }}
+                        className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest"
+                      >
+                        Clear
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setFilterOpen(false); }}
+                        className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -177,24 +242,8 @@ const PaymentsPage = () => {
         </div>
       )}
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-        {['all', 'completed', 'pending', 'failed'].map(s => (
-          <button 
-            key={s} 
-            onClick={() => setFilter(s)}
-            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-              filter === s 
-                ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' 
-                : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            {s} ({s === 'all' ? rows.length : rows.filter(r => r.status === s).length})
-          </button>
-        ))}
-      </div>
-
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 480px)' }}>
+        <div className="overflow-x-auto overflow-y-auto admin-table-container-stats">
           <table className="w-full">
             <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
               <tr>

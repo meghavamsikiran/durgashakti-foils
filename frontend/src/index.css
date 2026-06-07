@@ -773,3 +773,14 @@ h1, h2, h3, h4, h5, h6 {
 .animate-spin-slow {
   animation: spin-slow 16s linear infinite;
 }
+
+@media (min-width: 768px) {
+  .admin-table-container-stats {
+    height: calc(100vh - 420px) !important;
+    min-height: 350px !important;
+  }
+  .admin-table-container-standard {
+    height: calc(100vh - 290px) !important;
+    min-height: 450px !important;
+  }
+}

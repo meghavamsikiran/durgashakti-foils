@@ -509,7 +509,7 @@ const AdminUsersPage = () => {
       )}
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(100vh - 480px)' }}>
+        <div className="overflow-x-auto overflow-y-auto admin-table-container-stats">
           <table className="min-w-[1000px] lg:min-w-full">
             <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
               <tr>
