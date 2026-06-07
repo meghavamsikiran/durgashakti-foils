@@ -30,8 +30,8 @@ const OrderSuccess = lazy(() => import('./pages/OrderSuccess'));
 const ProductReviewPage = lazy(() => import('./pages/ProductReviewPage'));
 
 // Admin (eagerly loaded for instant tab switching)
-const AdminLayout = lazy(() => import('./admin/layouts/AdminLayout'));
-const ProtectedAdminRoute = lazy(() => import('./admin/guards/ProtectedAdminRoute'));
+import AdminLayout from './admin/layouts/AdminLayout';
+import ProtectedAdminRoute from './admin/guards/ProtectedAdminRoute';
 import AdminDashboard from './admin/pages/AdminDashboard';
 import ProductsPage from './admin/pages/ProductsPage';
 import CategoriesPage from './admin/pages/CategoriesPage';
@@ -106,7 +106,7 @@ function AppRoutes() {
             <Route path="/checkout" element={
               <ProtectedRoute><Checkout /></ProtectedRoute>
             } />
-            <Route path="/dashboard" element={
+            <Route path="/dashboard/*" element={
               <ProtectedRoute><Dashboard /></ProtectedRoute>
             } />
             <Route path="/order/:id" element={

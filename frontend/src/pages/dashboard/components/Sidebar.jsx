@@ -44,10 +44,9 @@ const Sidebar = ({ user, activeTab, setActiveTab, unreadNotifications, wishlistC
             <button
               key={item.id}
               onClick={() => {
-                setActiveTab(item.id);
                 setSidebarOpen(false);
                 if (navigate) {
-                  navigate(`/dashboard?tab=${item.id}`, { replace: true });
+                  navigate(`/dashboard/${item.id}`);
                 }
               }}
               className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${

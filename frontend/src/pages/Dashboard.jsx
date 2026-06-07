@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PageLoader from '../components/ui/PageLoader';
 import { useOrders } from '../hooks/useOrders';
 import { useWishlist } from '../hooks/useWishlist';
 import { useAddresses } from '../hooks/useAddresses';
 import authService from '../services/auth.service';
+import { toast } from 'sonner';
 
 import Sidebar from './dashboard/components/Sidebar';
 import ProfileHeader from './dashboard/components/ProfileHeader';
@@ -20,27 +21,22 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(() => {
-    const urlTab = new URLSearchParams(window.location.search).get('tab');
-    return urlTab || localStorage.getItem('dashboardActiveTab') || 'orders';
-  });
 
-  useEffect(() => {
-    localStorage.setItem('dashboardActiveTab', activeTab);
-  }, [activeTab]);
-
-  useEffect(() => {
-    const tabFromUrl = new URLSearchParams(location.search).get('tab');
-    if (tabFromUrl && tabFromUrl !== activeTab) {
-      setActiveTab(tabFromUrl);
+  const getActiveTabFromPath = (pathname) => {
+    const parts = pathname.split('/').filter(Boolean);
+    if (parts.length > 1) {
+      const sub = parts[1];
+      if (['orders', 'transactions', 'wishlist', 'addresses', 'settings'].includes(sub)) {
+        return sub;
+      }
     }
-  }, [location.search, activeTab]);
+    return 'orders';
+  };
 
-  // Feature hooks
-  const { orders, loading: ordersLoading, error: ordersError, fetchOrders, cancelOrder, returnOrder } = useOrders();
-  const { wishlist, loading: wishlistLoading, toggleWishlist, clearWishlist } = useWishlist();
-  const { addresses, loading: addressesLoading, addAddress, updateAddress, deleteAddress } = useAddresses();
+  const activeTab = getActiveTabFromPath(location.pathname);
 
+  // Fetch wishlist at top-level to dynamically feed the sidebar badge count
+  const { wishlist, toggleWishlist, clearWishlist } = useWishlist();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -74,33 +70,24 @@ const Dashboard = () => {
   const handleUpdateProfile = async (data) => {
     try {
       await authService.updateProfile(data);
-      // Reload page or update context if needed
       window.location.reload();
     } catch (err) {}
   };
 
-  const handleChangePassword = async (data) => {
-    try {
-      await authService.changePassword(data);
-    } catch (err) {}
+  // Respective route wrappers: Hook calls are triggered ONLY when their sub-routes are mounted
+  const OrdersTabWrapper = () => {
+    const { orders, loading, error, fetchOrders, cancelOrder } = useOrders();
+    return <OrdersTab orders={orders} loading={loading} error={error} onRetry={fetchOrders} onCancelOrder={cancelOrder} />;
   };
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'orders':
-        return <OrdersTab orders={orders} loading={ordersLoading} error={ordersError} onRetry={fetchOrders} onCancelOrder={cancelOrder} />;
-      case 'transactions':
-        return <TransactionsTab orders={orders} />;
-      case 'wishlist':
-        return <WishlistTab wishlist={wishlist} loading={wishlistLoading} onToggleWishlist={toggleWishlist} onClearWishlist={clearWishlist} />;
-      case 'addresses':
-        return <AddressesTab addresses={addresses} loading={addressesLoading} onAddAddress={addAddress} onUpdateAddress={updateAddress} onDeleteAddress={deleteAddress} />;
+  const TransactionsTabWrapper = () => {
+    const { orders } = useOrders();
+    return <TransactionsTab orders={orders} />;
+  };
 
-      case 'settings':
-        return <SettingsTab user={user} onUpdateProfile={handleUpdateProfile} />;
-      default:
-        return <OrdersTab orders={orders} loading={ordersLoading} error={ordersError} onRetry={fetchOrders} />;
-    }
+  const AddressesTabWrapper = () => {
+    const { addresses, loading, addAddress, updateAddress, deleteAddress } = useAddresses();
+    return <AddressesTab addresses={addresses} loading={loading} onAddAddress={addAddress} onUpdateAddress={updateAddress} onDeleteAddress={deleteAddress} />;
   };
 
   return (
@@ -118,8 +105,7 @@ const Dashboard = () => {
           <Sidebar 
             user={user} 
             activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-
+            setActiveTab={() => {}} 
             wishlistCount={wishlist?.length || 0}
             onLogout={logout} 
             sidebarOpen={sidebarOpen}
@@ -133,7 +119,15 @@ const Dashboard = () => {
               activeTab={activeTab} 
               onMenuClick={() => setSidebarOpen(true)}
             />
-            {renderTabContent()}
+            <Routes>
+              <Route path="/" element={<Navigate to="orders" replace />} />
+              <Route path="orders" element={<OrdersTabWrapper />} />
+              <Route path="transactions" element={<TransactionsTabWrapper />} />
+              <Route path="wishlist" element={<WishlistTab wishlist={wishlist} onToggleWishlist={toggleWishlist} onClearWishlist={clearWishlist} />} />
+              <Route path="addresses" element={<AddressesTabWrapper />} />
+              <Route path="settings" element={<SettingsTab user={user} onUpdateProfile={handleUpdateProfile} />} />
+              <Route path="*" element={<Navigate to="orders" replace />} />
+            </Routes>
           </main>
         </div>
       </div>

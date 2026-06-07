@@ -142,14 +142,14 @@ const AuditLogsPage = () => {
   if (loading && rows.length === 0) return <PageLoader message="Loading System Logs..." />;
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-200">
+    <div className="space-y-3">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2.5 border-b border-slate-200">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 flex items-center gap-3">
-            <Shield className="w-8 h-8 text-primary" />
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
             System Logs
           </h1>
-          <p className="text-slate-500 mt-1 font-medium">A record of all changes made in the system.</p>
+          <p className="text-xs text-slate-500 mt-0.5 font-medium">A record of all changes made in the system.</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -172,40 +172,40 @@ const AuditLogsPage = () => {
 
       {hasPermission('view_analytics') && metrics && (
         <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
-              <Activity className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
+              <Activity className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Total Logs</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.totalEvents}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total Logs</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.totalEvents}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
-              <Fingerprint className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
+              <Fingerprint className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Login Events</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.securityEvents}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Login Events</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.securityEvents}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Changes</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.destructive}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Changes</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.destructive}</div>
             </div>
           </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
-              <Clock className="w-5 h-5" />
+          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Recent Logs</div>
-              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.recentRate}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Recent Logs</div>
+              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.recentRate}</div>
             </div>
           </div>
         </div>
