@@ -348,6 +348,17 @@ const OrdersPage = () => {
     return () => clearInterval(timer);
   }, [loadSilent, page, rows]);
 
+  const handleViewOrderDetails = async (orderId) => {
+    const toastId = toast.loading('Fetching latest order details...');
+    try {
+      const response = await adminService.getOrderDetails(orderId);
+      setSelectedOrderForModal(response.data);
+      toast.dismiss(toastId);
+    } catch (err) {
+      toast.error(err.message || 'Failed to fetch order details', { id: toastId });
+    }
+  };
+
   const handleConfirmManualRefundItem = useCallback(async (restock = true) => {
     if (!refundModal) return;
     const { orderId, productId, isOrderLevel } = refundModal;
@@ -1132,7 +1143,7 @@ const OrdersPage = () => {
                        <td className="px-8 py-6 text-center">
                           {hasPermission('view_order_details') ? (
                             <button
-                               onClick={() => setSelectedOrderForModal(order)}
+                               onClick={() => handleViewOrderDetails(order.id)}
                                className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-primary hover:bg-white transition-all shadow-sm"
                             >
                                <Eye className="w-4 h-4" />

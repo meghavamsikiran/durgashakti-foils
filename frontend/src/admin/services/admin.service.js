@@ -87,6 +87,7 @@ const adminService = {
     }));
     return { data: { ...response.data, items } };
   },
+  getOrderDetails: (orderId) => apiClient.get(`/admin/orders/${orderId}`),
   updateOrderStatus: (orderId, payload) => {
     invalidateCache('/admin/orders');
     return apiClient.put(`/admin/orders/${orderId}/status`, payload, { silent: true, timeout: 120000 });

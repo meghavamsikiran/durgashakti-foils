@@ -725,6 +725,35 @@ async def get_all_orders(
     return {"items": items, "total": total, "page": page, "limit": limit}
 
 
+@router.get("/admin/orders/{order_id}")
+async def get_admin_order_details(
+    order_id: str,
+    admin: UserSchema = Depends(require_permission("view_order_details")),
+    db: AsyncSession = Depends(get_db)
+):
+    from routes.orders import (
+        enforce_return_deadlines,
+        enforce_payment_timeouts,
+        _reconcile_order_with_razorpay,
+        reconcile_order_refund_with_razorpay
+    )
+    validate_uuid(order_id)
+    
+    await enforce_return_deadlines(db)
+    await enforce_payment_timeouts(db)
+    
+    res = await db.execute(select(OrderModel).where(OrderModel.id == order_id))
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+        
+    await _reconcile_order_with_razorpay(order, db, source="admin_order_fetch")
+    await reconcile_order_refund_with_razorpay(order, db, source="admin_order_fetch")
+    
+    latest_refund_logs = await _normalize_refund_rows(db, [order])
+    order_dict = _order_response_dict(order, latest_refund_logs.get(str(order.id)))
+    return order_dict
+
 
 async def _send_order_email_background(order_id: str, user_id: str, effective_status: str, admin_message: str):
     from database import async_session_factory
