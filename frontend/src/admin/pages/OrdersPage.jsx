@@ -813,41 +813,41 @@ const OrdersPage = () => {
       </div>
 
       {hasPermission('view_analytics') && (
-        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
-              <ShoppingBag className="w-6 h-6" />
+        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
+              <ShoppingBag className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Orders</div>
-              <div className="text-2xl font-black text-slate-900">{stats.total}</div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Total Orders</div>
+              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.total}</div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-primary" />
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Confirmed</div>
-              <div className="text-2xl font-black text-slate-900">{stats.confirmed}</div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Confirmed</div>
+              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.confirmed}</div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-secondary-container text-secondary rounded-xl flex items-center justify-center">
-              <Clock className="w-6 h-6" />
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div className="w-9 h-9 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Packed</div>
-              <div className="text-2xl font-black text-slate-900">{stats.packaging}</div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Packed</div>
+              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.packaging}</div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-              <Truck className="w-6 h-6" />
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
+              <Truck className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Delivered</div>
-              <div className="text-2xl font-black text-slate-900">{stats.delivered}</div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Delivered</div>
+              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.delivered}</div>
             </div>
           </div>
         </div>
@@ -880,7 +880,7 @@ const OrdersPage = () => {
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-[1000px] lg:min-w-full">
-            <thead className="bg-slate-50/50 border-b border-slate-200">
+            <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
               <tr>
                 <th className="px-8 py-5 text-left w-12">
                   <input

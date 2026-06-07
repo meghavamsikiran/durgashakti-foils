@@ -529,45 +529,45 @@ const ProductsPage = () => {
       </div>
 
       {hasPermission('view_analytics') && metrics && (
-        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
-              <Zap className="w-6 h-6" />
+        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+            <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
+              <Zap className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Fastest Mover</div>
-              <div className="text-xs sm:text-sm lg:text-base font-black text-slate-900 leading-tight" title={stats.fastestMover}>
+              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Fastest Mover</div>
+              <div className="text-xs font-black text-slate-900 leading-tight truncate" title={stats.fastestMover}>
                 {stats.fastestMover}
               </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
-              <Trophy className="w-6 h-6" />
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+            <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
+              <Trophy className="w-5 h-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Top Performer</div>
-              <div className="text-xs sm:text-sm lg:text-base font-black text-slate-900 leading-tight" title={stats.topPerformer}>
+              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Top Performer</div>
+              <div className="text-xs font-black text-slate-900 leading-tight truncate" title={stats.topPerformer}>
                 {stats.topPerformer}
               </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-secondary-container text-secondary rounded-xl flex items-center justify-center">
-              <IndianRupee className="w-6 h-6" />
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+            <div className="w-9 h-9 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
+              <IndianRupee className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stock Value</div>
-              <div className="text-2xl font-black text-slate-900">₹{Math.round(stats.value/1000)}k</div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Stock Value</div>
+              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">₹{Math.round(stats.value/1000)}k</div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center">
-              <AlertCircle className="w-6 h-6" />
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3 hover:shadow-md transition-shadow">
+            <div className="w-9 h-9 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Low Stock</div>
-              <div className="text-2xl font-black text-slate-900">{stats.lowStock}</div>
+              <div className="text-[9px] font-black uppercase tracking-widest text-slate-500">Low Stock</div>
+              <div className="text-xl font-black text-slate-900 leading-none mt-0.5">{stats.lowStock}</div>
             </div>
           </div>
         </div>
@@ -898,7 +898,7 @@ const ProductsPage = () => {
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-[1000px] lg:min-w-full">
-            <thead className="bg-slate-50/50 border-b border-slate-200">
+            <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
               <tr>
                 <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Product</th>
                 <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">SKU Code</th>

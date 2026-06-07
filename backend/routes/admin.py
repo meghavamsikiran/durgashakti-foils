@@ -270,6 +270,8 @@ def _normalize_role_template(value: Optional[str]) -> str:
 def _admin_role_label(user: UserModel) -> str:
     if user.role == "SUPER_ADMIN":
         return "Super Admin"
+    if user.role == "customer":
+        return "Customer"
     permissions = user.permissions or {}
     template_key = _normalize_role_template(permissions.get("role_template"))
     return ROLE_TEMPLATE_LABELS.get(template_key, "Custom Admin")
@@ -2196,8 +2198,14 @@ async def export_gstr1(
 
 @router.get("/admin/audit-logs")
 async def get_audit_logs(page: int = Query(1), limit: int = Query(50), search: Optional[str] = None, admin: UserSchema = Depends(require_permission("view_audit_logs")), db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import cast, String
     search = sanitize_search_term(search)
     q = select(AuditLogModel, func.count(AuditLogModel.id).over().label('total_count'))
+    
+    # Outer join to filter out customer logs
+    q = q.outerjoin(UserModel, cast(UserModel.id, String) == AuditLogModel.actor_id)
+    q = q.where(or_(UserModel.id == None, UserModel.role != "customer"))
+
     clause = None
     if search:
         clause = or_(AuditLogModel.action.ilike(f"%{search}%"), AuditLogModel.actor_id.ilike(f"%{search}%"), AuditLogModel.target_id.ilike(f"%{search}%"))
@@ -2211,7 +2219,7 @@ async def get_audit_logs(page: int = Query(1), limit: int = Query(50), search: O
     if rows:
         total = rows[0][1]
     elif page > 1:
-        fallback_q = select(func.count(AuditLogModel.id))
+        fallback_q = select(func.count(AuditLogModel.id)).outerjoin(UserModel, cast(UserModel.id, String) == AuditLogModel.actor_id).where(or_(UserModel.id == None, UserModel.role != "customer"))
         if clause is not None:
             fallback_q = fallback_q.where(clause)
         total = (await db.execute(fallback_q)).scalar() or 0
@@ -2225,10 +2233,16 @@ async def get_audit_logs(page: int = Query(1), limit: int = Query(50), search: O
 
 @router.get("/admin/audit-logs/export")
 async def export_audit_logs(admin: UserSchema = Depends(require_permission("view_audit_logs")), db: AsyncSession = Depends(get_db)):
+    from sqlalchemy import cast, String
     # Export audit logs (last 6 months) as XLSX
     cutoff = datetime.now(timezone.utc) - pd.Timedelta(days=180)
-    q = await db.execute(select(AuditLogModel).where(AuditLogModel.created_at >= cutoff).order_by(AuditLogModel.created_at.desc()))
-    rows = q.scalars().all()
+    q = select(AuditLogModel).outerjoin(UserModel, cast(UserModel.id, String) == AuditLogModel.actor_id).where(
+        AuditLogModel.created_at >= cutoff,
+        or_(UserModel.id == None, UserModel.role != "customer")
+    ).order_by(AuditLogModel.created_at.desc())
+    
+    res = await db.execute(q)
+    rows = res.scalars().all()
 
     items = [row_to_dict(r) for r in rows]
     await _enrich_audit_actor_fields(db, items)

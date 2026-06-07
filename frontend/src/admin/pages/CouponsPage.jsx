@@ -1693,8 +1693,8 @@ const CouponsPage = () => {
                 </div>
               ) : (
                 <table className="min-w-[1000px] lg:min-w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/75 border-b border-border-subtle text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                  <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
+                    <tr className="border-b border-border-subtle text-[11px] font-black text-slate-400 uppercase tracking-widest">
                       <th className="px-6 py-4">Coupon Code</th>
                       <th className="px-6 py-4">Discount</th>
                       <th className="px-6 py-4">Amount</th>

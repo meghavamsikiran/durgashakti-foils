@@ -204,7 +204,7 @@ const CategoriesPage = () => {
 
           <div className="overflow-x-auto">
             <table className="min-w-[800px] lg:min-w-full">
-              <thead className="bg-slate-50/30">
+              <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
                 <tr>
                   <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Category</th>
                   <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Global Discount</th>
