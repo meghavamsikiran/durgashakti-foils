@@ -735,7 +735,8 @@ async def get_admin_order_details(
         enforce_return_deadlines,
         enforce_payment_timeouts,
         _reconcile_order_with_razorpay,
-        reconcile_order_refund_with_razorpay
+        reconcile_order_refund_with_razorpay,
+        _reconcile_refund_background
     )
     validate_uuid(order_id)
     
@@ -747,8 +748,21 @@ async def get_admin_order_details(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
         
-    await _reconcile_order_with_razorpay(order, db, source="admin_order_fetch")
-    await reconcile_order_refund_with_razorpay(order, db, source="admin_order_fetch")
+    # Trigger Razorpay reconciliation in the background so the admin gets the view immediately without network lags
+    async def _reconcile_async_task(oid: str):
+        try:
+            from database import async_session_factory
+            async with async_session_factory() as sdb:
+                res_async = await sdb.execute(select(OrderModel).where(OrderModel.id == oid))
+                ord_async = res_async.scalar_one_or_none()
+                if ord_async:
+                    await _reconcile_order_with_razorpay(ord_async, sdb, source="admin_order_fetch_async")
+                    await reconcile_order_refund_with_razorpay(ord_async, sdb, source="admin_order_fetch_async")
+                    await sdb.commit()
+        except Exception:
+            logger.exception("Failed to run async reconciliation task")
+
+    asyncio.create_task(_reconcile_async_task(str(order.id)))
     
     latest_refund_logs = await _normalize_refund_rows(db, [order])
     order_dict = _order_response_dict(order, latest_refund_logs.get(str(order.id)))
@@ -2597,7 +2611,6 @@ async def admin_item_process_refund(
     flag_modified(order, "items")
     order.updated_at = datetime.now(timezone.utc)
     
-    # Transition overall order status if all returned items are refunded
     has_active_returns = any(item.get("return_status") in ("RETURN_REQUESTED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED") for item in order.items)
     if not has_active_returns:
         if is_manual:
