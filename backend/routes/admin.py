@@ -706,7 +706,7 @@ async def get_all_orders(
 
     # 2. Page fetch query
     offset = (page - 1) * limit
-    q = select(OrderModel).where(*filters).order_by(OrderModel.updated_at.desc()).offset(offset).limit(limit)
+    q = select(OrderModel).where(*filters).order_by(OrderModel.created_at.desc()).offset(offset).limit(limit)
     res = await db.execute(q)
     orders = res.scalars().all()
     latest_refund_logs = await _normalize_refund_rows(db, orders)

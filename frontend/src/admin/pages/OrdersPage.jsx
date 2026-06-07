@@ -85,6 +85,8 @@ const statusLabel = (status) => STATUS_LABELS[uiStatus(status)] || uiStatus(stat
 const paymentMethodLabel = (order) => (String(order.payment_method || '').toLowerCase() === 'cod' ? 'COD' : 'Prepaid');
 const paymentStatusLabel = (order) => {
   const value = String(order.payment_status || '').toLowerCase();
+  const orderStatus = String(order.order_status || order.status || '').toLowerCase();
+  if (orderStatus === 'overdue') return 'Expired';
   if (value === 'cash on delivery') return 'To Collect';
   if (value === 'paid' || value === 'completed') return 'Paid';
   if (value === 'refund_pending') return 'Refund Initiated';
@@ -893,8 +895,8 @@ const OrdersPage = () => {
                        <td className="px-8 py-6">
                          <div className="font-bold text-slate-800">{order.customer_name || 'Guest User'}</div>
                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
-                           <div className={`w-1.5 h-1.5 rounded-full ${String(order.payment_status || '').toLowerCase() === 'refund_failed' ? 'bg-rose-500' : isPaidStatus(order.payment_status) ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-                           <span>{paymentMethodLabel(order)} • {paymentStatusLabel(order)}</span>
+                            <div className={`w-1.5 h-1.5 rounded-full ${String(order.order_status || order.status || '').toLowerCase() === 'overdue' || String(order.payment_status || '').toLowerCase() === 'refund_failed' ? 'bg-rose-500' : isPaidStatus(order.payment_status) ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
+                            <span>{paymentMethodLabel(order)} • {paymentStatusLabel(order)}</span>
                            {order.transaction_id && order.transaction_id !== 'COD' && (
                              <span className="font-mono normal-case tracking-normal select-all">{order.transaction_id}</span>
                            )}
@@ -2031,7 +2033,7 @@ const OrdersPage = () => {
 
             {/* Modal Footer */}
             <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
-              {selectedOrderForModal.payment_status === 'refund_pending' && (() => {
+              {(() => {
                 const hasReturnRequest = (selectedOrderForModal.items || []).some(i => i.return_status);
                 const itemsToSum = hasReturnRequest
                   ? (selectedOrderForModal.items || []).filter(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status))
@@ -2041,44 +2043,52 @@ const OrdersPage = () => {
                   const courierCost = ['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(i.return_status) ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0);
                   return sum + itemAmount + courierCost;
                 }, 0);
+
+                const showRefundActions = selectedOrderForModal.payment_status === 'refund_pending' && totalRefundAmount > 0;
+
                 return (
-                  <div className="text-[10px] text-slate-500 font-extrabold text-left w-full sm:w-auto">
-                    Refund: <span className="font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 select-all">₹{totalRefundAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    {' → '}
-                    <span className="font-mono text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 select-all">{selectedOrderForModal.shipping_address?.phone || 'customer'}</span>
-                  </div>
+                  <>
+                    {showRefundActions ? (
+                      <div className="text-[10px] text-slate-500 font-extrabold text-left w-full sm:w-auto">
+                        Refund: <span className="font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 select-all">₹{totalRefundAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        {' → '}
+                        <span className="font-mono text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 select-all">{selectedOrderForModal.shipping_address?.phone || 'customer'}</span>
+                      </div>
+                    ) : (
+                      <div></div>
+                    )}
+                    <div className="flex gap-3 justify-end w-full sm:w-auto shrink-0">
+                      {showRefundActions && hasPermission('update_order_status') && (
+                        String(selectedOrderForModal.payment_method || '').toLowerCase() === 'cod' ? (
+                          <button
+                            onClick={() => {
+                              handleOpenOrderRefundModal(selectedOrderForModal);
+                            }}
+                            className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98] shadow-md shadow-emerald-glow"
+                          >
+                            Confirm Manual Refund Paid
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              retryRefund(selectedOrderForModal.id);
+                            }}
+                            className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-sky-600 hover:bg-sky-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98] shadow-md shadow-sky-glow"
+                          >
+                            Retry Auto Refund
+                          </button>
+                        )
+                      )}
+                      <button
+                        onClick={() => setSelectedOrderForModal(null)}
+                        className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all hover:scale-[1.02] transform active:scale-[0.98]"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </>
                 );
               })()}
-              <div className="flex gap-3 justify-end w-full sm:w-auto shrink-0">
-                {selectedOrderForModal.payment_status === 'refund_pending' &&
-                 hasPermission('update_order_status') && (
-                   String(selectedOrderForModal.payment_method || '').toLowerCase() === 'cod' ? (
-                     <button
-                       onClick={() => {
-                         handleOpenOrderRefundModal(selectedOrderForModal);
-                       }}
-                       className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98] shadow-md shadow-emerald-glow"
-                     >
-                       Confirm Manual Refund Paid
-                     </button>
-                   ) : (
-                     <button
-                       onClick={() => {
-                         retryRefund(selectedOrderForModal.id);
-                       }}
-                       className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-sky-600 hover:bg-sky-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98] shadow-md shadow-sky-glow"
-                     >
-                       Retry Auto Refund
-                     </button>
-                   )
-                 )}
-                <button
-                  onClick={() => setSelectedOrderForModal(null)}
-                  className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all hover:scale-[1.02] transform active:scale-[0.98]"
-                >
-                  Close
-                </button>
-              </div>
             </div>
 
           </div>

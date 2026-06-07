@@ -21,7 +21,7 @@ const isOnlinePaymentPendingOrder = (orderData) => {
     !isRefundPaymentStatus(paymentStatus) &&
     !['failed', 'cancelled'].includes(paymentStatus) &&
     (orderData?.payment_method || '').toLowerCase() !== 'cod' &&
-    !['cancelled', 'failed', 'refunded', 'return_approved', 'return_rejected'].includes(orderStatus)
+    !['cancelled', 'failed', 'refunded', 'return_approved', 'return_rejected', 'overdue'].includes(orderStatus)
   );
 };
 
@@ -734,6 +734,13 @@ const OrderDetailsPage = () => {
                             {retryingPayment ? 'Processing...' : 'Pay Online'}
                           </button>
                         )}
+                      </div>
+                    ) : (order.order_status || '').toLowerCase() === 'overdue' ? (
+                      <div className="bg-rose-50 text-rose-800 text-[10px] rounded-xl p-3 border border-rose-100/80 space-y-1 font-semibold">
+                        <p className="font-extrabold flex items-center gap-1.5 text-rose-700">
+                          <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Payment Window Expired
+                        </p>
+                        <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">This order is overdue and cancelled.</p>
                       </div>
                     ) : (
                       <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-100/60 space-y-2 font-semibold">
