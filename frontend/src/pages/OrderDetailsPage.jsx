@@ -1450,7 +1450,7 @@ const OrderDetailsPage = () => {
                     View your item
                   </button>
                   
-                  {order.order_status === 'delivered' && order.items.some(i => !i.return_status) && order.payment_method?.toLowerCase() !== 'cod' && (
+                  {order.order_status === 'delivered' && !item.return_status && order.payment_method?.toLowerCase() !== 'cod' && (
                     <button 
                       onClick={() => setIsReturning(item.product_id)}
                       className="w-full bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 font-bold text-slate-750 text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all text-center uppercase tracking-widest text-[9px]"
