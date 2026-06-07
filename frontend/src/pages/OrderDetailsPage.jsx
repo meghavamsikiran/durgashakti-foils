@@ -1019,9 +1019,20 @@ const OrderDetailsPage = () => {
               <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                 order.order_status === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
                 order.order_status === 'cancelled' ? 'bg-rose-100 text-rose-800' :
+                (order.order_status === 'return_approved' && (order.payment_status || '').toLowerCase() === 'refund_pending') ? 'bg-sky-100 text-sky-800 border border-sky-200 animate-pulse' :
+                (order.order_status === 'return_approved' && (order.payment_status || '').toLowerCase() === 'refund_failed') ? 'bg-rose-100 text-rose-800 border border-rose-200' :
                 'bg-primary/10 text-primary'
               }`}>
-                {order.order_status?.replace('_', ' ')}
+                {(() => {
+                  const s = (order.order_status || '').toLowerCase();
+                  const p = (order.payment_status || '').toLowerCase();
+                  if (s === 'return_approved') {
+                    if (p === 'refunded') return 'Refund Credited';
+                    if (p === 'refund_failed') return 'Refund Failed';
+                    if (p === 'refund_pending') return 'Refund Initiated';
+                  }
+                  return order.order_status?.replace('_', ' ');
+                })()}
               </span>
             </div>
 
@@ -1268,7 +1279,7 @@ const OrderDetailsPage = () => {
                   : order.order_status === 'return_requested'
                   ? 'Return Pending Approval'
                   : order.order_status === 'return_approved'
-                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Refund Credited' : (order.payment_status || '').toLowerCase() === 'refund_failed' ? 'Refund Failed' : 'Return Approved')
+                  ? ((order.payment_status || '').toLowerCase() === 'refunded' ? 'Refund Credited' : (order.payment_status || '').toLowerCase() === 'refund_failed' ? 'Refund Failed' : (order.payment_status || '').toLowerCase() === 'refund_pending' ? 'Refund Initiated' : 'Return Approved')
                   : order.order_status === 'return_rejected'
                   ? 'Return Request Declined'
                   : `Preparing shipment • Est. Delivery ${getExpectedDeliveryDate(order.created_at)}`

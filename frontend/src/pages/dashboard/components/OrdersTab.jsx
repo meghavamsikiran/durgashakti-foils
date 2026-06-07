@@ -120,8 +120,18 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
     return status ? status.replace(/_/g, ' ') : 'Pending';
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, paymentStatus) => {
     const s = (status || 'pending').toLowerCase();
+    const payStatus = (paymentStatus || '').toLowerCase();
+    if (payStatus === 'refund_pending') {
+      return { bg: 'bg-sky-50 text-sky-600', label: 'Refund Initiated' };
+    }
+    if (payStatus === 'refund_failed') {
+      return { bg: 'bg-rose-50 text-rose-600', label: 'Refund Failed' };
+    }
+    if (payStatus === 'refunded') {
+      return { bg: 'bg-slate-100 text-slate-650 border border-slate-200', label: 'Refund Credited' };
+    }
     const config = {
       pending: { bg: 'bg-secondary-container text-secondary', label: 'Placed' },
       pending_payment: { bg: 'bg-rose-50 text-rose-600', label: 'Payment Pending' },
@@ -154,7 +164,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
       const matchesProducts = (order.items || []).some(item => 
         (item.product_name || '').toLowerCase().includes(query)
       );
-      const badge = getStatusBadge(order.order_status);
+      const badge = getStatusBadge(order.order_status, order.payment_status);
       const matchesStatus = (badge.label || '').toLowerCase().includes(query) || (order.order_status || '').toLowerCase().includes(query);
       const matchesPayment =
         (order.transaction_id || '').toLowerCase().includes(query) ||
@@ -378,7 +388,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
       ) : (
         <div className="space-y-4">
           {filteredOrders.slice((ordersPage - 1) * ORDERS_PER_PAGE, ordersPage * ORDERS_PER_PAGE).map((order) => {
-            const badge = getStatusBadge(order.order_status);
+            const badge = getStatusBadge(order.order_status, order.payment_status);
             return (
               <div key={order.id} className="p-6 rounded-xl border border-border-subtle hover:border-primary/50 hover:shadow-emerald-glow transition-all bg-surface-container-lowest shadow-sm">
                 <div className="flex flex-col md:flex-row gap-6">

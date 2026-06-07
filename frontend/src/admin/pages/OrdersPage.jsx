@@ -56,6 +56,8 @@ const statusConfigs = {
   RETURN_APPROVED: { color: 'text-teal-600', bg: 'bg-teal-50', icon: CheckCircle2 },
   RETURN_REJECTED: { color: 'text-rose-600', bg: 'bg-rose-50', icon: AlertCircle },
   REFUNDED: { color: 'text-slate-600', bg: 'bg-slate-50', icon: IndianRupee },
+  REFUND_PENDING: { color: 'text-sky-600', bg: 'bg-sky-50', icon: Clock },
+  REFUND_FAILED: { color: 'text-rose-600', bg: 'bg-rose-50', icon: AlertCircle },
 };
 
 const PAGE_SIZE = 15;
@@ -80,6 +82,19 @@ const STATUS_LABELS = {
   RETURN_APPROVED: 'Return Approved',
   RETURN_REJECTED: 'Return Rejected',
   REFUNDED: 'Refund Credited',
+  REFUND_PENDING: 'Refund Initiated',
+  REFUND_FAILED: 'Refund Failed',
+};
+const getDisplayStatus = (order) => {
+  if (!order) return 'PENDING';
+  const payStatus = String(order.payment_status || '').toLowerCase();
+  const ordStatus = String(order.status || order.order_status || 'PENDING').toUpperCase();
+  
+  if (payStatus === 'refund_pending') return 'REFUND_PENDING';
+  if (payStatus === 'refund_failed') return 'REFUND_FAILED';
+  if (payStatus === 'refunded') return 'REFUNDED';
+  
+  return ordStatus;
 };
 const statusLabel = (status) => STATUS_LABELS[uiStatus(status)] || uiStatus(status).replace(/_/g, ' ');
 const paymentMethodLabel = (order) => (String(order.payment_method || '').toLowerCase() === 'cod' ? 'COD' : 'Prepaid');
@@ -869,7 +884,7 @@ const OrdersPage = () => {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.map((order) => {
-                const status = (order.status || order.order_status || 'PENDING').toUpperCase();
+                const status = getDisplayStatus(order);
                 const config = statusConfigs[status] || statusConfigs.PENDING;
                 const StatusIcon = config.icon;
                 const actions = STATUS_FLOW[status] || [];
@@ -931,8 +946,11 @@ const OrdersPage = () => {
                             {(() => {
                               const refundPaymentStatus = String(order.payment_status || '').toLowerCase();
                               const isCod = String(order.payment_method || '').toLowerCase() === 'cod';
-                              const showRefundPendingButton = ['refund_pending', 'refund_failed'].includes(refundPaymentStatus) &&
-                                hasPermission('update_order_status');
+                              const showRefundPendingButton = (
+                                isCod 
+                                  ? ['refund_pending', 'refund_failed'].includes(refundPaymentStatus)
+                                  : refundPaymentStatus === 'refund_failed'
+                              ) && hasPermission('update_order_status');
                               const allowedActions = actions.filter((a) => {
                                 if (a === 'CANCELLED') {
                                   return hasPermission('cancel_orders');
@@ -1753,11 +1771,14 @@ const OrdersPage = () => {
                         Return Request Details
                       </h4>
                       <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
+                        getDisplayStatus(selectedOrderForModal) === 'REFUND_PENDING' ? 'bg-sky-100 text-sky-800 animate-pulse' :
+                        getDisplayStatus(selectedOrderForModal) === 'REFUND_FAILED' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                        getDisplayStatus(selectedOrderForModal) === 'REFUNDED' ? 'bg-emerald-100 text-emerald-800' :
                         selectedOrderForModal.status === 'RETURN_APPROVED' ? 'bg-emerald-100 text-emerald-800' :
                         selectedOrderForModal.status === 'RETURN_REJECTED' ? 'bg-rose-100 text-rose-800' :
                         'bg-amber-100 text-amber-800'
                       }`}>
-                        {selectedOrderForModal.status?.replace('_', ' ')}
+                        {statusLabel(getDisplayStatus(selectedOrderForModal))}
                       </span>
                     </div>
 
@@ -2079,15 +2100,24 @@ const OrdersPage = () => {
                   return sum + itemAmount + courierCost;
                 }, 0);
 
-                const showRefundActions = selectedOrderForModal.payment_status === 'refund_pending' && totalRefundAmount > 0;
+                const isCod = String(selectedOrderForModal.payment_method || '').toLowerCase() === 'cod';
+                const showRefundActions = (
+                  isCod
+                    ? ['refund_pending', 'refund_failed'].includes(selectedOrderForModal.payment_status)
+                    : ['refund_failed'].includes(selectedOrderForModal.payment_status)
+                ) && totalRefundAmount > 0;
+                const showRefundInfo = ['refund_pending', 'refunded', 'refund_failed'].includes(selectedOrderForModal.payment_status) && totalRefundAmount > 0;
 
                 return (
                   <>
-                    {showRefundActions ? (
-                      <div className="text-[10px] text-slate-500 font-extrabold text-left w-full sm:w-auto">
-                        Refund: <span className="font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 select-all">₹{totalRefundAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        {' → '}
+                    {showRefundInfo ? (
+                      <div className="text-[10px] text-slate-500 font-extrabold text-left w-full sm:w-auto flex flex-wrap items-center gap-2">
+                        <span>Refund: <span className="font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 select-all">₹{totalRefundAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></span>
+                        <span>{' → '}</span>
                         <span className="font-mono text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 select-all">{selectedOrderForModal.shipping_address?.phone || 'customer'}</span>
+                        {selectedOrderForModal.payment_status === 'refund_pending' && !isCod && (
+                          <span className="px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-100 rounded text-[9px] font-black uppercase tracking-wider animate-pulse">Refund Processing Automatically</span>
+                        )}
                       </div>
                     ) : (
                       <div></div>
