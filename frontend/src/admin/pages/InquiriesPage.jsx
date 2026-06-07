@@ -1,13 +1,59 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X } from 'lucide-react';
+import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X, Filter } from 'lucide-react';
 import AdminTable from '../components/AdminTable';
 import apiClient from '../../services/core/apiClient';
-import DateFilterPopover from '../../components/ui/DateFilterPopover';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
 import PageLoader from '../../components/ui/PageLoader';
 import TablePagination from '../../components/ui/TablePagination';
+
+const DATE_PRESETS = [
+  { key: 'today', label: 'Today' },
+  { key: 'last7', label: 'Last 7 Days' },
+  { key: 'thisWeek', label: 'This Week' },
+  { key: 'thisMonth', label: 'This Month' },
+  { key: 'thisYear', label: 'This Year' },
+  { key: 'custom', label: 'Custom Range' },
+];
+
+function toISODateStart(d) {
+  const dt = new Date(d);
+  dt.setHours(0, 0, 0, 0);
+  return dt.toISOString();
+}
+
+function toISODateEnd(d) {
+  const dt = new Date(d);
+  dt.setHours(23, 59, 59, 999);
+  return dt.toISOString();
+}
+
+function rangeForPreset(key) {
+  const now = new Date();
+  const start = new Date();
+  switch (key) {
+    case 'today':
+      return { start: toISODateStart(now), end: toISODateEnd(now) };
+    case 'last7':
+      start.setDate(now.getDate() - 6);
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
+    case 'thisWeek': {
+      const day = now.getDay();
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1); // monday as start
+      start.setDate(diff);
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
+    }
+    case 'thisMonth':
+      start.setDate(1);
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
+    case 'thisYear':
+      start.setMonth(0, 1);
+      return { start: toISODateStart(start), end: toISODateEnd(now) };
+    default:
+      return null;
+  }
+}
 
 const InquiriesPage = () => {
   const PAGE_SIZE = 20;
@@ -29,6 +75,75 @@ const InquiriesPage = () => {
   const [submittingReply, setSubmittingReply] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState(null);
+
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [tempStatus, setTempStatus] = useState('all');
+  const [tempPreset, setTempPreset] = useState('');
+  const [tempCustom, setTempCustom] = useState({ start: '', end: '' });
+  const filterRef = useRef(null);
+
+  useEffect(() => {
+    function handleOutsideClick(e) {
+      if (filterRef.current && !filterRef.current.contains(e.target)) {
+        setFilterOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const handleToggleFilter = () => {
+    if (!filterOpen) {
+      setTempStatus(statusFilter);
+      setTempPreset(dateFilter?.label || '');
+      setTempCustom({
+        start: dateFilter?.label === 'custom' ? (dateFilter.start_date || '').slice(0, 10) : '',
+        end: dateFilter?.label === 'custom' ? (dateFilter.end_date || '').slice(0, 10) : '',
+      });
+    }
+    setFilterOpen(!filterOpen);
+  };
+
+  const handleApplyFilters = () => {
+    setStatusFilter(tempStatus);
+    if (tempPreset === 'custom') {
+      if (tempCustom.start && tempCustom.end) {
+        const s = new Date(tempCustom.start);
+        const e = new Date(tempCustom.end);
+        if (s <= e) {
+          setDateFilter({
+            start_date: toISODateStart(s),
+            end_date: toISODateEnd(e),
+            label: 'custom'
+          });
+        }
+      }
+    } else if (tempPreset) {
+      const range = rangeForPreset(tempPreset);
+      if (range) {
+        setDateFilter({
+          start_date: range.start,
+          end_date: range.end,
+          label: tempPreset
+        });
+      }
+    } else {
+      setDateFilter(null);
+    }
+    setPage(1);
+    setFilterOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setStatusFilter('all');
+    setDateFilter(null);
+    setTempStatus('all');
+    setTempPreset('');
+    setTempCustom({ start: '', end: '' });
+    setPage(1);
+    setFilterOpen(false);
+  };
+
 
   const loadInquiries = useCallback(async (pageNum = 1) => {
     const params = {
@@ -162,23 +277,116 @@ const InquiriesPage = () => {
           </div>
           <p className="text-slate-500 font-medium">Manage and respond to messages submitted through the Contact Us form.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2">
-            <span className="text-xs font-black uppercase tracking-wider text-slate-500">Status</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent outline-none text-sm font-semibold"
-            >
-              <option value="all">All</option>
-              <option value="pending">Pending</option>
-              <option value="in_progress">In Progress</option>
-              <option value="replied">Replied</option>
-              <option value="resolved">Closed</option>
-            </select>
-          </div>
-          <DateFilterPopover onChange={(value) => setDateFilter(value)} initial={dateFilter} />
-        </div>
+        <div className="relative" ref={filterRef}>
+          <button
+            onClick={handleToggleFilter}
+            className="relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all font-semibold"
+          >
+            <Filter className="w-4 h-4 text-slate-650" />
+            <span className="text-xs font-black uppercase tracking-widest text-slate-650">Filter</span>
+            {(statusFilter !== 'all' || dateFilter) && (
+              <span className="ml-1.5 flex h-2 w-2 rounded-full bg-primary" />
+            )}
+          </button>
+
+          {filterOpen && (
+            <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl p-5 z-50 space-y-4 text-left">
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Status</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { key: 'all', label: 'All' },
+                    { key: 'pending', label: 'Pending' },
+                    { key: 'in_progress', label: 'In Progress' },
+                    { key: 'replied', label: 'Replied' },
+                    { key: 'resolved', label: 'Closed' }
+                  ].map(opt => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setTempStatus(opt.key)}
+                      className={`px-3 py-2 rounded-lg text-xs font-semibold text-center transition-all ${
+                        tempStatus === opt.key 
+                          ? 'bg-primary text-white shadow-sm' 
+                          : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Date Range</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {DATE_PRESETS.map(opt => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setTempPreset(opt.key)}
+                      className={`px-3 py-2 rounded-lg text-xs font-semibold text-center transition-all ${
+                        tempPreset === opt.key 
+                          ? 'bg-primary text-white shadow-sm' 
+                          : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {tempPreset === 'custom' && (
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Start Date</label>
+                    <input
+                      type="date"
+                      value={tempCustom.start}
+                      onChange={(e) => setTempCustom({ ...tempCustom, start: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">End Date</label>
+                    <input
+                      type="date"
+                      value={tempCustom.end}
+                      onChange={(e) => setTempCustom({ ...tempCustom, end: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-750"
+                >
+                  Clear All
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFilterOpen(false)}
+                    className="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold hover:bg-slate-5"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleApplyFilters}
+                    className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest shadow-md hover:bg-[#005a14]"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
       </div>
 
       {/* Table */}

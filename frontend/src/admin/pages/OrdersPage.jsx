@@ -180,6 +180,10 @@ const OrdersPage = () => {
   const [courierFilter, setCourierFilter] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('');
+  const [metrics, setMetrics] = useState(() => {
+    const cached = adminService.getCached('/admin/analytics/summary');
+    return cached?.data || null;
+  });
   const [showFilters, setShowFilters] = useState(false);
   const [adminMessage, setAdminMessage] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
@@ -220,6 +224,9 @@ const OrdersPage = () => {
       setRows(response.data.items || []);
       setTotal(response.data.total || 0);
       setPage(p);
+      adminService.getDashboardMetrics().then((mRes) => {
+        setMetrics(mRes.data || null);
+      }).catch(() => {});
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -254,6 +261,9 @@ const OrdersPage = () => {
       }));
       setRows(items);
       setTotal(response.data.total || 0);
+      apiClient.get('/admin/analytics/summary', { silent: true }).then((mRes) => {
+        setMetrics(mRes.data || null);
+      }).catch(() => {});
       setSelectedOrderForModal((prev) => {
         if (!prev) return null;
         const updated = items.find((item) => item.id === prev.id);
@@ -651,12 +661,27 @@ const OrdersPage = () => {
   const totalFilteredPages = Math.ceil(total / PAGE_SIZE);
   const paginatedOrders = filtered;
 
-  const getStats = () => ({
-    total: total,
-    confirmed: rows.filter(r => (r.status || '').toUpperCase() === 'CONFIRMED').length,
-    packaging: rows.filter(r => ['PACKAGING', 'PACKED'].includes((r.status || '').toUpperCase())).length,
-    delivered: rows.filter(r => (r.status || '').toUpperCase() === 'DELIVERED').length,
-  });
+  const getStats = () => {
+    if (metrics && metrics.order_status_counts) {
+      const counts = metrics.order_status_counts;
+      const c = {};
+      Object.keys(counts).forEach(k => {
+        c[k.toLowerCase()] = counts[k];
+      });
+      return {
+        total: metrics.metrics?.total_orders || total,
+        confirmed: c.confirmed || 0,
+        packaging: (c.packaging || 0) + (c.packed || 0),
+        delivered: c.delivered || 0,
+      };
+    }
+    return {
+      total: total,
+      confirmed: rows.filter(r => (r.status || '').toUpperCase() === 'CONFIRMED').length,
+      packaging: rows.filter(r => ['PACKAGING', 'PACKED'].includes((r.status || '').toUpperCase())).length,
+      delivered: rows.filter(r => (r.status || '').toUpperCase() === 'DELIVERED').length,
+    };
+  };
 
   const stats = getStats();
 
@@ -878,7 +903,7 @@ const OrdersPage = () => {
       )}
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-290px)]">
           <table className="min-w-[1000px] lg:min-w-full">
             <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
               <tr>

@@ -551,11 +551,18 @@ async def get_analytics_summary(
             sorted_keys = sorted(trend_map.keys(), key=lambda x: datetime.strptime(x, "%b %d"))
             revenue_trend = [{"name": k, "value": round(trend_map[k], 2)} for k in sorted_keys]
 
+    status_counts = results.get("status_counts", {}) or {}
+    normalized_counts = {str(k).lower(): v for k, v in status_counts.items()}
+    total_delivered = normalized_counts.get("delivered", 0)
+    total_returned = sum(normalized_counts.get(s, 0) for s in ["returned", "return_approved", "return_requested", "refunded"])
+
     metrics = {}
     if has_orders:
         metrics["total_orders"] = total_orders
         metrics["orders_today"] = orders_today_count
         metrics["avg_delivery_time_hours"] = avg_delivery_time_hours
+        metrics["total_delivered"] = total_delivered
+        metrics["total_returned"] = total_returned
     if has_financial:
         metrics["total_revenue"] = revenue
     if has_products:

@@ -6,7 +6,7 @@ const AdminTable = ({ columns, rows, emptyText = 'No records found.' }) => {
   }
 
   return (
-    <div className="overflow-x-auto rounded border bg-white">
+    <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-290px)] rounded border bg-white">
       <table className="min-w-full text-sm">
         <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
           <tr>

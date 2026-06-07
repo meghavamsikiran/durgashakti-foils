@@ -1528,7 +1528,45 @@ async def list_customers(
                 "loyalty_criteria": {"enabled": loyalty_enabled, "minimum_orders": min_orders, "minimum_spend": min_spend, "criteria_mode": criteria_mode}
             })
 
-    return {"items": rows_data, "total": total, "page": page, "limit": limit}
+    # Calculate global customer metrics for stats cards
+    total_customers_q = select(func.count(UserModel.id)).where(UserModel.role == "customer")
+    total_customers_count = (await db.execute(total_customers_q)).scalar() or 0
+
+    total_spend_q = select(func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0)).where(OrderModel.user_id.isnot(None))
+    total_spend = (await db.execute(total_spend_q)).scalar() or 0.0
+
+    avg_spend = total_spend / total_customers_count if total_customers_count > 0 else 0.0
+
+    loyal_users_count_q = (
+        select(func.count(OrderModel.user_id))
+        .where(OrderModel.user_id.isnot(None))
+        .group_by(OrderModel.user_id)
+    )
+    if loyalty_enabled:
+        orders_ok = func.count(OrderModel.id).filter(eligible_order) >= min_orders
+        spend_ok = func.coalesce(func.sum(OrderModel.total_amount).filter(eligible_order), 0) >= min_spend
+        if criteria_mode == "orders_only":
+            loyal_users_count_q = loyal_users_count_q.having(orders_ok)
+        elif criteria_mode == "spend_only":
+            loyal_users_count_q = loyal_users_count_q.having(spend_ok)
+        elif criteria_mode == "both":
+            from sqlalchemy import and_
+            loyal_users_count_q = loyal_users_count_q.having(and_(orders_ok, spend_ok))
+        else:
+            loyal_users_count_q = loyal_users_count_q.having(orders_ok | spend_ok)
+        
+        loyal_users_count = len((await db.execute(loyal_users_count_q)).all())
+    else:
+        loyal_users_count = 0
+
+    stats = {
+        "total_customers": total_customers_count,
+        "total_spend": round(total_spend, 2),
+        "avg_spend": round(avg_spend, 2),
+        "loyal_customers": loyal_users_count
+    }
+
+    return {"items": rows_data, "total": total, "page": page, "limit": limit, "stats": stats}
 
 
 @router.get("/admin/customers/{customer_id}")

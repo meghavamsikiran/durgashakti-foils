@@ -1684,7 +1684,7 @@ const CouponsPage = () => {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-290px)]">
               {filteredCoupons.length === 0 ? (
                 <div className="p-12 text-center text-slate-500">
                   <Ticket className="w-12 h-12 text-slate-350 mx-auto mb-3" />

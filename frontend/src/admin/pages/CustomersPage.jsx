@@ -30,6 +30,10 @@ const CustomersPage = () => {
     const cached = adminService.getCached('/admin/analytics/summary');
     return cached?.metrics || null;
   });
+  const [customerStats, setCustomerStats] = useState(() => {
+    const cached = adminService.getCached('/admin/customers', { page: 1, limit: ITEMS_PER_PAGE, search: '', segment: undefined });
+    return cached?.data?.stats || null;
+  });
   const [loyaltySettings, setLoyaltySettings] = useState({ enabled: true, minimum_orders: 10, minimum_spend: 15000, criteria_mode: 'either' });
   const skipNextLoadRef = React.useRef(false);
 
@@ -50,6 +54,7 @@ const CustomersPage = () => {
     if (!cached) return false;
     setRows(cached.data?.items || []);
     setTotal(cached.data?.total || 0);
+    setCustomerStats(cached.data?.stats || null);
     setPage(pageNum);
     return true;
   }, [getCustomerParams, search, segment]);
@@ -60,6 +65,7 @@ const CustomersPage = () => {
     if (cached) {
       setRows(cached.data?.items || []);
       setTotal(cached.data?.total || 0);
+      setCustomerStats(cached.data?.stats || null);
       setPage(pageNum);
     }
     if (!cached && rowsLengthRef.current === 0) {
@@ -69,6 +75,7 @@ const CustomersPage = () => {
       const response = await adminService.getCustomers(params);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
+      setCustomerStats(response.data?.stats || null);
       setPage(pageNum);
       adminService.getDashboardMetrics().then((mRes) => {
         setMetrics(mRes.data?.metrics || null);
@@ -97,6 +104,7 @@ const CustomersPage = () => {
       });
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
+      setCustomerStats(response.data?.stats || null);
     } catch {
       // Ignore background errors
     }
@@ -160,10 +168,10 @@ const CustomersPage = () => {
   const paginatedCustomers = rows;
 
   const stats = {
-    total: metrics?.total_customers || total,
-    loyal: loyaltyEnabled ? rows.filter(r => r.is_loyal).length : 0,
-    revenue: rows.reduce((sum, row) => sum + Number(row.total_spent || 0), 0),
-    avg: rows.length ? rows.reduce((sum, row) => sum + Number(row.total_spent || 0), 0) / rows.length : 0
+    total: customerStats?.total_customers || metrics?.total_customers || total,
+    loyal: customerStats?.loyal_customers || (loyaltyEnabled ? rows.filter(r => r.is_loyal).length : 0),
+    revenue: customerStats?.total_spend || rows.reduce((sum, row) => sum + Number(row.total_spent || 0), 0),
+    avg: customerStats?.avg_spend || (rows.length ? rows.reduce((sum, row) => sum + Number(row.total_spent || 0), 0) / rows.length : 0)
   };
 
   if (loading && rows.length === 0) return <PageLoader />;
@@ -252,7 +260,7 @@ const CustomersPage = () => {
       )}
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-290px)]">
           <table className="min-w-[1000px] lg:min-w-full">
             <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
               <tr>

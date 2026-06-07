@@ -13,6 +13,8 @@ import DateFilterPopover from '../../components/ui/DateFilterPopover';
 const metricConfigs = {
   total_orders: { label: 'Total Orders', icon: ShoppingBag, color: 'text-primary', bg: 'bg-primary/10' },
   orders_today: { label: "Today's Orders", icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50' },
+  total_delivered: { label: 'Total Delivered', icon: ShoppingBag, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  total_returned: { label: 'Total Returned', icon: ShoppingBag, color: 'text-rose-600', bg: 'bg-rose-50' },
   total_products: { label: 'Total Products', icon: Package, color: 'text-secondary', bg: 'bg-secondary-container' },
   total_customers: { label: 'Total Customers', icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
   total_revenue: { label: 'Total Revenue', icon: IndianRupee, color: 'text-secondary', bg: 'bg-secondary-container' },
