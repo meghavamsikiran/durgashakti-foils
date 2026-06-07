@@ -1136,10 +1136,10 @@ const OrderDetailsPage = () => {
           // Identify specific item return statuses
           const returnedItems = order.items?.filter(item => item.return_status) || [];
           const hasRequested = returnedItems.some(i => i.return_status === 'RETURN_REQUESTED');
-          const hasApproved = returnedItems.some(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
-          const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
-          const hasReceived = returnedItems.some(i => ['RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
-          const hasRefunded = returnedItems.some(i => i.return_status === 'REFUND_COMPLETED') || paymentStatus === 'refunded' || status === 'refunded';
+          const hasApproved = returnedItems.some(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
+          const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
+          const hasReceived = returnedItems.some(i => ['RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
+          const hasRefunded = returnedItems.some(i => ['REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status)) || paymentStatus === 'refunded' || status === 'refunded' || paymentStatus === 'refund_pending';
           const isRejected = (returnedItems.length > 0 && returnedItems.every(i => i.return_status === 'RETURN_REJECTED')) || status === 'return_rejected';
           const isRefundFailed = paymentStatus === 'refund_failed';
 
@@ -1187,9 +1187,9 @@ const OrderDetailsPage = () => {
               <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-50">
                 <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">{timelineTitle}</h3>
                 <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-                  isRejected || isRefundFailed ? 'bg-rose-100 text-rose-800' : hasRefunded ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'
+                  isRejected || isRefundFailed ? 'bg-rose-100 text-rose-800' : hasRefunded ? (paymentStatus === 'refunded' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800') : 'bg-sky-100 text-sky-800'
                 }`}>
-                  {isRejected ? 'Return Rejected' : isRefundFailed ? 'Refund Failed' : hasRefunded ? 'Refund Credited' : hasReceived ? 'Return Received' : hasSelfShipped ? 'Self Shipped' : hasApproved ? 'Approved' : 'Requested'}
+                  {isRejected ? 'Return Rejected' : isRefundFailed ? 'Refund Failed' : paymentStatus === 'refunded' ? 'Refund Credited' : paymentStatus === 'refund_pending' ? 'Refund Initiated' : hasReceived ? 'Return Received' : hasSelfShipped ? 'Self Shipped' : hasApproved ? 'Approved' : 'Requested'}
                 </span>
               </div>
               <div className="relative pt-6 pb-2 overflow-x-auto">

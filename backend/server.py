@@ -107,9 +107,38 @@ async def lifespan(app: FastAPI):
                         order.updated_at = now
                         logger.info("Migrated overdue order %s to cancelled/failed", order.order_number)
 
-                    if repaired_count > 0 or len(overdue_orders) > 0:
+                    # Reconcile historical refunded orders to ensure they actually have bank confirmation
+                    res_refunded = await session.execute(
+                        select(OrderModel).where(
+                            OrderModel.payment_status == "refunded",
+                            OrderModel.payment_method != "cod",
+                            OrderModel.razorpay_payment_id.isnot(None)
+                        )
+                    )
+                    refunded_orders = res_refunded.scalars().all()
+                    logger.info("Checking %d historical refunded orders for bank reference...", len(refunded_orders))
+                    from routes.orders import reconcile_order_refund_with_razorpay
+                    reconciled_refunded_count = 0
+                    for order in refunded_orders:
+                        try:
+                            # Temporarily change to refund_pending in memory to allow reconcile tool to run
+                            order.payment_status = "refund_pending"
+                            order.order_status = "return_approved"
+                            await session.flush()
+                            
+                            reconciled = await reconcile_order_refund_with_razorpay(order, session, source="startup_repair")
+                            if reconciled and order.payment_status == "refunded":
+                                logger.info("Historical order %s confirmed by bank (remained refunded)", order.order_number)
+                            else:
+                                reconciled_refunded_count += 1
+                                logger.info("Historical order %s reverted to refund_pending (no bank reference yet)", order.order_number)
+                            await asyncio.sleep(0.5)  # Avoid rate limits
+                        except Exception as inner_exc:
+                            logger.warning("Failed to reconcile historical order %s: %s", order.order_number, inner_exc)
+
+                    if repaired_count > 0 or len(overdue_orders) > 0 or len(refunded_orders) > 0:
                         await session.commit()
-                        logger.info("Successfully repaired %d return orders and migrated %d overdue orders in DB", repaired_count, len(overdue_orders))
+                        logger.info("Successfully repaired %d return orders, migrated %d overdue orders, and checked %d refunded orders", repaired_count, len(overdue_orders), len(refunded_orders))
                     else:
                         logger.info("No historical return orders or overdue orders needed repair")
             except Exception:
