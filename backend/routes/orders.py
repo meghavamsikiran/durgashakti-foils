@@ -126,11 +126,7 @@ async def normalize_unconfirmed_refund(order: OrderModel, db: AsyncSession) -> b
         return False
 
     latest = await _latest_refund_audit(db, str(order.id))
-    if latest and (
-        _audit_meta_has_bank_reference(latest.metadata_) 
-        or str(latest.metadata_.get("refund_status") or "").lower() == "processed"
-        or "RECONCILED" in latest.action
-    ):
+    if latest and _audit_meta_has_bank_reference(latest.metadata_):
         return False
 
     prev_payment_status = order.payment_status
@@ -420,7 +416,7 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
 async def _send_refund_email_background(order_id: str, user_id: str):
     from database import async_session_factory
     from sqlalchemy import select as _sel
-    from models import UserModel as _UM, OrderModel as _OM
+    from models import UserModel as _UM, OrderModel as _OM, AuditLogModel as _ALM
     from deps import send_email, row_to_dict
     from email_templates import refund_credited_email
     from routes.orders import _enrich_order_items
@@ -430,6 +426,18 @@ async def _send_refund_email_background(order_id: str, user_id: str):
     
     async with async_session_factory() as db:
         try:
+            # Prevent sending duplicate refund emails by checking audit log
+            existing_email_audit = await db.execute(
+                _sel(_ALM).where(
+                    _ALM.target_type == "order",
+                    _ALM.target_id == str(order_id),
+                    _ALM.action == "REFUND_CREDITED_EMAIL_SENT"
+                )
+            )
+            if existing_email_audit.scalar_one_or_none():
+                logger.info("Refund email already sent for order %s, skipping duplicate", order_id)
+                return
+
             user_res = await db.execute(_sel(_UM).where(_UM.id == user_id))
             cust = user_res.scalar_one_or_none()
             if not cust:
@@ -469,6 +477,18 @@ async def _send_refund_email_background(order_id: str, user_id: str):
                 courier_total
             )
             await send_email(cust.email, subj, body, attachments=att)
+            
+            # Write audit log to record that this refund email was sent
+            from deps import write_audit_log
+            await write_audit_log(
+                db,
+                "REFUND_CREDITED_EMAIL_SENT",
+                "system",
+                "order",
+                str(order_id),
+                {"recipient": cust.email}
+            )
+            await db.commit()
         except Exception:
             logger.exception("Failed to send automatic refund credited email in background")
 
