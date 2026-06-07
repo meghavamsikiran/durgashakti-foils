@@ -139,11 +139,13 @@ export const useCheckout = () => {
     }
   }, []);
 
+  const userId = user?.id;
+
   useEffect(() => {
-    if (user) {
+    if (userId) {
       fetchAddresses();
     }
-  }, [user, fetchAddresses]);
+  }, [userId, fetchAddresses]);
 
   useEffect(() => {
     if (!user) {
