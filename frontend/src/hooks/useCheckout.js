@@ -76,20 +76,50 @@ export const useCheckout = () => {
   const [paymentMethod, setPaymentMethod] = useState(() => localStorage.getItem('preferredPaymentMethod') || 'online');
   const [codEnabled, setCodEnabled] = useState(true);
   const [shippingSettings, setShippingSettings] = useState(null);
-  const [savedAddresses, setSavedAddresses] = useState([]);
-  const [addressesLoading, setAddressesLoading] = useState(true);
-  const [selectedAddressId, setSelectedAddressId] = useState(null);
-  const [shippingInfo, setShippingInfo] = useState({
-    label: 'Home',
-    full_name: '',
-    phone: '',
-    alternate_phone: '',
-    address_line1: '',
-    address_line2: '',
-    city: '',
-    state: '',
-    pincode: ''
+  const [savedAddresses, setSavedAddresses] = useState(() => {
+    return addressService.getCached ? addressService.getCached() : [];
   });
+  const [addressesLoading, setAddressesLoading] = useState(() => {
+    return !addressService.getCached || !addressService.getCached();
+  });
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [shippingInfo, setShippingInfo] = useState(() => {
+    const list = addressService.getCached ? addressService.getCached() : [];
+    const def = list.find(a => a.is_default) || list[0];
+    if (def) {
+      return {
+        label: def.label || 'Home',
+        full_name: def.full_name,
+        phone: def.phone,
+        alternate_phone: def.alternate_phone || '',
+        address_line1: def.address_line1,
+        address_line2: def.address_line2 || '',
+        city: def.city,
+        state: def.state,
+        pincode: def.pincode
+      };
+    }
+    return {
+      label: 'Home',
+      full_name: '',
+      phone: '',
+      alternate_phone: '',
+      address_line1: '',
+      address_line2: '',
+      city: '',
+      state: '',
+      pincode: ''
+    };
+  });
+  
+  // Update selected address ID on cache load initial state
+  useEffect(() => {
+    const list = addressService.getCached ? addressService.getCached() : [];
+    const def = list.find(a => a.is_default) || list[0];
+    if (def && !selectedAddressId) {
+      setSelectedAddressId(def.id);
+    }
+  }, [selectedAddressId]);
 
   const [appliedCoupons, setAppliedCoupons] = useState([]);
   const [availableLoyaltyCoupons, setAvailableLoyaltyCoupons] = useState([]);
@@ -233,8 +263,15 @@ export const useCheckout = () => {
 
   const validateShipping = async () => {
     const { full_name, phone, address_line1, city, state, pincode } = shippingInfo;
+    
+    // Ensure that if saved addresses exist, the customer has picked one, or filled out the new address form
+    if (savedAddresses?.length > 0 && !selectedAddressId && !full_name?.trim()) {
+      toast.error("Please select a saved shipping address or enter a new address to proceed.");
+      return false;
+    }
+    
     if (!full_name?.trim()) {
-      toast.error("Full name is required");
+      toast.error("Shipping address contact full name is required");
       return false;
     }
     if (!phone?.trim()) {

@@ -263,7 +263,7 @@ const InquiriesPage = () => {
   if (loading && inquiries.length === 0) return <PageLoader />;
 
   return (
-    <div className="space-y-3 max-w-[1500px] mx-auto">
+    <div className="space-y-2.5 max-w-[1500px] mx-auto">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2.5 border-b border-slate-200">
         <div>
