@@ -34,6 +34,30 @@ export const CartProvider = ({ children }) => {
   const [pendingQty, setPendingQtyState] = useState({}); // productId -> qty preview before add
   const { token, user } = useAuth();
   const activeRequestsCount = useRef(0);
+  const requestQueue = useRef(Promise.resolve());
+
+  const enqueue = useCallback((operation) => {
+    const promise = new Promise((resolve, reject) => {
+      requestQueue.current = requestQueue.current
+        .then(async () => {
+          try {
+            const res = await operation();
+            resolve(res);
+          } catch (err) {
+            reject(err);
+          }
+        })
+        .catch(async () => {
+          try {
+            const res = await operation();
+            resolve(res);
+          } catch (err) {
+            reject(err);
+          }
+        });
+    });
+    return promise;
+  }, []);
 
   // Called from PDP to preview qty in navbar badge live before adding to cart
   const setPendingQty = useCallback((productId, qty) => {
@@ -111,24 +135,26 @@ export const CartProvider = ({ children }) => {
 
     if (!token) return;
 
-    activeRequestsCount.current += 1;
-    setLoading(true);
-    try {
-      await apiClient.post('/cart/add', { product_id: productId, quantity });
-      activeRequestsCount.current -= 1;
-      // Clear pending preview for this product once it's in cart
-      setPendingQtyState(prev => { const n = { ...prev }; delete n[productId]; return n; });
-      await fetchCart();
-    } catch (error) {
-      activeRequestsCount.current -= 1;
-      if (rollbackCart) {
-        setCart(rollbackCart);
+    return enqueue(async () => {
+      activeRequestsCount.current += 1;
+      setLoading(true);
+      try {
+        await apiClient.post('/cart/add', { product_id: productId, quantity });
+        activeRequestsCount.current -= 1;
+        // Clear pending preview for this product once it's in cart
+        setPendingQtyState(prev => { const n = { ...prev }; delete n[productId]; return n; });
+        await fetchCart();
+      } catch (error) {
+        activeRequestsCount.current -= 1;
+        if (rollbackCart) {
+          setCart(rollbackCart);
+        }
+        throw error;
+      } finally {
+        setLoading(false);
       }
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, [token, fetchCart]);
+    });
+  }, [token, fetchCart, enqueue]);
 
   const updateCartItem = useCallback(async (productId, quantity) => {
     let rollbackCart = null;
@@ -147,22 +173,24 @@ export const CartProvider = ({ children }) => {
 
     if (!token) return;
 
-    activeRequestsCount.current += 1;
-    setLoading(true);
-    try {
-      await apiClient.put('/cart/update', { product_id: productId, quantity });
-      activeRequestsCount.current -= 1;
-      await fetchCart();
-    } catch (error) {
-      activeRequestsCount.current -= 1;
-      if (rollbackCart) {
-        setCart(rollbackCart);
+    return enqueue(async () => {
+      activeRequestsCount.current += 1;
+      setLoading(true);
+      try {
+        await apiClient.put('/cart/update', { product_id: productId, quantity });
+        activeRequestsCount.current -= 1;
+        await fetchCart();
+      } catch (error) {
+        activeRequestsCount.current -= 1;
+        if (rollbackCart) {
+          setCart(rollbackCart);
+        }
+        throw error;
+      } finally {
+        setLoading(false);
       }
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, [token, fetchCart]);
+    });
+  }, [token, fetchCart, enqueue]);
 
   const removeFromCart = useCallback(async (productId) => {
     let rollbackCart = null;
@@ -179,22 +207,24 @@ export const CartProvider = ({ children }) => {
 
     if (!token) return;
 
-    activeRequestsCount.current += 1;
-    setLoading(true);
-    try {
-      await apiClient.delete(`/cart/remove/${productId}`);
-      activeRequestsCount.current -= 1;
-      await fetchCart();
-    } catch (error) {
-      activeRequestsCount.current -= 1;
-      if (rollbackCart) {
-        setCart(rollbackCart);
+    return enqueue(async () => {
+      activeRequestsCount.current += 1;
+      setLoading(true);
+      try {
+        await apiClient.delete(`/cart/remove/${productId}`);
+        activeRequestsCount.current -= 1;
+        await fetchCart();
+      } catch (error) {
+        activeRequestsCount.current -= 1;
+        if (rollbackCart) {
+          setCart(rollbackCart);
+        }
+        throw error;
+      } finally {
+        setLoading(false);
       }
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  }, [token, fetchCart]);
+    });
+  }, [token, fetchCart, enqueue]);
 
   const clearCart = useCallback(async () => {
     const rollbackCart = cart;
