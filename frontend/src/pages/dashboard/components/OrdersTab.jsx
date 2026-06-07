@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Clock, Search, Filter, RefreshCw, ChevronDown } from 'lucide-react';
+import { ShoppingBag, Clock, Search, Filter, RefreshCw, ChevronDown, Copy, Check } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import TablePagination from '../../../components/ui/TablePagination';
 import { useNavigate } from 'react-router-dom';
@@ -57,6 +57,12 @@ const CustomSelect = ({ value, onChange, options }) => {
 const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
   const navigate = useNavigate();
   const [ordersPage, setOrdersPage] = useState(1);
+  const [copiedOrderId, setCopiedOrderId] = useState(null);
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedOrderId(text);
+    setTimeout(() => setCopiedOrderId(null), 1500);
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -406,7 +412,20 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                 <div className="flex flex-col md:flex-row gap-6">
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-3 mb-3">
-                      <span className="text-xs font-mono font-semibold tracking-normal text-muted-foreground">Order #{order.order_number}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs font-mono font-semibold tracking-normal text-muted-foreground">Order #{order.order_number}</span>
+                        <button
+                          onClick={() => handleCopy(order.order_number)}
+                          className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-primary transition-all"
+                          title="Copy Order Number"
+                        >
+                          {copiedOrderId === order.order_number ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
                       <span className={`px-2.5 py-1 rounded-sm text-[10px] font-mono tracking-wider font-semibold ${badge.bg}`}>
                         {badge.label}
                       </span>

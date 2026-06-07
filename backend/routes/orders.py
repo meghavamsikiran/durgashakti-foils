@@ -473,6 +473,22 @@ async def _send_refund_email_background(order_id: str, user_id: str):
             logger.exception("Failed to send automatic refund credited email in background")
 
 
+async def _reconcile_refund_background(order_id: str, source: str):
+    from database import async_session_factory
+    from models import OrderModel
+    from sqlalchemy import select as _sel
+    await asyncio.sleep(0.1)
+    async with async_session_factory() as db:
+        try:
+            res = await db.execute(_sel(OrderModel).where(OrderModel.id == order_id))
+            order = res.scalar_one_or_none()
+            if order:
+                await reconcile_order_refund_with_razorpay(order, db, source=source)
+                await db.commit()
+        except Exception:
+            logger.exception("Failed background refund reconciliation for order %s", order_id)
+
+
 async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSession, source: str = "order_fetch") -> bool:
     """Update local refund state when Razorpay has processed a pending refund."""
     payment_status = str(order.payment_status or "").lower()
@@ -1382,13 +1398,10 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
     )
     orders = result.scalars().all()
     
-    # Reconcile any refund_pending orders so customer order list reflects latest states instantly
+    # Reconcile any refund_pending orders in background so customer order list loads instantly
     pending_refunds = [o for o in orders if str(o.payment_status or "").lower() == "refund_pending"]
     for o in pending_refunds[:3]:
-        try:
-            await reconcile_order_refund_with_razorpay(o, db, source="orders_list")
-        except Exception:
-            logger.exception("Failed to reconcile refund for order %s in orders list", o.order_number)
+        asyncio.create_task(_reconcile_refund_background(str(o.id), source="orders_list"))
         
     orders_dict = [await order_response_dict(o, db, normalize=False) for o in orders]
     return await _enrich_order_items(db, orders_dict)

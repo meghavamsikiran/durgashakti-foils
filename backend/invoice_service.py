@@ -31,7 +31,7 @@ BANK_ACCOUNT_NO = "50200115257570"
 BANK_IFSC = "HDFC0005472"
 BANK_ACCOUNT_HOLDER = "DURGASHAKTI FOILS PRIVATE LIMITED"
 
-TEMPLATE_PATH = Path(__file__).resolve().parent / "assets" / "invoice_template_bg.avif"
+TEMPLATE_PATH = Path(__file__).resolve().parent / "assets" / "invoice_template_bg.png"
 BASE_WIDTH = 894.0
 BASE_HEIGHT = 1264.5
 PAGE_WIDTH = 595.9199829101562

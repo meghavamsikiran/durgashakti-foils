@@ -7,7 +7,7 @@ import {
   ShoppingBag, Clock, CheckCircle2, Truck, AlertCircle,
   Search, Filter, ChevronRight, XCircle, RefreshCcw,
   IndianRupee, Calendar, MoreHorizontal, Eye, PackageCheck,
-  MapPin, Phone as PhoneIcon, ChevronDown, ChevronUp, Check
+  MapPin, Phone as PhoneIcon, ChevronDown, ChevronUp, Check, Copy
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { formatImageUrl } from '../../utils/api';
@@ -157,6 +157,12 @@ const OrdersPage = () => {
     return !cached;
   });
   const [filter, setFilter] = useState('ALL');
+  const [copiedOrderId, setCopiedOrderId] = useState(null);
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedOrderId(text);
+    setTimeout(() => setCopiedOrderId(null), 1500);
+  };
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -927,7 +933,20 @@ const OrdersPage = () => {
                          />
                        </td>
                        <td className="px-8 py-6">
-                         <div className="font-mono text-xs font-black text-primary mb-1">{order.order_number}</div>
+                          <div className="flex items-center gap-1 mb-1">
+                            <span className="font-mono text-xs font-black text-primary">{order.order_number}</span>
+                            <button
+                              onClick={() => handleCopy(order.order_number)}
+                              className="p-0.5 hover:bg-slate-100 rounded text-slate-400 hover:text-primary transition-all"
+                              title="Copy Order Number"
+                            >
+                              {copiedOrderId === order.order_number ? (
+                                <Check className="w-3 h-3 text-emerald-600" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
                          <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                            <Calendar className="w-3 h-3" />
                            {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
