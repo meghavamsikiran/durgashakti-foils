@@ -354,7 +354,15 @@ const OrdersPage = () => {
   const handleViewOrderDetails = (orderId) => {
     const isAdmin = location.pathname.startsWith('/admin');
     const path = isAdmin ? `/admin/orders/${orderId}` : `/superadmin/orders/${orderId}`;
-    navigate(path);
+    const orderObj = (rows || []).find(r => r.id === orderId);
+    if (orderObj) {
+      try {
+        localStorage.setItem(`admin_order_detail_${orderId}`, JSON.stringify(orderObj));
+      } catch (e) {
+        console.error('Failed to cache order detail in localStorage:', e);
+      }
+    }
+    window.open(path, '_blank');
   };
 
   const handleConfirmManualRefundItem = useCallback(async (restock = true) => {
