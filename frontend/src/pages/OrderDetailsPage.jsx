@@ -1105,7 +1105,7 @@ const OrderDetailsPage = () => {
           const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
           const hasReceived = returnedItems.some(i => ['RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
           const hasRefunded = returnedItems.some(i => i.return_status === 'REFUND_COMPLETED') || paymentStatus === 'refunded' || status === 'refunded';
-          const isRejected = returnedItems.some(i => i.return_status === 'RETURN_REJECTED') || status === 'return_rejected';
+          const isRejected = (returnedItems.length > 0 && returnedItems.every(i => i.return_status === 'RETURN_REJECTED')) || status === 'return_rejected';
           const isRefundFailed = paymentStatus === 'refund_failed';
 
           // Show return timeline if any item has been requested, approved, shipped, received, or refunded

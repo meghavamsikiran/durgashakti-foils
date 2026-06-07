@@ -147,6 +147,7 @@ const OrdersPage = () => {
   const [pendingActionIds, setPendingActionIds] = useState(() => new Set());
   const [timeLeft, setTimeLeft] = useState(null);
   const skipNextLoadRef = React.useRef(false);
+  const activeUpdatesRef = React.useRef(new Set());
 
   const [refundModal, setRefundModal] = useState(null); // { orderId, productId, item, initialAmount }
   const [refundAmountInput, setRefundAmountInput] = useState('');
@@ -383,6 +384,8 @@ const OrdersPage = () => {
   };
 
   const updateStatus = async (orderId, newStatus, message = '', extraData = {}) => {
+    if (activeUpdatesRef.current.has(orderId)) return;
+    activeUpdatesRef.current.add(orderId);
     const previousRows = rows;
     const previousModalOrder = selectedOrderForModal;
     const toastId = toast.loading('Updating order...');
@@ -420,6 +423,7 @@ const OrdersPage = () => {
           toast.error(detail || 'Unable to update the order status. Please try again.', { id: toastId });
         }
     } finally {
+      activeUpdatesRef.current.delete(orderId);
       setPendingActionIds(prev => {
         const next = new Set(prev);
         next.delete(orderId);
@@ -1937,7 +1941,7 @@ const OrdersPage = () => {
                 const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
                 const hasReceived = returnedItems.some(i => ['RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
                 const hasRefunded = returnedItems.some(i => ['REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status)) || selectedOrderForModal.payment_status === 'refunded' || selectedOrderForModal.order_status === 'refunded';
-                const isRejected = returnedItems.some(i => i.return_status === 'RETURN_REJECTED') || selectedOrderForModal.order_status === 'return_rejected';
+                const isRejected = (returnedItems.length > 0 && returnedItems.every(i => i.return_status === 'RETURN_REJECTED')) || selectedOrderForModal.order_status === 'return_rejected';
                 const isRefundFailed = selectedOrderForModal.payment_status === 'refund_failed';
 
                 let returnSteps = [];

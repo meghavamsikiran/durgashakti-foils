@@ -122,6 +122,8 @@ async def normalize_unconfirmed_refund(order: OrderModel, db: AsyncSession) -> b
     order_status = str(order.order_status or "").lower()
     if payment_status != "refunded" and order_status != "refunded":
         return False
+    if str(order.payment_method or "").lower() == "cod":
+        return False
 
     latest = await _latest_refund_audit(db, str(order.id))
     if latest and _audit_meta_has_bank_reference(latest.metadata_):
@@ -154,6 +156,12 @@ async def refund_response_fields(order: OrderModel, db: AsyncSession) -> dict:
     payment_status = str(order.payment_status or "").lower()
     if payment_status not in {"refund_failed", "refund_pending", "refunded"}:
         return {}
+    if payment_status == "refunded":
+        return {
+            "refund_display_status": "credited",
+            "refund_status_label": "Refund Credited",
+            "refund_error": None,
+        }
     latest = await _latest_refund_audit(db, str(order.id))
     meta = latest.metadata_ if latest else {}
     error = meta.get("error") if isinstance(meta, dict) else None
@@ -169,17 +177,12 @@ async def refund_response_fields(order: OrderModel, db: AsyncSession) -> dict:
             "refund_status_label": "Refund Initiated",
             "refund_error": error if latest and latest.action.endswith("_FAILED") else None,
         }
-    if payment_status == "refunded":
-        return {
-            "refund_display_status": "credited",
-            "refund_status_label": "Refund Credited",
-            "refund_error": None,
-        }
     return {}
 
 
-async def order_response_dict(order: OrderModel, db: AsyncSession) -> dict:
-    await normalize_unconfirmed_refund(order, db)
+async def order_response_dict(order: OrderModel, db: AsyncSession, normalize: bool = True) -> dict:
+    if normalize:
+        await normalize_unconfirmed_refund(order, db)
     data = row_to_dict(order)
     data.update(await refund_response_fields(order, db))
     return data
@@ -470,7 +473,9 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
     """Update local refund state when Razorpay has processed a pending refund."""
     payment_status = str(order.payment_status or "").lower()
     order_status = str(order.order_status or "").lower()
-    if payment_status != "refund_pending" and order_status not in {"return_approved", "refunded"}:
+    if payment_status in {"refunded", "refund_completed"}:
+        return False
+    if payment_status != "refund_pending" and order_status not in {"return_approved"}:
         return False
     if str(order.payment_method or "").lower() == "cod" or not order.razorpay_payment_id:
         return False
@@ -1381,7 +1386,7 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
         select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.updated_at.desc()).limit(1000)
     )
     orders = result.scalars().all()
-    orders_dict = [await order_response_dict(o, db) for o in orders]
+    orders_dict = [await order_response_dict(o, db, normalize=False) for o in orders]
     return await _enrich_order_items(db, orders_dict)
 
 
