@@ -709,9 +709,20 @@ async def get_all_orders(
     q = select(OrderModel).where(*filters).order_by(OrderModel.created_at.desc()).offset(offset).limit(limit)
     res = await db.execute(q)
     orders = res.scalars().all()
+    
+    # Reconcile any refund_pending orders so the admin orders list has synchronized statuses immediately
+    pending_refund_orders = [o for o in orders if str(o.payment_status or "").lower() == "refund_pending"]
+    if pending_refund_orders:
+        from routes.orders import reconcile_order_refund_with_razorpay
+        await asyncio.gather(*[
+            reconcile_order_refund_with_razorpay(o, db, source="admin_orders_list")
+            for o in pending_refund_orders
+        ])
+        
     latest_refund_logs = await _normalize_refund_rows(db, orders)
     items = [_order_response_dict(order, latest_refund_logs.get(str(order.id))) for order in orders]
     return {"items": items, "total": total, "page": page, "limit": limit}
+
 
 
 async def _send_order_email_background(order_id: str, user_id: str, effective_status: str, admin_message: str):

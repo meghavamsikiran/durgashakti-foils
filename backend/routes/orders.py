@@ -1381,8 +1381,15 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
         select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.created_at.desc()).limit(1000)
     )
     orders = result.scalars().all()
+    
+    # Reconcile any refund_pending orders so customer order list reflects latest states instantly
+    pending_refunds = [o for o in orders if str(o.payment_status or "").lower() == "refund_pending"]
+    if pending_refunds:
+        await asyncio.gather(*[reconcile_order_refund_with_razorpay(o, db, source="orders_list") for o in pending_refunds])
+        
     orders_dict = [await order_response_dict(o, db, normalize=False) for o in orders]
     return await _enrich_order_items(db, orders_dict)
+
 
 
 @router.get("/orders/{order_id}")
@@ -1967,7 +1974,7 @@ async def razorpay_webhook(
 
         refund_status = str(refund_entity.get("status") or "").lower()
         bank_confirmed = _refund_has_bank_reference(refund_entity)
-        if (event == "refund.processed" or refund_status == "processed") and bank_confirmed:
+        if (event == "refund.processed" or refund_status == "processed"):
             stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
             order.payment_status = "refunded"
             order.order_status = "refunded"

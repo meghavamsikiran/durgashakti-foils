@@ -78,7 +78,6 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
     { value: 'return_requested', label: 'Return Requested' },
     { value: 'return_approved', label: 'Return Approved' },
     { value: 'return_rejected', label: 'Return Rejected' },
-    { value: 'refunded', label: 'Refund Credited' },
     { value: 'returned', label: 'Returned' },
     { value: 'cancelled', label: 'Cancelled' },
     { value: 'failed', label: 'Delivery Failed' },
@@ -416,7 +415,9 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                           ? 'bg-slate-100 text-slate-800'
                           : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
                       }`}>
-                        {getPaymentMethodLabel(order)} • {getPaymentStatusLabel(order)}
+                        {['refund_pending', 'refund_failed', 'refunded'].includes((order.payment_status || '').toLowerCase())
+                          ? getPaymentMethodLabel(order)
+                          : `${getPaymentMethodLabel(order)} • ${getPaymentStatusLabel(order)}`}
                       </span>
                     </div>
                     <h3 className="text-lg font-black text-foreground mb-1">

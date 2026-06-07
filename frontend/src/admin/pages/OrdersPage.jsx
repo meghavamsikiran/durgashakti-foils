@@ -738,7 +738,6 @@ const OrdersPage = () => {
                       <option value="RETURN_REQUESTED">Return Requested</option>
                       <option value="RETURN_APPROVED">Return Approved</option>
                       <option value="RETURN_REJECTED">Return Rejected</option>
-                      <option value="REFUNDED">Refund Credited</option>
                       <option value="RETURNED">Returned</option>
                       <option value="CANCELLED">Cancelled</option>
                       <option value="FAILED">Failed</option>
@@ -938,7 +937,11 @@ const OrdersPage = () => {
                          <div className="font-bold text-slate-800">{order.customer_name || 'Guest User'}</div>
                          <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
                             <div className={`w-1.5 h-1.5 rounded-full ${String(order.order_status || order.status || '').toLowerCase() === 'overdue' || String(order.payment_status || '').toLowerCase() === 'refund_failed' ? 'bg-rose-500' : isPaidStatus(order.payment_status) ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-                            <span>{paymentMethodLabel(order)} • {paymentStatusLabel(order)}</span>
+                             <span>
+                               {['refund_pending', 'refund_failed', 'refunded'].includes(String(order.payment_status || '').toLowerCase())
+                                 ? paymentMethodLabel(order)
+                                 : `${paymentMethodLabel(order)} • ${paymentStatusLabel(order)}`}
+                             </span>
                            {order.transaction_id && order.transaction_id !== 'COD' && (
                              <span className="font-mono normal-case tracking-normal select-all">{order.transaction_id}</span>
                            )}
