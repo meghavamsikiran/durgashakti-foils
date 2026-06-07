@@ -209,6 +209,9 @@ export const useCheckout = () => {
       return;
     }
     if (!cart.items || cart.items.length === 0) {
+      if (orderInProgress.current || localStorage.getItem(PENDING_RAZORPAY_ORDER_KEY)) {
+        return;
+      }
       navigate('/cart');
       return;
     }
