@@ -149,6 +149,7 @@ async def normalize_unconfirmed_refund(order: OrderModel, db: AsyncSession) -> b
         },
     )
     await db.flush()
+    await db.commit()
     return True
 
 
@@ -413,19 +414,25 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
         return False, str(e), None
 
 
+_sending_refund_emails = set()
+
 async def _send_refund_initiated_email_background(order_id: str, user_id: str):
-    from database import async_session_factory
-    from sqlalchemy import select as _sel
-    from models import UserModel as _UM, OrderModel as _OM, AuditLogModel as _ALM
-    from deps import send_email, row_to_dict
-    from email_templates import refund_initiated_email
-    from routes.orders import _enrich_order_items
-    
-    # Wait a bit to ensure transaction has committed
-    await asyncio.sleep(0.5)
-    
-    async with async_session_factory() as db:
-        try:
+    if order_id in _sending_refund_emails:
+        logger.info("Refund initiated email is already in progress/sent for order %s, skipping duplicate concurrent call", order_id)
+        return
+    _sending_refund_emails.add(order_id)
+    try:
+        from database import async_session_factory
+        from sqlalchemy import select as _sel
+        from models import UserModel as _UM, OrderModel as _OM, AuditLogModel as _ALM
+        from deps import send_email, row_to_dict
+        from email_templates import refund_initiated_email
+        from routes.orders import _enrich_order_items
+        
+        # Wait a bit to ensure transaction has committed
+        await asyncio.sleep(0.5)
+        
+        async with async_session_factory() as db:
             # Prevent sending duplicate refund emails by checking audit log
             existing_email_audit = await db.execute(
                 _sel(_ALM).where(
@@ -480,8 +487,12 @@ async def _send_refund_initiated_email_background(order_id: str, user_id: str):
             )
             await send_email(cust.email, subj, body)
             logger.info("Refund initiated email sent successfully for order %s", order_id)
-        except Exception:
-            logger.exception("Failed to send refund initiated email in background")
+    except Exception:
+        logger.exception("Failed to send refund initiated email in background")
+    finally:
+        # Keep in memory set for 15 seconds to shield against concurrent tasks
+        await asyncio.sleep(15)
+        _sending_refund_emails.discard(order_id)
 
 
 async def _send_refund_email_background(order_id: str, user_id: str):
@@ -1553,11 +1564,11 @@ async def get_order(order_id: str, current_user: UserSchema = Depends(get_curren
     # Try finding by UUID id first, if not a valid UUID try finding by order_number
     order = None
     if is_valid_uuid(order_id):
-        result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id).with_for_update())
+        result = await db.execute(select(OrderModel).where(OrderModel.id == order_id, OrderModel.user_id == current_user.id))
         order = result.scalar_one_or_none()
     
     if not order:
-        result = await db.execute(select(OrderModel).where(OrderModel.order_number == order_id, OrderModel.user_id == current_user.id).with_for_update())
+        result = await db.execute(select(OrderModel).where(OrderModel.order_number == order_id, OrderModel.user_id == current_user.id))
         order = result.scalar_one_or_none()
         
     if not order:
@@ -1780,8 +1791,6 @@ async def return_order(
     order.return_reason = reason
     order.return_image_url = ",".join(uploaded_urls) if uploaded_urls else None
     order.updated_at = datetime.now(timezone.utc)
-    await db.commit()
-    
     await create_notification(
         db,
         str(current_user.id),
@@ -1789,6 +1798,7 @@ async def return_order(
         f"Your return request for order {order.order_number} has been submitted.",
         "order"
     )
+    await db.commit()
     try:
         from email_templates import return_requested_email
         import asyncio
@@ -1982,7 +1992,6 @@ async def create_razorpay_order_for_existing_order(
     res = await db.execute(
         select(OrderModel)
         .where(OrderModel.id == payload.order_id, OrderModel.user_id == current_user.id)
-        .with_for_update()
     )
     order = res.scalar_one_or_none()
     if not order:
@@ -2020,26 +2029,37 @@ async def create_razorpay_order_for_existing_order(
             logger.warning("Failed to create Razorpay order for existing order %s: %s", order.order_number, exc)
             razorpay_order_id = f"order_{uuid.uuid4().hex[:14]}"
 
-    order.payment_method = "online"
-    order.payment_status = "pending"
-    order.razorpay_order_id = razorpay_order_id
-    order.updated_at = datetime.now(timezone.utc)
-    await db.flush()
+    # Acquire lock only when updating the order status in db
+    res_lock = await db.execute(
+        select(OrderModel)
+        .where(OrderModel.id == payload.order_id)
+        .with_for_update()
+    )
+    order_lock = res_lock.scalar_one_or_none()
+    if not order_lock:
+        raise HTTPException(status_code=404, detail="Order not found during update")
+
+    order_lock.payment_method = "online"
+    order_lock.payment_status = "pending"
+    order_lock.razorpay_order_id = razorpay_order_id
+    order_lock.updated_at = datetime.now(timezone.utc)
+    
     await write_audit_log(
         db,
         "PAYMENT_RAZORPAY_CREATED_FOR_EXISTING_ORDER",
         current_user.id,
         "order",
-        str(order.id),
+        str(order_lock.id),
         {"razorpay_order_id": razorpay_order_id}
     )
-
+    await db.commit()
     return {
         "success": True,
-        "order": row_to_dict(order),
+        "message": "Razorpay order created successfully",
+        "order": row_to_dict(order_lock),
         "razorpay_order_id": razorpay_order_id,
-        "amount": amount_paise,
     }
+
 
 
 @router.post("/payment/razorpay/sync")

@@ -84,6 +84,7 @@ const OrderDetailsPage = () => {
       await apiClient.post(`/orders/${id}/items/${selfShipModal.product_id}/self-ship`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      apiClient.invalidateCache('/orders');
       toast.success('Self shipping details submitted successfully');
       setSelfShipModal(null);
       setCourierName('');
@@ -404,6 +405,7 @@ const OrderDetailsPage = () => {
       await apiClient.post(`/orders/${id}/return`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      apiClient.invalidateCache('/orders');
       toast.success("Return request submitted successfully");
       setIsReturning(false);
       setReturnFiles([]);

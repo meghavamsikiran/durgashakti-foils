@@ -2505,7 +2505,6 @@ async def admin_item_receive(
     order.items = updated_items
     flag_modified(order, "items")
     order.updated_at = datetime.now(timezone.utc)
-    await db.commit()
     await write_audit_log(
         db,
         "ITEM_RETURN_RECEIVED",
@@ -2514,6 +2513,7 @@ async def admin_item_receive(
         order_id,
         {"product_id": product_id}
     )
+    await db.commit()
     return {"message": "Item marked as received", "order": _order_response_dict(order)}
 
 
@@ -2621,7 +2621,6 @@ async def admin_item_process_refund(
             order.payment_status = "refund_failed"
         
         
-    await db.commit()
     await write_audit_log(
         db,
         "ITEM_REFUND_PROCESSED",
@@ -2630,4 +2629,5 @@ async def admin_item_process_refund(
         order_id,
         {"product_id": product_id, "amount": refund_amount, "restock": restock, "warning": refund_warning}
     )
+    await db.commit()
     return {"message": "Refund processed successfully", "warning": refund_warning, "order": _order_response_dict(order)}
