@@ -96,11 +96,22 @@ async def lifespan(app: FastAPI):
                             flag_modified(order, "items")
                             repaired_count += 1
                             logger.info("Repaired return status for items in order %s", order.order_number)
-                    if repaired_count > 0:
+                    # Also, migrate any historical orders marked as 'overdue' to 'cancelled'
+                    res_overdue = await session.execute(
+                        select(OrderModel).where(OrderModel.order_status == "overdue")
+                    )
+                    overdue_orders = res_overdue.scalars().all()
+                    for order in overdue_orders:
+                        order.order_status = "cancelled"
+                        order.payment_status = "failed"
+                        order.updated_at = now
+                        logger.info("Migrated overdue order %s to cancelled/failed", order.order_number)
+
+                    if repaired_count > 0 or len(overdue_orders) > 0:
                         await session.commit()
-                        logger.info("Successfully repaired %d historical return orders in DB", repaired_count)
+                        logger.info("Successfully repaired %d return orders and migrated %d overdue orders in DB", repaired_count, len(overdue_orders))
                     else:
-                        logger.info("No historical return orders needed repair")
+                        logger.info("No historical return orders or overdue orders needed repair")
             except Exception:
                 logger.exception("Background historical returns repair task failed")
 
@@ -183,9 +194,8 @@ async def lifespan(app: FastAPI):
                                             product.updated_at = datetime.now(timezone.utc)
 
                             # Online orders do not reserve stock until payment succeeds.
-                            # Keep them retryable instead of cancelling them permanently.
-                            order.order_status = "overdue"
-                            order.payment_status = "pending"
+                            order.order_status = "cancelled"
+                            order.payment_status = "failed"
                             order.stock_applied = False
                             order.updated_at = datetime.now(timezone.utc)
 
@@ -194,8 +204,8 @@ async def lifespan(app: FastAPI):
                                 await create_notification(
                                     session,
                                     str(order.user_id),
-                                    "Payment Pending",
-                                    f"Payment for order {order.order_number} is still pending. You can complete the payment from order details.",
+                                    "Order Cancelled",
+                                    f"Your payment window for order {order.order_number} expired, and the order has been cancelled.",
                                     "order"
                                 )
 
