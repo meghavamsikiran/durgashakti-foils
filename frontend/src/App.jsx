@@ -37,6 +37,7 @@ import ProductsPage from './admin/pages/ProductsPage';
 import CategoriesPage from './admin/pages/CategoriesPage';
 import InventoryPage from './admin/pages/InventoryPage';
 import OrdersPage from './admin/pages/OrdersPage';
+import AdminOrderDetailsPage from './admin/pages/AdminOrderDetailsPage';
 import CustomersPage from './admin/pages/CustomersPage';
 import CustomerDetailPage from './admin/pages/CustomerDetailPage';
 import PaymentsPage from './admin/pages/PaymentsPage';
@@ -134,6 +135,7 @@ function AppRoutes() {
               <Route path="categories" element={<ProtectedAdminRoute permission="edit_products"><CategoriesPage /></ProtectedAdminRoute>} />
               <Route path="stock" element={<ProtectedAdminRoute permission="view_inventory"><InventoryPage /></ProtectedAdminRoute>} />
               <Route path="orders" element={<ProtectedAdminRoute permission="view_orders"><OrdersPage /></ProtectedAdminRoute>} />
+              <Route path="orders/:id" element={<ProtectedAdminRoute permission="view_order_details"><AdminOrderDetailsPage /></ProtectedAdminRoute>} />
               <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
               <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
               <Route path="inquiries" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
@@ -214,6 +216,7 @@ function AppRoutes() {
               <Route path="categories" element={<ProtectedAdminRoute permission="edit_products"><CategoriesPage /></ProtectedAdminRoute>} />
               <Route path="stock" element={<ProtectedAdminRoute permission="view_inventory"><InventoryPage /></ProtectedAdminRoute>} />
               <Route path="orders" element={<ProtectedAdminRoute permission="view_orders"><OrdersPage /></ProtectedAdminRoute>} />
+              <Route path="orders/:id" element={<ProtectedAdminRoute permission="view_order_details"><AdminOrderDetailsPage /></ProtectedAdminRoute>} />
               <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
               <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
               <Route path="inquiries" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />

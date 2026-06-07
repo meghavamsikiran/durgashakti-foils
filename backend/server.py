@@ -248,6 +248,25 @@ async def lifespan(app: FastAPI):
         asyncio.create_task(_payment_timeout_cleanup_loop())
     except Exception:
         logger.exception("Failed to start payment timeout cleanup task")
+
+    # Start background task to enforce return deadlines and payment timeouts periodically
+    try:
+        from database import async_session_factory
+        async def _enforce_deadlines_loop():
+            while True:
+                try:
+                    await asyncio.sleep(60)
+                    async with async_session_factory() as session:
+                        from routes.orders import enforce_return_deadlines, enforce_payment_timeouts
+                        await enforce_return_deadlines(session)
+                        await enforce_payment_timeouts(session)
+                except Exception:
+                    logger.exception("Background enforce deadlines loop failed")
+
+        asyncio.create_task(_enforce_deadlines_loop())
+    except Exception:
+        logger.exception("Failed to start background enforce deadlines loop")
+
     yield
     # Shutdown
     logger.info("DurgaShakti Foils Server Shutdown.")

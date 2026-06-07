@@ -396,7 +396,7 @@ const InquiriesPage = () => {
             {total} Total
           </span>
         </div>
-        <div className="overflow-x-auto overflow-y-auto admin-table-container-standard">
+        <div className="overflow-x-auto overflow-y-hidden admin-table-container-standard">
           <AdminTable
             columns={[
               { key: 'name', title: 'Customer' },

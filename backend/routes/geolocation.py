@@ -4,23 +4,29 @@ from fastapi import APIRouter, Query, HTTPException
 
 router = APIRouter(prefix="/api/geolocation")
 
+PINCODE_CACHE = {}
+
 def validate_with_india_post(pincode: str):
     """Authoritative validation and naming from Government India Post database."""
     if not pincode or len(pincode) != 6:
         return None
+    if pincode in PINCODE_CACHE:
+        return PINCODE_CACHE[pincode]
     try:
         url = f"https://api.postalpincode.in/pincode/{pincode}"
-        res = requests.get(url, timeout=10)
+        res = requests.get(url, timeout=1.0)
         if res.status_code == 200:
             data = res.json()
             if data and data[0].get("Status") == "Success" and data[0].get("PostOffice"):
                 po = data[0]["PostOffice"][0]
-                return {
+                result = {
                     "pincode": pincode,
                     "state": po.get("State", ""),
                     "city": po.get("District", ""),
                     "locality": po.get("Name", "")
                 }
+                PINCODE_CACHE[pincode] = result
+                return result
     except Exception:
         pass
     return None

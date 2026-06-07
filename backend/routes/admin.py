@@ -639,9 +639,6 @@ async def get_all_orders(
     admin: UserSchema = Depends(require_permission("view_orders")),
     db: AsyncSession = Depends(get_db)
 ):
-    from routes.orders import enforce_return_deadlines, enforce_payment_timeouts
-    await enforce_return_deadlines(db)
-    await enforce_payment_timeouts(db)
     search = sanitize_search_term(search)
     
     # Pre-parse date parameters
@@ -739,10 +736,6 @@ async def get_admin_order_details(
         _reconcile_refund_background
     )
     validate_uuid(order_id)
-    
-    await enforce_return_deadlines(db)
-    await enforce_payment_timeouts(db)
-    
     res = await db.execute(select(OrderModel).where(OrderModel.id == order_id))
     order = res.scalar_one_or_none()
     if not order:
@@ -2619,6 +2612,10 @@ async def admin_item_process_refund(
         elif razorpay_refund_succeeded:
             order.order_status = "return_approved"
             order.payment_status = "refund_pending"
+            if order.user_id:
+                from routes.orders import _send_refund_initiated_email_background
+                import asyncio
+                asyncio.create_task(_send_refund_initiated_email_background(str(order.id), str(order.user_id)))
         else:
             order.order_status = "return_approved"
             order.payment_status = "refund_failed"

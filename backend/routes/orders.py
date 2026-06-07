@@ -413,6 +413,77 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
         return False, str(e), None
 
 
+async def _send_refund_initiated_email_background(order_id: str, user_id: str):
+    from database import async_session_factory
+    from sqlalchemy import select as _sel
+    from models import UserModel as _UM, OrderModel as _OM, AuditLogModel as _ALM
+    from deps import send_email, row_to_dict
+    from email_templates import refund_initiated_email
+    from routes.orders import _enrich_order_items
+    
+    # Wait a bit to ensure transaction has committed
+    await asyncio.sleep(0.5)
+    
+    async with async_session_factory() as db:
+        try:
+            # Prevent sending duplicate refund emails by checking audit log
+            existing_email_audit = await db.execute(
+                _sel(_ALM).where(
+                    _ALM.target_type == "order",
+                    _ALM.target_id == str(order_id),
+                    _ALM.action == "REFUND_INITIATED_EMAIL_SENT"
+                )
+            )
+            if existing_email_audit.scalar_one_or_none():
+                logger.info("Refund initiated email already sent for order %s, skipping duplicate", order_id)
+                return
+
+            user_res = await db.execute(_sel(_UM).where(_UM.id == user_id))
+            cust = user_res.scalar_one_or_none()
+            if not cust:
+                return
+                
+            order_res = await db.execute(_sel(_OM).where(_OM.id == order_id))
+            order = order_res.scalar_one_or_none()
+            if not order:
+                return
+
+            # Write audit log immediately to prevent concurrent races, and commit it
+            from deps import write_audit_log
+            await write_audit_log(
+                db,
+                "REFUND_INITIATED_EMAIL_SENT",
+                "system",
+                "order",
+                str(order_id),
+                {"recipient": cust.email}
+            )
+            await db.commit()
+                
+            order_dict = row_to_dict(order)
+            enriched_order = await _enrich_order_items(db, order_dict)
+            
+            # Identify return-requested/approved items
+            refunded_items = [i for i in enriched_order.get("items", []) if i.get("return_status") in ("RETURN_APPROVED", "RETURN_RECEIVED", "REFUND_INITIATED", "REFUND_COMPLETED")]
+            if not refunded_items:
+                refunded_items = enriched_order.get("items", [])
+
+            item_refund_total = sum(float(i.get("refund_calculations", {}).get("refundable_amount") or 0.0) for i in refunded_items)
+            courier_total = sum(float(i.get("self_shipping_details", {}).get("courier_cost") or 0.0) for i in refunded_items)
+            
+            subj, body = refund_initiated_email(
+                cust.full_name or cust.email,
+                enriched_order,
+                refunded_items,
+                item_refund_total,
+                courier_total
+            )
+            await send_email(cust.email, subj, body)
+            logger.info("Refund initiated email sent successfully for order %s", order_id)
+        except Exception:
+            logger.exception("Failed to send refund initiated email in background")
+
+
 async def _send_refund_email_background(order_id: str, user_id: str):
     from database import async_session_factory
     from sqlalchemy import select as _sel
@@ -447,6 +518,18 @@ async def _send_refund_email_background(order_id: str, user_id: str):
             order = order_res.scalar_one_or_none()
             if not order:
                 return
+
+            # Write audit log immediately to prevent concurrent races, and commit it
+            from deps import write_audit_log
+            await write_audit_log(
+                db,
+                "REFUND_CREDITED_EMAIL_SENT",
+                "system",
+                "order",
+                str(order_id),
+                {"recipient": cust.email}
+            )
+            await db.commit()
                 
             order_dict = row_to_dict(order)
             enriched_order = await _enrich_order_items(db, order_dict)
@@ -477,18 +560,6 @@ async def _send_refund_email_background(order_id: str, user_id: str):
                 courier_total
             )
             await send_email(cust.email, subj, body, attachments=att)
-            
-            # Write audit log to record that this refund email was sent
-            from deps import write_audit_log
-            await write_audit_log(
-                db,
-                "REFUND_CREDITED_EMAIL_SENT",
-                "system",
-                "order",
-                str(order_id),
-                {"recipient": cust.email}
-            )
-            await db.commit()
         except Exception:
             logger.exception("Failed to send automatic refund credited email in background")
 
@@ -631,6 +702,8 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
                     order.payment_status = "refund_pending"
                 if str(order.order_status or "").lower() not in ("return_approved",):
                     order.order_status = "return_approved"
+                if order.user_id:
+                    asyncio.create_task(_send_refund_initiated_email_background(str(order.id), str(order.user_id)))
             
             order.updated_at = datetime.now(timezone.utc)
             await write_audit_log(
@@ -1460,8 +1533,6 @@ async def enforce_payment_timeouts(db: AsyncSession, user_id: Optional[str] = No
 
 @router.get("/orders")
 async def get_user_orders(current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    await enforce_return_deadlines(db, user_id=str(current_user.id))
-    await enforce_payment_timeouts(db, user_id=str(current_user.id))
     result = await db.execute(
         select(OrderModel).where(OrderModel.user_id == current_user.id).order_by(OrderModel.created_at.desc()).limit(1000)
     )
@@ -1479,9 +1550,6 @@ async def get_user_orders(current_user: UserSchema = Depends(get_current_user), 
 
 @router.get("/orders/{order_id}")
 async def get_order(order_id: str, current_user: UserSchema = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    await enforce_return_deadlines(db, user_id=str(current_user.id))
-    await enforce_payment_timeouts(db, user_id=str(current_user.id))
-    
     # Try finding by UUID id first, if not a valid UUID try finding by order_number
     order = None
     if is_valid_uuid(order_id):
@@ -1495,8 +1563,21 @@ async def get_order(order_id: str, current_user: UserSchema = Depends(get_curren
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
-    await _reconcile_order_with_razorpay(order, db, source="order_fetch")
-    await reconcile_order_refund_with_razorpay(order, db, source="order_fetch")
+    # Trigger Razorpay reconciliation in the background so the user gets the view immediately without network lags
+    async def _reconcile_async_task(oid: str):
+        try:
+            from database import async_session_factory
+            async with async_session_factory() as sdb:
+                res_async = await sdb.execute(select(OrderModel).where(OrderModel.id == oid))
+                ord_async = res_async.scalar_one_or_none()
+                if ord_async:
+                    await _reconcile_order_with_razorpay(ord_async, sdb, source="order_fetch_async")
+                    await reconcile_order_refund_with_razorpay(ord_async, sdb, source="order_fetch_async")
+                    await sdb.commit()
+        except Exception:
+            logger.exception("Failed to run async reconciliation task for customer order fetch")
+
+    asyncio.create_task(_reconcile_async_task(str(order.id)))
 
     d = await order_response_dict(order, db)
     return await _enrich_order_items(db, d)

@@ -629,3 +629,34 @@ def refund_credited_email(name: str, order: dict, refunded_items: list, item_ref
         
     return f"Refund Credited & Credit Note - {order_num} | DurgaShakti Foils", _base(content, "Refund Credited"), attachments
 
+
+def refund_initiated_email(name: str, order: dict, refunded_items: list, item_refund_total: float, courier_total: float) -> tuple[str, str]:
+    """Email template sent to customer when a refund is initiated, telling them to wait 5-7 business working days."""
+    first = escape((name.split()[0] if name else "Customer"))
+    order_num = escape(str(order.get("order_number", "N/A")))
+    total_refund = item_refund_total + courier_total
+    
+    items_desc = ", ".join([escape(i.get("product_name", "Product")) for i in refunded_items])
+    
+    content = f"""
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:42px;margin-bottom:8px;line-height:1;">⏳</div>
+      {_badge("Refund Initiated", "#f59e0b")}
+      <p style="font-size:22px;font-weight:800;color:{BRAND_DARK};margin:12px 0 4px;">Refund Initiated, {first}!</p>
+      <p style="color:#6b7280;font-size:14px;line-height:1.6;">Your refund has been successfully initiated. Please wait <strong>5-7 business working days</strong> for the amount to be credited back to your bank account/original payment method.</p>
+    </div>
+    <div style="background:{BRAND_SURFACE};border:1px solid {BRAND_BORDER};border-left:5px solid #f59e0b;border-radius:12px;padding:24px;margin-bottom:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        {_info_row("Order Number", order_num)}
+        {_info_row("Refunded Item(s)", items_desc)}
+        {_info_row("Item(s) Refund", _money(item_refund_total))}
+        {_info_row("Courier Reimbursement", _money(courier_total))}
+        {_info_row("Total Refund Pending", _money(total_refund))}
+        {_info_row("Initiated On", datetime.now(timezone.utc).strftime("%d %B %Y, %I:%M %p UTC"))}
+      </table>
+    </div>
+    <p style="margin:0 0 18px;color:#64748b;font-size:12px;line-height:1.6;text-align:center;">The bank timeline is standard for online transactions. If you do not see the credit after 7 business days, please contact your bank with the transaction reference.</p>
+    {_cta_button("View Dashboard", f"{SITE_URL}/dashboard?order={order_num}")}"""
+    
+    return f"Refund Initiated - {order_num} | DurgaShakti Foils", _base(content, "Refund Initiated")
+

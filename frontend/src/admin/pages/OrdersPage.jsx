@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
 import apiClient from '../../services/core/apiClient';
@@ -143,6 +144,8 @@ const patchOrderStatus = (order, status, extraData = {}) => {
 };
 
 const OrdersPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { hasPermission } = useAuth();
   const [rows, setRows] = useState(() => {
     const cached = adminService.getCached('/admin/orders', { page: 1, limit: PAGE_SIZE, search: '' });
@@ -348,15 +351,10 @@ const OrdersPage = () => {
     return () => clearInterval(timer);
   }, [loadSilent, page, rows]);
 
-  const handleViewOrderDetails = async (orderId) => {
-    const toastId = toast.loading('Fetching latest order details...');
-    try {
-      const response = await adminService.getOrderDetails(orderId);
-      setSelectedOrderForModal(response.data);
-      toast.dismiss(toastId);
-    } catch (err) {
-      toast.error(err.message || 'Failed to fetch order details', { id: toastId });
-    }
+  const handleViewOrderDetails = (orderId) => {
+    const isAdmin = location.pathname.startsWith('/admin');
+    const path = isAdmin ? `/admin/orders/${orderId}` : `/superadmin/orders/${orderId}`;
+    navigate(path);
   };
 
   const handleConfirmManualRefundItem = useCallback(async (restock = true) => {
