@@ -468,7 +468,7 @@ const OrdersPage = () => {
   const handleOpenRefundModal = async (orderId, productId, item) => {
     const calc = item.refund_calculations || {};
     const initialAmount = parseFloat(calc.refundable_amount || 0);
-    const courierCost = item.return_status === 'REFUND_COMPLETED' ? 0 : parseFloat(item.self_shipping_details?.courier_cost || 0);
+    const courierCost = ['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(item.return_status) ? 0 : parseFloat(item.self_shipping_details?.courier_cost || 0);
     const totalRefundDefault = Math.round((initialAmount + courierCost) * 100) / 100;
     setRefundModal({ orderId, productId, item, initialAmount, courierCost, totalRefundDefault, isOrderLevel: false });
     setRefundAmountInput(String(totalRefundDefault));
@@ -487,11 +487,11 @@ const OrdersPage = () => {
   };
 
   const handleOpenOrderRefundModal = async (order) => {
-    const refundItems = (order.items || []).filter(i => i.return_status === 'REFUND_COMPLETED' || i.return_status === 'RETURN_RECEIVED');
+    const refundItems = (order.items || []).filter(i => ['REFUND_COMPLETED', 'REFUND_INITIATED', 'RETURN_RECEIVED'].includes(i.return_status));
     const itemsToSum = refundItems.length > 0 ? refundItems : (order.items || []);
     
     const initialAmount = itemsToSum.reduce((sum, i) => sum + parseFloat(i.refund_calculations?.refundable_amount || 0), 0);
-    const courierCost = itemsToSum.reduce((sum, i) => sum + (i.return_status === 'REFUND_COMPLETED' ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0)), 0);
+    const courierCost = itemsToSum.reduce((sum, i) => sum + (['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(i.return_status) ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0)), 0);
     const totalRefundDefault = Math.round((initialAmount + courierCost) * 100) / 100;
 
     setRefundModal({
@@ -914,7 +914,6 @@ const OrdersPage = () => {
                               const refundPaymentStatus = String(order.payment_status || '').toLowerCase();
                               const isCod = String(order.payment_method || '').toLowerCase() === 'cod';
                               const showRefundPendingButton = ['refund_pending', 'refund_failed'].includes(refundPaymentStatus) &&
-                                (isCod || order.refund_error || refundPaymentStatus === 'refund_failed') &&
                                 hasPermission('update_order_status');
                               const allowedActions = actions.filter((a) => {
                                 if (a === 'CANCELLED') {
@@ -924,21 +923,39 @@ const OrdersPage = () => {
                               });
                               const buttons = [];
                               if (showRefundPendingButton) {
-                                buttons.push(
-                                  <button
-                                    key="REFUND_MANUAL"
-                                    disabled={isOrderPending}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpenOrderRefundModal(order);
-                                    }}
-                                    className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
-                                      isOrderPending ? 'opacity-60 cursor-wait' : ''
-                                    } ${refundPaymentStatus === 'refund_failed' ? 'border-rose-100 text-rose-700 hover:bg-rose-50' : 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'}`}
-                                  >
-                                    {isOrderPending ? 'Confirming' : 'Confirm Refund'}
-                                  </button>
-                                );
+                                if (isCod) {
+                                  buttons.push(
+                                    <button
+                                      key="REFUND_MANUAL"
+                                      disabled={isOrderPending}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenOrderRefundModal(order);
+                                      }}
+                                      className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                        isOrderPending ? 'opacity-60 cursor-wait' : ''
+                                      } ${refundPaymentStatus === 'refund_failed' ? 'border-rose-100 text-rose-700 hover:bg-rose-50' : 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'}`}
+                                    >
+                                      {isOrderPending ? 'Confirming' : 'Confirm Manual Refund'}
+                                    </button>
+                                  );
+                                } else {
+                                  buttons.push(
+                                    <button
+                                      key="REFUND_RETRY"
+                                      disabled={isOrderPending}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        retryRefund(order.id);
+                                      }}
+                                      className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
+                                        isOrderPending ? 'opacity-60 cursor-wait' : ''
+                                      } border-sky-100 text-sky-600 hover:bg-sky-50`}
+                                    >
+                                      {isOrderPending ? 'Retrying' : 'Retry Auto Refund'}
+                                    </button>
+                                  );
+                                }
                               }
                               if (allowedActions.length > 0) {
                                 allowedActions.forEach((a) => {
@@ -1441,14 +1458,15 @@ const OrdersPage = () => {
                                 <p className="font-mono text-slate-800">{selectedOrderForModal.razorpay_payment_id}</p>
                               </div>
                             )}
-                            {/* Manual Payout reference placeholder helper */}
+                            {/* Refund Payout details helper */}
                             {selectedOrderForModal.payment_status === 'refund_pending' && (() => {
-                              const refundItems = (selectedOrderForModal.items || []).filter(i => i.return_status === 'REFUND_COMPLETED');
+                              const refundItems = (selectedOrderForModal.items || []).filter(i => ['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(i.return_status));
                               const totalRefundAmount = refundItems.reduce((sum, i) => sum + parseFloat(i.refund_calculations?.refundable_amount || 0), 0);
-                              const selfShipCost = refundItems.reduce((sum, i) => sum + (i.return_status === 'REFUND_COMPLETED' ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0)), 0);
+                              const selfShipCost = refundItems.reduce((sum, i) => sum + (['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(i.return_status) ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0)), 0);
+                              const isCod = String(selectedOrderForModal.payment_method || '').toLowerCase() === 'cod';
                               return (
                                 <div className="pt-1.5 mt-1 border-t border-dashed border-sky-200 text-sky-900 leading-snug space-y-1.5">
-                                  <p className="text-[8px] font-black uppercase text-sky-700">Manual Refund Payout Details</p>
+                                  <p className="text-[8px] font-black uppercase text-sky-700">{isCod ? 'Manual' : 'Automatic'} Refund Payout Details</p>
                                   {totalRefundAmount > 0 && (
                                     <p className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
                                       Refund Amount: ₹{totalRefundAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1457,8 +1475,14 @@ const OrdersPage = () => {
                                   {selfShipCost > 0 && (
                                     <p className="text-[10px] text-slate-600">Self-Ship Courier Cost: ₹{selfShipCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                                   )}
-                                  <p>Customer Phone: <span className="font-mono font-extrabold bg-white px-1 py-0.5 rounded border border-sky-100 select-all">{selectedOrderForModal.shipping_address?.phone || 'N/A'}</span></p>
-                                  <p className="text-[8px] text-sky-600 font-medium mt-1">Please settle the refund amount manually via UPI / bank transfer and click "Confirm Manual Refund Paid" below.</p>
+                                  {isCod ? (
+                                    <>
+                                      <p>Customer Phone: <span className="font-mono font-extrabold bg-white px-1 py-0.5 rounded border border-sky-100 select-all">{selectedOrderForModal.shipping_address?.phone || 'N/A'}</span></p>
+                                      <p className="text-[8px] text-sky-600 font-medium mt-1">Please settle the refund amount manually via UPI / bank transfer and click "Confirm Manual Refund Paid" below.</p>
+                                    </>
+                                  ) : (
+                                    <p className="text-[8px] text-sky-600 font-medium mt-1">The refund has been automatically initiated via Razorpay and will credit to the original payment method. Webhook/reconciliation will update status once credited.</p>
+                                  )}
                                 </div>
                               );
                             })()}
@@ -1747,6 +1771,7 @@ const OrdersPage = () => {
                                 item.return_status === 'RETURN_APPROVED' ? 'bg-sky-100 text-sky-800' :
                                 item.return_status === 'SELF_SHIPPED' ? 'bg-indigo-100 text-indigo-800' :
                                 item.return_status === 'RETURN_RECEIVED' ? 'bg-purple-100 text-purple-800' :
+                                item.return_status === 'REFUND_INITIATED' ? 'bg-blue-100 text-blue-800' :
                                 item.return_status === 'REFUND_COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
                                 'bg-rose-100 text-rose-800'
                               }`}>
@@ -1756,11 +1781,11 @@ const OrdersPage = () => {
 
                             {item.refund_calculations && (
                               <div className="text-[10px] font-extrabold text-slate-500 bg-slate-50 p-2.5 rounded-xl flex flex-wrap gap-x-4 gap-y-1">
-                                <span>Taxable: ₹{item.refund_calculations.taxable_amount}</span>
-                                <span>CGST 9%: ₹{item.refund_calculations.cgst_amount}</span>
-                                <span>SGST 9%: ₹{item.refund_calculations.sgst_amount}</span>
-                                <span>Discount Share: -₹{item.refund_calculations.coupon_discount_share}</span>
-                                <span className="text-primary font-black">Est. Refundable: ₹{item.refund_calculations.refundable_amount}</span>
+                                <span>Taxable: ₹{Number(item.refund_calculations.taxable_amount || 0).toFixed(2)}</span>
+                                <span>CGST 9%: ₹{Number(item.refund_calculations.cgst_amount || 0).toFixed(2)}</span>
+                                <span>SGST 9%: ₹{Number(item.refund_calculations.sgst_amount || 0).toFixed(2)}</span>
+                                <span>Discount Share: -₹{Number(item.refund_calculations.coupon_discount_share || 0).toFixed(2)}</span>
+                                <span className="text-primary font-black">Est. Refundable: ₹{Number(item.refund_calculations.refundable_amount || 0).toFixed(2)}</span>
                               </div>
                             )}
 
@@ -1908,10 +1933,10 @@ const OrdersPage = () => {
               {/* Return Tracking Timeline */}
               {selectedOrderForModal.items?.some(i => i.return_status) && (() => {
                 const returnedItems = (selectedOrderForModal.items || []).filter(i => i.return_status);
-                const hasApproved = returnedItems.some(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
-                const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
-                const hasReceived = returnedItems.some(i => ['RETURN_RECEIVED', 'REFUND_COMPLETED'].includes(i.return_status));
-                const hasRefunded = returnedItems.some(i => i.return_status === 'REFUND_COMPLETED') || selectedOrderForModal.payment_status === 'refunded' || selectedOrderForModal.order_status === 'refunded';
+                const hasApproved = returnedItems.some(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
+                const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
+                const hasReceived = returnedItems.some(i => ['RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
+                const hasRefunded = returnedItems.some(i => ['REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status)) || selectedOrderForModal.payment_status === 'refunded' || selectedOrderForModal.order_status === 'refunded';
                 const isRejected = returnedItems.some(i => i.return_status === 'RETURN_REJECTED') || selectedOrderForModal.order_status === 'return_rejected';
                 const isRefundFailed = selectedOrderForModal.payment_status === 'refund_failed';
 
@@ -1990,11 +2015,11 @@ const OrdersPage = () => {
             {/* Modal Footer */}
             <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
               {selectedOrderForModal.payment_status === 'refund_pending' && (() => {
-                const refundItems = (selectedOrderForModal.items || []).filter(i => i.return_status === 'REFUND_COMPLETED' || i.return_status === 'RETURN_RECEIVED');
+                const refundItems = (selectedOrderForModal.items || []).filter(i => ['REFUND_COMPLETED', 'REFUND_INITIATED', 'RETURN_RECEIVED'].includes(i.return_status));
                 const itemsToSum = refundItems.length > 0 ? refundItems : (selectedOrderForModal.items || []);
                 const totalRefundAmount = itemsToSum.reduce((sum, i) => {
                   const itemAmount = parseFloat(i.refund_calculations?.refundable_amount || 0);
-                  const courierCost = i.return_status === 'REFUND_COMPLETED' ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0);
+                  const courierCost = ['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(i.return_status) ? 0 : parseFloat(i.self_shipping_details?.courier_cost || 0);
                   return sum + itemAmount + courierCost;
                 }, 0);
                 return (
@@ -2007,19 +2032,27 @@ const OrdersPage = () => {
               })()}
               <div className="flex gap-3 justify-end w-full sm:w-auto shrink-0">
                 {selectedOrderForModal.payment_status === 'refund_pending' &&
-                 (String(selectedOrderForModal.payment_method || '').toLowerCase() === 'cod' ||
-                  selectedOrderForModal.refund_error ||
-                  String(selectedOrderForModal.payment_status || '').toLowerCase() === 'refund_failed') &&
                  hasPermission('update_order_status') && (
-                  <button
-                    onClick={() => {
-                      handleOpenOrderRefundModal(selectedOrderForModal);
-                    }}
-                    className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98] shadow-md shadow-emerald-glow"
-                  >
-                    Confirm Manual Refund Paid
-                  </button>
-                )}
+                   String(selectedOrderForModal.payment_method || '').toLowerCase() === 'cod' ? (
+                     <button
+                       onClick={() => {
+                         handleOpenOrderRefundModal(selectedOrderForModal);
+                       }}
+                       className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98] shadow-md shadow-emerald-glow"
+                     >
+                       Confirm Manual Refund Paid
+                     </button>
+                   ) : (
+                     <button
+                       onClick={() => {
+                         retryRefund(selectedOrderForModal.id);
+                       }}
+                       className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-sky-600 hover:bg-sky-700 text-white transition-all hover:scale-[1.02] transform active:scale-[0.98] shadow-md shadow-sky-glow"
+                     >
+                       Retry Auto Refund
+                     </button>
+                   )
+                 )}
                 <button
                   onClick={() => setSelectedOrderForModal(null)}
                   className="px-6 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all hover:scale-[1.02] transform active:scale-[0.98]"

@@ -213,7 +213,7 @@ def _get_razorpay_client():
 
 
 async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[bool, Optional[str], Optional[dict]]:
-    """Trigger an optimum-speed Razorpay refund for a prepaid captured payment."""
+    """Trigger a normal-speed Razorpay refund for a prepaid captured payment."""
     if str(order.payment_method or "").lower() == "cod":
         return False, "COD orders cannot be refunded online automatically.", None
 
@@ -309,7 +309,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
             payment_id,
             {
                 "amount": remaining,
-                "speed": "optimum",
+                "speed": "normal",
                 "receipt": f"refund_{order.order_number}",
                 "notes": {
                     "order_number": order.order_number,
@@ -340,7 +340,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
 
 
 async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: AsyncSession) -> tuple[bool, Optional[str], Optional[dict]]:
-    """Trigger an optimum-speed Razorpay partial refund for a prepaid captured payment."""
+    """Trigger a normal-speed Razorpay partial refund for a prepaid captured payment."""
     if str(order.payment_method or "").lower() == "cod":
         return False, "COD orders cannot be refunded online automatically.", None
 
@@ -395,7 +395,7 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
             payment_id,
             {
                 "amount": actual_refund_paise,
-                "speed": "optimum",
+                "speed": "normal",
                 "receipt": f"refund_{order.order_number}_{uuid.uuid4().hex[:8]}",
                 "notes": {
                     "order_number": order.order_number,
@@ -408,6 +408,62 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
     except Exception as e:
         logger.exception("Failed to process Razorpay partial refund for payment %s", payment_id)
         return False, str(e), None
+
+
+async def _send_refund_email_background(order_id: str, user_id: str):
+    from database import async_session_factory
+    from sqlalchemy import select as _sel
+    from models import UserModel as _UM, OrderModel as _OM
+    from deps import send_email, row_to_dict
+    from email_templates import refund_credited_email
+    from routes.orders import _enrich_order_items
+    
+    # Wait a bit to ensure transaction has committed
+    await asyncio.sleep(0.5)
+    
+    async with async_session_factory() as db:
+        try:
+            user_res = await db.execute(_sel(_UM).where(_UM.id == user_id))
+            cust = user_res.scalar_one_or_none()
+            if not cust:
+                return
+                
+            order_res = await db.execute(_sel(_OM).where(_OM.id == order_id))
+            order = order_res.scalar_one_or_none()
+            if not order:
+                return
+                
+            order_dict = row_to_dict(order)
+            enriched_order = await _enrich_order_items(db, order_dict)
+            
+            # Identify refunded items
+            refunded_items = [i for i in enriched_order.get("items", []) if i.get("return_status") == "REFUND_COMPLETED"]
+            if not refunded_items:
+                refunded_items = [i for i in enriched_order.get("items", []) if i.get("return_status") == "REFUND_INITIATED"]
+            if not refunded_items:
+                refunded_items = [i for i in enriched_order.get("items", []) if i.get("return_status")]
+            if not refunded_items:
+                refunded_items = enriched_order.get("items", [])
+                
+            item_refund_total = sum(
+                (float(i.get("refund_calculations", {}).get("refundable_amount") or 0.0) -
+                 float(i.get("self_shipping_details", {}).get("courier_cost") or 0.0))
+                if i.get("return_status") in ("REFUND_COMPLETED", "REFUND_INITIATED")
+                else float(i.get("refund_calculations", {}).get("refundable_amount") or 0.0)
+                for i in refunded_items
+            )
+            courier_total = sum(float(i.get("self_shipping_details", {}).get("courier_cost") or 0.0) for i in refunded_items)
+            
+            subj, body, att = refund_credited_email(
+                cust.full_name or cust.email,
+                enriched_order,
+                refunded_items,
+                item_refund_total,
+                courier_total
+            )
+            await send_email(cust.email, subj, body, attachments=att)
+        except Exception:
+            logger.exception("Failed to send automatic refund credited email in background")
 
 
 async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSession, source: str = "order_fetch") -> bool:
@@ -476,6 +532,22 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
             stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
             order.payment_status = "refunded"
             order.order_status = "refunded"
+            
+            updated_items = []
+            for item in (order.items or []):
+                if item.get("return_status") in ("REFUND_INITIATED", "RETURN_RECEIVED"):
+                    item["return_status"] = "REFUND_COMPLETED"
+                    if "audit_timeline" not in item:
+                        item["audit_timeline"] = []
+                    item["audit_timeline"].append({
+                        "status": "REFUND_COMPLETED",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "remarks": "Refund verified and completed via Razorpay reconciliation."
+                    })
+                updated_items.append(item)
+            order.items = updated_items
+            flag_modified(order, "items")
+            
             order.updated_at = datetime.now(timezone.utc)
             await write_audit_log(
                 db,
@@ -505,6 +577,7 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
                     f"Your refund for order {order.order_number} has been credited.",
                     "order",
                 )
+                asyncio.create_task(_send_refund_email_background(str(order.id), str(order.user_id)))
             logger.info("Reconciled Razorpay refund for order %s from %s", order.order_number, source)
             return True
     except Exception:
@@ -1898,6 +1971,21 @@ async def razorpay_webhook(
             stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
             order.payment_status = "refunded"
             order.order_status = "refunded"
+            
+            updated_items = []
+            for item in (order.items or []):
+                if item.get("return_status") in ("REFUND_INITIATED", "RETURN_RECEIVED"):
+                    item["return_status"] = "REFUND_COMPLETED"
+                    if "audit_timeline" not in item:
+                        item["audit_timeline"] = []
+                    item["audit_timeline"].append({
+                        "status": "REFUND_COMPLETED",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "remarks": "Refund verified and completed via Razorpay webhook."
+                    })
+                updated_items.append(item)
+            order.items = updated_items
+            flag_modified(order, "items")
         else:
             stock_released = False
             order.payment_status = "refund_pending"
@@ -1930,6 +2018,7 @@ async def razorpay_webhook(
                     f"Your refund for order {order.order_number} has been credited.",
                     "order",
                 )
+                asyncio.create_task(_send_refund_email_background(str(order.id), str(order.user_id)))
             return {"status": "success", "message": "Refund credited confirmation received from Razorpay."}
         return {"status": "pending", "message": "Refund update received from Razorpay. The order remains pending until bank confirmation is available."}
 

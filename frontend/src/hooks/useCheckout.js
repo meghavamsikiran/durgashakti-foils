@@ -140,6 +140,12 @@ export const useCheckout = () => {
   }, []);
 
   useEffect(() => {
+    if (user) {
+      fetchAddresses();
+    }
+  }, [user, fetchAddresses]);
+
+  useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
@@ -164,9 +170,8 @@ export const useCheckout = () => {
       return;
     }
     fetchProducts();
-    fetchAddresses();
     fetchSettings();
-  }, [user, cartReady, cart.items, navigate, fetchProducts, fetchAddresses, fetchSettings]);
+  }, [user, cartReady, cart.items, navigate, fetchProducts, fetchSettings]);
 
   const calculateTotal = useCallback(() => {
     return cart.items?.reduce((total, item) => {
@@ -438,6 +443,7 @@ export const useCheckout = () => {
           order_id: rzpOrderId,
           prefill: {
             name: user.full_name || '',
+            email: user.email || '',
             contact: shippingInfo.phone || ''
           },
           handler: async function (paymentResponse) {

@@ -714,6 +714,63 @@ async def get_all_orders(
     return {"items": items, "total": total, "page": page, "limit": limit}
 
 
+async def _send_order_email_background(order_id: str, user_id: str, effective_status: str, admin_message: str):
+    from database import async_session_factory
+    from sqlalchemy import select as _sel
+    from models import UserModel as _UM, OrderModel as _OM
+    from deps import send_email as _send, row_to_dict, create_notification
+    from email_templates import (
+        order_shipped_email, order_delivered_email,
+        return_approved_email, return_rejected_email,
+        order_cancelled_email,
+    )
+    
+    # Wait a tiny bit to make sure the main request transaction has committed
+    await asyncio.sleep(0.5)
+    
+    async with async_session_factory() as db:
+        try:
+            user_res = await db.execute(_sel(_UM).where(_UM.id == user_id))
+            cust = user_res.scalar_one_or_none()
+            if not cust:
+                return
+                
+            order_res = await db.execute(_sel(_OM).where(_OM.id == order_id))
+            order = order_res.scalar_one_or_none()
+            if not order:
+                return
+
+            readable_status = effective_status.replace("_", " ").title()
+            await create_notification(
+                db,
+                str(cust.id),
+                f"Order {readable_status}",
+                f"Your order {order.order_number} is now {readable_status}.",
+                "order"
+            )
+            await db.commit()
+                
+            order_dict = row_to_dict(order)
+            cust_name = cust.full_name or cust.email
+            subj = body = att = None
+            
+            if effective_status == "shipped":
+                subj, body = order_shipped_email(cust_name, order_dict)
+            elif effective_status == "delivered":
+                subj, body, att = order_delivered_email(cust_name, order_dict)
+            elif effective_status == "return_approved":
+                subj, body = return_approved_email(cust_name, str(order.order_number), float(order.total_amount or 0))
+            elif effective_status == "return_rejected":
+                subj, body = return_rejected_email(cust_name, str(order.order_number), admin_message)
+            elif effective_status == "cancelled":
+                subj, body = order_cancelled_email(cust_name, str(order.order_number), float(order.total_amount or 0))
+                
+            if subj and body:
+                await _send(cust.email, subj, body, attachments=att)
+        except Exception:
+            logger.exception("Failed to send transactional email in background")
+
+
 @router.put("/admin/orders/{order_id}/status")
 async def update_order_status(order_id: str, status_data: dict, admin: UserSchema = Depends(require_permission("update_order_status")), db: AsyncSession = Depends(get_db)):
     validate_uuid(order_id)
@@ -870,48 +927,15 @@ async def update_order_status(order_id: str, status_data: dict, admin: UserSchem
     if should_schedule_refund:
         asyncio.create_task(_process_return_refund_background(str(order.id), str(admin.id)))
 
-    # ── Transactional Emails ─────────────────────────────────────────────
-    try:
-        # Fetch customer email
-        from sqlalchemy import select as _sel
-        from models import UserModel as _UM
-        user_res = await db.execute(_sel(_UM).where(_UM.id == order.user_id))
-        cust = user_res.scalar_one_or_none()
-        if cust:
-            readable_status = effective_status.replace("_", " ").title()
-            await create_notification(
-                db,
-                str(cust.id),
-                f"Order {readable_status}",
-                f"Your order {order.order_number} is now {readable_status}.",
-                "order"
+    if order.user_id:
+        asyncio.create_task(
+            _send_order_email_background(
+                str(order.id),
+                str(order.user_id),
+                effective_status,
+                status_data.get("admin_message", "")
             )
-            from deps import send_email as _send
-            from email_templates import (
-                order_shipped_email, order_delivered_email,
-                return_approved_email, return_rejected_email,
-                order_cancelled_email,
-            )
-            order_dict = row_to_dict(order)
-            cust_name = cust.full_name or cust.email
-            subj = body = None
-            if effective_status == "shipped":
-                subj, body = order_shipped_email(cust_name, order_dict)
-            elif effective_status == "delivered":
-                subj, body, att = order_delivered_email(cust_name, order_dict)
-            elif effective_status == "return_approved" and new_status == "return_approved":
-                subj, body = return_approved_email(cust_name, str(order.order_number), float(order.total_amount or 0))
-            elif effective_status == "return_rejected":
-                subj, body = return_rejected_email(cust_name, str(order.order_number), status_data.get("admin_message", ""))
-            elif effective_status == "cancelled":
-                subj, body = order_cancelled_email(cust_name, str(order.order_number), float(order.total_amount or 0))
-            if subj and body:
-                if effective_status == "delivered" and 'att' in locals():
-                    asyncio.create_task(_send(cust.email, subj, body, attachments=att))
-                else:
-                    asyncio.create_task(_send(cust.email, subj, body))
-    except Exception:
-        pass
+        )
 
     return res_payload
 
@@ -2350,24 +2374,24 @@ async def admin_item_process_refund(
             
             calc = item.get("refund_calculations") or {}
             if manual_amount is not None:
-                refund_amount = float(manual_amount)
+                refund_amount = round(float(manual_amount), 2)
                 calc["refundable_amount"] = refund_amount
                 item["refund_calculations"] = calc
             else:
                 item_refund = float(calc.get("refundable_amount") or 0.0)
                 courier_cost = float(item.get("self_shipping_details", {}).get("courier_cost") or 0.0)
-                refund_amount = item_refund + courier_cost
+                refund_amount = round(item_refund + courier_cost, 2)
                 calc["refundable_amount"] = refund_amount
                 item["refund_calculations"] = calc
             returned_qty = int(item.get("returned_quantity") or 1)
             
-            item["return_status"] = "REFUND_COMPLETED"
+            item["return_status"] = "REFUND_COMPLETED" if is_manual else "REFUND_INITIATED"
             if "audit_timeline" not in item:
                 item["audit_timeline"] = []
             item["audit_timeline"].append({
-                "status": "REFUND_COMPLETED",
+                "status": "REFUND_COMPLETED" if is_manual else "REFUND_INITIATED",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "remarks": f"Refund of ₹{refund_amount} completed successfully (Manual: {is_manual})"
+                "remarks": f"Refund of ₹{refund_amount:.2f} completed successfully (Manual: {is_manual})" if is_manual else f"Refund of ₹{refund_amount:.2f} initiated via Razorpay (Manual: {is_manual})"
             })
         updated_items.append(item)
 
@@ -2410,12 +2434,13 @@ async def admin_item_process_refund(
     # Transition overall order status if all returned items are refunded
     has_active_returns = any(item.get("return_status") in ("RETURN_REQUESTED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED") for item in order.items)
     if not has_active_returns:
-        if razorpay_refund_succeeded:
-            # Automatic or confirmed manual refund
+        if is_manual:
             order.order_status = "refunded"
             order.payment_status = "refunded"
+        elif razorpay_refund_succeeded:
+            order.order_status = "refunded"
+            order.payment_status = "refund_pending"
         else:
-            # Manual refund pending
             order.order_status = "refunded"
             order.payment_status = "refund_pending"
         
