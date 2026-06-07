@@ -108,6 +108,24 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
         })}
       </div>
 
+      {paymentMethod === 'cod' && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative mt-6 overflow-hidden rounded-lg bg-rose-50 border border-rose-200 text-rose-800 p-5 shadow-sm"
+        >
+          <div className="flex items-start gap-3">
+            <Shield className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-rose-700 font-black mb-1">COD RETURN POLICY ACKNOWLEDGEMENT</p>
+              <p className="text-xs font-semibold leading-relaxed text-rose-950">
+                Please note: There will be no returns or refunds accepted for Cash on Delivery (COD) orders. We accept return requests only for prepaid (online payment) orders. DurgaShakti Foils is not responsible for any product damages or any other issues caused once a COD order is placed and delivered.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       <div className="relative mt-8 overflow-hidden rounded-lg bg-[#0B1220] text-white border border-white/10">
         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),transparent_42%)]" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />

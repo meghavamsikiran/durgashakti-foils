@@ -11,7 +11,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-r
  * @param {number} pageSize     - (optional) rows per page, shown as context
  */
 const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pageSize }) => {
-  if (totalPages < 1 || totalItems === 0) return null;
+  if (totalPages < 1 || totalItems === 0 || (totalItems && pageSize && totalItems <= pageSize)) return null;
 
   const pages = [];
   const maxVisible = 5;

@@ -1115,7 +1115,7 @@ const OrdersPage = () => {
           pageSize={PAGE_SIZE}
         />
       </div>      {messageModal && (
-        <div className="fixed inset-[-10px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
+        <div className="fixed inset-[-20px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6">
             <div>
               <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
@@ -1174,7 +1174,7 @@ const OrdersPage = () => {
       )}
 
       {bulkShipModal && (
-        <div className="fixed inset-[-10px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
+        <div className="fixed inset-[-20px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
           <div className="bg-white rounded-3xl p-8 max-w-lg w-full border border-slate-100 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
             <div>
               <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Bulk Shipping Details</h3>
@@ -1326,7 +1326,7 @@ const OrdersPage = () => {
       )}
 
       {trackingModal && (
-        <div className="fixed inset-[-10px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
+        <div className="fixed inset-[-20px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6">
             <div>
               <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Shipment Details</h3>
@@ -1426,7 +1426,7 @@ const OrdersPage = () => {
       )}
 
       {selectedOrderForModal && (
-        <div className="fixed inset-[-10px] z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur animate-in fade-in duration-300">
+        <div className="fixed inset-[-20px] z-[99999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur animate-in fade-in duration-300">
           <div className="bg-white rounded-[2.5rem] p-8 max-w-5xl w-full border border-slate-100 shadow-2xl flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-300">
 
             {/* Modal Header */}
@@ -2179,7 +2179,7 @@ const OrdersPage = () => {
 
       {/* Manual Refund Payout Modal */}
       {refundModal && (
-        <div className="fixed inset-[-10px] bg-black/60 backdrop-blur-sm z-[999999] flex items-center justify-center p-4">
+        <div className="fixed inset-[-20px] bg-black/60 backdrop-blur-sm z-[999999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 md:p-8 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-slate-800">
             <button
               onClick={() => setRefundModal(null)}
@@ -2290,44 +2290,7 @@ const OrdersPage = () => {
                 />
               </div>
 
-              {/* QR Code section */}
-              <div className="flex flex-col items-center justify-center py-4 border-t border-slate-200">
-                {upiVpaInput ? (() => {
-                  const amt = parseFloat(refundAmountInput) || 0;
-                  const itemRefund = refundModal.initialAmount || 0;
-                  const courierRefund = refundModal.courierCost || 0;
-                  const upiUri = `upi://pay?pa=${upiVpaInput}&pn=Customer&am=${amt.toFixed(2)}&cu=INR`;
-                  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(upiUri)}`;
-                  return (
-                    <>
-                      <div className="w-full bg-slate-50 border border-slate-200/50 rounded-2xl p-4 mb-4 text-xs font-semibold text-slate-650 space-y-2 max-w-[280px]">
-                        <div className="flex justify-between">
-                          <span>Item Refund:</span>
-                          <span className="font-bold text-slate-800">₹{itemRefund.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Courier Reimbursement:</span>
-                          <span className="font-bold text-slate-800">₹{courierRefund.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between border-t border-slate-250 pt-2 font-black text-slate-900 text-sm">
-                          <span>Total Refund Payout:</span>
-                          <span className="text-emerald-600">₹{amt.toFixed(2)}</span>
-                        </div>
-                      </div>
-                      <div className="w-44 h-44 border-2 border-slate-200 p-2 rounded-2xl bg-white shadow-sm flex items-center justify-center relative">
-                        <img src={qrSrc} alt="Refund QR Code" className="w-full h-full object-contain" />
-                      </div>
-                      <p className="text-[10px] text-slate-400 font-bold text-center mt-3 max-w-[280px] leading-relaxed">
-                        Scan QR with any UPI app (GPay, PhonePe, Paytm) to automatically populate UPI ID and refund amount of ₹{amt.toFixed(2)}.
-                      </p>
-                    </>
-                  );
-                })() : (
-                  <div className="w-full py-8 text-center text-xs text-slate-400 font-semibold bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    Enter UPI VPA to generate the payment QR code
-                  </div>
-                )}
-              </div>
+              {/* QR Code section removed since COD refunds/returns are disabled */}
 
               {/* Actions */}
               <div className="flex gap-3 pt-2">

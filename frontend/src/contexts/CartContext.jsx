@@ -140,6 +140,7 @@ export const CartProvider = ({ children }) => {
       setLoading(true);
       try {
         await apiClient.post('/cart/add', { product_id: productId, quantity });
+        apiClient.invalidateCache('/cart');
         activeRequestsCount.current -= 1;
         // Clear pending preview for this product once it's in cart
         setPendingQtyState(prev => { const n = { ...prev }; delete n[productId]; return n; });
@@ -178,6 +179,7 @@ export const CartProvider = ({ children }) => {
       setLoading(true);
       try {
         await apiClient.put('/cart/update', { product_id: productId, quantity });
+        apiClient.invalidateCache('/cart');
         activeRequestsCount.current -= 1;
         await fetchCart();
       } catch (error) {
@@ -212,6 +214,7 @@ export const CartProvider = ({ children }) => {
       setLoading(true);
       try {
         await apiClient.delete(`/cart/remove/${productId}`);
+        apiClient.invalidateCache('/cart');
         activeRequestsCount.current -= 1;
         await fetchCart();
       } catch (error) {
