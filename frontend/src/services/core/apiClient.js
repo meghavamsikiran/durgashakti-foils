@@ -18,6 +18,24 @@ const apiCache = new Map();
 const inFlightGets = new Map();
 const DEFAULT_TTL = 60000; // 60 seconds
 
+// Load cache from localStorage on initialization
+try {
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('ds_api_cache:')) {
+      const entryStr = localStorage.getItem(key);
+      if (entryStr) {
+        const entry = JSON.parse(entryStr);
+        if (entry && entry.data) {
+          apiCache.set(key.replace('ds_api_cache:', ''), entry);
+        }
+      }
+    }
+  }
+} catch (e) {
+  // Ignore localStorage security/quota blocks
+}
+
 const getCacheKey = (url, params = {}) => {
   const sortedParams = Object.keys(params || {})
     .sort()
@@ -38,8 +56,12 @@ const cachedGet = async (url, options = {}) => {
     if (!inFlightGets.has(key)) {
       const refresh = apiClient.get(url, { ...options, silent: true })
         .then(res => {
-          apiCache.set(key, { data: res, time: Date.now() });
-          return res;
+          const serializedData = { data: res.data, status: res.status };
+          apiCache.set(key, { data: serializedData, time: Date.now() });
+          try {
+            localStorage.setItem('ds_api_cache:' + key, JSON.stringify({ data: serializedData, time: Date.now() }));
+          } catch (e) {}
+          return serializedData;
         })
         .catch(() => {})
         .finally(() => inFlightGets.delete(key));
@@ -54,8 +76,12 @@ const cachedGet = async (url, options = {}) => {
 
   const request = apiClient.get(url, options)
     .then(res => {
-      apiCache.set(key, { data: res, time: Date.now() });
-      return res;
+      const serializedData = { data: res.data, status: res.status };
+      apiCache.set(key, { data: serializedData, time: Date.now() });
+      try {
+        localStorage.setItem('ds_api_cache:' + key, JSON.stringify({ data: serializedData, time: Date.now() }));
+      } catch (e) {}
+      return serializedData;
     })
     .finally(() => inFlightGets.delete(key));
   inFlightGets.set(key, request);
@@ -77,6 +103,18 @@ const invalidateCache = (urlPrefix) => {
       apiCache.delete(key);
     }
   }
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('ds_api_cache:') && (key.includes(urlPrefix) || key.startsWith('ds_api_cache:' + urlPrefix))) {
+        keysToRemove.push(key);
+      }
+    }
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key);
+    }
+  } catch (e) {}
 };
 
 apiClient.cachedGet = cachedGet;
