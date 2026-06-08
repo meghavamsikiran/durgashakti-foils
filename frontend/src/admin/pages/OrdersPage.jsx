@@ -548,9 +548,22 @@ const OrdersPage = () => {
         const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
         setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
         setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
+      } else {
+        const updateOrder = (order) => {
+          if (!order) return order;
+          const updatedItems = (order.items || []).map(item => {
+            if (item.product_id === productId) {
+              return { ...item, return_status: item.return_type === 'exchange' ? 'EXCHANGE_RECEIVED' : 'RETURN_RECEIVED' };
+            }
+            return item;
+          });
+          return { ...order, items: updatedItems };
+        };
+        setRows(prev => prev.map(order => order.id === orderId ? updateOrder(order) : order));
+        setSelectedOrderForModal(prev => prev?.id === orderId ? updateOrder(prev) : prev);
       }
       toast.success('Item marked as received', { id: toastId });
-      setTimeout(() => loadSilent(page), 800);
+      await loadSilent(page);
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to mark item as received', { id: toastId });
     } finally {
@@ -1865,9 +1878,20 @@ const OrdersPage = () => {
                     <h4 className="text-[10px] font-black text-sky-700 uppercase tracking-widest mb-1.5">Courier & Tracking details</h4>
                     <div className="text-xs text-slate-600 leading-relaxed font-semibold">
                       <p>Carrier Name: <span className="font-extrabold text-slate-900">{selectedOrderForModal.carrier || 'Courier'}</span></p>
-                      <p className="mt-0.5">Tracking Number: <span className="font-mono text-slate-900 select-all font-extrabold">{selectedOrderForModal.tracking_id}</span></p>
-                      {selectedOrderForModal.tracking_url && (
-                        <a
+                      <p className="mt-0.5 flex items-center gap-1.5">
+                        Tracking Number: <span className="font-mono text-slate-900 select-all font-extrabold">{selectedOrderForModal.tracking_id}</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(selectedOrderForModal.tracking_id);
+                            toast.success('Tracking number copied!');
+                          }}
+                          className="p-1 hover:bg-slate-200 rounded text-slate-500 transition-colors"
+                          title="Copy Tracking Number"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </p>
+                      {selectedOrderForModal.tracking_url && (                        <a
                           href={selectedOrderForModal.tracking_url}
                           target="_blank"
                           rel="noreferrer"

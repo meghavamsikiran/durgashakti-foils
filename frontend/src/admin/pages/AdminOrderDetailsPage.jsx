@@ -216,9 +216,20 @@ const AdminOrderDetailsPage = () => {
       const serverOrder = response?.data?.order;
       if (serverOrder) {
         setOrder(serverOrder);
+      } else {
+        setOrder(prev => {
+          if (!prev) return prev;
+          const updatedItems = (prev.items || []).map(item => {
+            if (item.product_id === productId) {
+              return { ...item, return_status: item.return_type === 'exchange' ? 'EXCHANGE_RECEIVED' : 'RETURN_RECEIVED' };
+            }
+            return item;
+          });
+          return { ...prev, items: updatedItems };
+        });
       }
       toast.success('Item marked as received', { id: toastId });
-      setTimeout(() => fetchOrderDetails(true), 800);
+      await fetchOrderDetails(true);
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to mark item as received', { id: toastId });
     } finally {
