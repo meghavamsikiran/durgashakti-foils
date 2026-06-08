@@ -313,7 +313,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
             payment_id,
             {
                 "amount": remaining,
-                "speed": "normal",
+                "speed": "optimum",
                 "receipt": f"refund_{order.order_number}",
                 "notes": {
                     "order_number": order.order_number,
@@ -399,7 +399,7 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
             payment_id,
             {
                 "amount": actual_refund_paise,
-                "speed": "normal",
+                "speed": "optimum",
                 "receipt": f"refund_{order.order_number}_{uuid.uuid4().hex[:8]}",
                 "notes": {
                     "order_number": order.order_number,
@@ -674,7 +674,7 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
                 try:
                     key_id = os.environ.get("RAZORPAY_KEY_ID") or ""
                     is_test_mode = "test" in key_id.lower()
-                    delay = 120 if is_test_mode else 86400  # 2 minutes for test mode, 24 hours for live mode
+                    delay = 0  # Process immediately upon confirmation
                     current_ts = int(datetime.now(timezone.utc).timestamp())
                     refund_age = current_ts - int(latest_refund_created_at)
                     if refund_age < delay:
