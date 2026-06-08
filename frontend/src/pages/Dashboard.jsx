@@ -81,8 +81,8 @@ const Dashboard = () => {
   };
 
   const TransactionsTabWrapper = () => {
-    const { orders } = useOrders();
-    return <TransactionsTab orders={orders} />;
+    const { orders, loading, error } = useOrders();
+    return <TransactionsTab orders={orders} loading={loading} error={error} />;
   };
 
   const AddressesTabWrapper = () => {

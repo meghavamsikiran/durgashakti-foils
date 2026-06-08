@@ -55,7 +55,7 @@ const CustomSelect = ({ value, onChange, options }) => {
   );
 };
 
-const TransactionsTab = ({ orders }) => {
+const TransactionsTab = ({ orders, loading, error }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -65,6 +65,24 @@ const TransactionsTab = ({ orders }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const PAGE_SIZE = 10;
+
+  if (loading && (!orders || orders.length === 0)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[350px] bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mb-3"></div>
+        <p className="text-xs text-slate-500 font-medium">Securing transaction ledger...</p>
+      </div>
+    );
+  }
+
+  if (error && (!orders || orders.length === 0)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[350px] bg-white rounded-3xl border border-slate-200 shadow-sm p-8 text-center">
+        <AlertCircle className="w-12 h-12 text-rose-500 mb-3 shrink-0" />
+        <p className="text-sm font-bold text-slate-800">{error}</p>
+      </div>
+    );
+  }
 
   const methodOptions = [
     { value: 'all', label: 'All Methods' },
