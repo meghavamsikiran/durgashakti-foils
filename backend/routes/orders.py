@@ -709,7 +709,9 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
                 try:
                     key_id = os.environ.get("RAZORPAY_KEY_ID") or ""
                     is_test_mode = "test" in key_id.lower()
-                    delay = 0  # Process immediately upon confirmation
+                    speed_proc = str(latest_refund.get("speed_processed") or "").lower()
+                    is_instant = speed_proc in ("optimum", "instant")
+                    delay = 0 if is_instant else (120 if is_test_mode else 432000) # 5 days in seconds for normal speed
                     current_ts = int(datetime.now(timezone.utc).timestamp())
                     refund_age = current_ts - int(latest_refund_created_at)
                     if refund_age < delay:
@@ -721,7 +723,7 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
             prev_payment_status = order.payment_status
             prev_order_status = order.order_status
 
-            if is_fully_refunded and has_bank_reference:
+            if is_fully_refunded and has_bank_reference and not is_new_refund:
                 # Bank has confirmed — mark as fully credited
                 stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
                 order.payment_status = "refunded"
@@ -2210,7 +2212,9 @@ async def razorpay_webhook(
             try:
                 key_id = os.environ.get("RAZORPAY_KEY_ID") or ""
                 is_test_mode = "test" in key_id.lower()
-                delay = 120 if is_test_mode else 86400  # 2 minutes for test mode, 24 hours for live mode
+                speed_proc = str(refund_entity.get("speed_processed") or "").lower()
+                is_instant = speed_proc in ("optimum", "instant")
+                delay = 0 if is_instant else (120 if is_test_mode else 432000) # 5 days in seconds for normal speed
                 current_ts = int(datetime.now(timezone.utc).timestamp())
                 refund_age = current_ts - int(refund_created_at)
                 if refund_age < delay:
@@ -2218,7 +2222,7 @@ async def razorpay_webhook(
             except Exception:
                 pass
 
-        if (event == "refund.processed" or refund_status == "processed") and bank_confirmed:
+        if (event == "refund.processed" or refund_status == "processed") and bank_confirmed and not is_new_refund:
             # Bank has confirmed the refund (ARN/RRN/UTR present) — mark as fully credited
             stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
             order.payment_status = "refunded"
