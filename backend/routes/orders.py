@@ -212,7 +212,7 @@ def _get_razorpay_client():
 
 
 async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[bool, Optional[str], Optional[dict]]:
-    """Trigger a normal-speed Razorpay refund for a prepaid captured payment."""
+    """Trigger an instant-speed Razorpay refund for a prepaid captured payment."""
     if str(order.payment_method or "").lower() == "cod":
         return False, "COD orders cannot be refunded online automatically.", None
 
@@ -229,7 +229,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
             return True, "Mock Refund Successful", {
                 "id": f"rfnd_mock_{uuid.uuid4().hex[:12]}",
                 "status": "processed",
-                "speed_requested": "optimum",
+                "speed_requested": "instant",
                 "speed_processed": "instant",
                 "payment_id": payment_id,
                 "amount": _expected_amount_paise(order),
@@ -308,7 +308,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
             payment_id,
             {
                 "amount": remaining,
-                "speed": "optimum",
+                "speed": "instant",
                 "receipt": f"refund_{order.order_number}",
                 "notes": {
                     "order_number": order.order_number,
@@ -339,7 +339,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
 
 
 async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: AsyncSession) -> tuple[bool, Optional[str], Optional[dict]]:
-    """Trigger a normal-speed Razorpay partial refund for a prepaid captured payment."""
+    """Trigger an instant-speed Razorpay partial refund for a prepaid captured payment."""
     if str(order.payment_method or "").lower() == "cod":
         return False, "COD orders cannot be refunded online automatically.", None
 
@@ -360,7 +360,7 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
             return True, "Mock Refund Successful", {
                 "id": f"rfnd_mock_{uuid.uuid4().hex[:12]}",
                 "status": "processed",
-                "speed_requested": "optimum",
+                "speed_requested": "instant",
                 "speed_processed": "instant",
                 "payment_id": payment_id,
                 "amount": amount_paise,
@@ -394,7 +394,7 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
             payment_id,
             {
                 "amount": actual_refund_paise,
-                "speed": "optimum",
+                "speed": "instant",
                 "receipt": f"refund_{order.order_number}_{uuid.uuid4().hex[:8]}",
                 "notes": {
                     "order_number": order.order_number,

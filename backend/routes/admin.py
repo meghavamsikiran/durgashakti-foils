@@ -33,6 +33,8 @@ import json
 import logging
 import asyncio
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api")
 
 REFUND_AUDIT_ACTIONS = {
@@ -177,22 +179,64 @@ async def _process_return_refund_background(order_id: str, actor_id: str = "syst
 
             if success:
                 refund_status = str((refund_info or {}).get("status") or "").lower()
-                order.payment_status = "refund_pending"
-                order.order_status = "return_approved"
-                order.updated_at = datetime.now(timezone.utc)
-                await write_audit_log(
-                    session,
-                    "PAYMENT_RAZORPAY_REFUND_INITIATED",
-                    actor_id,
-                    "order",
-                    order_id,
-                    {
-                        "razorpay_payment_id": order.razorpay_payment_id,
-                        "razorpay_refund_id": (refund_info or {}).get("id"),
-                        "refund_status": refund_status,
-                        "amount": (refund_info or {}).get("amount"),
-                    },
-                )
+                if refund_status == "processed":
+                    from routes.orders import _release_stock_once
+                    await _release_stock_once(order, session, datetime.now(timezone.utc))
+                    order.payment_status = "refunded"
+                    order.order_status = "refunded"
+                    order.updated_at = datetime.now(timezone.utc)
+                    
+                    # Mark all return items as REFUND_COMPLETED
+                    updated_items = []
+                    for item in (order.items or []):
+                        if item.get("return_status") in ("REFUND_INITIATED", "RETURN_RECEIVED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_REQUESTED"):
+                            item["return_status"] = "REFUND_COMPLETED"
+                            if "audit_timeline" not in item:
+                                item["audit_timeline"] = []
+                            item["audit_timeline"].append({
+                                "status": "REFUND_COMPLETED",
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                                "remarks": "Refund completed instantly via Razorpay background process."
+                            })
+                        updated_items.append(item)
+                    order.items = updated_items
+                    flag_modified(order, "items")
+                    
+                    await write_audit_log(
+                        session,
+                        "PAYMENT_RAZORPAY_REFUND_RECONCILED",
+                        actor_id,
+                        "order",
+                        order_id,
+                        {
+                            "razorpay_payment_id": order.razorpay_payment_id,
+                            "razorpay_refund_id": (refund_info or {}).get("id"),
+                            "refund_status": refund_status,
+                            "amount": (refund_info or {}).get("amount"),
+                            "instant": True
+                        },
+                    )
+                    
+                    if order.user_id:
+                        from routes.orders import _send_refund_email_background
+                        asyncio.create_task(_send_refund_email_background(str(order.id), str(order.user_id)))
+                else:
+                    order.payment_status = "refund_pending"
+                    order.order_status = "return_approved"
+                    order.updated_at = datetime.now(timezone.utc)
+                    await write_audit_log(
+                        session,
+                        "PAYMENT_RAZORPAY_REFUND_INITIATED",
+                        actor_id,
+                        "order",
+                        order_id,
+                        {
+                            "razorpay_payment_id": order.razorpay_payment_id,
+                            "razorpay_refund_id": (refund_info or {}).get("id"),
+                            "refund_status": refund_status,
+                            "amount": (refund_info or {}).get("amount"),
+                        },
+                    )
             else:
                 order.payment_status = "refund_failed"
                 if str(order.order_status or "").lower() == "return_requested":
