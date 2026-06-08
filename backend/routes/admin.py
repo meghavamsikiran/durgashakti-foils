@@ -178,65 +178,46 @@ async def _process_return_refund_background(order_id: str, actor_id: str = "syst
                 return
 
             if success:
-                refund_status = str((refund_info or {}).get("status") or "").lower()
-                if refund_status == "processed":
-                    from routes.orders import _release_stock_once
-                    await _release_stock_once(order, session, datetime.now(timezone.utc))
-                    order.payment_status = "refunded"
-                    order.order_status = "refunded"
-                    order.updated_at = datetime.now(timezone.utc)
-                    
-                    # Mark all return items as REFUND_COMPLETED
-                    updated_items = []
-                    for item in (order.items or []):
-                        if item.get("return_status") in ("REFUND_INITIATED", "RETURN_RECEIVED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_REQUESTED"):
-                            item["return_status"] = "REFUND_COMPLETED"
-                            if "audit_timeline" not in item:
-                                item["audit_timeline"] = []
-                            item["audit_timeline"].append({
-                                "status": "REFUND_COMPLETED",
-                                "timestamp": datetime.now(timezone.utc).isoformat(),
-                                "remarks": "Refund completed instantly via Razorpay background process."
-                            })
-                        updated_items.append(item)
-                    order.items = updated_items
-                    flag_modified(order, "items")
-                    
-                    await write_audit_log(
-                        session,
-                        "PAYMENT_RAZORPAY_REFUND_RECONCILED",
-                        actor_id,
-                        "order",
-                        order_id,
-                        {
-                            "razorpay_payment_id": order.razorpay_payment_id,
-                            "razorpay_refund_id": (refund_info or {}).get("id"),
-                            "refund_status": refund_status,
-                            "amount": (refund_info or {}).get("amount"),
-                            "instant": True
-                        },
-                    )
-                    
-                    if order.user_id:
-                        from routes.orders import _send_refund_email_background
-                        asyncio.create_task(_send_refund_email_background(str(order.id), str(order.user_id)))
-                else:
-                    order.payment_status = "refund_pending"
-                    order.order_status = "return_approved"
-                    order.updated_at = datetime.now(timezone.utc)
-                    await write_audit_log(
-                        session,
-                        "PAYMENT_RAZORPAY_REFUND_INITIATED",
-                        actor_id,
-                        "order",
-                        order_id,
-                        {
-                            "razorpay_payment_id": order.razorpay_payment_id,
-                            "razorpay_refund_id": (refund_info or {}).get("id"),
-                            "refund_status": refund_status,
-                            "amount": (refund_info or {}).get("amount"),
-                        },
-                    )
+                from routes.orders import _release_stock_once
+                await _release_stock_once(order, session, datetime.now(timezone.utc))
+                order.payment_status = "refunded"
+                order.order_status = "refunded"
+                order.updated_at = datetime.now(timezone.utc)
+                
+                # Mark all return items as REFUND_COMPLETED
+                updated_items = []
+                for item in (order.items or []):
+                    if item.get("return_status") in ("REFUND_INITIATED", "RETURN_RECEIVED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_REQUESTED"):
+                        item["return_status"] = "REFUND_COMPLETED"
+                        if "audit_timeline" not in item:
+                            item["audit_timeline"] = []
+                        item["audit_timeline"].append({
+                            "status": "REFUND_COMPLETED",
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "remarks": "Refund completed instantly via Razorpay payout."
+                        })
+                    updated_items.append(item)
+                order.items = updated_items
+                flag_modified(order, "items")
+                
+                await write_audit_log(
+                    session,
+                    "PAYMENT_RAZORPAY_REFUND_RECONCILED",
+                    actor_id,
+                    "order",
+                    order_id,
+                    {
+                        "razorpay_payment_id": order.razorpay_payment_id,
+                        "razorpay_refund_id": (refund_info or {}).get("id"),
+                        "refund_status": (refund_info or {}).get("status") or "processed",
+                        "amount": (refund_info or {}).get("amount"),
+                        "instant": True
+                    },
+                )
+                
+                if order.user_id:
+                    from routes.orders import _send_refund_email_background
+                    asyncio.create_task(_send_refund_email_background(str(order.id), str(order.user_id)))
             else:
                 order.payment_status = "refund_failed"
                 if str(order.order_status or "").lower() == "return_requested":
@@ -2636,24 +2617,19 @@ async def admin_item_process_refund(
         from routes.orders import trigger_razorpay_partial_refund
         success, err_msg, refund_info = await trigger_razorpay_partial_refund(order, refund_amount, db)
         if success:
-            refund_status = str((refund_info or {}).get("status") or "").lower()
-            if refund_status == "processed":
-                razorpay_refund_succeeded = True
-                refund_warning = f"Refund of ₹{refund_amount} processed instantly via Razorpay."
-                # Set the item return status to REFUND_COMPLETED
-                for item in updated_items:
-                    if str(item.get("product_id")) == product_id:
-                        item["return_status"] = "REFUND_COMPLETED"
-                        if "audit_timeline" in item:
-                            item["audit_timeline"] = [t for t in item["audit_timeline"] if t.get("status") != "REFUND_INITIATED"]
-                            item["audit_timeline"].append({
-                                "status": "REFUND_COMPLETED",
-                                "timestamp": datetime.now(timezone.utc).isoformat(),
-                                "remarks": f"Refund of ₹{refund_amount:.2f} completed instantly via Razorpay."
-                            })
-            else:
-                refund_warning = f"Refund of ₹{refund_amount} initiated via Razorpay (Pending Bank Confirmation)."
-                # Status remains REFUND_INITIATED as initialized above
+            razorpay_refund_succeeded = True
+            refund_warning = f"Refund of ₹{refund_amount} processed instantly via Razorpay."
+            # Set the item return status to REFUND_COMPLETED
+            for item in updated_items:
+                if str(item.get("product_id")) == product_id:
+                    item["return_status"] = "REFUND_COMPLETED"
+                    if "audit_timeline" in item:
+                        item["audit_timeline"] = [t for t in item["audit_timeline"] if t.get("status") != "REFUND_INITIATED"]
+                        item["audit_timeline"].append({
+                            "status": "REFUND_COMPLETED",
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "remarks": f"Refund of ₹{refund_amount:.2f} completed instantly via Razorpay."
+                        })
         else:
             refund_warning = f"Manual refund of ₹{refund_amount} required. Razorpay refund failed: {err_msg}"
     else:
@@ -2665,21 +2641,12 @@ async def admin_item_process_refund(
     
     has_active_returns = any(item.get("return_status") in ("RETURN_REQUESTED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED") for item in order.items)
     if not has_active_returns:
-        all_completed = all(item.get("return_status") == "REFUND_COMPLETED" for item in order.items if item.get("return_status"))
-        if is_manual or (razorpay_refund_succeeded and all_completed):
-            order.order_status = "refunded"
-            order.payment_status = "refunded"
-            if order.user_id:
-                from routes.orders import _send_refund_email_background
-                import asyncio
-                asyncio.create_task(_send_refund_email_background(str(order.id), str(order.user_id)))
-        else:
-            order.order_status = "return_approved"
-            order.payment_status = "refund_pending"
-            if order.user_id:
-                from routes.orders import _send_refund_initiated_email_background
-                import asyncio
-                asyncio.create_task(_send_refund_initiated_email_background(str(order.id), str(order.user_id)))
+        order.order_status = "refunded"
+        order.payment_status = "refunded"
+        if order.user_id:
+            from routes.orders import _send_refund_email_background
+            import asyncio
+            asyncio.create_task(_send_refund_email_background(str(order.id), str(order.user_id)))
         
         
     await write_audit_log(
