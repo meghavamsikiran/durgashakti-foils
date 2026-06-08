@@ -407,12 +407,12 @@ const TransactionsTab = ({ orders }) => {
                           isFailed ? 'text-slate-400' :
                           isRefundSuccess ? 'text-emerald-600' :
                           isRefundPending ? 'text-amber-600' :
-                          isSuccess ? 'text-slate-900' : 'text-amber-650'
+                          isSuccess ? 'text-slate-900' : 'text-amber-600'
                         }`}>
                           {isFailed ? <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" /> :
-                           isRefundPending ? <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" /> :
+                           isRefundPending ? <ArrowDownLeft className="w-3.5 h-3.5 text-amber-500 shrink-0" /> :
                            isRefundSuccess ? <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> :
-                           isSuccess ? <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 shrink-0" /> :
+                           isSuccess ? <ArrowUpRight className="w-3.5 h-3.5 text-rose-500 shrink-0" /> :
                            <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                           Order #{tx.order_number}
                         </div>
