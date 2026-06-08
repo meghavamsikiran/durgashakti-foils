@@ -2608,29 +2608,49 @@ async def admin_item_process_refund(
     # Process Payment Refund
     payment_method_lower = str(order.payment_method or "").lower()
     refund_warning = None
-    razorpay_refund_succeeded = False
+    refund_outcome = None # 'instant', 'pending', or 'failed'
     
     if is_manual:
-        razorpay_refund_succeeded = True  # Treat manual as successful to set payment status to refunded
+        refund_outcome = "instant"
         refund_warning = f"Manual refund of ₹{refund_amount} processed and confirmed by admin."
     elif payment_method_lower != "cod" and refund_amount > 0:
         from routes.orders import trigger_razorpay_partial_refund
         success, err_msg, refund_info = await trigger_razorpay_partial_refund(order, refund_amount, db)
         if success:
-            razorpay_refund_succeeded = True
-            refund_warning = f"Refund of ₹{refund_amount} processed instantly via Razorpay."
-            # Set the item return status to REFUND_COMPLETED
-            for item in updated_items:
-                if str(item.get("product_id")) == product_id:
-                    item["return_status"] = "REFUND_COMPLETED"
-                    if "audit_timeline" in item:
-                        item["audit_timeline"] = [t for t in item["audit_timeline"] if t.get("status") != "REFUND_INITIATED"]
-                        item["audit_timeline"].append({
-                            "status": "REFUND_COMPLETED",
-                            "timestamp": datetime.now(timezone.utc).isoformat(),
-                            "remarks": f"Refund of ₹{refund_amount:.2f} completed instantly via Razorpay."
-                        })
+            refund_status = str((refund_info or {}).get("status") or "").lower()
+            speed_processed = str((refund_info or {}).get("speed_processed") or "").lower()
+            
+            is_instant = refund_status == "processed" and speed_processed in ("optimum", "instant")
+            if is_instant:
+                refund_outcome = "instant"
+                refund_warning = f"Refund of ₹{refund_amount} processed instantly via Razorpay."
+                # Set the item return status to REFUND_COMPLETED
+                for item in updated_items:
+                    if str(item.get("product_id")) == product_id:
+                        item["return_status"] = "REFUND_COMPLETED"
+                        if "audit_timeline" in item:
+                            item["audit_timeline"] = [t for t in item["audit_timeline"] if t.get("status") != "REFUND_INITIATED"]
+                            item["audit_timeline"].append({
+                                "status": "REFUND_COMPLETED",
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                                "remarks": f"Refund of ₹{refund_amount:.2f} completed instantly via Razorpay."
+                            })
+            else:
+                refund_outcome = "pending"
+                refund_warning = f"Refund of ₹{refund_amount} initiated via Razorpay (Normal speed fallback, takes 5-7 business days)."
+                # Set the item return status to REFUND_INITIATED
+                for item in updated_items:
+                    if str(item.get("product_id")) == product_id:
+                        item["return_status"] = "REFUND_INITIATED"
+                        if "audit_timeline" in item:
+                            item["audit_timeline"] = [t for t in item["audit_timeline"] if t.get("status") != "REFUND_INITIATED"]
+                            item["audit_timeline"].append({
+                                "status": "REFUND_INITIATED",
+                                "timestamp": datetime.now(timezone.utc).isoformat(),
+                                "remarks": f"Refund of ₹{refund_amount:.2f} initiated via Razorpay (Pending Bank Confirmation)."
+                            })
         else:
+            refund_outcome = "failed"
             refund_warning = f"Manual refund of ₹{refund_amount} required. Razorpay refund failed: {err_msg}"
             # Revert item status to RETURN_RECEIVED on failure
             for item in updated_items:
@@ -2651,22 +2671,32 @@ async def admin_item_process_refund(
     order.updated_at = datetime.now(timezone.utc)
     
     has_active_returns = any(item.get("return_status") in ("RETURN_REQUESTED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED") for item in order.items)
+    has_pending_refunds = any(item.get("return_status") == "REFUND_INITIATED" for item in order.items)
+
     if not has_active_returns:
-        if is_manual or razorpay_refund_succeeded:
-            order.order_status = "refunded"
-            order.payment_status = "refunded"
+        if has_pending_refunds:
+            order.order_status = "return_approved"
+            order.payment_status = "refund_pending"
             if order.user_id:
-                from routes.orders import _send_refund_email_background
+                from routes.orders import _send_refund_initiated_email_background
                 import asyncio
-                asyncio.create_task(_send_refund_email_background(str(order.id), str(order.user_id)))
+                asyncio.create_task(_send_refund_initiated_email_background(str(order.id), str(order.user_id)))
         else:
-            order.order_status = "return_approved"
-            order.payment_status = "refund_failed"
+            if refund_outcome == "failed":
+                order.order_status = "return_approved"
+                order.payment_status = "refund_failed"
+            else:
+                order.order_status = "refunded"
+                order.payment_status = "refunded"
+                if order.user_id:
+                    from routes.orders import _send_refund_email_background
+                    import asyncio
+                    asyncio.create_task(_send_refund_email_background(str(order.id), str(order.user_id)))
     else:
-        if not (is_manual or razorpay_refund_succeeded):
-            order.order_status = "return_approved"
+        if refund_outcome == "failed":
             order.payment_status = "refund_failed"
-        
+        elif refund_outcome == "pending" or has_pending_refunds:
+            order.payment_status = "refund_pending"
         
     await write_audit_log(
         db,
