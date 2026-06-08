@@ -212,7 +212,7 @@ def _get_razorpay_client():
 
 
 async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[bool, Optional[str], Optional[dict]]:
-    """Trigger a normal-speed Razorpay refund for a prepaid captured payment."""
+    """Trigger a Razorpay refund for a prepaid captured payment. Tries instant speed first, falls back to optimum then normal."""
     if str(order.payment_method or "").lower() == "cod":
         return False, "COD orders cannot be refunded online automatically.", None
 
@@ -229,8 +229,8 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
             return True, "Mock Refund Successful", {
                 "id": f"rfnd_mock_{uuid.uuid4().hex[:12]}",
                 "status": "processed",
-                "speed_requested": "normal",
-                "speed_processed": "normal",
+                "speed_requested": "instant",
+                "speed_processed": "instant",
                 "payment_id": payment_id,
                 "amount": _expected_amount_paise(order),
             }
@@ -302,21 +302,39 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
         if remaining <= 0:
             return True, None, usable_refunds[-1] if usable_refunds else None
 
-        # ── Step 3: Create the refund ──
-        refund_resp = await asyncio.to_thread(
-            client.payment.refund,
-            payment_id,
-            {
-                "amount": remaining,
-                "speed": "normal",
-                "receipt": f"refund_{order.order_number}",
-                "notes": {
-                    "order_number": order.order_number,
-                    "reason": "Return Approved",
-                },
-            },
-        )
-        logger.info("Razorpay refund successful: %s", refund_resp)
+        # ── Step 3: Create the refund with robust speed fallback ──
+        refund_resp = None
+        last_exception = None
+        speeds_to_try = ["instant", "optimum", "normal"]
+        for speed in speeds_to_try:
+            try:
+                logger.info("Attempting Razorpay refund for order %s with speed %s", order.order_number, speed)
+                refund_resp = await asyncio.to_thread(
+                    client.payment.refund,
+                    payment_id,
+                    {
+                        "amount": remaining,
+                        "speed": speed,
+                        "receipt": f"refund_{order.order_number}",
+                        "notes": {
+                            "order_number": order.order_number,
+                            "reason": "Return Approved",
+                        },
+                    },
+                )
+                logger.info("Razorpay refund successful with speed %s: %s", speed, refund_resp)
+                break
+            except Exception as exc:
+                err_msg = str(exc).lower()
+                if "speed" in err_msg and ("invalid" in err_msg or "not supported" in err_msg):
+                    logger.warning("Refund speed %s invalid/not supported. Retrying with next speed option.", speed)
+                    last_exception = exc
+                    continue
+                else:
+                    raise exc
+        else:
+            if last_exception:
+                raise last_exception
         await write_audit_log(
             db,
             "PAYMENT_RAZORPAY_REFUND_CREATED",
@@ -339,7 +357,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
 
 
 async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: AsyncSession) -> tuple[bool, Optional[str], Optional[dict]]:
-    """Trigger a normal-speed Razorpay partial refund for a prepaid captured payment."""
+    """Trigger a Razorpay partial refund for a prepaid captured payment. Tries instant speed first, falls back to optimum then normal."""
     if str(order.payment_method or "").lower() == "cod":
         return False, "COD orders cannot be refunded online automatically.", None
 
@@ -360,8 +378,8 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
             return True, "Mock Refund Successful", {
                 "id": f"rfnd_mock_{uuid.uuid4().hex[:12]}",
                 "status": "processed",
-                "speed_requested": "normal",
-                "speed_processed": "normal",
+                "speed_requested": "instant",
+                "speed_processed": "instant",
                 "payment_id": payment_id,
                 "amount": amount_paise,
             }
@@ -389,20 +407,38 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
         if actual_refund_paise <= 0:
             return False, "The payment has already been fully refunded or no remaining balance exists.", None
 
-        refund_resp = await asyncio.to_thread(
-            client.payment.refund,
-            payment_id,
-            {
-                "amount": actual_refund_paise,
-                "speed": "normal",
-                "receipt": f"refund_{order.order_number}_{uuid.uuid4().hex[:8]}",
-                "notes": {
-                    "order_number": order.order_number,
-                    "reason": "Partial Item Return Approved",
-                },
-            },
-        )
-        logger.info("Razorpay partial refund successful: %s", refund_resp)
+        refund_resp = None
+        last_exception = None
+        speeds_to_try = ["instant", "optimum", "normal"]
+        for speed in speeds_to_try:
+            try:
+                logger.info("Attempting Razorpay partial refund for payment %s with speed %s, amount %d paise", payment_id, speed, actual_refund_paise)
+                refund_resp = await asyncio.to_thread(
+                    client.payment.refund,
+                    payment_id,
+                    {
+                        "amount": actual_refund_paise,
+                        "speed": speed,
+                        "receipt": f"refund_{order.order_number}_{uuid.uuid4().hex[:8]}",
+                        "notes": {
+                            "order_number": order.order_number,
+                            "reason": "Partial Item Return Approved",
+                        },
+                    },
+                )
+                logger.info("Razorpay partial refund successful with speed %s: %s", speed, refund_resp)
+                break
+            except Exception as exc:
+                err_msg = str(exc).lower()
+                if "speed" in err_msg and ("invalid" in err_msg or "not supported" in err_msg):
+                    logger.warning("Partial refund speed %s invalid/not supported. Retrying with next speed option.", speed)
+                    last_exception = exc
+                    continue
+                else:
+                    raise exc
+        else:
+            if last_exception:
+                raise last_exception
         return True, None, refund_resp
     except Exception as e:
         logger.exception("Failed to process Razorpay partial refund for payment %s", payment_id)
