@@ -377,7 +377,7 @@ const OrdersPage = () => {
     if (isOrderLevel) {
       const toastId = toast.loading('Confirming manual refund...');
       try {
-        setPendingActionIds(prev => new Set(prev).add(orderId));
+        setPendingActionIds(prev => new Set(prev).add(`${orderId}-REFUND_MANUAL`));
         setSubmitting(true);
         const response = await apiClient.put(`/admin/orders/${orderId}/confirm-manual-refund`);
         apiClient.invalidateCache('/admin/orders');
@@ -396,7 +396,7 @@ const OrdersPage = () => {
       } finally {
         setPendingActionIds(prev => {
           const next = new Set(prev);
-          next.delete(orderId);
+          next.delete(`${orderId}-REFUND_MANUAL`);
           return next;
         });
         setSubmitting(false);
@@ -457,7 +457,7 @@ const OrdersPage = () => {
     const previousModalOrder = selectedOrderForModal;
     const toastId = toast.loading('Updating order...');
     try {
-      setPendingActionIds(prev => new Set(prev).add(orderId));
+      setPendingActionIds(prev => new Set(prev).add(`${orderId}-${newStatus}`));
       setSubmitting(true);
       const optimisticPatch = { ...extraData };
       if (message) optimisticPatch.admin_message = message;
@@ -493,7 +493,7 @@ const OrdersPage = () => {
       activeUpdatesRef.current.delete(orderId);
       setPendingActionIds(prev => {
         const next = new Set(prev);
-        next.delete(orderId);
+        next.delete(`${orderId}-${newStatus}`);
         return next;
       });
       setSubmitting(false);
@@ -620,7 +620,7 @@ const OrdersPage = () => {
     const previousModalOrder = selectedOrderForModal;
     const toastId = toast.loading('Initiating Razorpay refund...');
     try {
-      setPendingActionIds(prev => new Set(prev).add(orderId));
+      setPendingActionIds(prev => new Set(prev).add(`${orderId}-REFUND_RETRY`));
       setSubmitting(true);
       const response = await adminService.retryRefund(orderId);
       const serverOrder = response?.data?.order;
@@ -639,7 +639,7 @@ const OrdersPage = () => {
     } finally {
       setPendingActionIds(prev => {
         const next = new Set(prev);
-        next.delete(orderId);
+        next.delete(`${orderId}-REFUND_RETRY`);
         return next;
       });
       setSubmitting(false);
@@ -649,7 +649,7 @@ const OrdersPage = () => {
   const confirmManualRefund = async (orderId) => {
     const toastId = toast.loading('Confirming manual refund...');
     try {
-      setPendingActionIds(prev => new Set(prev).add(orderId));
+      setPendingActionIds(prev => new Set(prev).add(`${orderId}-REFUND_MANUAL`));
       setSubmitting(true);
       const response = await apiClient.put(`/admin/orders/${orderId}/confirm-manual-refund`);
       apiClient.invalidateCache('/admin/orders');
@@ -667,7 +667,7 @@ const OrdersPage = () => {
     } finally {
       setPendingActionIds(prev => {
         const next = new Set(prev);
-        next.delete(orderId);
+        next.delete(`${orderId}-REFUND_MANUAL`);
         return next;
       });
       setSubmitting(false);
@@ -952,7 +952,7 @@ const OrdersPage = () => {
                 const config = statusConfigs[status] || statusConfigs.PENDING;
                 const StatusIcon = config.icon;
                 const actions = STATUS_FLOW[status] || [];
-                const isOrderPending = pendingActionIds.has(order.id);
+                const isOrderPending = [...pendingActionIds].some(id => id === order.id || id.startsWith(`${order.id}-`));
 
                 return (
                    <React.Fragment key={order.id}>
@@ -1041,6 +1041,7 @@ const OrdersPage = () => {
                               const buttons = [];
                               if (showRefundPendingButton) {
                                 if (isCod) {
+                                  const isRefundManualPending = pendingActionIds.has(`${order.id}-REFUND_MANUAL`);
                                   buttons.push(
                                     <button
                                       key="REFUND_MANUAL"
@@ -1053,10 +1054,11 @@ const OrdersPage = () => {
                                         isOrderPending ? 'opacity-60 cursor-wait' : ''
                                       } ${refundPaymentStatus === 'refund_failed' ? 'border-rose-100 text-rose-700 hover:bg-rose-50' : 'border-emerald-100 text-emerald-600 hover:bg-emerald-50'}`}
                                     >
-                                      {isOrderPending ? 'Confirming' : 'Confirm Manual Refund'}
+                                      {isRefundManualPending ? 'Confirming' : 'Confirm Manual Refund'}
                                     </button>
                                   );
                                 } else {
+                                  const isRefundRetryPending = pendingActionIds.has(`${order.id}-REFUND_RETRY`);
                                   buttons.push(
                                     <button
                                       key="REFUND_RETRY"
@@ -1067,9 +1069,9 @@ const OrdersPage = () => {
                                       }}
                                       className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
                                         isOrderPending ? 'opacity-60 cursor-wait' : ''
-                                      } border-sky-100 text-sky-600 hover:bg-sky-50`}
+                                      } border-sky-100 text-sky-650 hover:bg-sky-50`}
                                     >
-                                      {isOrderPending ? 'Retrying' : 'Retry Auto Refund'}
+                                      {isRefundRetryPending ? 'Retrying' : 'Retry Auto Refund'}
                                     </button>
                                   );
                                 }
@@ -1094,6 +1096,7 @@ const OrdersPage = () => {
                                   const label = actionLabels[a] || statusLabel(a);
                                   const paymentStatusValue = String(order.payment_status || '').toLowerCase();
                                   const isDeliverWithCOD = a === 'DELIVERED' && String(order.payment_method || '').toLowerCase() === 'cod' && !['paid', 'completed', 'cash on delivery'].includes(paymentStatusValue);
+                                  const isThisActionPending = pendingActionIds.has(`${order.id}-${a}`);
 
                                   buttons.push(
                                     <button
@@ -1127,7 +1130,7 @@ const OrdersPage = () => {
                                           : 'border-primary/20 text-primary hover:bg-primary/10'
                                       }`}
                                     >
-                                      {isOrderPending ? 'Updating' : (isDeliverWithCOD ? 'Deliver & Mark Paid' : label)}
+                                      {isThisActionPending ? 'Updating' : (isDeliverWithCOD ? 'Deliver & Mark Paid' : label)}
                                     </button>
                                   );
                                 });

@@ -325,9 +325,8 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
                 logger.info("Razorpay refund successful with speed %s: %s", speed, refund_resp)
                 break
             except Exception as exc:
-                err_msg = str(exc).lower()
-                if "speed" in err_msg and ("invalid" in err_msg or "not supported" in err_msg):
-                    logger.warning("Refund speed %s invalid/not supported. Retrying with next speed option.", speed)
+                if speed == "optimum":
+                    logger.warning("Refund speed 'optimum' failed: %s. Retrying with 'normal' speed.", exc)
                     last_exception = exc
                     continue
                 else:
@@ -429,9 +428,8 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
                 logger.info("Razorpay partial refund successful with speed %s: %s", speed, refund_resp)
                 break
             except Exception as exc:
-                err_msg = str(exc).lower()
-                if "speed" in err_msg and ("invalid" in err_msg or "not supported" in err_msg):
-                    logger.warning("Partial refund speed %s invalid/not supported. Retrying with next speed option.", speed)
+                if speed == "optimum":
+                    logger.warning("Partial refund speed 'optimum' failed: %s. Retrying with 'normal' speed.", exc)
                     last_exception = exc
                     continue
                 else:
