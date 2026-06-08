@@ -2457,7 +2457,7 @@ async def admin_item_return_action(
                             "order"
                         )
                         subj, body = exchange_approved_email(cust.full_name or cust.email, order.order_number)
-                        await send_email(cust.email, subj, body)
+                        asyncio.create_task(send_email(cust.email, subj, body))
                     else:
                         has_return_request = any(item.get("return_status") for item in (order.items or []))
                         items_to_sum = (order.items or []) if not has_return_request else [
@@ -2481,7 +2481,7 @@ async def admin_item_return_action(
                         
                         # Send professional email explaining the 5-7 business days timeline
                         subj, body = return_approved_email(cust.full_name or cust.email, order.order_number, total_refund_amount)
-                        await send_email(cust.email, subj, body)
+                        asyncio.create_task(send_email(cust.email, subj, body))
                 else:
                     if is_exchange:
                         await create_notification(
@@ -2492,7 +2492,7 @@ async def admin_item_return_action(
                             "order"
                         )
                         subj, body = exchange_rejected_email(cust.full_name or cust.email, order.order_number, payload.remarks or "")
-                        await send_email(cust.email, subj, body)
+                        asyncio.create_task(send_email(cust.email, subj, body))
                     else:
                         await create_notification(
                             db,
@@ -2502,7 +2502,7 @@ async def admin_item_return_action(
                             "order"
                         )
                         subj, body = return_rejected_email(cust.full_name or cust.email, order.order_number, payload.remarks or "")
-                        await send_email(cust.email, subj, body)
+                        asyncio.create_task(send_email(cust.email, subj, body))
         except Exception:
             logger.exception("Failed to send return action email/notification")
 
@@ -2822,7 +2822,7 @@ async def admin_item_ship_exchange(
                     "order"
                 )
                 subj, body = exchange_shipped_email(cust.full_name or cust.email, order.order_number, payload.exchange_courier_name, payload.exchange_tracking_number)
-                await send_email(cust.email, subj, body)
+                asyncio.create_task(send_email(cust.email, subj, body))
         except Exception:
             logger.exception("Failed to send exchange shipped email/notification")
 

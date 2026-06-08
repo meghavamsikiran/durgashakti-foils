@@ -1358,7 +1358,7 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
                     "currency": "INR",
                     "receipt": f"receipt_{order_number}"
                 }
-                rz_order = client.order.create(data=data)
+                rz_order = await asyncio.to_thread(client.order.create, data=data)
                 razorpay_order_id = rz_order["id"]
         except Exception as e:
             logger.warning(f"Failed to create Razorpay order: {e}. Falling back to mock order ID.")

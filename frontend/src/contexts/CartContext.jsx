@@ -64,18 +64,19 @@ export const CartProvider = ({ children }) => {
     setPendingQtyState(prev => ({ ...prev, [productId]: qty }));
   }, []);
 
-  const fetchCart = useCallback(async () => {
+  const fetchCart = useCallback(async (force = false) => {
     if (!token) {
       setCartReady(true);
       setLoading(false);
       return;
     }
+    if (activeRequestsCount.current > 0 && !force) {
+      return;
+    }
     setLoading(true);
     try {
-
       const response = await apiClient.get('/cart');
-      // Ignore background fetch responses if there are active, newer local state updates in progress
-      if (activeRequestsCount.current === 0) {
+      if (activeRequestsCount.current === 0 || force) {
         setCart(response.data || { items: [] });
       }
     } catch (error) {
@@ -135,23 +136,22 @@ export const CartProvider = ({ children }) => {
 
     if (!token) return;
 
+    activeRequestsCount.current += 1;
     return enqueue(async () => {
-      activeRequestsCount.current += 1;
       setLoading(true);
       try {
         await apiClient.post('/cart/add', { product_id: productId, quantity });
         apiClient.invalidateCache('/cart');
-        activeRequestsCount.current -= 1;
         // Clear pending preview for this product once it's in cart
         setPendingQtyState(prev => { const n = { ...prev }; delete n[productId]; return n; });
-        await fetchCart();
       } catch (error) {
-        activeRequestsCount.current -= 1;
         if (rollbackCart) {
           setCart(rollbackCart);
         }
         throw error;
       } finally {
+        activeRequestsCount.current -= 1;
+        await fetchCart();
         setLoading(false);
       }
     });
@@ -174,21 +174,20 @@ export const CartProvider = ({ children }) => {
 
     if (!token) return;
 
+    activeRequestsCount.current += 1;
     return enqueue(async () => {
-      activeRequestsCount.current += 1;
       setLoading(true);
       try {
         await apiClient.put('/cart/update', { product_id: productId, quantity });
         apiClient.invalidateCache('/cart');
-        activeRequestsCount.current -= 1;
-        await fetchCart();
       } catch (error) {
-        activeRequestsCount.current -= 1;
         if (rollbackCart) {
           setCart(rollbackCart);
         }
         throw error;
       } finally {
+        activeRequestsCount.current -= 1;
+        await fetchCart();
         setLoading(false);
       }
     });
@@ -209,21 +208,20 @@ export const CartProvider = ({ children }) => {
 
     if (!token) return;
 
+    activeRequestsCount.current += 1;
     return enqueue(async () => {
-      activeRequestsCount.current += 1;
       setLoading(true);
       try {
         await apiClient.delete(`/cart/remove/${productId}`);
         apiClient.invalidateCache('/cart');
-        activeRequestsCount.current -= 1;
-        await fetchCart();
       } catch (error) {
-        activeRequestsCount.current -= 1;
         if (rollbackCart) {
           setCart(rollbackCart);
         }
         throw error;
       } finally {
+        activeRequestsCount.current -= 1;
+        await fetchCart();
         setLoading(false);
       }
     });

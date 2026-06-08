@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star, Clock } from 'lucide-react';
+import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star, Clock, Copy } from 'lucide-react';
 import { Button } from './../components/ui/button';
 import { formatImageUrl } from './../utils/api';
 import { useProgress } from './../components/ui/ProgressToast';
@@ -11,6 +11,7 @@ import PageLoader from './../components/ui/PageLoader';
 import { useCart } from './../contexts/CartContext';
 
 const PENDING_RAZORPAY_ORDER_KEY = 'pending_razorpay_order';
+const COURIER_OPTIONS = ["BlueDart", "DTDC", "Delhivery", "India Post", "Ecom Express", "XpressBees", "Shadowfax", "Ekart Logistics", "DHL", "Professional Couriers", "Other"];
 const isPaidPaymentStatus = (status) => ['paid', 'completed'].includes((status || '').toLowerCase());
 const isRefundPaymentStatus = (status) => ['refund_pending', 'refund_failed', 'refunded'].includes((status || '').toLowerCase());
 const isOnlinePaymentPendingOrder = (orderData) => {
@@ -649,7 +650,19 @@ const OrderDetailsPage = () => {
             <p className="text-xs font-semibold text-slate-500 mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
               <span>Order placed {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
               <span className="text-slate-300 font-normal">|</span>
-              <span>Order number {order.order_number}</span>
+              <span className="flex items-center gap-1.5">
+                Order number {order.order_number}
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(order.order_number);
+                    toast.success('Order number copied!');
+                  }}
+                  className="p-1 text-slate-400 hover:text-slate-650 transition-colors inline-flex items-center"
+                  title="Copy Order Number"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </span>
             </p>
           </div>
           
@@ -1334,9 +1347,10 @@ const OrderDetailsPage = () => {
                         navigator.clipboard.writeText(order.tracking_number || order.tracking_id);
                         toast.success('Tracking number copied!');
                       }}
-                      className="text-[9px] font-black uppercase text-primary border border-primary/20 bg-white hover:bg-primary/5 px-2 py-0.5 rounded-md shadow-sm transition-all"
+                      className="p-1 text-slate-400 hover:text-slate-655 transition-colors inline-flex items-center"
+                      title="Copy Tracking Number"
                     >
-                      Copy
+                      <Copy className="w-3.5 h-3.5" />
                     </button>
                   </p>
                   {order.expected_delivery_date && (
@@ -1481,7 +1495,7 @@ const OrderDetailsPage = () => {
                         {item.return_reason && (
                           <p className="text-[10px] text-slate-600 font-medium">Reason: <span className="font-bold">{item.return_reason}</span></p>
                         )}
-                        {item.refund_calculations && (() => {
+                        {item.return_type !== 'exchange' && item.refund_calculations && (() => {
                           const prodRefund = Number(item.refund_calculations.refundable_amount || 0);
                           const courierRefund = Number(item.self_shipping_details?.courier_cost || 0);
                           const isRefunded = ['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(item.return_status);
@@ -1504,8 +1518,22 @@ const OrderDetailsPage = () => {
                         {item.self_shipping_details && (
                           <div className="text-[10px] text-slate-500 space-y-1.5 font-semibold">
                             <div>
-                              <p>Courier: <span className="font-extrabold text-slate-800">{item.self_shipping_details.courier_name}</span></p>
-                              <p>Tracking: <span className="font-mono text-slate-800">{item.self_shipping_details.tracking_number}</span></p>
+                               <p className="flex items-center gap-1.5">
+                                Courier: <span className="font-extrabold text-slate-800">{item.self_shipping_details.courier_name}</span>
+                              </p>
+                              <p className="flex items-center gap-1.5">
+                                Tracking: <span className="font-mono text-slate-800 font-extrabold">{item.self_shipping_details.tracking_number}</span>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(item.self_shipping_details.tracking_number);
+                                    toast.success('Tracking number copied!');
+                                  }}
+                                  className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors inline-flex items-center"
+                                  title="Copy Tracking Number"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                              </p>
                               {item.self_shipping_details.courier_cost > 0 && <p>Courier Cost: <span className="font-bold text-slate-850">₹{item.self_shipping_details.courier_cost}</span></p>}
                             </div>
                             <div className="pt-1.5 border-t border-slate-100 flex flex-wrap gap-2">
@@ -1541,9 +1569,10 @@ const OrderDetailsPage = () => {
                                     navigator.clipboard.writeText(item.exchange_shipping_details.exchange_tracking_number);
                                     toast.success('Tracking number copied!');
                                   }}
-                                  className="text-[8px] font-black uppercase text-primary border border-primary/20 bg-white hover:bg-primary/5 px-2 py-0.5 rounded-md shadow-sm transition-all"
+                                  className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors inline-flex items-center"
+                                  title="Copy Tracking Number"
                                 >
-                                  Copy
+                                  <Copy className="w-3.5 h-3.5" />
                                 </button>
                               </p>
                               {item.exchange_shipping_details.exchange_expected_delivery_date && (
@@ -1712,14 +1741,34 @@ const OrderDetailsPage = () => {
               <form onSubmit={handleSubmitSelfShip} className="space-y-4">
                 <div className="space-y-1">
                   <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Courier / Carrier Name *</label>
-                  <input
-                    type="text"
+                  <select
                     required
-                    placeholder="e.g. BlueDart, DTDC, India Post"
-                    value={courierName}
-                    onChange={(e) => setCourierName(e.target.value)}
+                    value={COURIER_OPTIONS.includes(courierName) ? courierName : (courierName ? 'Other' : '')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'Other') {
+                        setCourierName('');
+                      } else {
+                        setCourierName(val);
+                      }
+                    }}
                     className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                  />
+                  >
+                    <option value="">Select Courier</option>
+                    {COURIER_OPTIONS.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                  {(!COURIER_OPTIONS.includes(courierName) || courierName === 'Other') && (
+                    <input
+                      type="text"
+                      required
+                      placeholder="Enter custom courier name"
+                      value={courierName}
+                      onChange={(e) => setCourierName(e.target.value)}
+                      className="w-full h-11 mt-2 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-1">

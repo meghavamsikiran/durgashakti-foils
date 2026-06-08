@@ -11,6 +11,8 @@ import PageLoader from '../../components/ui/PageLoader';
 import { useAuth } from '../../contexts/AuthContext';
 import { formatImageUrl } from '../../utils/api';
 
+const COURIER_OPTIONS = ["BlueDart", "DTDC", "Delhivery", "India Post", "Ecom Express", "XpressBees", "Shadowfax", "Ekart Logistics", "DHL", "Professional Couriers", "Other"];
+
 const STATUS_LABELS = {
   PENDING_PAYMENT: 'Payment Pending',
   PENDING: 'Placed',
@@ -171,6 +173,12 @@ const AdminOrderDetailsPage = () => {
   }, [order, fetchOrderDetails]);
 
   const handleItemReturnAction = async (orderId, productId, action, remarks = '') => {
+    const actionKey = `${productId}-${action}`;
+    setPendingActionIds(prev => {
+      const next = new Set(prev);
+      next.add(actionKey);
+      return next;
+    });
     const toastId = toast.loading(`${action === 'approve' ? 'Approving' : 'Rejecting'} item return...`);
     try {
       const response = await apiClient.post(`/admin/orders/${orderId}/items/${productId}/return-action`, { action, remarks });
@@ -185,10 +193,22 @@ const AdminOrderDetailsPage = () => {
       setTimeout(() => fetchOrderDetails(true), 800);
     } catch (err) {
       toast.error(err?.response?.data?.detail || `Failed to process item return ${action}`, { id: toastId });
+    } finally {
+      setPendingActionIds(prev => {
+        const next = new Set(prev);
+        next.delete(actionKey);
+        return next;
+      });
     }
   };
 
   const handleItemReceive = async (orderId, productId) => {
+    const actionKey = `${productId}-receive`;
+    setPendingActionIds(prev => {
+      const next = new Set(prev);
+      next.add(actionKey);
+      return next;
+    });
     const toastId = toast.loading('Marking item as received...');
     try {
       const response = await apiClient.post(`/admin/orders/${orderId}/items/${productId}/receive`);
@@ -201,10 +221,22 @@ const AdminOrderDetailsPage = () => {
       setTimeout(() => fetchOrderDetails(true), 800);
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to mark item as received', { id: toastId });
+    } finally {
+      setPendingActionIds(prev => {
+        const next = new Set(prev);
+        next.delete(actionKey);
+        return next;
+      });
     }
   };
 
   const handleItemProcessRefund = async (orderId, productId, restock = true) => {
+    const actionKey = `${productId}-refund`;
+    setPendingActionIds(prev => {
+      const next = new Set(prev);
+      next.add(actionKey);
+      return next;
+    });
     const toastId = toast.loading('Processing refund...');
     try {
       const response = await apiClient.post(`/admin/orders/${orderId}/items/${productId}/process-refund?restock=${restock}`);
@@ -221,8 +253,22 @@ const AdminOrderDetailsPage = () => {
       setTimeout(() => fetchOrderDetails(true), 800);
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to process refund', { id: toastId });
+    } finally {
+      setPendingActionIds(prev => {
+        const next = new Set(prev);
+        next.delete(actionKey);
+        return next;
+      });
     }
-  };  const handleItemCompleteExchange = async (orderId, productId) => {
+  };
+
+  const handleItemCompleteExchange = async (orderId, productId) => {
+    const actionKey = `${productId}-complete-exchange`;
+    setPendingActionIds(prev => {
+      const next = new Set(prev);
+      next.add(actionKey);
+      return next;
+    });
     const toastId = toast.loading('Completing exchange...');
     try {
       const response = await apiClient.post(`/admin/orders/${orderId}/items/${productId}/complete-exchange`);
@@ -235,6 +281,12 @@ const AdminOrderDetailsPage = () => {
       setTimeout(() => fetchOrderDetails(true), 800);
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to complete exchange', { id: toastId });
+    } finally {
+      setPendingActionIds(prev => {
+        const next = new Set(prev);
+        next.delete(actionKey);
+        return next;
+      });
     }
   };
 
@@ -871,7 +923,7 @@ const AdminOrderDetailsPage = () => {
                           </span>
                         </div>
 
-                        {item.refund_calculations && (() => {
+                        {item.return_type !== 'exchange' && item.refund_calculations && (() => {
                           const prodRefund = Number(item.refund_calculations.refundable_amount || 0);
                           const courierRefund = Number(item.self_shipping_details?.courier_cost || 0);
                           const isRefunded = ['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(item.return_status);
@@ -942,13 +994,39 @@ const AdminOrderDetailsPage = () => {
                           <div className="text-[10px] text-sky-800 font-extrabold bg-sky-50 p-3 rounded-xl border border-sky-105 flex flex-col gap-1.5">
                             <p className="uppercase tracking-wider font-black">Exchange Shipping Details</p>
                             <p className="font-semibold text-slate-600">Courier: <span className="font-bold">{item.exchange_shipping_details.exchange_courier_name}</span></p>
-                            <p className="font-semibold text-slate-600">Tracking Number: <span className="font-mono font-bold">{item.exchange_shipping_details.exchange_tracking_number}</span></p>
+                            <p className="font-semibold text-slate-600 flex items-center gap-1.5">Tracking Number: <span className="font-mono font-bold">{item.exchange_shipping_details.exchange_tracking_number}</span>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(item.exchange_shipping_details.exchange_tracking_number);
+                                  toast.success('Tracking number copied!');
+                                }}
+                                className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors inline-flex items-center"
+                                title="Copy Tracking Number"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            </p>
                             {item.exchange_shipping_details.exchange_expected_delivery_date && (
                               <p className="font-semibold text-slate-600">Expected Delivery: <span className="font-bold">{item.exchange_shipping_details.exchange_expected_delivery_date}</span></p>
                             )}
                             {item.exchange_shipping_details.exchange_shipment_notes && (
                               <p className="text-[9px] text-slate-500 italic">Notes: {item.exchange_shipping_details.exchange_shipment_notes}</p>
                             )}
+                            {(() => {
+                              const trackingNum = item.exchange_shipping_details.exchange_tracking_number;
+                              const cleanNum = trackingNum ? String(trackingNum).trim() : '';
+                              const trackUrl = cleanNum ? `https://t.17track.net/en#nums=${cleanNum}` : '';
+                              return trackUrl && (
+                                <a
+                                  href={trackUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 bg-sky-600 hover:bg-sky-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-sm w-fit"
+                                >
+                                  Track Exchange Shipment
+                                </a>
+                              );
+                            })()}
                           </div>
                         )}
 
@@ -987,9 +1065,10 @@ const AdminOrderDetailsPage = () => {
                           {item.return_status === 'SELF_SHIPPED' && (
                              <button
                                onClick={() => handleItemReceive(order.id, item.product_id)}
-                               className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
+                               disabled={pendingActionIds.has(`${item.product_id}-receive`)}
+                               className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all disabled:opacity-50"
                              >
-                               Mark Received
+                               {pendingActionIds.has(`${item.product_id}-receive`) ? 'Processing...' : 'Mark Received'}
                              </button>
                            )}
 
@@ -1000,9 +1079,10 @@ const AdminOrderDetailsPage = () => {
                                    handleItemProcessRefund(order.id, item.product_id, true);
                                  }
                                }}
-                               className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-emerald-glow"
+                               disabled={pendingActionIds.has(`${item.product_id}-refund`)}
+                               className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-emerald-glow disabled:opacity-50"
                              >
-                               Process Refund & Restock
+                               {pendingActionIds.has(`${item.product_id}-refund`) ? 'Refunding...' : 'Process Refund & Restock'}
                              </button>
                            )}
 
@@ -1027,9 +1107,10 @@ const AdminOrderDetailsPage = () => {
                                    handleItemCompleteExchange(order.id, item.product_id);
                                  }
                                }}
-                               className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md"
+                               disabled={pendingActionIds.has(`${item.product_id}-complete-exchange`)}
+                               className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md disabled:opacity-50"
                              >
-                               Complete Exchange
+                               {pendingActionIds.has(`${item.product_id}-complete-exchange`) ? 'Completing...' : 'Complete Exchange'}
                              </button>
                            )}
                         </div>
@@ -1320,10 +1401,10 @@ const AdminOrderDetailsPage = () => {
                     updateStatus(messageModal.orderId, messageModal.status, adminMessage);
                   }
                 }}
-                disabled={!adminMessage.trim()}
+                disabled={!adminMessage.trim() || (messageModal.action && pendingActionIds.has(`${messageModal.productId}-${messageModal.action}`))}
                 className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow disabled:opacity-50 transition-all"
               >
-                Confirm
+                {messageModal.action && pendingActionIds.has(`${messageModal.productId}-${messageModal.action}`) ? 'Processing...' : 'Confirm'}
               </button>
             </div>
           </div>
@@ -1476,14 +1557,34 @@ const AdminOrderDetailsPage = () => {
             <form onSubmit={handleShipExchangeSubmit} className="space-y-4">
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Courier / Carrier Name *</label>
-                <input
-                  type="text"
+                <select
                   required
-                  placeholder="e.g. BlueDart, DTDC, Delhivery"
-                  value={exCourierName}
-                  onChange={(e) => setExCourierName(e.target.value)}
+                  value={COURIER_OPTIONS.includes(exCourierName) ? exCourierName : (exCourierName ? 'Other' : '')}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'Other') {
+                      setExCourierName('');
+                    } else {
+                      setExCourierName(val);
+                    }
+                  }}
                   className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                />
+                >
+                  <option value="">Select Courier</option>
+                  {COURIER_OPTIONS.map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+                {(!COURIER_OPTIONS.includes(exCourierName) || exCourierName === 'Other') && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter custom courier name"
+                    value={exCourierName}
+                    onChange={(e) => setExCourierName(e.target.value)}
+                    className="w-full h-11 mt-2 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  />
+                )}
               </div>
 
               <div className="space-y-1">

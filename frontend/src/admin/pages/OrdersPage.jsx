@@ -501,6 +501,12 @@ const OrdersPage = () => {
   };
 
   const handleItemReturnAction = async (orderId, productId, action, remarks = '') => {
+    const actionKey = `${productId}-${action}`;
+    setPendingActionIds(prev => {
+      const next = new Set(prev);
+      next.add(actionKey);
+      return next;
+    });
     const toastId = toast.loading(`${action === 'approve' ? 'Approving' : 'Rejecting'} item return...`);
     try {
       const response = await apiClient.post(`/admin/orders/${orderId}/items/${productId}/return-action`, { action, remarks });
@@ -517,10 +523,22 @@ const OrdersPage = () => {
       setTimeout(() => loadSilent(page), 800);
     } catch (err) {
       toast.error(err?.response?.data?.detail || `Failed to process item return ${action}`, { id: toastId });
+    } finally {
+      setPendingActionIds(prev => {
+        const next = new Set(prev);
+        next.delete(actionKey);
+        return next;
+      });
     }
   };
 
   const handleItemReceive = async (orderId, productId) => {
+    const actionKey = `${productId}-receive`;
+    setPendingActionIds(prev => {
+      const next = new Set(prev);
+      next.add(actionKey);
+      return next;
+    });
     const toastId = toast.loading('Marking item as received...');
     try {
       const response = await apiClient.post(`/admin/orders/${orderId}/items/${productId}/receive`);
@@ -535,6 +553,12 @@ const OrdersPage = () => {
       setTimeout(() => loadSilent(page), 800);
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to mark item as received', { id: toastId });
+    } finally {
+      setPendingActionIds(prev => {
+        const next = new Set(prev);
+        next.delete(actionKey);
+        return next;
+      });
     }
   };
 
@@ -594,6 +618,12 @@ const OrdersPage = () => {
   };
 
   const handleItemProcessRefund = async (orderId, productId, restock = true) => {
+    const actionKey = `${productId}-refund`;
+    setPendingActionIds(prev => {
+      const next = new Set(prev);
+      next.add(actionKey);
+      return next;
+    });
     const toastId = toast.loading('Processing refund...');
     try {
       const response = await apiClient.post(`/admin/orders/${orderId}/items/${productId}/process-refund?restock=${restock}`);
@@ -612,6 +642,12 @@ const OrdersPage = () => {
       setTimeout(() => loadSilent(page), 800);
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to process refund', { id: toastId });
+    } finally {
+      setPendingActionIds(prev => {
+        const next = new Set(prev);
+        next.delete(actionKey);
+        return next;
+      });
     }
   };
 
@@ -1230,10 +1266,10 @@ const OrdersPage = () => {
                     updateStatus(messageModal.orderId, messageModal.status, adminMessage);
                   }
                 }}
-                disabled={!adminMessage.trim()}
+                disabled={!adminMessage.trim() || (messageModal.action && pendingActionIds.has(`${messageModal.productId}-${messageModal.action}`))}
                 className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow disabled:opacity-50 transition-all"
               >
-                Confirm
+                {messageModal.action && pendingActionIds.has(`${messageModal.productId}-${messageModal.action}`) ? 'Processing...' : 'Confirm'}
               </button>
             </div>
           </div>
@@ -2015,9 +2051,10 @@ const OrdersPage = () => {
                               {item.return_status === 'SELF_SHIPPED' && (
                                  <button
                                    onClick={() => handleItemReceive(selectedOrderForModal.id, item.product_id)}
-                                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
+                                   disabled={pendingActionIds.has(`${item.product_id}-receive`)}
+                                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all disabled:opacity-50"
                                  >
-                                   Mark Received
+                                   {pendingActionIds.has(`${item.product_id}-receive`) ? 'Processing...' : 'Mark Received'}
                                  </button>
                                )}
 
@@ -2028,9 +2065,10 @@ const OrdersPage = () => {
                                        handleItemProcessRefund(selectedOrderForModal.id, item.product_id, true);
                                      }
                                    }}
-                                   className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-emerald-glow"
+                                   disabled={pendingActionIds.has(`${item.product_id}-refund`)}
+                                   className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-emerald-glow disabled:opacity-50"
                                  >
-                                   Process Refund & Restock
+                                   {pendingActionIds.has(`${item.product_id}-refund`) ? 'Refunding...' : 'Process Refund & Restock'}
                                  </button>
                                )}
                             </div>

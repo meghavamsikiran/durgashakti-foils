@@ -80,7 +80,7 @@ const adminService = {
 
   // Orders
   getOrders: async (params) => {
-    const response = await cachedGet('/admin/orders', { params });
+    const response = await apiClient.get('/admin/orders', { params });
     const items = (response.data.items || []).map((order) => ({
       ...order,
       status: (order.order_status || '').toUpperCase(),
