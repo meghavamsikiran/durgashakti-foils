@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CreditCard, ArrowUpRight, ArrowDownLeft, Search, Filter, ChevronDown } from 'lucide-react';
+import { 
+  CreditCard, ArrowUpRight, ArrowDownLeft, Search, Filter, 
+  ChevronDown, Calendar, XCircle, Clock, IndianRupee, CheckCircle2, AlertCircle
+} from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import TablePagination from '../../../components/ui/TablePagination';
 
@@ -65,6 +68,7 @@ const TransactionsTab = ({ orders }) => {
 
   const methodOptions = [
     { value: 'all', label: 'All Methods' },
+    { value: 'online', label: 'Online Payment' },
     { value: 'cod', label: 'Cash On Delivery (COD)' },
   ];
   const statusOptions = [
@@ -110,6 +114,8 @@ const TransactionsTab = ({ orders }) => {
       const methodStr = (tx.method || '').toLowerCase();
       if (methodFilter === 'cod') {
         matchesMethod = methodStr.includes('cod') || methodStr.includes('cash');
+      } else if (methodFilter === 'online') {
+        matchesMethod = methodStr.includes('online') || methodStr.includes('razorpay');
       }
     }
 
@@ -167,12 +173,75 @@ const TransactionsTab = ({ orders }) => {
     currentPage * PAGE_SIZE
   );
 
+  const stats = {
+    totalSpent: transactions
+      .filter(tx => ['paid', 'completed', 'success'].includes(String(tx.status || '').toLowerCase()))
+      .reduce((sum, tx) => sum + Number(tx.amount || 0), 0),
+    pendingAmount: transactions
+      .filter(tx => ['pending', 'unpaid', 'processing', 'pending_payment'].includes(String(tx.status || '').toLowerCase()))
+      .reduce((sum, tx) => sum + Number(tx.amount || 0), 0),
+    successCount: transactions
+      .filter(tx => ['paid', 'completed', 'success'].includes(String(tx.status || '').toLowerCase()))
+      .length,
+    refundedAmount: transactions
+      .filter(tx => ['refunded', 'refund initiated', 'refund_initiated', 'refund credited', 'refund_credited', 'failed'].includes(String(tx.status || '').toLowerCase()))
+      .reduce((sum, tx) => sum + Number(tx.amount || 0), 0),
+  };
+
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl md:text-3xl font-black text-foreground uppercase tracking-tighter">Transaction History</h2>
-        <CreditCard className="w-8 h-8 text-muted-foreground/30" />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-200">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2">
+            <CreditCard className="w-6 h-6 text-primary" />
+            Personal Ledger
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5 font-medium">Track your payments, refunds, and order clearances.</p>
+        </div>
+        <CreditCard className="w-8 h-8 text-muted-foreground/30 hidden lg:block" />
       </div>
+
+      {/* Stats Cards Section */}
+      {transactions.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white py-3 px-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
+              <IndianRupee className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Spent</div>
+              <div className="text-lg font-extrabold text-slate-900 leading-none mt-1">₹{stats.totalSpent.toLocaleString('en-IN')}</div>
+            </div>
+          </div>
+          <div className="bg-white py-3 px-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pending</div>
+              <div className="text-lg font-extrabold text-slate-900 leading-none mt-1">₹{stats.pendingAmount.toLocaleString('en-IN')}</div>
+            </div>
+          </div>
+          <div className="bg-white py-3 px-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Payments Done</div>
+              <div className="text-lg font-extrabold text-slate-900 leading-none mt-1">{stats.successCount}</div>
+            </div>
+          </div>
+          <div className="bg-white py-3 px-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+            <div className="w-9 h-9 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Refunds & Failed</div>
+              <div className="text-lg font-extrabold text-slate-900 leading-none mt-1">₹{stats.refundedAmount.toLocaleString('en-IN')}</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {transactions.length > 0 && (
         <div className="flex gap-3">
@@ -310,48 +379,80 @@ const TransactionsTab = ({ orders }) => {
           <p className="text-muted-foreground/60 text-xs mt-1">Try refining your search terms</p>
         </div>
       ) : (
-        <div className="bg-surface-container-lowest rounded-xl border border-border-subtle shadow-sm overflow-hidden">
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-slate-50/80 text-slate-500 border-b border-border-subtle/50">
-                  <th className="px-5 py-3.5 text-[11px] font-bold tracking-wider uppercase min-w-[300px]">Transaction</th>
-                  <th className="px-5 py-3.5 text-[11px] font-bold tracking-wider uppercase">Date</th>
-                  <th className="px-5 py-3.5 text-[11px] font-bold tracking-wider uppercase">Method</th>
-                  <th className="px-5 py-3.5 text-[11px] font-bold tracking-wider uppercase">Status</th>
-                  <th className="px-5 py-3.5 text-right text-[11px] font-bold tracking-wider uppercase">Amount</th>
+                <tr className="bg-slate-50/85 text-slate-500 border-b border-slate-200">
+                  <th className="px-6 py-5 text-[11px] font-black tracking-wider uppercase min-w-[220px]">Reference Code</th>
+                  <th className="px-6 py-5 text-[11px] font-black tracking-wider uppercase">Transaction ID</th>
+                  <th className="px-6 py-5 text-[11px] font-black tracking-wider uppercase text-center w-[120px]">Method</th>
+                  <th className="px-6 py-5 text-[11px] font-black tracking-wider uppercase text-center w-[140px]">Status</th>
+                  <th className="px-6 py-5 text-right text-[11px] font-black tracking-wider uppercase w-[150px]">Amount</th>
+                  <th className="px-6 py-5 text-right text-[11px] font-black tracking-wider uppercase w-[180px]">Stamp</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-subtle">
-                {paginatedTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-surface-container-low transition-colors group">
-                    <td className="px-5 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${tx.type === 'debit' ? 'bg-primary/10 text-primary' : 'bg-emerald-50 text-emerald-600'}`}>
-                          {tx.type === 'debit' ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownLeft className="w-5 h-5" />}
+              <tbody className="divide-y divide-slate-50">
+                {paginatedTransactions.map((tx) => {
+                  const statusLower = String(tx.status || '').toLowerCase();
+                  const isRefund = statusLower.includes('refund') || statusLower.includes('failed');
+                  const isPending = statusLower.includes('pending') || statusLower.includes('initiated');
+                  const isSuccess = statusLower.includes('completed') || statusLower.includes('paid') || statusLower.includes('success');
+
+                  return (
+                    <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-6 py-5">
+                        <div className={`text-xs font-black flex items-center gap-1.5 ${
+                          isRefund ? 'text-rose-600' :
+                          isPending ? 'text-amber-600' : 'text-emerald-600'
+                        }`}>
+                          {isRefund ? <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" /> :
+                           isPending ? <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" /> :
+                           <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                          Order #{tx.order_number}
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-foreground text-sm font-mono">Order #{tx.order_number}</p>
-                          <p className="text-[10px] font-mono text-muted-foreground uppercase break-all leading-relaxed">
-                            TXN ID: {tx.transaction_id}
-                          </p>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="text-xs font-mono font-bold text-slate-700 uppercase tracking-wider bg-slate-100 px-2 py-1.5 rounded inline-block whitespace-normal break-all">
+                          {tx.transaction_id || 'INTERNAL_RECON'}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-5 text-sm font-mono text-muted-foreground whitespace-nowrap">
-                      {new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </td>
-                    <td className="px-5 py-5 text-sm font-bold text-foreground uppercase tracking-tight whitespace-nowrap">{tx.method}</td>
-                    <td className="px-5 py-5">
-                      <span className={`px-2.5 py-1 rounded-sm text-[10px] font-mono tracking-wider font-semibold ${['completed', 'paid'].includes(tx.status?.toLowerCase()) ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-                        {tx.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-5 text-right whitespace-nowrap">
-                      <span className="text-lg font-black text-foreground font-mono">&#8377;{Number(tx.amount || 0).toLocaleString()}</span>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-5 text-center">
+                        <span className="px-2.5 py-0.5 rounded-full bg-slate-50 text-slate-650 border border-slate-200/60 text-[9px] font-black uppercase tracking-wider">
+                          {String(tx.method || 'Gateway').toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5 text-center">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                          isSuccess ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
+                          isRefund ? 'bg-rose-50 text-rose-600 border border-rose-100' : 
+                          'bg-amber-50 text-amber-600 border border-amber-100'
+                        }`}>
+                          {tx.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5 text-right">
+                        <div className={`text-sm font-black ${
+                          isRefund ? 'text-rose-600' : 'text-slate-900'
+                        }`}>
+                          {isRefund ? '-' : ''}₹{Number(tx.amount || 0).toLocaleString('en-IN')}
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 text-right">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-end gap-1.5">
+                          <Calendar className="w-3 h-3" />
+                          {tx.date ? new Date(tx.date).toLocaleDateString('en-IN', { 
+                            day: '2-digit', 
+                            month: 'short', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : '—'}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
