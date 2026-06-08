@@ -140,9 +140,24 @@ export const useCheckout = () => {
       const data = await addressService.getAddresses();
       setSavedAddresses(data);
       setSelectedAddressId(prev => {
-        if (prev && data.some(a => a.id === prev)) return prev;
+        const activeId = (prev && data.some(a => a.id === prev)) ? prev : null;
         const def = data.find(a => a.is_default) || data[0];
-        return def ? def.id : null;
+        const finalId = activeId || (def ? def.id : null);
+        const matched = data.find(a => a.id === finalId);
+        if (matched) {
+          setShippingInfo({
+            label: matched.label || 'Home',
+            full_name: matched.full_name,
+            phone: matched.phone,
+            alternate_phone: matched.alternate_phone || '',
+            address_line1: matched.address_line1,
+            address_line2: matched.address_line2 || '',
+            city: matched.city,
+            state: matched.state,
+            pincode: matched.pincode
+          });
+        }
+        return finalId;
       });
     } catch (err) {
       // Silent — addresses are optional at this point
