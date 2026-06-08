@@ -632,6 +632,7 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
         return False
 
     try:
+        has_bank_reference = False
         client = _get_razorpay_client()
         if not client:
             key_id = os.environ.get("RAZORPAY_KEY_ID")
@@ -653,6 +654,7 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
                 processed_refunds_with_reference = [latest_refund]
                 processed_amount_with_reference = amount_refunded
                 is_fully_refunded = True
+                has_bank_reference = True
             else:
                 return False
         else:
@@ -715,7 +717,7 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
             prev_payment_status = order.payment_status
             prev_order_status = order.order_status
 
-            if is_fully_refunded:
+            if is_fully_refunded and has_bank_reference:
                 # Bank has confirmed — mark as fully credited
                 stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
                 order.payment_status = "refunded"
@@ -735,38 +737,28 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
                     updated_items.append(item)
                 order.items = updated_items
                 flag_modified(order, "items")
-            else:
-                # Razorpay processed but bank has NOT confirmed yet — keep as pending
-                stock_released = False
-                if order.payment_status != "refund_pending":
-                    order.payment_status = "refund_pending"
-                if str(order.order_status or "").lower() not in ("return_approved",):
-                    order.order_status = "return_approved"
-                if order.user_id:
-                    asyncio.create_task(_send_refund_initiated_email_background(str(order.id), str(order.user_id)))
-            
-            order.updated_at = datetime.now(timezone.utc)
-            await write_audit_log(
-                db,
-                "PAYMENT_RAZORPAY_REFUND_RECONCILED",
-                str(order.user_id or "system"),
-                "order",
-                str(order.id),
-                {
-                    "source": source,
-                    "prev_payment_status": prev_payment_status,
-                    "prev_order_status": prev_order_status,
-                    "razorpay_payment_id": payment_id,
-                    "razorpay_refund_id": latest_refund.get("id"),
-                    "refund_status": latest_refund.get("status") or refund_status,
-                    "amount_refunded": amount_refunded,
-                    "processed_amount": processed_amount,
-                    "processed_amount_with_reference": processed_amount_with_reference,
-                    "has_bank_reference": has_bank_reference,
-                    "stock_released": stock_released,
-                },
-            )
-            if has_bank_reference and order.payment_status == "refunded":
+                
+                order.updated_at = datetime.now(timezone.utc)
+                await write_audit_log(
+                    db,
+                    "PAYMENT_RAZORPAY_REFUND_RECONCILED",
+                    str(order.user_id or "system"),
+                    "order",
+                    str(order.id),
+                    {
+                        "source": source,
+                        "prev_payment_status": prev_payment_status,
+                        "prev_order_status": prev_order_status,
+                        "razorpay_payment_id": payment_id,
+                        "razorpay_refund_id": latest_refund.get("id"),
+                        "refund_status": latest_refund.get("status") or refund_status,
+                        "amount_refunded": amount_refunded,
+                        "processed_amount": processed_amount,
+                        "processed_amount_with_reference": processed_amount_with_reference,
+                        "has_bank_reference": has_bank_reference,
+                        "stock_released": stock_released,
+                    },
+                )
                 if order.user_id:
                     await create_notification(
                         db,
@@ -776,8 +768,11 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
                         "order",
                     )
                     asyncio.create_task(_send_refund_email_background(str(order.id), str(order.user_id)))
-            logger.info("Reconciled Razorpay refund for order %s from %s (bank_confirmed=%s)", order.order_number, source, has_bank_reference)
-            return True
+                logger.info("Reconciled Razorpay refund for order %s from %s (bank_confirmed=%s)", order.order_number, source, has_bank_reference)
+                return True
+            else:
+                # Razorpay processed but bank has NOT confirmed yet — keep as pending
+                return False
     except Exception:
         logger.exception("Failed to reconcile Razorpay refund for order %s", order.order_number)
     return False
@@ -2219,7 +2214,7 @@ async def razorpay_webhook(
             except Exception:
                 pass
 
-        if (event == "refund.processed" or refund_status == "processed"):
+        if (event == "refund.processed" or refund_status == "processed") and bank_confirmed:
             # Bank has confirmed the refund (ARN/RRN/UTR present) — mark as fully credited
             stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
             order.payment_status = "refunded"
