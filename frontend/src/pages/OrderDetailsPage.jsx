@@ -1621,54 +1621,7 @@ const OrderDetailsPage = () => {
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Tracking URL (Optional)</label>
-                  <input
-                    type="url"
-                    placeholder="https://..."
-                    value={trackingUrl}
-                    onChange={(e) => setTrackingUrl(e.target.value)}
-                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                  />
-                </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Courier Cost *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      placeholder="₹0.00"
-                      value={courierCost}
-                      onChange={(e) => setCourierCost(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Invoice / Receipt File *</label>
-                    <div className="relative w-full h-11 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 transition-colors flex items-center justify-center cursor-pointer text-xs font-bold text-slate-700">
-                      <input
-                        type="file"
-                        required
-                        accept="image/*,application/pdf"
-                        onChange={(e) => setInvoiceFile(e.target.files[0])}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                      <span>{invoiceFile ? invoiceFile.name.substring(0, 15) : 'Select Receipt'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Notes / Remarks</label>
-                  <textarea
-                    placeholder="Any comments, details, or issues faced during shipping..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="w-full p-3 min-h-[60px] rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none resize-none"
-                  />
-                </div>
 
                 <div className="flex gap-2.5 pt-1.5">
                   <button

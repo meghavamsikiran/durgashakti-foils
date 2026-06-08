@@ -592,11 +592,11 @@ def contact_resolved_email(name: str, original_message: str, date_str: str) -> t
     return "Your inquiry has been resolved - DurgaShakti Foils", _base(content, "Inquiry Resolved")
 
 
-def refund_credited_email(name: str, order: dict, refunded_items: list, item_refund_total: float, courier_total: float) -> tuple[str, str, list]:
+def refund_credited_email(name: str, order: dict, refunded_items: list, item_refund_total: float, courier_total: float = 0.0) -> tuple[str, str, list]:
     """Email template sent to customer when a refund is credited, with a Credit Note PDF attached."""
     first = escape((name.split()[0] if name else "Customer"))
     order_num = escape(str(order.get("order_number", "N/A")))
-    total_refund = item_refund_total + courier_total
+    total_refund = item_refund_total
     
     items_desc = ", ".join([escape(i.get("product_name", "Product")) for i in refunded_items])
     
@@ -611,8 +611,6 @@ def refund_credited_email(name: str, order: dict, refunded_items: list, item_ref
       <table width="100%" cellpadding="0" cellspacing="0">
         {_info_row("Order Number", order_num)}
         {_info_row("Refunded Item(s)", items_desc)}
-        {_info_row("Item(s) Refund", _money(item_refund_total))}
-        {_info_row("Courier Reimbursement", _money(courier_total))}
         {_info_row("Total Refund Credited", _money(total_refund))}
         {_info_row("Date & Time", datetime.now(timezone.utc).strftime("%d %B %Y, %I:%M %p UTC"))}
       </table>
@@ -623,18 +621,18 @@ def refund_credited_email(name: str, order: dict, refunded_items: list, item_ref
     attachments = []
     try:
         from invoice_service import build_credit_note_attachment
-        attachments.append(build_credit_note_attachment(order, refunded_items, item_refund_total, courier_total))
+        attachments.append(build_credit_note_attachment(order, refunded_items, item_refund_total, 0.0))
     except Exception as e:
         print("Failed to generate credit note PDF:", e)
         
     return f"Refund Credited & Credit Note - {order_num} | DurgaShakti Foils", _base(content, "Refund Credited"), attachments
 
 
-def refund_initiated_email(name: str, order: dict, refunded_items: list, item_refund_total: float, courier_total: float) -> tuple[str, str]:
+def refund_initiated_email(name: str, order: dict, refunded_items: list, item_refund_total: float, courier_total: float = 0.0) -> tuple[str, str]:
     """Email template sent to customer when a refund is initiated, telling them to wait 5-7 business working days."""
     first = escape((name.split()[0] if name else "Customer"))
     order_num = escape(str(order.get("order_number", "N/A")))
-    total_refund = item_refund_total + courier_total
+    total_refund = item_refund_total
     
     items_desc = ", ".join([escape(i.get("product_name", "Product")) for i in refunded_items])
     
@@ -649,8 +647,6 @@ def refund_initiated_email(name: str, order: dict, refunded_items: list, item_re
       <table width="100%" cellpadding="0" cellspacing="0">
         {_info_row("Order Number", order_num)}
         {_info_row("Refunded Item(s)", items_desc)}
-        {_info_row("Item(s) Refund", _money(item_refund_total))}
-        {_info_row("Courier Reimbursement", _money(courier_total))}
         {_info_row("Total Refund Pending", _money(total_refund))}
         {_info_row("Initiated On", datetime.now(timezone.utc).strftime("%d %B %Y, %I:%M %p UTC"))}
       </table>

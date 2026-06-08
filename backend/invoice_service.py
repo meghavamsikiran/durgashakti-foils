@@ -668,6 +668,7 @@ def build_tax_invoice_attachment(order: dict) -> dict:
 
 def build_credit_note_pdf(order: dict, refunded_items: list, item_refund_total: float, courier_total: float) -> bytes:
     """Generate a one-page Credit Note PDF using the DSF bill template structure."""
+    courier_total = 0.0
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=(PAGE_WIDTH, PAGE_HEIGHT))
 
