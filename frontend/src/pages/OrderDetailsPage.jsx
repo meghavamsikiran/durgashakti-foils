@@ -85,6 +85,7 @@ const OrderDetailsPage = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       apiClient.invalidateCache('/orders');
+      apiClient.invalidateCache(`/orders/${id}`);
       toast.success('Self shipping details submitted successfully');
       setSelfShipModal(null);
       setCourierName('');
@@ -105,9 +106,29 @@ const OrderDetailsPage = () => {
   };
 
   const fetchOrder = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
+    // 1. Try to find the order in the cached order list first for instant load
+    let foundOrder = null;
+    const cachedList = apiClient.getCachedDataSync('/orders');
+    if (cachedList && cachedList.data) {
+      foundOrder = cachedList.data.find(o => String(o.id) === String(id));
+    }
+    // 2. If not found in list, check if there is a direct details cache
+    if (!foundOrder) {
+      const cachedDetail = apiClient.getCachedDataSync(`/orders/${id}`);
+      if (cachedDetail) {
+        foundOrder = cachedDetail.data;
+      }
+    }
+    
+    if (foundOrder) {
+      setOrder(foundOrder);
+      setLoading(false);
+    } else if (!silent) {
+      setLoading(true);
+    }
+
     try {
-      const res = await apiClient.get(`/orders/${id}`);
+      const res = await apiClient.cachedGet(`/orders/${id}`);
       let orderData = res.data;
       const isOnlinePending = isOnlinePaymentPendingOrder(orderData);
       const rememberedPaymentId = sessionStorage.getItem(`razorpay_payment_${id}`);
@@ -121,7 +142,9 @@ const OrderDetailsPage = () => {
           });
           if (syncResult?.success) {
             sessionStorage.removeItem(`razorpay_payment_${id}`);
-            const refreshed = await apiClient.get(`/orders/${id}`, { silent: true });
+            apiClient.invalidateCache(`/orders/${id}`);
+            apiClient.invalidateCache('/orders');
+            const refreshed = await apiClient.cachedGet(`/orders/${id}`);
             orderData = refreshed.data;
           }
         } catch {}
@@ -134,7 +157,7 @@ const OrderDetailsPage = () => {
 
       setOrder(orderData);
     } catch (err) {
-      if (!silent) {
+      if (!silent && !foundOrder) {
         toast.error('Failed to load order details');
         navigate('/dashboard');
       }
@@ -406,6 +429,7 @@ const OrderDetailsPage = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       apiClient.invalidateCache('/orders');
+      apiClient.invalidateCache(`/orders/${id}`);
       toast.success("Return request submitted successfully");
       setIsReturning(false);
       setReturnFiles([]);
