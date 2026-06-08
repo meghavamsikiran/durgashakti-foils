@@ -2632,6 +2632,17 @@ async def admin_item_process_refund(
                         })
         else:
             refund_warning = f"Manual refund of ₹{refund_amount} required. Razorpay refund failed: {err_msg}"
+            # Revert item status to RETURN_RECEIVED on failure
+            for item in updated_items:
+                if str(item.get("product_id")) == product_id:
+                    item["return_status"] = "RETURN_RECEIVED"
+                    if "audit_timeline" in item:
+                        item["audit_timeline"] = [t for t in item["audit_timeline"] if t.get("status") != "REFUND_INITIATED"]
+                        item["audit_timeline"].append({
+                            "status": "RETURN_RECEIVED",
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "remarks": f"Razorpay refund failed: {err_msg}. Reverted to Return Received."
+                        })
     else:
         refund_warning = f"Manual refund of ₹{refund_amount} required (COD/manual)."
 
@@ -2641,12 +2652,20 @@ async def admin_item_process_refund(
     
     has_active_returns = any(item.get("return_status") in ("RETURN_REQUESTED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED") for item in order.items)
     if not has_active_returns:
-        order.order_status = "refunded"
-        order.payment_status = "refunded"
-        if order.user_id:
-            from routes.orders import _send_refund_email_background
-            import asyncio
-            asyncio.create_task(_send_refund_email_background(str(order.id), str(order.user_id)))
+        if is_manual or razorpay_refund_succeeded:
+            order.order_status = "refunded"
+            order.payment_status = "refunded"
+            if order.user_id:
+                from routes.orders import _send_refund_email_background
+                import asyncio
+                asyncio.create_task(_send_refund_email_background(str(order.id), str(order.user_id)))
+        else:
+            order.order_status = "return_approved"
+            order.payment_status = "refund_failed"
+    else:
+        if not (is_manual or razorpay_refund_succeeded):
+            order.order_status = "return_approved"
+            order.payment_status = "refund_failed"
         
         
     await write_audit_log(
