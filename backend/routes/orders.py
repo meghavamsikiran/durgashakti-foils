@@ -118,12 +118,7 @@ async def _latest_refund_audit(db: AsyncSession, order_id: str) -> Optional[Audi
 
 
 async def normalize_unconfirmed_refund(order: OrderModel, db: AsyncSession) -> bool:
-    payment_status = str(order.payment_status or "").lower()
-    order_status = str(order.order_status or "").lower()
-    if payment_status != "refunded" and order_status != "refunded":
-        return False
-    if str(order.payment_method or "").lower() == "cod":
-        return False
+    return False
 
     latest = await _latest_refund_audit(db, str(order.id))
     if latest and _audit_meta_has_bank_reference(latest.metadata_):
@@ -686,7 +681,7 @@ async def reconcile_order_refund_with_razorpay(order: OrderModel, db: AsyncSessi
             prev_payment_status = order.payment_status
             prev_order_status = order.order_status
 
-            if has_bank_reference and not is_new_refund:
+            if is_fully_refunded:
                 # Bank has confirmed — mark as fully credited
                 stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
                 order.payment_status = "refunded"
@@ -2190,7 +2185,7 @@ async def razorpay_webhook(
             except Exception:
                 pass
 
-        if (event == "refund.processed" or refund_status == "processed") and bank_confirmed and not is_new_refund:
+        if (event == "refund.processed" or refund_status == "processed"):
             # Bank has confirmed the refund (ARN/RRN/UTR present) — mark as fully credited
             stock_released = await _release_stock_once(order, db, datetime.now(timezone.utc))
             order.payment_status = "refunded"
