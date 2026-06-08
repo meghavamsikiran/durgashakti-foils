@@ -1497,21 +1497,23 @@ async def enforce_return_deadlines(db: AsyncSession, user_id: Optional[str] = No
         if updated_at < limit:
             updated_items = []
             for item in (order.items or []):
-                if item.get("return_status") == "RETURN_APPROVED":
-                    item["return_status"] = "RETURN_REJECTED"
+                if item.get("return_status") in ("RETURN_APPROVED", "EXCHANGE_APPROVED"):
+                    is_exchange = item.get("return_status") == "EXCHANGE_APPROVED" or item.get("return_type") == "exchange"
+                    new_status = "EXCHANGE_REJECTED" if is_exchange else "RETURN_REJECTED"
+                    item["return_status"] = new_status
                     if "audit_timeline" not in item:
                         item["audit_timeline"] = []
                     item["audit_timeline"].append({
-                        "status": "RETURN_REJECTED",
+                        "status": new_status,
                         "timestamp": now.isoformat(),
-                        "remarks": "Return cancelled automatically: customer failed to self-ship within the 3-day deadline."
+                        "remarks": f"{'Exchange' if is_exchange else 'Return'} cancelled automatically: customer failed to self-ship within the 3-day deadline."
                     })
                 updated_items.append(item)
             
             order.items = updated_items
             flag_modified(order, "items")
             order.order_status = "return_rejected"
-            order.admin_message = "Return request cancelled: Customer failed to self-ship items within the 3-day deadline."
+            order.admin_message = "Return/Exchange request cancelled: Customer failed to self-ship items within the 3-day deadline."
             order.updated_at = now
             modified = True
             
@@ -1701,6 +1703,7 @@ async def return_order(
     reason: str = Form(...),
     image: List[UploadFile] = File(None),
     items: str = Form(None), # JSON string: [{"product_id": "...", "quantity": 1}]
+    return_type: str = Form("refund"), # "refund" or "exchange"
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -1778,14 +1781,16 @@ async def return_order(
             if ret_qty <= 0 or ret_qty > int(item.get("quantity", 1)):
                 raise HTTPException(status_code=400, detail=f"Invalid return quantity for {item.get('product_name')}")
             
-            item["return_status"] = "RETURN_REQUESTED"
+            item["return_type"] = return_type
+            status_val = "EXCHANGE_REQUESTED" if return_type == "exchange" else "RETURN_REQUESTED"
+            item["return_status"] = status_val
             item["returned_quantity"] = ret_qty
             item["return_reason"] = reason
             item["return_proof_images"] = uploaded_urls
             item["audit_timeline"] = [{
-                "status": "RETURN_REQUESTED",
+                "status": status_val,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "remarks": f"Return requested for qty {ret_qty}. Reason: {reason}"
+                "remarks": f"{'Exchange' if return_type == 'exchange' else 'Return'} requested for qty {ret_qty}. Reason: {reason}"
             }]
             
             # Recalculate tax and discount shares for this item
@@ -1864,8 +1869,8 @@ async def self_ship_item(
         if str(item.get("product_id")) == product_id:
             found_item = True
             current_status = item.get("return_status")
-            if current_status not in ("RETURN_APPROVED", "SELF_SHIPPING_PENDING", "return_approved"):
-                raise HTTPException(status_code=400, detail="Item is not approved for return or already shipped")
+            if current_status not in ("RETURN_APPROVED", "SELF_SHIPPING_PENDING", "return_approved", "EXCHANGE_APPROVED"):
+                raise HTTPException(status_code=400, detail="Item is not approved for return or exchange or already shipped")
                 
             uploaded_invoice_url = None
             if invoice and invoice.filename:

@@ -1901,12 +1901,12 @@ const OrdersPage = () => {
                                 </div>
                               </div>
                               <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                                item.return_status === 'RETURN_REQUESTED' ? 'bg-amber-100 text-amber-800' :
-                                item.return_status === 'RETURN_APPROVED' ? 'bg-sky-100 text-sky-800' :
+                                item.return_status === 'RETURN_REQUESTED' || item.return_status === 'EXCHANGE_REQUESTED' ? 'bg-amber-100 text-amber-800' :
+                                item.return_status === 'RETURN_APPROVED' || item.return_status === 'EXCHANGE_APPROVED' ? 'bg-sky-100 text-sky-800' :
                                 item.return_status === 'SELF_SHIPPED' ? 'bg-indigo-100 text-indigo-800' :
-                                item.return_status === 'RETURN_RECEIVED' ? 'bg-purple-100 text-purple-800' :
-                                item.return_status === 'REFUND_INITIATED' ? 'bg-blue-100 text-blue-800' :
-                                item.return_status === 'REFUND_COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
+                                item.return_status === 'RETURN_RECEIVED' || item.return_status === 'EXCHANGE_RECEIVED' ? 'bg-purple-100 text-purple-800' :
+                                item.return_status === 'EXCHANGE_SHIPPED' ? 'bg-blue-100 text-blue-800' :
+                                item.return_status === 'REFUND_COMPLETED' || item.return_status === 'EXCHANGE_COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
                                 'bg-rose-100 text-rose-800'
                               }`}>
                                 {item.return_status.replace('_', ' ')}

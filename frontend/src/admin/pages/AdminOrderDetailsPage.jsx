@@ -91,6 +91,12 @@ const AdminOrderDetailsPage = () => {
   const [messageModal, setMessageModal] = useState(null);
   const [adminMessage, setAdminMessage] = useState('');
   const [timeLeft, setTimeLeft] = useState(null);
+  const [shipExchangeModal, setShipExchangeModal] = useState(null);
+  const [exCourierName, setExCourierName] = useState('');
+  const [exTrackingNumber, setExTrackingNumber] = useState('');
+  const [exExpectedDate, setExExpectedDate] = useState('');
+  const [exNotes, setExNotes] = useState('');
+  const [submittingExShip, setSubmittingExShip] = useState(false);
 
   const fetchOrderDetails = useCallback(async (silent = false) => {
     if (!silent && !order) setLoading(true);
@@ -215,6 +221,55 @@ const AdminOrderDetailsPage = () => {
       setTimeout(() => fetchOrderDetails(true), 800);
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to process refund', { id: toastId });
+    }
+  };  const handleItemCompleteExchange = async (orderId, productId) => {
+    const toastId = toast.loading('Completing exchange...');
+    try {
+      const response = await apiClient.post(`/admin/orders/${orderId}/items/${productId}/complete-exchange`);
+      apiClient.invalidateCache('/admin/orders');
+      const serverOrder = response?.data?.order;
+      if (serverOrder) {
+        setOrder(serverOrder);
+      }
+      toast.success('Exchange completed successfully', { id: toastId });
+      setTimeout(() => fetchOrderDetails(true), 800);
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to complete exchange', { id: toastId });
+    }
+  };
+
+  const handleShipExchangeSubmit = async (e) => {
+    e.preventDefault();
+    if (!exCourierName || !exTrackingNumber) {
+      toast.error('Courier name and Tracking number are required');
+      return;
+    }
+    setSubmittingExShip(true);
+    const toastId = toast.loading('Submitting exchange shipping details...');
+    try {
+      const payload = {
+        exchange_courier_name: exCourierName,
+        exchange_tracking_number: exTrackingNumber,
+        exchange_expected_delivery_date: exExpectedDate || null,
+        exchange_shipment_notes: exNotes || null
+      };
+      const response = await apiClient.post(`/admin/orders/${shipExchangeModal.orderId}/items/${shipExchangeModal.productId}/ship-exchange`, payload);
+      apiClient.invalidateCache('/admin/orders');
+      const serverOrder = response?.data?.order;
+      if (serverOrder) {
+        setOrder(serverOrder);
+      }
+      toast.success('Exchange shipment details submitted successfully', { id: toastId });
+      setShipExchangeModal(null);
+      setExCourierName('');
+      setExTrackingNumber('');
+      setExExpectedDate('');
+      setExNotes('');
+      setTimeout(() => fetchOrderDetails(true), 800);
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to submit exchange shipping details', { id: toastId });
+    } finally {
+      setSubmittingExShip(false);
     }
   };
 
@@ -804,12 +859,12 @@ const AdminOrderDetailsPage = () => {
                             </div>
                           </div>
                           <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                            item.return_status === 'RETURN_REQUESTED' ? 'bg-amber-100 text-amber-800' :
-                            item.return_status === 'RETURN_APPROVED' ? 'bg-sky-100 text-sky-800' :
+                            item.return_status === 'RETURN_REQUESTED' || item.return_status === 'EXCHANGE_REQUESTED' ? 'bg-amber-100 text-amber-800' :
+                            item.return_status === 'RETURN_APPROVED' || item.return_status === 'EXCHANGE_APPROVED' ? 'bg-sky-100 text-sky-800' :
                             item.return_status === 'SELF_SHIPPED' ? 'bg-indigo-100 text-indigo-800' :
-                            item.return_status === 'RETURN_RECEIVED' ? 'bg-purple-100 text-purple-800' :
-                            item.return_status === 'REFUND_INITIATED' ? 'bg-blue-100 text-blue-800' :
-                            item.return_status === 'REFUND_COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
+                            item.return_status === 'RETURN_RECEIVED' || item.return_status === 'EXCHANGE_RECEIVED' ? 'bg-purple-100 text-purple-800' :
+                            item.return_status === 'EXCHANGE_SHIPPED' ? 'bg-blue-100 text-blue-800' :
+                            item.return_status === 'REFUND_COMPLETED' || item.return_status === 'EXCHANGE_COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
                             'bg-rose-100 text-rose-800'
                           }`}>
                             {item.return_status.replace('_', ' ')}
@@ -876,15 +931,29 @@ const AdminOrderDetailsPage = () => {
                           </div>
                         )}
 
-                        {item.return_status === 'RETURN_APPROVED' && (
+                        {(item.return_status === 'RETURN_APPROVED' || item.return_status === 'EXCHANGE_APPROVED') && (
                           <div className="text-[10px] text-amber-800 font-extrabold bg-amber-50 p-3 rounded-xl border border-amber-100 flex flex-col gap-1">
                             <p className="uppercase tracking-wider font-black">Self-Shipping Status</p>
                             <p className="font-semibold text-slate-600">Self Shipping by customer is pending. The customer has a maximum of 3 days to submit courier/tracking details.</p>
                           </div>
                         )}
 
+                        {item.exchange_shipping_details && (
+                          <div className="text-[10px] text-sky-800 font-extrabold bg-sky-50 p-3 rounded-xl border border-sky-105 flex flex-col gap-1.5">
+                            <p className="uppercase tracking-wider font-black">Exchange Shipping Details</p>
+                            <p className="font-semibold text-slate-600">Courier: <span className="font-bold">{item.exchange_shipping_details.exchange_courier_name}</span></p>
+                            <p className="font-semibold text-slate-600">Tracking Number: <span className="font-mono font-bold">{item.exchange_shipping_details.exchange_tracking_number}</span></p>
+                            {item.exchange_shipping_details.exchange_expected_delivery_date && (
+                              <p className="font-semibold text-slate-600">Expected Delivery: <span className="font-bold">{item.exchange_shipping_details.exchange_expected_delivery_date}</span></p>
+                            )}
+                            {item.exchange_shipping_details.exchange_shipment_notes && (
+                              <p className="text-[9px] text-slate-500 italic">Notes: {item.exchange_shipping_details.exchange_shipment_notes}</p>
+                            )}
+                          </div>
+                        )}
+
                         <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-50">
-                          {item.return_status === 'RETURN_REQUESTED' && (
+                          {(item.return_status === 'RETURN_REQUESTED' || item.return_status === 'EXCHANGE_REQUESTED') && (
                             <>
                               <button
                                 onClick={() => {
@@ -897,7 +966,7 @@ const AdminOrderDetailsPage = () => {
                                 }}
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
                               >
-                                Approve Return
+                                {item.return_status === 'EXCHANGE_REQUESTED' ? 'Approve Exchange' : 'Approve Return'}
                               </button>
                               <button
                                 onClick={() => {
@@ -910,7 +979,7 @@ const AdminOrderDetailsPage = () => {
                                 }}
                                 className="bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
                               >
-                                Reject Return
+                                {item.return_status === 'EXCHANGE_REQUESTED' ? 'Reject Exchange' : 'Reject Return'}
                               </button>
                             </>
                           )}
@@ -934,6 +1003,33 @@ const AdminOrderDetailsPage = () => {
                                className="bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-emerald-glow"
                              >
                                Process Refund & Restock
+                             </button>
+                           )}
+
+                           {item.return_status === 'EXCHANGE_RECEIVED' && (
+                             <button
+                               onClick={() => {
+                                 setShipExchangeModal({
+                                   orderId: order.id,
+                                   productId: item.product_id
+                                 });
+                               }}
+                               className="bg-sky-600 hover:bg-sky-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md"
+                             >
+                               Ship Exchange Product
+                             </button>
+                           )}
+
+                           {item.return_status === 'EXCHANGE_SHIPPED' && (
+                             <button
+                               onClick={() => {
+                                 if (window.confirm("Are you sure you want to complete this exchange?")) {
+                                   handleItemCompleteExchange(order.id, item.product_id);
+                                 }
+                               }}
+                               className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md"
+                             >
+                               Complete Exchange
                              </button>
                            )}
                         </div>
@@ -1005,8 +1101,37 @@ const AdminOrderDetailsPage = () => {
             let returnSteps = [];
             let progressWidth = '0%';
             let timelineTitle = 'Return Request Timeline';
+            const isExchangeOrder = returnedItems.some(i => i.return_type === 'exchange' || i.return_status?.startsWith('EXCHANGE_'));
 
-            if (isRejected) {
+            if (isExchangeOrder) {
+              const hasExRequested = returnedItems.some(i => ['EXCHANGE_REQUESTED', 'EXCHANGE_APPROVED', 'SELF_SHIPPED', 'EXCHANGE_RECEIVED', 'EXCHANGE_SHIPPED', 'EXCHANGE_COMPLETED'].includes(i.return_status));
+              const hasExApproved = returnedItems.some(i => ['EXCHANGE_APPROVED', 'SELF_SHIPPED', 'EXCHANGE_RECEIVED', 'EXCHANGE_SHIPPED', 'EXCHANGE_COMPLETED'].includes(i.return_status));
+              const hasExSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'EXCHANGE_RECEIVED', 'EXCHANGE_SHIPPED', 'EXCHANGE_COMPLETED'].includes(i.return_status));
+              const hasExReceived = returnedItems.some(i => ['EXCHANGE_RECEIVED', 'EXCHANGE_SHIPPED', 'EXCHANGE_COMPLETED'].includes(i.return_status));
+              const hasExShipped = returnedItems.some(i => ['EXCHANGE_SHIPPED', 'EXCHANGE_COMPLETED'].includes(i.return_status));
+              const hasExCompleted = returnedItems.some(i => i.return_status === 'EXCHANGE_COMPLETED');
+              const isExRejected = returnedItems.every(i => i.return_status === 'EXCHANGE_REJECTED');
+
+              if (isExRejected) {
+                returnSteps = [
+                  { label: 'Exchange Requested', active: true, date: order.updated_at },
+                  { label: 'Exchange Rejected', active: true, date: order.updated_at, rejected: true }
+                ];
+                progressWidth = '100%';
+                timelineTitle = 'Exchange Request Declined';
+              } else {
+                returnSteps = [
+                  { label: 'Exchange Requested', active: hasExRequested, date: order.created_at },
+                  { label: 'Approved for Exchange', active: hasExApproved, date: hasExApproved ? order.updated_at : null },
+                  { label: 'Returned Item Self-Shipped', active: hasExSelfShipped, date: null },
+                  { label: 'Returned Item Received', active: hasExReceived, date: null },
+                  { label: 'Exchange Product Shipped', active: hasExShipped, date: null },
+                  { label: 'Exchange Completed', active: hasExCompleted, date: null }
+                ];
+                progressWidth = hasExCompleted ? '100%' : hasExShipped ? '80%' : hasExReceived ? '60%' : hasExSelfShipped ? '40%' : hasExApproved ? '20%' : '0%';
+                timelineTitle = 'Exchange Process Timeline';
+              }
+            } else if (isRejected) {
               returnSteps = [
                 { label: 'Return Requested', active: true, date: order.updated_at },
                 { label: 'Return Rejected', active: true, date: order.updated_at, rejected: true }
@@ -1339,6 +1464,86 @@ const AdminOrderDetailsPage = () => {
         </div>
       )}
 
+      {/* Ship Exchange Modal */}
+      {shipExchangeModal && (
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Ship Exchange Product</h3>
+              <p className="text-xs text-slate-500 mt-1">Provide tracking and delivery details for the exchanged product shipment.</p>
+            </div>
+
+            <form onSubmit={handleShipExchangeSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Courier / Carrier Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. BlueDart, DTDC, Delhivery"
+                  value={exCourierName}
+                  onChange={(e) => setExCourierName(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tracking Number / Waybill *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter exchange tracking number"
+                  value={exTrackingNumber}
+                  onChange={(e) => setExTrackingNumber(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Expected Delivery Date (Optional)</label>
+                <input
+                  type="date"
+                  value={exExpectedDate}
+                  onChange={(e) => setExExpectedDate(e.target.value)}
+                  className="w-full h-11 px-3.5 rounded-xl border border-slate-200 text-xs font-bold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Shipment Notes (Optional)</label>
+                <textarea
+                  placeholder="Any additional shipment details or comments..."
+                  value={exNotes}
+                  onChange={(e) => setExNotes(e.target.value)}
+                  className="w-full p-3 min-h-[80px] rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:ring-2 focus:ring-primary/20 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShipExchangeModal(null);
+                    setExCourierName('');
+                    setExTrackingNumber('');
+                    setExExpectedDate('');
+                    setExNotes('');
+                  }}
+                  className="flex-1 h-12 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingExShip}
+                  className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow disabled:opacity-50 transition-all"
+                >
+                  {submittingExShip ? 'Shipping...' : 'Ship Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

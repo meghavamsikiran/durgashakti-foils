@@ -2395,21 +2395,28 @@ async def admin_item_return_action(
     updated_items = []
     found_item = False
     action_upper = payload.action.upper()
+    is_exchange = False
     
     for item in (order.items or []):
         if str(item.get("product_id")) == product_id:
             found_item = True
-            if item.get("return_status") != "RETURN_REQUESTED":
-                raise HTTPException(status_code=400, detail="Item return is not requested or already processed")
+            current_status = item.get("return_status")
+            if current_status not in ("RETURN_REQUESTED", "EXCHANGE_REQUESTED"):
+                raise HTTPException(status_code=400, detail="Item return or exchange is not requested or already processed")
             
-            new_status = "RETURN_APPROVED" if action_upper == "APPROVE" else "RETURN_REJECTED"
+            is_exchange = (item.get("return_type") == "exchange" or current_status == "EXCHANGE_REQUESTED")
+            if is_exchange:
+                new_status = "EXCHANGE_APPROVED" if action_upper == "APPROVE" else "EXCHANGE_REJECTED"
+            else:
+                new_status = "RETURN_APPROVED" if action_upper == "APPROVE" else "RETURN_REJECTED"
+                
             item["return_status"] = new_status
             if "audit_timeline" not in item:
                 item["audit_timeline"] = []
             item["audit_timeline"].append({
                 "status": new_status,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "remarks": payload.remarks or f"Return {payload.action}d by admin"
+                "remarks": payload.remarks or f"{'Exchange' if is_exchange else 'Return'} {payload.action.lower()}d by admin"
             })
         updated_items.append(item)
 
@@ -2421,9 +2428,9 @@ async def admin_item_return_action(
     order.updated_at = datetime.now(timezone.utc)
     
     # Check overall status
-    has_pending = any(item.get("return_status") == "RETURN_REQUESTED" for item in order.items)
+    has_pending = any(item.get("return_status") in ("RETURN_REQUESTED", "EXCHANGE_REQUESTED") for item in order.items)
     if not has_pending:
-        any_approved = any(item.get("return_status") == "RETURN_APPROVED" for item in order.items)
+        any_approved = any(item.get("return_status") in ("RETURN_APPROVED", "EXCHANGE_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED", "REFUND_INITIATED", "REFUND_COMPLETED", "EXCHANGE_RECEIVED", "EXCHANGE_SHIPPED", "EXCHANGE_COMPLETED") for item in order.items)
         if any_approved:
             order.order_status = "return_approved"
         else:
@@ -2439,41 +2446,63 @@ async def admin_item_return_action(
             cust = u_res.scalar_one_or_none()
             if cust:
                 from deps import send_email, create_notification
-                from email_templates import return_approved_email, return_rejected_email
+                from email_templates import return_approved_email, return_rejected_email, exchange_approved_email, exchange_rejected_email
                 if action_upper == "APPROVE":
-                    has_return_request = any(item.get("return_status") for item in (order.items or []))
-                    items_to_sum = (order.items or []) if not has_return_request else [
-                        item for item in (order.items or [])
-                        if item.get("return_status") in ("RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED", "REFUND_INITIATED", "REFUND_COMPLETED")
-                    ]
-                    total_refund_amount = sum(
-                        float(item.get("refund_calculations", {}).get("refundable_amount") or 0.0) +
-                        float(item.get("self_shipping_details", {}).get("courier_cost") or 0.0)
-                        for item in items_to_sum
-                    )
-                    
-                    # Send customer notification
-                    await create_notification(
-                        db,
-                        str(order.user_id),
-                        "Return Approved",
-                        f"Your return request for order {order.order_number} has been approved. Refund will process in 5-7 business days.",
-                        "order"
-                    )
-                    
-                    # Send professional email explaining the 5-7 business days timeline
-                    subj, body = return_approved_email(cust.full_name or cust.email, order.order_number, total_refund_amount)
-                    await send_email(cust.email, subj, body)
+                    if is_exchange:
+                        await create_notification(
+                            db,
+                            str(order.user_id),
+                            "Exchange Approved",
+                            f"Your exchange request for order {order.order_number} has been approved. Please self-ship the item back.",
+                            "order"
+                        )
+                        subj, body = exchange_approved_email(cust.full_name or cust.email, order.order_number)
+                        await send_email(cust.email, subj, body)
+                    else:
+                        has_return_request = any(item.get("return_status") for item in (order.items or []))
+                        items_to_sum = (order.items or []) if not has_return_request else [
+                            item for item in (order.items or [])
+                            if item.get("return_status") in ("RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED", "REFUND_INITIATED", "REFUND_COMPLETED")
+                        ]
+                        total_refund_amount = sum(
+                            float(item.get("refund_calculations", {}).get("refundable_amount") or 0.0) +
+                            float(item.get("self_shipping_details", {}).get("courier_cost") or 0.0)
+                            for item in items_to_sum
+                        )
+                        
+                        # Send customer notification
+                        await create_notification(
+                            db,
+                            str(order.user_id),
+                            "Return Approved",
+                            f"Your return request for order {order.order_number} has been approved. Refund will process in 5-7 business days.",
+                            "order"
+                        )
+                        
+                        # Send professional email explaining the 5-7 business days timeline
+                        subj, body = return_approved_email(cust.full_name or cust.email, order.order_number, total_refund_amount)
+                        await send_email(cust.email, subj, body)
                 else:
-                    await create_notification(
-                        db,
-                        str(order.user_id),
-                        "Return Rejected",
-                        f"Your return request for order {order.order_number} has been rejected.",
-                        "order"
-                    )
-                    subj, body = return_rejected_email(cust.full_name or cust.email, order.order_number, payload.remarks or "")
-                    await send_email(cust.email, subj, body)
+                    if is_exchange:
+                        await create_notification(
+                            db,
+                            str(order.user_id),
+                            "Exchange Rejected",
+                            f"Your exchange request for order {order.order_number} has been rejected.",
+                            "order"
+                        )
+                        subj, body = exchange_rejected_email(cust.full_name or cust.email, order.order_number, payload.remarks or "")
+                        await send_email(cust.email, subj, body)
+                    else:
+                        await create_notification(
+                            db,
+                            str(order.user_id),
+                            "Return Rejected",
+                            f"Your return request for order {order.order_number} has been rejected.",
+                            "order"
+                        )
+                        subj, body = return_rejected_email(cust.full_name or cust.email, order.order_number, payload.remarks or "")
+                        await send_email(cust.email, subj, body)
         except Exception:
             logger.exception("Failed to send return action email/notification")
 
@@ -2507,16 +2536,18 @@ async def admin_item_receive(
         if str(item.get("product_id")) == product_id:
             found_item = True
             current_status = item.get("return_status")
-            if current_status not in ("SELF_SHIPPED", "RETURN_APPROVED"):
-                raise HTTPException(status_code=400, detail="Item is not shipped or return not approved")
+            if current_status not in ("SELF_SHIPPED", "RETURN_APPROVED", "EXCHANGE_APPROVED"):
+                raise HTTPException(status_code=400, detail="Item is not shipped or return/exchange not approved")
             
-            item["return_status"] = "RETURN_RECEIVED"
+            is_exchange = (item.get("return_type") == "exchange")
+            new_status = "EXCHANGE_RECEIVED" if is_exchange else "RETURN_RECEIVED"
+            item["return_status"] = new_status
             if "audit_timeline" not in item:
                 item["audit_timeline"] = []
             item["audit_timeline"].append({
-                "status": "RETURN_RECEIVED",
+                "status": new_status,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "remarks": "Item physically received at warehouse"
+                "remarks": f"Returned item physically received at warehouse for {'exchange' if is_exchange else 'refund'}"
             })
         updated_items.append(item)
 
@@ -2709,3 +2740,156 @@ async def admin_item_process_refund(
     )
     await db.commit()
     return {"message": "Refund processed successfully", "warning": refund_warning, "order": _order_response_dict(order)}
+
+
+class ShipExchangeInput(BaseModel):
+    exchange_courier_name: str
+    exchange_tracking_number: str
+    exchange_expected_delivery_date: Optional[str] = None
+    exchange_shipment_notes: Optional[str] = None
+
+
+@router.post("/admin/orders/{order_id}/items/{product_id}/ship-exchange")
+async def admin_item_ship_exchange(
+    order_id: str,
+    product_id: str,
+    payload: ShipExchangeInput,
+    admin: UserSchema = Depends(require_permission("update_order_status")),
+    db: AsyncSession = Depends(get_db)
+):
+    validate_uuid(order_id)
+    res = await db.execute(select(OrderModel).where(OrderModel.id == order_id))
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    updated_items = []
+    found_item = False
+    for item in (order.items or []):
+        if str(item.get("product_id")) == product_id:
+            found_item = True
+            current_status = item.get("return_status")
+            if current_status not in ("EXCHANGE_RECEIVED", "EXCHANGE_APPROVED", "SELF_SHIPPED"):
+                raise HTTPException(status_code=400, detail="Item must be received or approved before shipping exchange")
+            
+            item["return_status"] = "EXCHANGE_SHIPPED"
+            item["exchange_shipping_details"] = {
+                "exchange_courier_name": payload.exchange_courier_name,
+                "exchange_tracking_number": payload.exchange_tracking_number,
+                "exchange_expected_delivery_date": payload.exchange_expected_delivery_date,
+                "exchange_shipment_notes": payload.exchange_shipment_notes
+            }
+            if "audit_timeline" not in item:
+                item["audit_timeline"] = []
+            item["audit_timeline"].append({
+                "status": "EXCHANGE_SHIPPED",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "remarks": f"Exchanged product shipped via {payload.exchange_courier_name}. Tracking ID: {payload.exchange_tracking_number}"
+            })
+        updated_items.append(item)
+
+    if not found_item:
+        raise HTTPException(status_code=404, detail="Item not found in order")
+
+    order.items = updated_items
+    flag_modified(order, "items")
+    order.updated_at = datetime.now(timezone.utc)
+    
+    await write_audit_log(
+        db,
+        "ITEM_EXCHANGE_SHIPPED",
+        admin.id,
+        "order",
+        order_id,
+        {"product_id": product_id, "courier": payload.exchange_courier_name, "tracking_number": payload.exchange_tracking_number}
+    )
+    await db.commit()
+
+    # Send notification and email
+    if order.user_id:
+        try:
+            from models import UserModel
+            u_res = await db.execute(select(UserModel).where(UserModel.id == order.user_id))
+            cust = u_res.scalar_one_or_none()
+            if cust:
+                from deps import send_email, create_notification
+                from email_templates import exchange_shipped_email
+                await create_notification(
+                    db,
+                    str(order.user_id),
+                    "Exchange Shipped",
+                    f"Your exchange product for order {order.order_number} has been shipped via {payload.exchange_courier_name}.",
+                    "order"
+                )
+                subj, body = exchange_shipped_email(cust.full_name or cust.email, order.order_number, payload.exchange_courier_name, payload.exchange_tracking_number)
+                await send_email(cust.email, subj, body)
+        except Exception:
+            logger.exception("Failed to send exchange shipped email/notification")
+
+    return {"message": "Exchange item shipped successfully", "order": _order_response_dict(order)}
+
+
+@router.post("/admin/orders/{order_id}/items/{product_id}/complete-exchange")
+async def admin_item_complete_exchange(
+    order_id: str,
+    product_id: str,
+    admin: UserSchema = Depends(require_permission("update_order_status")),
+    db: AsyncSession = Depends(get_db)
+):
+    validate_uuid(order_id)
+    res = await db.execute(select(OrderModel).where(OrderModel.id == order_id))
+    order = res.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    updated_items = []
+    found_item = False
+    for item in (order.items or []):
+        if str(item.get("product_id")) == product_id:
+            found_item = True
+            current_status = item.get("return_status")
+            if current_status != "EXCHANGE_SHIPPED":
+                raise HTTPException(status_code=400, detail="Item must be shipped before completing exchange")
+            
+            item["return_status"] = "EXCHANGE_COMPLETED"
+            if "audit_timeline" not in item:
+                item["audit_timeline"] = []
+            item["audit_timeline"].append({
+                "status": "EXCHANGE_COMPLETED",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "remarks": "Exchange process completed and product delivered"
+            })
+        updated_items.append(item)
+
+    if not found_item:
+        raise HTTPException(status_code=404, detail="Item not found in order")
+
+    order.items = updated_items
+    flag_modified(order, "items")
+    order.updated_at = datetime.now(timezone.utc)
+    
+    await write_audit_log(
+        db,
+        "ITEM_EXCHANGE_COMPLETED",
+        admin.id,
+        "order",
+        order_id,
+        {"product_id": product_id}
+    )
+    await db.commit()
+
+    if order.user_id:
+        try:
+            from deps import create_notification
+            await create_notification(
+                db,
+                str(order.user_id),
+                "Exchange Completed",
+                f"Your exchange for order {order.order_number} has been completed successfully.",
+                "order"
+            )
+        except Exception:
+            pass
+
+    return {"message": "Exchange item completed successfully", "order": _order_response_dict(order)}
+

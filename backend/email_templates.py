@@ -656,3 +656,65 @@ def refund_initiated_email(name: str, order: dict, refunded_items: list, item_re
     
     return f"Refund Initiated - {order_num} | DurgaShakti Foils", _base(content, "Refund Initiated")
 
+
+def exchange_approved_email(name: str, order_num: str) -> tuple[str, str]:
+    first = name.split()[0] if name else "Customer"
+    content = f"""
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:48px;margin-bottom:8px;">✅</div>
+      {_badge("Exchange Approved", "#10b981")}
+      <p style="font-size:22px;font-weight:800;color:{BRAND_DARK};margin:12px 0 4px;">Exchange Approved, {first}!</p>
+      <p style="color:#6b7280;font-size:14px;">Good news! Your exchange request has been approved. Please self-ship the item back to us.</p>
+    </div>
+    <div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        {_info_row("Order Number", order_num)}
+        {_info_row("Approved On", datetime.now(timezone.utc).strftime("%d %B %Y"))}
+        {_info_row("Action Needed", "Self-ship the item and update tracking details in dashboard")}
+      </table>
+    </div>
+    {_cta_button("Update Shipping Details", f"{SITE_URL}/dashboard?order={order_num}")}"""
+    return f"Exchange Approved | {order_num}", _base(content, "Exchange Approved")
+
+
+def exchange_rejected_email(name: str, order_num: str, admin_message: str = "") -> tuple[str, str]:
+    first = name.split()[0] if name else "Customer"
+    content = f"""
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:48px;margin-bottom:8px;">❌</div>
+      {_badge("Exchange Rejected", "#ef4444")}
+      <p style="font-size:22px;font-weight:800;color:{BRAND_DARK};margin:12px 0 4px;">Exchange Request Rejected</p>
+      <p style="color:#6b7280;font-size:14px;">Hi {first}, unfortunately we could not approve your exchange request.</p>
+    </div>
+    <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:20px;margin-bottom:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        {_info_row("Order Number", order_num)}
+        {_info_row("Decision Date", datetime.now(timezone.utc).strftime("%d %B %Y"))}
+        {f'{_info_row("Reason", admin_message)}' if admin_message else ''}
+      </table>
+    </div>
+    <p style="color:#374151;font-size:14px;text-align:center;">If you have questions, please <a href="{SITE_URL}/contact" style="color:{BRAND_COLOR};">contact our support team</a>.</p>
+    {_cta_button("Contact Support", SITE_URL + "/contact")}"""
+    return f"Exchange Request Update - {order_num} | DurgaShakti Foils", _base(content, "Exchange Rejected")
+
+
+def exchange_shipped_email(name: str, order_num: str, courier_name: str, tracking_number: str) -> tuple[str, str]:
+    first = name.split()[0] if name else "Customer"
+    content = f"""
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:48px;margin-bottom:8px;">🚚</div>
+      {_badge("Exchange Shipped", "#3b82f6")}
+      <p style="font-size:22px;font-weight:800;color:{BRAND_DARK};margin:12px 0 4px;">Your exchanged product is on the way, {first}!</p>
+      <p style="color:#6b7280;font-size:14px;">The exchanged product has been shipped to your address.</p>
+    </div>
+    <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:12px;padding:24px;margin-bottom:24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        {_info_row("Order Number", order_num)}
+        {_info_row("Courier Partner", courier_name)}
+        {_info_row("Tracking ID", tracking_number)}
+      </table>
+    </div>
+    {_cta_button("Track Shipment", f"{SITE_URL}/dashboard?order={order_num}")}"""
+    return f"Exchange Product Shipped! 🚚 - {order_num}", _base(content, "Exchange Shipped")
+
+
