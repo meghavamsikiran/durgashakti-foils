@@ -229,8 +229,8 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
             return True, "Mock Refund Successful", {
                 "id": f"rfnd_mock_{uuid.uuid4().hex[:12]}",
                 "status": "processed",
-                "speed_requested": "instant",
-                "speed_processed": "instant",
+                "speed_requested": "optimum",
+                "speed_processed": "optimum",
                 "payment_id": payment_id,
                 "amount": _expected_amount_paise(order),
             }
@@ -305,7 +305,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
         # ── Step 3: Create the refund with robust speed fallback ──
         refund_resp = None
         last_exception = None
-        speeds_to_try = ["instant", "optimum", "normal"]
+        speeds_to_try = ["optimum", "normal"]
         for speed in speeds_to_try:
             try:
                 logger.info("Attempting Razorpay refund for order %s with speed %s", order.order_number, speed)
@@ -378,8 +378,8 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
             return True, "Mock Refund Successful", {
                 "id": f"rfnd_mock_{uuid.uuid4().hex[:12]}",
                 "status": "processed",
-                "speed_requested": "instant",
-                "speed_processed": "instant",
+                "speed_requested": "optimum",
+                "speed_processed": "optimum",
                 "payment_id": payment_id,
                 "amount": amount_paise,
             }
@@ -409,7 +409,7 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
 
         refund_resp = None
         last_exception = None
-        speeds_to_try = ["instant", "optimum", "normal"]
+        speeds_to_try = ["optimum", "normal"]
         for speed in speeds_to_try:
             try:
                 logger.info("Attempting Razorpay partial refund for payment %s with speed %s, amount %d paise", payment_id, speed, actual_refund_paise)
