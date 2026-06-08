@@ -305,6 +305,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
         # ── Step 3: Create the refund with robust speed fallback ──
         refund_resp = None
         last_exception = None
+        optimum_error = None
         speeds_to_try = ["optimum", "normal"]
         for speed in speeds_to_try:
             try:
@@ -327,6 +328,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
             except Exception as exc:
                 if speed == "optimum":
                     logger.warning("Refund speed 'optimum' failed: %s. Retrying with 'normal' speed.", exc)
+                    optimum_error = str(exc)
                     last_exception = exc
                     continue
                 else:
@@ -349,7 +351,7 @@ async def trigger_razorpay_refund(order: OrderModel, db: AsyncSession) -> tuple[
                 "amount": refund_resp.get("amount"),
             },
         )
-        return True, None, refund_resp
+        return True, optimum_error, refund_resp
     except Exception as exc:
         logger.exception("Failed to trigger Razorpay refund for order %s", order.order_number)
         return False, _normalize_refund_error(exc), None
@@ -408,6 +410,7 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
 
         refund_resp = None
         last_exception = None
+        optimum_error = None
         speeds_to_try = ["optimum", "normal"]
         for speed in speeds_to_try:
             try:
@@ -430,6 +433,7 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
             except Exception as exc:
                 if speed == "optimum":
                     logger.warning("Partial refund speed 'optimum' failed: %s. Retrying with 'normal' speed.", exc)
+                    optimum_error = str(exc)
                     last_exception = exc
                     continue
                 else:
@@ -437,7 +441,7 @@ async def trigger_razorpay_partial_refund(order: OrderModel, amount: float, db: 
         else:
             if last_exception:
                 raise last_exception
-        return True, None, refund_resp
+        return True, optimum_error, refund_resp
     except Exception as e:
         logger.exception("Failed to process Razorpay partial refund for payment %s", payment_id)
         return False, str(e), None

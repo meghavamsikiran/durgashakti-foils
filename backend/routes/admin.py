@@ -2637,7 +2637,8 @@ async def admin_item_process_refund(
                             })
             else:
                 refund_outcome = "pending"
-                refund_warning = f"Refund of ₹{refund_amount} initiated via Razorpay (Normal speed fallback, takes 5-7 business days)."
+                reason_suffix = f" (Instant speed attempt failed: {err_msg})" if err_msg else ""
+                refund_warning = f"Refund of ₹{refund_amount} initiated via Razorpay (Normal speed fallback, takes 5-7 business days){reason_suffix}."
                 # Set the item return status to REFUND_INITIATED
                 for item in updated_items:
                     if str(item.get("product_id")) == product_id:
