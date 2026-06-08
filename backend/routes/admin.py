@@ -92,33 +92,6 @@ async def _normalize_refund_rows(db: AsyncSession, orders: list[OrderModel]) -> 
         or str(order.order_status or "").lower() in {"return_approved", "refunded"}
     ]
     latest_logs = await _latest_refund_logs_for_orders(db, [str(order.id) for order in refund_orders])
-    now = datetime.now(timezone.utc)
-
-    for order in refund_orders:
-        latest = latest_logs.get(str(order.id))
-        meta = latest.metadata_ if latest else {}
-        payment_status = _payment_status_lower(order)
-        order_status = str(order.order_status or "").lower()
-
-        if payment_status == "refunded" or order_status == "refunded":
-            if not _is_refund_bank_confirmed(meta):
-                order.payment_status = "refund_pending"
-                order.order_status = "return_approved"
-                order.updated_at = now
-                await write_audit_log(
-                    db,
-                    "ORDER_REFUND_STATUS_CORRECTED_PENDING_CONFIRMATION",
-                    "system",
-                    "order",
-                    str(order.id),
-                    {
-                        "reason": "Refund was previously marked credited before bank confirmation was available.",
-                        "latest_refund_audit_action": latest.action if latest else None,
-                        "latest_refund_audit_metadata": meta,
-                    },
-                )
-    if refund_orders:
-        await db.flush()
     return latest_logs
 
 
