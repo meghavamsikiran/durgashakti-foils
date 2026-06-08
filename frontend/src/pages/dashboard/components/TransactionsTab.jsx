@@ -395,20 +395,25 @@ const TransactionsTab = ({ orders }) => {
               <tbody className="divide-y divide-slate-50">
                 {paginatedTransactions.map((tx) => {
                   const statusLower = String(tx.status || '').toLowerCase();
-                  const isRefund = statusLower.includes('refund') || statusLower.includes('failed');
-                  const isPending = statusLower.includes('pending') || statusLower.includes('initiated');
-                  const isSuccess = statusLower.includes('completed') || statusLower.includes('paid') || statusLower.includes('success');
+                  const isSuccess = ['paid', 'completed', 'success'].includes(statusLower);
+                  const isFailed = ['failed', 'cancelled', 'overdue'].includes(statusLower);
+                  const isRefundPending = ['refund_pending', 'refund pending', 'refund_initiated', 'refund initiated'].includes(statusLower);
+                  const isRefundSuccess = ['refunded', 'refund_credited', 'refund credited', 'refund_completed', 'refund completed'].includes(statusLower);
 
                   return (
                     <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="px-6 py-5">
                         <div className={`text-xs font-black flex items-center gap-1.5 ${
-                          isRefund ? 'text-rose-600' :
-                          isPending ? 'text-amber-600' : 'text-emerald-600'
+                          isFailed ? 'text-slate-400' :
+                          isRefundSuccess ? 'text-emerald-600' :
+                          isRefundPending ? 'text-amber-600' :
+                          isSuccess ? 'text-slate-900' : 'text-amber-650'
                         }`}>
-                          {isRefund ? <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" /> :
-                           isPending ? <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" /> :
-                           <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                          {isFailed ? <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" /> :
+                           isRefundPending ? <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" /> :
+                           isRefundSuccess ? <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> :
+                           isSuccess ? <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 shrink-0" /> :
+                           <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                           Order #{tx.order_number}
                         </div>
                       </td>
@@ -425,7 +430,8 @@ const TransactionsTab = ({ orders }) => {
                       <td className="px-6 py-5 text-center">
                         <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
                           isSuccess ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
-                          isRefund ? 'bg-rose-50 text-rose-600 border border-rose-100' : 
+                          isFailed ? 'bg-rose-50 text-rose-600 border border-rose-100' : 
+                          isRefundSuccess ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' :
                           'bg-amber-50 text-amber-600 border border-amber-100'
                         }`}>
                           {tx.status}
@@ -433,9 +439,12 @@ const TransactionsTab = ({ orders }) => {
                       </td>
                       <td className="px-6 py-5 text-right">
                         <div className={`text-sm font-black ${
-                          isRefund ? 'text-rose-600' : 'text-slate-900'
+                          isFailed ? 'text-slate-400 line-through' :
+                          isRefundSuccess ? 'text-emerald-600' :
+                          isRefundPending ? 'text-amber-600' :
+                          'text-slate-900'
                         }`}>
-                          {isRefund ? '-' : ''}₹{Number(tx.amount || 0).toLocaleString('en-IN')}
+                          {isRefundSuccess ? '+' : ''}₹{Number(tx.amount || 0).toLocaleString('en-IN')}
                         </div>
                       </td>
                       <td className="px-6 py-5 text-right">
