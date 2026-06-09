@@ -298,6 +298,11 @@ export const useCheckout = () => {
       toast.error("Please select a saved shipping address or enter a new address to proceed.");
       return false;
     }
+
+    // If a saved address is selected, bypass checking form validations because it is already verified and saved
+    if (selectedAddressId) {
+      return true;
+    }
     
     if (!full_name?.trim()) {
       toast.error("Shipping address contact full name is required");
@@ -308,17 +313,19 @@ export const useCheckout = () => {
       toast.error("Phone number is required");
       return false;
     }
-    if (cleanPhone.length !== 10) {
+    const last10 = cleanPhone.slice(-10);
+    if (last10.length !== 10) {
       toast.error("Phone number must be exactly 10 digits");
       return false;
     }
-    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+    if (!/^[6-9]\d{9}$/.test(last10)) {
       toast.error("Please enter a valid 10-digit phone number (starts with 6-9)");
       return false;
     }
     if (alternate_phone?.trim()) {
       const cleanAlt = alternate_phone.replace(/\D/g, '');
-      if (cleanAlt.length !== 10 || !/^[6-9]\d{9}$/.test(cleanAlt)) {
+      const last10Alt = cleanAlt.slice(-10);
+      if (last10Alt.length !== 10 || !/^[6-9]\d{9}$/.test(last10Alt)) {
         toast.error("Please enter a valid 10-digit alternative phone number (starts with 6-9)");
         return false;
       }

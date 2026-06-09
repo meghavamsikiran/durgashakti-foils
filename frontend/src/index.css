@@ -917,18 +917,7 @@ h1, h2, h3, h4, h5, h6 {
 .admin-shell tr:hover,
 .admin-shell .group:hover,
 .admin-shell [class*="group-hover:bg-"] {
-  background-color: #19231F !important;
-}
-
-/* Ensure light text elements stay readable on hover */
-.admin-shell tr:hover td,
-.admin-shell tr:hover span,
-.admin-shell tr:hover div,
-.admin-shell tr:hover p,
-.admin-shell .group:hover span,
-.admin-shell .group:hover div,
-.admin-shell .group:hover p {
-  color: #ffffff !important;
+  background-color: rgba(19, 27, 23, 0.35) !important;
 }
 
 .admin-shell input, 
@@ -955,11 +944,114 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .admin-shell table tr:hover {
-  background-color: #19231F !important;
+  background-color: rgba(19, 27, 23, 0.35) !important;
 }
 
 .admin-shell table tr {
   background-color: transparent !important;
   color: #ffffff !important;
+}
+
+/* ── LIGHT THEME STYLING OVERRIDES ── */
+.light-theme {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #181c1b !important;
+}
+
+/* Override dark background utility classes */
+.light-theme .bg-\[\#0C1310\],
+.light-theme .bg-\[\#0c1310\],
+.light-theme .bg-\[\#030504\],
+.light-theme .bg-\[\#030504\]\/100,
+.light-theme .bg-background,
+.light-theme .bg-surface,
+.light-theme main.bg-\[\#0C1310\],
+.light-theme main.bg-\[\#0c1310\],
+.light-theme div.bg-\[\#0C1310\],
+.light-theme div.bg-\[\#0c1310\],
+.light-theme div.min-h-screen.bg-\[\#0C1310\] {
+  background-color: #ffffff !important;
+  color: #181c1b !important;
+}
+
+/* Override dark text to dark gray for readability */
+.light-theme .text-white,
+.light-theme .text-slate-100,
+.light-theme .text-slate-200,
+.light-theme .text-slate-300,
+.light-theme .text-slate-350,
+.light-theme .text-slate-400 {
+  color: #181c1b !important;
+}
+
+/* Card and container elements in light theme */
+.light-theme .bg-\[\#131B17\],
+.light-theme .bg-\[\#19231F\],
+.light-theme .bg-\[\#131b17\],
+.light-theme .bg-\[\#19231f\],
+.light-theme div.bg-\[\#131B17\],
+.light-theme div.bg-\[\#19231F\] {
+  background-color: #f7faf8 !important;
+  border-color: #bbcbb5 !important;
+  color: #181c1b !important;
+}
+
+/* Border color overrides */
+.light-theme .border-\[\#26322B\],
+.light-theme .border-\[\#26322b\],
+.light-theme .border-white\/5,
+.light-theme .border-slate-800 {
+  border-color: #bbcbb5 !important;
+}
+
+/* Text elements */
+.light-theme h1,
+.light-theme h2,
+.light-theme h3,
+.light-theme h4,
+.light-theme h5,
+.light-theme h6,
+.light-theme p,
+.light-theme span,
+.light-theme label,
+.light-theme a {
+  color: #181c1b !important;
+}
+
+/* Do not override primary brand colors and status pills */
+.light-theme .text-primary,
+.light-theme .text-\[\#25D958\],
+.light-theme .text-[#25D958],
+.light-theme .text-brand-green {
+  color: #006e1b !important;
+}
+
+/* Form inputs in light theme */
+.light-theme input,
+.light-theme textarea,
+.light-theme select {
+  background-color: #ffffff !important;
+  border-color: #bbcbb5 !important;
+  color: #181c1b !important;
+}
+
+.light-theme input::placeholder,
+.light-theme textarea::placeholder {
+  color: #6c7b68 !important;
+}
+
+.light-theme input:focus,
+.light-theme textarea:focus,
+.light-theme select:focus {
+  border-color: #006e1b !important;
+  box-shadow: 0 0 0 3px rgba(11, 209, 61, 0.12) !important;
+}
+
+/* Adjust table hover in light theme */
+.light-theme tr:hover,
+.light-theme .hover\:bg-white\/5:hover,
+.light-theme .hover\:bg-slate-50:hover {
+  background-color: rgba(0, 110, 27, 0.05) !important;
 }
 

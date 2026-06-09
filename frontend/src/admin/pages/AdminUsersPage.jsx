@@ -324,7 +324,8 @@ const AdminUsersPage = () => {
       toast.error('Please fill all required fields'); return;
     }
     const cleanPhone = form.phone ? form.phone.replace(/\D/g, '') : '';
-    if (form.phone && (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone))) {
+    const last10 = cleanPhone.slice(-10);
+    if (form.phone && (last10.length !== 10 || !/^[6-9]\d{9}$/.test(last10))) {
       toast.error('Please enter a valid 10-digit phone number (starts with 6-9)');
       return;
     }
@@ -349,7 +350,8 @@ const AdminUsersPage = () => {
 
   const handleEdit = async () => {
     const cleanPhone = editForm.phone ? editForm.phone.replace(/\D/g, '') : '';
-    if (editForm.phone && (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone))) {
+    const last10 = cleanPhone.slice(-10);
+    if (editForm.phone && (last10.length !== 10 || !/^[6-9]\d{9}$/.test(last10))) {
       toast.error('Please enter a valid 10-digit phone number (starts with 6-9)');
       return;
     }

@@ -93,12 +93,13 @@ const Login = () => {
           setLoading(false);
           return;
         }
-        if (cleanPhone.length !== 10) {
+        const last10 = cleanPhone.slice(-10);
+        if (last10.length !== 10) {
           toast.error("Phone number must be exactly 10 digits");
           setLoading(false);
           return;
         }
-        if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+        if (!/^[6-9]\d{9}$/.test(last10)) {
           toast.error("Please enter a valid 10-digit phone number (starts with 6-9)");
           setLoading(false);
           return;
