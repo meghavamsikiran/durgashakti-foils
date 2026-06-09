@@ -79,7 +79,7 @@ const PaymentsPage = () => {
   const [dateFilter, setDateFilter] = useState(null);
   const [metrics, setMetrics] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary');
-    return cached?.metrics || null;
+    return cached?.data?.metrics || null;
   });
 
   const [total, setTotal] = useState(() => {

@@ -49,7 +49,7 @@ const ProductsPage = () => {
   const { isSuperAdmin, hasPermission } = useAuth();
   const [rows, setRows] = useState(() => {
     const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: 1, limit: 10, search: '' });
-    return cached?.items || [];
+    return cached?.data?.items || [];
   });
   const [loading, setLoading] = useState(() => {
     const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: 1, limit: 10, search: '' });
@@ -93,7 +93,7 @@ const ProductsPage = () => {
   ]);
   const [metrics, setMetrics] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary');
-    return cached?.metrics || null;
+    return cached?.data?.metrics || null;
   });
   const [categories, setCategories] = useState([]);
   const [statusSavingIds, setStatusSavingIds] = useState(() => new Set());

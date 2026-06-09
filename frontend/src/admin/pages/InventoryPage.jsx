@@ -21,7 +21,7 @@ const InventoryPage = () => {
   const ITEMS_PER_PAGE = 15;
   const [rows, setRows] = useState(() => {
     const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: 1, limit: ITEMS_PER_PAGE, search: '' });
-    const rawItems = cached?.items || [];
+    const rawItems = cached?.data?.items || [];
     return rawItems.map((product) => ({
       id: product.id,
       name: product.name,
@@ -52,7 +52,7 @@ const InventoryPage = () => {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(() => {
     const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: 1, limit: ITEMS_PER_PAGE, search: '' });
-    return cached?.total || 0;
+    return cached?.data?.total || 0;
   });
   const [metrics, setMetrics] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary');

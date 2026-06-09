@@ -724,12 +724,24 @@ const OrderDetailsPage = () => {
                   <>
                     <p className="font-extrabold text-slate-900 uppercase tracking-wider">{isCod ? 'Cash on Delivery' : 'Prepaid Online'}</p>
                     {isRefunded ? (
-                      <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1 font-semibold">
+                      <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1.5 font-semibold">
                         <p className="font-extrabold flex items-center gap-1.5 text-emerald-700">
                           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Refund Credited
                         </p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
-                          <p className="font-mono text-slate-500 break-all select-all">Paid Txn: {order.transaction_id}</p>
+                          <p className="font-mono text-slate-500 break-all select-all flex items-center gap-1">
+                            Paid Txn: {order.transaction_id}
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(order.transaction_id);
+                                toast.success('Transaction ID copied!');
+                              }}
+                              className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors inline-flex items-center"
+                              title="Copy Transaction ID"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </p>
                         )}
                       </div>
                     ) : isRefundFailed ? (
@@ -742,22 +754,46 @@ const OrderDetailsPage = () => {
                         )}
                       </div>
                     ) : isRefundPending ? (
-                      <div className="bg-sky-50 text-sky-800 text-[10px] rounded-xl p-3 border border-sky-100/80 space-y-1 font-semibold">
+                      <div className="bg-sky-50 text-sky-800 text-[10px] rounded-xl p-3 border border-sky-100/80 space-y-1.5 font-semibold">
                         <p className="font-extrabold flex items-center gap-1.5 text-sky-700">
                           <span className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse"></span> Refund Initiated
                         </p>
                         <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">Razorpay is processing the refund.</p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
-                          <p className="font-mono text-slate-500 break-all select-all">Paid Txn: {order.transaction_id}</p>
+                          <p className="font-mono text-slate-500 break-all select-all flex items-center gap-1">
+                            Paid Txn: {order.transaction_id}
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(order.transaction_id);
+                                toast.success('Transaction ID copied!');
+                              }}
+                              className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors inline-flex items-center"
+                              title="Copy Transaction ID"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </p>
                         )}
                       </div>
                     ) : isPaid ? (
-                      <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1 font-semibold">
+                      <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1.5 font-semibold">
                         <p className="font-extrabold flex items-center gap-1.5 text-emerald-700">
                           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Paid
                         </p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
-                          <p className="font-mono text-slate-500 break-all select-all">Txn: {order.transaction_id}</p>
+                          <p className="font-mono text-slate-500 break-all select-all flex items-center gap-1">
+                            Txn: {order.transaction_id}
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(order.transaction_id);
+                                toast.success('Transaction ID copied!');
+                              }}
+                              className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors inline-flex items-center"
+                              title="Copy Transaction ID"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </p>
                         )}
                       </div>
                     ) : isCod ? (

@@ -10,8 +10,14 @@ import { formatImageUrl } from '../../utils/api';
 const PAGE_SIZE = 20;
 
 const ReviewsPage = () => {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState(() => {
+    const cached = reviewService.getAdminReviewsCached({ page: 1, limit: PAGE_SIZE, search: '' });
+    return cached?.data?.items || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = reviewService.getAdminReviewsCached({ page: 1, limit: PAGE_SIZE, search: '' });
+    return !cached;
+  });
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [rating, setRating] = useState('all');
@@ -19,7 +25,10 @@ const ReviewsPage = () => {
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(() => {
+    const cached = reviewService.getAdminReviewsCached({ page: 1, limit: PAGE_SIZE, search: '' });
+    return cached?.data?.total || 0;
+  });
   const [replyDrafts, setReplyDrafts] = useState({});
   const [savingId, setSavingId] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -27,7 +36,24 @@ const ReviewsPage = () => {
   const [selectedModalMedia, setSelectedModalMedia] = useState(null);
 
   const load = useCallback(async (pageNum = 1) => {
-    setLoading(true);
+    const params = {
+      page: pageNum,
+      limit: PAGE_SIZE,
+      search,
+      status: status === 'all' ? undefined : status,
+      rating: rating === 'all' ? undefined : rating,
+      date_range: dateRange === 'all' ? undefined : dateRange,
+      start_date: dateRange === 'custom' ? customStart || undefined : undefined,
+      end_date: dateRange === 'custom' ? customEnd || undefined : undefined,
+    };
+    const cached = reviewService.getAdminReviewsCached(params);
+    if (cached) {
+      setRows(cached.data?.items || []);
+      setTotal(cached.data?.total || 0);
+    } else {
+      setRows([]);
+      setLoading(true);
+    }
     try {
       const data = await reviewService.getAdminReviews({
         page: pageNum,

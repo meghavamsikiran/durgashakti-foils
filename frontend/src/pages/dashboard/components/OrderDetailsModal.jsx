@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, Clock, Check } from 'lucide-react';
+import { X, Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, Clock, Check, Copy } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { formatImageUrl } from '../../../utils/api';
 import { useProgress } from '../../../components/ui/ProgressToast';
@@ -707,8 +707,22 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                             <div className="space-y-1">
                               <p className="font-black text-foreground font-mono uppercase tracking-tight">{isCod ? 'COD' : 'Prepaid'} • {statusLabel}</p>
                               {order.transaction_id && (
-                                <p className="text-[10px] font-mono text-muted-foreground break-all select-all">
-                                  {order.transaction_id === 'COD' ? 'Payment: COD' : `Payment ID: ${order.transaction_id}`}
+                                <p className="text-[10px] font-mono text-muted-foreground break-all select-all flex items-center gap-1.5">
+                                  {order.transaction_id === 'COD' ? 'Payment: COD' : (
+                                    <>
+                                      Payment ID: {order.transaction_id}
+                                      <button
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(order.transaction_id);
+                                          toast.success('Transaction ID copied!');
+                                        }}
+                                        className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors inline-flex items-center"
+                                        title="Copy Transaction ID"
+                                      >
+                                        <Copy className="w-3 h-3" />
+                                      </button>
+                                    </>
+                                  )}
                                 </p>
                               )}
                               {order.refund_error && (

@@ -30,8 +30,12 @@ const reviewService = {
   },
 
   getAdminReviews: async (params = {}) => {
-    const response = await apiClient.get('/admin/reviews', { params });
+    const response = await apiClient.cachedGet('/admin/reviews', { params });
     return response.data;
+  },
+
+  getAdminReviewsCached: (params = {}) => {
+    return apiClient.getCachedDataSync('/admin/reviews', params);
   },
 
   updateAdminReviewStatus: async (reviewId, status) => {
