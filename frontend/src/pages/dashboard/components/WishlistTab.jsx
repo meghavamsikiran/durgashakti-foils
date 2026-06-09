@@ -40,13 +40,13 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
-        <h2 className="text-2xl md:text-3xl font-black text-foreground uppercase tracking-tighter">Wishlist</h2>
+        <h2 className="text-xl font-bold text-white font-serif uppercase tracking-tight">Wishlist</h2>
         {wishlist && wishlist.length > 0 && (
           <Button
             variant="outline"
             onClick={handleClearWishlist}
             disabled={clearing}
-            className="h-11 text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 rounded-lg transition-all"
+            className="h-11 text-rose-450 border border-rose-500/30 bg-transparent hover:bg-rose-500/10 hover:text-rose-400 rounded-lg transition-all"
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Clear All
@@ -55,9 +55,9 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
       </div>
 
       {!wishlist || wishlist.length === 0 ? (
-        <div className="text-center py-20 bg-surface-container-low rounded-xl border border-dashed border-border-subtle">
-          <Heart className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-          <p className="text-muted-foreground font-bold">Your wishlist is empty</p>
+        <div className="text-center py-20 rounded-xl border border-dashed border-[#26322B] bg-[#19231F] text-white">
+          <Heart className="w-12 h-12 text-white mx-auto mb-4" />
+          <p className="text-white font-bold">Your wishlist is empty</p>
         </div>
       ) : (
         <>
@@ -70,9 +70,9 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
               return (
                 <div
                   key={product.id}
-                  className="group rounded-xl border border-border-subtle bg-white hover:shadow-emerald-glow hover:border-primary/50 transition-all overflow-hidden flex flex-col min-h-[356px]"
+                  className="group rounded-xl border border-[#26322B] bg-[#19231F] hover:border-[#25D958]/50 transition-all overflow-hidden flex flex-col min-h-[356px] text-white"
                 >
-                  <div className="relative h-44 bg-surface-container-low overflow-hidden">
+                  <div className="relative h-44 bg-[#131B17] overflow-hidden">
                     <img
                       src={formatImageUrl(product.image_url)}
                       alt={product.name}
@@ -101,12 +101,12 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
 
                   <div className="p-4 flex flex-col flex-1">
                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <p className="text-[10px] font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant truncate">
+                      <p className="text-[10px] font-mono font-bold uppercase tracking-[0.12em] text-slate-400 truncate">
                         {product.size} - {product.thickness}
                       </p>
                     </div>
 
-                    <h4 className="font-black text-foreground leading-snug line-clamp-2 min-h-[44px]">
+                    <h4 className="font-bold text-white font-serif leading-snug line-clamp-2 min-h-[44px]">
                       {product.name}
                     </h4>
 
@@ -116,24 +116,24 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
 
                     <div className="mt-auto pt-4">
                       <div className="flex items-baseline gap-2 mb-4">
-                        <span className="text-xl font-black text-primary font-mono">&#8377;{displayPrice}</span>
+                        <span className="text-xl font-bold text-[#25D958] font-mono">&#8377;{displayPrice}</span>
                         {hasOffer && (
-                          <span className="text-[11px] text-text-muted line-through font-semibold">&#8377;{basePrice}</span>
+                          <span className="text-[11px] text-slate-400 line-through font-semibold">&#8377;{basePrice}</span>
                         )}
                       </div>
 
                       <div className="flex items-center gap-3">
                         {inCart ? (
-                          <Button disabled className="flex-1 h-11 rounded-lg bg-surface-container-low text-muted-foreground opacity-100 cursor-not-allowed hover:bg-surface-container-low">
+                          <Button disabled className="flex-1 h-11 rounded-lg bg-[#131B17] text-slate-400 opacity-100 cursor-not-allowed border border-[#26322B] hover:bg-[#131B17]">
                             In Cart
                           </Button>
                         ) : (
-                          <Button onClick={() => addToCart(product.id)} className="flex-1 h-11 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground">
+                          <Button onClick={() => addToCart(product.id)} className="flex-1 h-11 rounded-lg bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-bold">
                             <ShoppingCart className="w-4 h-4 mr-2" />
                             Add to Cart
                           </Button>
                         )}
-                        <Button variant="ghost" onClick={() => onToggleWishlist(product.id)} className="h-11 w-11 rounded-lg text-rose-500 hover:bg-rose-50">
+                        <Button variant="ghost" onClick={() => onToggleWishlist(product.id)} className="h-11 w-11 rounded-lg text-rose-500 hover:bg-white/5 hover:text-rose-400 border border-[#26322B] p-0 flex items-center justify-center shrink-0">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -150,18 +150,18 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
                 variant="outline"
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="w-10 h-10 p-0 rounded-lg"
+                className="w-10 h-10 p-0 rounded-lg bg-[#131B17] border border-[#26322B] text-white hover:bg-white/5"
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
-              <span className="text-sm font-semibold text-muted-foreground font-mono">
+              <span className="text-sm font-semibold text-slate-400 font-mono">
                 Page {currentPage} of {totalPages}
               </span>
               <Button
                 variant="outline"
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="w-10 h-10 p-0 rounded-lg"
+                className="w-10 h-10 p-0 rounded-lg bg-[#131B17] border border-[#26322B] text-white hover:bg-white/5"
               >
                 <ChevronRight className="w-5 h-5" />
               </Button>
