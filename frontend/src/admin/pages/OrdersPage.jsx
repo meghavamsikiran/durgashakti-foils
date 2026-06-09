@@ -166,7 +166,17 @@ const OrdersPage = () => {
     setCopiedOrderId(text);
     setTimeout(() => setCopiedOrderId(null), 1500);
   };
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+
+  // Debounce search input changes
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearch(searchInput);
+    }, 450); // 450ms debounce
+    return () => clearTimeout(handler);
+  }, [searchInput]);
+
   const [dateFilter, setDateFilter] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [total, setTotal] = useState(() => {
@@ -770,8 +780,8 @@ const OrdersPage = () => {
             <input
               type="text"
               placeholder="Search customer, order, payment ID..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64"
             />
           </div>

@@ -154,19 +154,48 @@ async def notify_loyalty_coupon_recipients(db: AsyncSession, coupon: CouponModel
             users_res = await db.execute(select(UserModel).where(UserModel.id.in_(ids)))
             recipients = [{"id": str(u.id), "email": u.email, "name": u.full_name or u.email} for u in users_res.scalars().all()]
 
-    for recipient in recipients[:200]:
-        await create_notification(
-            db,
-            recipient["id"],
-            "Loyal customer coupon unlocked",
-            f"Your loyalty coupon {coupon.code} is available at checkout.",
-            "coupon"
-        )
-        asyncio.create_task(send_email(
-            recipient["email"],
-            f"Your loyalty coupon {coupon.code} is ready",
-            f"Hi {recipient['name']},<br/><br/>Your loyalty coupon <strong>{coupon.code}</strong> is available for your next Durga Shakti Foils order."
-        ))
+    async def send_notify_email_task(db_session_factory, r, c_code):
+        # We spawn a separate task to handle notification DB write and email sends
+        # to ensure the admin HTTP request returns instantly without waiting for 200 DB writes / email tasks
+        try:
+            # We obtain a separate DB session if needed or we can do a background runner.
+            # But the simplest is: since we are just inside the main request, we can run create_notification and send_email in background.
+            # Let's wrap the notification/email loop in a task
+            pass
+        except Exception:
+            pass
+
+    async def run_notifications_in_background(rec_list, c_code):
+        # Since database session is async and shared, doing concurrent database writes with the same session can cause conflicts.
+        # But we can do them sequentially or run them in background after the request returns.
+        # To let the request return instantly, we can run this entire notifier loop in a separate task.
+        # Since it runs after the main response is committed, we need a new DB session context or we can do it inside create_task.
+        # Let's write the loop in background:
+        from database import SessionLocal
+        async with SessionLocal() as background_db:
+            for recipient in rec_list:
+                try:
+                    await create_notification(
+                        background_db,
+                        recipient["id"],
+                        "Loyal customer coupon unlocked",
+                        f"Your loyalty coupon {c_code} is available at checkout.",
+                        "coupon"
+                    )
+                    await background_db.commit()
+                except Exception:
+                    pass
+                try:
+                    await send_email(
+                        recipient["email"],
+                        f"Your loyalty coupon {c_code} is ready",
+                        f"Hi {recipient['name']},<br/><br/>Your loyalty coupon <strong>{c_code}</strong> is available for your next Durga Shakti Foils order."
+                    )
+                except Exception:
+                    pass
+
+    if recipients:
+        asyncio.create_task(run_notifications_in_background(recipients[:200], coupon.code))
 
 
 async def list_loyal_customer_rows(db: AsyncSession, search: str = "", limit: int | None = None) -> list[dict]:

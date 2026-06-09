@@ -601,17 +601,43 @@ const AdminOrderDetailsPage = () => {
                           {isCod ? 'Payment: COD' : 'Payment: Prepaid'}
                         </p>
                         {order.transaction_id && (
-                          <p className="font-mono text-slate-500 break-all select-all">
-                            {order.transaction_id === 'COD' ? 'Txn: COD' : `Txn: ${order.transaction_id}`}
-                          </p>
-                        )}
-                        {/* Display Customer Payout/UPI Details if present */}
-                        {order.razorpay_payment_id && (
-                          <div className="pt-1 mt-1 border-t border-slate-200/50 space-y-0.5 text-slate-600 font-extrabold">
-                            <p className="text-[8px] text-slate-400 font-black uppercase">Customer Razorpay ID</p>
-                            <p className="font-mono text-slate-800">{order.razorpay_payment_id}</p>
-                          </div>
-                        )}
+                           <div className="pt-1 mt-1 border-t border-slate-200/50 space-y-0.5">
+                             <p className="text-[8px] text-slate-400 font-black uppercase">Transaction ID</p>
+                             <p className="font-mono text-slate-800 break-all select-all flex items-center gap-1.5">
+                               {order.transaction_id === 'COD' ? 'COD' : order.transaction_id}
+                               {order.transaction_id !== 'COD' && (
+                                 <button
+                                   onClick={() => {
+                                     navigator.clipboard.writeText(order.transaction_id);
+                                     toast.success('Transaction ID copied!');
+                                   }}
+                                   className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors inline-flex items-center"
+                                   title="Copy Transaction ID"
+                                 >
+                                   <Copy className="w-3 h-3" />
+                                 </button>
+                               )}
+                             </p>
+                           </div>
+                         )}
+                         {order.razorpay_payment_id && order.razorpay_payment_id !== order.transaction_id && (
+                           <div className="pt-1 mt-1 border-t border-slate-200/50 space-y-0.5">
+                             <p className="text-[8px] text-slate-400 font-black uppercase">Customer Razorpay ID</p>
+                             <p className="font-mono text-slate-800 break-all select-all flex items-center gap-1.5">
+                               {order.razorpay_payment_id}
+                               <button
+                                 onClick={() => {
+                                   navigator.clipboard.writeText(order.razorpay_payment_id);
+                                   toast.success('Razorpay ID copied!');
+                                 }}
+                                 className="p-0.5 text-slate-400 hover:text-slate-600 transition-colors inline-flex items-center"
+                                 title="Copy Razorpay ID"
+                               >
+                                 <Copy className="w-3 h-3" />
+                               </button>
+                             </p>
+                           </div>
+                         )}
                         {/* Refund Payout details helper */}
                         {order.payment_status === 'refund_pending' && (() => {
                           const refundItems = (order.items || []).filter(i => ['REFUND_COMPLETED', 'REFUND_INITIATED'].includes(i.return_status));
@@ -864,14 +890,16 @@ const AdminOrderDetailsPage = () => {
                     </button>
                   </p>
                   {order.tracking_url && (
-                    <a
-                      href={order.tracking_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline mt-2 inline-block"
-                    >
-                      Launch Tracking URL &rsaquo;
-                    </a>
+                    <div className="pt-2">
+                      <a
+                        href={order.tracking_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 bg-sky-600 hover:bg-sky-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-sm w-fit"
+                      >
+                        Track Shipment
+                      </a>
+                    </div>
                   )}
                 </div>
               </div>

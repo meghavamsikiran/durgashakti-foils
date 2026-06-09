@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import adminService from '../services/admin.service';
 import { 
   CreditCard, IndianRupee, AlertCircle, CheckCircle2, 
-  Search, Calendar, Filter, ArrowUpRight, ArrowDownLeft, RefreshCcw, XCircle, Clock
+  Search, Calendar, Filter, ArrowUpRight, ArrowDownLeft, RefreshCcw, XCircle, Clock, Copy
 } from 'lucide-react';
 import TablePagination from '../../components/ui/TablePagination';
 import { toast } from 'sonner';
@@ -74,6 +74,7 @@ const PaymentsPage = () => {
   const [tempCustomStart, setTempCustomStart] = useState('');
   const [tempCustomEnd, setTempCustomEnd] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState(null);
   const [metrics, setMetrics] = useState(() => {
@@ -133,11 +134,16 @@ const PaymentsPage = () => {
     catch { return d; }
   };
 
+  // Debounce search input changes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      load(1);
-    }, 100);
-    return () => clearTimeout(timer);
+    const handler = setTimeout(() => {
+      setSearch(searchInput);
+    }, 450); // 450ms debounce
+    return () => clearTimeout(handler);
+  }, [searchInput]);
+
+  useEffect(() => {
+    load(1);
   }, [search, load]);
 
   // Periodic silent polling in the background (every 10 seconds) for real-time payments list
@@ -189,8 +195,8 @@ const PaymentsPage = () => {
             <input 
               type="text"
               placeholder="Order # or Transaction..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
             />
           </div>
@@ -386,7 +392,7 @@ const PaymentsPage = () => {
       )}
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto overflow-y-auto admin-table-container-stats">
+        <div className="overflow-x-auto overflow-y-auto admin-table-container-stats" style={{ minHeight: '420px' }}>
           <table className="w-full">
             <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
               <tr>
@@ -422,8 +428,22 @@ const PaymentsPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      <div className="text-xs font-mono font-bold text-slate-700 uppercase tracking-wider bg-slate-100 px-2 py-1.5 rounded inline-block whitespace-normal break-all">
-                        {row.transaction_id || 'INTERNAL_RECON'}
+                      <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-1.5 rounded w-fit">
+                        <span className="text-xs font-mono font-bold text-slate-700 uppercase tracking-wider whitespace-nowrap select-all">
+                          {row.transaction_id || 'INTERNAL_RECON'}
+                        </span>
+                        {row.transaction_id && (
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(row.transaction_id);
+                              toast.success('Transaction ID copied!');
+                            }}
+                            className="p-0.5 text-slate-400 hover:text-slate-650 transition-colors inline-flex items-center"
+                            title="Copy Transaction ID"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-5 text-center">

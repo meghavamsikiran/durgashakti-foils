@@ -2025,7 +2025,6 @@ async def save_setting(data: dict, admin: UserSchema = Depends(require_permissio
 
 @router.get("/settings/public")
 async def get_public_settings(db: AsyncSession = Depends(get_db)):
-    await cleanup_expired_coupons(db)
     res = await db.execute(select(SettingModel).where(SettingModel.key.in_(["company_profile", "payment_settings", "scrolling_banner", "shipping_settings", "popup_banner", "feedback_settings", "loyalty_settings"])))
     d = {s.key: s.value for s in res.scalars().all()}
     if "payment_settings" not in d:
