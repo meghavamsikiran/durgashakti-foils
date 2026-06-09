@@ -116,7 +116,8 @@ const DurgaMaaLoader = () => {
       className="relative w-[104px] h-[83px] md:w-40 md:h-32 flex items-center justify-center select-none pointer-events-none"
       style={{ background: 'transparent', backgroundColor: 'transparent' }}
     >
-      {/* Hidden video source — decoded frames are drawn to canvas */}
+      {/* Hidden video source — decoded frames are drawn to canvas
+          CRITICAL: Do NOT use display:none, iOS Safari will suspend the video decoder! */}
       <video
         ref={videoRef}
         src="/durgamaloader.mp4"
@@ -124,7 +125,15 @@ const DurgaMaaLoader = () => {
         playsInline
         loop
         preload="auto"
-        style={{ display: 'none' }}
+        crossOrigin="anonymous"
+        style={{ 
+          opacity: 0.001, 
+          position: 'absolute', 
+          width: '1px', 
+          height: '1px', 
+          pointerEvents: 'none', 
+          zIndex: -1 
+        }}
       />
 
       {/* Canvas renders transparent frames via pixel keying */}
