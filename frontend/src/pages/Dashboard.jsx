@@ -111,7 +111,7 @@ const Dashboard = () => {
         navigate={navigate}
       />
       
-      <main className="flex-1 xl:ml-64 min-w-0 w-full min-h-screen flex flex-col bg-[#0C1310]">
+      <main className="flex-1 min-w-0 w-full min-h-screen flex flex-col bg-[#0C1310]">
         <div className="p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
           <ProfileHeader 
             user={user} 

@@ -17,7 +17,7 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
   return (
     <>
       {/* Sidebar for Desktop */}
-      <aside className="hidden xl:flex xl:w-64 xl:flex-col xl:fixed xl:inset-y-0 bg-[#0C1310] z-30 select-none border-r border-[#19231F]">
+      <aside className="hidden xl:flex xl:w-64 xl:flex-col xl:sticky xl:top-16 xl:h-[calc(100vh-64px)] bg-[#0C1310] z-30 select-none border-r border-[#19231F]">
         {/* Navigation Items */}
         <nav className="flex-1 overflow-y-auto py-6 pl-3 pr-3 space-y-1 sidebar-scrollbar">
           {menuItems.map((item) => (
