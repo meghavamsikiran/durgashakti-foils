@@ -783,4 +783,32 @@ h1, h2, h3, h4, h5, h6 {
     height: calc(100vh - 245px) !important;
     min-height: 300px !important;
   }
+  .admin-table-container-admins {
+    height: calc(100vh - 295px) !important;
+    min-height: 250px !important;
+  }
+  .admin-table-container-orders {
+    height: calc(100vh - 225px) !important;
+    min-height: 250px !important;
+  }
+  .admin-table-container-products {
+    height: calc(100vh - 225px) !important;
+    min-height: 250px !important;
+  }
+  .admin-table-container-inventory {
+    height: calc(100vh - 225px) !important;
+    min-height: 250px !important;
+  }
+  .admin-table-container-customers {
+    height: calc(100vh - 235px) !important;
+    min-height: 250px !important;
+  }
+  .admin-table-container-payments {
+    height: calc(100vh - 235px) !important;
+    min-height: 250px !important;
+  }
+  .admin-table-container-audit-logs {
+    height: calc(100vh - 235px) !important;
+    min-height: 250px !important;
+  }
 }
