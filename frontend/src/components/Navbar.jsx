@@ -525,11 +525,14 @@ const Navbar = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onFocus={() => { if (searchQuery.trim()) setShowDropdown(true); }}
-                className="w-full h-10 bg-white/10 text-white placeholder-white/50 text-sm px-4 pr-10 rounded-lg border border-white/15 focus:outline-none focus:border-[#25d958]"
+                className="w-full h-10 bg-white/10 text-white placeholder-white/50 text-sm px-4 pr-16 rounded-lg border border-white/15 focus:outline-none focus:border-[#25d958]"
                 autoFocus
               />
-              <button type="submit" className="absolute right-3 p-1 text-white/70 hover:text-[#25d958]">
+              <button type="submit" className="absolute right-10 p-1 text-white/70 hover:text-[#25d958]">
                 <Search className="w-4 h-4" />
+              </button>
+              <button type="button" onClick={closeSearch} className="absolute right-3 p-1 text-white/50 hover:text-white transition-colors">
+                <X className="w-4 h-4" />
               </button>
             </form>
 
@@ -601,16 +604,20 @@ const Navbar = () => {
         </Link>
         <button 
           onClick={() => {
-            setIsMobileSearchOpen(prev => !prev);
-            setIsMenuOpen(false);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (isMobileSearchOpen) {
+              closeSearch();
+            } else {
+              setIsMobileSearchOpen(true);
+              setIsMenuOpen(false);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
           }}
           className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
             isMobileSearchOpen ? 'text-[#25d958]' : 'text-white/60 hover:text-white'
           }`}
         >
-          <Search className="w-5 h-5" />
-          <span>Search</span>
+          {isMobileSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+          <span>{isMobileSearchOpen ? 'Close' : 'Search'}</span>
         </button>
         <Link 
           to="/cart" 

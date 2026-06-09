@@ -226,9 +226,9 @@ const Shop = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] font-inter text-[#1E293B]" data-testid="shop-page">
+    <div className="min-h-screen bg-[#0C1310] font-sans text-white" data-testid="shop-page">
       {/* Premium Header Banner - full width img element with controlled height for professional UI */}
-      <div className="w-full overflow-hidden border-b border-slate-200/50 h-auto aspect-[1024/194] md:aspect-none md:h-[295px] lg:h-[345px] bg-[#111111]">
+      <div className="w-full overflow-hidden border-b border-[#26322B] h-auto aspect-[1024/194] md:aspect-none md:h-[295px] lg:h-[345px] bg-[#111111]">
         <img 
           src="/product_display_poster.webp" 
           alt="Our Products - Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene."
@@ -239,15 +239,15 @@ const Shop = () => {
       <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 py-10">
         {/* Mobile Toolbar: Results Count and compact Filter Toggle side-by-side */}
         <div className="lg:hidden flex items-center justify-between mb-6">
-          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-450">
             SHOWING {filteredProducts.length} PRODUCT{filteredProducts.length !== 1 ? 'S' : ''}
           </p>
           <button
             onClick={() => setShowMobileFilters(!showMobileFilters)}
             className={`inline-flex items-center justify-center w-[40px] h-[40px] rounded-xl border transition-all shadow-sm shrink-0 ${
               showMobileFilters
-                ? 'border-[#0F5C2E] bg-[#0F5C2E]/10 text-[#0F5C2E]'
-                : 'border-slate-200 bg-white text-slate-650 hover:bg-slate-50'
+                ? 'border-[#25D958] bg-[#25D958]/10 text-[#25D958]'
+                : 'border-[#26322B] bg-[#131B17] text-white hover:bg-[#19231F]'
             }`}
             title="Toggle Filters"
           >
@@ -258,7 +258,7 @@ const Shop = () => {
         {/* Sliding Sidebar Drawer Backdrop on Mobile */}
         {showMobileFilters && (
           <div 
-            className="lg:hidden fixed inset-0 bg-black/60 z-[90] transition-opacity duration-300"
+            className="lg:hidden fixed inset-0 bg-[#0C1310]/80 backdrop-blur-sm z-[90] transition-opacity duration-300"
             onClick={() => setShowMobileFilters(false)}
           />
         )}
@@ -267,12 +267,12 @@ const Shop = () => {
           {/* Filters Sidebar Drawer */}
           <div className={`
             lg:relative lg:block lg:w-80 lg:translate-x-0 lg:z-auto lg:p-0 lg:border-none lg:bg-transparent lg:shadow-none
-            fixed inset-y-0 left-0 w-80 bg-white z-[100] shadow-2xl p-6 overflow-y-auto transition-transform duration-300 border-r border-slate-200/60
+            fixed inset-y-0 left-0 w-80 bg-[#0C1310] z-[100] shadow-2xl p-6 overflow-y-auto transition-transform duration-300 border-r border-[#26322B]
             ${showMobileFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           `}>
-            <div className="bg-white lg:border lg:border-slate-200/60 lg:p-6 lg:rounded-2xl sticky top-24 lg:shadow-sm">
+            <div className="bg-[#131B17] lg:border lg:border-[#26322B] lg:p-6 lg:rounded-2xl sticky top-24 lg:shadow-sm">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="font-extrabold text-xs font-manrope text-slate-800 uppercase tracking-wider">
+                <h2 className="font-extrabold text-xs font-sans text-white uppercase tracking-wider">
                   Category
                 </h2>
                 <div className="flex items-center gap-3">
@@ -286,7 +286,7 @@ const Shop = () => {
                   )}
                   <button 
                     onClick={() => setShowMobileFilters(false)}
-                    className="lg:hidden p-1 text-slate-400 hover:text-slate-650"
+                    className="lg:hidden p-1 text-slate-400 hover:text-white"
                     title="Close Filters"
                   >
                     <X className="w-4 h-4" />
@@ -300,7 +300,7 @@ const Shop = () => {
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs focus:outline-none focus:border-[#0F5C2E] focus:ring-1 focus:ring-[#0F5C2E]/20 text-slate-700 font-bold uppercase tracking-wider appearance-none cursor-pointer"
+                      className="w-full h-10 rounded-xl border border-[#26322B] bg-[#131B17] px-3 text-xs focus:outline-none focus:border-[#25D958] focus:ring-1 focus:ring-[#25D958]/20 text-white font-bold uppercase tracking-wider appearance-none cursor-pointer"
                     >
                       <option value="all">All Category</option>
                       {categories
@@ -311,14 +311,14 @@ const Shop = () => {
                           </option>
                         ))}
                     </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#25D958]">
                       <ChevronRight className="w-4 h-4 rotate-90" />
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t border-slate-200/60 pt-6">
-                  <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 block">Price</label>
+                <div className="border-t border-[#26322B] pt-6">
+                  <label className="text-xs font-bold text-white uppercase tracking-wider mb-3 block">Price</label>
                   {/* Custom Range Slider */}
                   <div className="mb-4">
                     <input 
@@ -327,9 +327,9 @@ const Shop = () => {
                       max={computedMaxPrice} 
                       value={maxPrice} 
                       onChange={(e) => setMaxPrice(Number(e.target.value))}
-                      className="w-full accent-[#0F5C2E] h-1.5 bg-slate-200 rounded-lg cursor-pointer"
+                      className="w-full accent-[#25D958] h-1.5 bg-[#26322B] rounded-lg cursor-pointer"
                     />
-                    <div className="flex justify-between items-center mt-2 text-[10px] font-bold text-slate-550 font-mono">
+                    <div className="flex justify-between items-center mt-2 text-[10px] font-bold text-slate-400 font-mono">
                       <span>min ₹0</span>
                       <span>max ₹{maxPrice}</span>
                     </div>
@@ -342,9 +342,8 @@ const Shop = () => {
                       { value: '250to500', label: '₹250 - ₹500' },
                       { value: '500to1000', label: '₹500 - ₹1000' }
                     ].map(option => {
-                      const isActive = priceFilter === option.value;
                       return (
-                        <label key={option.value} className="flex items-center gap-2 text-[11px] font-bold text-slate-700 cursor-pointer select-none">
+                        <label key={option.value} className="flex items-center gap-2 text-[11px] font-bold text-slate-300 cursor-pointer select-none">
                           <input
                             type="radio"
                             name="price"
@@ -358,7 +357,7 @@ const Shop = () => {
                               else if (option.value === '500to1000') setMaxPrice(1000);
                               else if (option.value === 'all') setMaxPrice(computedMaxPrice);
                             }}
-                            className="w-3.5 h-3.5 accent-[#0F5C2E]"
+                            className="w-3.5 h-3.5 accent-[#25D958]"
                           />
                           <span>{option.label}</span>
                         </label>
@@ -367,9 +366,9 @@ const Shop = () => {
                   </div>
                 </div>
 
-                <div className="border-t border-slate-200/60 pt-6">
+                <div className="border-t border-[#26322B] pt-6">
                   <div className="flex items-center justify-between mb-3">
-                    <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block">Customer Rating</label>
+                    <label className="text-xs font-bold text-white uppercase tracking-wider block">Customer Rating</label>
                     {ratingFilter !== 'all' && (
                       <button
                         onClick={() => setRatingFilter('all')}
@@ -391,18 +390,18 @@ const Shop = () => {
                         <div 
                           key={option.value} 
                           onClick={() => setRatingFilter(isActive ? 'all' : option.value)}
-                          className={`flex items-center justify-between cursor-pointer transition-all duration-150 py-2 px-3 rounded-xl border ${isActive ? 'bg-[#0F5C2E]/10 border-[#0F5C2E] text-[#0F5C2E] font-black' : 'bg-slate-50 border-slate-200 text-slate-650 hover:bg-slate-100'}`}
+                          className={`flex items-center justify-between cursor-pointer transition-all duration-150 py-2 px-3 rounded-xl border ${isActive ? 'bg-[#25D958]/10 border-[#25D958] text-[#25D958] font-black' : 'bg-[#19231F] border-[#26322B] text-slate-300 hover:bg-[#1f2c27]'}`}
                         >
                           <div className="flex items-center gap-2">
-                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${isActive ? 'border-[#0F5C2E] bg-[#0F5C2E]' : 'border-slate-350 bg-white'}`}>
-                              {isActive && <Check className="w-2.5 h-2.5 text-white stroke-[3px]" />}
+                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${isActive ? 'border-[#25D958] bg-[#25D958]' : 'border-[#26322B] bg-[#131B17]'}`}>
+                              {isActive && <Check className="w-2.5 h-2.5 text-[#0C1310] stroke-[3px]" />}
                             </div>
                             <span className="flex items-center">
                               {[...Array(option.stars)].map((_, i) => (
                                 <Star key={`gold-${i}`} className="w-3 h-3 text-amber-400 fill-amber-400" />
                               ))}
                               {[...Array(option.empty)].map((_, i) => (
-                                <Star key={`gray-${i}`} className="w-3 h-3 text-slate-350" />
+                                <Star key={`gray-${i}`} className="w-3 h-3 text-slate-650" />
                               ))}
                             </span>
                             <span className="text-[10px] uppercase font-bold tracking-wider font-mono ml-1">{option.label}</span>
@@ -410,10 +409,10 @@ const Shop = () => {
                           {isActive && (
                             <button
                               onClick={(e) => {
-                                e.stopPropagation();
-                                setRatingFilter('all');
+                                  e.stopPropagation();
+                                  setRatingFilter('all');
                               }}
-                              className="p-0.5 rounded-full hover:bg-[#0F5C2E]/20 text-[#0F5C2E]"
+                              className="p-0.5 rounded-full hover:bg-[#25D958]/20 text-[#25D958]"
                               title="Clear Rating Filter"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -425,13 +424,13 @@ const Shop = () => {
                   </div>
                 </div>
 
-                <div className="border-t border-slate-200/60 pt-6">
-                  <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 block">Sort By</label>
+                <div className="border-t border-[#26322B] pt-6">
+                  <label className="text-xs font-bold text-white uppercase tracking-wider mb-3 block">Sort By</label>
                   <div className="relative">
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
-                      className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs focus:outline-none focus:border-[#0F5C2E] focus:ring-1 focus:ring-[#0F5C2E]/20 text-slate-700 font-bold uppercase tracking-wider appearance-none cursor-pointer"
+                      className="w-full h-10 rounded-xl border border-[#26322B] bg-[#131B17] px-3 text-xs focus:outline-none focus:border-[#25D958] focus:ring-1 focus:ring-[#25D958]/20 text-white font-bold uppercase tracking-wider appearance-none cursor-pointer"
                       data-testid="sort-select"
                     >
                       <option value="name">Name</option>
@@ -439,7 +438,7 @@ const Shop = () => {
                       <option value="price-high">Price: High to Low</option>
                       <option value="rating-high">Rating: High to Low</option>
                     </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#25D958]">
                       <ChevronRight className="w-4 h-4 rotate-90" />
                     </div>
                   </div>
@@ -448,13 +447,12 @@ const Shop = () => {
             </div>
           </div>
 
-
           {/* Products Grid */}
           <div className="flex-1">
             {searchQuery && (
-              <div className="mb-6 p-4 rounded-xl border border-primary/20 bg-primary/5 flex items-center justify-between text-sm">
-                <span className="font-semibold text-slate-700">
-                  Search results for: <strong className="text-primary font-extrabold">"{searchQuery}"</strong>
+              <div className="mb-6 p-4 rounded-xl border border-[#25D958]/20 bg-[#25D958]/5 flex items-center justify-between text-sm">
+                <span className="font-semibold text-slate-350">
+                  Search results for: <strong className="text-[#25D958] font-extrabold">"{searchQuery}"</strong>
                 </span>
                 <button
                   onClick={() => {
@@ -469,8 +467,8 @@ const Shop = () => {
               </div>
             )}
             {loading ? <PageLoader /> : filteredProducts.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl border border-border-subtle p-8 shadow-sm">
-                <p className="text-on-surface-variant font-medium">No products found match your active filters.</p>
+              <div className="text-center py-16 bg-[#131B17] rounded-2xl border border-[#26322B] p-8">
+                <p className="text-slate-400 font-medium">No products found match your active filters.</p>
               </div>
             ) : (
               <>
@@ -497,6 +495,7 @@ const Shop = () => {
                     onPageChange={setPage}
                     totalItems={filteredProducts.length}
                     pageSize={ITEMS_PER_PAGE}
+                    variant="dark"
                   />
                 </div>
               </>
