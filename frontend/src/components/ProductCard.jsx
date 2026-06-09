@@ -158,20 +158,29 @@ const ProductCard = ({ product }) => {
   };
 
 
+  const getCustomBadgeStyle = (tag) => {
+    const t = String(tag).toUpperCase();
+    if (t.includes('TRENDING')) return 'bg-[#F97316] text-white';
+    if (t.includes('HOT DEAL') || t.includes('HOT')) return 'bg-[#EF4444] text-white';
+    if (t.includes('FEATURED')) return 'bg-[#A855F7] text-white';
+    if (t.includes('EXTRA STRENGTH') || t.includes('STRENGTH')) return 'bg-[#1E293B] text-white';
+    return 'bg-[#0F5C2E] text-white';
+  };
+
   return (
     <>
       <motion.div
-        whileHover={{ y: -5 }}
+        whileHover={{ y: -4 }}
         transition={{ duration: 0.2 }}
-        className="group relative overflow-hidden bg-white border border-border-subtle rounded-xl hover:border-primary hover:shadow-emerald-glow transition-all duration-300 cursor-pointer flex flex-col h-full"
+        className="group relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl hover:shadow-md hover:border-slate-300 transition-all duration-300 cursor-pointer flex flex-col h-full"
         onClick={() => navigate(`/product/${product.id}`)}
         data-testid={`product-card-${product.id}`}
       >
-        <div className="aspect-square overflow-hidden bg-surface-container-low relative">
+        <div className="aspect-square overflow-hidden bg-slate-50 relative">
           <img
             src={formatImageUrl(product.image_url)}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-103"
             data-testid="product-image"
           />
           
@@ -179,18 +188,15 @@ const ProductCard = ({ product }) => {
           <button
             onClick={handleToggleWishlist}
             disabled={wishlisting}
-            className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-md transition-all duration-200 shadow-sm z-10 
-              ${isWishlisted 
-                ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20' 
-                : 'bg-white/90 text-rose-500/70 hover:text-rose-600 hover:bg-white hover:scale-110'}`}
+            className="absolute top-3 right-3 p-2 rounded-full bg-white border border-slate-200 transition-all duration-200 shadow-sm z-10 hover:scale-110 flex items-center justify-center"
             data-testid="wishlist-toggle"
           >
-            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''} ${wishlisting ? 'animate-pulse' : ''}`} />
+            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-rose-500 text-rose-500' : 'text-slate-700'} ${wishlisting ? 'animate-pulse' : ''}`} />
           </button>
 
           {/* Active Tag */}
           {activeTag && (
-            <div className={`absolute top-3 left-0 px-3 py-1 text-[9px] font-black uppercase tracking-widest shadow-md rounded-r-full z-10 ${getBadgeClasses(activeTag)}`}>
+            <div className={`absolute top-3 left-3 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider rounded z-10 shadow-sm ${getCustomBadgeStyle(activeTag)}`}>
               {activeTag}
             </div>
           )}
@@ -219,30 +225,45 @@ const ProductCard = ({ product }) => {
 
         <div className="p-5 flex flex-col justify-between flex-1">
           <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded border border-border-subtle">
-                {product.size} • {product.thickness}
-              </span>
+            <div className="mb-3 flex flex-wrap gap-2 items-center">
+              {product.size && (
+                <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded">
+                  {product.size}
+                </span>
+              )}
+              {product.thickness && (
+                <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded">
+                  {product.thickness}
+                </span>
+              )}
               {hasOffer && (
-                <span className="text-[10px] font-black text-rose-600 bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-sm">
+                <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded">
                   -{discountPercent}%
                 </span>
               )}
             </div>
             
-            <h3 className="font-bold text-base font-manrope text-ink-slate mb-1 line-clamp-2 hover:text-primary transition-colors" data-testid="product-name">
+            <h3 className="font-bold text-sm md:text-base font-manrope text-slate-900 mb-1.5 line-clamp-2 hover:text-[#0F5C2E] transition-colors" data-testid="product-name">
               {product.name}
             </h3>
 
             {Number(product.review_count || 0) > 0 && (
-              <StarRating
-                value={product.rating_average}
-                count={product.review_count}
-                className="mb-2"
-              />
+              <div className="flex items-center gap-1 mb-2">
+                <div className="flex items-center">
+                  {[...Array(5)].map((_, i) => (
+                    <Star 
+                      key={i} 
+                      className={`w-3.5 h-3.5 ${i < Math.round(Number(product.rating_average || 0)) 
+                        ? 'text-amber-400 fill-amber-400' 
+                        : 'text-slate-300'}`} 
+                    />
+                  ))}
+                </div>
+                <span className="text-[11px] font-bold text-slate-400 font-mono">({product.review_count})</span>
+              </div>
             )}
             
-            <p className="text-xs text-text-muted leading-relaxed line-clamp-2 font-inter mb-4">
+            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 font-inter mb-4">
               {product.description}
             </p>
           </div>
@@ -252,32 +273,31 @@ const ProductCard = ({ product }) => {
               <div className="flex flex-col gap-0.5 min-w-0">
                 {hasOffer ? (
                   <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-black text-ink-slate font-manrope leading-none" data-testid="product-price">
+                    <span className="text-lg font-extrabold text-slate-900 font-manrope leading-none" data-testid="product-price">
                       ₹{displayPrice}
                     </span>
-                    <span className="text-[11px] text-text-muted line-through font-semibold">
+                    <span className="text-[11px] text-slate-400 line-through font-semibold">
                       ₹{basePrice}
                     </span>
                   </div>
                 ) : (
-                  <span className="text-xl font-black text-ink-slate font-manrope leading-none" data-testid="product-price">
+                  <span className="text-lg font-extrabold text-slate-900 font-manrope leading-none" data-testid="product-price">
                     ₹{displayPrice}
                   </span>
                 )}
               </div>
-              
             </div>
             <div className="pt-4" onClick={(e) => e.stopPropagation()}>
               {isUnavailable ? (
                 <Button
                   onClick={(e) => { e.stopPropagation(); toast.success('🔔 We will email you once this item is back in stock!'); }}
-                  className="w-full border border-border-subtle bg-white hover:bg-slate-50 text-slate-700 h-10 rounded-lg font-bold transition-all shadow-sm text-[10px] flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 h-10 rounded-lg font-bold transition-all shadow-sm text-[10px] flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Bell className="w-3 h-3 text-slate-500" />
                   NOTIFY ME
                 </Button>
               ) : qty > 0 ? (
-                <div className="flex items-center justify-between border border-border-subtle bg-white rounded-full h-10 w-full px-3.5 shadow-sm hover:border-primary/50 transition-all select-none">
+                <div className="flex items-center justify-between border border-slate-200 bg-white rounded-lg h-10 w-full px-3.5 shadow-sm hover:border-[#0F5C2E]/50 transition-all select-none">
                   <button
                     onClick={handleDecrement}
                     className="h-full flex items-center justify-center text-slate-400 hover:text-rose-600 transition-colors focus:outline-none cursor-pointer"
@@ -295,7 +315,7 @@ const ProductCard = ({ product }) => {
                   </span>
                   <button
                     onClick={handleIncrement}
-                    className="h-full flex items-center justify-center text-slate-400 hover:text-primary transition-colors focus:outline-none cursor-pointer"
+                    className="h-full flex items-center justify-center text-slate-400 hover:text-[#0F5C2E] transition-colors focus:outline-none cursor-pointer"
                     title="Increase quantity"
                     data-testid={`increase-quantity-${product.id}`}
                   >
@@ -305,7 +325,7 @@ const ProductCard = ({ product }) => {
               ) : (
                 <Button
                   onClick={handleAddToCart}
-                  className="w-full bg-primary hover:bg-emerald-hover text-white h-10 rounded-lg font-bold transition-all flex items-center justify-center gap-2 shadow-sm text-xs cursor-pointer active:scale-95"
+                  className="w-full bg-[#0F5C2E] hover:bg-[#0c4a24] text-white h-10 rounded-lg font-bold transition-all flex items-center justify-center gap-2 shadow-sm text-xs cursor-pointer active:scale-95"
                   data-testid="add-to-cart-button"
                 >
                   <ShoppingCart className="w-3.5 h-3.5" />

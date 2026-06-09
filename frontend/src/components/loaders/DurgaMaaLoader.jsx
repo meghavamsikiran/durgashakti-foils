@@ -91,6 +91,7 @@ const DurgaMaaLoader = () => {
           muted
           playsInline
           webkit-playsinline="true"
+          preload="auto"
           loop
           crossOrigin="anonymous"
           style={{ display: 'none' }}
@@ -121,6 +122,7 @@ const DurgaMaaLoader = () => {
         muted 
         playsInline
         webkit-playsinline="true"
+        preload="auto"
         controls={false}
         onTimeUpdate={handleTimeUpdate}
         className="w-full h-full object-cover border-none outline-none bg-transparent"

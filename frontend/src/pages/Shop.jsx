@@ -59,6 +59,7 @@ const Shop = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [loading, setLoading] = useState(!initialProducts.length);
   const [priceFilter, setPriceFilter] = useState('all');
+  const [maxPrice, setMaxPrice] = useState(1000);
   const [ratingFilter, setRatingFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [page, setPage] = useState(1);
@@ -122,6 +123,23 @@ const Shop = () => {
       });
     } else if (priceFilter === 'over500') {
       filtered = filtered.filter(p => getProductPricing(p).displayPrice >= 500);
+    } else if (priceFilter === '0to250') {
+      filtered = filtered.filter(p => getProductPricing(p).displayPrice <= 250);
+    } else if (priceFilter === '250to500') {
+      filtered = filtered.filter(p => {
+        const price = getProductPricing(p).displayPrice;
+        return price >= 250 && price <= 500;
+      });
+    } else if (priceFilter === '500to1000') {
+      filtered = filtered.filter(p => {
+        const price = getProductPricing(p).displayPrice;
+        return price >= 500 && price <= 1000;
+      });
+    }
+
+    // Slider filter
+    if (maxPrice < 1000) {
+      filtered = filtered.filter(p => getProductPricing(p).displayPrice <= maxPrice);
     }
 
     if (ratingFilter !== 'all') {
@@ -142,7 +160,7 @@ const Shop = () => {
 
     setFilteredProducts(filtered);
     setPage(1); // Reset to first page when filters change
-  }, [products, categoryFilter, priceFilter, ratingFilter, sortBy, searchQuery]);
+  }, [products, categoryFilter, priceFilter, ratingFilter, sortBy, searchQuery, maxPrice]);
 
   useEffect(() => {
     fetchProducts();
@@ -158,6 +176,7 @@ const Shop = () => {
   const handleClearFilters = () => {
     setCategoryFilter('all');
     setPriceFilter('all');
+    setMaxPrice(1000);
     setRatingFilter('all');
     setSortBy('name');
     if (searchParams.has('search')) {
@@ -170,22 +189,16 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-surface py-12 font-inter text-on-surface" data-testid="shop-page">
       <div className="mx-auto max-w-[1340px] px-6 md:px-12 lg:px-[90px]">
-        {/* Premium Header Banner */}
-        <div className="mb-12 rounded-3xl overflow-hidden relative border border-border-subtle p-8 md:p-12 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-xl">
-          {/* Subtle grid and glow design details */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-          <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
-          <div className="absolute left-1/3 bottom-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-[60px] pointer-events-none" />
-
-          <div className="relative z-10 max-w-2xl">
-            <span className="text-[9px] font-mono font-bold uppercase tracking-[0.25em] text-primary bg-primary/10 px-3.5 py-1.5 rounded-full inline-block mb-4 border border-primary/20">
-              PREMIUM PRODUCTS
-            </span>
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tighter text-white font-manrope mb-4" data-testid="shop-title">
-              Our Products
-            </h1>
-            <p className="text-xs md:text-sm text-slate-300 font-medium leading-relaxed">
-              Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil engineered for commercial strength and clinical hygiene.
+        {/* Redesigned Premium Header Banner */}
+        <div 
+          className="mb-12 rounded-2xl overflow-hidden relative shadow-md bg-cover bg-center h-[240px] md:h-[280px] lg:h-[320px] w-full"
+          style={{ backgroundImage: "url('/product_display_poster.webp')" }}
+        >
+          {/* Accessible text for SEO / Screen Readers */}
+          <div className="sr-only">
+            <h1 data-testid="shop-title">Our Products</h1>
+            <p>
+              Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene.
             </p>
           </div>
         </div>
@@ -193,7 +206,7 @@ const Shop = () => {
         {/* Collapsible Mobile Filters Button */}
         <button
           onClick={() => setShowMobileFilters(!showMobileFilters)}
-          className="lg:hidden w-full flex items-center justify-center gap-2 py-3 bg-[#39c653] hover:bg-[#48d862] text-white font-extrabold rounded-xl shadow-sm mb-6 transition-all duration-200"
+          className="lg:hidden w-full flex items-center justify-center gap-2 py-3 bg-[#0F5C2E] hover:bg-[#0c4a24] text-white font-extrabold rounded-xl shadow-sm mb-6 transition-all duration-200"
         >
           <SlidersHorizontal className="w-4 h-4" />
           <span>{showMobileFilters ? 'HIDE FILTERS' : 'SHOW FILTERS'}</span>
@@ -202,15 +215,15 @@ const Shop = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
           <div className={`lg:w-80 flex-shrink-0 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
-            <div className="bg-white border border-border-subtle p-6 rounded-2xl shadow-sm sticky top-24">
-              <div className="flex items-center justify-between mb-6 border-b border-border-subtle pb-4">
+            <div className="bg-[#F9F9F9] border border-slate-100 p-6 rounded-2xl sticky top-24">
+              <div className="flex items-center justify-between mb-6 border-b border-slate-200/60 pb-4">
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-5 h-5 text-primary" />
-                  <h2 className="font-bold text-sm font-manrope text-ink-slate uppercase tracking-wider">
+                  <SlidersHorizontal className="w-4 h-4 text-slate-800" />
+                  <h2 className="font-extrabold text-xs font-manrope text-slate-800 uppercase tracking-wider">
                     Filters
                   </h2>
                 </div>
-                {(categoryFilter !== 'all' || priceFilter !== 'all' || ratingFilter !== 'all' || sortBy !== 'name') && (
+                {(categoryFilter !== 'all' || priceFilter !== 'all' || maxPrice !== 1000 || ratingFilter !== 'all' || sortBy !== 'name') && (
                   <button 
                     onClick={handleClearFilters}
                     className="text-[10px] font-bold text-rose-500 hover:text-rose-600 uppercase tracking-wider transition-colors"
@@ -222,12 +235,12 @@ const Shop = () => {
 
               <div className="space-y-6">
                 <div>
-                  <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-3 block">Category</label>
+                  <label className="text-[11px] font-manrope font-extrabold uppercase tracking-wider text-slate-800 mb-3 block">Category</label>
                   <div className="flex flex-wrap gap-2">
-                    <label className={`relative flex items-center justify-center px-4 py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 select-none
+                    <label className={`relative flex items-center justify-center px-4 py-2 rounded-full border text-[11px] font-bold cursor-pointer transition-all duration-200 select-none
                       ${categoryFilter === 'all' 
-                        ? 'bg-primary text-white border-primary shadow-emerald-glow' 
-                        : 'bg-slate-50 text-slate-600 border-border-subtle hover:bg-slate-100 hover:text-slate-800'}`}
+                        ? 'bg-[#0F5C2E] text-white border-[#0F5C2E]' 
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
                     >
                       <input
                         type="radio"
@@ -238,13 +251,13 @@ const Shop = () => {
                         className="sr-only"
                         data-testid="filter-category-all"
                       />
-                      <span>All Categories</span>
+                      <span>All Category</span>
                     </label>
                     {categories.map(category => (
-                      <label key={category.id || category.name} className={`relative flex items-center justify-center px-4 py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 select-none
+                      <label key={category.id || category.name} className={`relative flex items-center justify-center px-4 py-2 rounded-full border text-[11px] font-bold cursor-pointer transition-all duration-200 select-none
                         ${categoryFilter === category.name 
-                          ? 'bg-primary text-white border-primary shadow-emerald-glow' 
-                          : 'bg-slate-50 text-slate-600 border-border-subtle hover:bg-slate-100 hover:text-slate-800'}`}
+                          ? 'bg-[#0F5C2E] text-white border-[#0F5C2E]' 
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
                       >
                         <input
                           type="radio"
@@ -261,90 +274,88 @@ const Shop = () => {
                   </div>
                 </div>
 
-                <div className="border-t border-border-subtle pt-6">
-                  <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-3 block">Price Range</label>
+                <div className="border-t border-slate-200/60 pt-6">
+                  <label className="text-[11px] font-manrope font-extrabold uppercase tracking-wider text-slate-800 mb-3 block">Price</label>
+                  {/* Custom Range Slider */}
+                  <div className="mb-4">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="1000" 
+                      value={maxPrice} 
+                      onChange={(e) => setMaxPrice(Number(e.target.value))}
+                      className="w-full accent-[#0F5C2E] h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="flex justify-between items-center mt-2 text-[10px] font-semibold text-slate-500 font-mono">
+                      <span>min ₹0</span>
+                      <span>max ₹{maxPrice}</span>
+                    </div>
+                  </div>
+                  {/* Radio Buttons below slider */}
                   <div className="flex flex-col gap-2">
                     {[
-                      { value: 'all', label: 'All Prices' },
-                      { value: 'under200', label: 'Under ₹200' },
-                      { value: '200to500', label: '₹200 - ₹500' },
-                      { value: 'over500', label: 'Over ₹500' }
+                      { value: 'all', label: 'All' },
+                      { value: '0to250', label: '₹0 - ₹250' },
+                      { value: '250to500', label: '₹250 - ₹500' },
+                      { value: '500to1000', label: '₹500 - ₹1000' }
                     ].map(option => {
                       const isActive = priceFilter === option.value;
                       return (
-                        <label key={option.value} className={`relative flex items-center justify-between px-4 py-3 rounded-xl border text-xs font-bold cursor-pointer transition-all duration-200 select-none
-                          ${isActive 
-                            ? 'bg-primary/5 text-primary border-primary font-extrabold' 
-                            : 'bg-white text-slate-600 border-border-subtle hover:bg-slate-50'}`}
-                        >
+                        <label key={option.value} className="flex items-center gap-2 text-[11px] font-bold text-slate-700 cursor-pointer select-none">
                           <input
                             type="radio"
                             name="price"
                             value={option.value}
                             checked={priceFilter === option.value}
-                            onChange={(e) => setPriceFilter(e.target.value)}
-                            className="sr-only"
+                            onChange={(e) => {
+                              setPriceFilter(e.target.value);
+                              // Auto sync slider if they select a radio
+                              if (option.value === '0to250') setMaxPrice(250);
+                              else if (option.value === '250to500') setMaxPrice(500);
+                              else if (option.value === '500to1000') setMaxPrice(1000);
+                              else if (option.value === 'all') setMaxPrice(1000);
+                            }}
+                            className="w-3.5 h-3.5 accent-[#0F5C2E]"
                             data-testid={`filter-price-${option.value}`}
                           />
                           <span>{option.label}</span>
-                          <span className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all shrink-0
-                            ${isActive ? 'border-primary bg-primary' : 'border-slate-300'}`}
-                          >
-                            {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
-                          </span>
                         </label>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="border-t border-border-subtle pt-6">
-                  <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-3 block">Customer Rating</label>
-                  <div className="flex flex-col gap-2">
+                <div className="border-t border-slate-200/60 pt-6">
+                  <label className="text-[11px] font-manrope font-extrabold uppercase tracking-wider text-slate-800 mb-3 block">Customer Rating</label>
+                  <div className="flex flex-col gap-2.5">
                     {[
-                      { value: 'all', label: 'All Ratings' },
-                      { value: '4', label: '4 Stars & Up' },
-                      { value: '3', label: '3 Stars & Up' },
-                      { value: '2', label: '2 Stars & Up' },
-                      { value: '1', label: '1 Star & Up' }
+                      { value: '4.5', label: '4.5 & above (68)', stars: 5, empty: 0 },
+                      { value: '4.0', label: '4.0 & above (116)', stars: 4, empty: 1 },
+                      { value: '3.5', label: '3.5 & above (247)', stars: 3, empty: 2 },
+                      { value: '3.0', label: '3.0 & above (421)', stars: 2, empty: 3 }
                     ].map(option => {
                       const isActive = ratingFilter === option.value;
                       return (
-                        <label key={option.value} className={`relative flex items-center justify-between px-4 py-3 rounded-xl border text-xs font-bold cursor-pointer transition-all duration-200 select-none
-                          ${isActive 
-                            ? 'bg-primary/5 text-primary border-primary font-extrabold' 
-                            : 'bg-white text-slate-600 border-border-subtle hover:bg-slate-50'}`}
-                        >
+                        <label key={option.value} className="flex items-center gap-2 cursor-pointer select-none">
                           <input
                             type="radio"
                             name="rating"
                             value={option.value}
                             checked={ratingFilter === option.value}
                             onChange={(e) => setRatingFilter(e.target.value)}
-                            className="sr-only"
+                            className="w-3.5 h-3.5 accent-[#0F5C2E]"
                             data-testid={`filter-rating-${option.value}`}
                           />
-                          <span className="flex items-center gap-1.5">
-                            {option.value !== 'all' ? (
-                              <div className="flex items-center gap-0.5">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star 
-                                    key={i} 
-                                    className={`w-3.5 h-3.5 ${i < Number(option.value) 
-                                      ? 'text-amber-400 fill-amber-400' 
-                                      : 'text-slate-200 fill-slate-100'}`} 
-                                  />
-                                ))}
-                                <span className="ml-1 text-slate-400 font-semibold text-[10px] uppercase font-mono">({option.label})</span>
-                              </div>
-                            ) : (
-                              <span>{option.label}</span>
-                            )}
-                          </span>
-                          <span className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all shrink-0
-                            ${isActive ? 'border-primary bg-primary' : 'border-slate-300'}`}
-                          >
-                            {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          <span className="flex items-center gap-1">
+                            <span className="flex items-center">
+                              {[...Array(option.stars)].map((_, i) => (
+                                <Star key={`gold-${i}`} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                              ))}
+                              {[...Array(option.empty)].map((_, i) => (
+                                <Star key={`gray-${i}`} className="w-3.5 h-3.5 text-slate-300" />
+                              ))}
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-600 ml-1">{option.label}</span>
                           </span>
                         </label>
                       );
@@ -352,13 +363,13 @@ const Shop = () => {
                   </div>
                 </div>
 
-                <div className="border-t border-border-subtle pt-6">
-                  <label className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 mb-3 block">Sort By</label>
+                <div className="border-t border-slate-200/60 pt-6">
+                  <label className="text-[11px] font-manrope font-extrabold uppercase tracking-wider text-slate-800 mb-3 block">Sort By</label>
                   <div className="relative">
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
-                      className="w-full h-11 rounded-xl border border-border-subtle bg-white px-4 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-slate-700 font-bold uppercase tracking-wider appearance-none cursor-pointer"
+                      className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs focus:outline-none focus:border-[#0F5C2E] focus:ring-1 focus:ring-[#0F5C2E]/20 text-slate-700 font-bold uppercase tracking-wider appearance-none cursor-pointer"
                       data-testid="sort-select"
                     >
                       <option value="name">Name</option>
@@ -374,6 +385,7 @@ const Shop = () => {
               </div>
             </div>
           </div>
+
 
           {/* Products Grid */}
           <div className="flex-1">
