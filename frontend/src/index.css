@@ -921,7 +921,7 @@ h1, h2, h3, h4, h5, h6 {
 .admin-theme tbody tr:hover,
 .admin-shell .group:hover,
 .admin-shell [class*="group-hover:bg-"] {
-  background-color: rgba(255, 255, 255, 0.22) !important;
+  background-color: rgba(19, 27, 23, 0.35) !important;
 }
 
 .admin-shell input, 
@@ -948,7 +948,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .admin-shell table tr:hover {
-  background-color: rgba(255, 255, 255, 0.22) !important;
+  background-color: rgba(19, 27, 23, 0.35) !important;
 }
 
 .admin-shell table tr {
@@ -1048,7 +1048,9 @@ input[type="checkbox"] {
 .light-theme main.bg-\[\#0c1310\],
 .light-theme div.bg-\[\#0C1310\],
 .light-theme div.bg-\[\#0c1310\],
-.light-theme div.min-h-screen.bg-\[\#0C1310\] {
+.light-theme div.min-h-screen.bg-\[\#0C1310\],
+.light-theme .admin-shell,
+.light-theme .admin-shell main {
   background-color: #f7faf8 !important;
   color: #181c1b !important;
 }
@@ -1059,8 +1061,23 @@ input[type="checkbox"] {
 .light-theme .text-slate-200,
 .light-theme .text-slate-300,
 .light-theme .text-slate-350,
-.light-theme .text-slate-400 {
+.light-theme .text-slate-400,
+.light-theme .admin-shell .text-white,
+.light-theme .admin-shell .text-slate-100,
+.light-theme .admin-shell .text-slate-200,
+.light-theme .admin-shell .text-slate-300,
+.light-theme .admin-shell .text-slate-350,
+.light-theme .admin-shell .text-slate-400,
+.light-theme .admin-shell .text-slate-700,
+.light-theme .admin-shell .text-slate-800,
+.light-theme .admin-shell .text-slate-900 {
   color: #181c1b !important;
+}
+
+/* Ensure secondary slate text is legible but muted */
+.light-theme .admin-shell .text-slate-500,
+.light-theme .admin-shell .text-slate-600 {
+  color: #64748B !important;
 }
 
 /* Card and container elements in light theme - to pure white #ffffff */
@@ -1069,7 +1086,14 @@ input[type="checkbox"] {
 .light-theme .bg-\[\#131b17\],
 .light-theme .bg-\[\#19231f\],
 .light-theme div.bg-\[\#131B17\],
-.light-theme div.bg-\[\#19231F\] {
+.light-theme div.bg-\[\#19231F\],
+.light-theme .admin-shell .bg-white,
+.light-theme .admin-shell div.bg-white,
+.light-theme .admin-shell .bg-card,
+.light-theme .admin-theme .bg-slate-900,
+.light-theme .admin-shell .bg-slate-900,
+.light-theme .admin-shell div.bg-slate-900,
+.light-theme .admin-shell [class*="bg-slate-900"] {
   background-color: #ffffff !important;
   border-color: #bbcbb5 !important;
   color: #181c1b !important;
@@ -1079,8 +1103,35 @@ input[type="checkbox"] {
 .light-theme .border-\[\#26322B\],
 .light-theme .border-\[\#26322b\],
 .light-theme .border-white\/5,
-.light-theme .border-slate-800 {
+.light-theme .border-slate-800,
+.light-theme .admin-shell .border-\[\#26322B\],
+.light-theme .admin-shell .border-\[\#26322b\],
+.light-theme .admin-shell .border-white\/5,
+.light-theme .admin-shell .border-white\/10,
+.light-theme .admin-shell .border-slate-200,
+.light-theme .admin-shell .border-slate-100 {
   border-color: #bbcbb5 !important;
+}
+
+/* Table overrides in light theme admin shell */
+.light-theme .admin-shell table th {
+  background-color: #f1f4f2 !important;
+  color: #181c1b !important;
+  border-bottom: 1px solid #bbcbb5 !important;
+}
+
+.light-theme .admin-shell table td {
+  border-bottom: 1px solid #bbcbb5 !important;
+}
+
+.light-theme .admin-shell table tr {
+  background-color: transparent !important;
+  color: #181c1b !important;
+}
+
+.light-theme .admin-shell table tr:hover,
+.light-theme .admin-shell tr:hover td {
+  background-color: rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Text elements */

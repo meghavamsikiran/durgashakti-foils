@@ -956,8 +956,8 @@ const OrdersPage = () => {
 
       {/* Horizontal tabs removed to optimize loading speed and unify filters */}
 
-      {selectedOrderIds.size > 0 && (
-        <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-300">
+      <div className={`transition-all duration-300 ease-in-out overflow-hidden ${selectedOrderIds.size > 0 ? 'max-h-24 opacity-100 mb-3' : 'max-h-0 opacity-0 mb-0 pointer-events-none'}`}>
+        <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-xs font-black uppercase tracking-widest text-primary">{selectedOrderIds.size} Orders Selected</span>
           </div>
@@ -976,7 +976,7 @@ const OrdersPage = () => {
             </button>
           </div>
         </div>
-      )}
+      </div>
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto overflow-y-auto admin-table-container-orders">

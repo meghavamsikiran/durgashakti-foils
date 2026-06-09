@@ -15,6 +15,15 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [themeMode, setThemeMode] = React.useState(() => localStorage.getItem('themeMode') || 'dark');
+
+  React.useEffect(() => {
+    const handleThemeToggle = (e) => {
+      setThemeMode(e.detail);
+    };
+    window.addEventListener('theme-toggle', handleThemeToggle);
+    return () => window.removeEventListener('theme-toggle', handleThemeToggle);
+  }, []);
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -582,12 +591,16 @@ const Navbar = () => {
     </nav>
 
     {/* Sticky Mobile Bottom Navigation Bar */}
-    <div className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-[#030504]/90 border-t border-white/10 backdrop-blur-md px-6 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.5)]">
+    <div className={`fixed bottom-0 inset-x-0 z-50 md:hidden border-t backdrop-blur-md px-6 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.5)] transition-all duration-300 ${
+      themeMode === 'light' ? 'bg-[#f7faf8]/95 border-[#bbcbb5]' : 'bg-[#030504]/90 border-white/10'
+    }`}>
       <div className="flex items-center justify-between">
         <Link 
           to="/" 
           className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
-            location.pathname === '/' ? 'text-[#25d958]' : 'text-white/60 hover:text-white'
+            location.pathname === '/' 
+              ? 'text-[#006e1b]' 
+              : (themeMode === 'light' ? 'text-slate-650 hover:text-slate-900' : 'text-white/60 hover:text-white')
           }`}
         >
           <HomeIcon className="w-5 h-5" />
@@ -596,7 +609,9 @@ const Navbar = () => {
         <Link 
           to="/shop" 
           className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
-            location.pathname === '/shop' ? 'text-[#25d958]' : 'text-white/60 hover:text-white'
+            location.pathname === '/shop' 
+              ? 'text-[#006e1b]' 
+              : (themeMode === 'light' ? 'text-slate-650 hover:text-slate-900' : 'text-white/60 hover:text-white')
           }`}
         >
           <ShoppingBag className="w-5 h-5" />
@@ -613,7 +628,9 @@ const Navbar = () => {
             }
           }}
           className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
-            isMobileSearchOpen ? 'text-[#25d958]' : 'text-white/60 hover:text-white'
+            isMobileSearchOpen 
+              ? 'text-[#006e1b]' 
+              : (themeMode === 'light' ? 'text-slate-650 hover:text-slate-900' : 'text-white/60 hover:text-white')
           }`}
         >
           {isMobileSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
@@ -622,7 +639,9 @@ const Navbar = () => {
         <Link 
           to="/cart" 
           className={`relative flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
-            location.pathname === '/cart' ? 'text-[#25d958]' : 'text-white/60 hover:text-white'
+            location.pathname === '/cart' 
+              ? 'text-[#006e1b]' 
+              : (themeMode === 'light' ? 'text-slate-650 hover:text-slate-900' : 'text-white/60 hover:text-white')
           }`}
         >
           <ShoppingCart className="w-5 h-5" />
@@ -636,7 +655,9 @@ const Navbar = () => {
         <Link 
           to={user ? (isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard") : "/login"} 
           className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
-            location.pathname.startsWith('/dashboard') || location.pathname === '/login' ? 'text-[#25d958]' : 'text-white/60 hover:text-white'
+            location.pathname.startsWith('/dashboard') || location.pathname === '/login' 
+              ? 'text-[#006e1b]' 
+              : (themeMode === 'light' ? 'text-slate-650 hover:text-slate-900' : 'text-white/60 hover:text-white')
           }`}
         >
           <User className="w-5 h-5" />
