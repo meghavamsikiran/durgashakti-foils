@@ -226,14 +226,9 @@ const ProductCard = ({ product }) => {
         <div className="p-5 flex flex-col justify-between flex-1">
           <div>
             <div className="mb-3 flex flex-wrap gap-2 items-center">
-              {product.size && (
+              {(product.size || product.thickness) && (
                 <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded">
-                  {product.size}
-                </span>
-              )}
-              {product.thickness && (
-                <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded">
-                  {product.thickness}
+                  {[product.size, product.thickness].filter(Boolean).join('  |  ')}
                 </span>
               )}
               {hasOffer && (
@@ -247,21 +242,19 @@ const ProductCard = ({ product }) => {
               {product.name}
             </h3>
 
-            {Number(product.review_count || 0) > 0 && (
-              <div className="flex items-center gap-1 mb-2">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`w-3.5 h-3.5 ${i < Math.round(Number(product.rating_average || 0)) 
-                        ? 'text-amber-400 fill-amber-400' 
-                        : 'text-slate-300'}`} 
-                    />
-                  ))}
-                </div>
-                <span className="text-[11px] font-bold text-slate-400 font-mono">({product.review_count})</span>
+            <div className="flex items-center gap-1 mb-2">
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star 
+                    key={i} 
+                    className={`w-3.5 h-3.5 ${i < Math.round(Number(product.rating_average || 5)) 
+                      ? 'text-amber-400 fill-amber-400' 
+                      : 'text-slate-300'}`} 
+                  />
+                ))}
               </div>
-            )}
+              <span className="text-[11px] font-bold text-slate-400 font-mono">({product.review_count || 0})</span>
+            </div>
             
             <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 font-inter mb-4">
               {product.description}

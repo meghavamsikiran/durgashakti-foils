@@ -65,7 +65,7 @@ const Shop = () => {
   const [page, setPage] = useState(1);
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
-  const ITEMS_PER_PAGE = 9;
+  const ITEMS_PER_PAGE = 12;
 
   const fetchProducts = useCallback(async () => {
     const hasInstantData = !!apiClient.getCachedDataSync('/products') || readSessionList(PRODUCTS_CACHE_KEY).length > 0;
@@ -195,17 +195,17 @@ const Shop = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface py-12 font-inter text-on-surface" data-testid="shop-page">
-      <div className="mx-auto max-w-[1340px] px-6 md:px-12 lg:px-[90px]">
-        {/* Redesigned Premium Header Banner - full width img element to display text and details without cropping */}
-        <div className="mb-12 rounded-2xl overflow-hidden shadow-sm w-full">
-          <img 
-            src="/product_display_poster.webp" 
-            alt="Our Products - Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene."
-            className="w-full h-auto object-contain block"
-          />
-        </div>
+    <div className="min-h-screen bg-[#F5F5F5] font-inter text-[#1E293B]" data-testid="shop-page">
+      {/* Redesigned Premium Header Banner - full width banner spanning edge-to-edge */}
+      <div className="w-full overflow-hidden border-b border-slate-200/50">
+        <img 
+          src="/product_display_poster.webp" 
+          alt="Our Products - Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene."
+          className="w-full h-auto object-cover block"
+        />
+      </div>
 
+      <div className="mx-auto max-w-[1440px] px-4 md:px-8 lg:px-12 py-10">
         {/* Collapsible Mobile Filters Button */}
         <button
           onClick={() => setShowMobileFilters(!showMobileFilters)}
@@ -218,14 +218,11 @@ const Shop = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
           <div className={`lg:w-80 flex-shrink-0 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
-            <div className="bg-[#F9F9F9] border border-slate-100 p-6 rounded-2xl sticky top-24">
-              <div className="flex items-center justify-between mb-6 border-b border-slate-200/60 pb-4">
-                <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-slate-800" />
-                  <h2 className="font-extrabold text-xs font-manrope text-slate-800 uppercase tracking-wider">
-                    Filters
-                  </h2>
-                </div>
+            <div className="bg-white border border-slate-200/60 p-6 rounded-2xl sticky top-24 shadow-sm">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="font-extrabold text-xs font-manrope text-slate-800 uppercase tracking-wider">
+                  Category
+                </h2>
                 {(categoryFilter !== 'all' || priceFilter !== 'all' || maxPrice !== 1000 || ratingFilter !== 'all' || sortBy !== 'name') && (
                   <button 
                     onClick={handleClearFilters}
@@ -238,7 +235,6 @@ const Shop = () => {
 
               <div className="space-y-6">
                 <div>
-                  <label className="text-[11px] font-manrope font-extrabold uppercase tracking-wider text-slate-800 mb-3 block">Category</label>
                   <div className="flex flex-wrap gap-2">
                     {[
                       { value: 'all', label: 'All Category' },
@@ -251,7 +247,7 @@ const Shop = () => {
                         <label key={opt.value} className={`relative flex items-center justify-center px-4 py-2 rounded-full border text-[11px] font-bold cursor-pointer transition-all duration-200 select-none
                           ${isActive 
                             ? 'bg-[#0F5C2E] text-white border-[#0F5C2E]' 
-                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
+                            : 'bg-slate-50 text-slate-650 border-slate-200 hover:bg-slate-100'}`}
                         >
                           <input
                             type="radio"
@@ -269,7 +265,7 @@ const Shop = () => {
                 </div>
 
                 <div className="border-t border-slate-200/60 pt-6">
-                  <label className="text-[11px] font-manrope font-extrabold uppercase tracking-wider text-slate-800 mb-3 block">Price</label>
+                  <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 block">Price</label>
                   {/* Custom Range Slider */}
                   <div className="mb-4">
                     <input 
@@ -280,13 +276,13 @@ const Shop = () => {
                       onChange={(e) => setMaxPrice(Number(e.target.value))}
                       className="w-full accent-[#0F5C2E] h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
                     />
-                    <div className="flex justify-between items-center mt-2 text-[10px] font-semibold text-slate-500 font-mono">
+                    <div className="flex justify-between items-center mt-2 text-[10px] font-bold text-slate-550 font-mono">
                       <span>min ₹0</span>
                       <span>max ₹{maxPrice}</span>
                     </div>
                   </div>
-                  {/* Radio Buttons below slider in a 2-column grid layout */}
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 mt-4">
+                  {/* Radio Buttons below slider in a flex wrapping layout */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-2.5 mt-4">
                     {[
                       { value: 'all', label: 'All' },
                       { value: '0to250', label: '₹0 - ₹250' },
@@ -319,7 +315,7 @@ const Shop = () => {
                 </div>
 
                 <div className="border-t border-slate-200/60 pt-6">
-                  <label className="text-[11px] font-manrope font-extrabold uppercase tracking-wider text-slate-800 mb-3 block">Customer Rating</label>
+                  <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 block">Customer Rating</label>
                   <div className="flex flex-col gap-2.5">
                     {[
                       { value: '4.5', label: '4.5 & above (68)', stars: 5, empty: 0 },
@@ -352,7 +348,7 @@ const Shop = () => {
                 </div>
 
                 <div className="border-t border-slate-200/60 pt-6">
-                  <label className="text-[11px] font-manrope font-extrabold uppercase tracking-wider text-slate-800 mb-3 block">Sort By</label>
+                  <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 block">Sort By</label>
                   <div className="relative">
                     <select
                       value={sortBy}
@@ -403,7 +399,7 @@ const Shop = () => {
                 <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-6" data-testid="product-count">
                   SHOWING {filteredProducts.length} PRODUCT{filteredProducts.length !== 1 ? 'S' : ''}
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 auto-rows-fr gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 auto-rows-fr gap-6">
                   {filteredProducts.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE).map((product, index) => (
                     <motion.div
                       key={product.id}
