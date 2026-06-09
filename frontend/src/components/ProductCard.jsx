@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Heart, Trash2, Plus, Minus, Bell, X, Check, Ticket } from 'lucide-react';
+import { ShoppingCart, Heart, Trash2, Plus, Minus, Bell, X, Check, Ticket, Star } from 'lucide-react';
 import { Button } from './ui/button';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
