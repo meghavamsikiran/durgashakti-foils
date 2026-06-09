@@ -163,7 +163,14 @@ async def main():
     client = _get_client()
     
     logger.info("Connecting to database...")
-    engine = create_async_engine(database_url, connect_args={"ssl": "require"})
+    engine = create_async_engine(
+        database_url,
+        connect_args={
+            "ssl": "require",
+            "statement_cache_size": 0,
+            "prepared_statement_cache_size": 0,
+        }
+    )
     
     async with engine.begin() as conn:
         # 1. Migrate products table
