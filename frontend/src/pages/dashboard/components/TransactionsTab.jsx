@@ -207,55 +207,53 @@ const TransactionsTab = ({ orders, loading, error }) => {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-slate-200">
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+      <div className="flex items-center justify-between pb-2 border-b border-slate-200">
         <div>
-          <h2 className="text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-primary" />
+          <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-primary" />
             Personal Ledger
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5 font-medium">Track your payments, refunds, and order clearances.</p>
         </div>
-        <CreditCard className="w-8 h-8 text-muted-foreground/30 hidden lg:block" />
       </div>
 
       {/* Stats Cards Section */}
       {transactions.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white py-3 px-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
-              <IndianRupee className="w-5 h-5" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-white py-1.5 px-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
+            <div className="w-7 h-7 bg-emerald-50 text-emerald-600 rounded-md flex items-center justify-center shrink-0">
+              <IndianRupee className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Spent</div>
-              <div className="text-lg font-extrabold text-slate-900 leading-none mt-1">₹{stats.totalSpent.toLocaleString('en-IN')}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Total Spent</div>
+              <div className="text-sm font-extrabold text-slate-900 leading-none mt-0.5">₹{stats.totalSpent.toLocaleString('en-IN')}</div>
             </div>
           </div>
-          <div className="bg-white py-3 px-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center shrink-0">
-              <Clock className="w-5 h-5" />
+          <div className="bg-white py-1.5 px-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
+            <div className="w-7 h-7 bg-amber-50 text-amber-600 rounded-md flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pending</div>
-              <div className="text-lg font-extrabold text-slate-900 leading-none mt-1">₹{stats.pendingAmount.toLocaleString('en-IN')}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Pending</div>
+              <div className="text-sm font-extrabold text-slate-900 leading-none mt-0.5">₹{stats.pendingAmount.toLocaleString('en-IN')}</div>
             </div>
           </div>
-          <div className="bg-white py-3 px-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-5 h-5" />
+          <div className="bg-white py-1.5 px-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
+            <div className="w-7 h-7 bg-primary/10 text-primary rounded-md flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Payments Done</div>
-              <div className="text-lg font-extrabold text-slate-900 leading-none mt-1">{stats.successCount}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Payments Done</div>
+              <div className="text-sm font-extrabold text-slate-900 leading-none mt-0.5">{stats.successCount}</div>
             </div>
           </div>
-          <div className="bg-white py-3 px-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-            <div className="w-9 h-9 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
-              <AlertCircle className="w-5 h-5" />
+          <div className="bg-white py-1.5 px-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
+            <div className="w-7 h-7 bg-rose-50 text-rose-600 rounded-md flex items-center justify-center shrink-0">
+              <AlertCircle className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Refunds & Failed</div>
-              <div className="text-lg font-extrabold text-slate-900 leading-none mt-1">₹{stats.refundedAmount.toLocaleString('en-IN')}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Refunds & Failed</div>
+              <div className="text-sm font-extrabold text-slate-900 leading-none mt-0.5">₹{stats.refundedAmount.toLocaleString('en-IN')}</div>
             </div>
           </div>
         </div>
@@ -264,7 +262,7 @@ const TransactionsTab = ({ orders, loading, error }) => {
       {transactions.length > 0 && (
         <div className="flex gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search by order # or TXN ID..."
@@ -273,20 +271,20 @@ const TransactionsTab = ({ orders, loading, error }) => {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-12 pr-4 h-[48px] rounded-lg border border-border-subtle focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm font-medium text-foreground placeholder:text-muted-foreground bg-surface shadow-sm"
+              className="w-full pl-10 pr-4 h-[38px] rounded-lg border border-border-subtle focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-xs font-medium text-foreground placeholder:text-muted-foreground bg-surface shadow-sm"
             />
           </div>
           <div className="relative">
             <button
               type="button"
               onClick={() => setFilterOpen((prev) => !prev)}
-              className={`inline-flex items-center justify-center w-[48px] h-[48px] rounded-lg border shadow-sm transition-colors ${
+              className={`inline-flex items-center justify-center w-[38px] h-[38px] rounded-lg border shadow-sm transition-colors ${
                 filterOpen || methodFilter !== 'all' || statusFilter !== 'all' || timeframeFilter !== 'all' || startDate !== '' || endDate !== ''
                   ? 'border-primary bg-primary/5 text-primary'
                   : 'border-border-subtle bg-surface text-muted-foreground hover:bg-slate-50'
               }`}
             >
-              <Filter className="w-5 h-5" />
+              <Filter className="w-4 h-4" />
             </button>
             {filterOpen && (
               <>
@@ -398,7 +396,7 @@ const TransactionsTab = ({ orders, loading, error }) => {
         </div>
       ) : (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto customer-table-container">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-slate-50/85 text-slate-500 border-b border-slate-200">

@@ -811,4 +811,8 @@ h1, h2, h3, h4, h5, h6 {
     height: calc(100vh - 235px) !important;
     min-height: 250px !important;
   }
+  .customer-table-container {
+    height: calc(100vh - 350px) !important;
+    min-height: 250px !important;
+  }
 }
