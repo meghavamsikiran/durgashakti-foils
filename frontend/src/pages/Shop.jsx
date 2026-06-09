@@ -197,24 +197,27 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-[#F5F5F5] font-inter text-[#1E293B]" data-testid="shop-page">
       {/* Responsive React Hero Banner Component */}
-      <div className="w-full bg-[#0d0f12] relative overflow-hidden border-b border-slate-800 px-6 md:px-12 lg:px-16 py-6 md:py-0 flex flex-col md:flex-row items-center justify-between gap-6 min-h-[220px] md:h-[280px] lg:h-[320px]">
+      <div 
+        className="w-full bg-[#0d0f12] relative overflow-hidden border-b border-slate-800 px-6 md:px-12 lg:px-16 py-6 md:py-0 flex flex-col md:flex-row items-center justify-between gap-6 min-h-[220px] md:h-[280px] lg:h-[320px] bg-cover bg-center"
+        style={{ backgroundImage: "url('/shop-hero-bg.webp')" }}
+      >
         {/* Subtle decorative radial glow */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_120%,rgba(15,92,46,0.18),transparent_50%)] pointer-events-none" />
         
         {/* Left Side: Premium Typography and Branding */}
         <div className="flex-1 text-white z-10 max-w-xl md:py-6">
-          <h1 className="text-3xl md:text-4xl lg:text-[46px] font-extrabold tracking-tight mb-3 leading-tight font-manrope bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-4xl lg:text-[46px] font-extrabold tracking-tight mb-3 leading-tight font-manrope bg-gradient-to-r from-white via-slate-100 to-slate-350 bg-clip-text text-transparent">
             Our Products
           </h1>
           <p className="text-xs md:text-sm lg:text-base text-slate-400 font-normal leading-relaxed max-w-md">
-            Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil with commercial strength and clinical hygiene.
+            Choose Hot Wrap Foils for a healthier & greener tomorrow, Premium food-grade aluminum foil commercial strength and clinical hygiene.
           </p>
         </div>
 
         {/* Right Side: Product Family Image - Preserved sharp scaling, no cropping */}
         <div className="flex-1 w-full h-full max-h-[180px] md:max-h-full flex items-center justify-center md:justify-end z-10 md:h-[280px] lg:h-[320px]">
           <img 
-            src="/hero-products.webp" 
+            src="/shop-hero-products.webp" 
             alt="Durga Shakti premium food-grade aluminum foils family"
             className="h-full w-auto max-h-[160px] md:max-h-[240px] lg:max-h-[280px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)] transition-transform duration-500 hover:scale-102"
           />
