@@ -196,40 +196,28 @@ const Shop = () => {
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] font-inter text-[#1E293B]" data-testid="shop-page">
-      {/* Responsive Premium React Hero Banner */}
-      <div className="w-full bg-[#121214] relative overflow-hidden border-b border-slate-800/80">
-        {/* Subtle decorative background gradient */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_120%,rgba(15,92,46,0.15),transparent_60%)]" />
+      {/* Responsive React Hero Banner Component */}
+      <div className="w-full bg-[#0d0f12] relative overflow-hidden border-b border-slate-800 px-6 md:px-12 lg:px-16 py-6 md:py-0 flex flex-col md:flex-row items-center justify-between gap-6 min-h-[220px] md:h-[280px] lg:h-[320px]">
+        {/* Subtle decorative radial glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_120%,rgba(15,92,46,0.18),transparent_50%)] pointer-events-none" />
         
-        <div className="mx-auto max-w-[1440px] px-4 md:px-8 lg:px-12 py-6 md:py-8 lg:py-10 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-6 md:gap-10">
-            {/* Left side: Premium FMCG Text Info */}
-            <div className="md:col-span-7 flex flex-col justify-center">
-              <div className="flex items-center gap-3 mb-2">
-                <span className="h-[1px] w-8 bg-[#0F5C2E]" />
-                <span className="text-[10px] font-bold tracking-widest text-[#0F5C2E] uppercase font-mono">
-                  Premium FMCG Range
-                </span>
-              </div>
-              <h1 className="text-white font-manrope font-extrabold text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight mb-3">
-                Our Products
-              </h1>
-              <p className="text-slate-400 text-xs md:text-sm lg:text-base leading-relaxed max-w-xl font-normal">
-                Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil featuring commercial strength, optimal thickness, and clinical hygiene.
-              </p>
-            </div>
-            
-            {/* Right side: Product Family Image */}
-            <div className="md:col-span-5 flex justify-center md:justify-end">
-              <div className="relative group max-w-full">
-                <img 
-                  src="/hero-products.webp" 
-                  alt="Hot Wrap Premium Aluminum Foil Family Pack"
-                  className="w-auto h-auto max-h-[160px] md:max-h-[220px] lg:max-h-[240px] object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] select-none pointer-events-none transition-transform duration-300 group-hover:scale-[1.02]"
-                />
-              </div>
-            </div>
-          </div>
+        {/* Left Side: Premium Typography and Branding */}
+        <div className="flex-1 text-white z-10 max-w-xl md:py-6">
+          <h1 className="text-3xl md:text-4xl lg:text-[46px] font-extrabold tracking-tight mb-3 leading-tight font-manrope bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+            Our Products
+          </h1>
+          <p className="text-xs md:text-sm lg:text-base text-slate-400 font-normal leading-relaxed max-w-md">
+            Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil with commercial strength and clinical hygiene.
+          </p>
+        </div>
+
+        {/* Right Side: Product Family Image - Preserved sharp scaling, no cropping */}
+        <div className="flex-1 w-full h-full max-h-[180px] md:max-h-full flex items-center justify-center md:justify-end z-10 md:h-[280px] lg:h-[320px]">
+          <img 
+            src="/hero-products.webp" 
+            alt="Durga Shakti premium food-grade aluminum foils family"
+            className="h-full w-auto max-h-[160px] md:max-h-[240px] lg:max-h-[280px] object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)] transition-transform duration-500 hover:scale-102"
+          />
         </div>
       </div>
 
