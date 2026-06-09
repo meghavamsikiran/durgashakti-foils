@@ -99,10 +99,13 @@ export const api = {
 export const formatImageUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
-    return url.startsWith('/') ? url : `/${url}`;
-  }
+  
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://durgashakti-foils-1.onrender.com';
+  
+  if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
+    const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    return `${backendUrl}${cleanUrl}`;
+  }
   return `${backendUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
