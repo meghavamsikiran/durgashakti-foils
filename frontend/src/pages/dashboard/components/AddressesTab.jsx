@@ -238,8 +238,8 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-            <Button type="submit" className="h-12 rounded-lg text-sm font-bold bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] uppercase tracking-wider">{editingAddressId ? 'Update Address' : 'Save Address'}</Button>
             <Button type="button" variant="ghost" onClick={() => { setShowAddressForm(false); setEditingAddressId(null); }} className="h-12 rounded-lg font-bold text-slate-400 hover:text-white hover:bg-white/5 text-sm uppercase tracking-wider">Cancel</Button>
+            <Button type="submit" className="h-12 rounded-lg text-sm font-bold bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] uppercase tracking-wider">{editingAddressId ? 'Update Address' : 'Save Address'}</Button>
           </div>
         </form>
       ) : (
