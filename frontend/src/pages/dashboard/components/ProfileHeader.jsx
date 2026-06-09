@@ -16,27 +16,25 @@ const ProfileHeader = ({ user, activeTab, onMenuClick }) => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-            <LayoutDashboard className="w-4 h-4" />
-          </div>
-          <span className="text-[10px] font-mono tracking-wider font-semibold text-muted-foreground">Dashboard / {getTabLabel()}</span>
+    <div className="flex items-center justify-between pb-3 border-b border-slate-200/80">
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <LayoutDashboard className="w-4 h-4" />
         </div>
-        <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tighter uppercase leading-none">
-          Welcome, <span className="text-primary italic">{user?.full_name?.split(' ')[0]}</span>
-        </h1>
+        <div>
+          <div className="text-[9px] font-mono tracking-wider font-semibold text-muted-foreground uppercase leading-none">Dashboard / {getTabLabel()}</div>
+          <h1 className="text-base font-black text-slate-800 uppercase tracking-tight leading-none mt-1">
+            {getTabLabel()}
+          </h1>
+        </div>
       </div>
       
-      <div className="flex items-center gap-4">
-        <div className="hidden md:block text-right">
-          <p className="text-sm font-black text-foreground">{user?.full_name}</p>
-          {user?.role && user.role !== 'customer' && (
-            <p className="text-[10px] font-mono tracking-wider text-muted-foreground uppercase">{user.role}</p>
-          )}
+      <div className="flex items-center gap-3">
+        <div className="hidden sm:block text-right">
+          <p className="text-xs font-black text-slate-700">Hello, {user?.full_name?.split(' ')[0]}</p>
+          <p className="text-[9px] font-mono tracking-wider text-muted-foreground uppercase leading-none mt-0.5">Customer Portal</p>
         </div>
-        <div className="w-12 h-12 rounded-lg bg-primary text-white flex items-center justify-center font-black text-xl shadow-emerald-glow">
+        <div className="w-9 h-9 rounded-lg bg-primary text-white flex items-center justify-center font-black text-sm shadow-emerald-glow shrink-0">
           {user?.full_name?.charAt(0) || 'U'}
         </div>
       </div>

@@ -208,84 +208,64 @@ const TransactionsTab = ({ orders, loading, error }) => {
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-      <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-        <div>
-          <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-primary" />
-            Personal Ledger
-          </h2>
-        </div>
-      </div>
-
-      {/* Stats Cards Section */}
+      {/* Search & Stats Control Center */}
       {transactions.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="bg-white py-1.5 px-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
-            <div className="w-7 h-7 bg-emerald-50 text-emerald-600 rounded-md flex items-center justify-center shrink-0">
-              <IndianRupee className="w-4 h-4" />
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 space-y-3">
+          {/* Section Title & Horizontal Stats Pills */}
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-2.5 border-b border-slate-100">
+            <div className="flex items-center gap-1.5 text-slate-800 shrink-0">
+              <CreditCard className="w-4 h-4 text-primary" />
+              <span className="text-xs font-black uppercase tracking-wider">Personal Ledger</span>
             </div>
-            <div>
-              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Total Spent</div>
-              <div className="text-sm font-extrabold text-slate-900 leading-none mt-0.5">₹{stats.totalSpent.toLocaleString('en-IN')}</div>
-            </div>
-          </div>
-          <div className="bg-white py-1.5 px-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
-            <div className="w-7 h-7 bg-amber-50 text-amber-600 rounded-md flex items-center justify-center shrink-0">
-              <Clock className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Pending</div>
-              <div className="text-sm font-extrabold text-slate-900 leading-none mt-0.5">₹{stats.pendingAmount.toLocaleString('en-IN')}</div>
-            </div>
-          </div>
-          <div className="bg-white py-1.5 px-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
-            <div className="w-7 h-7 bg-primary/10 text-primary rounded-md flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Payments Done</div>
-              <div className="text-sm font-extrabold text-slate-900 leading-none mt-0.5">{stats.successCount}</div>
-            </div>
-          </div>
-          <div className="bg-white py-1.5 px-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-2">
-            <div className="w-7 h-7 bg-rose-50 text-rose-600 rounded-md flex items-center justify-center shrink-0">
-              <AlertCircle className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-450">Refunds & Failed</div>
-              <div className="text-sm font-extrabold text-slate-900 leading-none mt-0.5">₹{stats.refundedAmount.toLocaleString('en-IN')}</div>
+            
+            {/* Quick Stats Grid */}
+            <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-slate-500">
+              <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100/50 px-2.5 py-1 rounded-full shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>Spent: <span className="font-extrabold text-slate-900">₹{stats.totalSpent.toLocaleString('en-IN')}</span></span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-100/50 px-2.5 py-1 rounded-full shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-550"></span>
+                <span>Pending: <span className="font-extrabold text-slate-900">₹{stats.pendingAmount.toLocaleString('en-IN')}</span></span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                <span>Done: <span className="font-extrabold text-slate-900">{stats.successCount}</span></span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-100/50 px-2.5 py-1 rounded-full shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                <span>Refunds/Failed: <span className="font-extrabold text-slate-900">₹{stats.refundedAmount.toLocaleString('en-IN')}</span></span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {transactions.length > 0 && (
-        <div className="flex gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search by order # or TXN ID..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full pl-10 pr-4 h-[38px] rounded-lg border border-border-subtle focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-xs font-medium text-foreground placeholder:text-muted-foreground bg-surface shadow-sm"
-            />
-          </div>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setFilterOpen((prev) => !prev)}
-              className={`inline-flex items-center justify-center w-[38px] h-[38px] rounded-lg border shadow-sm transition-colors ${
-                filterOpen || methodFilter !== 'all' || statusFilter !== 'all' || timeframeFilter !== 'all' || startDate !== '' || endDate !== ''
-                  ? 'border-primary bg-primary/5 text-primary'
-                  : 'border-border-subtle bg-surface text-muted-foreground hover:bg-slate-50'
-              }`}
-            >
-              <Filter className="w-4 h-4" />
-            </button>
+          {/* Search Input & Filters Trigger Row */}
+          <div className="flex gap-2.5">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search by order # or TXN ID..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-10 pr-4 h-[36px] rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-xs font-semibold text-slate-700 bg-slate-50/50"
+              />
+            </div>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setFilterOpen((prev) => !prev)}
+                className={`inline-flex items-center justify-center w-[36px] h-[36px] rounded-xl border shadow-sm transition-colors ${
+                  filterOpen || methodFilter !== 'all' || statusFilter !== 'all' || timeframeFilter !== 'all' || startDate !== '' || endDate !== ''
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <Filter className="w-4 h-4" />
+              </button>
             {filterOpen && (
               <>
                 <div className="fixed inset-0 bg-black/40 z-40 xl:hidden" onClick={() => setFilterOpen(false)} />
@@ -381,6 +361,7 @@ const TransactionsTab = ({ orders, loading, error }) => {
             )}
           </div>
         </div>
+      </div>
       )}
 
       {transactions.length === 0 ? (
