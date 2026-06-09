@@ -40,7 +40,7 @@ async def process_image_url(url: str, client) -> str:
         return url
     
     url_lower = url.lower()
-    if not any(url_lower.endswith(ext) for ext in (".png", ".jpg", ".jpeg")):
+    if not any(url_lower.endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".avif")):
         return url
 
     logger.info(f"Processing URL for conversion: {url}")
@@ -48,9 +48,24 @@ async def process_image_url(url: str, client) -> str:
     # Check if local fallback
     if "/uploads/" in url:
         filename = url.split("/uploads/")[-1]
+        base_name, _ = os.path.splitext(filename)
+        webp_filename = base_name + ".webp"
+        
         local_dir_backend = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
         local_dir_frontend = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "public", "uploads")
         
+        # 1. Check if the .webp file already exists on disk
+        webp_exists = False
+        for directory in (local_dir_backend, local_dir_frontend):
+            if os.path.exists(os.path.join(directory, webp_filename)):
+                webp_exists = True
+                break
+        
+        if webp_exists:
+            logger.info(f"WebP file already exists on disk for {filename}. Updating database reference to WebP.")
+            return url.replace(filename, webp_filename)
+            
+        # 2. Otherwise search for the original file (.png, .jpg, .jpeg, .avif)
         local_path = None
         for directory in (local_dir_backend, local_dir_frontend):
             p = os.path.join(directory, filename)
@@ -63,19 +78,21 @@ async def process_image_url(url: str, client) -> str:
                 raw = open(local_path, "rb").read()
                 webp_raw = convert_bytes_to_webp(raw)
                 
-                # Write webp file
-                new_filename = os.path.splitext(filename)[0] + ".webp"
-                new_path = os.path.join(os.path.dirname(local_path), new_filename)
+                new_path = os.path.join(os.path.dirname(local_path), webp_filename)
                 with open(new_path, "wb") as f:
                     f.write(webp_raw)
                 
                 # Delete original
                 os.remove(local_path)
                 logger.info(f"Converted local file: {local_path} -> {new_path}")
-                return url.replace(filename, new_filename)
+                return url.replace(filename, webp_filename)
             except Exception as e:
                 logger.error(f"Failed to convert local file {local_path}: {e}")
                 return url
+        else:
+            # If the original file does not exist on disk, check if we can fall back to the WebP name
+            logger.info(f"Original file {filename} not found on disk. Directing database reference to WebP.")
+            return url.replace(filename, webp_filename)
                 
     elif client and BUCKET_NAME in url:
         # Supabase storage URL
@@ -190,12 +207,12 @@ async def main():
             if isinstance(value, dict):
                 import json
                 value_str = json.dumps(value)
-                # Find all urls matching .png, .jpg, .jpeg
+                # Find all urls matching .png, .jpg, .jpeg, .avif
                 import re
                 urls = re.findall(r'https?://[^\s"\'}]+', value_str)
                 new_value_str = value_str
                 for u in urls:
-                    if any(u.lower().endswith(ext) for ext in (".png", ".jpg", ".jpeg")):
+                    if any(u.lower().endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".avif")):
                         new_u = await process_image_url(u, client)
                         new_value_str = new_value_str.replace(u, new_u)
                 if new_value_str != value_str:
