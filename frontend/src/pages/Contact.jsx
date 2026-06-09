@@ -138,59 +138,51 @@ const Contact = () => {
   const inputClass = "h-11 rounded-xl border-slate-200 bg-slate-50/50 px-4 text-sm focus:border-primary focus:ring-0 transition-all placeholder:text-slate-300";
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface animate-in fade-in duration-500 font-inter" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-screen bg-[#0C1310] text-white animate-in fade-in duration-500 font-sans">
       
       {/* ── HERO SECTION ────────────────────────────────────────────────── */}
-      <section className="pt-24 pb-12 md:pt-32 md:pb-16 bg-white relative overflow-hidden border-b border-border-subtle">
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] pointer-events-none -mr-32 -mt-32" />
-        
-        <div className="max-w-7xl mx-auto px-6 md:px-12 lg:px-24">
+      <section className="pt-28 pb-12 relative overflow-hidden bg-[#0C1310]">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
           <motion.div 
             initial="hidden"
             animate="visible"
             variants={staggerContainer}
-            className="max-w-2xl text-center mx-auto"
+            className="max-w-3xl text-center mx-auto"
           >
-            <motion.span 
-              variants={fadeInUp} 
-              className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-primary bg-primary/5 px-4 py-1.5 rounded-full mb-4 inline-block border border-primary/10"
-            >
-              Get in Touch
-            </motion.span>
             <motion.h1 
               variants={fadeInUp} 
-              className="text-4xl md:text-5xl font-bold tracking-tighter text-ink-slate mb-4 font-manrope"
+              className="text-lg md:text-xl font-medium tracking-wide text-slate-350 font-sans leading-relaxed"
             >
-              Contact Us
+              Have a bulk inquiry, custom sizing request, or need order support?
             </motion.h1>
             <motion.p 
               variants={fadeInUp} 
-              className="text-sm md:text-base text-on-surface-variant font-medium max-w-lg mx-auto"
+              className="text-sm md:text-base text-slate-400 font-medium mt-1.5 font-sans"
             >
-              Have a bulk inquiry, custom sizing request, or need order support? Reach out and we will assist you immediately.
+              Reach out and we will assist you immediately.
             </motion.p>
           </motion.div>
         </div>
       </section>
 
       {/* ── VISUAL ARCHITECTURE 3-COLUMN LAYOUT ─────────────────── */}
-      <section className="py-12 md:py-20 bg-surface">
+      <section className="pb-24 bg-[#0C1310]">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 rounded-xl overflow-hidden shadow-sm border border-border-subtle bg-white">
+          <div className="grid grid-cols-1 lg:grid-cols-3 rounded-2xl overflow-hidden border-2 border-[#25D958] bg-[#0C1310] relative">
             
             {/* 1. LEFT COLUMN: Contact Form */}
-            <div className="p-8 md:p-12 flex flex-col justify-between bg-white">
+            <div className="p-8 md:p-12 flex flex-col justify-between bg-[#0C1310]">
               <div>
-                <h2 className="text-2xl font-bold text-ink-slate font-manrope mb-6 uppercase tracking-wider text-sm font-label-caps" style={{ letterSpacing: '0.1em' }}>
-                  Contact Form
+                <h2 className="text-base font-black text-white font-sans mb-8 uppercase tracking-widest">
+                  CONTACT FORM
                 </h2>
                 
                 {submitted ? (
                   <motion.div 
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-primary/5 text-primary border border-primary/20 p-6 rounded-lg text-center my-auto font-mono text-xs font-bold tracking-wide"
+                    className="bg-[#25D958]/10 text-[#25D958] border border-[#25D958]/20 p-6 rounded-lg text-center my-auto font-mono text-xs font-bold tracking-wide"
                   >
                     <span className="text-sm font-black block mb-1">🎉 MESSAGE SENT!</span>
                     <span className="leading-relaxed">Thank you. We will get back to you shortly.</span>
@@ -198,51 +190,51 @@ const Contact = () => {
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="flex flex-col gap-1.5">
-                      <Label className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest ml-1">Name</Label>
+                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans">NAME</Label>
                       <Input 
                         required
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder="Enter your Name" 
-                        className="h-12 border-border-subtle text-slate-800" 
+                        className="h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium" 
                       />
                     </div>
                     
                     <div className="flex flex-col gap-1.5">
-                      <Label className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest ml-1">Email</Label>
+                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans">EMAIL</Label>
                       <Input 
                         required
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="Enter a valid email address" 
-                        className="h-12 border-border-subtle text-slate-800" 
+                        className="h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium" 
                       />
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <Label className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest ml-1">Phone Number</Label>
+                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans">PHONE NUMBER</Label>
                       <PhoneInput 
                         international
                         defaultCountry="IN"
                         value={formData.phone}
                         onChange={(val) => setFormData({ ...formData, phone: val || '' })}
-                        className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
+                        className="flex h-12 w-full rounded-lg border border-[#26322B] bg-[#131B17] px-4 py-3 text-sm font-medium focus-within:border-[#25D958] transition-all outline-none text-white"
                         numberInputProps={{
-                          className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
+                          className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium text-white placeholder:text-slate-500",
                           placeholder: "Enter phone number"
                         }}
                       />
                     </div>
                     
                     <div className="flex flex-col gap-1.5">
-                      <Label className="text-[10px] text-slate-400 font-mono font-bold uppercase tracking-widest ml-1">Message</Label>
+                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans">MESSAGE</Label>
                       <textarea 
                         required
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                         placeholder="Your message here..."
-                        className="w-full min-h-[100px] rounded-lg border border-border-subtle bg-white p-4 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none text-slate-800 font-semibold"
+                        className="w-full min-h-[100px] rounded-lg border border-[#26322B] bg-[#131B17] p-4 text-sm focus:border-[#25D958] transition-all outline-none text-white font-medium placeholder:text-slate-550"
                       />
                     </div>
 
@@ -253,17 +245,17 @@ const Contact = () => {
                         id="terms" 
                         checked={acceptedTerms}
                         onChange={(e) => setAcceptedTerms(e.target.checked)}
-                        className="rounded border-slate-350 text-primary focus:ring-primary w-4 h-4 cursor-pointer" 
+                        className="rounded border-[#26322B] text-[#25D958] focus:ring-[#25D958] bg-[#131B17] w-4 h-4 cursor-pointer" 
                       />
-                      <label htmlFor="terms" className="text-[10px] text-slate-400 font-mono font-bold cursor-pointer uppercase tracking-wider">
-                        I accept the <span onClick={() => setShowTermsModal(true)} className="underline hover:text-emerald-hover text-primary font-bold">Terms of Service</span>
+                      <label htmlFor="terms" className="text-[10px] text-slate-400 font-bold cursor-pointer uppercase tracking-wider font-sans">
+                        I ACCEPT THE <span onClick={() => setShowTermsModal(true)} className="underline hover:text-[#1bb847] text-[#25D958] font-bold">TERMS OF SERVICE</span>
                       </label>
                     </div>
 
                     <Button 
                       type="submit" 
                       disabled={submitting}
-                      className="w-full h-[52px] bg-primary hover:bg-emerald-hover text-white font-bold uppercase tracking-wider rounded-lg text-xs transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 duration-200"
+                      className="w-full h-12 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-black uppercase tracking-wider rounded-lg text-sm transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 duration-200"
                     >
                       {submitting ? 'SUBMITTING...' : 'SUBMIT'}
                     </Button>
@@ -271,74 +263,100 @@ const Contact = () => {
                 )}
               </div>
               
-              <div className="mt-8 pt-6 border-t border-slate-100 flex items-center gap-2 text-slate-400 font-mono">
-                <Shield className="w-4 h-4 text-primary/50" />
+              <div className="mt-8 pt-6 border-t border-[#26322B] flex items-center gap-2 text-slate-500 font-mono">
+                <Shield className="w-4 h-4 text-[#25D958]/55" />
                 <span className="text-[9px] font-bold uppercase tracking-widest">Secure end-to-end processing</span>
               </div>
             </div>
 
             {/* 2. MIDDLE COLUMN: Dark Contact Info */}
-            <div className="bg-[#0B1220] text-white p-8 md:p-12 flex flex-col justify-center text-center space-y-10 relative overflow-hidden border-l border-r border-border-subtle/10">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="bg-[#0C1310] text-white p-8 md:p-12 flex flex-col justify-center text-center space-y-12 relative overflow-hidden border-y lg:border-y-0 lg:border-x border-[#E5B54F]/20 min-h-[450px]">
               
+              {/* Background Lotus Drawings */}
+              <div className="absolute top-4 right-4 opacity-15 pointer-events-none">
+                <svg viewBox="0 0 100 100" fill="none" stroke="#E5B54F" strokeWidth="1" className="w-24 h-24">
+                  <path d="M50 15 C50 15 35 45 50 85 C50 85 65 45 50 15 Z" />
+                  <path d="M50 35 C50 35 25 55 40 85 C40 85 60 70 50 35 Z" />
+                  <path d="M50 35 C50 35 75 55 60 85 C60 85 40 70 50 35 Z" />
+                  <path d="M50 50 C50 50 15 65 30 85 C30 85 55 80 50 50 Z" />
+                  <path d="M50 50 C50 50 85 65 70 85 C70 85 45 80 50 50 Z" />
+                </svg>
+              </div>
+              <div className="absolute bottom-4 left-4 opacity-15 pointer-events-none">
+                <svg viewBox="0 0 100 100" fill="none" stroke="#E5B54F" strokeWidth="1" className="w-24 h-24">
+                  <path d="M50 15 C50 15 35 45 50 85 C50 85 65 45 50 15 Z" />
+                  <path d="M50 35 C50 35 25 55 40 85 C40 85 60 70 50 35 Z" />
+                  <path d="M50 35 C50 35 75 55 60 85 C60 85 40 70 50 35 Z" />
+                  <path d="M50 50 C50 50 15 65 30 85 C30 85 55 80 50 50 Z" />
+                  <path d="M50 50 C50 50 85 65 70 85 C70 85 45 80 50 50 Z" />
+                </svg>
+              </div>
+              <div className="absolute bottom-4 right-1/4 opacity-15 pointer-events-none">
+                <svg viewBox="0 0 100 100" fill="none" stroke="#E5B54F" strokeWidth="1" className="w-24 h-24">
+                  <path d="M50 15 C50 15 35 45 50 85 C50 85 65 45 50 15 Z" />
+                  <path d="M50 35 C50 35 25 55 40 85 C40 85 60 70 50 35 Z" />
+                  <path d="M50 35 C50 35 75 55 60 85 C60 85 40 70 50 35 Z" />
+                  <path d="M50 50 C50 50 15 65 30 85 C30 85 55 80 50 50 Z" />
+                  <path d="M50 50 C50 50 85 65 70 85 C70 85 45 80 50 50 Z" />
+                </svg>
+              </div>
+
               {/* Call Us section */}
-              <div className="space-y-3">
-                <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-primary uppercase block">
+              <div className="space-y-2 relative z-10">
+                <span className="text-xs font-black tracking-[0.2em] text-[#E5B54F] uppercase block font-sans">
                   CALL US
                 </span>
-                <div className="space-y-1">
-                  <a href={`tel:${profile.companyPhone}`} className="text-lg font-bold hover:text-primary transition-colors block font-manrope">
-                    {profile.companyPhone}
-                  </a>
-                </div>
+                <a href={`tel:${profile.companyPhone}`} className="text-2xl font-bold hover:text-[#25D958] transition-colors block font-sans">
+                  {profile.companyPhone}
+                </a>
               </div>
 
               {/* Location section */}
-              <div className="space-y-3">
-                <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-primary uppercase block">
+              <div className="space-y-2 relative z-10">
+                <span className="text-xs font-black tracking-[0.2em] text-[#E5B54F] uppercase block font-sans">
                   LOCATION
                 </span>
-                <p className="text-xs font-semibold text-slate-305 leading-relaxed whitespace-pre-line max-w-xs mx-auto">
+                <p className="text-sm font-medium text-slate-350 leading-relaxed whitespace-pre-line max-w-xs mx-auto font-sans">
                   {profile.companyAddress}
                 </p>
               </div>
 
               {profile.companyEmail && (
-                <div className="space-y-3">
-                  <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-primary uppercase block">
+                <div className="space-y-3 relative z-10">
+                  <span className="text-xs font-black tracking-[0.2em] text-[#E5B54F] uppercase block font-sans">
                     OUR SERVICES & CONTACT
                   </span>
-                  <div className="space-y-1 text-slate-300 text-xs font-medium">
-                    <a href={`mailto:${profile.companyEmail}`} className="font-bold hover:text-primary transition-colors block mb-2">
+                  <div className="space-y-1 text-slate-300 text-sm font-medium font-sans">
+                    <a href={`mailto:${profile.companyEmail}`} className="font-bold hover:text-[#25D958] transition-colors block mb-2 underline">
                       {profile.companyEmail}
                     </a>
-                    <p className="text-[10px] text-slate-400 font-mono">Business Hours: Mon - Sat (8am - 8pm)</p>
-                    <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-1 font-mono">ISO 9001:2015 Certified Manufacturing</p>
+                    <p className="text-xs text-slate-400">Business Hours: Mon - Sat (8am - 8pm)</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-1 font-semibold">ISO 9001:2015 CERTIFIED MANUFACTURING</p>
                   </div>
                 </div>
               )}
             </div>
 
             {/* 3. RIGHT COLUMN: dynamic Google Map */}
-            <div className="w-full h-[400px] lg:h-auto min-h-[400px] relative bg-slate-100 flex flex-col overflow-hidden min-w-0">
+            <div className="w-full h-[400px] lg:h-auto min-h-[400px] relative bg-[#0C1310] flex flex-col overflow-hidden min-w-0">
               <iframe 
                 title="Durga Shakti Foils Location"
                 src={getEmbedMapUrl(profile.googleMapsLink, profile.companyAddress, profile.companyName)}
                 width="100%" 
                 height="100%" 
-                style={{ border: 0, minHeight: '100%', flexGrow: 1 }} 
+                style={{ border: 0, minHeight: '100%', flexGrow: 1, filter: 'invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%)' }} 
                 allowFullScreen="" 
                 loading="eager" 
                 referrerPolicy="no-referrer-when-downgrade"
               />
               
               {/* Floating Get Directions CTA overlay */}
-              <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur border border-border-subtle p-4 rounded-xl shadow-lg flex justify-between items-center gap-4">
+              <div className="absolute bottom-4 left-4 right-4 bg-[#0C1310]/95 backdrop-blur border border-[#26322B] p-4 rounded-xl shadow-lg flex justify-between items-center gap-4">
                 <div>
-                  <h4 className="font-bold text-xs text-slate-900 leading-tight font-manrope">
+                  <h4 className="font-bold text-sm text-white leading-tight font-sans">
                     {profile.companyName}
                   </h4>
-                  <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5 font-mono tracking-wider">Live Location Pin</p>
+                  <p className="text-[9px] text-[#25D958] font-bold uppercase mt-1 font-mono tracking-widest">LIVE LOCATION PIN</p>
                 </div>
                 
                 <motion.a 
@@ -347,9 +365,9 @@ const Contact = () => {
                   href={profile.googleMapsLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 bg-primary hover:bg-emerald-hover text-white font-bold px-4 py-2.5 rounded-lg shadow-sm text-[10px] tracking-wide uppercase transition-colors"
+                  className="flex items-center gap-1.5 bg-[#F5C451] hover:bg-[#e0b23f] text-[#0C1310] font-black px-4 py-2.5 rounded-lg shadow-sm text-[10px] tracking-wide uppercase transition-colors"
                 >
-                  <Navigation className="w-3.5 h-3.5 fill-white text-white" />
+                  <Navigation className="w-3.5 h-3.5 fill-[#0C1310] text-[#0C1310]" />
                   Get Directions
                 </motion.a>
               </div>
