@@ -110,39 +110,38 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
   const pageItems = (addresses || []).slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-3xl font-black text-foreground uppercase tracking-tighter">Addresses</h2>
-        {!showAddressForm && (
-          <Button onClick={() => setShowAddressForm(true)} className="rounded-lg h-12 px-6 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-emerald-glow w-full sm:w-auto font-black uppercase tracking-widest justify-center">
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+      {!showAddressForm && (
+        <div className="flex justify-end mb-2">
+          <Button onClick={() => setShowAddressForm(true)} className="rounded-lg h-12 px-6 gap-2 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-bold w-full sm:w-auto font-black uppercase tracking-widest justify-center">
             <PlusIcon className="w-5 h-5" /> New Address
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {showAddressForm ? (
-        <form onSubmit={handleSubmit} className="p-6 md:p-8 rounded-xl bg-surface-container-lowest border border-border-subtle shadow-sm space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <form onSubmit={handleSubmit} className="p-6 md:p-8 rounded-xl bg-[#19231F] border border-[#26322B] shadow-sm space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 text-white">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-primary text-white flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-[#25D958]/10 text-[#25D958] flex items-center justify-center">
               <MapPin className="w-5 h-5" />
             </div>
-            <h3 className="text-xl font-black text-foreground uppercase tracking-tight">{editingAddressId ? 'Edit Address' : 'Add New Address'}</h3>
+            <h3 className="text-xl font-bold text-white font-serif uppercase tracking-tight">{editingAddressId ? 'Edit Address' : 'Add New Address'}</h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Full Name</Label>
-              <Input placeholder="e.g. Rahul Sharma" value={addressForm.full_name} onChange={e => setAddressForm({...addressForm, full_name: e.target.value})} required className="rounded-lg h-12 bg-surface border border-border-subtle focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all px-4 text-sm font-medium" />
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
+              <Input placeholder="e.g. Rahul Sharma" value={addressForm.full_name} onChange={e => setAddressForm({...addressForm, full_name: e.target.value})} required className="rounded-lg h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 transition-all px-4 text-sm font-medium" />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Address Type</Label>
-              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-50 border border-slate-200 p-1">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Address Type</Label>
+              <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#131B17] border border-[#26322B] p-1">
                 {['Home', 'Work'].map(label => (
                   <button
                     key={label}
                     type="button"
                     onClick={() => setAddressForm({...addressForm, label})}
-                    className={`h-10 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${addressForm.label === label ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-white'}`}
+                    className={`h-10 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${addressForm.label === label ? 'bg-[#25D958] text-[#0C1310] shadow-sm' : 'text-slate-450 hover:bg-[#19231F]/40 hover:text-white'}`}
                   >
                     {label === 'Home' ? <Home className="w-4 h-4" /> : <Briefcase className="w-4 h-4" />}
                     {label}
@@ -151,31 +150,31 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Mobile Number</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Mobile Number</Label>
               <PhoneInput
                 international
                 defaultCountry="IN"
                 value={addressForm.phone}
                 onChange={val => setAddressForm({...addressForm, phone: val || ''})}
                 displayInitialValueAsLocalNumber={false}
-                className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
+                className="flex h-12 w-full rounded-xl border border-[#26322B] bg-[#131B17] px-4 py-3 text-white text-sm font-medium focus-within:ring-0 focus-within:border-[#25D958] transition-all outline-none"
                 numberInputProps={{
-                  className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
+                  className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium text-white",
                   placeholder: "Enter phone number"
                 }}
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Alternative Phone Number (Optional)</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Alternative Phone Number (Optional)</Label>
               <PhoneInput
                 international
                 defaultCountry="IN"
                 value={addressForm.alternate_phone}
                 onChange={val => setAddressForm({...addressForm, alternate_phone: val || ''})}
                 displayInitialValueAsLocalNumber={false}
-                className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
+                className="flex h-12 w-full rounded-xl border border-[#26322B] bg-[#131B17] px-4 py-3 text-white text-sm font-medium focus-within:ring-0 focus-within:border-[#25D958] transition-all outline-none"
                 numberInputProps={{
-                  className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
+                  className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium text-white",
                   placeholder: "Optional alternate phone"
                 }}
               />
@@ -184,98 +183,98 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Pincode</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Pincode</Label>
               <div className="relative">
-                <Input placeholder="6 digits" value={addressForm.pincode} onChange={handlePincodeChange} required maxLength={6} className="rounded-lg h-12 bg-surface border border-border-subtle focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all px-4 text-sm font-medium" />
-                {checkingPincode && <Loader2 className="absolute right-4 top-3.5 w-5 h-5 animate-spin text-primary" />}
+                <Input placeholder="6 digits" value={addressForm.pincode} onChange={handlePincodeChange} required maxLength={6} className="rounded-lg h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 transition-all px-4 text-sm font-medium" />
+                {checkingPincode && <Loader2 className="absolute right-4 top-3.5 w-5 h-5 animate-spin text-[#25D958]" />}
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">State</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">State</Label>
               <select 
                 value={addressForm.state} 
                 onChange={e => setAddressForm({...addressForm, state: e.target.value})}
-                className="w-full rounded-lg h-12 bg-surface border border-border-subtle focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all px-4 text-sm font-medium outline-none appearance-none cursor-pointer"
+                className="w-full rounded-lg h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:bg-[#19231F] transition-all px-4 text-sm font-medium outline-none cursor-pointer"
               >
-                <option value="">Select State</option>
+                <option value="" className="bg-[#19231F] text-white">Select State</option>
                 {INDIAN_STATES.map(state => (
-                  <option key={state} value={state}>{state}</option>
+                  <option key={state} value={state} className="bg-[#19231F] text-white">{state}</option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">City / District</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">City / District</Label>
               <Input 
                 value={addressForm.city} 
                 onChange={e => setAddressForm({...addressForm, city: e.target.value})}
                 placeholder="Enter City" 
-                className="rounded-lg h-12 bg-surface border border-border-subtle focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all px-4 text-sm font-medium" 
+                className="rounded-lg h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 transition-all px-4 text-sm font-medium" 
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Flat, House no., Building, Apartment</Label>
-            <Input value={addressForm.address_line1} onChange={e => setAddressForm({...addressForm, address_line1: e.target.value})} required className="rounded-lg h-12 bg-surface border border-border-subtle focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all px-4 text-sm font-medium" />
+            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Flat, House no., Building, Apartment</Label>
+            <Input value={addressForm.address_line1} onChange={e => setAddressForm({...addressForm, address_line1: e.target.value})} required className="rounded-lg h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 transition-all px-4 text-sm font-medium" />
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between ml-1">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Area, Street, Landmark (Optional)</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Area, Street, Landmark (Optional)</Label>
               <button 
                 type="button" 
                 onClick={handleDetectLocation} 
                 disabled={detectingLocation}
-                className="text-primary font-black uppercase tracking-widest text-[9px] flex items-center gap-1 hover:text-primary/80 transition-colors"
+                className="text-[#25D958] font-bold uppercase tracking-widest text-[9px] flex items-center gap-1 hover:text-[#25D958]/85 transition-colors"
               >
                 {detectingLocation ? <Loader2 className="w-3 h-3 animate-spin" /> : <LocateFixed className="w-3 h-3" />}
                 {detectingLocation ? "Detecting..." : "Use my current location"}
               </button>
             </div>
-            <Input value={addressForm.address_line2} onChange={e => setAddressForm({...addressForm, address_line2: e.target.value})} className="rounded-lg h-12 bg-surface border border-border-subtle focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all px-4 text-sm font-medium" />
-            <p className="text-[10px] font-semibold text-amber-600/80 italic ml-1">
+            <Input value={addressForm.address_line2} onChange={e => setAddressForm({...addressForm, address_line2: e.target.value})} className="rounded-lg h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 transition-all px-4 text-sm font-medium" />
+            <p className="text-[10px] font-semibold text-[#fedb41] italic ml-1">
               * Note: Geolocation approximations depend on browser permissions/settings and might not work precisely. Please verify loaded address details.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-            <Button type="submit" className="h-12 rounded-lg text-sm font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-emerald-glow">{editingAddressId ? 'Update Address' : 'Save Address'}</Button>
-            <Button type="button" variant="ghost" onClick={() => { setShowAddressForm(false); setEditingAddressId(null); }} className="h-12 rounded-lg font-black uppercase tracking-widest hover:bg-surface-container text-sm">Cancel</Button>
+            <Button type="submit" className="h-12 rounded-lg text-sm font-bold bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] uppercase tracking-wider">{editingAddressId ? 'Update Address' : 'Save Address'}</Button>
+            <Button type="button" variant="ghost" onClick={() => { setShowAddressForm(false); setEditingAddressId(null); }} className="h-12 rounded-lg font-bold text-slate-400 hover:text-white hover:bg-white/5 text-sm uppercase tracking-wider">Cancel</Button>
           </div>
         </form>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {addresses.length === 0 ? (
-            <div className="md:col-span-2 p-16 text-center bg-surface-container-low rounded-xl border border-dashed border-border-subtle">
-              <div className="w-16 h-16 bg-surface-container rounded-lg flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-8 h-8 text-muted-foreground/40" />
+            <div className="md:col-span-2 p-16 text-center bg-[#19231F] rounded-xl border border-dashed border-[#26322B] text-slate-350">
+              <div className="w-16 h-16 bg-[#131B17] border border-[#26322B] rounded-lg flex items-center justify-center mx-auto mb-4">
+                <MapPin className="w-8 h-8 text-slate-500" />
               </div>
-              <h3 className="text-xl font-black text-foreground uppercase tracking-tight">No addresses found</h3>
-              <p className="text-muted-foreground font-medium mt-2">Add your shipping address to start ordering.</p>
+              <h3 className="text-xl font-bold font-serif text-white uppercase tracking-tight">No addresses found</h3>
+              <p className="text-slate-400 font-medium mt-2">Add your shipping address to start ordering.</p>
             </div>
           ) : pageItems.map(addr => (
-            <div key={addr.id} className="p-6 rounded-xl border border-border-subtle bg-surface-container-lowest relative group hover:shadow-emerald-glow hover:border-primary/50 transition-all animate-in zoom-in-95 duration-500">
+            <div key={addr.id} className="p-6 rounded-xl border border-[#26322B] bg-[#19231F] relative group hover:border-[#25D958]/50 transition-all animate-in zoom-in-95 duration-500 text-white">
               <div className="flex items-center gap-3 mb-4">
-                <div className="px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded-sm text-[10px] font-mono tracking-wider font-semibold uppercase">{addr.label}</div>
-                {addr.is_default && <div className="px-2 py-0.5 bg-primary/10 text-primary rounded-sm text-[10px] font-mono tracking-wider font-semibold uppercase">Primary</div>}
+                <div className="px-2 py-0.5 bg-[#131B17] text-slate-300 border border-[#26322B] rounded-sm text-[10px] font-mono tracking-wider font-semibold uppercase">{addr.label}</div>
+                {addr.is_default && <div className="px-2 py-0.5 bg-[#25D958]/10 text-[#25D958] border border-[#25D958]/20 rounded-sm text-[10px] font-mono tracking-wider font-semibold uppercase">Primary</div>}
               </div>
-              <h4 className="text-xl font-black text-foreground mb-1">{addr.full_name}</h4>
-              <p className="text-muted-foreground leading-relaxed text-sm font-medium">
+              <h4 className="text-xl font-bold text-white font-serif mb-1">{addr.full_name}</h4>
+              <p className="text-slate-400 leading-relaxed text-sm font-medium">
                 {addr.address_line1}<br />
                 {addr.address_line2 && <>{addr.address_line2}<br /></>}
-                {addr.city}, {addr.state} - <span className="font-mono font-bold text-foreground">{addr.pincode}</span>
+                {addr.city}, {addr.state} - <span className="font-mono font-bold text-[#25D958]">{addr.pincode}</span>
               </p>
-              <div className="mt-4 flex items-center gap-3 pt-4 border-t border-border-subtle">
-                <div className="flex items-center gap-2 text-muted-foreground font-mono text-xs">
+              <div className="mt-4 flex items-center gap-3 pt-4 border-t border-[#26322B]/60">
+                <div className="flex items-center gap-2 text-slate-450 font-mono text-xs">
                   {addr.phone}
-                  {addr.alternate_phone && <span className="text-slate-400">/ {addr.alternate_phone}</span>}
+                  {addr.alternate_phone && <span className="text-slate-600">/ {addr.alternate_phone}</span>}
                 </div>
               </div>
               <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                <button onClick={() => handleEditClick(addr)} className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+                <button onClick={() => handleEditClick(addr)} className="w-10 h-10 rounded-lg bg-[#25D958]/10 text-[#25D958] flex items-center justify-center hover:bg-[#25D958] hover:text-[#0C1310] transition-all">
                   <Pencil className="w-4 h-4" />
                 </button>
-                <button onClick={() => onDeleteAddress(addr.id)} className="w-10 h-10 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive hover:text-white transition-all">
+                <button onClick={() => onDeleteAddress(addr.id)} className="w-10 h-10 rounded-lg bg-rose-500/10 text-rose-450 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -285,11 +284,11 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
       )}
       {!showAddressForm && totalPages > 1 && (
         <div className="flex justify-center items-center gap-3">
-          <Button variant="outline" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 p-0 rounded-lg">
+          <Button variant="outline" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 p-0 rounded-lg bg-[#131B17] border border-[#26322B] text-white hover:bg-white/5">
             <ChevronLeft className="w-5 h-5" />
           </Button>
-          <span className="text-sm font-semibold text-muted-foreground font-mono">Page {currentPage} of {totalPages}</span>
-          <Button variant="outline" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 p-0 rounded-lg">
+          <span className="text-sm font-semibold text-slate-400 font-mono">Page {currentPage} of {totalPages}</span>
+          <Button variant="outline" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 p-0 rounded-lg bg-[#131B17] border border-[#26322B] text-white hover:bg-white/5">
             <ChevronRight className="w-5 h-5" />
           </Button>
         </div>

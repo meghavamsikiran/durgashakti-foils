@@ -23,17 +23,17 @@ const CustomSelect = ({ value, onChange, options }) => {
   }, []);
 
   return (
-    <div className="relative w-full text-slate-800" ref={containerRef}>
+    <div className="relative w-full text-white" ref={containerRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between rounded-xl border border-slate-200 p-2.5 text-sm bg-white text-left focus:outline-none focus:ring-2 focus:ring-primary/25 font-semibold transition-all shadow-sm"
+        className="w-full flex items-center justify-between rounded-xl border border-[#26322B] p-2.5 text-sm bg-[#131B17] text-left focus:outline-none focus:ring-1 focus:ring-[#25D958]/30 font-semibold transition-all shadow-sm"
       >
         <span className="truncate">{selectedOption?.label}</span>
         <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-1.5 max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl z-50 py-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute left-0 right-0 mt-1.5 max-h-48 overflow-y-auto rounded-xl border border-[#26322B] bg-[#19231F] shadow-xl z-50 py-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
           {options.map((option) => (
             <button
               key={option.value}
@@ -42,8 +42,8 @@ const CustomSelect = ({ value, onChange, options }) => {
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full text-left px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-slate-50 ${
-                option.value === value ? 'text-primary bg-primary/5 font-bold' : 'text-slate-700'
+              className={`w-full text-left px-3.5 py-2 text-sm font-semibold transition-colors hover:bg-[#131B17] ${
+                option.value === value ? 'text-[#25D958] bg-[#25D958]/10 font-bold' : 'text-slate-350'
               }`}
             >
               {option.label}
@@ -68,18 +68,18 @@ const TransactionsTab = ({ orders, loading, error }) => {
 
   if (loading && (!orders || orders.length === 0)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[350px] bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mb-3"></div>
-        <p className="text-xs text-slate-500 font-medium">Securing transaction ledger...</p>
+      <div className="flex flex-col items-center justify-center min-h-[350px] bg-[#19231F] rounded-3xl border border-[#26322B] shadow-sm p-8">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#25D958] mb-3"></div>
+        <p className="text-xs text-slate-400 font-medium">Securing transaction ledger...</p>
       </div>
     );
   }
 
   if (error && (!orders || orders.length === 0)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[350px] bg-white rounded-3xl border border-slate-200 shadow-sm p-8 text-center">
+      <div className="flex flex-col items-center justify-center min-h-[350px] bg-[#19231F] rounded-3xl border border-[#26322B] shadow-sm p-8 text-center text-white">
         <AlertCircle className="w-12 h-12 text-rose-500 mb-3 shrink-0" />
-        <p className="text-sm font-bold text-slate-800">{error}</p>
+        <p className="text-sm font-bold text-slate-300">{error}</p>
       </div>
     );
   }
@@ -193,13 +193,13 @@ const TransactionsTab = ({ orders, loading, error }) => {
 
   const stats = {
     totalSpent: transactions
-      .filter(tx => ['paid', 'completed', 'success'].includes(String(tx.status || '').toLowerCase()))
+      .filter(tx => ['paid', 'completed', 'success', 'delivered'].includes(String(tx.status || '').toLowerCase()))
       .reduce((sum, tx) => sum + Number(tx.amount || 0), 0),
     pendingAmount: transactions
       .filter(tx => ['pending', 'unpaid', 'processing', 'pending_payment'].includes(String(tx.status || '').toLowerCase()))
       .reduce((sum, tx) => sum + Number(tx.amount || 0), 0),
     successCount: transactions
-      .filter(tx => ['paid', 'completed', 'success'].includes(String(tx.status || '').toLowerCase()))
+      .filter(tx => ['paid', 'completed', 'success', 'delivered'].includes(String(tx.status || '').toLowerCase()))
       .length,
     refundedAmount: transactions
       .filter(tx => ['refunded', 'refund initiated', 'refund_initiated', 'refund credited', 'refund_credited', 'failed'].includes(String(tx.status || '').toLowerCase()))
@@ -207,34 +207,34 @@ const TransactionsTab = ({ orders, loading, error }) => {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4 text-white">
       {/* Search & Stats Control Center */}
       {transactions.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 space-y-3">
+        <div className="bg-[#19231F] rounded-2xl border border-[#26322B] shadow-sm p-3.5 space-y-3">
           {/* Section Title & Horizontal Stats Pills */}
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-2.5 border-b border-slate-100">
-            <div className="flex items-center gap-1.5 text-slate-800 shrink-0">
-              <CreditCard className="w-4 h-4 text-primary" />
-              <span className="text-xs font-black uppercase tracking-wider">Personal Ledger</span>
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-2.5 border-b border-[#26322B]/60">
+            <div className="flex items-center gap-1.5 text-white shrink-0">
+              <CreditCard className="w-4 h-4 text-[#25D958]" />
+              <span className="text-xs font-bold uppercase tracking-wider font-serif">Personal Ledger</span>
             </div>
             
             {/* Quick Stats Grid */}
-            <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-slate-500">
-              <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100/50 px-2.5 py-1 rounded-full shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                <span>Spent: <span className="font-extrabold text-slate-900">₹{stats.totalSpent.toLocaleString('en-IN')}</span></span>
+            <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-slate-400">
+              <div className="flex items-center gap-1.5 bg-[#25D958]/10 border border-[#25D958]/20 px-2.5 py-1 rounded-full shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#25D958]"></span>
+                <span>Spent: <span className="font-extrabold text-white">₹{stats.totalSpent.toLocaleString('en-IN')}</span></span>
               </div>
-              <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-100/50 px-2.5 py-1 rounded-full shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-550"></span>
-                <span>Pending: <span className="font-extrabold text-slate-900">₹{stats.pendingAmount.toLocaleString('en-IN')}</span></span>
+              <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#fedb41]"></span>
+                <span>Pending: <span className="font-extrabold text-white">₹{stats.pendingAmount.toLocaleString('en-IN')}</span></span>
               </div>
-              <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                <span>Done: <span className="font-extrabold text-slate-900">{stats.successCount}</span></span>
+              <div className="flex items-center gap-1.5 bg-[#25D958]/10 border border-[#25D958]/20 px-2.5 py-1 rounded-full shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#25D958]"></span>
+                <span>Done: <span className="font-extrabold text-white">{stats.successCount}</span></span>
               </div>
-              <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-100/50 px-2.5 py-1 rounded-full shrink-0">
+              <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-full shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                <span>Refunds/Failed: <span className="font-extrabold text-slate-900">₹{stats.refundedAmount.toLocaleString('en-IN')}</span></span>
+                <span>Refunds/Failed: <span className="font-extrabold text-white">₹{stats.refundedAmount.toLocaleString('en-IN')}</span></span>
               </div>
             </div>
           </div>
@@ -251,7 +251,7 @@ const TransactionsTab = ({ orders, loading, error }) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-10 pr-4 h-[36px] rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-xs font-semibold text-slate-700 bg-slate-50/50"
+                className="w-full pl-10 pr-4 h-[36px] rounded-xl border border-[#26322B] focus:border-[#25D958] focus:ring-0 outline-none transition-all text-xs font-semibold text-white bg-[#131B17]"
               />
             </div>
             <div className="relative">
@@ -260,8 +260,8 @@ const TransactionsTab = ({ orders, loading, error }) => {
                 onClick={() => setFilterOpen((prev) => !prev)}
                 className={`inline-flex items-center justify-center w-[36px] h-[36px] rounded-xl border shadow-sm transition-colors ${
                   filterOpen || methodFilter !== 'all' || statusFilter !== 'all' || timeframeFilter !== 'all' || startDate !== '' || endDate !== ''
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
+                    ? 'border-[#25D958] bg-[#25D958]/10 text-[#25D958]'
+                    : 'border-[#26322B] bg-[#131B17] text-slate-400 hover:text-white'
                 }`}
               >
                 <Filter className="w-4 h-4" />
@@ -269,11 +269,11 @@ const TransactionsTab = ({ orders, loading, error }) => {
             {filterOpen && (
               <>
                 <div className="fixed inset-0 bg-black/40 z-40 xl:hidden" onClick={() => setFilterOpen(false)} />
-                <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 xl:absolute xl:translate-y-0 xl:inset-auto xl:right-0 xl:mt-2 w-auto xl:w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-black text-slate-900">Transaction Filters</h3>
+                <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 xl:absolute xl:translate-y-0 xl:inset-auto xl:right-0 xl:mt-2 w-auto xl:w-72 bg-[#19231F] border border-[#26322B] rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="space-y-4 text-white">
+                    <h3 className="text-sm font-black font-serif">Transaction Filters</h3>
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Payment Method</label>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Payment Method</label>
                       <CustomSelect
                         value={methodFilter}
                         onChange={(val) => {
@@ -284,7 +284,7 @@ const TransactionsTab = ({ orders, loading, error }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Payment Status</label>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Payment Status</label>
                       <CustomSelect
                         value={statusFilter}
                         onChange={(val) => {
@@ -295,7 +295,7 @@ const TransactionsTab = ({ orders, loading, error }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Timeframe</label>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Timeframe</label>
                       <CustomSelect
                         value={timeframeFilter}
                         onChange={(val) => {
@@ -316,7 +316,7 @@ const TransactionsTab = ({ orders, loading, error }) => {
                               setStartDate(e.target.value);
                               setCurrentPage(1);
                             }}
-                            className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25 bg-white"
+                            className="w-full rounded-xl border border-[#26322B] p-2 text-sm bg-[#131B17] text-white focus:outline-none"
                           />
                         </div>
                         <div>
@@ -328,12 +328,12 @@ const TransactionsTab = ({ orders, loading, error }) => {
                               setEndDate(e.target.value);
                               setCurrentPage(1);
                             }}
-                            className="w-full rounded-xl border border-slate-200 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/25 bg-white"
+                            className="w-full rounded-xl border border-[#26322B] p-2 text-sm bg-[#131B17] text-white focus:outline-none"
                           />
                         </div>
                       </div>
                     )}
-                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                    <div className="flex justify-end gap-2 pt-2 border-t border-[#26322B]/60">
                       <Button
                         variant="ghost"
                         onClick={() => {
@@ -344,13 +344,13 @@ const TransactionsTab = ({ orders, loading, error }) => {
                           setEndDate('');
                           setFilterOpen(false);
                         }}
-                        className="text-xs px-3 py-1.5 h-auto text-slate-500 hover:bg-slate-100 rounded-lg"
+                        className="text-xs px-3 py-1.5 h-auto text-slate-400 hover:bg-white/5 hover:text-white rounded-lg"
                       >
                         Reset
                       </Button>
                       <Button
                         onClick={() => setFilterOpen(false)}
-                        className="text-xs px-3 py-1.5 h-auto bg-primary hover:bg-primary/90 text-white rounded-lg font-bold"
+                        className="text-xs px-3 py-1.5 h-auto bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] rounded-lg font-bold"
                       >
                         Close
                       </Button>
@@ -359,28 +359,28 @@ const TransactionsTab = ({ orders, loading, error }) => {
                 </div>
               </>
             )}
+            </div>
           </div>
         </div>
-      </div>
       )}
 
       {transactions.length === 0 ? (
-        <div className="text-center py-20 bg-surface-container-low rounded-xl border border-dashed border-border-subtle">
-          <CreditCard className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-          <p className="text-muted-foreground font-bold">No transactions found</p>
+        <div className="text-center py-20 bg-[#19231F] rounded-xl border border-dashed border-[#26322B] text-slate-350">
+          <CreditCard className="w-12 h-12 text-slate-500 mx-auto mb-4" />
+          <p className="text-slate-300 font-bold">No transactions found</p>
         </div>
       ) : filteredTransactions.length === 0 ? (
-        <div className="text-center py-16 bg-surface-container-low/50 rounded-xl border border-dashed border-border-subtle">
-          <Search className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-muted-foreground font-bold">No matching transactions found</p>
-          <p className="text-muted-foreground/60 text-xs mt-1">Try refining your search terms</p>
+        <div className="text-center py-16 bg-[#19231F] rounded-xl border border-dashed border-[#26322B] text-slate-355">
+          <Search className="w-10 h-10 text-slate-550 mx-auto mb-3" />
+          <p className="text-slate-300 font-bold">No matching transactions found</p>
+          <p className="text-slate-500 text-xs mt-1">Try refining your search terms</p>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-[#19231F] rounded-3xl border border-[#26322B] shadow-sm overflow-hidden">
           <div className="overflow-x-auto overflow-y-auto customer-table-container">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-slate-50/85 text-slate-500 border-b border-slate-200">
+                <tr className="bg-[#131B17] text-slate-400 border-b border-[#26322B]">
                   <th className="px-6 py-5 text-[11px] font-black tracking-wider uppercase min-w-[220px]">Reference Code</th>
                   <th className="px-6 py-5 text-[11px] font-black tracking-wider uppercase">Transaction ID</th>
                   <th className="px-6 py-5 text-[11px] font-black tracking-wider uppercase text-center w-[120px]">Method</th>
@@ -389,7 +389,7 @@ const TransactionsTab = ({ orders, loading, error }) => {
                   <th className="px-6 py-5 text-right text-[11px] font-black tracking-wider uppercase w-[180px]">Stamp</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-[#26322B]/40">
                 {paginatedTransactions.map((tx) => {
                   const statusLower = String(tx.status || '').toLowerCase();
                   const isSuccess = ['paid', 'completed', 'success'].includes(statusLower);
@@ -398,54 +398,54 @@ const TransactionsTab = ({ orders, loading, error }) => {
                   const isRefundSuccess = ['refunded', 'refund_credited', 'refund credited', 'refund_completed', 'refund completed'].includes(statusLower);
 
                   return (
-                    <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <tr key={tx.id} className="hover:bg-[#131B17]/35 transition-colors group">
                       <td className="px-6 py-5">
-                        <div className={`text-xs font-black flex items-center gap-1.5 ${
-                          isFailed ? 'text-slate-400' :
-                          isRefundSuccess ? 'text-emerald-600' :
-                          isRefundPending ? 'text-amber-600' :
-                          isSuccess ? 'text-slate-900' : 'text-amber-600'
+                        <div className={`text-xs font-bold flex items-center gap-1.5 ${
+                          isFailed ? 'text-slate-500 line-through' :
+                          isRefundSuccess ? 'text-[#25D958]' :
+                          isRefundPending ? 'text-[#fedb41]' :
+                          isSuccess ? 'text-white' : 'text-[#fedb41]'
                         }`}>
                           {isFailed ? <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" /> :
-                           isRefundPending ? <ArrowDownLeft className="w-3.5 h-3.5 text-amber-500 shrink-0" /> :
-                           isRefundSuccess ? <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> :
-                           isSuccess ? <ArrowUpRight className="w-3.5 h-3.5 text-rose-500 shrink-0" /> :
-                           <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                           isRefundPending ? <ArrowDownLeft className="w-3.5 h-3.5 text-[#fedb41] shrink-0" /> :
+                           isRefundSuccess ? <ArrowDownLeft className="w-3.5 h-3.5 text-[#25D958] shrink-0" /> :
+                           isSuccess ? <ArrowUpRight className="w-3.5 h-3.5 text-[#25D958] shrink-0" /> :
+                           <Clock className="w-3.5 h-3.5 text-[#fedb41] shrink-0" />}
                           Order #{tx.order_number}
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <div className="text-xs font-mono font-bold text-slate-700 uppercase tracking-wider bg-slate-100 px-2 py-1.5 rounded inline-block whitespace-normal break-all">
+                        <div className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider bg-[#131B17] border border-[#26322B]/60 px-2 py-1.5 rounded inline-block whitespace-normal break-all">
                           {tx.transaction_id || 'INTERNAL_RECON'}
                         </div>
                       </td>
                       <td className="px-6 py-5 text-center">
-                        <span className="px-2.5 py-0.5 rounded-full bg-slate-50 text-slate-650 border border-slate-200/60 text-[9px] font-black uppercase tracking-wider">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#131B17] text-slate-300 border border-[#26322B] text-[9px] font-black uppercase tracking-wider">
                           {String(tx.method || 'Gateway').toUpperCase()}
                         </span>
                       </td>
                       <td className="px-6 py-5 text-center">
                         <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                          isSuccess ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
-                          isFailed ? 'bg-rose-50 text-rose-600 border border-rose-100' : 
-                          isRefundSuccess ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' :
-                          'bg-amber-50 text-amber-600 border border-amber-100'
+                          isSuccess ? 'bg-[#25D958]/10 text-[#25D958] border border-[#25D958]/20' : 
+                          isFailed ? 'bg-rose-500/10 text-rose-450 border border-rose-500/20' : 
+                          isRefundSuccess ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' :
+                          'bg-amber-500/10 text-[#fedb41] border border-amber-500/20'
                         }`}>
                           {tx.status}
                         </span>
                       </td>
                       <td className="px-6 py-5 text-right">
-                        <div className={`text-sm font-black ${
-                          isFailed ? 'text-slate-400 line-through' :
-                          isRefundSuccess ? 'text-emerald-600' :
-                          isRefundPending ? 'text-amber-600' :
-                          'text-slate-900'
+                        <div className={`text-sm font-bold font-mono ${
+                          isFailed ? 'text-slate-500 line-through' :
+                          isRefundSuccess ? 'text-[#25D958]' :
+                          isRefundPending ? 'text-[#fedb41]' :
+                          'text-white'
                         }`}>
                           {isRefundSuccess ? '+' : ''}₹{Number(tx.amount || 0).toLocaleString('en-IN')}
                         </div>
                       </td>
                       <td className="px-6 py-5 text-right">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-end gap-1.5">
+                        <div className="text-[10px] font-black text-slate-450 uppercase tracking-widest flex items-center justify-end gap-1.5">
                           <Calendar className="w-3 h-3" />
                           {tx.date ? new Date(tx.date).toLocaleDateString('en-IN', { 
                             day: '2-digit', 

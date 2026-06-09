@@ -38,17 +38,6 @@ const ProfileHeader = ({ user, activeTab, onMenuClick }) => {
             <p className="text-xs text-slate-400 truncate leading-none mt-0.5">{user?.email}</p>
           </div>
         </div>
-
-        {/* Action Icons */}
-        <div className="flex items-center gap-3">
-          <button className="relative p-2 text-slate-400 hover:text-[#25D958] hover:bg-[#19231F] rounded-full transition-colors">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-[#0C1310]"></span>
-          </button>
-          <button className="p-2 text-slate-400 hover:text-[#25D958] hover:bg-[#19231F] rounded-full transition-colors">
-            <Settings className="w-5 h-5" />
-          </button>
-        </div>
       </div>
 
       {/* Tab Title */}
