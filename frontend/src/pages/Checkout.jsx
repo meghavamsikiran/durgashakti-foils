@@ -47,7 +47,7 @@ const Checkout = () => {
   const { grandTotal } = calculateCheckoutPricing(total, shippingSettings, paymentMethod, appliedCoupons);
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-32 lg:pb-12">
+    <div className="min-h-screen bg-[#0C1310] pb-32 lg:pb-12 text-white font-sans">
       <CheckoutStepper step={checkoutStep} />
 
       <div className="max-w-7xl mx-auto px-6 mt-8">
@@ -104,19 +104,19 @@ const Checkout = () => {
       </div>
 
       {/* Mobile Sticky Footer */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-50 flex items-center justify-between gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#131B17] border-t border-[#26322B] p-4 z-50 flex items-center justify-between gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.3)]">
         <div className="flex flex-col">
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Amount</span>
-          <span className="text-xl font-black text-primary">₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Total Amount</span>
+          <span className="text-xl font-extrabold text-[#25D958]">₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         {checkoutStep === 'shipping' ? (
-          <Button onClick={handleContinueToPayment} className="rounded-xl px-8 h-12 font-black uppercase tracking-widest">Next Step</Button>
+          <Button onClick={handleContinueToPayment} className="bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] rounded-lg px-8 h-12 font-black uppercase tracking-wider">Next Step</Button>
         ) : (
-          <Button onClick={handlePlaceOrder} disabled={loading} className="rounded-xl px-8 h-12 font-black uppercase tracking-widest">
+          <Button onClick={handlePlaceOrder} disabled={loading} className="bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] rounded-lg px-8 h-12 font-black uppercase tracking-wider">
             {loading ? (
-              <Loader2 className="animate-spin w-5 h-5" />
+              <Loader2 className="animate-spin w-5 h-5 text-[#0C1310]" />
             ) : paymentMethod === 'cod' ? (
-              'Place your Order'
+              'Place Order'
             ) : (
               'Pay Now'
             )}

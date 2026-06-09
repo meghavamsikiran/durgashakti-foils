@@ -74,9 +74,9 @@ const AddressStep = ({
 
   if (addressesLoading) {
     return (
-      <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200 flex flex-col items-center justify-center min-h-[300px]">
-        <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
-        <p className="text-slate-500 text-xs font-black uppercase tracking-wider">Loading saved addresses...</p>
+      <div className="bg-[#131B17] rounded-[2rem] p-8 border border-[#26322B] flex flex-col items-center justify-center min-h-[300px]">
+        <Loader2 className="w-8 h-8 text-[#25D958] animate-spin mb-3" />
+        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider font-mono">Loading saved addresses...</p>
       </div>
     );
   }
@@ -87,10 +87,10 @@ const AddressStep = ({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
-      className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-200"
+      className="bg-[#131B17] rounded-[2rem] p-8 border border-[#26322B] text-white"
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
-        <h2 className="text-xl md:text-2xl font-black text-slate-900 uppercase tracking-tighter">Shipping Details</h2>
+        <h2 className="text-xl md:text-2xl font-bold text-white uppercase tracking-wider font-sans">Shipping Details</h2>
         {savedAddresses && savedAddresses.length > 0 && (
           <Button 
             type="button"
@@ -113,7 +113,7 @@ const AddressStep = ({
                 });
               }
             }}
-            className="rounded-full font-bold uppercase tracking-widest text-[10px] h-10 px-5 ring-1 ring-slate-200 border-slate-200 bg-white text-slate-600 hover:border-primary hover:text-primary transition-all"
+            className="rounded-full font-bold uppercase tracking-wider text-[10px] h-10 px-5 border-[#26322B] bg-[#0C1310] text-slate-350 hover:border-[#25D958] hover:text-[#25D958] transition-all"
           >
             {showAddressSelector ? (
               <ArrowLeft className="w-3 h-3 mr-2" />
@@ -135,22 +135,22 @@ const AddressStep = ({
               <div 
                 key={addr.id} 
                 onClick={() => onSelectAddress(addr)}
-                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative group ${selectedAddressId === addr.id ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-primary/20'}`}
+                className={`p-5 rounded-2xl border-2 transition-all cursor-pointer relative group ${selectedAddressId === addr.id ? 'border-[#25D958] bg-[#25D958]/5' : 'border-[#26322B] bg-[#0C1310] hover:border-[#25D958]/20'}`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className={`p-2 rounded-lg ${selectedAddressId === addr.id ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'}`}>
+                    <div className={`p-2 rounded-lg ${selectedAddressId === addr.id ? 'bg-[#25D958] text-[#0C1310]' : 'bg-[#19231F] text-slate-400'}`}>
                       {addr.label === 'Home' ? <Home className="w-3 h-3" /> : addr.label === 'Work' ? <Briefcase className="w-3 h-3" /> : <MapPin className="w-3 h-3" />}
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{addr.label}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">{addr.label}</span>
                   </div>
-                  {selectedAddressId === addr.id && <CheckCircle2 className="w-5 h-5 text-primary" />}
+                  {selectedAddressId === addr.id && <CheckCircle2 className="w-5 h-5 text-[#25D958]" />}
                 </div>
-                <h4 className="font-black text-slate-900 text-sm mb-1">{addr.full_name}</h4>
-                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                <h4 className="font-bold text-white text-sm mb-1">{addr.full_name}</h4>
+                <p className="text-xs text-slate-350 line-clamp-2 leading-relaxed">
                   {addr.address_line1}, {addr.city}, {addr.state} - {addr.pincode}
                 </p>
-                <div className="mt-3 text-[10px] font-bold text-slate-500 uppercase">
+                <div className="mt-3 text-[10px] font-bold text-slate-400 uppercase font-mono">
                   {addr.phone}{addr.alternate_phone ? ` / ${addr.alternate_phone}` : ''}
                 </div>
               </div>
@@ -160,14 +160,14 @@ const AddressStep = ({
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5 md:col-span-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Address Type</Label>
-                <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-50 border border-slate-200 p-1 max-w-sm">
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Address Type</Label>
+                <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#0C1310] border border-[#26322B] p-1 max-w-sm">
                   {['Home', 'Work'].map(label => (
                     <button
                       key={label}
                       type="button"
                       onClick={() => setShippingInfo(prev => ({ ...prev, label }))}
-                      className={`h-10 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${shippingInfo.label === label ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-white'}`}
+                      className={`h-10 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${shippingInfo.label === label ? 'bg-[#25D958] text-[#0C1310] shadow-sm' : 'text-slate-400 hover:bg-[#131B17]/80'}`}
                     >
                       {label === 'Home' ? <Home className="w-4 h-4" /> : <Briefcase className="w-4 h-4" />}
                       {label}
@@ -176,33 +176,33 @@ const AddressStep = ({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Full Name</Label>
-                <Input name="full_name" value={shippingInfo.full_name} onChange={onInputChange} placeholder="Rahul Sharma" className="rounded-xl h-12" />
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Full Name</Label>
+                <Input name="full_name" value={shippingInfo.full_name} onChange={onInputChange} placeholder="Rahul Sharma" className="rounded-xl h-12 bg-[#0C1310] border-[#26322B] text-white placeholder:text-slate-500 focus-visible:ring-1 focus-visible:ring-[#25D958] focus-visible:border-[#25D958]" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Mobile</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Mobile</Label>
                 <PhoneInput
                   international
                   defaultCountry="IN"
                   value={shippingInfo.phone}
                   onChange={val => setShippingInfo(prev => ({ ...prev, phone: val || '' }))}
-                  className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
+                  className="flex h-12 w-full rounded-xl border border-[#26322B] bg-[#0C1310] px-4 py-3 text-sm font-medium focus-within:ring-1 focus-within:ring-[#25D958] focus-within:border-[#25D958] transition-all outline-none"
                   numberInputProps={{
-                    className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
+                    className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium text-white placeholder:text-slate-500",
                     placeholder: "Enter phone number"
                   }}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Alternative Phone Number (Optional)</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Alternative Phone Number (Optional)</Label>
                 <PhoneInput
                   international
                   defaultCountry="IN"
                   value={shippingInfo.alternate_phone}
                   onChange={val => setShippingInfo(prev => ({ ...prev, alternate_phone: val || '' }))}
-                  className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
+                  className="flex h-12 w-full rounded-xl border border-[#26322B] bg-[#0C1310] px-4 py-3 text-sm font-medium focus-within:ring-1 focus-within:ring-[#25D958] focus-within:border-[#25D958] transition-all outline-none"
                   numberInputProps={{
-                    className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
+                    className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium text-white placeholder:text-slate-500",
                     placeholder: "Optional alternate phone"
                   }}
                 />
@@ -211,52 +211,57 @@ const AddressStep = ({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Pincode</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Pincode</Label>
                 <div className="relative">
-                  <Input name="pincode" value={shippingInfo.pincode} onChange={handlePincodeChange} placeholder="6 digits" className="rounded-xl h-12" maxLength={6} />
-                  {checkingPincode && <Loader2 className="absolute right-4 top-3.5 w-5 h-5 animate-spin text-primary" />}
+                  <Input name="pincode" value={shippingInfo.pincode} onChange={handlePincodeChange} placeholder="6 digits" className="rounded-xl h-12 bg-[#0C1310] border-[#26322B] text-white placeholder:text-slate-500 focus-visible:ring-1 focus-visible:ring-[#25D958] focus-visible:border-[#25D958]" maxLength={6} />
+                  {checkingPincode && <Loader2 className="absolute right-4 top-3.5 w-5 h-5 animate-spin text-[#25D958]" />}
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">State</Label>
-                <select 
-                  name="state"
-                  value={shippingInfo.state} 
-                  onChange={onInputChange}
-                  className="w-full rounded-xl h-12 bg-white border border-input px-4 text-xs font-bold uppercase focus:ring-2 focus:ring-primary/20 outline-none appearance-none"
-                >
-                  <option value="">Select</option>
-                  {INDIAN_STATES.map(state => (
-                    <option key={state} value={state}>{state}</option>
-                  ))}
-                </select>
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">State</Label>
+                <div className="relative">
+                  <select 
+                    name="state"
+                    value={shippingInfo.state} 
+                    onChange={onInputChange}
+                    className="w-full rounded-xl h-12 bg-[#0C1310] border border-[#26322B] px-4 text-xs font-bold uppercase text-white focus:ring-1 focus:ring-[#25D958] focus:border-[#25D958] outline-none appearance-none"
+                  >
+                    <option value="">Select</option>
+                    {INDIAN_STATES.map(state => (
+                      <option key={state} value={state} className="bg-[#131B17] text-white">{state}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-4 pointer-events-none text-slate-400">
+                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                  </div>
+                </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">City</Label>
-                <Input name="city" value={shippingInfo.city} onChange={onInputChange} placeholder="City" className="rounded-xl h-12" />
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">City</Label>
+                <Input name="city" value={shippingInfo.city} onChange={onInputChange} placeholder="City" className="rounded-xl h-12 bg-[#0C1310] border-[#26322B] text-white placeholder:text-slate-500 focus-visible:ring-1 focus-visible:ring-[#25D958] focus-visible:border-[#25D958]" />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">House/Flat No., Building</Label>
-              <Input name="address_line1" value={shippingInfo.address_line1} onChange={onInputChange} className="rounded-xl h-12" />
+              <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">House/Flat No., Building</Label>
+              <Input name="address_line1" value={shippingInfo.address_line1} onChange={onInputChange} className="rounded-xl h-12 bg-[#0C1310] border-[#26322B] text-white focus-visible:ring-1 focus-visible:ring-[#25D958] focus-visible:border-[#25D958]" />
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between ml-1">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Area, Street, Landmark</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">Area, Street, Landmark</Label>
                 <button 
                   type="button" 
                   onClick={handleDetectLocation} 
                   disabled={detectingLocation}
-                  className="text-primary font-black uppercase tracking-widest text-[8px] flex items-center gap-1 hover:text-emerald-hover transition-colors"
+                  className="text-[#25D958] font-bold uppercase tracking-wider text-[8px] font-mono flex items-center gap-1 hover:text-[#1bb847] transition-colors"
                 >
                   {detectingLocation ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <LocateFixed className="w-2.5 h-2.5" />}
                   {detectingLocation ? "Detecting..." : "Use current location"}
                 </button>
               </div>
-              <Input name="address_line2" value={shippingInfo.address_line2} onChange={onInputChange} className="rounded-xl h-12" />
-              <p className="text-[10px] font-semibold text-amber-600/80 italic ml-1">
+              <Input name="address_line2" value={shippingInfo.address_line2} onChange={onInputChange} className="rounded-xl h-12 bg-[#0C1310] border-[#26322B] text-white focus-visible:ring-1 focus-visible:ring-[#25D958] focus-visible:border-[#25D958]" />
+              <p className="text-[10px] font-semibold text-amber-500/80 italic ml-1">
                 * Note: Geolocation approximations depend on browser permissions/settings and might not work precisely. Please verify loaded address details.
               </p>
             </div>
@@ -266,7 +271,7 @@ const AddressStep = ({
         <div className="pt-2">
           <Button 
             onClick={onContinue} 
-            className="w-full h-14 md:h-16 rounded-2xl text-base md:text-lg font-black uppercase tracking-widest shadow-xl shadow-emerald-glow bg-primary hover:bg-emerald-hover transition-all"
+            className="w-full h-14 md:h-16 rounded-2xl text-base md:text-lg font-black uppercase tracking-wider bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] transition-all shadow-[0_4px_20px_rgba(37,217,88,0.2)] active:scale-[0.98]"
           >
             Continue to Payment <ArrowRight className="ml-2 w-5 h-5" />
           </Button>

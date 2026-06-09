@@ -37,23 +37,22 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="relative overflow-hidden bg-white rounded-lg p-6 md:p-8 shadow-[0_28px_80px_rgba(15,23,42,0.08)] border border-border-subtle"
+      className="relative overflow-hidden bg-[#131B17] rounded-lg p-6 md:p-8 border border-[#26322B]"
     >
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
-      <div className="absolute left-0 bottom-0 right-0 h-28 bg-[linear-gradient(135deg,transparent,rgba(215,219,217,0.36),transparent)] pointer-events-none" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#26322B] to-transparent" />
 
       <div className="relative flex flex-col md:flex-row md:items-start md:justify-between gap-5 mb-8">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-primary font-black mb-2">Secure Settlement</p>
-          <h2 className="text-2xl md:text-3xl font-black text-slate-950 tracking-tight">Payment Selection</h2>
-          <p className="text-sm text-slate-500 font-semibold mt-2 max-w-xl">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#25D958] font-bold mb-2">Secure Settlement</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Payment Selection</h2>
+          <p className="text-sm text-slate-400 font-medium mt-2 max-w-xl">
             Choose how you want to complete this order. Online payments are verified against your DurgaShakti order and followed by one receipt with the tax invoice.
           </p>
         </div>
         <Button
-          variant="ghost"
+          variant="outline"
           onClick={onBack}
-          className="h-12 px-5 rounded-lg border border-border-subtle bg-white/80 text-primary font-black uppercase tracking-widest text-[10px] hover:shadow-emerald-glow"
+          className="h-12 px-5 rounded-lg border border-[#26322B] bg-[#0C1310] text-[#25D958] font-bold uppercase tracking-wider text-[10px] hover:border-[#25D958] hover:bg-[#131B17] transition-all"
         >
           Edit Address
         </Button>
@@ -67,39 +66,38 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
               key={method.id}
               className={`group relative overflow-hidden flex items-center gap-4 p-5 md:p-6 border rounded-lg cursor-pointer transition-all min-h-[96px] ${
                 isSelected
-                  ? 'border-primary bg-[linear-gradient(135deg,rgba(11,209,61,0.11),rgba(255,255,255,0.92))] shadow-emerald-glow'
-                  : 'border-border-subtle bg-white hover:border-primary/40 hover:shadow-[0_18px_46px_rgba(15,23,42,0.07)]'
+                  ? 'border-[#25D958] bg-[#25D958]/5 shadow-[0_0_20px_rgba(37,217,88,0.1)]'
+                  : 'border-[#26322B] bg-[#0C1310] hover:border-[#25D958]/25 hover:shadow-lg'
               }`}
             >
               {isSelected && (
-                <span className="absolute inset-y-0 left-0 w-1 bg-primary" />
+                <span className="absolute inset-y-0 left-0 w-1 bg-[#25D958]" />
               )}
-              <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-[linear-gradient(115deg,transparent,rgba(255,255,255,0.72),transparent)]" />
               <input
                 type="radio"
                 name="payment_method"
                 value={method.id}
                 checked={isSelected}
                 onChange={() => selectPaymentMethod(method.id)}
-                className="relative w-5 h-5 border-slate-300 focus:ring-primary text-primary cursor-pointer"
+                className="relative w-5 h-5 border-[#26322B] focus:ring-[#25D958] text-[#25D958] bg-[#0C1310] cursor-pointer"
               />
-              <div className={`relative p-3 rounded-lg text-white shadow-lg ${isSelected ? 'bg-primary shadow-emerald-glow' : 'bg-slate-900'}`}>
+              <div className={`relative p-3 rounded-lg text-white shadow-lg ${isSelected ? 'bg-[#25D958] text-[#0C1310]' : 'bg-[#19231F] text-slate-300'}`}>
                 <method.icon className="w-6 h-6" />
               </div>
               <div className="relative flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-black tracking-tight text-slate-950">{method.name}</p>
+                  <p className="font-bold tracking-tight text-white">{method.name}</p>
                   {isSelected && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-white border border-primary/20 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.16em] text-primary font-black">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#25D958]/10 border border-[#25D958]/35 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.16em] text-[#25D958] font-bold">
                       <BadgeCheck className="w-3 h-3" /> Selected
                     </span>
                   )}
                 </div>
-                <p className="text-xs font-semibold mt-1.5 text-slate-500 leading-relaxed">{method.description}</p>
+                <p className="text-xs font-medium mt-1.5 text-slate-400 leading-relaxed">{method.description}</p>
               </div>
               {method.id === 'online' && (
-                <div className="relative hidden md:flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  <ScanQrCode className="w-4 h-4 text-primary" />
+                <div className="relative hidden md:flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                  <ScanQrCode className="w-4 h-4 text-[#25D958]" />
                   QR + UPI
                 </div>
               )}
@@ -112,13 +110,13 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative mt-6 overflow-hidden rounded-lg bg-rose-50 border border-rose-200 text-rose-800 p-5 shadow-sm"
+          className="relative mt-6 overflow-hidden rounded-lg bg-rose-950/20 border border-rose-900/50 text-rose-200 p-5 shadow-sm"
         >
           <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <Shield className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <div>
-              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-rose-700 font-black mb-1">COD RETURN POLICY ACKNOWLEDGEMENT</p>
-              <p className="text-xs font-semibold leading-relaxed text-rose-950">
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-rose-400 font-bold mb-1">COD RETURN POLICY ACKNOWLEDGEMENT</p>
+              <p className="text-xs font-medium leading-relaxed text-rose-300">
                 Please note: There will be no returns or refunds accepted for Cash on Delivery (COD) orders. We accept return requests only for prepaid (online payment) orders. DurgaShakti Foils is not responsible for any product damages or any other issues caused once a COD order is placed and delivered.
               </p>
             </div>
@@ -126,17 +124,17 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
         </motion.div>
       )}
 
-      <div className="relative mt-8 overflow-hidden rounded-lg bg-[#0B1220] text-white border border-white/10">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),transparent_42%)]" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+      <div className="relative mt-8 overflow-hidden rounded-lg bg-[#0C1310] text-white border border-[#26322B]">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(37,217,88,0.03),transparent_42%)]" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#26322B] to-transparent" />
         <div className="relative p-6 md:p-7">
           <div className="flex items-start justify-between gap-4 mb-5">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center shadow-emerald-glow">
-                <Shield className="w-5 h-5 text-[#34e44e]" />
+              <div className="w-11 h-11 rounded-lg bg-[#25D958]/10 border border-[#25D958]/20 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-[#25D958]" />
               </div>
               <div>
-                <span className="font-mono font-black uppercase tracking-[0.22em] text-[10px] text-[#34e44e]">DurgaShakti Protection</span>
+                <span className="font-mono font-bold uppercase tracking-[0.22em] text-[10px] text-[#25D958]">DurgaShakti Protection</span>
                 <p className="text-sm font-semibold text-slate-300 mt-1">
                   {paymentMethod === 'cod'
                     ? 'Cash handling is supported by direct order verification.'
@@ -144,13 +142,13 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
                 </p>
               </div>
             </div>
-            <Sparkles className="w-5 h-5 text-[#34e44e] opacity-70" />
+            <Sparkles className="w-5 h-5 text-[#25D958] opacity-70" />
           </div>
           <div className="grid md:grid-cols-3 gap-3">
             {protectionItems.map((item) => (
-              <div key={item} className="min-h-12 rounded-lg border border-white/10 bg-white/[0.06] px-4 py-3 flex items-center gap-2">
-                <LockKeyhole className="w-3.5 h-3.5 text-[#34e44e] shrink-0" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-200 leading-snug">{item}</span>
+              <div key={item} className="min-h-12 rounded-lg border border-[#26322B] bg-[#131B17] px-4 py-3 flex items-center gap-2">
+                <LockKeyhole className="w-3.5 h-3.5 text-[#25D958] shrink-0" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-250 leading-snug font-mono">{item}</span>
               </div>
             ))}
           </div>

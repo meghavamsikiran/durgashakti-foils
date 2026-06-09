@@ -49,9 +49,9 @@ const AdminLayout = () => {
   });
 
   return (
-    <div className="admin-shell min-h-screen bg-[#f7faf8] flex flex-col md:flex-row text-on-surface">
+    <div className="admin-shell min-h-screen bg-[#0C1310] flex flex-col md:flex-row text-white">
       {/* Mobile Header - Dark background to match the sidebar theme and ensure the logo is visible */}
-      <header className="flex md:hidden items-center justify-between px-6 py-4 bg-[#0B1220] border-b border-border-subtle/10 sticky top-0 z-30 shadow-sm">
+      <header className="flex md:hidden items-center justify-between px-6 py-4 bg-[#050807] border-b border-[#26322B] sticky top-0 z-30 shadow-sm">
         <button 
           onClick={() => setSidebarOpen(true)}
           className="p-2 -ml-2 text-slate-300 hover:text-[#25d958] transition-colors focus:outline-none"
@@ -74,16 +74,16 @@ const AdminLayout = () => {
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/50 md:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-[#0C1310]/80 backdrop-blur-sm md:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside className={`w-64 bg-[#0B1220] text-slate-350 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-50 border-r border-border-subtle/10 font-inter transition-transform duration-300 md:translate-x-0 ${
+      <aside className={`w-64 bg-[#050807] text-slate-350 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-50 border-r border-[#26322B] font-inter transition-transform duration-300 md:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="p-5 flex items-center justify-between border-b border-border-subtle/10 bg-[#0B1220]">
+        <div className="p-5 flex items-center justify-between border-b border-[#26322B] bg-[#050807]">
           <Link to="/" className="flex items-center py-1">
             <img
               src="/logo-durga.webp"
@@ -100,7 +100,7 @@ const AdminLayout = () => {
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-6 pl-3 pr-2 space-y-1 sidebar-scrollbar bg-[#0B1220]">
+        <nav className="flex-1 overflow-y-auto py-6 pl-3 pr-2 space-y-1 sidebar-scrollbar bg-[#050807]">
           {menu.map((item) => {
             const Icon = ICON_MAP[item.label] || LayoutDashboard;
             const isSuper = user?.role === 'SUPER_ADMIN' || location.pathname.startsWith('/superadmin');
@@ -116,17 +116,17 @@ const AdminLayout = () => {
                 className={`flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group ${
                   isActive 
                     ? 'bg-[rgba(11,209,61,0.12)] text-[#16E34A] border-l-4 border-primary pl-2.5 font-bold' 
-                    : 'text-slate-300 pl-3 font-medium'
+                    : 'text-slate-300 pl-3 font-medium hover:text-[#16E34A]'
                 }`}
               >
-                <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-[#16E34A]' : 'text-slate-500'}`} />
+                <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-[#16E34A]' : 'text-slate-500 group-hover:text-[#16E34A]'}`} />
                 {item.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-border-subtle/10 bg-[#0B1220]">
+        <div className="p-4 border-t border-[#26322B] bg-[#050807]">
           <div className="flex items-center gap-3 px-2 mb-4">
             {user?.role === 'SUPER_ADMIN' && user?.permissions?.profile_pic ? (
               <img 
@@ -147,7 +147,7 @@ const AdminLayout = () => {
           <button 
             type="button" 
             onClick={logout} 
-            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-bold text-slate-400 transition-all"
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-bold text-slate-400 transition-all hover:text-white"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
@@ -156,7 +156,7 @@ const AdminLayout = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 md:ml-64 min-h-screen bg-[#f7faf8]">
+      <main className="flex-1 md:ml-64 min-h-screen bg-[#0C1310]">
         <div className="mx-auto max-w-[1280px] p-3 md:py-3.5 md:px-6">
           <Outlet />
         </div>

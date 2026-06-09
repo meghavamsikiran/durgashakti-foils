@@ -70,17 +70,20 @@ const ProductCard = ({ product }) => {
 
     const previousState = isWishlisted;
     setOptimisticWishlist(!previousState); // Instant visual update
-    setWishlisting(true);
-    toast.success(previousState ? 'Removed from wishlist' : 'Added to wishlist');
+    
+    // Show toast notification instantly
+    toast.success(previousState ? 'Removed from wishlist' : 'Added to wishlist', {
+      id: `wishlist-toast-${product.id}`
+    });
     
     try {
       await api.toggleWishlist(product.id);
       refreshUser().catch(() => {});
     } catch (error) {
       setOptimisticWishlist(previousState); // Rollback on failure
-      toast.error('Failed to update wishlist');
-    } finally {
-      setWishlisting(false);
+      toast.error('Failed to update wishlist', {
+        id: `wishlist-toast-${product.id}`
+      });
     }
   };
 
@@ -187,11 +190,10 @@ const ProductCard = ({ product }) => {
           {/* Wishlist Button */}
           <button
             onClick={handleToggleWishlist}
-            disabled={wishlisting}
             className="absolute top-3 right-3 p-2 rounded-full bg-white border border-slate-200 transition-all duration-200 shadow-sm z-10 hover:scale-110 flex items-center justify-center"
             data-testid="wishlist-toggle"
           >
-            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-rose-500 text-rose-500' : 'text-slate-700'} ${wishlisting ? 'animate-pulse' : ''}`} />
+            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-rose-500 text-rose-500' : 'text-slate-700'}`} />
           </button>
 
           {/* Active Tag */}

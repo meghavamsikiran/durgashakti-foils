@@ -831,3 +831,115 @@ h1, h2, h3, h4, h5, h6 {
     min-height: 250px !important;
   }
 }
+
+/* ── ADMIN DARK THEME OVERRIDES ──────────────────────────────────── */
+.admin-shell {
+  --background: 150 18% 5%;
+  --foreground: 0 0% 100%;
+  --card: 150 18% 7%;
+  --card-foreground: 0 0% 100%;
+  --popover: 150 18% 7%;
+  --popover-foreground: 0 0% 100%;
+  --muted: 150 18% 12%;
+  --muted-foreground: 150 10% 70%;
+  --accent: 150 18% 12%;
+  --accent-foreground: 0 0% 100%;
+  --border: 150 18% 12%;
+  --input: 150 18% 12%;
+  --surface: #0C1310;
+  --surface-bright: #0C1310;
+  --surface-container-lowest: #131B17;
+  --surface-container-low: #131B17;
+  --surface-container: #19231F;
+  --surface-container-high: #19231F;
+  --surface-container-highest: #26322B;
+  --on-surface: #ffffff;
+  --on-surface-variant: #cbd5e1;
+  --border-subtle: #26322B;
+}
+
+.admin-shell main, 
+.admin-shell div.bg-\[\#f7faf8\], 
+.admin-shell div.bg-surface, 
+.admin-shell div.text-on-surface {
+  background-color: #0C1310 !important;
+  color: #ffffff !important;
+}
+
+.admin-shell .bg-white {
+  background-color: #131B17 !important;
+  color: #ffffff !important;
+}
+
+.admin-shell .text-slate-800,
+.admin-shell .text-slate-900 {
+  color: #ffffff !important;
+}
+
+.admin-shell .text-slate-700,
+.admin-shell .text-slate-650 {
+  color: #e2e8f0 !important;
+}
+
+.admin-shell .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+.admin-shell .text-slate-500,
+.admin-shell .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.admin-shell .border-slate-200,
+.admin-shell .border-slate-100,
+.admin-shell .border-slate-250,
+.admin-shell .border-slate-200\/60,
+.admin-shell .border-slate-200\/80 {
+  border-color: #26322B !important;
+}
+
+.admin-shell .bg-slate-50,
+.admin-shell .bg-slate-100,
+.admin-shell .bg-slate-200\/50,
+.admin-shell .bg-slate-200 {
+  background-color: #131B17 !important;
+}
+
+.admin-shell .hover\:bg-slate-50:hover,
+.admin-shell .hover\:bg-slate-100:hover,
+.admin-shell .hover\:bg-slate-50\/50:hover {
+  background-color: #19231F !important;
+}
+
+.admin-shell input, 
+.admin-shell select, 
+.admin-shell textarea {
+  background-color: #131B17 !important;
+  border-color: #26322B !important;
+  color: #ffffff !important;
+}
+
+.admin-shell input::placeholder, 
+.admin-shell textarea::placeholder {
+  color: #64748B !important;
+}
+
+.admin-shell table th {
+  background-color: #19231F !important;
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #26322B !important;
+}
+
+.admin-shell table td {
+  border-bottom: 1px solid #26322B !important;
+}
+
+.admin-shell table tr:hover {
+  background-color: #19231F !important;
+}
+
+.admin-shell table tr {
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
