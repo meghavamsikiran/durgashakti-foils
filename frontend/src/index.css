@@ -901,14 +901,34 @@ h1, h2, h3, h4, h5, h6 {
 .admin-shell .bg-slate-50,
 .admin-shell .bg-slate-100,
 .admin-shell .bg-slate-200\/50,
-.admin-shell .bg-slate-200 {
+.admin-shell .bg-slate-200,
+.admin-shell [class*="bg-slate-50"],
+.admin-shell [class*="bg-slate-100"],
+.admin-shell [class*="bg-slate-200"] {
   background-color: #131B17 !important;
 }
 
 .admin-shell .hover\:bg-slate-50:hover,
 .admin-shell .hover\:bg-slate-100:hover,
-.admin-shell .hover\:bg-slate-50\/50:hover {
+.admin-shell .hover\:bg-slate-50\/50:hover,
+.admin-shell [class*="hover:bg-slate-"]:hover,
+.admin-shell [class*="hover:bg-white"]:hover,
+.admin-shell [class*="hover:bg-slate-50\/40"]:hover,
+.admin-shell tr:hover,
+.admin-shell .group:hover,
+.admin-shell [class*="group-hover:bg-"] {
   background-color: #19231F !important;
+}
+
+/* Ensure light text elements stay readable on hover */
+.admin-shell tr:hover td,
+.admin-shell tr:hover span,
+.admin-shell tr:hover div,
+.admin-shell tr:hover p,
+.admin-shell .group:hover span,
+.admin-shell .group:hover div,
+.admin-shell .group:hover p {
+  color: #ffffff !important;
 }
 
 .admin-shell input, 
