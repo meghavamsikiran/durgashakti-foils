@@ -114,19 +114,32 @@ async def debug_products_db(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(ProductModel))
     products = result.scalars().all()
     
+    # Check Supabase status
+    from storage_service import _get_client, SUPABASE_URL, SUPABASE_SERVICE_KEY, BUCKET_NAME
+    client = _get_client()
+    
+    supabase_info = {
+        "client_is_none": client is None,
+        "url_configured": bool(SUPABASE_URL),
+        "key_length": len(SUPABASE_SERVICE_KEY) if SUPABASE_SERVICE_KEY else 0,
+        "bucket": BUCKET_NAME
+    }
+
     # Try running the migration synchronously on demand
     from convert_existing_to_webp import main as run_migration
     migration_error = None
     try:
         await run_migration()
     except Exception as e:
-        migration_error = str(e)
+        import traceback
+        migration_error = f"{e}\n{traceback.format_exc()}"
 
     # Re-fetch after migration attempt
     result2 = await db.execute(select(ProductModel))
     products_after = result2.scalars().all()
 
     return {
+        "supabase_info": supabase_info,
         "migration_error": migration_error,
         "products_before": [{"id": str(p.id), "name": p.name, "image_url": p.image_url} for p in products],
         "products_after": [{"id": str(p.id), "name": p.name, "image_url": p.image_url} for p in products_after]
