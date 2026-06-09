@@ -54,7 +54,21 @@ const DurgaMaaLoader = () => {
       if (video && video.readyState >= 2) {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const videoRatio = video.videoWidth / video.videoHeight;
+        const canvasRatio = canvas.width / canvas.height;
+        
+        let sx = 0, sy = 0, sw = video.videoWidth, sh = video.videoHeight;
+        
+        if (videoRatio > canvasRatio) {
+          sw = video.videoHeight * canvasRatio;
+          sx = (video.videoWidth - sw) / 2;
+        } else {
+          sh = video.videoWidth / canvasRatio;
+          sy = (video.videoHeight - sh) / 2;
+        }
+        
+        ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
       }
       animationFrameId = requestAnimationFrame(render);
     };
