@@ -2,111 +2,25 @@ import React, { useRef, useEffect, useState } from 'react';
 
 const DurgaMaaLoader = () => {
   const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const [useCanvas, setUseCanvas] = useState(false);
 
   useEffect(() => {
-    // Detect iOS (iPhone/iPad/iPod)
-    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    setUseCanvas(isIOSDevice);
-  }, []);
-
-  useEffect(() => {
-    if (!useCanvas) {
-      const video = videoRef.current;
-      if (video) {
-        video.muted = true;
-        video.playsInline = true;
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            video.load();
-            video.play().catch(e => {});
-          });
-        }
-      }
-      return;
-    }
-
     const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    let animationFrameId;
-
-    video.muted = true;
-    video.playsInline = true;
-    video.loop = true;
-
-    const playVideo = () => {
-      video.play().catch(e => {});
-    };
-
-    if (video.readyState >= 3) {
-      playVideo();
-    } else {
-      video.addEventListener('canplay', playVideo);
+    if (video) {
+      video.muted = true;
+      video.playsInline = true;
+      // Force inline playback on iOS
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+      
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          video.load();
+          video.play().catch(e => {});
+        });
+      }
     }
-
-    const render = () => {
-      if (video && video.readyState >= 2) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        const videoRatio = video.videoWidth / video.videoHeight;
-        const canvasRatio = canvas.width / canvas.height;
-        
-        let sx = 0, sy = 0, sw = video.videoWidth, sh = video.videoHeight;
-        
-        if (videoRatio > canvasRatio) {
-          sw = video.videoHeight * canvasRatio;
-          sx = (video.videoWidth - sw) / 2;
-        } else {
-          sh = video.videoWidth / canvasRatio;
-          sy = (video.videoHeight - sh) / 2;
-        }
-        
-        ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-
-        try {
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const data = imgData.data;
-          
-          for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            
-            // If the pixel is near white, make it transparent
-            if (r > 210 && g > 210 && b > 210) {
-              data[i + 3] = 0; // Alpha = 0 (Transparent)
-            } else {
-              // Blend edges gracefully
-              const maxVal = Math.max(r, g, b);
-              if (maxVal > 170) {
-                const alpha = Math.round((1 - (maxVal - 170) / 40) * 255);
-                data[i + 3] = Math.min(data[i + 3], alpha);
-              }
-            }
-          }
-          ctx.putImageData(imgData, 0, 0);
-        } catch (e) {
-          // Fallback if getImageData fails (e.g. cross-origin, though crossOrigin is set)
-        }
-      }
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      if (video) {
-        video.removeEventListener('canplay', playVideo);
-      }
-    };
-  }, [useCanvas]);
+  }, []);
 
   const handleTimeUpdate = () => {
     const video = videoRef.current;
@@ -117,43 +31,10 @@ const DurgaMaaLoader = () => {
     }
   };
 
-  // Video Loader scaled to 65% on mobile (w-40 -> w-[104px], h-32 -> h-[83px])
-  if (useCanvas) {
-    return (
-      <div 
-        className="relative w-[104px] h-[83px] md:w-40 md:h-32 flex items-center justify-center overflow-hidden bg-transparent border-none outline-none select-none shadow-none pointer-events-none"
-        style={{ isolation: 'isolate', backgroundColor: 'transparent' }}
-      >
-        <video
-          ref={videoRef}
-          src="/durgamaloader.mp4"
-          muted
-          playsInline
-          webkit-playsinline="true"
-          preload="auto"
-          loop
-          crossOrigin="anonymous"
-          style={{ display: 'none' }}
-        />
-        <canvas
-          ref={canvasRef}
-          width={160}
-          height={128}
-          className="w-full h-full object-cover"
-          style={{ 
-            mixBlendMode: 'multiply',
-            filter: 'contrast(1.25) brightness(1.15) opacity(0.99)',
-            transform: 'scale(1.15)',
-          }}
-        />
-      </div>
-    );
-  }
-
-  // Restore EXACT OLD CODE for non-iOS (Android/Web Desktop)
   return (
     <div 
       className="relative w-[104px] h-[83px] md:w-40 md:h-32 flex items-center justify-center overflow-hidden bg-transparent border-none outline-none select-none shadow-none pointer-events-none"
+      style={{ backgroundColor: 'transparent', background: 'transparent' }}
     >
       <video 
         ref={videoRef}
@@ -170,6 +51,7 @@ const DurgaMaaLoader = () => {
           filter: 'contrast(1.25) brightness(1.15)',
           transform: 'scale(1.08)',
           backgroundColor: 'transparent',
+          background: 'transparent',
           mixBlendMode: 'multiply'
         }}
       />
