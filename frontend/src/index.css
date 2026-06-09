@@ -243,6 +243,19 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: none;
   }
 
+  .public-theme input[type="range"] {
+    min-height: auto;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .public-theme input[type="range"]:focus {
+    border-color: transparent;
+    box-shadow: none;
+  }
+
   .public-theme .hover\:bg-emerald-hover:hover,
   .public-theme .hover\:bg-primary\/95:hover,
   .public-theme .hover\:bg-primary\/90:hover,

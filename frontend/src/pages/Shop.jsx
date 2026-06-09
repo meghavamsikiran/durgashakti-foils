@@ -59,7 +59,7 @@ const Shop = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [loading, setLoading] = useState(!initialProducts.length);
   const [priceFilter, setPriceFilter] = useState('all');
-  const [maxPrice, setMaxPrice] = useState(1000);
+  const [maxPrice, setMaxPrice] = useState(25000);
   const [ratingFilter, setRatingFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [page, setPage] = useState(1);
@@ -146,7 +146,7 @@ const Shop = () => {
     }
 
     // Slider filter
-    if (maxPrice < 1000) {
+    if (maxPrice < 25000) {
       filtered = filtered.filter(p => getProductPricing(p).displayPrice <= maxPrice);
     }
 
@@ -184,7 +184,7 @@ const Shop = () => {
   const handleClearFilters = () => {
     setCategoryFilter('all');
     setPriceFilter('all');
-    setMaxPrice(1000);
+    setMaxPrice(25000);
     setRatingFilter('all');
     setSortBy('name');
     if (searchParams.has('search')) {
@@ -205,7 +205,7 @@ const Shop = () => {
         />
       </div>
 
-      <div className="mx-auto max-w-[1440px] px-4 md:px-8 lg:px-12 py-10">
+      <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 py-10">
         {/* Collapsible Mobile Filters Button */}
         <button
           onClick={() => setShowMobileFilters(!showMobileFilters)}
@@ -223,7 +223,7 @@ const Shop = () => {
                 <h2 className="font-extrabold text-xs font-manrope text-slate-800 uppercase tracking-wider">
                   Category
                 </h2>
-                {(categoryFilter !== 'all' || priceFilter !== 'all' || maxPrice !== 1000 || ratingFilter !== 'all' || sortBy !== 'name') && (
+                {(categoryFilter !== 'all' || priceFilter !== 'all' || maxPrice !== 25000 || ratingFilter !== 'all' || sortBy !== 'name') && (
                   <button 
                     onClick={handleClearFilters}
                     className="text-[10px] font-bold text-rose-500 hover:text-rose-600 uppercase tracking-wider transition-colors"
@@ -271,10 +271,10 @@ const Shop = () => {
                     <input 
                       type="range" 
                       min="0" 
-                      max="1000" 
+                      max="25000" 
                       value={maxPrice} 
                       onChange={(e) => setMaxPrice(Number(e.target.value))}
-                      className="w-full accent-[#0F5C2E] h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                      className="w-full accent-[#0F5C2E] h-1.5 bg-slate-200 rounded-lg cursor-pointer"
                     />
                     <div className="flex justify-between items-center mt-2 text-[10px] font-bold text-slate-550 font-mono">
                       <span>min ₹0</span>
@@ -303,7 +303,7 @@ const Shop = () => {
                               if (option.value === '0to250') setMaxPrice(250);
                               else if (option.value === '250to500') setMaxPrice(500);
                               else if (option.value === '500to1000') setMaxPrice(1000);
-                              else if (option.value === 'all') setMaxPrice(1000);
+                              else if (option.value === 'all') setMaxPrice(25000);
                             }}
                             className="w-3.5 h-3.5 accent-[#0F5C2E]"
                           />
