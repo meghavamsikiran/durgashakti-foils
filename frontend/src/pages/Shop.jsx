@@ -236,7 +236,7 @@ const Shop = () => {
         />
       </div>
 
-      <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 py-10">
+      <div className="w-full px-4 md:px-8 lg:px-12 py-10">
         {/* Mobile Toolbar: Results Count and compact Filter Toggle side-by-side */}
         <div className="lg:hidden flex items-center justify-between mb-6">
           <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-450">
