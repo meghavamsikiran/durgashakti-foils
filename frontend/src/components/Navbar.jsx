@@ -349,7 +349,7 @@ const Navbar = () => {
               return (
                 <span key={item.id} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                   {showFavicon && (
-                     <img src="/favicon.webp" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm brightness-0 invert" />
+                     <img src="/favicon.webp" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm brightness-0 invert" onError={(e) => { e.target.style.display = 'none'; }} />
                   )}
                   {item.text}
                 </span>
@@ -362,7 +362,7 @@ const Navbar = () => {
               return (
                 <span key={`dup-${item.id}`} className="text-[10px] font-black uppercase tracking-[0.2em] px-16 border-r border-white/10 flex items-center gap-3">
                   {showFavicon && (
-                     <img src="/favicon.webp" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm brightness-0 invert" />
+                     <img src="/favicon.webp" alt="Durga Maa" className="w-4 h-4 object-contain drop-shadow-sm brightness-0 invert" onError={(e) => { e.target.style.display = 'none'; }} />
                   )}
                   {item.text}
                 </span>
