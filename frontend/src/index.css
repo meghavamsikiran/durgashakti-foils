@@ -901,9 +901,10 @@ h1, h2, h3, h4, h5, h6 {
 .admin-shell .bg-slate-100,
 .admin-shell .bg-slate-200\/50,
 .admin-shell .bg-slate-200,
-.admin-shell [class*="bg-slate-50"],
-.admin-shell [class*="bg-slate-100"],
-.admin-shell [class*="bg-slate-200"] {
+.admin-shell .bg-slate-50\/50,
+.admin-shell .bg-slate-100\/50,
+.admin-shell .bg-slate-50\/40,
+.admin-shell .bg-slate-50\/80 {
   background-color: #131B17 !important;
 }
 
@@ -1092,11 +1093,96 @@ input[type="checkbox"] {
 .light-theme .admin-shell .bg-card,
 .light-theme .admin-theme .bg-slate-900,
 .light-theme .admin-shell .bg-slate-900,
-.light-theme .admin-shell div.bg-slate-900,
-.light-theme .admin-shell [class*="bg-slate-900"] {
+.light-theme .admin-shell div.bg-slate-900 {
   background-color: #ffffff !important;
   border-color: #bbcbb5 !important;
   color: #181c1b !important;
+}
+
+/* Custom background slate classes in light theme admin panel */
+.light-theme .admin-shell .bg-slate-50,
+.light-theme .admin-shell .bg-slate-100,
+.light-theme .admin-shell .bg-slate-200,
+.light-theme .admin-shell .bg-slate-200\/50,
+.light-theme .admin-shell .bg-slate-50\/50,
+.light-theme .admin-shell .bg-slate-100\/50,
+.light-theme .admin-shell .bg-slate-50\/40,
+.light-theme .admin-shell .bg-slate-50\/80 {
+  background-color: #f1f4f2 !important;
+  color: #181c1b !important;
+  border-color: #bbcbb5 !important;
+}
+
+/* Ensure buttons with bg-slate-100 can hover to primary green with white text */
+.light-theme .admin-shell .bg-slate-100:hover,
+.light-theme .admin-shell .hover\:bg-primary:hover,
+.light-theme .admin-shell button.bg-slate-100:hover {
+  background-color: #006e1b !important;
+  color: #ffffff !important;
+}
+
+/* Restore dark theme styles for the admin sidebar and mobile header under global light theme */
+.light-theme .admin-shell aside,
+.light-theme .admin-shell aside div,
+.light-theme .admin-shell aside nav,
+.light-theme .admin-shell aside a,
+.light-theme .admin-shell aside button,
+.light-theme .admin-shell aside p,
+.light-theme .admin-shell aside span,
+.light-theme .admin-shell header.bg-\[\#050807\],
+.light-theme .admin-shell header.bg-\[\#050807\] button,
+.light-theme .admin-shell header.bg-\[\#050807\] a,
+.light-theme .admin-shell header.bg-\[\#050807\] span {
+  background-color: transparent !important;
+}
+
+.light-theme .admin-shell aside,
+.light-theme .admin-shell aside.bg-\[\#050807\],
+.light-theme .admin-shell aside nav.bg-\[\#050807\],
+.light-theme .admin-shell aside div.bg-\[\#050807\] {
+  background-color: #050807 !important;
+  border-color: #26322B !important;
+}
+
+.light-theme .admin-shell header.bg-\[\#050807\] {
+  background-color: #050807 !important;
+  border-color: #26322B !important;
+}
+
+.light-theme .admin-shell header.bg-\[\#050807\] img,
+.light-theme .admin-shell aside img {
+  filter: none !important;
+}
+
+.light-theme .admin-shell aside a.text-slate-300,
+.light-theme .admin-shell header.bg-\[\#050807\] .text-slate-300 {
+  color: #cbd5e1 !important;
+}
+
+.light-theme .admin-shell aside a:hover,
+.light-theme .admin-shell aside a.text-\[\#16E34A\],
+.light-theme .admin-shell aside a.text-primary,
+.light-theme .admin-shell header.bg-\[\#050807\] button:hover {
+  color: #16E34A !important;
+}
+
+.light-theme .admin-shell aside .text-white,
+.light-theme .admin-shell header.bg-\[\#050807\] .text-white {
+  color: #ffffff !important;
+}
+
+.light-theme .admin-shell aside .text-slate-400,
+.light-theme .admin-shell aside button.text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.light-theme .admin-shell aside .text-slate-400:hover,
+.light-theme .admin-shell aside button.text-slate-400:hover {
+  color: #ffffff !important;
+}
+
+.light-theme .admin-shell aside .text-slate-500 {
+  color: #64748B !important;
 }
 
 /* Border color overrides */

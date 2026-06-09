@@ -118,6 +118,7 @@ const DurgaMaaLoader = () => {
           style={{ 
             mixBlendMode: 'multiply',
             filter: 'contrast(1.25) brightness(1.15) opacity(0.99)',
+            transform: 'scale(1.15)',
           }}
         />
       </div>
