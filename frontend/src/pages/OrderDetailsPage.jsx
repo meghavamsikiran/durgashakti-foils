@@ -635,7 +635,7 @@ const OrderDetailsPage = () => {
       <div className="max-w-4xl mx-auto px-6">
         
         {/* Amazon-style Breadcrumbs */}
-        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-6 font-semibold">
+        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300 mb-6 font-semibold">
           <span className="hover:text-primary cursor-pointer transition-colors" onClick={() => navigate('/dashboard')}>Your Account</span>
           <span className="text-slate-400 dark:text-slate-500 font-normal">&rsaquo;</span>
           <span className="hover:text-primary cursor-pointer transition-colors" onClick={() => navigate('/dashboard')}>Your Orders</span>
@@ -647,7 +647,7 @@ const OrderDetailsPage = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Order Details</h1>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="text-xs font-semibold text-slate-500 dark:text-slate-300 mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
               <span>Order placed {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
               <span className="text-slate-300 font-normal">|</span>
               <span className="flex items-center gap-1.5">
@@ -670,7 +670,7 @@ const OrderDetailsPage = () => {
             {((order.payment_status || '').toLowerCase() === 'paid' || (order.payment_status || '').toLowerCase() === 'completed') && (
               <button
                 onClick={handleDownloadInvoice}
-                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:text-primary border border-slate-300 rounded-xl px-4 py-2.5 bg-white dark:bg-[#1A1F1C] transition-all shadow-sm dark:shadow-none hover:bg-slate-50 dark:bg-[#1A1F1C]/50"
+                className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:text-primary border border-slate-300 rounded-xl px-4 py-2.5 bg-white dark:bg-[#131B17] transition-all shadow-sm dark:shadow-none hover:bg-slate-50 dark:bg-[#26322B]/40"
               >
                 <ExternalLink className="w-3.5 h-3.5" /> Invoice
               </button>
@@ -690,7 +690,7 @@ const OrderDetailsPage = () => {
         )}
 
         {/* 3-Column Info Card (Ship to | Payment Method | Order Summary) */}
-        <div className="bg-white dark:bg-[#1A1F1C] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none p-6 mb-6 grid grid-cols-1 md:grid-cols-3 gap-6 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-white/10">
+        <div className="bg-white dark:bg-[#131B17] rounded-2xl border border-slate-200 dark:border-[#26322B] shadow-sm dark:shadow-none p-6 mb-6 grid grid-cols-1 md:grid-cols-3 gap-6 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-[#26322B]">
           
           {/* Column 1: Ship to */}
           <div className="space-y-2">
@@ -700,7 +700,7 @@ const OrderDetailsPage = () => {
               <p>{order.shipping_address?.address_line1}</p>
               {order.shipping_address?.address_line2 && <p>{order.shipping_address.address_line2}</p>}
               <p>{order.shipping_address?.city}, {order.shipping_address?.state} - {order.shipping_address?.pincode}</p>
-              <p className="text-slate-500 dark:text-slate-400 font-bold mt-2.5 flex items-center gap-1">
+              <p className="text-slate-500 dark:text-slate-300 font-bold mt-2.5 flex items-center gap-1">
                 <Phone className="w-3 h-3 text-slate-400 dark:text-slate-500" />
                 {order.shipping_address?.phone}
               </p>
@@ -729,7 +729,7 @@ const OrderDetailsPage = () => {
                           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Refund Credited
                         </p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
-                          <p className="font-mono text-slate-500 dark:text-slate-400 break-all select-all flex items-center gap-1">
+                          <p className="font-mono text-slate-500 dark:text-slate-300 break-all select-all flex items-center gap-1">
                             Paid Txn: {order.transaction_id}
                             <button
                               onClick={() => {
@@ -758,9 +758,9 @@ const OrderDetailsPage = () => {
                         <p className="font-extrabold flex items-center gap-1.5 text-sky-700">
                           <span className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse"></span> Refund Initiated
                         </p>
-                        <p className="text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[8px] font-black">Razorpay is processing the refund.</p>
+                        <p className="text-slate-500 dark:text-slate-300 uppercase tracking-widest text-[8px] font-black">Razorpay is processing the refund.</p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
-                          <p className="font-mono text-slate-500 dark:text-slate-400 break-all select-all flex items-center gap-1">
+                          <p className="font-mono text-slate-500 dark:text-slate-300 break-all select-all flex items-center gap-1">
                             Paid Txn: {order.transaction_id}
                             <button
                               onClick={() => {
@@ -781,7 +781,7 @@ const OrderDetailsPage = () => {
                           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Paid
                         </p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
-                          <p className="font-mono text-slate-500 dark:text-slate-400 break-all select-all flex items-center gap-1">
+                          <p className="font-mono text-slate-500 dark:text-slate-300 break-all select-all flex items-center gap-1">
                             Txn: {order.transaction_id}
                             <button
                               onClick={() => {
@@ -797,7 +797,7 @@ const OrderDetailsPage = () => {
                         )}
                       </div>
                     ) : isCod ? (
-                      <div className="bg-slate-50 dark:bg-[#1A1F1C]/50 text-slate-700 dark:text-slate-300 text-[10px] rounded-xl p-3 border border-slate-200 dark:border-white/10 space-y-2 font-semibold">
+                      <div className="bg-slate-50 dark:bg-[#26322B]/40 text-slate-700 dark:text-slate-300 text-[10px] rounded-xl p-3 border border-slate-200 dark:border-[#26322B] space-y-2 font-semibold">
                         <p className="font-extrabold flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                           <span className="w-1.5 h-1.5 bg-slate-400 rounded-full"></span> Cash to be collected on delivery
                         </p>
@@ -817,17 +817,17 @@ const OrderDetailsPage = () => {
                         <p className="font-extrabold flex items-center gap-1.5 text-rose-700">
                           <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Payment Window Expired
                         </p>
-                        <p className="text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[8px] font-black">This order is overdue and cancelled.</p>
+                        <p className="text-slate-500 dark:text-slate-300 uppercase tracking-widest text-[8px] font-black">This order is overdue and cancelled.</p>
                       </div>
                     ) : (
                       <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 border border-amber-100/60 space-y-2 font-semibold">
                         <p className="font-extrabold flex items-center gap-1.5 text-amber-700">
                           <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span> Confirming Payment
                         </p>
-                        <p className="text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[8px] font-black">Status updates automatically.</p>
+                        <p className="text-slate-500 dark:text-slate-300 uppercase tracking-widest text-[8px] font-black">Status updates automatically.</p>
                         {timeLeft && timeLeft !== 'Expired' && !['cancelled', 'failed'].includes((order.order_status || '').toLowerCase()) && (
                           <div className="mt-2 space-y-2">
-                            <div className="flex items-center gap-2 bg-white dark:bg-[#1A1F1C]/80 rounded-lg px-3 py-2 border border-amber-200">
+                            <div className="flex items-center gap-2 bg-white dark:bg-[#26322B]/60 rounded-lg px-3 py-2 border border-amber-200">
                               <Clock className="w-3.5 h-3.5 text-amber-600" />
                               <span className="text-xs font-black text-amber-800 tabular-nums">{timeLeft}</span>
                               <span className="text-[9px] font-bold text-amber-600">remaining in payment window</span>
@@ -867,7 +867,7 @@ const OrderDetailsPage = () => {
               const codCharge = metadata?.cod_charge ?? 0.0;
 
               return (
-                <div className="space-y-2 text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                <div className="space-y-2 text-xs text-slate-500 dark:text-slate-300 font-semibold">
                   <div className="flex justify-between">
                     <span>Item(s) Subtotal:</span>
                     <span className="text-slate-900 dark:text-white">₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -899,7 +899,7 @@ const OrderDetailsPage = () => {
                       </div>
                     </>
                   )}
-                  <div className="h-px bg-slate-100 my-1" />
+                  <div className="h-px bg-slate-100 dark:bg-[#26322B] my-1" />
                   <div className="flex justify-between font-black text-slate-900 dark:text-white text-sm pt-0.5">
                     <span>Grand Total:</span>
                     <span className="text-primary text-base font-extrabold">₹{Number(order.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -912,8 +912,8 @@ const OrderDetailsPage = () => {
 
         {/* Inline Return Form Box */}
         {isReturning && (
-          <div className="bg-white dark:bg-[#1A1F1C] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none p-6 mb-6 animate-in slide-in-from-top-4 duration-300">
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-white/5 mb-6">
+          <div className="bg-white dark:bg-[#131B17] rounded-2xl border border-slate-200 dark:border-[#26322B] shadow-sm dark:shadow-none p-6 mb-6 animate-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-[#26322B] mb-6">
               <h3 className="text-base font-bold text-slate-900 dark:text-white">Request Return</h3>
               <button 
                 onClick={() => {
@@ -931,12 +931,12 @@ const OrderDetailsPage = () => {
 
             <form onSubmit={handleSubmitReturn} className="space-y-5">
               <div className="space-y-3">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Select Items to Return</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Select Items to Return</label>
                 <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1">
                   {order.items.filter(item => !item.return_status).map((item) => {
                     const returnInfo = selectedItemsForReturn[item.product_id] || { selected: false, quantity: 1 };
                     return (
-                      <div key={item.product_id} className="flex items-center justify-between p-3 border border-slate-100 dark:border-white/5 rounded-xl hover:bg-slate-50 dark:bg-[#1A1F1C]/50 transition-colors">
+                      <div key={item.product_id} className="flex items-center justify-between p-3 border border-slate-100 dark:border-[#26322B] rounded-xl hover:bg-slate-50 dark:bg-[#26322B]/40 transition-colors">
                         <div className="flex items-center gap-3">
                           <input
                             type="checkbox"
@@ -954,7 +954,7 @@ const OrderDetailsPage = () => {
                               src={formatImageUrl(item.image_url)} 
                               onError={(e) => { e.target.src = '/logo-durga.webp'; }}
                               alt="" 
-                              className="w-10 h-10 rounded-lg object-cover bg-slate-50 dark:bg-[#1A1F1C]/50 border border-slate-100 dark:border-white/5" 
+                              className="w-10 h-10 rounded-lg object-cover bg-slate-50 dark:bg-[#26322B]/40 border border-slate-100 dark:border-[#26322B]" 
                             />
                           )}
                           <div>
@@ -973,7 +973,7 @@ const OrderDetailsPage = () => {
                                   [item.product_id]: { ...returnInfo, quantity: parseInt(e.target.value) }
                                 }));
                               }}
-                              className="px-2 py-1 rounded-lg border border-slate-200 dark:border-white/10 text-xs font-bold bg-white dark:bg-[#1A1F1C] focus:outline-none"
+                              className="px-2 py-1 rounded-lg border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] focus:outline-none"
                             >
                               {[...Array(item.quantity)].map((_, i) => (
                                 <option key={i+1} value={i+1}>{i+1}</option>
@@ -988,46 +988,46 @@ const OrderDetailsPage = () => {
               </div>
 
               <div className="space-y-3">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Return Option</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Return Option</label>
                 <div className="grid grid-cols-2 gap-4">
                   <div 
                     onClick={() => setReturnType('refund')}
                     className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
                       returnType === 'refund' 
                         ? 'border-primary bg-primary/5 text-primary' 
-                        : 'border-slate-200 dark:border-white/10 hover:border-slate-300 text-slate-600 dark:text-slate-400 bg-white dark:bg-[#1A1F1C]'
+                        : 'border-slate-200 dark:border-[#26322B] hover:border-slate-300 text-slate-600 dark:text-slate-400 bg-white dark:bg-[#131B17]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black uppercase tracking-wider">Refund</span>
                       {returnType === 'refund' && <Check className="w-4 h-4 stroke-[3px]" />}
                     </div>
-                    <p className="text-[10px] font-medium mt-1 text-slate-500 dark:text-slate-400 leading-snug">Original payment method (credited in 5-7 business days)</p>
+                    <p className="text-[10px] font-medium mt-1 text-slate-500 dark:text-slate-300 leading-snug">Original payment method (credited in 5-7 business days)</p>
                   </div>
                   <div 
                     onClick={() => setReturnType('exchange')}
                     className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
                       returnType === 'exchange' 
                         ? 'border-primary bg-primary/5 text-primary' 
-                        : 'border-slate-200 dark:border-white/10 hover:border-slate-300 text-slate-600 dark:text-slate-400 bg-white dark:bg-[#1A1F1C]'
+                        : 'border-slate-200 dark:border-[#26322B] hover:border-slate-300 text-slate-600 dark:text-slate-400 bg-white dark:bg-[#131B17]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black uppercase tracking-wider">Exchange</span>
                       {returnType === 'exchange' && <Check className="w-4 h-4 stroke-[3px]" />}
                     </div>
-                    <p className="text-[10px] font-medium mt-1 text-slate-500 dark:text-slate-400 leading-snug">Swap for the same product (self-ship return to warehouse)</p>
+                    <p className="text-[10px] font-medium mt-1 text-slate-500 dark:text-slate-300 leading-snug">Swap for the same product (self-ship return to warehouse)</p>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Reason for Return</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Reason for Return</label>
                 <select
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   required
-                  className="w-full h-12 px-4 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold bg-white dark:bg-[#1A1F1C] focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                  className="w-full h-12 px-4 rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] focus:ring-2 focus:ring-primary/20 focus:outline-none"
                 >
                   <option value="">Select a reason...</option>
                   <option value="Damaged/Defective Product">Damaged or Defective Product</option>
@@ -1039,20 +1039,20 @@ const OrderDetailsPage = () => {
 
               {reason === 'Other' && (
                 <div className="space-y-2 animate-fade-in">
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Details</label>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Details</label>
                   <textarea
                     placeholder="Please provide details about the return reason..."
                     value={otherDetails}
                     onChange={(e) => setOtherDetails(e.target.value)}
                     required
-                    className="w-full p-4 min-h-[100px] rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold bg-white dark:bg-[#1A1F1C] focus:ring-2 focus:ring-primary/20 focus:outline-none resize-none"
+                    className="w-full p-4 min-h-[100px] rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-semibold bg-white dark:bg-[#131B17] focus:ring-2 focus:ring-primary/20 focus:outline-none resize-none"
                   />
                 </div>
               )}
 
               <div className="space-y-2">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Upload Proof (Images/Videos) *</label>
-                <div className="relative group border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-primary transition-all duration-300 rounded-2xl p-6 flex flex-col items-center justify-center bg-white dark:bg-[#1A1F1C] hover:bg-primary/5 cursor-pointer min-h-[140px]">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Upload Proof (Images/Videos) *</label>
+                <div className="relative group border-2 border-dashed border-slate-200 dark:border-[#26322B] hover:border-primary transition-all duration-300 rounded-2xl p-6 flex flex-col items-center justify-center bg-white dark:bg-[#131B17] hover:bg-primary/5 cursor-pointer min-h-[140px]">
                   <input
                     type="file"
                     multiple
@@ -1070,7 +1070,7 @@ const OrderDetailsPage = () => {
                 {returnPreviews.length > 0 && (
                   <div className="grid grid-cols-3 gap-3 pt-2">
                     {returnPreviews.map((preview, index) => (
-                      <div key={index} className="relative w-full h-24 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#1A1F1C]/50 flex items-center justify-center">
+                      <div key={index} className="relative w-full h-24 rounded-xl overflow-hidden border border-slate-200 dark:border-[#26322B] bg-slate-50 dark:bg-[#26322B]/40 flex items-center justify-center">
                         {preview.type === 'video' ? (
                           <video src={`${preview.url}#t=0.001`} className="w-full h-full object-cover" preload="metadata" />
                         ) : (
@@ -1104,7 +1104,7 @@ const OrderDetailsPage = () => {
                     setReturnFiles([]);
                     setReturnPreviews([]);
                   }}
-                  className="flex-1 h-12 rounded-xl font-black uppercase tracking-widest border border-slate-200 dark:border-white/10 text-[10px] text-slate-600 dark:text-slate-400 hover:bg-slate-100"
+                  className="flex-1 h-12 rounded-xl font-black uppercase tracking-widest border border-slate-200 dark:border-[#26322B] text-[10px] text-slate-600 dark:text-slate-400 hover:bg-slate-100"
                 >
                   Cancel
                 </Button>
@@ -1124,9 +1124,9 @@ const OrderDetailsPage = () => {
 
         {/* Elegant Horizontal/Responsive Stepper Timeline Card */}
         {!isReturning && (
-          <div className="bg-white dark:bg-[#1A1F1C] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none p-6 mb-6">
-            <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-50 dark:border-white/5">
-              <h3 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Shipment Timeline</h3>
+          <div className="bg-white dark:bg-[#131B17] rounded-2xl border border-slate-200 dark:border-[#26322B] shadow-sm dark:shadow-none p-6 mb-6">
+            <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-50 dark:border-[#26322B]">
+              <h3 className="text-xs font-black text-slate-500 dark:text-slate-300 uppercase tracking-widest">Shipment Timeline</h3>
               <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                 order.order_status === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
                 order.order_status === 'cancelled' ? 'bg-rose-100 text-rose-800' :
@@ -1324,9 +1324,9 @@ const OrderDetailsPage = () => {
           }
 
           return (
-            <div className="bg-white dark:bg-[#1A1F1C] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none p-6 mb-6">
-              <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-50 dark:border-white/5">
-                <h3 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{timelineTitle}</h3>
+            <div className="bg-white dark:bg-[#131B17] rounded-2xl border border-slate-200 dark:border-[#26322B] shadow-sm dark:shadow-none p-6 mb-6">
+              <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-50 dark:border-[#26322B]">
+                <h3 className="text-xs font-black text-slate-500 dark:text-slate-300 uppercase tracking-widest">{timelineTitle}</h3>
                 <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
                   isRejected || isRefundFailed ? 'bg-rose-100 text-rose-800' : hasRefunded ? (paymentStatus === 'refunded' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800') : 'bg-sky-100 text-sky-800'
                 }`}>
@@ -1393,7 +1393,7 @@ const OrderDetailsPage = () => {
                     <p className="mt-0.5 text-slate-700 dark:text-slate-300">Estimated Delivery: <span className="font-extrabold text-slate-900 dark:text-white">{new Date(order.expected_delivery_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</span></p>
                   )}
                   {order.shipment_notes && (
-                    <p className="mt-1 text-slate-500 dark:text-slate-400 italic bg-white dark:bg-[#1A1F1C]/60 p-2 rounded-lg border border-slate-100 dark:border-white/5">Notes: {order.shipment_notes}</p>
+                    <p className="mt-1 text-slate-500 dark:text-slate-300 italic bg-white dark:bg-[#131B17]/60 p-2 rounded-lg border border-slate-100 dark:border-[#26322B]">Notes: {order.shipment_notes}</p>
                   )}
                 </div>
               </div>
@@ -1416,7 +1416,7 @@ const OrderDetailsPage = () => {
                   Track Shipment
                 </a>
               ) : (
-                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 bg-slate-100 border border-slate-200 dark:border-white/10 px-3 py-2 rounded-xl">
+                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-[#131B17] border border-slate-200 dark:border-[#26322B] px-3 py-2 rounded-xl">
                   No Direct Tracking Link
                 </span>
               );
@@ -1425,10 +1425,10 @@ const OrderDetailsPage = () => {
         )}
 
         {/* Main Amazon-Style Order Items Card */}
-        <div className="bg-white dark:bg-[#1A1F1C] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none overflow-hidden mb-6">
+        <div className="bg-white dark:bg-[#131B17] rounded-2xl border border-slate-200 dark:border-[#26322B] shadow-sm dark:shadow-none overflow-hidden mb-6">
           
           {/* Status Header Bar inside Items Card */}
-          <div className="bg-slate-50/70 dark:bg-[#1A1F1C]/70 border-b border-slate-100 dark:border-white/5 px-6 py-4 flex flex-wrap justify-between items-center gap-4 font-semibold">
+          <div className="bg-slate-50/70 dark:bg-[#131B17]/70 border-b border-slate-100 dark:border-[#26322B] px-6 py-4 flex flex-wrap justify-between items-center gap-4 font-semibold">
             <div>
               <h2 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
                 {order.order_status === 'delivered' 
@@ -1454,7 +1454,7 @@ const OrderDetailsPage = () => {
                   : `Preparing shipment • Est. Delivery ${getExpectedDeliveryDate(order.created_at)}`
                 }
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-300 font-medium mt-0.5">
                 {order.order_status === 'delivered' 
                   ? `Your package was delivered on ${new Date(order.delivered_at || order.updated_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`
                   : order.order_status === 'cancelled'
@@ -1480,7 +1480,7 @@ const OrderDetailsPage = () => {
           </div>
 
           {/* Items Row list */}
-          <div className="p-6 divide-y divide-slate-100 dark:divide-white/10">
+          <div className="p-6 divide-y divide-slate-100 dark:divide-[#26322B]">
             {order.items.map((item, idx) => (
               <div key={idx} className="py-6 first:pt-0 last:pb-0 flex flex-col md:flex-row gap-6 items-start justify-between">
                 
@@ -1490,7 +1490,7 @@ const OrderDetailsPage = () => {
                     src={formatImageUrl(item.image_url)} 
                     onError={(e) => { e.target.src = '/logo-durga.webp'; }}
                     alt={item.product_name} 
-                    className="w-24 h-24 rounded-xl object-cover bg-slate-50 dark:bg-[#1A1F1C]/50 border border-slate-200 dark:border-white/10 shrink-0 shadow-sm dark:shadow-none"
+                    className="w-24 h-24 rounded-xl object-cover bg-slate-50 dark:bg-[#26322B]/40 border border-slate-200 dark:border-[#26322B] shrink-0 shadow-sm dark:shadow-none"
                     loading="lazy"
                   />
                   <div className="space-y-1.5 min-w-0">
@@ -1513,7 +1513,7 @@ const OrderDetailsPage = () => {
                     </div>
 
                     {item.return_status && (
-                      <div className="mt-3 p-3 bg-slate-50 dark:bg-[#1A1F1C]/50 border border-slate-150 rounded-xl space-y-2 max-w-md">
+                      <div className="mt-3 p-3 bg-slate-50 dark:bg-[#26322B]/40 border border-slate-150 rounded-xl space-y-2 max-w-md">
                         <div className="flex items-center gap-2">
                           <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
                             item.return_status === 'RETURN_REQUESTED' || item.return_status === 'EXCHANGE_REQUESTED' ? 'bg-amber-100 text-amber-800' :
@@ -1526,7 +1526,7 @@ const OrderDetailsPage = () => {
                           }`}>
                             {item.return_status.replace('_', ' ')}
                           </span>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-extrabold">{item.return_type === 'exchange' ? 'Qty Exchanged' : 'Qty Returned'}: {item.returned_quantity}</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-300 font-extrabold">{item.return_type === 'exchange' ? 'Qty Exchanged' : 'Qty Returned'}: {item.returned_quantity}</span>
                         </div>
                         {item.return_reason && (
                           <p className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">Reason: <span className="font-bold">{item.return_reason}</span></p>
@@ -1539,12 +1539,12 @@ const OrderDetailsPage = () => {
                           const totalRefundable = isRefunded ? prodRefund : (prodRefund + courierRefund);
                           
                           return (
-                            <div className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 bg-white dark:bg-[#1A1F1C] p-2.5 rounded-xl border border-slate-100 dark:border-white/5 flex flex-wrap gap-x-4 gap-y-1">
+                            <div className="text-[10px] font-extrabold text-slate-500 dark:text-slate-300 bg-white dark:bg-[#131B17] p-2.5 rounded-xl border border-slate-100 dark:border-[#26322B] flex flex-wrap gap-x-4 gap-y-1">
                               <span>Taxable: ₹{Number(item.refund_calculations.taxable_amount || 0).toFixed(2)}</span>
                               <span>CGST 9%: ₹{Number(item.refund_calculations.cgst_amount || 0).toFixed(2)}</span>
                               <span>SGST 9%: ₹{Number(item.refund_calculations.sgst_amount || 0).toFixed(2)}</span>
                               <span>Discount Share: -₹{Number(item.refund_calculations.coupon_discount_share || 0).toFixed(2)}</span>
-                              <span className="text-primary font-black w-full mt-1 border-t border-slate-200 dark:border-white/10/50 pt-1">
+                              <span className="text-primary font-black w-full mt-1 border-t border-slate-200 dark:border-[#26322B]/50 pt-1">
                                 Est. Refundable: ₹{totalRefundable.toFixed(2)} 
                                 {courierRefund > 0 ? ` (Product: ₹${actualProductRefund.toFixed(2)} + Courier: ₹${courierRefund.toFixed(2)})` : ''}
                               </span>
@@ -1552,7 +1552,7 @@ const OrderDetailsPage = () => {
                           );
                         })()}
                         {item.self_shipping_details && (
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400 space-y-1.5 font-semibold">
+                          <div className="text-[10px] text-slate-500 dark:text-slate-300 space-y-1.5 font-semibold">
                             <div>
                                <p className="flex items-center gap-1.5">
                                 Courier: <span className="font-extrabold text-slate-800 dark:text-slate-200">{item.self_shipping_details.courier_name}</span>
@@ -1572,7 +1572,7 @@ const OrderDetailsPage = () => {
                               </p>
                               {item.self_shipping_details.courier_cost > 0 && <p>Courier Cost: <span className="font-bold text-slate-850">₹{item.self_shipping_details.courier_cost}</span></p>}
                             </div>
-                            <div className="pt-1.5 border-t border-slate-100 dark:border-white/5 flex flex-wrap gap-2">
+                            <div className="pt-1.5 border-t border-slate-100 dark:border-[#26322B] flex flex-wrap gap-2">
                               {(() => {
                                 const rawNum = item.self_shipping_details.tracking_number;
                                 const cleanNum = rawNum ? String(rawNum).trim() : '';
@@ -1615,7 +1615,7 @@ const OrderDetailsPage = () => {
                                 <p>Expected Delivery: <span className="font-extrabold text-slate-800 dark:text-slate-200">{item.exchange_shipping_details.exchange_expected_delivery_date}</span></p>
                               )}
                               {item.exchange_shipping_details.exchange_shipment_notes && (
-                                <p className="text-slate-500 dark:text-slate-400 italic bg-white dark:bg-[#1A1F1C]/65 p-2 rounded-lg border border-slate-100 dark:border-white/5">Notes: {item.exchange_shipping_details.exchange_shipment_notes}</p>
+                                <p className="text-slate-500 dark:text-slate-300 italic bg-white dark:bg-[#131B17]/65 p-2 rounded-lg border border-slate-100 dark:border-[#26322B]">Notes: {item.exchange_shipping_details.exchange_shipment_notes}</p>
                               )}
                             </div>
                             {(() => {
@@ -1647,7 +1647,7 @@ const OrderDetailsPage = () => {
                 <div className="w-full md:w-48 flex flex-col gap-2 pt-2 md:pt-0 shrink-0">
                   <button 
                     onClick={() => navigate(`/product/${item.product_id}`)}
-                    className="w-full bg-white dark:bg-[#1A1F1C] hover:bg-slate-50 dark:bg-[#1A1F1C]/50 border border-slate-300 hover:border-slate-400 font-bold text-slate-700 dark:text-slate-300 text-xs px-4 py-2.5 rounded-xl shadow-sm dark:shadow-none transition-all text-center uppercase tracking-widest text-[9px]"
+                    className="w-full bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:bg-[#26322B]/40 border border-slate-300 hover:border-slate-400 font-bold text-slate-700 dark:text-slate-300 text-xs px-4 py-2.5 rounded-xl shadow-sm dark:shadow-none transition-all text-center uppercase tracking-widest text-[9px]"
                   >
                     View your item
                   </button>
@@ -1655,14 +1655,14 @@ const OrderDetailsPage = () => {
                   {order.order_status === 'delivered' && !item.return_status && order.payment_method?.toLowerCase() !== 'cod' && (
                     <button 
                       onClick={() => setIsReturning(item.product_id)}
-                      className="w-full bg-white dark:bg-[#1A1F1C] hover:bg-slate-50 dark:bg-[#1A1F1C]/50 border border-slate-300 hover:border-slate-400 font-bold text-slate-750 text-xs px-4 py-2.5 rounded-xl shadow-sm dark:shadow-none transition-all text-center uppercase tracking-widest text-[9px]"
+                      className="w-full bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:bg-[#26322B]/40 border border-slate-300 hover:border-slate-400 font-bold text-slate-700 dark:text-slate-300 text-xs px-4 py-2.5 rounded-xl shadow-sm dark:shadow-none transition-all text-center uppercase tracking-widest text-[9px]"
                     >
                       Return items
                     </button>
                   )}
 
                   {order.payment_method?.toLowerCase() === 'cod' && (
-                    <div className="bg-slate-50 dark:bg-[#1A1F1C]/50 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 rounded-xl p-3.5 text-[9px] font-black uppercase tracking-wider text-center leading-normal">
+                    <div className="bg-slate-50 dark:bg-[#26322B]/40 border border-slate-200 dark:border-[#26322B] text-slate-500 dark:text-slate-300 rounded-xl p-3.5 text-[9px] font-black uppercase tracking-wider text-center leading-normal">
                       Returns not allowed for COD
                     </div>
                   )}
@@ -1703,13 +1703,13 @@ const OrderDetailsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Return Reason</span>
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-[#1A1F1C] p-3 rounded-xl border border-slate-100 dark:border-white/5">{order.return_reason}</p>
+                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-[#131B17] p-3 rounded-xl border border-slate-100 dark:border-[#26322B]">{order.return_reason}</p>
               </div>
 
               {order.admin_message && (
                 <div className="space-y-1">
                   <span className="text-[9px] font-black uppercase tracking-widest text-primary">Store Response Remarks</span>
-                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-[#1A1F1C] p-3 rounded-xl border border-slate-100 dark:border-white/5">{order.admin_message}</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-[#131B17] p-3 rounded-xl border border-slate-100 dark:border-[#26322B]">{order.admin_message}</p>
                 </div>
               )}
             </div>
@@ -1722,7 +1722,7 @@ const OrderDetailsPage = () => {
                     const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
                     const fullUrl = formatImageUrl(url);
                     return (
-                       <div key={index} className="relative rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden bg-white dark:bg-[#1A1F1C] shadow-sm dark:shadow-none w-20 h-20 hover:ring-2 hover:ring-primary transition-all flex items-center justify-center group cursor-pointer">
+                       <div key={index} className="relative rounded-xl border border-slate-200 dark:border-[#26322B] overflow-hidden bg-white dark:bg-[#131B17] shadow-sm dark:shadow-none w-20 h-20 hover:ring-2 hover:ring-primary transition-all flex items-center justify-center group cursor-pointer">
                         {isVideo ? (
                           <a
                             href={fullUrl}
@@ -1732,7 +1732,7 @@ const OrderDetailsPage = () => {
                           >
                             <video src={fullUrl} className="w-full h-full object-cover" muted autoPlay loop playsInline />
                             <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/50 transition-colors">
-                              <div className="w-7 h-7 rounded-full bg-white dark:bg-[#1A1F1C]/30 backdrop-blur-sm flex items-center justify-center text-white border border-white/20">
+                              <div className="w-7 h-7 rounded-full bg-white dark:bg-[#131B17]/30 backdrop-blur-sm flex items-center justify-center text-white border border-white/20">
                                 <svg className="w-3 h-3 fill-current ml-0.5" viewBox="0 0 24 24">
                                   <path d="M8 5v14l11-7z" />
                                 </svg>
@@ -1760,8 +1760,8 @@ const OrderDetailsPage = () => {
 
         {selfShipModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-[#1A1F1C] rounded-3xl border border-slate-200 dark:border-white/10 shadow-2xl p-6 max-w-md w-full animate-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-white/5 mb-5">
+            <div className="bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-2xl p-6 max-w-md w-full animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-[#26322B] mb-5">
                 <div>
                   <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Self-Ship Return Courier Info</h3>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 font-extrabold mt-0.5">{selfShipModal.product_name}</p>
@@ -1788,7 +1788,7 @@ const OrderDetailsPage = () => {
                         setCourierName(val);
                       }
                     }}
-                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold bg-white dark:bg-[#1A1F1C] focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   >
                     <option value="">Select Courier</option>
                     {COURIER_OPTIONS.map(opt => (
@@ -1802,7 +1802,7 @@ const OrderDetailsPage = () => {
                       placeholder="Enter custom courier name"
                       value={courierName}
                       onChange={(e) => setCourierName(e.target.value)}
-                      className="w-full h-11 mt-2 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold bg-white dark:bg-[#1A1F1C] focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      className="w-full h-11 mt-2 px-3.5 rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     />
                   )}
                 </div>
@@ -1815,7 +1815,7 @@ const OrderDetailsPage = () => {
                     placeholder="Enter shipment tracking number"
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
-                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-bold bg-white dark:bg-[#1A1F1C] focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono"
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] focus:ring-2 focus:ring-primary/20 focus:outline-none font-mono dark:text-slate-300"
                   />
                 </div>
 
@@ -1825,7 +1825,7 @@ const OrderDetailsPage = () => {
                   <button
                     type="button"
                     onClick={() => setSelfShipModal(null)}
-                    className="flex-1 h-11 rounded-xl font-black uppercase tracking-widest border border-slate-200 dark:border-white/10 text-[9px] text-slate-600 dark:text-slate-400 hover:bg-slate-105"
+                    className="flex-1 h-11 rounded-xl font-black uppercase tracking-widest border border-slate-200 dark:border-[#26322B] text-[9px] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#26322B]"
                   >
                     Cancel
                   </button>
