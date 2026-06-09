@@ -39,9 +39,8 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <h2 className="text-xl font-bold text-white font-serif uppercase tracking-tight">Wishlist</h2>
-        {wishlist && wishlist.length > 0 && (
+      {wishlist && wishlist.length > 0 && (
+        <div className="flex justify-end gap-4">
           <Button
             variant="outline"
             onClick={handleClearWishlist}
@@ -51,8 +50,8 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
             <Trash2 className="w-4 h-4 mr-2" />
             Clear All
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {!wishlist || wishlist.length === 0 ? (
         <div className="text-center py-20 bg-transparent text-white">
