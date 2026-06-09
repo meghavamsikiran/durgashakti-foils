@@ -102,8 +102,8 @@ function AppRoutes() {
           <button
             onClick={() => {
               const next = themeMode === 'dark' ? 'light' : 'dark';
-              setThemeMode(next);
               localStorage.setItem('themeMode', next);
+              window.dispatchEvent(new CustomEvent('theme-toggle', { detail: next }));
             }}
             className="fixed bottom-20 right-6 md:bottom-6 md:right-6 z-[9999] p-3 rounded-full bg-[#25D958] text-[#0C1310] shadow-[0_4px_20px_rgba(37,217,88,0.3)] hover:scale-110 active:scale-95 transition-all duration-200"
             aria-label="Toggle Theme"

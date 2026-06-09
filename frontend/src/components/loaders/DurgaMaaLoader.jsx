@@ -52,8 +52,7 @@ const DurgaMaaLoader = () => {
 
     const render = () => {
       if (video && video.readyState >= 2) {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
         const videoRatio = video.videoWidth / video.videoHeight;
         const canvasRatio = canvas.width / canvas.height;
@@ -69,6 +68,32 @@ const DurgaMaaLoader = () => {
         }
         
         ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+        try {
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imgData.data;
+          
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            // If the pixel is near white, make it transparent
+            if (r > 210 && g > 210 && b > 210) {
+              data[i + 3] = 0; // Alpha = 0 (Transparent)
+            } else {
+              // Blend edges gracefully
+              const maxVal = Math.max(r, g, b);
+              if (maxVal > 170) {
+                const alpha = Math.round((1 - (maxVal - 170) / 40) * 255);
+                data[i + 3] = Math.min(data[i + 3], alpha);
+              }
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+        } catch (e) {
+          // Fallback if getImageData fails (e.g. cross-origin, though crossOrigin is set)
+        }
       }
       animationFrameId = requestAnimationFrame(render);
     };
