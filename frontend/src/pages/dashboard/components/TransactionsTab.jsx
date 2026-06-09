@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   CreditCard, ArrowUpRight, ArrowDownLeft, Search, Filter, 
-  ChevronDown, Calendar, XCircle, Clock, IndianRupee, CheckCircle2, AlertCircle
+  ChevronDown, Calendar, XCircle, Clock, IndianRupee, CheckCircle2, AlertCircle, Copy
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '../../../components/ui/button';
 import TablePagination from '../../../components/ui/TablePagination';
 
@@ -57,6 +58,10 @@ const CustomSelect = ({ value, onChange, options }) => {
 
 const TransactionsTab = ({ orders, loading, error }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const handleCopy = (text, type) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${type} copied to clipboard!`);
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [methodFilter, setMethodFilter] = useState('all');
@@ -389,23 +394,47 @@ const TransactionsTab = ({ orders, loading, error }) => {
                   return (
                     <tr key={tx.id} className="hover:bg-[#131B17]/35 transition-colors group">
                       <td className="px-6 py-5">
-                        <div className={`text-xs font-bold flex items-center gap-1.5 ${
-                          isFailed ? 'text-slate-500 line-through' :
-                          isRefundSuccess ? 'text-[#25D958]' :
-                          isRefundPending ? 'text-[#fedb41]' :
-                          isSuccess ? 'text-white' : 'text-[#fedb41]'
-                        }`}>
-                          {isFailed ? <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" /> :
-                           isRefundPending ? <ArrowDownLeft className="w-3.5 h-3.5 text-[#fedb41] shrink-0" /> :
-                           isRefundSuccess ? <ArrowDownLeft className="w-3.5 h-3.5 text-[#25D958] shrink-0" /> :
-                           isSuccess ? <ArrowUpRight className="w-3.5 h-3.5 text-[#25D958] shrink-0" /> :
-                           <Clock className="w-3.5 h-3.5 text-[#fedb41] shrink-0" />}
-                          Order #{tx.order_number}
+                        <div className="flex items-center gap-2">
+                          <div className={`text-xs font-bold flex items-center gap-1.5 ${
+                            isFailed ? 'text-slate-500 line-through' :
+                            isRefundSuccess ? 'text-[#25D958]' :
+                            isRefundPending ? 'text-[#fedb41]' :
+                            isSuccess ? 'text-white' : 'text-[#fedb41]'
+                          }`}>
+                            {isFailed ? <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" /> :
+                             isRefundPending ? <ArrowDownLeft className="w-3.5 h-3.5 text-[#fedb41] shrink-0" /> :
+                             isRefundSuccess ? <ArrowDownLeft className="w-3.5 h-3.5 text-[#25D958] shrink-0" /> :
+                             isSuccess ? <ArrowUpRight className="w-3.5 h-3.5 text-[#25D958] shrink-0" /> :
+                             <Clock className="w-3.5 h-3.5 text-[#fedb41] shrink-0" />}
+                            Order #{tx.order_number}
+                          </div>
+                          {tx.order_number && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(tx.order_number, 'Order number')}
+                              className="text-slate-400 hover:text-white p-1 rounded transition-colors shrink-0"
+                              title="Copy Order Number"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <div className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider bg-[#131B17] border border-[#26322B]/60 px-2 py-1.5 rounded inline-block whitespace-normal break-all">
-                          {tx.transaction_id || 'INTERNAL_RECON'}
+                        <div className="flex items-center gap-2 max-w-[200px]">
+                          <div className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider bg-[#131B17] border border-[#26322B]/60 px-2 py-1.5 rounded inline-block whitespace-normal break-all">
+                            {tx.transaction_id || 'INTERNAL_RECON'}
+                          </div>
+                          {tx.transaction_id && tx.transaction_id !== 'Cash on Delivery' && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(tx.transaction_id, 'Transaction ID')}
+                              className="text-slate-400 hover:text-white p-1 rounded transition-colors shrink-0"
+                              title="Copy Transaction ID"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-5 text-center">

@@ -303,9 +303,25 @@ export const useCheckout = () => {
       toast.error("Shipping address contact full name is required");
       return false;
     }
-    if (!phone?.trim()) {
+    const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
+    if (!cleanPhone) {
       toast.error("Phone number is required");
       return false;
+    }
+    if (cleanPhone.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits");
+      return false;
+    }
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      toast.error("Please enter a valid 10-digit phone number (starts with 6-9)");
+      return false;
+    }
+    if (alternate_phone?.trim()) {
+      const cleanAlt = alternate_phone.replace(/\D/g, '');
+      if (cleanAlt.length !== 10 || !/^[6-9]\d{9}$/.test(cleanAlt)) {
+        toast.error("Please enter a valid 10-digit alternative phone number (starts with 6-9)");
+        return false;
+      }
     }
     if (!address_line1?.trim()) {
       toast.error("Address is required");

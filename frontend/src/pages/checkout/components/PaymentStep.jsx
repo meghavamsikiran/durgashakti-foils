@@ -115,9 +115,9 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <div>
-              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-rose-400 font-bold mb-1">COD RETURN POLICY ACKNOWLEDGEMENT</p>
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-rose-400 font-bold mb-1">COD RETURN & EXCHANGE POLICY ACKNOWLEDGEMENT</p>
               <p className="text-xs font-medium leading-relaxed text-rose-300">
-                Please note: There will be no returns or refunds accepted for Cash on Delivery (COD) orders. We accept return requests only for prepaid (online payment) orders. DurgaShakti Foils is not responsible for any product damages or any other issues caused once a COD order is placed and delivered.
+                Please note: There will be no returns, refunds or exchanges accepted for Cash on Delivery (COD) orders. We accept return, refund and exchange requests only for prepaid (online payment) orders. DurgaShakti Foils is not responsible for any product damages or any other issues caused once a COD order is placed and delivered.
               </p>
             </div>
           </div>

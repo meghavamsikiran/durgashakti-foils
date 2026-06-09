@@ -72,6 +72,26 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const cleanPhone = addressForm.phone ? addressForm.phone.replace(/\D/g, '') : '';
+    if (!cleanPhone) {
+      toast.error("Phone number is required");
+      return;
+    }
+    if (cleanPhone.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits");
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      toast.error("Please enter a valid 10-digit phone number (starts with 6-9)");
+      return;
+    }
+    if (addressForm.alternate_phone?.trim()) {
+      const cleanAlt = addressForm.alternate_phone.replace(/\D/g, '');
+      if (cleanAlt.length !== 10 || !/^[6-9]\d{9}$/.test(cleanAlt)) {
+        toast.error("Please enter a valid 10-digit alternative phone number (starts with 6-9)");
+        return;
+      }
+    }
     let success;
     if (editingAddressId) {
       success = await onUpdateAddress(editingAddressId, addressForm);
@@ -149,34 +169,32 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
                 ))}
               </div>
             </div>
-            <div className="space-y-2">
+             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Mobile Number</Label>
-              <PhoneInput
-                international
-                defaultCountry="IN"
+              <Input
+                type="text"
+                maxLength={10}
                 value={addressForm.phone}
-                onChange={val => setAddressForm({...addressForm, phone: val || ''})}
-                displayInitialValueAsLocalNumber={false}
-                className="flex h-12 w-full rounded-xl border border-[#26322B] bg-[#131B17] px-4 py-3 text-white text-sm font-medium focus-within:ring-0 focus-within:border-[#25D958] transition-all outline-none"
-                numberInputProps={{
-                  className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium text-white",
-                  placeholder: "Enter phone number"
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setAddressForm({...addressForm, phone: val});
                 }}
+                className="rounded-lg h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 transition-all px-4 text-sm font-medium"
+                placeholder="Enter 10-digit mobile number"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Alternative Phone Number (Optional)</Label>
-              <PhoneInput
-                international
-                defaultCountry="IN"
+              <Input
+                type="text"
+                maxLength={10}
                 value={addressForm.alternate_phone}
-                onChange={val => setAddressForm({...addressForm, alternate_phone: val || ''})}
-                displayInitialValueAsLocalNumber={false}
-                className="flex h-12 w-full rounded-xl border border-[#26322B] bg-[#131B17] px-4 py-3 text-white text-sm font-medium focus-within:ring-0 focus-within:border-[#25D958] transition-all outline-none"
-                numberInputProps={{
-                  className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium text-white",
-                  placeholder: "Optional alternate phone"
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setAddressForm({...addressForm, alternate_phone: val});
                 }}
+                className="rounded-lg h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 transition-all px-4 text-sm font-medium"
+                placeholder="Optional alternate 10-digit mobile number"
               />
             </div>
           </div>

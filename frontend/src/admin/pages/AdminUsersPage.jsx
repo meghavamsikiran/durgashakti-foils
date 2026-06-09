@@ -14,8 +14,6 @@ import { PERMISSION_GROUPS, ROLE_TEMPLATES, getAllPermissionKeys } from '../cons
 import PageLoader from '../../components/ui/PageLoader';
 import TablePagination from '../../components/ui/TablePagination';
 import { useAuth } from '../../contexts/AuthContext';
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
 
 const PermissionsSelector = ({ selectedPermissions, onChange, role }) => {
   const allKeys = getAllPermissionKeys();
@@ -325,6 +323,11 @@ const AdminUsersPage = () => {
     if (!form.full_name || !form.email || !form.password || !form.role) {
       toast.error('Please fill all required fields'); return;
     }
+    const cleanPhone = form.phone ? form.phone.replace(/\D/g, '') : '';
+    if (form.phone && (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone))) {
+      toast.error('Please enter a valid 10-digit phone number (starts with 6-9)');
+      return;
+    }
     try {
       setCreating(true);
       await adminService.createAdminUser({
@@ -345,6 +348,11 @@ const AdminUsersPage = () => {
   };
 
   const handleEdit = async () => {
+    const cleanPhone = editForm.phone ? editForm.phone.replace(/\D/g, '') : '';
+    if (editForm.phone && (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone))) {
+      toast.error('Please enter a valid 10-digit phone number (starts with 6-9)');
+      return;
+    }
     try {
       setEditSaving(true);
       const payload = editForm.role === 'SUPER_ADMIN'
@@ -632,16 +640,16 @@ const AdminUsersPage = () => {
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Phone Number</label>
-                    <PhoneInput
-                      international
-                      defaultCountry="IN"
+                    <Input
+                      type="text"
+                      maxLength={10}
                       value={form.phone}
-                      onChange={val => setForm({...form, phone: val || ''})}
-                      className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
-                      numberInputProps={{
-                        className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800 font-medium",
-                        placeholder: "Enter phone number"
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setForm({...form, phone: val});
                       }}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      placeholder="Enter 10-digit phone number"
                     />
                   </div>
                   <div className="space-y-1">
@@ -710,16 +718,16 @@ const AdminUsersPage = () => {
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Phone Number</label>
-                    <PhoneInput
-                      international
-                      defaultCountry="IN"
+                    <Input
+                      type="text"
+                      maxLength={10}
                       value={editForm.phone}
-                      onChange={val => setEditForm({...editForm, phone: val || ''})}
-                      className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
-                      numberInputProps={{
-                        className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm text-slate-800 font-medium",
-                        placeholder: "Enter phone number"
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setEditForm({...editForm, phone: val});
                       }}
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      placeholder="Enter 10-digit phone number"
                     />
                   </div>
                   {editForm.role === 'SUPER_ADMIN' ? (

@@ -7,8 +7,6 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
 
 const normalizeAuthError = (error) => {
   if (error?.message) {
@@ -89,7 +87,23 @@ const Login = () => {
           setLoading(false);
         }, 3000);
       } else {
-        await register(email, password, fullName, phone);
+        const cleanPhone = phone ? phone.replace(/\D/g, '') : '';
+        if (!cleanPhone) {
+          toast.error("Phone number is required");
+          setLoading(false);
+          return;
+        }
+        if (cleanPhone.length !== 10) {
+          toast.error("Phone number must be exactly 10 digits");
+          setLoading(false);
+          return;
+        }
+        if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+          toast.error("Please enter a valid 10-digit phone number (starts with 6-9)");
+          setLoading(false);
+          return;
+        }
+        await register(email, password, fullName, cleanPhone);
         toast.success('Registration successful!');
         window.dispatchEvent(new CustomEvent('triggerLoginLoader', { detail: { duration: 3000 } }));
         
@@ -191,18 +205,19 @@ const Login = () => {
                 </div>
                 <div>
                   <Label htmlFor="phone">Phone Number</Label>
-                  <PhoneInput
+                  <Input
                     id="phone"
-                    international
-                    defaultCountry="IN"
+                    type="text"
+                    maxLength={10}
                     value={phone}
-                    onChange={setPhone}
-                    data-testid="register-phone-input"
-                    className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all outline-none"
-                    numberInputProps={{
-                      className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium",
-                      placeholder: "Enter phone number"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setPhone(val);
                     }}
+                    required
+                    data-testid="register-phone-input"
+                    className="h-12 bg-white border border-slate-200 text-slate-900 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                    placeholder="Enter 10-digit phone number"
                   />
                 </div>
               </>

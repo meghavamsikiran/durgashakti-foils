@@ -4,8 +4,7 @@ import { User, Save, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
+import { toast } from 'sonner';
 
 const SettingsTab = ({ user, onUpdateProfile }) => {
   const [profileForm, setProfileForm] = useState({ 
@@ -17,8 +16,21 @@ const SettingsTab = ({ user, onUpdateProfile }) => {
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
+    const cleanPhone = profileForm.phone ? profileForm.phone.replace(/\D/g, '') : '';
+    if (!cleanPhone) {
+      toast.error("Phone number is required");
+      return;
+    }
+    if (cleanPhone.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits");
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      toast.error("Please enter a valid 10-digit phone number (starts with 6-9)");
+      return;
+    }
     setUpdatingProfile(true);
-    await onUpdateProfile(profileForm);
+    await onUpdateProfile({ ...profileForm, phone: cleanPhone });
     setUpdatingProfile(false);
   };
 
@@ -43,16 +55,16 @@ const SettingsTab = ({ user, onUpdateProfile }) => {
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Phone Number</Label>
-            <PhoneInput
-              international
-              defaultCountry="IN"
+            <Input
+              type="text"
+              maxLength={10}
               value={profileForm.phone}
-              onChange={val => setProfileForm({...profileForm, phone: val || ''})}
-              className="flex h-12 w-full rounded-xl border border-[#26322B] bg-[#131B17] px-4 py-3 text-white text-sm font-medium focus-within:ring-0 focus-within:border-[#25D958] transition-all outline-none"
-              numberInputProps={{
-                className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium text-white",
-                placeholder: "Enter phone number"
+              onChange={e => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                setProfileForm({...profileForm, phone: val});
               }}
+              className="h-12 rounded-lg bg-[#131B17] border border-[#26322B] focus:border-[#25D958] focus:ring-0 text-white transition-all px-4 text-sm font-medium"
+              placeholder="Enter 10-digit mobile number"
             />
           </div>
           <div className="pt-2 md:col-span-2">

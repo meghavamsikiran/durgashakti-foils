@@ -181,30 +181,30 @@ const AddressStep = ({
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Mobile</Label>
-                <PhoneInput
-                  international
-                  defaultCountry="IN"
+                <Input
+                  type="text"
+                  maxLength={10}
                   value={shippingInfo.phone}
-                  onChange={val => setShippingInfo(prev => ({ ...prev, phone: val || '' }))}
-                  className="flex h-12 w-full rounded-xl border border-[#26322B] bg-[#0C1310] px-4 py-3 text-sm font-medium focus-within:ring-1 focus-within:ring-[#25D958] focus-within:border-[#25D958] transition-all outline-none"
-                  numberInputProps={{
-                    className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium text-white placeholder:text-slate-500",
-                    placeholder: "Enter phone number"
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setShippingInfo(prev => ({ ...prev, phone: val }));
                   }}
+                  className="rounded-xl h-12 bg-[#0C1310] border-[#26322B] text-white placeholder:text-slate-500 focus-visible:ring-1 focus-visible:ring-[#25D958] focus-visible:border-[#25D958]"
+                  placeholder="Enter 10-digit mobile number"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Alternative Phone Number (Optional)</Label>
-                <PhoneInput
-                  international
-                  defaultCountry="IN"
+                <Input
+                  type="text"
+                  maxLength={10}
                   value={shippingInfo.alternate_phone}
-                  onChange={val => setShippingInfo(prev => ({ ...prev, alternate_phone: val || '' }))}
-                  className="flex h-12 w-full rounded-xl border border-[#26322B] bg-[#0C1310] px-4 py-3 text-sm font-medium focus-within:ring-1 focus-within:ring-[#25D958] focus-within:border-[#25D958] transition-all outline-none"
-                  numberInputProps={{
-                    className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium text-white placeholder:text-slate-500",
-                    placeholder: "Optional alternate phone"
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setShippingInfo(prev => ({ ...prev, alternate_phone: val }));
                   }}
+                  className="rounded-xl h-12 bg-[#0C1310] border-[#26322B] text-white placeholder:text-slate-500 focus-visible:ring-1 focus-visible:ring-[#25D958] focus-visible:border-[#25D958]"
+                  placeholder="Optional alternate 10-digit mobile number"
                 />
               </div>
             </div>

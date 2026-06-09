@@ -60,7 +60,7 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {currentItems.map((product) => {
               const inCart = cart?.items?.some((i) => String(i.product_id) === String(product.id));
               const { basePrice, displayPrice, hasOffer, discountPercent } = getProductPricing(product);

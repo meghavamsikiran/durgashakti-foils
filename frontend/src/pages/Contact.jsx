@@ -8,8 +8,6 @@ import { reveal, fadeInUp, staggerContainer } from '../animations/variants';
 import settingsService from '../services/settings.service';
 import contactService from '../services/contact.service';
 import { toast } from 'sonner';
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/core/apiClient';
 
@@ -94,9 +92,22 @@ const Contact = () => {
       toast.error('You must accept the Terms of Service to submit.');
       return;
     }
+    const cleanPhone = formData.phone ? formData.phone.replace(/\D/g, '') : '';
+    if (!cleanPhone) {
+      toast.error("Phone number is required");
+      return;
+    }
+    if (cleanPhone.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits");
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
+      toast.error("Please enter a valid 10-digit phone number (starts with 6-9)");
+      return;
+    }
     try {
       setSubmitting(true);
-      await contactService.submitContact(formData);
+      await contactService.submitContact({ ...formData, phone: cleanPhone });
       setSubmitted(true);
       setFormData({ name: '', email: '', phone: '', message: '' });
       setAcceptedTerms(false);
@@ -214,16 +225,17 @@ const Contact = () => {
 
                     <div className="flex flex-col gap-1.5">
                       <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans">PHONE NUMBER</Label>
-                      <PhoneInput 
-                        international
-                        defaultCountry="IN"
+                      <Input 
+                        required
+                        type="text"
+                        maxLength={10}
                         value={formData.phone}
-                        onChange={(val) => setFormData({ ...formData, phone: val || '' })}
-                        className="flex h-12 w-full rounded-lg border border-[#26322B] bg-[#131B17] px-4 py-3 text-sm font-medium focus-within:border-[#25D958] transition-all outline-none text-white"
-                        numberInputProps={{
-                          className: "w-full focus:outline-none focus:ring-0 border-none bg-transparent pl-2 text-sm font-medium text-white placeholder:text-slate-500",
-                          placeholder: "Enter phone number"
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                          setFormData({ ...formData, phone: val });
                         }}
+                        placeholder="Enter 10-digit phone number"
+                        className="h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium"
                       />
                     </div>
                     

@@ -46,7 +46,7 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
         {/* Brand Tagline */}
         <div className="px-5 py-4 border-t border-[#19231F]/60 text-center bg-[#0C1310]">
           <p className="font-serif italic text-xs text-[#25D958]/90 leading-relaxed tracking-wide">
-            "Wrap it Right, Keep it Hot, Keep it Fresh!"
+            "Wrap Purity, Seal Freshness"
           </p>
         </div>
 
@@ -102,7 +102,7 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
         {/* Brand Tagline for Mobile */}
         <div className="px-5 py-4 border-t border-[#19231F]/60 text-center bg-[#0C1310]">
           <p className="font-serif italic text-[11px] text-[#25D958]/90 leading-relaxed">
-            "Wrap it Right, Keep it Hot, Keep it Fresh!"
+            "Wrap Purity, Seal Freshness"
           </p>
         </div>
 
