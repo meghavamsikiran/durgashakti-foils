@@ -211,8 +211,8 @@ h1, h2, h3, h4, h5, h6 {
 @layer utilities {
   .public-theme {
     min-height: 100vh;
-    background: #f7faf8;
-    color: #181c1b;
+    background: #0C1310;
+    color: #ffffff;
   }
 
   .public-theme input,
@@ -917,7 +917,7 @@ h1, h2, h3, h4, h5, h6 {
 .admin-shell tr:hover,
 .admin-shell .group:hover,
 .admin-shell [class*="group-hover:bg-"] {
-  background-color: rgba(19, 27, 23, 0.35) !important;
+  background-color: rgba(25, 35, 31, 0.6) !important;
 }
 
 .admin-shell input, 
@@ -944,7 +944,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .admin-shell table tr:hover {
-  background-color: rgba(19, 27, 23, 0.35) !important;
+  background-color: rgba(25, 35, 31, 0.6) !important;
 }
 
 .admin-shell table tr {
@@ -954,12 +954,12 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── LIGHT THEME STYLING OVERRIDES ── */
 .light-theme {
-  background-color: #ffffff !important;
-  background: #ffffff !important;
+  background-color: #f7faf8 !important;
+  background: #f7faf8 !important;
   color: #181c1b !important;
 }
 
-/* Override dark background utility classes */
+/* Override page background to soft off-white #f7faf8 */
 .light-theme .bg-\[\#0C1310\],
 .light-theme .bg-\[\#0c1310\],
 .light-theme .bg-\[\#030504\],
@@ -971,7 +971,7 @@ h1, h2, h3, h4, h5, h6 {
 .light-theme div.bg-\[\#0C1310\],
 .light-theme div.bg-\[\#0c1310\],
 .light-theme div.min-h-screen.bg-\[\#0C1310\] {
-  background-color: #ffffff !important;
+  background-color: #f7faf8 !important;
   color: #181c1b !important;
 }
 
@@ -985,14 +985,14 @@ h1, h2, h3, h4, h5, h6 {
   color: #181c1b !important;
 }
 
-/* Card and container elements in light theme */
+/* Card and container elements in light theme - to pure white #ffffff */
 .light-theme .bg-\[\#131B17\],
 .light-theme .bg-\[\#19231F\],
 .light-theme .bg-\[\#131b17\],
 .light-theme .bg-\[\#19231f\],
 .light-theme div.bg-\[\#131B17\],
 .light-theme div.bg-\[\#19231F\] {
-  background-color: #f7faf8 !important;
+  background-color: #ffffff !important;
   border-color: #bbcbb5 !important;
   color: #181c1b !important;
 }
@@ -1053,5 +1053,60 @@ h1, h2, h3, h4, h5, h6 {
 .light-theme .hover\:bg-white\/5:hover,
 .light-theme .hover\:bg-slate-50:hover {
   background-color: rgba(0, 110, 27, 0.05) !important;
+}
+
+/* Clean styling for radio buttons globally to eliminate square outer box overlays */
+input[type="radio"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border-radius: 50% !important;
+  outline: none !important;
+  border: 2px solid #26322B !important;
+  width: 1.15rem !important;
+  height: 1.15rem !important;
+  display: inline-grid !important;
+  place-content: center !important;
+  background-color: #0C1310 !important;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.light-theme input[type="radio"] {
+  border-color: #bbcbb5 !important;
+  background-color: #ffffff !important;
+}
+
+input[type="radio"]:checked {
+  border-color: #25D958 !important;
+}
+
+input[type="radio"]::before {
+  content: "" !important;
+  width: 0.55rem !important;
+  height: 0.55rem !important;
+  border-radius: 50% !important;
+  transform: scale(0) !important;
+  transition: 120ms transform ease-in-out !important;
+  background-color: #25D958 !important;
+}
+
+input[type="radio"]:checked::before {
+  transform: scale(1) !important;
+}
+
+input[type="radio"]:focus,
+input[type="radio"]:focus-visible,
+input[type="radio"]:active,
+button[role="radio"]:focus,
+button[role="radio"]:focus-visible,
+button[role="radio"]:active {
+  outline: none !important;
+  box-shadow: none !important;
+  ring: 0 !important;
+  --tw-ring-offset-width: 0px !important;
+  --tw-ring-color: transparent !important;
+}
+
+button[role="radio"] {
+  border-radius: 9999px !important;
 }
 
