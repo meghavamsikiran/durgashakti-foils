@@ -26,10 +26,10 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
   for (let i = start; i <= end; i++) pages.push(i);
 
   return (
-    <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t ${
+    <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 rounded-2xl border ${
       isDark 
         ? 'border-[#26322B] bg-[#131B17]/40' 
-        : 'border-slate-200 bg-slate-50/30'
+        : 'border-slate-250 bg-white shadow-md'
     }`}>
       {/* Left: item count */}
       <div className={`text-[10px] font-black uppercase tracking-widest ${

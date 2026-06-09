@@ -338,33 +338,35 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
             </div>
           </div>
 
-          {/* Quick status chips under search */}
-          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[#26322B]/60">
-            {['all', 'paid', 'shipped', 'returned'].map((filterVal) => {
-              const active = quickFilter === filterVal;
-              return (
-                <button
-                  key={filterVal}
-                  type="button"
-                  onClick={() => {
-                    setQuickFilter(filterVal);
-                    setOrdersPage(1);
-                  }}
-                  className={`px-4 py-1.5 text-xs font-semibold rounded-full border transition-all ${
-                    active 
-                      ? 'bg-[#25D958] text-[#0C1310] border-[#25D958] font-bold shadow-sm'
-                      : 'bg-[#131B17] text-slate-300 border-[#26322B] hover:bg-[#19231F]/50 hover:text-white'
-                  }`}
-                >
-                  {filterVal.charAt(0).toUpperCase() + filterVal.slice(1)}
-                </button>
-              );
-            })}
-          </div>
-
           {/* Advanced Filters drawer details if open */}
           {filterOpen && (
             <div className="p-4 border-t border-[#26322B]/60 bg-[#131B17]/60 rounded-xl space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+              {/* Quick status chips inside the filter section */}
+              <div className="space-y-1.5 pb-2 border-b border-[#26322B]/40">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">Quick Filters</label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {['all', 'paid', 'shipped', 'returned'].map((filterVal) => {
+                    const active = quickFilter === filterVal;
+                    return (
+                      <button
+                        key={filterVal}
+                        type="button"
+                        onClick={() => {
+                          setQuickFilter(filterVal);
+                          setOrdersPage(1);
+                        }}
+                        className={`px-4 py-1.5 text-xs font-semibold rounded-full border transition-all ${
+                          active 
+                            ? 'bg-[#25D958] text-[#0C1310] border-[#25D958] font-bold shadow-sm'
+                            : 'bg-[#131B17] text-slate-300 border-[#26322B] hover:bg-[#19231F]/50 hover:text-white'
+                        }`}
+                      >
+                        {filterVal.charAt(0).toUpperCase() + filterVal.slice(1)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Order Status</label>
@@ -437,6 +439,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                     setStatusFilter('all');
                     setCourierFilter('all');
                     setTimeframeFilter('all');
+                    setQuickFilter('all');
                     setStartDate('');
                     setEndDate('');
                     setFilterOpen(false);

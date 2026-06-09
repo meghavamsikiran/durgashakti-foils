@@ -63,7 +63,7 @@ const CategoriesPage = () => {
     const nextStatus = !cat.is_active;
     // Update state instantly for a premium responsive feel
     setCategories(prev => prev.map(c => c.id === cat.id ? { ...c, is_active: nextStatus } : c));
-    toast.success(`Category ${nextStatus ? 'enabled' : 'disabled'} successfully`);
+    toast.success(`Category ${nextStatus ? 'active' : 'inactive'} successfully`);
     
     try {
       await adminService.updateCategory(cat.id, { is_active: nextStatus });
@@ -270,12 +270,12 @@ const CategoriesPage = () => {
                         {cat.is_active ? (
                           <span className="px-3 py-1 rounded-lg bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                            Enabled
+                            Active
                           </span>
                         ) : (
                           <span className="px-3 py-1 rounded-lg bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
                             <span className="w-1.5 h-1.5 bg-slate-400 rounded-full"></span>
-                            Disabled
+                            Inactive
                           </span>
                         )}
                       </button>

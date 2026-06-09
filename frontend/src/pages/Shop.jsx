@@ -59,13 +59,19 @@ const Shop = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [loading, setLoading] = useState(!initialProducts.length);
   const [priceFilter, setPriceFilter] = useState('all');
-  const [maxPrice, setMaxPrice] = useState(25000);
+  const [maxPrice, setMaxPrice] = useState(10000);
   const [ratingFilter, setRatingFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [page, setPage] = useState(1);
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const ITEMS_PER_PAGE = 12;
+
+  const getRatingCount = (minRating) => {
+    return products
+      .filter(p => Number(p.rating_average || 0) >= minRating)
+      .reduce((sum, p) => sum + Number(p.review_count || 0), 0);
+  };
 
   const fetchProducts = useCallback(async () => {
     const hasInstantData = !!apiClient.getCachedDataSync('/products') || readSessionList(PRODUCTS_CACHE_KEY).length > 0;
@@ -146,7 +152,7 @@ const Shop = () => {
     }
 
     // Slider filter
-    if (maxPrice < 25000) {
+    if (maxPrice < 10000) {
       filtered = filtered.filter(p => getProductPricing(p).displayPrice <= maxPrice);
     }
 
@@ -184,7 +190,7 @@ const Shop = () => {
   const handleClearFilters = () => {
     setCategoryFilter('all');
     setPriceFilter('all');
-    setMaxPrice(25000);
+    setMaxPrice(10000);
     setRatingFilter('all');
     setSortBy('name');
     if (searchParams.has('search')) {
@@ -197,7 +203,7 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-[#F5F5F5] font-inter text-[#1E293B]" data-testid="shop-page">
       {/* Premium Header Banner - full width img element with controlled height for professional UI */}
-      <div className="w-full overflow-hidden border-b border-slate-200/50 h-auto aspect-[1024/252] md:aspect-none md:h-[285px] lg:h-[335px] bg-[#111111]">
+      <div className="w-full overflow-hidden border-b border-slate-200/50 h-auto aspect-[1024/275] md:aspect-none md:h-[295px] lg:h-[345px] bg-[#111111]">
         <img 
           src="/product_display_poster.webp" 
           alt="Our Products - Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene."
@@ -245,7 +251,7 @@ const Shop = () => {
                   Category
                 </h2>
                 <div className="flex items-center gap-3">
-                  {(categoryFilter !== 'all' || priceFilter !== 'all' || maxPrice !== 25000 || ratingFilter !== 'all' || sortBy !== 'name') && (
+                  {(categoryFilter !== 'all' || priceFilter !== 'all' || maxPrice !== 10000 || ratingFilter !== 'all' || sortBy !== 'name') && (
                     <button 
                       onClick={handleClearFilters}
                       className="text-[10px] font-bold text-rose-500 hover:text-rose-600 uppercase tracking-wider transition-colors"
@@ -265,32 +271,24 @@ const Shop = () => {
 
               <div className="space-y-6">
                 <div>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { value: 'all', label: 'All Category' },
-                      { value: 'Kitchen', label: 'Kitchen' },
-                      { value: 'Food Container', label: 'Food Container' },
-                      { value: 'Foil & Wrapper', label: 'Foil & Wrapper' }
-                    ].map(opt => {
-                      const isActive = categoryFilter === opt.value;
-                      return (
-                        <label key={opt.value} className={`relative flex items-center justify-center px-4 py-2 rounded-full border text-[11px] font-bold cursor-pointer transition-all duration-200 select-none
-                          ${isActive 
-                            ? 'bg-[#0F5C2E] text-white border-[#0F5C2E]' 
-                            : 'bg-slate-50 text-slate-650 border-slate-200 hover:bg-slate-100'}`}
-                        >
-                          <input
-                            type="radio"
-                            name="category"
-                            value={opt.value}
-                            checked={categoryFilter === opt.value}
-                            onChange={(e) => setCategoryFilter(e.target.value)}
-                            className="sr-only"
-                          />
-                          <span>{opt.label}</span>
-                        </label>
-                      );
-                    })}
+                  <div className="relative">
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs focus:outline-none focus:border-[#0F5C2E] focus:ring-1 focus:ring-[#0F5C2E]/20 text-slate-700 font-bold uppercase tracking-wider appearance-none cursor-pointer"
+                    >
+                      <option value="all">All Category</option>
+                      {categories
+                        .filter(c => c.is_active)
+                        .map(cat => (
+                          <option key={cat.id || cat.name} value={cat.name}>
+                            {cat.name}
+                          </option>
+                        ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <ChevronRight className="w-4 h-4 rotate-90" />
+                    </div>
                   </div>
                 </div>
 
@@ -301,7 +299,7 @@ const Shop = () => {
                     <input 
                       type="range" 
                       min="0" 
-                      max="25000" 
+                      max="10000" 
                       value={maxPrice} 
                       onChange={(e) => setMaxPrice(Number(e.target.value))}
                       className="w-full accent-[#0F5C2E] h-1.5 bg-slate-200 rounded-lg cursor-pointer"
@@ -333,7 +331,7 @@ const Shop = () => {
                               if (option.value === '0to250') setMaxPrice(250);
                               else if (option.value === '250to500') setMaxPrice(500);
                               else if (option.value === '500to1000') setMaxPrice(1000);
-                              else if (option.value === 'all') setMaxPrice(25000);
+                              else if (option.value === 'all') setMaxPrice(10000);
                             }}
                             className="w-3.5 h-3.5 accent-[#0F5C2E]"
                           />
@@ -348,10 +346,10 @@ const Shop = () => {
                   <label className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 block">Customer Rating</label>
                   <div className="flex flex-col gap-2.5">
                     {[
-                      { value: '4.5', label: '4.5 & above (68)', stars: 5, empty: 0 },
-                      { value: '4.0', label: '4.0 & above (116)', stars: 4, empty: 1 },
-                      { value: '3.5', label: '3.5 & above (247)', stars: 3, empty: 2 },
-                      { value: '3.0', label: '3.0 & above (421)', stars: 2, empty: 3 }
+                      { value: '4.5', label: `4.5 & above (${getRatingCount(4.5)})`, stars: 5, empty: 0 },
+                      { value: '4.0', label: `4.0 & above (${getRatingCount(4.0)})`, stars: 4, empty: 1 },
+                      { value: '3.5', label: `3.5 & above (${getRatingCount(3.5)})`, stars: 3, empty: 2 },
+                      { value: '3.0', label: `3.0 & above (${getRatingCount(3.0)})`, stars: 2, empty: 3 }
                     ].map(option => {
                       const isActive = ratingFilter === option.value;
                       return (
