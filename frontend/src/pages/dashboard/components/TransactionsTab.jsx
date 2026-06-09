@@ -215,26 +215,22 @@ const TransactionsTab = ({ orders, loading, error }) => {
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-2.5 border-b border-[#26322B]/60">
             <div className="flex items-center gap-1.5 text-white shrink-0">
               <CreditCard className="w-4 h-4 text-[#25D958]" />
-              <span className="text-xs font-bold uppercase tracking-wider font-serif">Personal Ledger</span>
+              <span className="text-xs font-bold uppercase tracking-wider font-sans">Your Transactions</span>
             </div>
             
             {/* Quick Stats Grid */}
-            <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-slate-400">
-              <div className="flex items-center gap-1.5 bg-[#25D958]/10 border border-[#25D958]/20 px-2.5 py-1 rounded-full shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#25D958]"></span>
-                <span>Spent: <span className="font-extrabold text-white">₹{stats.totalSpent.toLocaleString('en-IN')}</span></span>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400">
+              <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
+                <span>Spent: <span className="font-bold text-white">₹{stats.totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></span>
               </div>
-              <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#fedb41]"></span>
-                <span>Pending: <span className="font-extrabold text-white">₹{stats.pendingAmount.toLocaleString('en-IN')}</span></span>
+              <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
+                <span>Pending: <span className="font-bold text-white">₹{stats.pendingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></span>
               </div>
-              <div className="flex items-center gap-1.5 bg-[#25D958]/10 border border-[#25D958]/20 px-2.5 py-1 rounded-full shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#25D958]"></span>
-                <span>Done: <span className="font-extrabold text-white">{stats.successCount}</span></span>
+              <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
+                <span>Done: <span className="font-bold text-[#25D958]">{stats.successCount}</span></span>
               </div>
-              <div className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-full shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                <span>Refunds/Failed: <span className="font-extrabold text-white">₹{stats.refundedAmount.toLocaleString('en-IN')}</span></span>
+              <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
+                <span>Refunds/Failed: <span className="font-bold text-white">₹{stats.refundedAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></span>
               </div>
             </div>
           </div>
@@ -468,6 +464,7 @@ const TransactionsTab = ({ orders, loading, error }) => {
             onPageChange={setCurrentPage}
             totalItems={filteredTransactions.length}
             pageSize={PAGE_SIZE}
+            variant="dark"
           />
         </div>
       )}

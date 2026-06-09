@@ -51,7 +51,7 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
         </div>
 
         {/* User / Sign Out Footer */}
-        <div className="p-4 border-t border-[#19231F] bg-[#0C1310]">
+        <div className="p-4 pb-10 border-t border-[#19231F] bg-[#0C1310]">
           <button 
             type="button" 
             onClick={onLogout} 
@@ -106,7 +106,7 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
           </p>
         </div>
 
-        <div className="p-4 border-t border-[#19231F] bg-[#0C1310]">
+        <div className="p-4 pb-10 border-t border-[#19231F] bg-[#0C1310]">
           <button 
             type="button" 
             onClick={onLogout} 

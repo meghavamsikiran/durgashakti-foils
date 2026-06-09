@@ -292,6 +292,22 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
       {orders.length > 0 && (
         <div className="bg-[#19231F] p-5 rounded-2xl border border-[#26322B] shadow-sm space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Quick Stats Pills inline */}
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400">
+              <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
+                <span>Total Spent: <span className="font-bold text-white">₹{stats.totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></span>
+              </div>
+              <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
+                <span>Pending: <span className="font-bold text-white">₹{stats.pendingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></span>
+              </div>
+              <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
+                <span>Done: <span className="font-bold text-[#25D958]">{stats.doneCount}</span></span>
+              </div>
+              <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
+                <span>Refunds: <span className="font-bold text-white">₹{stats.refundedAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></span>
+              </div>
+            </div>
+
             {/* Search Box */}
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-450" />
@@ -313,22 +329,6 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
               >
                 <Filter className="w-4 h-4" />
               </button>
-            </div>
-
-            {/* Quick Stats Pills inline */}
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400">
-              <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
-                <span>Total Spent: <span className="font-bold text-white">₹{stats.totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></span>
-              </div>
-              <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
-                <span>Pending: <span className="font-bold text-white">₹{stats.pendingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></span>
-              </div>
-              <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
-                <span>Done: <span className="font-bold text-[#25D958]">{stats.doneCount}</span></span>
-              </div>
-              <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
-                <span>Refunds: <span className="font-bold text-white">₹{stats.refundedAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></span>
-              </div>
             </div>
           </div>
 
@@ -548,6 +548,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
           onPageChange={setOrdersPage}
           totalItems={filteredOrders.length}
           pageSize={ORDERS_PER_PAGE}
+          variant="dark"
         />
       )}
     </motion.div>

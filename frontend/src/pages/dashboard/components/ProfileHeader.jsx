@@ -5,7 +5,7 @@ const ProfileHeader = ({ user, activeTab, onMenuClick }) => {
   const getTabLabel = () => {
     switch (activeTab) {
       case 'orders': return 'Order History';
-      case 'transactions': return 'Financial Records';
+      case 'transactions': return 'Your Transactions';
       case 'cards': return 'Security Vault';
       case 'wishlist': return 'Favorites';
       case 'addresses': return 'Shipping Network';

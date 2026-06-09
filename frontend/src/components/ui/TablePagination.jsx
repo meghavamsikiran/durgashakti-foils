@@ -10,8 +10,10 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-r
  * @param {number} totalItems   - (optional) total row count, shown as "X items"
  * @param {number} pageSize     - (optional) rows per page, shown as context
  */
-const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pageSize }) => {
+const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pageSize, variant }) => {
   if (totalItems === 0) return null;
+
+  const isDark = variant === 'dark';
 
   const pages = [];
   const maxVisible = 5;
@@ -24,9 +26,15 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
   for (let i = start; i <= end; i++) pages.push(i);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-slate-50/30">
+    <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t ${
+      isDark 
+        ? 'border-[#26322B] bg-[#131B17]/40' 
+        : 'border-slate-200 bg-slate-50/30'
+    }`}>
       {/* Left: item count */}
-      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+      <div className={`text-[10px] font-black uppercase tracking-widest ${
+        isDark ? 'text-slate-400' : 'text-slate-500'
+      }`}>
         {totalItems != null && (
           <>
             Showing {Math.min((currentPage - 1) * (pageSize || 10) + 1, totalItems)}–
@@ -41,7 +49,11 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
         <button
           disabled={currentPage === 1}
           onClick={() => onPageChange(1)}
-          className="p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+          className={`p-2 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none ${
+            isDark 
+              ? 'text-slate-400 hover:text-[#25D958] hover:bg-[#25D958]/10' 
+              : 'text-slate-500 hover:text-primary hover:bg-white'
+          }`}
           aria-label="First page"
         >
           <ChevronsLeft className="w-4 h-4" />
@@ -51,7 +63,11 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
         <button
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
-          className="p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+          className={`p-2 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none ${
+            isDark 
+              ? 'text-slate-400 hover:text-[#25D958] hover:bg-[#25D958]/10' 
+              : 'text-slate-500 hover:text-primary hover:bg-white'
+          }`}
           aria-label="Previous page"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -59,7 +75,9 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
 
         {/* Show ellipsis before */}
         {start > 1 && (
-          <span className="w-8 h-8 flex items-center justify-center text-slate-300 text-xs">…</span>
+          <span className={`w-8 h-8 flex items-center justify-center text-xs ${
+            isDark ? 'text-slate-500' : 'text-slate-300'
+          }`}>…</span>
         )}
 
         {/* Page numbers */}
@@ -69,8 +87,12 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
             onClick={() => onPageChange(p)}
             className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
               p === currentPage
-                ? 'bg-primary text-white shadow-md shadow-emerald-glow'
-                : 'text-slate-500 hover:bg-white hover:text-primary'
+                ? isDark
+                  ? 'bg-[#25D958] text-[#0C1310] shadow-md shadow-[#25D958]/20'
+                  : 'bg-primary text-white shadow-md shadow-emerald-glow'
+                : isDark
+                  ? 'text-slate-400 hover:bg-[#25D958]/10 hover:text-[#25D958]'
+                  : 'text-slate-500 hover:bg-white hover:text-primary'
             }`}
           >
             {p}
@@ -79,14 +101,20 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
 
         {/* Show ellipsis after */}
         {end < totalPages && (
-          <span className="w-8 h-8 flex items-center justify-center text-slate-300 text-xs">…</span>
+          <span className={`w-8 h-8 flex items-center justify-center text-xs ${
+            isDark ? 'text-slate-500' : 'text-slate-300'
+          }`}>…</span>
         )}
 
         {/* Next */}
         <button
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          className="p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+          className={`p-2 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none ${
+            isDark 
+              ? 'text-slate-400 hover:text-[#25D958] hover:bg-[#25D958]/10' 
+              : 'text-slate-500 hover:text-primary hover:bg-white'
+          }`}
           aria-label="Next page"
         >
           <ChevronRight className="w-4 h-4" />
@@ -96,7 +124,11 @@ const TablePagination = ({ currentPage, totalPages, onPageChange, totalItems, pa
         <button
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(totalPages)}
-          className="p-2 rounded-lg text-slate-500 hover:text-primary hover:bg-white disabled:opacity-30 disabled:pointer-events-none transition-all"
+          className={`p-2 rounded-lg transition-all disabled:opacity-30 disabled:pointer-events-none ${
+            isDark 
+              ? 'text-slate-400 hover:text-[#25D958] hover:bg-[#25D958]/10' 
+              : 'text-slate-500 hover:text-primary hover:bg-white'
+          }`}
           aria-label="Last page"
         >
           <ChevronsRight className="w-4 h-4" />
