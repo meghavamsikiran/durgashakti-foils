@@ -269,37 +269,7 @@ const Contact = () => {
               </div>
             </div>
 
-            {/* 2. MIDDLE COLUMN: Dark Contact Info */}
             <div className="bg-[#0C1310] text-white p-8 md:p-12 flex flex-col justify-center text-center space-y-12 relative overflow-hidden border-y lg:border-y-0 lg:border-x border-[#E5B54F]/20 min-h-[450px]">
-              
-              {/* Background Lotus Drawings */}
-              <div className="absolute top-4 right-4 opacity-15 pointer-events-none">
-                <svg viewBox="0 0 100 100" fill="none" stroke="#E5B54F" strokeWidth="1" className="w-24 h-24">
-                  <path d="M50 15 C50 15 35 45 50 85 C50 85 65 45 50 15 Z" />
-                  <path d="M50 35 C50 35 25 55 40 85 C40 85 60 70 50 35 Z" />
-                  <path d="M50 35 C50 35 75 55 60 85 C60 85 40 70 50 35 Z" />
-                  <path d="M50 50 C50 50 15 65 30 85 C30 85 55 80 50 50 Z" />
-                  <path d="M50 50 C50 50 85 65 70 85 C70 85 45 80 50 50 Z" />
-                </svg>
-              </div>
-              <div className="absolute bottom-4 left-4 opacity-15 pointer-events-none">
-                <svg viewBox="0 0 100 100" fill="none" stroke="#E5B54F" strokeWidth="1" className="w-24 h-24">
-                  <path d="M50 15 C50 15 35 45 50 85 C50 85 65 45 50 15 Z" />
-                  <path d="M50 35 C50 35 25 55 40 85 C40 85 60 70 50 35 Z" />
-                  <path d="M50 35 C50 35 75 55 60 85 C60 85 40 70 50 35 Z" />
-                  <path d="M50 50 C50 50 15 65 30 85 C30 85 55 80 50 50 Z" />
-                  <path d="M50 50 C50 50 85 65 70 85 C70 85 45 80 50 50 Z" />
-                </svg>
-              </div>
-              <div className="absolute bottom-4 right-1/4 opacity-15 pointer-events-none">
-                <svg viewBox="0 0 100 100" fill="none" stroke="#E5B54F" strokeWidth="1" className="w-24 h-24">
-                  <path d="M50 15 C50 15 35 45 50 85 C50 85 65 45 50 15 Z" />
-                  <path d="M50 35 C50 35 25 55 40 85 C40 85 60 70 50 35 Z" />
-                  <path d="M50 35 C50 35 75 55 60 85 C60 85 40 70 50 35 Z" />
-                  <path d="M50 50 C50 50 15 65 30 85 C30 85 55 80 50 50 Z" />
-                  <path d="M50 50 C50 50 85 65 70 85 C70 85 45 80 50 50 Z" />
-                </svg>
-              </div>
 
               {/* Call Us section */}
               <div className="space-y-2 relative z-10">
