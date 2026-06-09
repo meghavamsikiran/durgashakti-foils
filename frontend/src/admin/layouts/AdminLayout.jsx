@@ -60,7 +60,7 @@ const AdminLayout = () => {
         </button>
         <Link to="/" className="flex items-center py-1">
           <img
-            src="/logo-durga.avif"
+            src="/logo-durga.webp"
             alt="Durga Shakti Foils"
             className="h-9 w-auto object-contain block"
             style={{ maxWidth: '170px' }}
@@ -86,7 +86,7 @@ const AdminLayout = () => {
         <div className="p-5 flex items-center justify-between border-b border-border-subtle/10 bg-[#0B1220]">
           <Link to="/" className="flex items-center py-1">
             <img
-              src="/logo-durga.avif"
+              src="/logo-durga.webp"
               alt="Durga Shakti Foils"
               className="h-10 w-auto object-contain block"
               style={{ maxWidth: '190px' }}

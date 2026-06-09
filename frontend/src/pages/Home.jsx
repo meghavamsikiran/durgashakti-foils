@@ -82,7 +82,7 @@ const Home = () => {
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-[#0a0f0d] border-b border-white/5">
         <img
-          src="/hero-products.avif"
+          src="/hero-products.webp"
           alt="Durga Shakti Foils Premium Packing Solutions"
           loading="eager"
           fetchpriority="high"
@@ -142,7 +142,7 @@ const Home = () => {
 
           <div className="md:hidden mt-4">
             <img
-              src="/hero-products.avif"
+              src="/hero-products.webp"
               alt="Premium Foil Products"
               loading="eager"
               fetchpriority="high"

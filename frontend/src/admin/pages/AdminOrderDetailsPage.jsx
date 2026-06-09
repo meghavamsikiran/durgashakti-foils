@@ -951,7 +951,7 @@ const AdminOrderDetailsPage = () => {
                             {item.image_url && (
                               <img 
                                 src={formatImageUrl(item.image_url)} 
-                                onError={(e) => { e.target.src = '/logo-durga.avif'; }}
+                                onError={(e) => { e.target.src = '/logo-durga.webp'; }}
                                 alt="" 
                                 className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" 
                               />
@@ -1217,7 +1217,7 @@ const AdminOrderDetailsPage = () => {
                             >
                               <img
                                 src={fullUrl}
-                                onError={(e) => { e.target.src = '/logo-durga.avif'; }}
+                                onError={(e) => { e.target.src = '/logo-durga.webp'; }}
                                 alt="Proof"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                               />

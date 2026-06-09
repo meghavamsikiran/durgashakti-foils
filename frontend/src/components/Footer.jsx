@@ -78,7 +78,7 @@ const Footer = () => {
           <div>
             <Link to="/" className="inline-block py-1">
               <img
-                src="/logo-durga.avif"
+                src="/logo-durga.webp"
                 alt="Durga Shakti Foils"
                 className="h-11 w-auto object-contain block"
                 style={{ maxWidth: '240px' }}

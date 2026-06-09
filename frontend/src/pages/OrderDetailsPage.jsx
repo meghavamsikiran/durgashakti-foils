@@ -204,7 +204,7 @@ const OrderDetailsPage = () => {
         currency: 'INR',
         name: 'DurgaShakti Foils',
         description: `Order #${payableOrder.order_number || order.order_number}`,
-        image: '/logo-durga.avif',
+        image: '/logo-durga.webp',
         theme: {
           color: '#006e1b',
           hide_topbar: false,
@@ -952,7 +952,7 @@ const OrderDetailsPage = () => {
                           {item.image_url && (
                             <img 
                               src={formatImageUrl(item.image_url)} 
-                              onError={(e) => { e.target.src = '/logo-durga.avif'; }}
+                              onError={(e) => { e.target.src = '/logo-durga.webp'; }}
                               alt="" 
                               className="w-10 h-10 rounded-lg object-cover bg-slate-50 border border-slate-100" 
                             />
@@ -1488,7 +1488,7 @@ const OrderDetailsPage = () => {
                 <div className="flex gap-5 flex-1 min-w-0">
                   <img 
                     src={formatImageUrl(item.image_url)} 
-                    onError={(e) => { e.target.src = '/logo-durga.avif'; }}
+                    onError={(e) => { e.target.src = '/logo-durga.webp'; }}
                     alt={item.product_name} 
                     className="w-24 h-24 rounded-xl object-cover bg-slate-50 border border-slate-200 shrink-0 shadow-sm"
                     loading="lazy"
@@ -1743,7 +1743,7 @@ const OrderDetailsPage = () => {
                           <a href={fullUrl} target="_blank" rel="noreferrer" className="w-full h-full">
                             <img 
                               src={fullUrl} 
-                              onError={(e) => { e.target.src = '/logo-durga.avif'; }}
+                              onError={(e) => { e.target.src = '/logo-durga.webp'; }}
                               alt="Proof" 
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
                             />

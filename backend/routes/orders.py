@@ -1170,7 +1170,7 @@ async def _enrich_order_items(db: AsyncSession, orders_data):
         for order in orders:
             for item in order.get("items", []):
                 if not item.get("image_url") and item.get("product_id"):
-                    item["image_url"] = product_image_map.get(item["product_id"]) or "/uploads/foil_9m.avif"
+                    item["image_url"] = product_image_map.get(item["product_id"]) or "/uploads/foil_9m.webp"
     return orders_data if is_list else orders[0]
 
 

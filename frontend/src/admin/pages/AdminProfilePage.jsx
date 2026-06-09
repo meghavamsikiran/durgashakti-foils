@@ -123,7 +123,7 @@ const AdminProfilePage = () => {
               <div className="relative group shrink-0">
                 <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/20 bg-slate-50 flex items-center justify-center shadow-inner">
                   <img 
-                    src={user?.permissions?.profile_pic || '/logo-durga.avif'} 
+                    src={user?.permissions?.profile_pic || '/logo-durga.webp'} 
                     alt="Super Admin Profile" 
                     className="w-full h-full object-cover"
                   />
