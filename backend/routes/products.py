@@ -138,10 +138,14 @@ async def debug_products_db(db: AsyncSession = Depends(get_db)):
     result2 = await db.execute(select(ProductModel))
     products_after = result2.scalars().all()
 
+    from convert_existing_to_webp import MIGRATION_LOGS
+
     return {
         "supabase_info": supabase_info,
         "migration_error": migration_error,
+        "migration_logs": MIGRATION_LOGS,
         "products_before": [{"id": str(p.id), "name": p.name, "image_url": p.image_url} for p in products],
         "products_after": [{"id": str(p.id), "name": p.name, "image_url": p.image_url} for p in products_after]
     }
+
 

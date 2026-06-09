@@ -20,6 +20,16 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from storage_service import _get_client, BUCKET_NAME
 
+MIGRATION_LOGS = []
+
+def log_debug(msg):
+    logger.info(msg)
+    MIGRATION_LOGS.append(f"INFO: {msg}")
+
+def log_error(msg):
+    logger.error(msg)
+    MIGRATION_LOGS.append(f"ERROR: {msg}")
+
 def convert_bytes_to_webp(raw_bytes: bytes) -> bytes:
     try:
         img = Image.open(BytesIO(raw_bytes))
@@ -32,7 +42,7 @@ def convert_bytes_to_webp(raw_bytes: bytes) -> bytes:
         img.save(out, format="WEBP", quality=80)
         return out.getvalue()
     except Exception as e:
-        logger.warning(f"Failed to convert bytes to webp: {e}")
+        log_error(f"Failed to convert bytes to webp: {e}")
         return raw_bytes
 
 async def process_image_url(url: str, client) -> str:
@@ -43,7 +53,7 @@ async def process_image_url(url: str, client) -> str:
     if not any(url_lower.endswith(ext) for ext in (".png", ".jpg", ".jpeg", ".avif")):
         return url
 
-    logger.info(f"Processing URL for conversion: {url}")
+    log_debug(f"Processing URL for conversion: {url}")
     
     # Check if local fallback
     if "/uploads/" in url:
@@ -62,7 +72,7 @@ async def process_image_url(url: str, client) -> str:
                 break
         
         if webp_exists:
-            logger.info(f"WebP file already exists on disk for {filename}. Updating database reference to WebP.")
+            log_debug(f"WebP file already exists on disk for {filename}. Updating database reference to WebP.")
             return url.replace(filename, webp_filename)
             
         # 2. Otherwise search for the original file (.png, .jpg, .jpeg, .avif)
@@ -84,26 +94,39 @@ async def process_image_url(url: str, client) -> str:
                 
                 # Delete original
                 os.remove(local_path)
-                logger.info(f"Converted local file: {local_path} -> {new_path}")
+                log_debug(f"Converted local file: {local_path} -> {new_path}")
                 return url.replace(filename, webp_filename)
             except Exception as e:
-                logger.error(f"Failed to convert local file {local_path}: {e}")
+                log_error(f"Failed to convert local file {local_path}: {e}")
                 return url
         else:
             # If the original file does not exist on disk, check if we can fall back to the WebP name
-            logger.info(f"Original file {filename} not found on disk. Directing database reference to WebP.")
+            log_debug(f"Original file {filename} not found on disk. Directing database reference to WebP.")
             return url.replace(filename, webp_filename)
                 
     elif client and BUCKET_NAME in url:
         # Supabase storage URL
         try:
             filename = url.split(f"/{BUCKET_NAME}/")[-1].split("?")[0]
+            log_debug(f"Attempting to download from Supabase storage: {filename}")
+            
             # Download from Supabase
-            raw = client.storage.from_(BUCKET_NAME).download(filename)
+            try:
+                raw = client.storage.from_(BUCKET_NAME).download(filename)
+            except Exception as download_err:
+                log_error(f"Download failed for {filename}: {download_err}")
+                # Construct the .webp filename
+                new_filename = os.path.splitext(filename)[0] + ".webp"
+                # If download fails, let's still change the DB URL to .webp as a clean transition
+                new_url = client.storage.from_(BUCKET_NAME).get_public_url(new_filename)
+                log_debug(f"Updating DB reference to fallback WebP URL: {new_url}")
+                return new_url
+                
             webp_raw = convert_bytes_to_webp(raw)
             
             # Upload WebP to Supabase
             new_filename = os.path.splitext(filename)[0] + ".webp"
+            log_debug(f"Uploading WebP to Supabase storage: {new_filename}")
             client.storage.from_(BUCKET_NAME).upload(
                 path=new_filename,
                 file=webp_raw,
@@ -111,13 +134,16 @@ async def process_image_url(url: str, client) -> str:
             )
             
             # Delete old image
-            client.storage.from_(BUCKET_NAME).remove([filename])
+            try:
+                client.storage.from_(BUCKET_NAME).remove([filename])
+            except Exception as remove_err:
+                log_debug(f"Failed to remove old file {filename}: {remove_err}")
             
             new_url = client.storage.from_(BUCKET_NAME).get_public_url(new_filename)
-            logger.info(f"Converted Supabase file: {filename} -> {new_filename}")
+            log_debug(f"Converted Supabase file: {filename} -> {new_filename}")
             return new_url
         except Exception as e:
-            logger.error(f"Failed to convert Supabase URL {url}: {e}")
+            log_error(f"Failed to convert Supabase URL {url}: {e}")
             return url
             
     return url
