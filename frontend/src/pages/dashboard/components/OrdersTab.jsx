@@ -308,23 +308,29 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
               </div>
             </div>
 
-            {/* Search Box */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-450" />
-              <input
-                type="text"
-                placeholder="Search"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setOrdersPage(1);
-                }}
-                className="w-full pl-10 pr-10 h-[40px] rounded-xl border border-[#26322B] focus:border-[#25D958] focus:ring-0 outline-none transition-all text-sm text-white bg-[#131B17]"
-              />
+            {/* Search Box & Filter Row */}
+            <div className="flex gap-2.5 flex-1 max-w-md w-full">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-450" />
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setOrdersPage(1);
+                  }}
+                  className="w-full pl-10 pr-4 h-[40px] rounded-xl border border-[#26322B] focus:border-[#25D958] focus:ring-0 outline-none transition-all text-sm text-white bg-[#131B17]"
+                />
+              </div>
               <button
                 type="button"
                 onClick={() => setFilterOpen((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                className={`inline-flex items-center justify-center w-[40px] h-[40px] rounded-xl border shadow-sm transition-colors shrink-0 ${
+                  filterOpen || statusFilter !== 'all' || timeframeFilter !== 'all' || courierFilter !== 'all' || startDate !== '' || endDate !== ''
+                    ? 'border-[#25D958] bg-[#25D958]/10 text-[#25D958]'
+                    : 'border-[#26322B] bg-[#131B17] text-slate-400 hover:text-white'
+                }`}
                 title="Advanced Filters"
               >
                 <Filter className="w-4 h-4" />

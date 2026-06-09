@@ -89,11 +89,11 @@ const ReviewsPage = () => {
     const prevRows = [...rows];
     setRows((prev) => prev.map((r) => r.id === review.id ? { ...r, status: nextStatus } : r));
     setSavingId(review.id);
+    const toastId = toast.success(nextStatus === 'published' ? 'Review published' : 'Review hidden');
     try {
       await reviewService.updateAdminReviewStatus(review.id, nextStatus);
-      toast.success(nextStatus === 'published' ? 'Review published' : 'Review hidden');
     } catch {
-      toast.error('Failed to update review status');
+      toast.error('Failed to update review status', { id: toastId });
       setRows(prevRows);
     } finally {
       setSavingId(null);
@@ -147,11 +147,11 @@ const ReviewsPage = () => {
     setRows((prev) => prev.filter((r) => r.id !== review.id));
     setTotal((prev) => Math.max(0, prev - 1));
     setSavingId(review.id);
+    const toastId = toast.success('Review deleted');
     try {
       await reviewService.deleteAdminReview(review.id);
-      toast.success('Review deleted');
     } catch {
-      toast.error('Failed to delete review');
+      toast.error('Failed to delete review', { id: toastId });
       setRows(prevRows);
       setTotal(prevTotal);
     } finally {

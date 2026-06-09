@@ -210,15 +210,9 @@ const TransactionsTab = ({ orders, loading, error }) => {
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4 text-white">
       {/* Search & Stats Control Center */}
       {transactions.length > 0 && (
-        <div className="bg-[#19231F] rounded-2xl border border-[#26322B] shadow-sm p-3.5 space-y-3">
-          {/* Section Title & Horizontal Stats Pills */}
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-2.5 border-b border-[#26322B]/60">
-            <div className="flex items-center gap-1.5 text-white shrink-0">
-              <CreditCard className="w-4 h-4 text-[#25D958]" />
-              <span className="text-xs font-bold uppercase tracking-wider font-sans">Your Transactions</span>
-            </div>
-            
-            {/* Quick Stats Grid */}
+        <div className="bg-[#19231F] p-5 rounded-2xl border border-[#26322B] shadow-sm space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Quick Stats Pills inline */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400">
               <div className="bg-[#131B17] border border-[#26322B]/65 px-3.5 py-1.5 rounded-lg shrink-0">
                 <span>Spent: <span className="font-bold text-white">₹{stats.totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></span>
@@ -233,36 +227,37 @@ const TransactionsTab = ({ orders, loading, error }) => {
                 <span>Refunds/Failed: <span className="font-bold text-white">₹{stats.refundedAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></span>
               </div>
             </div>
-          </div>
 
-          {/* Search Input & Filters Trigger Row */}
-          <div className="flex gap-2.5">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search by order # or TXN ID..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full pl-10 pr-4 h-[36px] rounded-xl border border-[#26322B] focus:border-[#25D958] focus:ring-0 outline-none transition-all text-xs font-semibold text-white bg-[#131B17]"
-              />
-            </div>
-            <div className="relative">
+            {/* Search Box & Filter Row */}
+            <div className="flex gap-2.5 flex-1 max-w-md w-full">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-450" />
+                <input
+                  type="text"
+                  placeholder="Search by order # or TXN ID..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-10 pr-4 h-[40px] rounded-xl border border-[#26322B] focus:border-[#25D958] focus:ring-0 outline-none transition-all text-sm text-white bg-[#131B17]"
+                />
+              </div>
               <button
                 type="button"
                 onClick={() => setFilterOpen((prev) => !prev)}
-                className={`inline-flex items-center justify-center w-[36px] h-[36px] rounded-xl border shadow-sm transition-colors ${
+                className={`inline-flex items-center justify-center w-[40px] h-[40px] rounded-xl border shadow-sm transition-colors shrink-0 ${
                   filterOpen || methodFilter !== 'all' || statusFilter !== 'all' || timeframeFilter !== 'all' || startDate !== '' || endDate !== ''
                     ? 'border-[#25D958] bg-[#25D958]/10 text-[#25D958]'
                     : 'border-[#26322B] bg-[#131B17] text-slate-400 hover:text-white'
                 }`}
+                title="Advanced Filters"
               >
                 <Filter className="w-4 h-4" />
               </button>
-            {filterOpen && (
+            </div>
+          </div>
+          {filterOpen && (
               <>
                 <div className="fixed inset-0 bg-black/40 z-40 xl:hidden" onClick={() => setFilterOpen(false)} />
                 <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 xl:absolute xl:translate-y-0 xl:inset-auto xl:right-0 xl:mt-2 w-auto xl:w-72 bg-[#19231F] border border-[#26322B] rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-200">
@@ -355,8 +350,6 @@ const TransactionsTab = ({ orders, loading, error }) => {
                 </div>
               </>
             )}
-            </div>
-          </div>
         </div>
       )}
 
