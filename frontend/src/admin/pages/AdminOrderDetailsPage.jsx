@@ -850,7 +850,19 @@ const AdminOrderDetailsPage = () => {
                 <h4 className="text-[10px] font-black text-sky-700 uppercase tracking-widest mb-1.5">Courier & Tracking details</h4>
                 <div className="text-xs text-slate-600 leading-relaxed font-semibold">
                   <p>Carrier Name: <span className="font-extrabold text-slate-900">{order.carrier || 'Courier'}</span></p>
-                  <p className="mt-0.5">Tracking Number: <span className="font-mono text-slate-900 select-all font-extrabold">{order.tracking_id}</span></p>
+                   <p className="mt-0.5 flex items-center gap-1.5">
+                    Tracking Number: <span className="font-mono text-slate-900 select-all font-extrabold">{order.tracking_id}</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(order.tracking_id);
+                        toast.success('Tracking number copied!');
+                      }}
+                      className="p-0.5 text-slate-400 hover:text-slate-650 transition-colors inline-flex items-center"
+                      title="Copy Tracking Number"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </p>
                   {order.tracking_url && (
                     <a
                       href={order.tracking_url}
