@@ -199,7 +199,7 @@ const Shop = () => {
 
     setFilteredProducts(filtered);
     setPage(1); // Reset to first page when filters change
-  }, [products, categoryFilter, priceFilter, ratingFilter, sortBy, searchQuery, maxPrice]);
+  }, [products, categoryFilter, priceFilter, ratingFilter, sortBy, searchQuery, maxPrice, computedMaxPrice]);
 
   useEffect(() => {
     fetchProducts();
