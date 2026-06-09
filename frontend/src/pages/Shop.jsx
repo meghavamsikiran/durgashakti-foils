@@ -110,7 +110,11 @@ const Shop = () => {
     }
 
     if (categoryFilter !== 'all') {
-      filtered = filtered.filter(p => p.category === categoryFilter);
+      if (categoryFilter === 'Kitchen' || categoryFilter === 'Foil & Wrapper') {
+        filtered = filtered.filter(p => p.category === 'Foil Roll' || p.category === 'Foil & Wrapper');
+      } else {
+        filtered = filtered.filter(p => p.category === categoryFilter);
+      }
     }
 
     // Price filter
@@ -189,18 +193,13 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-surface py-12 font-inter text-on-surface" data-testid="shop-page">
       <div className="mx-auto max-w-[1340px] px-6 md:px-12 lg:px-[90px]">
-        {/* Redesigned Premium Header Banner */}
-        <div 
-          className="mb-12 rounded-2xl overflow-hidden relative shadow-md bg-cover bg-center h-[240px] md:h-[280px] lg:h-[320px] w-full"
-          style={{ backgroundImage: "url('/product_display_poster.webp')" }}
-        >
-          {/* Accessible text for SEO / Screen Readers */}
-          <div className="sr-only">
-            <h1 data-testid="shop-title">Our Products</h1>
-            <p>
-              Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene.
-            </p>
-          </div>
+        {/* Redesigned Premium Header Banner - full width img element to display text and details without cropping */}
+        <div className="mb-12 rounded-2xl overflow-hidden shadow-sm w-full">
+          <img 
+            src="/product_display_poster.webp" 
+            alt="Our Products - Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene."
+            className="w-full h-auto object-contain block"
+          />
         </div>
 
         {/* Collapsible Mobile Filters Button */}
@@ -237,40 +236,31 @@ const Shop = () => {
                 <div>
                   <label className="text-[11px] font-manrope font-extrabold uppercase tracking-wider text-slate-800 mb-3 block">Category</label>
                   <div className="flex flex-wrap gap-2">
-                    <label className={`relative flex items-center justify-center px-4 py-2 rounded-full border text-[11px] font-bold cursor-pointer transition-all duration-200 select-none
-                      ${categoryFilter === 'all' 
-                        ? 'bg-[#0F5C2E] text-white border-[#0F5C2E]' 
-                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
-                    >
-                      <input
-                        type="radio"
-                        name="category"
-                        value="all"
-                        checked={categoryFilter === 'all'}
-                        onChange={(e) => setCategoryFilter(e.target.value)}
-                        className="sr-only"
-                        data-testid="filter-category-all"
-                      />
-                      <span>All Category</span>
-                    </label>
-                    {categories.map(category => (
-                      <label key={category.id || category.name} className={`relative flex items-center justify-center px-4 py-2 rounded-full border text-[11px] font-bold cursor-pointer transition-all duration-200 select-none
-                        ${categoryFilter === category.name 
-                          ? 'bg-[#0F5C2E] text-white border-[#0F5C2E]' 
-                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
-                      >
-                        <input
-                          type="radio"
-                          name="category"
-                          value={category.name}
-                          checked={categoryFilter === category.name}
-                          onChange={(e) => setCategoryFilter(e.target.value)}
-                          className="sr-only"
-                          data-testid={`filter-category-${category.name}`}
-                        />
-                        <span>{category.name}</span>
-                      </label>
-                    ))}
+                    {[
+                      { value: 'all', label: 'All Category' },
+                      { value: 'Kitchen', label: 'Kitchen' },
+                      { value: 'Food Container', label: 'Food Container' },
+                      { value: 'Foil & Wrapper', label: 'Foil & Wrapper' }
+                    ].map(opt => {
+                      const isActive = categoryFilter === opt.value;
+                      return (
+                        <label key={opt.value} className={`relative flex items-center justify-center px-4 py-2 rounded-full border text-[11px] font-bold cursor-pointer transition-all duration-200 select-none
+                          ${isActive 
+                            ? 'bg-[#0F5C2E] text-white border-[#0F5C2E]' 
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
+                        >
+                          <input
+                            type="radio"
+                            name="category"
+                            value={opt.value}
+                            checked={categoryFilter === opt.value}
+                            onChange={(e) => setCategoryFilter(e.target.value)}
+                            className="sr-only"
+                          />
+                          <span>{opt.label}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -291,8 +281,8 @@ const Shop = () => {
                       <span>max ₹{maxPrice}</span>
                     </div>
                   </div>
-                  {/* Radio Buttons below slider */}
-                  <div className="flex flex-col gap-2">
+                  {/* Radio Buttons below slider in a 2-column grid layout */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 mt-4">
                     {[
                       { value: 'all', label: 'All' },
                       { value: '0to250', label: '₹0 - ₹250' },
@@ -316,7 +306,6 @@ const Shop = () => {
                               else if (option.value === 'all') setMaxPrice(1000);
                             }}
                             className="w-3.5 h-3.5 accent-[#0F5C2E]"
-                            data-testid={`filter-price-${option.value}`}
                           />
                           <span>{option.label}</span>
                         </label>
@@ -336,28 +325,23 @@ const Shop = () => {
                     ].map(option => {
                       const isActive = ratingFilter === option.value;
                       return (
-                        <label key={option.value} className="flex items-center gap-2 cursor-pointer select-none">
-                          <input
-                            type="radio"
-                            name="rating"
-                            value={option.value}
-                            checked={ratingFilter === option.value}
-                            onChange={(e) => setRatingFilter(e.target.value)}
-                            className="w-3.5 h-3.5 accent-[#0F5C2E]"
-                            data-testid={`filter-rating-${option.value}`}
-                          />
+                        <div 
+                          key={option.value} 
+                          onClick={() => setRatingFilter(isActive ? 'all' : option.value)}
+                          className={`flex items-center gap-2 cursor-pointer transition-all duration-150 py-0.5 rounded hover:bg-slate-100/50 ${isActive ? 'opacity-100 font-extrabold text-[#0F5C2E]' : 'opacity-85'}`}
+                        >
                           <span className="flex items-center gap-1">
                             <span className="flex items-center">
                               {[...Array(option.stars)].map((_, i) => (
                                 <Star key={`gold-${i}`} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                               ))}
                               {[...Array(option.empty)].map((_, i) => (
-                                <Star key={`gray-${i}`} className="w-3.5 h-3.5 text-slate-300" />
+                                <Star key={`gray-${i}`} className="w-3.5 h-3.5 text-slate-350" />
                               ))}
                             </span>
-                            <span className="text-[11px] font-bold text-slate-600 ml-1">{option.label}</span>
+                            <span className="text-[11px] font-bold text-slate-650 ml-1.5">{option.label}</span>
                           </span>
-                        </label>
+                        </div>
                       );
                     })}
                   </div>
