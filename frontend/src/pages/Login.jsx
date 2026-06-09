@@ -252,7 +252,6 @@ const Login = () => {
                 data-testid="login-password-input"
                 className="bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
               />
-              />
               {isLogin && (
                 <div className="flex justify-end mt-1">
                   <Link
