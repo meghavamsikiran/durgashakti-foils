@@ -110,10 +110,14 @@ const Shop = () => {
     }
 
     if (categoryFilter !== 'all') {
-      if (categoryFilter === 'Kitchen' || categoryFilter === 'Foil & Wrapper') {
-        filtered = filtered.filter(p => p.category === 'Foil Roll' || p.category === 'Foil & Wrapper');
+      const filterLower = categoryFilter.toLowerCase();
+      if (filterLower === 'kitchen' || filterLower === 'foil & wrapper') {
+        filtered = filtered.filter(p => {
+          const cat = (p.category || '').toLowerCase();
+          return cat === 'foil roll' || cat === 'kitchen' || cat === 'foil & wrapper';
+        });
       } else {
-        filtered = filtered.filter(p => p.category === categoryFilter);
+        filtered = filtered.filter(p => (p.category || '').toLowerCase() === filterLower);
       }
     }
 
