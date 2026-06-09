@@ -197,7 +197,7 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-[#F5F5F5] font-inter text-[#1E293B]" data-testid="shop-page">
       {/* Premium Header Banner - full width img element with controlled height for professional UI */}
-      <div className="w-full overflow-hidden border-b border-slate-200/50 h-[220px] md:h-[275px] lg:h-[325px]">
+      <div className="w-full overflow-hidden border-b border-slate-200/50 h-[230px] md:h-[285px] lg:h-[335px]">
         <img 
           src="/product_display_poster.webp" 
           alt="Our Products - Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene."
