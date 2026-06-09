@@ -776,11 +776,11 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (min-width: 768px) {
   .admin-table-container-stats {
-    height: calc(100vh - 410px) !important;
-    min-height: 220px !important;
+    height: calc(100vh - 355px) !important;
+    min-height: 250px !important;
   }
   .admin-table-container-standard {
-    height: calc(100vh - 290px) !important;
-    min-height: 280px !important;
+    height: calc(100vh - 245px) !important;
+    min-height: 300px !important;
   }
 }
