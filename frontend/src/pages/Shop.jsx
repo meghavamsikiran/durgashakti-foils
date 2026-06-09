@@ -198,8 +198,10 @@ const Shop = () => {
     <div className="min-h-screen bg-[#F5F5F5] font-inter text-[#1E293B]" data-testid="shop-page">
       {/* Responsive React Hero Banner Component */}
       <div 
-        className="w-full bg-[#0d0f12] relative overflow-hidden border-b border-slate-800 px-6 md:px-12 lg:px-16 py-6 md:py-0 flex flex-col md:flex-row items-center justify-between gap-6 min-h-[220px] md:h-[280px] lg:h-[320px] bg-cover bg-center"
-        style={{ backgroundImage: "url('/shop-hero-bg.webp')" }}
+        className="w-full relative overflow-hidden border-b border-slate-800 px-6 md:px-12 lg:px-16 py-6 md:py-0 flex flex-col md:flex-row items-center justify-between gap-6 min-h-[220px] md:h-[280px] lg:h-[320px]"
+        style={{ 
+          background: "url('/shop-hero-bg.webp') left center / contain no-repeat, linear-gradient(90deg, #0d0e11 0%, #15171a 100%)"
+        }}
       >
         {/* Subtle decorative radial glow */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_120%,rgba(15,92,46,0.18),transparent_50%)] pointer-events-none" />
