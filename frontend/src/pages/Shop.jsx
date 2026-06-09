@@ -196,13 +196,41 @@ const Shop = () => {
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] font-inter text-[#1E293B]" data-testid="shop-page">
-      {/* Redesigned Premium Header Banner - full width banner spanning edge-to-edge */}
-      <div className="w-full overflow-hidden border-b border-slate-200/50">
-        <img 
-          src="/product_display_poster.webp" 
-          alt="Our Products - Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene."
-          className="w-full h-auto object-cover block"
-        />
+      {/* Responsive Premium React Hero Banner */}
+      <div className="w-full bg-[#121214] relative overflow-hidden border-b border-slate-800/80">
+        {/* Subtle decorative background gradient */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_120%,rgba(15,92,46,0.15),transparent_60%)]" />
+        
+        <div className="mx-auto max-w-[1440px] px-4 md:px-8 lg:px-12 py-6 md:py-8 lg:py-10 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-6 md:gap-10">
+            {/* Left side: Premium FMCG Text Info */}
+            <div className="md:col-span-7 flex flex-col justify-center">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="h-[1px] w-8 bg-[#0F5C2E]" />
+                <span className="text-[10px] font-bold tracking-widest text-[#0F5C2E] uppercase font-mono">
+                  Premium FMCG Range
+                </span>
+              </div>
+              <h1 className="text-white font-manrope font-extrabold text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight mb-3">
+                Our Products
+              </h1>
+              <p className="text-slate-400 text-xs md:text-sm lg:text-base leading-relaxed max-w-xl font-normal">
+                Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil featuring commercial strength, optimal thickness, and clinical hygiene.
+              </p>
+            </div>
+            
+            {/* Right side: Product Family Image */}
+            <div className="md:col-span-5 flex justify-center md:justify-end">
+              <div className="relative group max-w-full">
+                <img 
+                  src="/hero-products.webp" 
+                  alt="Hot Wrap Premium Aluminum Foil Family Pack"
+                  className="w-auto h-auto max-h-[160px] md:max-h-[220px] lg:max-h-[240px] object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] select-none pointer-events-none transition-transform duration-300 group-hover:scale-[1.02]"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="mx-auto max-w-[1440px] px-4 md:px-8 lg:px-12 py-10">
