@@ -1759,7 +1759,7 @@ const OrderDetailsPage = () => {
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>
-                  {(!COURIER_OPTIONS.includes(courierName) || courierName === 'Other') && (
+                  {courierName && (!COURIER_OPTIONS.includes(courierName) || courierName === 'Other') && (
                     <input
                       type="text"
                       required

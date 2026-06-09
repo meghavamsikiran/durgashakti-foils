@@ -960,7 +960,19 @@ const AdminOrderDetailsPage = () => {
                             <p className="text-[9px] text-indigo-700 font-black uppercase tracking-wider">Self-Shipping Proof Details</p>
                             <div className="grid grid-cols-2 gap-2">
                               <p>Courier: <span className="font-extrabold text-slate-900">{item.self_shipping_details.courier_name}</span></p>
-                              <p>Tracking #: <span className="font-mono font-extrabold text-slate-900 select-all">{item.self_shipping_details.tracking_number}</span></p>
+                              <p className="flex items-center gap-1.5">
+                                Tracking #: <span className="font-mono font-extrabold text-slate-900 select-all">{item.self_shipping_details.tracking_number}</span>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(item.self_shipping_details.tracking_number);
+                                    toast.success('Tracking number copied!');
+                                  }}
+                                  className="p-0.5 text-slate-400 hover:text-slate-650 transition-colors inline-flex items-center"
+                                  title="Copy Tracking Number"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                              </p>
                               {item.self_shipping_details.courier_cost > 0 && <p>Courier Cost: <span className="font-extrabold text-slate-900">₹{item.self_shipping_details.courier_cost}</span></p>}
                               {item.self_shipping_details.courier_invoice_url && (
                                 <p>
@@ -1586,7 +1598,7 @@ const AdminOrderDetailsPage = () => {
                     <option key={opt} value={opt}>{opt}</option>
                   ))}
                 </select>
-                {(!COURIER_OPTIONS.includes(exCourierName) || exCourierName === 'Other') && (
+                {exCourierName && (!COURIER_OPTIONS.includes(exCourierName) || exCourierName === 'Other') && (
                   <input
                     type="text"
                     required
