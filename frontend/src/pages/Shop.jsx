@@ -6,7 +6,7 @@ import TablePagination from '../components/ui/TablePagination';
 import api from '../utils/api';
 import apiClient from '../services/core/apiClient';
 import { getProductPricing } from '../utils/productPricing';
-import { SlidersHorizontal, Star, ChevronRight } from 'lucide-react';
+import { SlidersHorizontal, Star, ChevronRight, X } from 'lucide-react';
 import PageLoader from '../components/ui/PageLoader';
 
 const PRODUCTS_CACHE_KEY = 'dsf_shop_products_v1';
@@ -197,7 +197,7 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-[#F5F5F5] font-inter text-[#1E293B]" data-testid="shop-page">
       {/* Premium Header Banner - full width img element with controlled height for professional UI */}
-      <div className="w-full overflow-hidden border-b border-slate-200/50 h-[230px] md:h-[285px] lg:h-[335px]">
+      <div className="w-full overflow-hidden border-b border-slate-200/50 h-auto aspect-[1024/409] md:aspect-none md:h-[285px] lg:h-[335px] bg-[#111111]">
         <img 
           src="/product_display_poster.webp" 
           alt="Our Products - Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene."
@@ -206,31 +206,61 @@ const Shop = () => {
       </div>
 
       <div className="w-full max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 py-10">
-        {/* Collapsible Mobile Filters Button */}
-        <button
-          onClick={() => setShowMobileFilters(!showMobileFilters)}
-          className="lg:hidden w-full flex items-center justify-center gap-2 py-3 bg-[#0F5C2E] hover:bg-[#0c4a24] text-white font-extrabold rounded-xl shadow-sm mb-6 transition-all duration-200"
-        >
-          <SlidersHorizontal className="w-4 h-4" />
-          <span>{showMobileFilters ? 'HIDE FILTERS' : 'SHOW FILTERS'}</span>
-        </button>
+        {/* Mobile Toolbar: Results Count and compact Filter Toggle side-by-side */}
+        <div className="lg:hidden flex items-center justify-between mb-6">
+          <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+            SHOWING {filteredProducts.length} PRODUCT{filteredProducts.length !== 1 ? 'S' : ''}
+          </p>
+          <button
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className={`inline-flex items-center justify-center w-[40px] h-[40px] rounded-xl border transition-all shadow-sm shrink-0 ${
+              showMobileFilters
+                ? 'border-[#0F5C2E] bg-[#0F5C2E]/10 text-[#0F5C2E]'
+                : 'border-slate-200 bg-white text-slate-650 hover:bg-slate-50'
+            }`}
+            title="Toggle Filters"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Sliding Sidebar Drawer Backdrop on Mobile */}
+        {showMobileFilters && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/60 z-[90] transition-opacity duration-300"
+            onClick={() => setShowMobileFilters(false)}
+          />
+        )}
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Filters Sidebar */}
-          <div className={`lg:w-80 flex-shrink-0 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
-            <div className="bg-white border border-slate-200/60 p-6 rounded-2xl sticky top-24 shadow-sm">
+          {/* Filters Sidebar Drawer */}
+          <div className={`
+            lg:relative lg:block lg:w-80 lg:translate-x-0 lg:z-auto lg:p-0 lg:border-none lg:bg-transparent lg:shadow-none
+            fixed inset-y-0 left-0 w-80 bg-white z-[100] shadow-2xl p-6 overflow-y-auto transition-transform duration-300 border-r border-slate-200/60
+            ${showMobileFilters ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          `}>
+            <div className="bg-white lg:border lg:border-slate-200/60 lg:p-6 lg:rounded-2xl sticky top-24 lg:shadow-sm">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="font-extrabold text-xs font-manrope text-slate-800 uppercase tracking-wider">
                   Category
                 </h2>
-                {(categoryFilter !== 'all' || priceFilter !== 'all' || maxPrice !== 25000 || ratingFilter !== 'all' || sortBy !== 'name') && (
+                <div className="flex items-center gap-3">
+                  {(categoryFilter !== 'all' || priceFilter !== 'all' || maxPrice !== 25000 || ratingFilter !== 'all' || sortBy !== 'name') && (
+                    <button 
+                      onClick={handleClearFilters}
+                      className="text-[10px] font-bold text-rose-500 hover:text-rose-600 uppercase tracking-wider transition-colors"
+                    >
+                      Clear All
+                    </button>
+                  )}
                   <button 
-                    onClick={handleClearFilters}
-                    className="text-[10px] font-bold text-rose-500 hover:text-rose-600 uppercase tracking-wider transition-colors"
+                    onClick={() => setShowMobileFilters(false)}
+                    className="lg:hidden p-1 text-slate-400 hover:text-slate-650"
+                    title="Close Filters"
                   >
-                    Clear All
+                    <X className="w-4 h-4" />
                   </button>
-                )}
+                </div>
               </div>
 
               <div className="space-y-6">
@@ -396,7 +426,7 @@ const Shop = () => {
               </div>
             ) : (
               <>
-                <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-6" data-testid="product-count">
+                <p className="hidden lg:block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 mb-6" data-testid="product-count">
                   SHOWING {filteredProducts.length} PRODUCT{filteredProducts.length !== 1 ? 'S' : ''}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 auto-rows-fr gap-6">

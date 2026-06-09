@@ -37,6 +37,31 @@ const ProductDetail = () => {
   const { user, refreshUser } = useAuth();
   const [wishlisting, setWishlisting] = useState(false);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const minSwipeDistance = 50;
+    if (distance > minSwipeDistance) {
+      // Swipe left: next media
+      setActiveMediaIndex((prev) => (prev + 1) % mediaList.length);
+    } else if (distance < -minSwipeDistance) {
+      // Swipe right: previous media
+      setActiveMediaIndex((prev) => (prev - 1 + mediaList.length) % mediaList.length);
+    }
+  };
+
   const pricing = getProductPricing(product);
   
   const activeTag = getProductBadge(product, pricing.discountPercent);
@@ -225,7 +250,12 @@ const ProductDetail = () => {
 
             {/* Main Interactive Media Box */}
             <div className="flex-1 flex flex-col gap-4">
-              <div className="aspect-square w-full rounded-2xl overflow-hidden bg-secondary/20 border border-slate-100 shadow-lg relative group flex items-center justify-center">
+              <div 
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+                className="aspect-square w-full rounded-2xl overflow-hidden bg-secondary/20 border border-slate-100 shadow-lg relative group flex items-center justify-center select-none"
+              >
                 {activeMedia.type === 'video' ? (
                   <div className="w-full h-full bg-slate-950 flex items-center justify-center relative">
                     <video
