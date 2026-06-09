@@ -41,17 +41,20 @@ const ProductDetail = () => {
   const [touchEnd, setTouchEnd] = useState(null);
 
   const onTouchStart = (e) => {
-    setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
+    setTouchEnd(e.targetTouches[0].clientX); // initialize end coordinate as well
   };
 
   const onTouchMove = (e) => {
     setTouchEnd(e.targetTouches[0].clientX);
   };
 
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
+  const onTouchEnd = (e) => {
+    if (touchStart === null) return;
+    const endX = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : touchEnd;
+    if (endX === null) return;
+    
+    const distance = touchStart - endX;
     const minSwipeDistance = 50;
     if (distance > minSwipeDistance) {
       // Swipe left: next media
@@ -60,6 +63,8 @@ const ProductDetail = () => {
       // Swipe right: previous media
       setActiveMediaIndex((prev) => (prev - 1 + mediaList.length) % mediaList.length);
     }
+    setTouchStart(null);
+    setTouchEnd(null);
   };
 
   const pricing = getProductPricing(product);
@@ -254,7 +259,7 @@ const ProductDetail = () => {
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
-                className="aspect-square w-full rounded-2xl overflow-hidden bg-secondary/20 border border-slate-100 shadow-lg relative group flex items-center justify-center select-none"
+                className="aspect-square w-full rounded-2xl overflow-hidden bg-secondary/20 border border-slate-100 shadow-lg relative group flex items-center justify-center select-none touch-pan-y"
               >
                 {activeMedia.type === 'video' ? (
                   <div className="w-full h-full bg-slate-950 flex items-center justify-center relative">
