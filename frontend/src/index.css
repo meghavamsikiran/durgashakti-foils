@@ -776,7 +776,7 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (min-width: 768px) {
   .admin-table-container-stats {
-    height: calc(100vh - 315px) !important;
+    height: calc(100vh - 270px) !important;
     min-height: 250px !important;
   }
   .admin-table-container-standard {
