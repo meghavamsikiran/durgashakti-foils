@@ -18,18 +18,6 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
     <>
       {/* Sidebar for Desktop */}
       <aside className="hidden xl:flex xl:w-64 xl:flex-col xl:fixed xl:inset-y-0 bg-[#0C1310] z-30 select-none border-r border-[#19231F]">
-        {/* Brand Logo */}
-        <div className="flex h-20 items-center px-6 border-b border-[#19231F]">
-          <Link to="/" className="flex items-center gap-3">
-            <img 
-              src="/images/logo.webp" 
-              alt="Durga Shakti Foils" 
-              className="h-10 w-auto object-contain block brightness-110"
-              style={{ maxWidth: '190px' }}
-            />
-          </Link>
-        </div>
-
         {/* Navigation Items */}
         <nav className="flex-1 overflow-y-auto py-6 pl-3 pr-3 space-y-1 sidebar-scrollbar">
           {menuItems.map((item) => (
@@ -80,14 +68,7 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex h-20 items-center justify-between px-6 border-b border-[#19231F]">
-          <Link to="/" className="flex items-center gap-3">
-            <img 
-              src="/images/logo.webp" 
-              alt="Durga Shakti Foils" 
-              className="h-10 w-auto object-contain block"
-              style={{ maxWidth: '170px' }}
-            />
-          </Link>
+          <span className="text-white font-bold font-serif text-lg">Menu</span>
           <button onClick={() => setSidebarOpen(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg">
             <X className="w-5 h-5" />
           </button>

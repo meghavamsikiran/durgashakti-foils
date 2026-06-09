@@ -55,7 +55,7 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
       </div>
 
       {!wishlist || wishlist.length === 0 ? (
-        <div className="text-center py-20 rounded-xl border border-dashed border-[#26322B] bg-[#19231F] text-white">
+        <div className="text-center py-20 bg-transparent text-white">
           <Heart className="w-12 h-12 text-white mx-auto mb-4" />
           <p className="text-white font-bold">Your wishlist is empty</p>
         </div>
