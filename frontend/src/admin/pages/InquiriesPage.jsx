@@ -276,12 +276,18 @@ const InquiriesPage = () => {
         <div className="relative" ref={filterRef}>
           <button
             onClick={handleToggleFilter}
-            className="relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 transition-all font-semibold"
+            className={`h-11 inline-flex items-center justify-center gap-2 rounded-xl border px-4 text-xs font-black uppercase tracking-widest shadow-sm transition-all ${
+              filterOpen || (statusFilter !== 'all' || dateFilter)
+                ? 'border-primary/30 bg-primary/10 text-primary'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+            }`}
           >
-            <Filter className="w-4 h-4 text-slate-650" />
-            <span className="text-xs font-black uppercase tracking-widest text-slate-650">Filter</span>
+            <Filter className="w-4 h-4" />
+            Filter
             {(statusFilter !== 'all' || dateFilter) && (
-              <span className="ml-1.5 flex h-2 w-2 rounded-full bg-primary" />
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] text-white">
+                !
+              </span>
             )}
           </button>
 

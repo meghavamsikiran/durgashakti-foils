@@ -1107,7 +1107,9 @@ input[type="checkbox"] {
 .light-theme .admin-shell .bg-slate-50\/50,
 .light-theme .admin-shell .bg-slate-100\/50,
 .light-theme .admin-shell .bg-slate-50\/40,
-.light-theme .admin-shell .bg-slate-50\/80 {
+.light-theme .admin-shell .bg-slate-50\/80,
+.light-theme .admin-shell div.bg-\[\#f7faf8\],
+.light-theme .admin-shell .bg-\[\#f7faf8\] {
   background-color: #f1f4f2 !important;
   color: #181c1b !important;
   border-color: #bbcbb5 !important;
