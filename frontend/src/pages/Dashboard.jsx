@@ -91,7 +91,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20">
+    <div className="min-h-screen bg-[#F4F4F0] flex flex-col xl:flex-row text-slate-800">
       {/* Mobile Sidebar Backdrop Overlay */}
       {sidebarOpen && (
         <div 
@@ -100,37 +100,35 @@ const Dashboard = () => {
         />
       )}
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 pt-8 lg:pt-10">
-        <div className="flex flex-col xl:flex-row gap-6 lg:gap-8 items-start">
-          <Sidebar 
+      <Sidebar 
+        user={user} 
+        activeTab={activeTab} 
+        setActiveTab={() => {}} 
+        wishlistCount={wishlist?.length || 0}
+        onLogout={logout} 
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        navigate={navigate}
+      />
+      
+      <main className="flex-1 xl:ml-64 min-w-0 w-full min-h-screen flex flex-col">
+        <div className="p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+          <ProfileHeader 
             user={user} 
             activeTab={activeTab} 
-            setActiveTab={() => {}} 
-            wishlistCount={wishlist?.length || 0}
-            onLogout={logout} 
-            sidebarOpen={sidebarOpen}
-            setSidebarOpen={setSidebarOpen}
-            navigate={navigate}
+            onMenuClick={() => setSidebarOpen(true)}
           />
-          
-          <main className="flex-1 min-w-0 w-full flex flex-col gap-6">
-            <ProfileHeader 
-              user={user} 
-              activeTab={activeTab} 
-              onMenuClick={() => setSidebarOpen(true)}
-            />
-            <Routes>
-              <Route path="/" element={<Navigate to="orders" replace />} />
-              <Route path="orders" element={<OrdersTabWrapper />} />
-              <Route path="transactions" element={<TransactionsTabWrapper />} />
-              <Route path="wishlist" element={<WishlistTab wishlist={wishlist} onToggleWishlist={toggleWishlist} onClearWishlist={clearWishlist} />} />
-              <Route path="addresses" element={<AddressesTabWrapper />} />
-              <Route path="settings" element={<SettingsTab user={user} onUpdateProfile={handleUpdateProfile} />} />
-              <Route path="*" element={<Navigate to="orders" replace />} />
-            </Routes>
-          </main>
+          <Routes>
+            <Route path="/" element={<Navigate to="orders" replace />} />
+            <Route path="orders" element={<OrdersTabWrapper />} />
+            <Route path="transactions" element={<TransactionsTabWrapper />} />
+            <Route path="wishlist" element={<WishlistTab wishlist={wishlist} onToggleWishlist={toggleWishlist} onClearWishlist={clearWishlist} />} />
+            <Route path="addresses" element={<AddressesTabWrapper />} />
+            <Route path="settings" element={<SettingsTab user={user} onUpdateProfile={handleUpdateProfile} />} />
+            <Route path="*" element={<Navigate to="orders" replace />} />
+          </Routes>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
