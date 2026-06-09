@@ -42,6 +42,25 @@ def _local_fallback_path() -> Path:
     return p
 
 
+from io import BytesIO
+from PIL import Image
+
+def convert_to_webp(raw_bytes: bytes) -> bytes:
+    try:
+        img = Image.open(BytesIO(raw_bytes))
+        if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+            # Keep alpha channel
+            pass
+        else:
+            img = img.convert("RGB")
+        out = BytesIO()
+        img.save(out, format="WEBP", quality=80)
+        return out.getvalue()
+    except Exception as e:
+        logger.warning("Failed to convert image to webp: %s", e)
+        return raw_bytes
+
+
 ALLOWED_IMAGE_TYPES = {"image/png": ".png", "image/jpeg": ".jpg", "image/jpg": ".jpg", "image/webp": ".webp"}
 ALLOWED_DOC_TYPES = {"application/pdf": ".pdf"}
 ALLOWED_MEDIA_TYPES = {
@@ -71,7 +90,13 @@ async def upload_media(raw: bytes, content_type: str, prefix: str = "media") -> 
     Returns a public URL string.
     Falls back to local /uploads/ if Supabase is not configured.
     """
-    ext = _ext_for_content_type(content_type, ALLOWED_MEDIA_TYPES)
+    is_image = (content_type or "").lower().startswith("image/")
+    if is_image:
+        raw = convert_to_webp(raw)
+        content_type = "image/webp"
+        ext = ".webp"
+    else:
+        ext = _ext_for_content_type(content_type, ALLOWED_MEDIA_TYPES)
     filename = f"{prefix}_{uuid.uuid4().hex}{ext}"
 
     client = _get_client()
@@ -100,7 +125,9 @@ async def upload_image(raw: bytes, content_type: str, prefix: str = "img") -> st
     Returns a public URL string.
     Falls back to local /uploads/ if Supabase is not configured.
     """
-    ext = _ext_for_content_type(content_type, ALLOWED_IMAGE_TYPES)
+    raw = convert_to_webp(raw)
+    content_type = "image/webp"
+    ext = ".webp"
     filename = f"{prefix}_{uuid.uuid4().hex}{ext}"
 
     client = _get_client()

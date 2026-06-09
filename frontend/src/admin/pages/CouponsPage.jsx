@@ -574,13 +574,23 @@ const sanitizePopupBanner = (popupBannerValue = {}, coupons = []) => {
 };
 
 const CouponsPage = () => {
-  const [coupons, setCoupons] = useState([]);
-  const [settings, setSettings] = useState({
-    system_enabled: true,
-    stacking_enabled: false,
-    single_use_per_account: false
+  const [coupons, setCoupons] = useState(() => {
+    const cached = apiClient.getCachedDataSync('/admin/coupons');
+    return normalizeCouponList(cached?.data || []);
   });
-  const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState(() => {
+    const cached = apiClient.getCachedDataSync('/admin/coupons/settings');
+    return cached?.data || {
+      system_enabled: true,
+      stacking_enabled: false,
+      single_use_per_account: false
+    };
+  });
+  const [loading, setLoading] = useState(() => {
+    const cachedCoupons = apiClient.getCachedDataSync('/admin/coupons');
+    const cachedSettings = apiClient.getCachedDataSync('/admin/coupons/settings');
+    return !(cachedCoupons && cachedSettings);
+  });
   const [savingSettings, setSavingSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -659,7 +669,14 @@ const CouponsPage = () => {
   });
 
   const fetchCouponsAndSettings = useCallback(async () => {
-    setLoading(true);
+    const cachedCoupons = apiClient.getCachedDataSync('/admin/coupons');
+    const cachedSettings = apiClient.getCachedDataSync('/admin/coupons/settings');
+    if (cachedCoupons && cachedSettings) {
+      setCoupons(normalizeCouponList(cachedCoupons.data || []));
+      setSettings(cachedSettings.data);
+    } else {
+      setLoading(true);
+    }
     try {
       const [couponsData, settingsData, adminSettingsRes, loyalCustomerData, analyticsData] = await Promise.all([
         couponService.getCoupons(),

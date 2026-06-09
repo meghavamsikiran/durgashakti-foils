@@ -10,19 +10,43 @@ import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
 
 const BusinessProfilePage = () => {
-  const [companyName, setCompanyName] = useState('');
-  const [gstNumber, setGstNumber] = useState('');
-  const [companyPhone, setCompanyPhone] = useState('');
-  const [companyEmail, setCompanyEmail] = useState('');
-  const [companyAddress, setCompanyAddress] = useState('');
-  const [googleMapsLink, setGoogleMapsLink] = useState('');
-  const [instagramLink, setInstagramLink] = useState('');
-  const [facebookLink, setFacebookLink] = useState('');
-  const [youtubeLink, setYoutubeLink] = useState('');
+  const getCachedProfile = () => {
+    const cached = adminService.getCached('/admin/settings') || adminService.getCached('/settings/public');
+    return cached?.data?.company_profile || {};
+  };
+
+  const [companyName, setCompanyName] = useState(() => getCachedProfile().companyName || '');
+  const [gstNumber, setGstNumber] = useState(() => getCachedProfile().gstNumber || '');
+  const [companyPhone, setCompanyPhone] = useState(() => getCachedProfile().companyPhone || '');
+  const [companyEmail, setCompanyEmail] = useState(() => getCachedProfile().companyEmail || '');
+  const [companyAddress, setCompanyAddress] = useState(() => getCachedProfile().companyAddress || '');
+  const [googleMapsLink, setGoogleMapsLink] = useState(() => getCachedProfile().googleMapsLink || '');
+  const [instagramLink, setInstagramLink] = useState(() => getCachedProfile().instagramLink || 'https://www.instagram.com/durgashaktifoils_pvt.ltd/');
+  const [facebookLink, setFacebookLink] = useState(() => getCachedProfile().facebookLink || '');
+  const [youtubeLink, setYoutubeLink] = useState(() => getCachedProfile().youtubeLink || '');
   const [saving, setSaving] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => {
+    const cached = adminService.getCached('/admin/settings') || adminService.getCached('/settings/public');
+    return !!cached;
+  });
 
   const loadSettings = async () => {
+    const cached = adminService.getCached('/admin/settings') || adminService.getCached('/settings/public');
+    if (cached) {
+      const data = cached.data || {};
+      const profile = data.company_profile || {};
+      setCompanyName(profile.companyName || '');
+      setGstNumber(profile.gstNumber || '');
+      setCompanyPhone(profile.companyPhone || '');
+      setCompanyEmail(profile.companyEmail || '');
+      setCompanyAddress(profile.companyAddress || '');
+      setGoogleMapsLink(profile.googleMapsLink || '');
+      setInstagramLink(profile.instagramLink || 'https://www.instagram.com/durgashaktifoils_pvt.ltd/');
+      setFacebookLink(profile.facebookLink || '');
+      setYoutubeLink(profile.youtubeLink || '');
+    } else {
+      setLoaded(false);
+    }
     try {
       const res = await adminService.getSettings();
       const data = res.data || {};

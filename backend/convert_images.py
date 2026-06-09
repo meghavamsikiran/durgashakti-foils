@@ -71,7 +71,7 @@ def replace_in_file(file_path):
         
         # Replace .png with .avif, but ignore standard third-party logos or libraries if needed,
         # but the request is "Convert all the images being used in this project to AVIF".
-        # Let's replace any static local references like /logo-durga.png -> /logo-durga.avif,
+        # Let's replace any static local references like /logo-durga.webp -> /logo-durga.avif,
         # etc., except external links if they are external PNGs.
         # Let's replace any relative or absolute .png references.
         new_content = re.sub(r'([a-zA-Z0-9_\-\/]+)\.png', r'\1.avif', content)

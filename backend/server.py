@@ -55,6 +55,17 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(ensure_bucket_exists())
     logger.info("Supabase storage bucket verification scheduled in the background.")
 
+    async def run_webp_migration():
+        await asyncio.sleep(10)
+        try:
+            from convert_existing_to_webp import main as migrate_webp
+            logger.info("Starting WebP image migration on server startup...")
+            await migrate_webp()
+        except Exception as e:
+            logger.exception(f"Failed to run WebP image migration: {e}")
+
+    asyncio.create_task(run_webp_migration())
+
     # Start background task to repair historical returns (sync items with order status)
     try:
         from database import async_session_factory
