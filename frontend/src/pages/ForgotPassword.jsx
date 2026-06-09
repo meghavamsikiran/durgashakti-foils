@@ -79,7 +79,7 @@ const ForgotPassword = () => {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="bg-card border border-border/50 rounded-sm p-8 shadow-float">
+        <div className="bg-[#131B17] border border-[#26322B] rounded-sm p-8 shadow-float text-white">
           <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Manrope' }}>
             {step === 1 ? 'Forgot Password?' : 'Verify OTP'}
           </h1>
@@ -92,7 +92,7 @@ const ForgotPassword = () => {
           {step === 1 ? (
             <form onSubmit={handleSendOTP} className="space-y-4">
               <div>
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email" className="text-slate-200">Email Address</Label>
                 <Input
                   id="email"
                   type="email"
@@ -100,16 +100,17 @@ const ForgotPassword = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="name@example.com"
+                  className="bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
                 />
               </div>
-              <Button type="submit" disabled={loading} className="w-full h-12">
+              <Button type="submit" disabled={loading} className="w-full h-12 bg-primary hover:bg-[#005a14] text-white font-bold rounded-sm">
                 {loading ? 'Sending...' : 'Send Recovery Code'}
               </Button>
             </form>
           ) : (
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
-                <Label htmlFor="otp">6-Digit Code</Label>
+                <Label htmlFor="otp" className="text-slate-200">6-Digit Code</Label>
                 <Input
                   id="otp"
                   type="text"
@@ -118,7 +119,7 @@ const ForgotPassword = () => {
                   onChange={(e) => setOtp(e.target.value)}
                   required
                   placeholder="000000"
-                  className="tracking-widest text-center font-bold text-lg"
+                  className="tracking-widest text-center font-bold text-lg bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
                 />
                 <div className="flex items-center justify-between mt-2 px-1">
                   <span className="text-[11px] text-muted-foreground">
@@ -139,7 +140,7 @@ const ForgotPassword = () => {
                 </div>
               </div>
               <div>
-                <Label htmlFor="newPassword">New Password</Label>
+                <Label htmlFor="newPassword" className="text-slate-200">New Password</Label>
                 <Input
                   id="newPassword"
                   type="password"
@@ -147,9 +148,10 @@ const ForgotPassword = () => {
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   placeholder="••••••••"
+                  className="bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
                 />
               </div>
-              <Button type="submit" disabled={loading} className="w-full h-12">
+              <Button type="submit" disabled={loading} className="w-full h-12 bg-primary hover:bg-[#005a14] text-white font-bold rounded-sm">
                 {loading ? 'Resetting...' : 'Update Password'}
               </Button>
             </form>

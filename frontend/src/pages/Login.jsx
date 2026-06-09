@@ -179,7 +179,7 @@ const Login = () => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <div className="bg-card border border-border/50 rounded-sm p-8 shadow-float">
+        <div className="bg-[#131B17] border border-[#26322B] rounded-sm p-8 shadow-float text-white">
           <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Manrope' }} data-testid="login-title">
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h1>
@@ -193,7 +193,7 @@ const Login = () => {
             {!isLogin && (
               <>
                 <div>
-                  <Label htmlFor="fullName">Full Name</Label>
+                  <Label htmlFor="fullName" className="text-slate-200">Full Name</Label>
                   <Input
                     id="fullName"
                     type="text"
@@ -202,10 +202,11 @@ const Login = () => {
                     onChange={(e) => setFullName(e.target.value)}
                     required
                     data-testid="register-fullname-input"
+                    className="bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone" className="text-slate-200">Phone Number</Label>
                   <Input
                     id="phone"
                     type="text"
@@ -217,7 +218,7 @@ const Login = () => {
                     }}
                     required
                     data-testid="register-phone-input"
-                    className="h-12 bg-white border border-slate-200 text-slate-900 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                    className="h-12 bg-[#131B17] border border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
                     placeholder="Enter 10-digit phone number"
                   />
                 </div>
@@ -225,7 +226,7 @@ const Login = () => {
             )}
 
             <div>
-              <Label htmlFor="email">{isLogin ? 'Email or Gmail Username' : 'Email'}</Label>
+              <Label htmlFor="email" className="text-slate-200">{isLogin ? 'Email or Gmail Username' : 'Email'}</Label>
               <Input
                 id="email"
                 type="text"
@@ -235,11 +236,12 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 data-testid="login-email-input"
+                className="bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
               />
             </div>
 
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-slate-200">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -248,6 +250,8 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 data-testid="login-password-input"
+                className="bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
+              />
               />
               {isLogin && (
                 <div className="flex justify-end mt-1">
@@ -268,10 +272,10 @@ const Login = () => {
                   type="checkbox"
                   checked={acceptTerms}
                   onChange={(e) => setAcceptTerms(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/25 accent-primary cursor-pointer"
+                  className="mt-1 h-4 w-4 rounded border-[#26322B] text-primary focus:ring-primary/25 bg-[#131B17] accent-primary cursor-pointer"
                   required
                 />
-                <label htmlFor="acceptTerms" className="text-xs font-semibold text-slate-650 leading-normal select-none cursor-pointer">
+                <label htmlFor="acceptTerms" className="text-xs font-semibold text-slate-300 leading-normal select-none cursor-pointer">
                   I accept the{' '}
                   <button
                     type="button"
@@ -304,7 +308,7 @@ const Login = () => {
               onClick={handleGoogleLogin}
               disabled={loading}
               variant="outline"
-              className="w-full h-12 rounded-sm font-semibold flex items-center justify-center gap-3 border-border hover:bg-slate-50 transition-colors mt-2"
+              className="w-full h-12 rounded-sm font-semibold flex items-center justify-center gap-3 border-[#26322B] bg-[#131B17] text-white hover:bg-white/5 hover:text-[#25D958] transition-colors mt-2"
             >
               <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
                 <path
@@ -350,14 +354,14 @@ const Login = () => {
       </motion.div>
       {showTermsModal && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" data-testid="terms-modal">
-          <div className="relative w-full max-w-xl max-h-[80vh] overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-xl max-h-[80vh] overflow-hidden rounded-2xl bg-[#131B17] border border-[#26322B] shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200 text-white">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h2 className="text-lg font-black text-slate-900 font-manrope">Terms & Conditions</h2>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#26322B]">
+              <h2 className="text-lg font-black text-white font-manrope">Terms & Conditions</h2>
               <button
                 type="button"
                 onClick={() => setShowTermsModal(false)}
-                className="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 transition-colors"
+                className="rounded-full p-1.5 text-slate-400 hover:bg-[#19231F] transition-colors"
                 data-testid="terms-modal-close"
               >
                 <X className="h-5 w-5" />
@@ -365,55 +369,55 @@ const Login = () => {
             </div>
 
             {/* Scrollable Terms Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-slate-600 space-y-4 leading-relaxed no-scrollbar">
-              <p className="font-semibold text-slate-800">
+            <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-slate-300 space-y-4 leading-relaxed no-scrollbar font-semibold">
+              <p className="font-semibold text-white">
                 Welcome to Durga Shakti Foils. Please read these Terms and Conditions carefully before registering an account or purchasing from us.
               </p>
               
               <div>
-                <h3 className="font-extrabold text-slate-900 mt-2">1. Introduction</h3>
+                <h3 className="font-extrabold text-white mt-2">1. Introduction</h3>
                 <p className="mt-1">
                   By creating an account or using our services, you agree to comply with and be bound by these Terms and Conditions. If you do not agree, please do not create an account or place an order.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-extrabold text-slate-900 mt-2">2. Account Information & Security</h3>
+                <h3 className="font-extrabold text-white mt-2">2. Account Information & Security</h3>
                 <p className="mt-1">
                   When you register, you must provide accurate, current, and complete information. You are solely responsible for safeguarding the credentials of your account and for any activities or actions under your password.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-extrabold text-slate-900 mt-2">3. Eligibility & Registration Rules</h3>
+                <h3 className="font-extrabold text-white mt-2">3. Registration Rules</h3>
                 <p className="mt-1">
                   Our platform permits account registration only using valid email addresses. Specifically, to ensure identity verification, we only accept standard Google accounts (@gmail.com) for customer registration.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-extrabold text-slate-900 mt-2">4. Product Specifications & Pricing</h3>
+                <h3 className="font-extrabold text-white mt-2">4. Product Specifications & Pricing</h3>
                 <p className="mt-1">
                   We strive to present all products, categories, dimensions, and specifications (such as foil thickness, length, and width) as accurately as possible. Prices are subject to change without notice and include GST unless stated otherwise.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-extrabold text-slate-900 mt-2">5. Ordering & Payment</h3>
+                <h3 className="font-extrabold text-white mt-2">5. Ordering & Payment</h3>
                 <p className="mt-1">
                   All orders are subject to availability. You can pay via credit card, UPI, net banking, or Cash on Delivery (COD) where eligible. We reserve the right to cancel or refuse any order for reasons including stock limitations or suspect transactional fraud.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-extrabold text-slate-900 mt-2">6. Limitation of Liability</h3>
+                <h3 className="font-extrabold text-white mt-2">6. Limitation of Liability</h3>
                 <p className="mt-1">
                   Durga Shakti Foils shall not be liable for any indirect, incidental, or consequential damages resulting from the use or inability to use our products or services.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-extrabold text-slate-900 mt-2">7. Updates to Terms</h3>
+                <h3 className="font-extrabold text-white mt-2">7. Updates to Terms</h3>
                 <p className="mt-1">
                   We may modify these Terms and Conditions at any time. Your continued use of the platform following updates signifies your acceptance of the revised terms.
                 </p>
@@ -421,12 +425,12 @@ const Login = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+            <div className="px-6 py-4 border-t border-[#26322B] flex justify-end gap-3 bg-[#0C1310]">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setShowTermsModal(false)}
-                className="rounded-lg text-slate-700 font-bold"
+                className="rounded-lg border-[#26322B] bg-[#131B17] text-slate-300 hover:bg-white/5 font-bold"
               >
                 Close
               </Button>
