@@ -91,11 +91,11 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F4F0] flex flex-col xl:flex-row text-slate-800">
+    <div className="min-h-screen bg-[#0C1310] flex flex-col xl:flex-row text-white">
       {/* Mobile Sidebar Backdrop Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/50 xl:hidden transition-opacity duration-300"
+          className="fixed inset-0 z-40 bg-black/60 xl:hidden transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -111,7 +111,7 @@ const Dashboard = () => {
         navigate={navigate}
       />
       
-      <main className="flex-1 xl:ml-64 min-w-0 w-full min-h-screen flex flex-col">
+      <main className="flex-1 xl:ml-64 min-w-0 w-full min-h-screen flex flex-col bg-[#0C1310]">
         <div className="p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
           <ProfileHeader 
             user={user} 
