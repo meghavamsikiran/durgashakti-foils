@@ -6,7 +6,8 @@ import {
   LayoutDashboard, Package, Boxes, ShoppingCart, 
   Users, CreditCard, BarChart3, FileText,
   UserCog, ShieldAlert, Settings, LogOut, Package2, Layers,
-  MessageSquare, Menu, X, Ticket, Star, User, Building2
+  MessageSquare, Menu, X, Ticket, Star, User, Building2,
+  Sun, Moon
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -36,6 +37,22 @@ const AdminLayout = () => {
   const { user, logout, hasPermission } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [themeMode, setThemeMode] = React.useState(() => localStorage.getItem('themeMode') || 'dark');
+
+  // Sync theme change from event
+  React.useEffect(() => {
+    const handleThemeToggle = (e) => {
+      setThemeMode(e.detail);
+    };
+    window.addEventListener('theme-toggle', handleThemeToggle);
+    return () => window.removeEventListener('theme-toggle', handleThemeToggle);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = themeMode === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('themeMode', next);
+    window.dispatchEvent(new CustomEvent('theme-toggle', { detail: next }));
+  };
 
   // Close sidebar on route change
   React.useEffect(() => {
@@ -66,8 +83,17 @@ const AdminLayout = () => {
             style={{ maxWidth: '170px' }}
           />
         </Link>
-        <div className="w-8 h-8 rounded-lg bg-[#25d958]/20 flex items-center justify-center text-[#25d958] font-black text-xs">
-          {user?.full_name?.charAt(0) || 'A'}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="p-2 text-slate-300 hover:text-[#25d958] transition-colors focus:outline-none"
+            aria-label="Toggle Theme"
+          >
+            {themeMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+          <div className="w-8 h-8 rounded-lg bg-[#25d958]/20 flex items-center justify-center text-[#25d958] font-black text-xs">
+            {user?.full_name?.charAt(0) || 'A'}
+          </div>
         </div>
       </header>
 
@@ -144,6 +170,14 @@ const AdminLayout = () => {
               <p className="text-[10px] text-slate-500 truncate uppercase tracking-widest font-mono">{user?.role || 'Admin'}</p>
             </div>
           </div>
+          <button 
+            type="button" 
+            onClick={toggleTheme} 
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-bold text-slate-400 transition-all hover:text-white mb-2"
+          >
+            {themeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {themeMode === 'dark' ? 'Light Theme' : 'Dark Theme'}
+          </button>
           <button 
             type="button" 
             onClick={logout} 

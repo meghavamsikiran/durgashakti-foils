@@ -71,13 +71,24 @@ function AppRoutes() {
   const { loading: authLoading } = useAuth();
   const location = useLocation();
   const [themeMode, setThemeMode] = React.useState(() => localStorage.getItem('themeMode') || 'dark');
+
+  React.useEffect(() => {
+    const handleThemeToggle = (e) => {
+      setThemeMode(e.detail);
+    };
+    window.addEventListener('theme-toggle', handleThemeToggle);
+    return () => window.removeEventListener('theme-toggle', handleThemeToggle);
+  }, []);
+
   const isAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin');
   const isShopPath = location.pathname === '/shop';
   const isProtectedRoute = location.pathname.startsWith('/dashboard') || 
                            location.pathname.startsWith('/checkout') || 
                            location.pathname.startsWith('/order') || 
                            location.pathname.startsWith('/review');
-  const themeClass = isAdminPath ? 'admin-theme' : (themeMode === 'light' ? 'public-theme light-theme' : 'public-theme');
+  const themeClass = isAdminPath 
+    ? (themeMode === 'light' ? 'admin-theme light-theme' : 'admin-theme')
+    : (themeMode === 'light' ? 'public-theme light-theme' : 'public-theme');
 
   return (
     <CartProvider>

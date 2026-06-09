@@ -789,47 +789,45 @@ h1, h2, h3, h4, h5, h6 {
   animation: spin-slow 16s linear infinite;
 }
 
-@media (min-width: 768px) {
-  .admin-table-container-stats {
-    height: calc(100vh - 225px) !important;
-    min-height: 250px !important;
-  }
-  .admin-table-container-standard {
-    height: calc(100vh - 245px) !important;
-    min-height: 300px !important;
-  }
-  .admin-table-container-admins {
-    height: calc(100vh - 295px) !important;
-    min-height: 250px !important;
-  }
-  .admin-table-container-orders {
-    height: calc(100vh - 225px) !important;
-    min-height: 250px !important;
-  }
-  .admin-table-container-products {
-    height: calc(100vh - 225px) !important;
-    min-height: 250px !important;
-  }
-  .admin-table-container-inventory {
-    height: calc(100vh - 225px) !important;
-    min-height: 250px !important;
-  }
-  .admin-table-container-customers {
-    height: calc(100vh - 235px) !important;
-    min-height: 250px !important;
-  }
-  .admin-table-container-payments {
-    height: calc(100vh - 235px) !important;
-    min-height: 250px !important;
-  }
-  .admin-table-container-audit-logs {
-    height: calc(100vh - 235px) !important;
-    min-height: 250px !important;
-  }
-  .customer-table-container {
-    height: calc(100vh - 290px) !important;
-    min-height: 250px !important;
-  }
+.admin-table-container-stats {
+  height: calc(100vh - 225px) !important;
+  min-height: 250px !important;
+}
+.admin-table-container-standard {
+  height: calc(100vh - 245px) !important;
+  min-height: 300px !important;
+}
+.admin-table-container-admins {
+  height: calc(100vh - 295px) !important;
+  min-height: 250px !important;
+}
+.admin-table-container-orders {
+  height: calc(100vh - 225px) !important;
+  min-height: 250px !important;
+}
+.admin-table-container-products {
+  height: calc(100vh - 225px) !important;
+  min-height: 250px !important;
+}
+.admin-table-container-inventory {
+  height: calc(100vh - 225px) !important;
+  min-height: 250px !important;
+}
+.admin-table-container-customers {
+  height: calc(100vh - 235px) !important;
+  min-height: 250px !important;
+}
+.admin-table-container-payments {
+  height: calc(100vh - 235px) !important;
+  min-height: 250px !important;
+}
+.admin-table-container-audit-logs {
+  height: calc(100vh - 235px) !important;
+  min-height: 250px !important;
+}
+.customer-table-container {
+  height: calc(100vh - 290px) !important;
+  min-height: 250px !important;
 }
 
 /* ── ADMIN DARK THEME OVERRIDES ──────────────────────────────────── */
@@ -856,6 +854,7 @@ h1, h2, h3, h4, h5, h6 {
   --on-surface: #ffffff;
   --on-surface-variant: #cbd5e1;
   --border-subtle: #26322B;
+  --ink-slate: #ffffff;
 }
 
 .admin-shell main, 
@@ -922,7 +921,7 @@ h1, h2, h3, h4, h5, h6 {
 .admin-theme tbody tr:hover,
 .admin-shell .group:hover,
 .admin-shell [class*="group-hover:bg-"] {
-  background-color: rgba(19, 27, 23, 0.35) !important;
+  background-color: rgba(255, 255, 255, 0.22) !important;
 }
 
 .admin-shell input, 
@@ -949,7 +948,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .admin-shell table tr:hover {
-  background-color: rgba(25, 35, 31, 0.6) !important;
+  background-color: rgba(255, 255, 255, 0.22) !important;
 }
 
 .admin-shell table tr {
@@ -962,6 +961,36 @@ h1, h2, h3, h4, h5, h6 {
   background-color: #f7faf8 !important;
   background: #f7faf8 !important;
   color: #181c1b !important;
+  --ink-slate: #0F172A !important;
+}
+
+.light-theme div.fixed.bottom-0 {
+  background-color: rgba(247, 250, 248, 0.95) !important;
+  border-top-color: #bbcbb5 !important;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.08) !important;
+}
+
+.light-theme div.fixed.bottom-0 a,
+.light-theme div.fixed.bottom-0 button {
+  color: #64748B !important;
+}
+
+.light-theme div.fixed.bottom-0 a.text-\[\#25d958\],
+.light-theme div.fixed.bottom-0 button.text-\[\#25d958\],
+.light-theme div.fixed.bottom-0 a[class*="text-[#25d958]"],
+.light-theme div.fixed.bottom-0 button[class*="text-[#25d958]"] {
+  color: #006e1b !important;
+}
+
+/* Clean styling for checkbox to prevent stretching */
+input[type="checkbox"] {
+  align-self: center !important;
+  flex-shrink: 0 !important;
+  aspect-ratio: 1/1 !important;
+  width: 1rem !important;
+  height: 1rem !important;
+  min-width: 1rem !important;
+  min-height: 1rem !important;
 }
 
 .light-theme img[src*="logo-durga"] {
@@ -1101,7 +1130,7 @@ h1, h2, h3, h4, h5, h6 {
 .light-theme tr:hover,
 .light-theme .hover\:bg-white\/5:hover,
 .light-theme .hover\:bg-slate-50:hover {
-  background-color: rgba(0, 110, 27, 0.05) !important;
+  background-color: rgba(0, 0, 0, 0.06) !important;
 }
 
 /* Clean styling for radio buttons globally to eliminate square outer box overlays */

@@ -89,13 +89,6 @@ const RouteTransitionLoader = () => {
   }, [show, duration]);
 
 
-  const [isIOS, setIsIOS] = useState(false);
-  useEffect(() => {
-    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    setIsIOS(isIOSDevice);
-  }, []);
-
   if (!show) return null;
 
   return (
@@ -107,21 +100,7 @@ const RouteTransitionLoader = () => {
         className="fixed inset-0 z-[99999] flex items-center justify-center bg-transparent pointer-events-none"
         style={{ mixBlendMode: 'multiply' }}
       >
-        {isIOS ? (
-          <div className="flex flex-col items-center justify-center gap-5">
-            <div className="relative w-16 h-16 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-[3.5px] border-slate-200/60" />
-              <div className="absolute inset-0 rounded-full border-[3.5px] border-transparent border-t-primary animate-spin" />
-              <img
-                src="/favicon.webp"
-                alt="Durga Shakti"
-                className="w-7 h-7 object-contain opacity-90 animate-pulse"
-              />
-            </div>
-          </div>
-        ) : (
-          <DurgaMaaLoader />
-        )}
+        <DurgaMaaLoader />
       </div>
     </>
   );
