@@ -60,12 +60,37 @@ const Shop = () => {
   const [loading, setLoading] = useState(!initialProducts.length);
   const [priceFilter, setPriceFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState(10000);
+  const [hasInitializedMaxPrice, setHasInitializedMaxPrice] = useState(false);
   const [ratingFilter, setRatingFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [page, setPage] = useState(1);
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const ITEMS_PER_PAGE = 12;
+
+  const calculateDynamicMaxPrice = (maxPriceVal) => {
+    if (!maxPriceVal || maxPriceVal <= 0) return 1000;
+    if (maxPriceVal <= 100) return Math.ceil(maxPriceVal / 10) * 10;
+    if (maxPriceVal <= 500) return Math.ceil(maxPriceVal / 50) * 50;
+    if (maxPriceVal <= 2000) return Math.ceil(maxPriceVal / 100) * 100;
+    if (maxPriceVal <= 5000) return Math.ceil(maxPriceVal / 500) * 500;
+    return Math.ceil(maxPriceVal / 1000) * 1000;
+  };
+
+  const getProductsMaxPrice = () => {
+    if (products.length === 0) return 10000;
+    const maxVal = Math.max(...products.map(p => getProductPricing(p).displayPrice));
+    return calculateDynamicMaxPrice(maxVal);
+  };
+
+  const computedMaxPrice = getProductsMaxPrice();
+
+  useEffect(() => {
+    if (products.length > 0 && !hasInitializedMaxPrice) {
+      setMaxPrice(computedMaxPrice);
+      setHasInitializedMaxPrice(true);
+    }
+  }, [products, hasInitializedMaxPrice, computedMaxPrice]);
 
   const getRatingCount = (minRating) => {
     return products
@@ -152,7 +177,7 @@ const Shop = () => {
     }
 
     // Slider filter
-    if (maxPrice < 10000) {
+    if (maxPrice < computedMaxPrice) {
       filtered = filtered.filter(p => getProductPricing(p).displayPrice <= maxPrice);
     }
 
@@ -190,7 +215,7 @@ const Shop = () => {
   const handleClearFilters = () => {
     setCategoryFilter('all');
     setPriceFilter('all');
-    setMaxPrice(10000);
+    setMaxPrice(computedMaxPrice);
     setRatingFilter('all');
     setSortBy('name');
     if (searchParams.has('search')) {
@@ -251,7 +276,7 @@ const Shop = () => {
                   Category
                 </h2>
                 <div className="flex items-center gap-3">
-                  {(categoryFilter !== 'all' || priceFilter !== 'all' || maxPrice !== 10000 || ratingFilter !== 'all' || sortBy !== 'name') && (
+                  {(categoryFilter !== 'all' || priceFilter !== 'all' || maxPrice !== computedMaxPrice || ratingFilter !== 'all' || sortBy !== 'name') && (
                     <button 
                       onClick={handleClearFilters}
                       className="text-[10px] font-bold text-rose-500 hover:text-rose-600 uppercase tracking-wider transition-colors"
@@ -299,7 +324,7 @@ const Shop = () => {
                     <input 
                       type="range" 
                       min="0" 
-                      max="10000" 
+                      max={computedMaxPrice} 
                       value={maxPrice} 
                       onChange={(e) => setMaxPrice(Number(e.target.value))}
                       className="w-full accent-[#0F5C2E] h-1.5 bg-slate-200 rounded-lg cursor-pointer"
@@ -331,7 +356,7 @@ const Shop = () => {
                               if (option.value === '0to250') setMaxPrice(250);
                               else if (option.value === '250to500') setMaxPrice(500);
                               else if (option.value === '500to1000') setMaxPrice(1000);
-                              else if (option.value === 'all') setMaxPrice(10000);
+                              else if (option.value === 'all') setMaxPrice(computedMaxPrice);
                             }}
                             className="w-3.5 h-3.5 accent-[#0F5C2E]"
                           />
