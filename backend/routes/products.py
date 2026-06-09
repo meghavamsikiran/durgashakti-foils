@@ -107,3 +107,28 @@ async def get_public_categories(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(CategoryModel).where(CategoryModel.is_active == True).order_by(CategoryModel.name.asc()))
     categories = result.scalars().all()
     return [row_to_dict(c) for c in categories]
+
+
+@router.get("/debug/products-db")
+async def debug_products_db(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(ProductModel))
+    products = result.scalars().all()
+    
+    # Try running the migration synchronously on demand
+    from convert_existing_to_webp import main as run_migration
+    migration_error = None
+    try:
+        await run_migration()
+    except Exception as e:
+        migration_error = str(e)
+
+    # Re-fetch after migration attempt
+    result2 = await db.execute(select(ProductModel))
+    products_after = result2.scalars().all()
+
+    return {
+        "migration_error": migration_error,
+        "products_before": [{"id": str(p.id), "name": p.name, "image_url": p.image_url} for p in products],
+        "products_after": [{"id": str(p.id), "name": p.name, "image_url": p.image_url} for p in products_after]
+    }
+
