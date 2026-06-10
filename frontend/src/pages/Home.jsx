@@ -72,7 +72,7 @@ const Home = () => {
           to { transform: translateX(-50%); }
         }
         .animate-marquee {
-          animation: marquee 30s linear infinite;
+          animation: marquee 80s linear infinite;
         }
         .font-display {
           font-family: 'Playfair Display', serif;

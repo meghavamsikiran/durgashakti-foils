@@ -787,10 +787,10 @@ const OrdersPage = () => {
           <div className="relative">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-xs font-semibold transition-all shadow-sm h-[40px] ${
+              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-xs font-semibold transition-all shadow-sm h-[40px] admin-filter-btn ${
                 showFilters || courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter || filter !== 'ALL'
-                  ? 'bg-primary/10 border-primary text-primary'
-                  : 'bg-white border-slate-200 text-slate-750 hover:bg-slate-50'
+                  ? 'active-filter'
+                  : ''
               }`}
             >
               <Filter className="w-4 h-4" />

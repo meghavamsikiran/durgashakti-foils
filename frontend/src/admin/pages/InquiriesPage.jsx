@@ -276,10 +276,10 @@ const InquiriesPage = () => {
         <div className="relative" ref={filterRef}>
           <button
             onClick={handleToggleFilter}
-            className={`h-11 inline-flex items-center justify-center gap-2 rounded-xl border px-4 text-xs font-black uppercase tracking-widest shadow-sm transition-all ${
+            className={`h-11 inline-flex items-center justify-center gap-2 rounded-xl border px-4 text-xs font-black uppercase tracking-widest shadow-sm transition-all admin-filter-btn ${
               filterOpen || (statusFilter !== 'all' || dateFilter)
-                ? 'border-primary/30 bg-primary/10 text-primary'
-                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                ? 'active-filter'
+                : ''
             }`}
           >
             <Filter className="w-4 h-4" />

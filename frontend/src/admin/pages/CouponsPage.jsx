@@ -1591,8 +1591,8 @@ const CouponsPage = () => {
                 <div className="relative" ref={filterRef}>
                   <button
                     onClick={() => setIsFilterOpen(prev => !prev)}
-                    className={`relative inline-flex items-center gap-2 px-3 py-2 rounded-xl border shadow-sm transition-all ${
-                      (statusFilter !== 'all' || dateFilter) ? 'border-primary bg-primary/5 text-primary hover:bg-primary/20' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:hover:bg-[#19231F] dark:hover:text-[#16E34A] dark:hover:border-primary/30'
+                    className={`relative inline-flex items-center gap-2 px-3 py-2 rounded-xl border shadow-sm transition-all admin-filter-btn ${
+                      (statusFilter !== 'all' || dateFilter) ? 'active-filter' : ''
                     }`}
                   >
                     <Filter className="w-4 h-4" />

@@ -230,7 +230,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .animate-marquee {
     display: flex;
-    animation: marquee 30s linear infinite;
+    animation: marquee 80s linear infinite;
     width: max-content;
 }
 
@@ -1067,9 +1067,9 @@ input[type="checkbox"] {
   filter: none !important;
 }
 
-/* Hero section absolute overlay gradient override in light theme */
+/* Hero section absolute overlay gradient override in light theme - restored */
 .light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] div[style*="linear-gradient"] {
-  display: none !important;
+  display: block !important;
 }
 
 /* Scrolling marquee top banner background and border overrides in light theme */
@@ -1088,7 +1088,7 @@ input[type="checkbox"] {
 
 /* Home Page Light Mode Contrast Overrides */
 .light-theme .bg-\[\#0a0f0d\] {
-  background-color: #f1f4f2 !important;
+  background-color: #0a0f0d !important;
 }
 .light-theme .bg-\[\#080d0b\] {
   background-color: #f7faf8 !important;
@@ -1426,5 +1426,93 @@ button[role="radio"]:active {
 
 button[role="radio"] {
   border-radius: 9999px !important;
+}
+
+/* ── UNIFIED FILTER BUTTONS STYLING ────────────────────────────── */
+.admin-filter-btn {
+  background-color: #ffffff !important;
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.admin-filter-btn:hover {
+  background-color: #f8fafc !important;
+  color: #006e1b !important;
+  border-color: #006e1b !important;
+}
+
+/* Dark theme overrides for filter buttons */
+.dark .admin-filter-btn {
+  background-color: #131B17 !important;
+  color: #cbd5e1 !important;
+  border-color: #26322B !important;
+}
+
+.dark .admin-filter-btn:hover {
+  background-color: #19231F !important;
+  color: #16E34A !important;
+  border-color: rgba(22, 227, 74, 0.3) !important;
+}
+
+/* Active filter state styling */
+.admin-filter-btn.active-filter {
+  background-color: rgba(0, 110, 27, 0.1) !important;
+  color: #006e1b !important;
+  border-color: rgba(0, 110, 27, 0.3) !important;
+}
+
+.admin-filter-btn.active-filter:hover {
+  background-color: rgba(0, 110, 27, 0.18) !important;
+}
+
+.dark .admin-filter-btn.active-filter {
+  background-color: rgba(22, 227, 74, 0.1) !important;
+  color: #16E34A !important;
+  border-color: rgba(22, 227, 74, 0.3) !important;
+}
+
+.dark .admin-filter-btn.active-filter:hover {
+  background-color: rgba(22, 227, 74, 0.18) !important;
+}
+
+/* ── LIGHT THEME HERO CONTAINER RESTORATION ──────────────────────── */
+.light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] {
+  background-color: #0a0f0d !important;
+}
+
+.light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] h1 {
+  color: #ffffff !important;
+}
+
+.light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] p.text-slate-300 {
+  color: #cbd5e1 !important;
+}
+
+.light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] .text-white {
+  color: #ffffff !important;
+}
+
+.light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] .text-slate-200 {
+  color: #e2e8f0 !important;
+}
+
+.light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] .bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] .border-white\/10,
+.light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] .border-white\/5 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] .bg-\[\#0c1816\]\/80 {
+  background-color: rgba(12, 24, 22, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
