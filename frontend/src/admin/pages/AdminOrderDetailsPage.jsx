@@ -1442,7 +1442,7 @@ const AdminOrderDetailsPage = () => {
                 value={adminMessage}
                 onChange={(e) => setAdminMessage(e.target.value)}
                 required
-                className="w-full p-4 min-h-[100px] rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none resize-none"
+                className="w-full p-4 min-h-[100px] rounded-2xl border border-slate-200 dark:border-[#26322B] text-xs font-semibold bg-slate-50 dark:bg-[#131B17] text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none resize-none"
               />
             </div>
 

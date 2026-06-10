@@ -1267,7 +1267,7 @@ const OrdersPage = () => {
                 value={adminMessage}
                 onChange={(e) => setAdminMessage(e.target.value)}
                 required
-                className="w-full p-4 min-h-[100px] rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none resize-none"
+                className="w-full p-4 min-h-[100px] rounded-2xl border border-slate-200 dark:border-[#26322B] text-xs font-semibold bg-slate-50 dark:bg-[#131B17] text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none resize-none"
               />
             </div>
 
@@ -1312,7 +1312,7 @@ const OrdersPage = () => {
                 <select
                   value={bulkShipForm.courier}
                   onChange={(e) => setBulkShipForm({ ...bulkShipForm, courier: e.target.value })}
-                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                  className="w-full p-4 rounded-2xl border border-slate-200 dark:border-[#26322B] text-xs font-semibold bg-slate-50 dark:bg-[#131B17] text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none"
                 >
                   <option value="India Post">India Post</option>
                   <option value="Speed Post">Speed Post</option>
@@ -1335,7 +1335,7 @@ const OrdersPage = () => {
                     placeholder="Enter Courier Name"
                     value={bulkShipForm.custom_carrier}
                     onChange={(e) => setBulkShipForm({ ...bulkShipForm, custom_carrier: e.target.value })}
-                    className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                    className="w-full p-4 rounded-2xl border border-slate-200 dark:border-[#26322B] text-xs font-semibold bg-slate-50 dark:bg-[#131B17] text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none"
                   />
                 </div>
               )}
@@ -1346,7 +1346,7 @@ const OrdersPage = () => {
                   type="date"
                   value={bulkShipForm.expected_delivery_date}
                   onChange={(e) => setBulkShipForm({ ...bulkShipForm, expected_delivery_date: e.target.value })}
-                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                  className="w-full p-4 rounded-2xl border border-slate-200 dark:border-[#26322B] text-xs font-semibold bg-slate-50 dark:bg-[#131B17] text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none"
                 />
               </div>
 
@@ -1356,7 +1356,7 @@ const OrdersPage = () => {
                   placeholder="Optional shipment notes"
                   value={bulkShipForm.shipment_notes}
                   onChange={(e) => setBulkShipForm({ ...bulkShipForm, shipment_notes: e.target.value })}
-                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none resize-none h-16"
+                  className="w-full p-4 rounded-2xl border border-slate-200 dark:border-[#26322B] text-xs font-semibold bg-slate-50 dark:bg-[#131B17] text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none resize-none h-16"
                 />
               </div>
 
@@ -1399,7 +1399,7 @@ const OrdersPage = () => {
                     placeholder="E.g. ORD1001 - TRACK001 ORD1002 - TRACK002"
                     value={bulkShipForm.pasted_text}
                     onChange={(e) => setBulkShipForm({ ...bulkShipForm, pasted_text: e.target.value })}
-                    className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-mono bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none resize-none h-32"
+                    className="w-full p-4 rounded-2xl border border-slate-200 dark:border-[#26322B] text-xs font-mono bg-slate-50 dark:bg-[#131B17] text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none resize-none h-32"
                   />
                 </div>
               </div>
@@ -1464,7 +1464,7 @@ const OrdersPage = () => {
                 <select
                   value={trackingForm.carrier}
                   onChange={(e) => setTrackingForm({ ...trackingForm, carrier: e.target.value })}
-                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                  className="w-full p-4 rounded-2xl border border-slate-200 dark:border-[#26322B] text-xs font-semibold bg-slate-50 dark:bg-[#131B17] text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none"
                 >
                   <option value="India Post">India Post</option>
                   <option value="Speed Post">Speed Post</option>
@@ -1487,7 +1487,7 @@ const OrdersPage = () => {
                     placeholder="Enter Courier Name"
                     value={trackingForm.custom_carrier}
                     onChange={(e) => setTrackingForm({ ...trackingForm, custom_carrier: e.target.value })}
-                    className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                    className="w-full p-4 rounded-2xl border border-slate-200 dark:border-[#26322B] text-xs font-semibold bg-slate-50 dark:bg-[#131B17] text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none"
                   />
                 </div>
               )}
@@ -1498,7 +1498,7 @@ const OrdersPage = () => {
                   placeholder="Tracking ID"
                   value={trackingForm.tracking_id}
                   onChange={(e) => setTrackingForm({ ...trackingForm, tracking_id: e.target.value })}
-                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                  className="w-full p-4 rounded-2xl border border-slate-200 dark:border-[#26322B] text-xs font-semibold bg-slate-50 dark:bg-[#131B17] text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none"
                 />
               </div>
 
@@ -1508,7 +1508,7 @@ const OrdersPage = () => {
                   type="date"
                   value={trackingForm.expected_delivery_date}
                   onChange={(e) => setTrackingForm({ ...trackingForm, expected_delivery_date: e.target.value })}
-                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none"
+                  className="w-full p-4 rounded-2xl border border-slate-200 dark:border-[#26322B] text-xs font-semibold bg-slate-50 dark:bg-[#131B17] text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none"
                 />
               </div>
 
@@ -1518,7 +1518,7 @@ const OrdersPage = () => {
                   placeholder="Optional shipment notes"
                   value={trackingForm.shipment_notes}
                   onChange={(e) => setTrackingForm({ ...trackingForm, shipment_notes: e.target.value })}
-                  className="w-full p-4 rounded-2xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:ring-2 focus:ring-primary focus:outline-none resize-none h-20"
+                  className="w-full p-4 rounded-2xl border border-slate-200 dark:border-[#26322B] text-xs font-semibold bg-slate-50 dark:bg-[#131B17] text-slate-800 dark:text-white focus:bg-white dark:focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none resize-none h-20"
                 />
               </div>
             </div>
@@ -2409,7 +2409,7 @@ const OrdersPage = () => {
                   min="0"
                   value={refundAmountInput}
                   onChange={(e) => setRefundAmountInput(e.target.value)}
-                  className="w-full h-11 px-4 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-slate-350 bg-slate-50/50"
+                  className="w-full h-11 px-4 border border-slate-200 dark:border-[#26322B] rounded-xl text-sm font-bold focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-slate-350 bg-slate-50/50 dark:bg-[#131B17] text-slate-800 dark:text-white"
                   placeholder="Enter payout amount"
                 />
               </div>
@@ -2424,7 +2424,7 @@ const OrdersPage = () => {
                   type="text"
                   value={upiVpaInput}
                   onChange={(e) => setUpiVpaInput(e.target.value)}
-                  className="w-full h-11 px-4 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-slate-350 bg-slate-50/50"
+                  className="w-full h-11 px-4 border border-slate-200 dark:border-[#26322B] rounded-xl text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-slate-350 bg-slate-50/50 dark:bg-[#131B17] text-slate-800 dark:text-white"
                   placeholder="Enter UPI VPA (e.g. user@okaxis)"
                 />
               </div>
