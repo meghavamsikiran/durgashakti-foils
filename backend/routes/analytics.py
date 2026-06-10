@@ -265,6 +265,24 @@ async def get_analytics_summary(
                     avg_del_clause = avg_del_clause & (OrderModel.created_at >= date_filter)
                 selects.append(func.avg(case((avg_del_clause, func.extract('epoch', OrderModel.delivered_at - OrderModel.shipped_at)), else_=None)))
                 
+                # Fetch detailed today metrics (delivered, pending, shipped)
+                today_delivered_clause = (OrderModel.order_status == "delivered") & (OrderModel.created_at >= today_iso)
+                today_pending_clause = (OrderModel.order_status.in_(["placed", "confirmed", "processing", "packaging"])) & (OrderModel.created_at >= today_iso)
+                today_shipped_clause = (OrderModel.order_status.in_(["shipped", "in_transit", "out_for_delivery"])) & (OrderModel.created_at >= today_iso)
+                
+                selects.append(func.sum(case((today_delivered_clause, 1), else_=0)))
+                selects.append(func.sum(case((today_pending_clause, 1), else_=0)))
+                selects.append(func.sum(case((today_shipped_clause, 1), else_=0)))
+
+                # Timeframe active order status queries (Delivered, Pending, Shipped)
+                active_delivered_clause = (OrderModel.order_status == "delivered") & timeframe_clause
+                active_pending_clause = (OrderModel.order_status.in_(["placed", "confirmed", "processing", "packaging"])) & timeframe_clause
+                active_shipped_clause = (OrderModel.order_status.in_(["shipped", "in_transit", "out_for_delivery"])) & timeframe_clause
+
+                selects.append(func.sum(case((active_delivered_clause, 1), else_=0)))
+                selects.append(func.sum(case((active_pending_clause, 1), else_=0)))
+                selects.append(func.sum(case((active_shipped_clause, 1), else_=0)))
+
                 q = select(*selects)
                 res = await session.execute(q)
                 return res.tuples().first()
@@ -407,6 +425,14 @@ async def get_analytics_summary(
     revenue = round(float(orders_val[2]), 2) if (orders_val and orders_val[2] is not None) else 0.0
     avg_del_seconds = float(orders_val[3]) if (orders_val and len(orders_val) > 3 and orders_val[3] is not None) else 0.0
     avg_delivery_time_hours = round(avg_del_seconds / 3600.0, 1)
+
+    today_delivered_count = int(orders_val[4]) if (orders_val and len(orders_val) > 4 and orders_val[4] is not None) else 0
+    today_pending_count = int(orders_val[5]) if (orders_val and len(orders_val) > 5 and orders_val[5] is not None) else 0
+    today_shipped_count = int(orders_val[6]) if (orders_val and len(orders_val) > 6 and orders_val[6] is not None) else 0
+
+    active_delivered_count = int(orders_val[7]) if (orders_val and len(orders_val) > 7 and orders_val[7] is not None) else 0
+    active_pending_count = int(orders_val[8]) if (orders_val and len(orders_val) > 8 and orders_val[8] is not None) else 0
+    active_shipped_count = int(orders_val[9]) if (orders_val and len(orders_val) > 9 and orders_val[9] is not None) else 0
 
     prod_val = results.get("product_metrics")
     if prod_val:
@@ -563,6 +589,16 @@ async def get_analytics_summary(
         metrics["avg_delivery_time_hours"] = avg_delivery_time_hours
         metrics["total_delivered"] = total_delivered
         metrics["total_returned"] = total_returned
+        
+        # Today's status-based metrics
+        metrics["today_delivered"] = today_delivered_count
+        metrics["today_pending"] = today_pending_count
+        metrics["today_shipped"] = today_shipped_count
+        
+        # Timeframe-scoped status-based metrics
+        metrics["range_delivered"] = active_delivered_count
+        metrics["range_pending"] = active_pending_count
+        metrics["range_shipped"] = active_shipped_count
     if has_financial:
         metrics["total_revenue"] = revenue
     if has_products:

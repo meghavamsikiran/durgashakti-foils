@@ -3,6 +3,7 @@ import { BadgeCheck, Camera, Check, ChevronDown, ChevronLeft, ChevronRight, Edit
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import reviewService from '../../services/review.service';
+import apiClient from '../../services/core/apiClient';
 import { formatImageUrl } from '../../utils/api';
 import StarRating from './StarRating';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,9 +11,32 @@ import { useAuth } from '../../contexts/AuthContext';
 const ProductReviews = ({ productId, summary }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [reviews, setReviews] = useState([]);
-  const [ratingSummary, setRatingSummary] = useState(summary || {});
-  const [loading, setLoading] = useState(false);
+  
+  // Synchronously look up cached review data to display instantly without waiting
+  const getInitialReviews = () => {
+    if (!productId) return [];
+    try {
+      const cached = reviewService.getAdminReviewsCached ? reviewService.getAdminReviewsCached({ limit: 50 }) : null; // fallback or custom sync check
+      const customCache = apiClient.getCachedDataSync(`/products/${productId}/reviews`, { limit: 50 });
+      return customCache?.data?.items || [];
+    } catch {
+      return [];
+    }
+  };
+
+  const getInitialSummary = () => {
+    if (!productId) return summary || {};
+    try {
+      const customCache = apiClient.getCachedDataSync(`/products/${productId}/reviews`, { limit: 50 });
+      return customCache?.data || summary || {};
+    } catch {
+      return summary || {};
+    }
+  };
+
+  const [reviews, setReviews] = useState(() => getInitialReviews());
+  const [ratingSummary, setRatingSummary] = useState(() => getInitialSummary());
+  const [loading, setLoading] = useState(() => !getInitialReviews().length);
   const [editingReplyId, setEditingReplyId] = useState(null);
   const [replyDrafts, setReplyDrafts] = useState({});
   const [savingId, setSavingId] = useState(null);
