@@ -1263,10 +1263,10 @@ input[type="checkbox"] {
 .light-theme h4,
 .light-theme h5,
 .light-theme h6,
-.light-theme p,
-.light-theme span,
+.light-theme p:not(.text-white):not(.text-slate-100),
+.light-theme span:not(.text-white):not(.text-slate-100),
 .light-theme label,
-.light-theme a {
+.light-theme a:not(.text-white):not(.text-slate-100) {
   color: #181c1b !important;
 }
 
