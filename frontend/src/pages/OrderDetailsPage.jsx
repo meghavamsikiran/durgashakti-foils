@@ -1387,11 +1387,11 @@ const OrderDetailsPage = () => {
 
         {/* Courier Details Card */}
         {order.tracking_id && (
-          <div className="bg-sky-50/50 border border-sky-100 rounded-2xl p-5 mb-6 shadow-sm dark:shadow-none flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-300">
+          <div className="bg-sky-50/50 dark:bg-[#0f1f1a] border border-sky-100 dark:border-[#1e3028] rounded-2xl p-5 mb-6 shadow-sm dark:shadow-none flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-300">
             <div className="flex items-start gap-4">
               <Truck className="w-6 h-6 text-sky-600 shrink-0 mt-0.5" />
               <div className="space-y-1 flex-1">
-                <h4 className="text-[10px] font-black text-sky-700 uppercase tracking-widest">Shipment Tracking details</h4>
+                <h4 className="text-[10px] font-black text-sky-700 dark:text-sky-400 uppercase tracking-widest">Shipment Tracking details</h4>
                 <div className="text-xs text-slate-650 dark:text-slate-300 leading-relaxed font-semibold">
                   <p>Courier: <span className="font-extrabold text-slate-900 dark:text-white">{order.courier_name || order.carrier || 'Courier'}</span></p>
                   <p className="flex items-center gap-2 mt-0.5">
@@ -1411,7 +1411,7 @@ const OrderDetailsPage = () => {
                     <p className="mt-0.5 text-slate-700 dark:text-slate-300">Estimated Delivery: <span className="font-extrabold text-slate-900 dark:text-white">{new Date(order.expected_delivery_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</span></p>
                   )}
                   {order.shipment_notes && (
-                    <p className="mt-1 text-slate-500 dark:text-slate-300 italic bg-white dark:bg-[#131B17]/60 p-2 rounded-lg border border-slate-100 dark:border-[#26322B]">Notes: {order.shipment_notes}</p>
+                    <p className="mt-1 text-slate-700 dark:text-slate-200 italic bg-white dark:bg-[#19231F] p-2 rounded-lg border border-slate-100 dark:border-[#26322B]">Notes: {order.shipment_notes}</p>
                   )}
                 </div>
               </div>
@@ -1558,10 +1558,10 @@ const OrderDetailsPage = () => {
                           
                           return (
                             <div className="text-[10px] font-extrabold text-slate-500 dark:text-slate-300 bg-white dark:bg-[#131B17] p-2.5 rounded-xl border border-slate-100 dark:border-[#26322B] flex flex-wrap gap-x-4 gap-y-1">
-                              <span>Taxable: ₹{Number(item.refund_calculations.taxable_amount || 0).toFixed(2)}</span>
+                              <span>Product Price: ₹{Number(item.refund_calculations.taxable_amount || 0).toFixed(2)}</span>
                               <span>CGST 9%: ₹{Number(item.refund_calculations.cgst_amount || 0).toFixed(2)}</span>
                               <span>SGST 9%: ₹{Number(item.refund_calculations.sgst_amount || 0).toFixed(2)}</span>
-                              <span>Discount Share: -₹{Number(item.refund_calculations.coupon_discount_share || 0).toFixed(2)}</span>
+                              <span>Discount Share: {Number(item.refund_calculations.coupon_discount_share || 0) > 0 ? '-' : ''}₹{Number(item.refund_calculations.coupon_discount_share || 0).toFixed(2)}</span>
                               <span className="text-primary font-black w-full mt-1 border-t border-slate-200 dark:border-[#26322B]/50 pt-1">
                                 Est. Refundable: ₹{totalRefundable.toFixed(2)} 
                                 {courierRefund > 0 ? ` (Product: ₹${actualProductRefund.toFixed(2)} + Courier: ₹${courierRefund.toFixed(2)})` : ''}
@@ -1712,8 +1712,8 @@ const OrderDetailsPage = () => {
 
         {/* Return Details Card (If request has already been submitted in the past) */}
         {order.return_reason && !isReturning && (
-          <div className="bg-amber-50/50 border border-amber-200 rounded-2xl p-6 shadow-sm dark:shadow-none space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-widest text-amber-700 flex items-center gap-2">
+          <div className="bg-amber-50/50 dark:bg-[#1a1500] border border-amber-200 dark:border-amber-900/40 rounded-2xl p-6 shadow-sm dark:shadow-none space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 flex items-center gap-2">
               <Package className="w-4 h-4" />
               Return Request History
             </h3>
