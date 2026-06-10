@@ -724,74 +724,74 @@ const OrderDetailsPage = () => {
                   <>
                     <p className="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">{isCod ? 'Cash on Delivery' : 'Prepaid Online'}</p>
                     {isRefunded ? (
-                      <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1.5 font-semibold">
-                        <p className="font-extrabold flex items-center gap-1.5 text-emerald-700">
+                      <div className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 text-[10px] rounded-xl p-3 border border-emerald-100/60 dark:border-emerald-900/30 space-y-1.5 font-semibold">
+                        <p className="font-extrabold flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
                           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Refund Credited
                         </p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
-                          <p className="font-mono text-slate-500 dark:text-slate-300 break-all select-all flex items-center gap-1">
+                          <p className="font-mono text-slate-650 dark:text-slate-300 break-all select-all flex items-center gap-1">
                             Paid Txn: {order.transaction_id}
                             <button
                               onClick={() => {
                                 navigator.clipboard.writeText(order.transaction_id);
                                 toast.success('Transaction ID copied!');
                               }}
-                              className="p-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 transition-colors inline-flex items-center"
+                              className="p-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:text-slate-350 transition-colors inline-flex items-center"
                               title="Copy Transaction ID"
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3.5 h-3.5" />
                             </button>
                           </p>
                         )}
                       </div>
                     ) : isRefundFailed ? (
-                      <div className="bg-rose-50 text-rose-800 text-[10px] rounded-xl p-3 border border-rose-100/80 space-y-1 font-semibold">
-                        <p className="font-extrabold flex items-center gap-1.5 text-rose-700">
+                      <div className="bg-rose-50 dark:bg-rose-950/20 text-rose-800 dark:text-rose-300 text-[10px] rounded-xl p-3 border border-rose-100/80 dark:border-rose-900/30 space-y-1 font-semibold">
+                        <p className="font-extrabold flex items-center gap-1.5 text-rose-700 dark:text-rose-400">
                           <span className="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Refund Failed
                         </p>
                         {order.refund_error && (
-                          <p className="text-rose-700 leading-snug">{order.refund_error}</p>
+                          <p className="text-rose-750 dark:text-rose-350 leading-snug">{order.refund_error}</p>
                         )}
                       </div>
                     ) : isRefundPending ? (
-                      <div className="bg-sky-50 text-sky-800 text-[10px] rounded-xl p-3 border border-sky-100/80 space-y-1.5 font-semibold">
-                        <p className="font-extrabold flex items-center gap-1.5 text-sky-700">
+                      <div className="bg-sky-50 dark:bg-sky-950/20 text-sky-800 dark:text-sky-300 text-[10px] rounded-xl p-3 border border-sky-100/80 dark:border-sky-900/30 space-y-1.5 font-semibold">
+                        <p className="font-extrabold flex items-center gap-1.5 text-sky-700 dark:text-sky-400">
                           <span className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-pulse"></span> Refund Initiated
                         </p>
-                        <p className="text-slate-500 dark:text-slate-300 uppercase tracking-widest text-[8px] font-black">Razorpay is processing the refund.</p>
+                        <p className="text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[8px] font-black">Razorpay is processing the refund.</p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
-                          <p className="font-mono text-slate-500 dark:text-slate-300 break-all select-all flex items-center gap-1">
+                          <p className="font-mono text-slate-650 dark:text-slate-300 break-all select-all flex items-center gap-1">
                             Paid Txn: {order.transaction_id}
                             <button
                               onClick={() => {
                                 navigator.clipboard.writeText(order.transaction_id);
                                 toast.success('Transaction ID copied!');
                               }}
-                              className="p-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 transition-colors inline-flex items-center"
+                              className="p-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:text-slate-350 transition-colors inline-flex items-center"
                               title="Copy Transaction ID"
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3.5 h-3.5" />
                             </button>
                           </p>
                         )}
                       </div>
                     ) : isPaid ? (
-                      <div className="bg-emerald-50 text-emerald-800 text-[10px] rounded-xl p-3 border border-emerald-100/60 space-y-1.5 font-semibold">
-                        <p className="font-extrabold flex items-center gap-1.5 text-emerald-700">
+                      <div className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 text-[10px] rounded-xl p-3 border border-emerald-100/60 dark:border-emerald-900/30 space-y-1.5 font-semibold">
+                        <p className="font-extrabold flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
                           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Paid
                         </p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
-                          <p className="font-mono text-slate-500 dark:text-slate-300 break-all select-all flex items-center gap-1">
+                          <p className="font-mono text-slate-650 dark:text-slate-300 break-all select-all flex items-center gap-1">
                             Txn: {order.transaction_id}
                             <button
                               onClick={() => {
                                 navigator.clipboard.writeText(order.transaction_id);
                                 toast.success('Transaction ID copied!');
                               }}
-                              className="p-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 transition-colors inline-flex items-center"
+                              className="p-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-650 dark:text-slate-350 transition-colors inline-flex items-center"
                               title="Copy Transaction ID"
                             >
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3.5 h-3.5" />
                             </button>
                           </p>
                         )}
