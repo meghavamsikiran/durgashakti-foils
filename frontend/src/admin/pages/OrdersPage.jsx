@@ -187,9 +187,7 @@ const OrdersPage = () => {
   const [messageModal, setMessageModal] = useState(null);
   const [trackingModal, setTrackingModal] = useState(null);
   const [trackingForm, setTrackingForm] = useState({ carrier: 'India Post', tracking_id: '', expected_delivery_date: '', shipment_notes: '', custom_carrier: '' });
-  const [selectedOrderIds, setSelectedOrderIds] = useState(new Set());
-  const [bulkShipModal, setBulkShipModal] = useState(false);
-  const [bulkShipForm, setBulkShipForm] = useState({ courier: 'India Post', custom_carrier: '', expected_delivery_date: '', shipment_notes: '', pasted_text: '' });
+
   const [courierFilter, setCourierFilter] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('');
@@ -956,47 +954,14 @@ const OrdersPage = () => {
 
       {/* Horizontal tabs removed to optimize loading speed and unify filters */}
 
-      <div className={`transition-all duration-300 ease-in-out overflow-hidden ${selectedOrderIds.size > 0 ? 'max-h-24 opacity-100 mb-3' : 'max-h-0 opacity-0 mb-0 pointer-events-none'}`}>
-        <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-black uppercase tracking-widest text-primary">{selectedOrderIds.size} Orders Selected</span>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setBulkShipModal(true)}
-              className="px-4 py-2 bg-primary hover:bg-emerald-hover text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-lg transition-all"
-            >
-              Ship Orders in Bulk
-            </button>
-            <button
-              onClick={() => setSelectedOrderIds(new Set())}
-              className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-black uppercase tracking-widest rounded-xl transition-all"
-            >
-              Clear Selection
-            </button>
-          </div>
-        </div>
-      </div>
+
 
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto overflow-y-auto admin-table-container-orders">
           <table className="min-w-[1000px] lg:min-w-full">
             <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
               <tr>
-                <th className="px-8 py-5 text-left w-12">
-                  <input
-                    type="checkbox"
-                    checked={filtered.length > 0 && selectedOrderIds.size === filtered.length}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedOrderIds(new Set(filtered.map(r => r.id)));
-                      } else {
-                        setSelectedOrderIds(new Set());
-                      }
-                    }}
-                    className="w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer"
-                  />
-                </th>
+
                 <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Order ID</th>
                 <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Customer</th>
                 <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">Status</th>
@@ -1016,23 +981,6 @@ const OrdersPage = () => {
                 return (
                    <React.Fragment key={order.id}>
                      <tr className={`hover:bg-slate-100/50 dark:hover:bg-slate-800/30 transition-colors group ${expandedOrderId === order.id ? 'bg-primary/5' : ''}`}>
-                       <td className="px-8 py-6">
-                         <input
-                           type="checkbox"
-                           checked={selectedOrderIds.has(order.id)}
-                           onChange={(e) => {
-                             const next = new Set(selectedOrderIds);
-                             if (e.target.checked) {
-                               next.add(order.id);
-                             } else {
-                               next.delete(order.id);
-                             }
-                             setSelectedOrderIds(next);
-                           }}
-                           onClick={(e) => e.stopPropagation()}
-                           className="w-4 h-4 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer"
-                         />
-                       </td>
                        <td className="px-8 py-6">
                           <div className="flex items-center gap-1 mb-1">
                             <span className="font-mono text-xs font-black text-primary">{order.order_number}</span>
@@ -1299,7 +1247,7 @@ const OrdersPage = () => {
         </div>
       )}
 
-      {bulkShipModal && (
+      {false && (
         <div className="fixed inset-[-20px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
           <div className="bg-white rounded-3xl p-8 max-w-lg w-full border border-slate-100 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
             <div>
