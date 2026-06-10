@@ -597,13 +597,13 @@ const AdminOrderDetailsPage = () => {
                           <span className={`w-1.5 h-1.5 ${dot} rounded-full ${!paidLike ? 'animate-pulse' : ''}`}></span>
                           {statusLabel}
                         </p>
-                        <p className="text-slate-500 uppercase tracking-widest text-[8px] font-black">
+                        <p className="text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[8px] font-black">
                           {isCod ? 'Payment: COD' : 'Payment: Prepaid'}
                         </p>
                         {order.transaction_id && (
                            <div className="pt-1 mt-1 border-t border-slate-200/50 space-y-0.5">
-                             <p className="text-[8px] text-slate-400 font-black uppercase">Transaction ID</p>
-                             <p className="font-mono text-slate-800 break-all select-all flex items-center gap-1.5">
+                             <p className="text-[8px] text-slate-400 dark:text-slate-500 font-black uppercase">Transaction ID</p>
+                             <p className="font-mono text-slate-800 dark:text-slate-100 break-all select-all flex items-center gap-1.5">
                                {order.transaction_id === 'COD' ? 'COD' : order.transaction_id}
                                {order.transaction_id !== 'COD' && (
                                  <button
@@ -623,7 +623,7 @@ const AdminOrderDetailsPage = () => {
                          {order.razorpay_payment_id && order.razorpay_payment_id !== order.transaction_id && (
                            <div className="pt-1 mt-1 border-t border-slate-200/50 space-y-0.5">
                              <p className="text-[8px] text-slate-400 font-black uppercase">Customer Razorpay ID</p>
-                             <p className="font-mono text-slate-800 break-all select-all flex items-center gap-1.5">
+                             <p className="font-mono text-slate-800 dark:text-slate-100 break-all select-all flex items-center gap-1.5">
                                {order.razorpay_payment_id}
                                <button
                                  onClick={() => {

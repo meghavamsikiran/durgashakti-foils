@@ -740,7 +740,7 @@ const OrderDetailsPage = () => {
                           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Refund Credited
                         </p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
-                          <p className="font-mono text-slate-650 dark:text-slate-300 break-all select-all flex items-center gap-1">
+                          <p className="font-mono text-slate-700 dark:text-slate-200 break-all select-all flex items-center gap-1">
                             Paid Txn: {order.transaction_id}
                             <button
                               onClick={() => {
@@ -771,7 +771,7 @@ const OrderDetailsPage = () => {
                         </p>
                         <p className="text-slate-500 dark:text-slate-400 uppercase tracking-widest text-[8px] font-black">Razorpay is processing the refund.</p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
-                          <p className="font-mono text-slate-650 dark:text-slate-300 break-all select-all flex items-center gap-1">
+                          <p className="font-mono text-slate-700 dark:text-slate-200 break-all select-all flex items-center gap-1">
                             Paid Txn: {order.transaction_id}
                             <button
                               onClick={() => {
@@ -792,7 +792,7 @@ const OrderDetailsPage = () => {
                           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Paid
                         </p>
                         {order.transaction_id && order.transaction_id !== 'COD' && (
-                          <p className="font-mono text-slate-650 dark:text-slate-300 break-all select-all flex items-center gap-1">
+                          <p className="font-mono text-slate-700 dark:text-slate-200 break-all select-all flex items-center gap-1">
                             Txn: {order.transaction_id}
                             <button
                               onClick={() => {
