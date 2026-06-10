@@ -119,14 +119,16 @@ h1, h2, h3, h4, h5, h6 {
     }
 
     /* Fix native browser select option visibility in dark mode */
-    .dark select {
+    .dark select,
+    .dark select option,
+    .admin-shell select,
+    .admin-shell select option {
         color: #ffffff !important;
         background-color: #131B17 !important;
     }
 
-    .dark select option {
-        background-color: #131B17 !important;
-        color: #ffffff !important;
+    .dark select {
+        border-color: #26322B !important;
     }
 
     .glass {
@@ -948,7 +950,6 @@ h1, h2, h3, h4, h5, h6 {
   background-color: #19231F !important;
 }
 
-/*
   .admin-shell input,
   .admin-shell select,
   .admin-shell textarea {
@@ -956,7 +957,6 @@ h1, h2, h3, h4, h5, h6 {
     border-color: #26322B !important;
     color: #ffffff !important;
   }
-*/
 
 
 .admin-shell input:focus, 

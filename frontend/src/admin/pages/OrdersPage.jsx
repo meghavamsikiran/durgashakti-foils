@@ -902,7 +902,7 @@ const OrdersPage = () => {
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Date Range</label>
-                    <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} />
+                    <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} inlineOpen={true} />
                   </div>
                 </div>
               </>

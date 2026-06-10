@@ -73,8 +73,8 @@ function labelForPreset(key) {
   }
 }
 
-const DateFilterPopover = ({ onChange, initial }) => {
-  const [open, setOpen] = useState(false);
+const DateFilterPopover = ({ onChange, initial, customTrigger, inlineOpen = false }) => {
+  const [open, setOpen] = useState(inlineOpen);
   const [active, setActive] = useState((initial && initial.label) || '');
   const [selected, setSelected] = useState((initial && initial.label) || '');
   const [custom, setCustom] = useState({
@@ -82,6 +82,12 @@ const DateFilterPopover = ({ onChange, initial }) => {
     end: initial?.label === 'custom' ? (initial.end_date || '').slice(0, 10) : ''
   });
   const ref = useRef();
+
+  useEffect(() => {
+    if (inlineOpen) {
+      setOpen(true);
+    }
+  }, [inlineOpen]);
 
   useEffect(() => {
     setActive((initial && initial.label) || '');
@@ -94,6 +100,7 @@ const DateFilterPopover = ({ onChange, initial }) => {
 
   useEffect(() => {
     function onDoc(e) {
+      if (inlineOpen) return; // parent handles closure
       if (ref.current && !ref.current.contains(e.target)) {
         setOpen(false);
         setSelected(active);
@@ -105,7 +112,7 @@ const DateFilterPopover = ({ onChange, initial }) => {
     }
     document.addEventListener('click', onDoc);
     return () => document.removeEventListener('click', onDoc);
-  }, [active, initial]);
+  }, [active, initial, inlineOpen]);
 
   useEffect(() => {
     if (!open) return;
@@ -130,7 +137,7 @@ const DateFilterPopover = ({ onChange, initial }) => {
   };
 
   const closePopover = () => {
-    setOpen(false);
+    if (!inlineOpen) setOpen(false);
     restorePendingSelection();
   };
 
@@ -143,14 +150,14 @@ const DateFilterPopover = ({ onChange, initial }) => {
       if (s > e) return;
       if (onChange) onChange({ start_date: toISODateStart(s), end_date: toISODateEnd(e), label: 'custom' });
       setActive('custom');
-      setOpen(false);
+      if (!inlineOpen) setOpen(false);
       return;
     }
 
     const r = rangeForPreset(selected);
     if (r && onChange) onChange({ start_date: r.start, end_date: r.end, label: selected });
     setActive(selected);
-    setOpen(false);
+    if (!inlineOpen) setOpen(false);
   };
 
   const clear = () => {
@@ -158,64 +165,80 @@ const DateFilterPopover = ({ onChange, initial }) => {
     setSelected('');
     setCustom({ start: '', end: '' });
     if (onChange) onChange(null);
-    setOpen(false);
+    if (!inlineOpen) setOpen(false);
   };
 
   return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={(e) => { e.stopPropagation(); if (open) { closePopover(); } else { setOpen(true); } }}
-        className="relative inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
-      >
-        <Filter className="w-4 h-4 text-slate-600" />
-        <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
-        {active ? (
-          <span className="ml-2 inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-primary text-white text-[11px] font-semibold">{labelForPreset(active)}</span>
-        ) : null}
-      </button>
+    <div className={inlineOpen ? "w-full" : "relative"} ref={ref}>
+      {!inlineOpen && (
+        customTrigger ? customTrigger(() => setOpen(true)) : (
+          <button
+            onClick={(e) => { e.stopPropagation(); if (open) { closePopover(); } else { setOpen(true); } }}
+            className="relative inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+          >
+            <Filter className="w-4 h-4 text-slate-600" />
+            <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
+            {active ? (
+              <span className="ml-2 inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-primary text-white text-[11px] font-semibold">{labelForPreset(active)}</span>
+            ) : null}
+          </button>
+        )
+      )}
 
       {open && (
-        <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50">
+        <div className={inlineOpen ? "w-full bg-slate-50/50 dark:bg-[#131B17]/60 border border-slate-200 dark:border-[#26322B] rounded-xl p-3.5 space-y-3" : "absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50"}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-primary" />
-              <div className="text-sm font-black">Date Range</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Select Range</div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={clear}
-                className="px-3 py-1 rounded-full border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest hover:bg-slate-50"
+                className="px-2.5 py-1 rounded-full border border-slate-200 text-slate-500 text-[9px] font-black uppercase tracking-widest hover:bg-slate-50"
               >
                 Clear
               </button>
-              <button onClick={closePopover} className="text-slate-400 hover:text-slate-700"><X className="w-4 h-4" /></button>
+              {!inlineOpen && <button onClick={closePopover} className="text-slate-400 hover:text-slate-700"><X className="w-4 h-4" /></button>}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {PRESETS.map(p => (
-              <button
-                key={p.key}
-                onClick={() => applyPreset(p.key)}
-                className={`px-3 py-2 rounded-lg text-sm font-semibold text-left ${selected === p.key ? 'bg-primary text-white' : 'bg-slate-50 text-slate-700'}`}
-              >
-                {p.label}
-              </button>
-            ))}
+          <div className="grid grid-cols-3 gap-1.5">
+            {PRESETS.map(p => {
+              const isSel = selected === p.key;
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => applyPreset(p.key)}
+                  className={`px-2 py-2 rounded-lg text-[10px] font-bold text-center transition-colors ${
+                    isSel 
+                      ? 'bg-primary text-white' 
+                      : 'bg-white dark:bg-[#26322B] border border-slate-200 dark:border-[#26322B] text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
           </div>
 
           <div className="mt-3">
             {selected === 'custom' && (
-              <>
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Start</label>
-                <input type="date" value={custom.start} onChange={(e) => setCustom({ ...custom, start: e.target.value })} className="w-full mt-1 p-2 rounded-lg border border-slate-200" />
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-2 block">End</label>
-                <input type="date" value={custom.end} onChange={(e) => setCustom({ ...custom, end: e.target.value })} className="w-full mt-1 p-2 rounded-lg border border-slate-200" />
-              </>
+              <div className="space-y-2 mt-2 border-t border-slate-100/50 pt-2">
+                <div>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Start Date</label>
+                  <input type="date" value={custom.start} onChange={(e) => setCustom({ ...custom, start: e.target.value })} className="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white dark:bg-[#26322B]" />
+                </div>
+                <div>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">End Date</label>
+                  <input type="date" value={custom.end} onChange={(e) => setCustom({ ...custom, end: e.target.value })} className="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white dark:bg-[#26322B]" />
+                </div>
+              </div>
             )}
-            <div className="flex justify-end gap-2 mt-3">
-              <button onClick={closePopover} className="px-3 py-2 rounded-lg border border-slate-200">Cancel</button>
-              <button onClick={applySelected} className="px-3 py-2 rounded-lg bg-primary text-white">Apply</button>
+            <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-150/40">
+              <button type="button" onClick={closePopover} className="px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-600 dark:text-slate-350">Cancel</button>
+              <button type="button" onClick={applySelected} className="px-3 py-1.5 rounded-lg bg-primary text-white text-[10px] font-bold">Apply</button>
             </div>
           </div>
         </div>
