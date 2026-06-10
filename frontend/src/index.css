@@ -1520,8 +1520,120 @@ button[role="radio"] {
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-.light-theme main[data-testid="home-page"] > div:first-of-type .bg-\[\#0c1816\]\/80 {
-  background-color: rgba(12, 24, 22, 0.8) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
+/* Form inputs in light theme */
+.light-theme input,
+.light-theme textarea,
+.light-theme select {
+  background-color: #ffffff !important;
+  border-color: #bbcbb5 !important;
+  color: #181c1b !important;
 }
+
+/* Fix input autofill background and focused field colors */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #0C1310 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.light-theme input:-webkit-autofill,
+.light-theme input:-webkit-autofill:hover, 
+.light-theme input:-webkit-autofill:focus, 
+.light-theme input:-webkit-autofill:active,
+.light-theme textarea:-webkit-autofill,
+.light-theme textarea:-webkit-autofill:focus,
+.light-theme select:-webkit-autofill,
+.light-theme select:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #181c1b !important;
+}
+
+/* Explicitly fix date picker calendar icon color based on active theme */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8) sepia(1) saturate(5) hue-rotate(85deg) brightness(1.2) !important; /* light-green/white matching tone */
+  cursor: pointer;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1) !important; /* Pure white on dark theme */
+}
+
+.light-theme input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.3) sepia(0.5) saturate(1) hue-rotate(85deg) !important; /* Adjusted for light theme contrast */
+}
+
+/* ── ADMIN PANEL DARK THEME OVERRIDES ────────────────────────────── */
+.dark .admin-shell .bg-white,
+.dark .admin-shell .bg-slate-50,
+.dark .admin-shell .bg-slate-50\/50,
+.dark .admin-shell div.bg-white,
+.dark .admin-shell main .bg-white {
+  background-color: #131B17 !important;
+  color: #e2e8f0 !important;
+  border-color: #26322B !important;
+}
+
+.dark .admin-shell .text-slate-900,
+.dark .admin-shell .text-slate-800,
+.dark .admin-shell .text-slate-700 {
+  color: #f1f5f9 !important;
+}
+
+.dark .admin-shell .text-slate-500,
+.dark .admin-shell .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+.dark .admin-shell .border-slate-200,
+.dark .admin-shell .border-slate-100,
+.dark .admin-shell .border-slate-300\/50,
+.dark .admin-shell .border-slate-100\/80 {
+  border-color: #26322B !important;
+}
+
+.dark .admin-shell .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+.dark .admin-shell .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #26322B !important;
+}
+
+/* Specific support for Return Request and timelines in Order Details Page */
+.dark .admin-shell .bg-amber-50\/50,
+.dark .admin-shell .bg-amber-50\/40,
+.dark .admin-shell .bg-yellow-50\/30 {
+  background-color: rgba(245, 158, 11, 0.08) !important;
+  border-color: rgba(245, 158, 11, 0.2) !important;
+  color: #f59e0b !important;
+}
+
+.dark .admin-shell .bg-emerald-50\/40,
+.dark .admin-shell .bg-emerald-50\/50 {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+  color: #10b981 !important;
+}
+
+/* Modal overlay backgrounds */
+.dark .admin-shell div[role="dialog"],
+.dark .admin-shell .fixed.inset-0.bg-black\/80 + div > div {
+  background-color: #131B17 !important;
+  border-color: #26322B !important;
+}
+
+.dark .admin-shell input,
+.dark .admin-shell select,
+.dark .admin-shell textarea {
+  background-color: #0C1310 !important;
+  border-color: #26322B !important;
+  color: #ffffff !important;
+}
+
 
