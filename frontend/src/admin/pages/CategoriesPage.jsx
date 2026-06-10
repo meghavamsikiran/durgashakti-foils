@@ -151,11 +151,11 @@ const CategoriesPage = () => {
               />
             </div>
 
-            <div className="space-y-3 p-4 bg-emerald-50/40 rounded-xl border border-emerald-100">
+            <div className="space-y-3 p-4 bg-emerald-50/40 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-700">Apply Global Discount</label>
-                  <p className="text-[9px] text-slate-500 mt-0.5">Enable to apply discount % to all products in this category</p>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-emerald-400">Apply Global Discount</label>
+                  <p className="text-[9px] text-slate-500 dark:text-emerald-300/70 mt-0.5">Enable to apply discount % to all products in this category</p>
                 </div>
                 <button
                   type="button"
@@ -167,13 +167,13 @@ const CategoriesPage = () => {
               </div>
               {globalDiscountEnabled && (
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-700">Discount Percent (%)</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-emerald-400">Discount Percent (%)</label>
                   <input 
                     type="number" 
                     min="0" 
                     max="100" 
                     step="0.01"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                    className="w-full rounded-lg border border-slate-300 dark:border-emerald-800 px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none bg-white dark:bg-[#131B17] text-slate-800 dark:text-white"
                     placeholder="e.g., 10, 15.5" 
                     value={globalDiscountPercent} 
                     onChange={e => setGlobalDiscountPercent(Number(e.target.value))}

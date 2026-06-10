@@ -207,7 +207,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .animate-marquee {
     display: flex;
-    animation: marquee 120s linear infinite;
+    animation: marquee 30s linear infinite;
     width: max-content;
 }
 
@@ -880,6 +880,7 @@ h1, h2, h3, h4, h5, h6 {
   --on-surface-variant: #cbd5e1;
   --border-subtle: #26322B;
   --ink-slate: #ffffff;
+  --text-muted: #94a3b8;
 }
 
 .admin-shell main, 
@@ -896,7 +897,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .admin-shell .text-slate-800,
-.admin-shell .text-slate-900 {
+.admin-shell .text-slate-900,
+.admin-shell .text-slate-950 {
   color: #ffffff !important;
 }
 
@@ -1035,7 +1037,11 @@ input[type="checkbox"] {
 .light-theme .animate-marquee span,
 .light-theme .animate-marquee,
 .light-theme div[class*="animate-marquee"] span {
-  color: #ffffff !important;
+  color: #006e1b !important;
+}
+
+.light-theme .animate-marquee img {
+  filter: none !important;
 }
 
 /* Home Page Light Mode Contrast Overrides */

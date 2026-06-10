@@ -227,44 +227,43 @@ const AnalyticsPage = () => {
           <Button variant="outline" className="rounded-xl" onClick={handleExport}><Download className="w-4 h-4 mr-2" /> Download</Button>
         </div>
       </div>
-
-      <div className="bg-slate-50 p-2 rounded-2xl flex flex-wrap items-center gap-4 border border-slate-200 shadow-inner">
-        <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200">
+      <div className="bg-slate-50 dark:bg-[#131B17]/60 p-2 rounded-2xl flex flex-wrap items-center gap-4 border border-slate-200 dark:border-[#26322B] shadow-inner">
+        <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#131B17] rounded-xl shadow-sm border border-slate-200 dark:border-[#26322B]">
           <Calendar className="w-4 h-4 text-primary" />
-          <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="text-sm font-bold text-slate-700 outline-none bg-transparent">
-            <option>All Time</option>
-            <option>Today</option>
-            <option>Last 7 Days</option>
-            <option>This Month</option>
-            <option>Fiscal Year</option>
-            <option>Date Range</option>
+          <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="text-sm font-bold text-slate-700 dark:text-slate-200 outline-none bg-transparent">
+            <option className="dark:bg-[#131B17] dark:text-white">All Time</option>
+            <option className="dark:bg-[#131B17] dark:text-white">Today</option>
+            <option className="dark:bg-[#131B17] dark:text-white">Last 7 Days</option>
+            <option className="dark:bg-[#131B17] dark:text-white">This Month</option>
+            <option className="dark:bg-[#131B17] dark:text-white">Fiscal Year</option>
+            <option className="dark:bg-[#131B17] dark:text-white">Date Range</option>
           </select>
         </div>
-
+ 
         {timeframe === 'Date Range' && (
-          <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200">
+          <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#131B17] rounded-xl shadow-sm border border-slate-200 dark:border-[#26322B]">
             <input 
               type="date" 
               value={customStart} 
               onChange={(e) => setCustomStart(e.target.value)} 
-              className="text-sm font-bold text-slate-700 outline-none bg-transparent border-0 p-0 focus:ring-0 cursor-pointer"
+              className="text-sm font-bold text-slate-700 dark:text-slate-200 outline-none bg-transparent border-0 p-0 focus:ring-0 cursor-pointer"
             />
             <span className="text-xs font-bold text-slate-400">to</span>
             <input 
               type="date" 
               value={customEnd} 
               onChange={(e) => setCustomEnd(e.target.value)} 
-              className="text-sm font-bold text-slate-700 outline-none bg-transparent border-0 p-0 focus:ring-0 cursor-pointer"
+              className="text-sm font-bold text-slate-700 dark:text-slate-200 outline-none bg-transparent border-0 p-0 focus:ring-0 cursor-pointer"
             />
           </div>
         )}
-
-        <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200 ml-auto">
-          <span className="text-xs font-black text-slate-500 uppercase tracking-tighter">Show:</span>
-          <select value={topLimit} onChange={(e) => setTopLimit(Number(e.target.value))} className="text-sm font-bold text-slate-700 outline-none bg-transparent">
-            <option value={5}>05 Items</option>
-            <option value={10}>10 Items</option>
-            <option value={20}>20 Items</option>
+ 
+        <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#131B17] rounded-xl shadow-sm border border-slate-200 dark:border-[#26322B] ml-auto">
+          <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-tighter">Show:</span>
+          <select value={topLimit} onChange={(e) => setTopLimit(Number(e.target.value))} className="text-sm font-bold text-slate-700 dark:text-slate-200 outline-none bg-transparent">
+            <option value={5} className="dark:bg-[#131B17] dark:text-white">05 Items</option>
+            <option value={10} className="dark:bg-[#131B17] dark:text-white">10 Items</option>
+            <option value={20} className="dark:bg-[#131B17] dark:text-white">20 Items</option>
           </select>
         </div>
       </div>

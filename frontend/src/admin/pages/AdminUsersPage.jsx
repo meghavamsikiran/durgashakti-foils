@@ -617,7 +617,7 @@ const AdminUsersPage = () => {
 
       {/* Add Modal */}
       {showCreate && createPortal((
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
+        <div className="admin-shell fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Add New Admin</h2>
@@ -642,7 +642,7 @@ const AdminUsersPage = () => {
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Phone Number</label>
-                    <Input
+                    <input
                       type="text"
                       maxLength={10}
                       value={form.phone}
@@ -650,7 +650,7 @@ const AdminUsersPage = () => {
                         const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                         setForm({...form, phone: val});
                       }}
-                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white"
                       placeholder="Enter 10-digit phone number"
                     />
                   </div>
@@ -692,10 +692,9 @@ const AdminUsersPage = () => {
           </div>
         </div>
       ), document.body)}
-
       {/* Edit Modal */}
       {editModal && createPortal((
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
+        <div className="admin-shell fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Edit Admin</h2>
@@ -720,7 +719,7 @@ const AdminUsersPage = () => {
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Phone Number</label>
-                    <Input
+                    <input
                       type="text"
                       maxLength={10}
                       value={editForm.phone}
@@ -728,7 +727,7 @@ const AdminUsersPage = () => {
                         const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                         setEditForm({...editForm, phone: val});
                       }}
-                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white"
                       placeholder="Enter 10-digit phone number"
                     />
                   </div>
@@ -750,7 +749,7 @@ const AdminUsersPage = () => {
                   )}
                 </div>
               </div>
-
+ 
               <div>
                 <PermissionsSelector 
                   selectedPermissions={editForm.permissions} 
@@ -769,16 +768,16 @@ const AdminUsersPage = () => {
           </div>
         </div>
       ), document.body)}
-
+ 
       {/* Reset Password Modal */}
       {resetModal && createPortal((
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
+        <div className="admin-shell fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-2">Reset Password</h2>
             <p className="text-sm text-slate-500 mb-6">Updating password for <span className="font-bold text-primary">{resetModal.full_name}</span></p>
             <div className="space-y-6">
               <input type="password" autoFocus placeholder="New password..." autoComplete="new-password"
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20 bg-white"
                 value={newPassword} onChange={e => setNewPassword(e.target.value)} />
               <div className="flex gap-4">
                 <button onClick={(e) => { e.stopPropagation(); setResetModal(null); }} className="flex-1 px-6 py-3 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
@@ -790,10 +789,10 @@ const AdminUsersPage = () => {
           </div>
         </div>
       ), document.body)}
-
+ 
       {/* Delete Admin Modal */}
       {deleteTarget && createPortal((
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
+        <div className="admin-shell fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-slate-200">
             <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-6">
               <Trash2 className="w-8 h-8" />

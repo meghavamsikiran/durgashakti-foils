@@ -469,23 +469,23 @@ const InquiriesPage = () => {
 
       {/* Inquiry Detail Modal */}
       {selectedInquiry && createPortal((
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-          <div className="bg-white rounded-[2rem] max-w-3xl w-full max-h-[92vh] overflow-y-auto p-6 md:p-8 shadow-2xl shadow-slate-900/20 border border-white/50 flex flex-col scrollbar-thin">
+        <div className="admin-shell fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+          <div className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white rounded-[2rem] max-w-3xl w-full max-h-[92vh] overflow-y-auto p-6 md:p-8 shadow-2xl shadow-slate-900/20 border border-white/50 dark:border-[#26322B] flex flex-col scrollbar-thin">
             <div className="flex justify-between items-start mb-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <MessageSquare className="w-5 h-5" />
                   </div>
-                  <h3 className="text-2xl font-extrabold text-slate-900" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                  <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white" style={{ fontFamily: 'Manrope, sans-serif' }}>
                     Inquiry Details
                   </h3>
                 </div>
-                <p className="text-sm text-slate-500 font-medium ml-13">ID: {selectedInquiry.id}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium ml-13">ID: {selectedInquiry.id}</p>
               </div>
               <button 
                 onClick={() => setSelectedInquiry(null)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-[#1E2722] text-slate-500 dark:text-slate-450 hover:bg-rose-100 dark:hover:bg-rose-950/30 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -494,82 +494,82 @@ const InquiriesPage = () => {
             <div className="space-y-6">
               {/* Customer Info Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center gap-4 text-slate-700 bg-slate-50/80 p-4 rounded-2xl border border-slate-100/50">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-primary">
+                <div className="flex items-center gap-4 text-slate-700 dark:text-slate-300 bg-slate-50/80 dark:bg-[#1E2722] p-4 rounded-2xl border border-slate-100/50 dark:border-[#26322B]">
+                  <div className="w-10 h-10 rounded-full bg-white dark:bg-[#131B17] flex items-center justify-center shadow-sm text-primary">
                     <User className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Customer</p>
-                    <p className="font-extrabold text-slate-900 text-sm">{selectedInquiry.name}</p>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Customer</p>
+                    <p className="font-extrabold text-slate-900 dark:text-white text-sm">{selectedInquiry.name}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-slate-700 bg-slate-50/80 p-4 rounded-2xl border border-slate-100/50">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-primary">
+                <div className="flex items-center gap-4 text-slate-700 dark:text-slate-300 bg-slate-50/80 dark:bg-[#1E2722] p-4 rounded-2xl border border-slate-100/50 dark:border-[#26322B]">
+                  <div className="w-10 h-10 rounded-full bg-white dark:bg-[#131B17] flex items-center justify-center shadow-sm text-primary">
                     <Mail className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email</p>
-                    <p className="font-bold text-slate-900 text-sm break-all">{selectedInquiry.email}</p>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Email</p>
+                    <p className="font-bold text-slate-900 dark:text-white text-sm break-all">{selectedInquiry.email}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-slate-700 bg-slate-50/80 p-4 rounded-2xl border border-slate-100/50">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-primary">
+                <div className="flex items-center gap-4 text-slate-700 dark:text-slate-300 bg-slate-50/80 dark:bg-[#1E2722] p-4 rounded-2xl border border-slate-100/50 dark:border-[#26322B]">
+                  <div className="w-10 h-10 rounded-full bg-white dark:bg-[#131B17] flex items-center justify-center shadow-sm text-primary">
                     <Phone className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Phone</p>
-                    <p className="font-bold text-slate-900 text-sm">{selectedInquiry.phone || 'Not Provided'}</p>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Phone</p>
+                    <p className="font-bold text-slate-900 dark:text-white text-sm">{selectedInquiry.phone || 'Not Provided'}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 text-slate-700 bg-slate-50/80 p-4 rounded-2xl border border-slate-100/50">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-primary">
+                <div className="flex items-center gap-4 text-slate-700 dark:text-slate-300 bg-slate-50/80 dark:bg-[#1E2722] p-4 rounded-2xl border border-slate-100/50 dark:border-[#26322B]">
+                  <div className="w-10 h-10 rounded-full bg-white dark:bg-[#131B17] flex items-center justify-center shadow-sm text-primary">
                     <Calendar className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Received</p>
-                    <p className="font-bold text-slate-900 text-sm">{new Date(selectedInquiry.created_at).toLocaleString()}</p>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Received</p>
+                    <p className="font-bold text-slate-900 dark:text-white text-sm">{new Date(selectedInquiry.created_at).toLocaleString()}</p>
                   </div>
                 </div>
               </div>
 
               {/* Message Content */}
-              <div className="flex flex-col gap-3 text-slate-700 bg-gradient-to-b from-slate-50/80 to-slate-100/50 p-6 rounded-3xl border border-slate-200/60 shadow-inner">
-                <div className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] tracking-widest">
+              <div className="flex flex-col gap-3 text-slate-700 dark:text-slate-300 bg-gradient-to-b from-slate-50/80 to-slate-100/50 dark:from-[#1E2722]/50 dark:to-[#1E2722] p-6 rounded-3xl border border-slate-200/60 dark:border-[#26322B] shadow-inner">
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-450 font-black uppercase text-[10px] tracking-widest">
                   <FileText className="w-4 h-4 text-primary" /> Full Message
                 </div>
-                <p className="text-slate-800 text-sm leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-300 font-medium">
+                <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-[#26322B] font-medium">
                   {selectedInquiry.message}
                 </p>
               </div>
 
               {/* Status Update */}
-              <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                <span className="text-sm font-bold text-slate-700">
+              <div className="flex items-center justify-between bg-white dark:bg-[#1E2722] p-4 rounded-2xl border border-slate-200 dark:border-[#26322B] shadow-sm">
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
                   Status:
                 </span>
                 <select
                   value={selectedInquiry.status || 'pending'}
                   onChange={(e) => handleUpdateStatus(selectedInquiry.id, e.target.value)}
-                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative ${getStatusStyle(selectedInquiry.status || 'pending')}`}
+                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative bg-white dark:bg-[#131B17] text-slate-900 dark:text-white ${getStatusStyle(selectedInquiry.status || 'pending')}`}
                   style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
                 >
-                  <option value="pending">Pending</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="replied">Replied</option>
-                  <option value="resolved">Closed</option>
+                  <option value="pending" className="dark:bg-[#131B17] dark:text-white">Pending</option>
+                  <option value="in_progress" className="dark:bg-[#131B17] dark:text-white">In Progress</option>
+                  <option value="replied" className="dark:bg-[#131B17] dark:text-white">Replied</option>
+                  <option value="resolved" className="dark:bg-[#131B17] dark:text-white">Closed</option>
                 </select>
               </div>
 
               {/* Reply History */}
               {selectedInquiry.reply_message && (
-                <div className="flex flex-col gap-3 text-slate-700 bg-primary/5 p-6 rounded-3xl border border-primary/20 shadow-sm">
+                <div className="flex flex-col gap-3 text-slate-700 dark:text-slate-300 bg-primary/5 dark:bg-emerald-950/20 p-6 rounded-3xl border border-primary/20 dark:border-emerald-900/50 shadow-sm">
                   <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest">
                     <Mail className="w-4 h-4" /> Reply Sent {selectedInquiry.replied_at && `on ${new Date(selectedInquiry.replied_at).toLocaleString()}`}
                   </div>
-                  <p className="text-slate-800 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                  <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-medium">
                     {selectedInquiry.reply_message}
                   </p>
                 </div>
@@ -577,14 +577,14 @@ const InquiriesPage = () => {
 
               {/* Send Reply Email */}
               {selectedInquiry.status === 'resolved' ? (
-                <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4 text-xs font-semibold flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-400 rounded-2xl p-4 text-xs font-semibold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
                   This inquiry is closed. You cannot send replies unless it is re-opened (change status to Pending or In Progress).
                 </div>
               ) : (
-                <form onSubmit={handleSendReply} className="space-y-4 pt-4 border-t border-slate-100">
+                <form onSubmit={handleSendReply} className="space-y-4 pt-4 border-t border-slate-100 dark:border-[#26322B]">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] text-slate-400 font-black uppercase tracking-wider ml-1">
+                    <label className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-wider ml-1">
                       {selectedInquiry.reply_message ? 'Send Another Reply' : 'Compose Reply'}
                     </label>
                     <textarea
@@ -592,7 +592,7 @@ const InquiriesPage = () => {
                       value={replyMessage}
                       onChange={(e) => setReplyMessage(e.target.value)}
                       placeholder="Type your response email here..."
-                      className="w-full min-h-[100px] rounded-xl border border-slate-200 bg-slate-50/50 p-4 text-sm focus:border-primary focus:ring-0 transition-all outline-none"
+                      className="w-full min-h-[100px] rounded-xl border border-slate-200 dark:border-[#26322B] bg-slate-50/50 dark:bg-[#1E2722] p-4 text-sm focus:border-primary focus:ring-0 transition-all outline-none text-slate-900 dark:text-white"
                     />
                   </div>
                   <Button
@@ -609,7 +609,7 @@ const InquiriesPage = () => {
             <div className="mt-8 flex justify-end">
               <Button 
                 onClick={() => setSelectedInquiry(null)}
-                className="bg-slate-900 text-white font-extrabold text-sm px-8 py-4 rounded-2xl tracking-wide hover:bg-primary transition-all shadow-lg hover:shadow-emerald-glow active:scale-95"
+                className="bg-slate-900 dark:bg-[#1E2722] text-white font-extrabold text-sm px-8 py-4 rounded-2xl tracking-wide hover:bg-primary dark:hover:bg-primary transition-all shadow-lg hover:shadow-emerald-glow active:scale-95 border border-transparent dark:border-[#26322B]"
               >
                 Close Details
               </Button>
