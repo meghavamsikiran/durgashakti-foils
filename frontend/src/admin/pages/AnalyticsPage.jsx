@@ -285,9 +285,9 @@ const AnalyticsPage = () => {
                     <stop offset="95%" stopColor="#006e1b" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `₹${val}`} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle, #f1f5f9)" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-muted, #64748b)', fontWeight: 600 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-muted, #64748b)' }} tickFormatter={(val) => `₹${val}`} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
                   formatter={(value) => [`₹${Number(value).toLocaleString('en-IN')}`, 'Revenue']}
@@ -356,18 +356,18 @@ const AnalyticsPage = () => {
           {(!categoryChartData || categoryChartData.length === 0) ? renderEmptyState() : (
             <ResponsiveContainer width="100%" height={340}>
               <BarChart data={categoryChartData} margin={{ top: 10, right: 20, left: 10, bottom: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle, #f1f5f9)" />
                 <XAxis
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }}
+                  tick={{ fontSize: 11, fill: 'var(--text-muted, #475569)', fontWeight: 600 }}
                   angle={-18}
                   textAnchor="end"
                   height={70}
                   tickFormatter={(name) => (name || '').length > 16 ? `${(name || '').substring(0, 14)}...` : name}
                 />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `Rs.${Math.round(val / 1000)}k`} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-muted, #64748b)' }} tickFormatter={(val) => `Rs.${Math.round(val / 1000)}k`} />
                 <Tooltip
                   cursor={{ fill: '#f8fafc' }}
                   contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
@@ -439,15 +439,15 @@ const AnalyticsPage = () => {
                 data={inventoryData}
                 margin={{ top: 10, right: 30, left: 110, bottom: 10 }}
               >
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-subtle, #f1f5f9)" />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-muted, #64748b)' }} />
                 <YAxis 
                   type="category" 
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
                   tickFormatter={(name) => (name || '').length > 20 ? (name || '').substring(0, 18) + '...' : name}
-                  tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }}
+                  tick={{ fontSize: 11, fill: 'var(--text-muted, #475569)', fontWeight: 600 }}
                   width={100}
                 />
                 <Tooltip 
@@ -476,15 +476,15 @@ const AnalyticsPage = () => {
                 data={productData}
                 margin={{ top: 10, right: 30, left: 110, bottom: 10 }}
               >
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-subtle, #f1f5f9)" />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-muted, #64748b)' }} />
                 <YAxis 
                   type="category" 
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
                   tickFormatter={(name) => (name || '').length > 20 ? (name || '').substring(0, 18) + '...' : name}
-                  tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }}
+                  tick={{ fontSize: 11, fill: 'var(--text-muted, #475569)', fontWeight: 600 }}
                   width={100}
                 />
                 <Tooltip 

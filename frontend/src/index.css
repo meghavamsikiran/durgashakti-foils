@@ -1046,7 +1046,7 @@ input[type="checkbox"] {
 
 /* Hero section absolute overlay gradient override in light theme */
 .light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] div[style*="linear-gradient"] {
-  background: linear-gradient(to right, #f1f4f2 0%, #f1f4f2 38%, rgba(241, 244, 242, 0.7) 50%, rgba(241, 244, 242, 0.15) 75%, rgba(241, 244, 242, 0) 100%) !important;
+  display: none !important;
 }
 
 /* Scrolling marquee top banner background and border overrides in light theme */
@@ -1060,7 +1060,7 @@ input[type="checkbox"] {
   border-right-color: #bbcbb5 !important;
 }
 .light-theme .w-full.bg-\[\#050807\].text-white img {
-  filter: brightness(0) saturate(100%) invert(24%) sepia(85%) saturate(1313%) hue-rotate(97deg) brightness(96%) contrast(102%) !important;
+  filter: brightness(0) saturate(100%) invert(53%) sepia(93%) saturate(1450%) hue-rotate(352deg) brightness(101%) contrast(97%) !important;
 }
 
 /* Home Page Light Mode Contrast Overrides */

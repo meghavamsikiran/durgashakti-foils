@@ -216,7 +216,7 @@ const Home = () => {
             <div className="flex flex-col items-center w-full">
               <div className="w-full rounded-2xl overflow-hidden shadow-2xl transition-transform duration-500 hover:scale-[1.02]">
                 <img
-                  src="/media__1780688276908.webp"
+                  src="/durga-shakti-foil-new.jpg"
                   alt="Durga Shakti Foil heat lock test"
                   className="w-full h-auto block"
                 />

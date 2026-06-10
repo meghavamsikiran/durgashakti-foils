@@ -197,10 +197,10 @@ const InventoryPage = () => {
             <button
               type="button"
               onClick={() => setFilterOpen((prev) => !prev)}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-[40px]"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 dark:hover:bg-[#19231F] dark:hover:text-[#16E34A] dark:hover:border-primary/30 h-[40px]"
             >
-              <Filter className="w-4 h-4 text-slate-600" />
-              <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
+              <Filter className="w-4 h-4 text-slate-600 dark:text-slate-350" />
+              <span className="text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-350">Filter</span>
             </button>
             {filterOpen && (
               <>

@@ -191,8 +191,8 @@ const ReviewsPage = () => {
               onClick={() => setShowFilters((prev) => !prev)}
               className={`h-11 inline-flex items-center justify-center gap-2 rounded-xl border px-4 text-xs font-black uppercase tracking-widest shadow-sm transition-all ${
                 showFilters || activeFilterCount > 0
-                  ? 'border-primary/30 bg-primary/10 text-primary'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                  ? 'border-primary/30 bg-primary/10 text-primary hover:bg-primary/20'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:hover:bg-[#19231F] dark:hover:text-[#16E34A] dark:hover:border-primary/30'
               }`}
             >
               <Filter className="w-4 h-4" />
@@ -378,7 +378,7 @@ const ReviewsPage = () => {
                             >
                               {media.type === 'video' ? (
                                 <>
-                                  <video src={`${formatImageUrl(media.url)}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                                  <video src={`${formatImageUrl(media.url)}#t=0.001`} crossOrigin="anonymous" className="w-full h-full object-cover" muted playsInline preload="metadata" />
                                   <span className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
                                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-primary shadow-sm group-hover:scale-110 transition-transform">
                                       <Play className="h-4 w-4 fill-current translate-x-[1px]" />
@@ -543,6 +543,7 @@ const ReviewsPage = () => {
                     <video
                       key={activeItem.url}
                       src={formatImageUrl(activeItem.url)}
+                      crossOrigin="anonymous"
                       className="max-h-[70vh] w-full object-contain"
                       controls
                       autoPlay
@@ -604,7 +605,7 @@ const ReviewsPage = () => {
                       >
                         {item.type === 'video' ? (
                           <div className="relative h-full w-full">
-                            <video src={`${formatImageUrl(item.url)}#t=0.001`} className="h-full w-full object-cover" muted playsInline preload="metadata" />
+                            <video src={`${formatImageUrl(item.url)}#t=0.001`} crossOrigin="anonymous" className="h-full w-full object-cover" muted playsInline preload="metadata" />
                             <span className="absolute inset-0 flex items-center justify-center bg-black/10 text-white">
                               <Play className="h-3.5 w-3.5 fill-current" />
                             </span>
