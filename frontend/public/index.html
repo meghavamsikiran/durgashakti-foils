@@ -57,8 +57,9 @@
         <script>
             (function() {
                 try {
+                    var isAdmin = window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/superadmin');
                     var theme = localStorage.getItem('themeMode') || 'dark';
-                    if (theme === 'dark') {
+                    if (theme === 'dark' || isAdmin) {
                         document.documentElement.classList.add('dark');
                         document.documentElement.classList.remove('light-theme');
                     } else {

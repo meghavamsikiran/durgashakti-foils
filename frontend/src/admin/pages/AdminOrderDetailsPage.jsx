@@ -1047,9 +1047,9 @@ const AdminOrderDetailsPage = () => {
                         )}
 
                         {(item.return_status === 'RETURN_APPROVED' || item.return_status === 'EXCHANGE_APPROVED') && (
-                          <div className="text-[10px] text-amber-800 font-extrabold bg-amber-50 p-3 rounded-xl border border-amber-100 flex flex-col gap-1">
-                            <p className="uppercase tracking-wider font-black">Self-Shipping Status</p>
-                            <p className="font-semibold text-slate-600">Self Shipping by customer is pending. The customer has a maximum of 3 days to submit courier/tracking details.</p>
+                          <div className="text-[10px] text-amber-400 font-extrabold bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 flex flex-col gap-1">
+                            <p className="uppercase tracking-wider font-black text-amber-400">Self-Shipping Status</p>
+                            <p className="font-semibold text-amber-200/90">Self Shipping by customer is pending. The customer has a maximum of 3 days to submit courier/tracking details.</p>
                           </div>
                         )}
 
