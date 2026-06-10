@@ -948,9 +948,15 @@ h1, h2, h3, h4, h5, h6 {
   background-color: #19231F !important;
 }
 
-.admin-shell input, 
-.admin-shell select, 
-.admin-shell textarea {
+/*
+  .admin-shell input,
+  .admin-shell select,
+  .admin-shell textarea {
+    background-color: #131B17 !important;
+    border-color: #26322B !important;
+    color: #ffffff !important;
+  }
+*/
   background-color: #131B17 !important;
   border-color: #26322B !important;
   color: #ffffff !important;
