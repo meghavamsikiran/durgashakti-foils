@@ -13,3 +13,13 @@ root.render(
     <App />
   </React.StrictMode>,
 );
+
+// Fade out and remove the instant loader once React begins rendering
+try {
+  const loader = document.getElementById("instant-loader");
+  if (loader) {
+    loader.style.opacity = "0";
+    setTimeout(() => loader.remove(), 300);
+  }
+} catch (e) {}
+
