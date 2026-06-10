@@ -80,6 +80,17 @@ function AppRoutes() {
     return () => window.removeEventListener('theme-toggle', handleThemeToggle);
   }, []);
 
+  React.useEffect(() => {
+    const root = window.document.documentElement;
+    if (themeMode === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    }
+  }, [themeMode]);
+
   const isAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin');
   const isShopPath = location.pathname === '/shop';
   const isProtectedRoute = location.pathname.startsWith('/dashboard') || 
@@ -87,8 +98,8 @@ function AppRoutes() {
                            location.pathname.startsWith('/order') || 
                            location.pathname.startsWith('/review');
   const themeClass = isAdminPath 
-    ? (themeMode === 'light' ? 'admin-theme light-theme' : 'admin-theme')
-    : (themeMode === 'light' ? 'public-theme light-theme' : 'public-theme');
+    ? (themeMode === 'light' ? 'admin-theme light-theme' : 'admin-theme dark')
+    : (themeMode === 'light' ? 'public-theme light-theme' : 'public-theme dark');
 
   return (
     <CartProvider>
