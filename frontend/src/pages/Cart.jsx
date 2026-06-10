@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, Plus, Minus, ShoppingBag, X, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -251,18 +251,20 @@ const Cart = () => {
                     >
                       <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                         <div className="flex gap-4 items-start flex-1">
-                          <div className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-lg overflow-hidden bg-[#19231F] border border-[#26322B]">
+                          <Link to={`/product/${product.id}`} className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 rounded-lg overflow-hidden bg-[#19231F] border border-[#26322B] hover:border-[#25D958]/40 transition-colors block">
                             <img
                               src={formatImageUrl(product.image_url)}
                               alt={product.name}
                               className="w-full h-full object-cover"
                             />
-                          </div>
+                          </Link>
 
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-bold text-base sm:text-lg font-sans text-white mb-1 truncate">
-                              {product.name}
-                            </h3>
+                            <Link to={`/product/${product.id}`} className="hover:text-[#25D958] transition-colors block">
+                              <h3 className="font-bold text-base sm:text-lg font-sans text-white hover:text-inherit mb-1 truncate">
+                                {product.name}
+                              </h3>
+                            </Link>
                             <div className="mb-2">
                               <span className="text-[10px] font-mono font-bold uppercase tracking-[0.12em] text-slate-300 bg-[#19231F] px-2 py-0.5 rounded border border-[#26322B]">
                                 {product.size} • {product.thickness}

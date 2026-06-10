@@ -398,7 +398,7 @@ const ProductDetail = () => {
               </div>
             )}
 
-            <p className="text-base leading-relaxed text-on-surface-variant mb-8 font-medium">
+            <p className="text-base leading-relaxed text-slate-600 dark:text-slate-300 mb-8 font-medium">
               {product.description}
             </p>
 
@@ -411,7 +411,7 @@ const ProductDetail = () => {
                   {productFeatures.map((feature, index) => (
                     <li key={index} className="flex items-start gap-2.5">
                       <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                      <span className="text-sm font-semibold text-slate-700">{feature}</span>
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{feature}</span>
                     </li>
                   ))}
                 </ul>

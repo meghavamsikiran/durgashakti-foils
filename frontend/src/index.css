@@ -945,7 +945,7 @@ h1, h2, h3, h4, h5, h6 {
 .admin-theme tbody tr:hover,
 .admin-shell .group:hover,
 .admin-shell [class*="group-hover:bg-"] {
-  background-color: rgba(19, 27, 23, 0.35) !important;
+  background-color: rgba(37, 217, 88, 0.08) !important;
 }
 
 .admin-shell input, 
@@ -972,7 +972,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .admin-shell table tr:hover {
-  background-color: rgba(19, 27, 23, 0.35) !important;
+  background-color: rgba(37, 217, 88, 0.08) !important;
 }
 
 .admin-shell table tr {
@@ -1242,7 +1242,7 @@ input[type="checkbox"] {
 
 .light-theme .admin-shell table tr:hover,
 .light-theme .admin-shell tr:hover td {
-  background-color: rgba(0, 0, 0, 0.05) !important;
+  background-color: rgba(0, 110, 27, 0.05) !important;
 }
 
 /* Text elements */
@@ -1292,7 +1292,7 @@ input[type="checkbox"] {
 .light-theme tr:hover,
 .light-theme .hover\:bg-white\/5:hover,
 .light-theme .hover\:bg-slate-50:hover {
-  background-color: rgba(0, 0, 0, 0.06) !important;
+  background-color: rgba(0, 110, 27, 0.05) !important;
 }
 
 /* Clean styling for radio buttons globally to eliminate square outer box overlays */
