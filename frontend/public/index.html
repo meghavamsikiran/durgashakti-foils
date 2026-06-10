@@ -57,9 +57,10 @@
         <script>
             (function() {
                 try {
+                    var isOrderPath = window.location.pathname.startsWith('/order/') || window.location.pathname.startsWith('/order');
                     var isAdmin = window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/superadmin');
                     var theme = localStorage.getItem('themeMode') || 'dark';
-                    if (theme === 'dark' || isAdmin) {
+                    if (theme === 'dark' || isAdmin || isOrderPath) {
                         document.documentElement.classList.add('dark');
                         document.documentElement.classList.remove('light-theme');
                         document.write('<style>html, body { background-color: #0C1310 !important; color: #ffffff !important; }</style>');
@@ -78,10 +79,12 @@
             <script>
                 (function() {
                     try {
+                        var isOrderPath = window.location.pathname.startsWith('/order/') || window.location.pathname.startsWith('/order');
                         var isAdmin = window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/superadmin');
                         var theme = localStorage.getItem('themeMode') || 'dark';
-                        var loaderBg = (theme === 'dark' || isAdmin) ? '#0C1310' : '#f7faf8';
-                        var loaderCircleColor = (theme === 'dark' || isAdmin) ? '#25D958' : '#006e1b';
+                        var isDarkTheme = theme === 'dark' || isAdmin || isOrderPath;
+                        var loaderBg = isDarkTheme ? '#0C1310' : '#f7faf8';
+                        var loaderCircleColor = isDarkTheme ? '#25D958' : '#006e1b';
                         document.getElementById('instant-loader').style.backgroundColor = loaderBg;
                         document.write(
                             '<style>' +
