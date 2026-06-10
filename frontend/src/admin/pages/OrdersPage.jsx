@@ -1015,7 +1015,7 @@ const OrdersPage = () => {
 
                 return (
                    <React.Fragment key={order.id}>
-                     <tr className={`hover:bg-slate-50/50 transition-colors group ${expandedOrderId === order.id ? 'bg-primary/5' : ''}`}>
+                     <tr className={`hover:bg-slate-100/50 dark:hover:bg-slate-800/30 transition-colors group ${expandedOrderId === order.id ? 'bg-primary/5' : ''}`}>
                        <td className="px-8 py-6">
                          <input
                            type="checkbox"
@@ -1852,7 +1852,7 @@ const OrdersPage = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-700 font-bold">
                       {selectedOrderForModal.items?.map((item, idx) => (
-                        <tr key={idx} className="bg-white hover:bg-slate-50/40 transition-colors">
+                        <tr key={idx} className="bg-white hover:bg-slate-100/50 dark:hover:bg-slate-800/30 transition-colors">
                           <td className="px-6 py-4 text-xs font-extrabold text-slate-900 flex items-center gap-3">
                             {item.image_url ? (
                               <img

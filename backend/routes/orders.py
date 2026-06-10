@@ -1724,7 +1724,7 @@ async def return_order(
             delivered_date = delivered_date.replace(tzinfo=timezone.utc)
         else:
             delivered_date = delivered_date.astimezone(timezone.utc)
-        cutoff_date = (delivered_date + timedelta(days=4)).replace(hour=0, minute=0, second=0, microsecond=0)
+        cutoff_date = (delivered_date + timedelta(days=3)).replace(hour=0, minute=0, second=0, microsecond=0)
         now_utc = datetime.now(timezone.utc)
         if now_utc > cutoff_date:
             raise HTTPException(status_code=400, detail="Return window has closed.")

@@ -945,7 +945,7 @@ h1, h2, h3, h4, h5, h6 {
 .admin-theme tbody tr:hover,
 .admin-shell .group:hover,
 .admin-shell [class*="group-hover:bg-"] {
-  background-color: rgba(37, 217, 88, 0.08) !important;
+  background-color: #19231F !important;
 }
 
 .admin-shell input, 
@@ -972,7 +972,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .admin-shell table tr:hover {
-  background-color: rgba(37, 217, 88, 0.08) !important;
+  background-color: #19231F !important;
 }
 
 .admin-shell table tr {
