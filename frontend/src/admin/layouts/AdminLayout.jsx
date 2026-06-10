@@ -141,8 +141,8 @@ const AdminLayout = () => {
                 to={path}
                 className={`flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group ${
                   isActive 
-                    ? 'bg-[rgba(11,209,61,0.12)] text-[#16E34A] border-l-4 border-primary pl-2.5 font-bold' 
-                    : 'text-slate-300 pl-3 font-medium hover:text-[#16E34A]'
+                    ? 'bg-[rgba(11,209,61,0.12)] hover:bg-[rgba(11,209,61,0.16)] text-[#16E34A] border-l-4 border-primary pl-2.5 font-bold' 
+                    : 'text-slate-300 pl-3 font-medium hover:text-[#16E34A] hover:bg-[#19231F]/55'
                 }`}
               >
                 <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-[#16E34A]' : 'text-slate-500 group-hover:text-[#16E34A]'}`} />

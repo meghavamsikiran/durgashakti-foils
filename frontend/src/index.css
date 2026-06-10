@@ -869,18 +869,18 @@ h1, h2, h3, h4, h5, h6 {
   --accent-foreground: 0 0% 100%;
   --border: 150 18% 12%;
   --input: 150 18% 12%;
-  --surface: #0C1310;
-  --surface-bright: #0C1310;
-  --surface-container-lowest: #131B17;
-  --surface-container-low: #131B17;
-  --surface-container: #19231F;
-  --surface-container-high: #19231F;
-  --surface-container-highest: #26322B;
-  --on-surface: #ffffff;
-  --on-surface-variant: #cbd5e1;
-  --border-subtle: #26322B;
-  --ink-slate: #ffffff;
-  --text-muted: #94a3b8;
+  --surface: #0C1310 !important;
+  --surface-bright: #0C1310 !important;
+  --surface-container-lowest: #131B17 !important;
+  --surface-container-low: #131B17 !important;
+  --surface-container: #19231F !important;
+  --surface-container-high: #19231F !important;
+  --surface-container-highest: #26322B !important;
+  --on-surface: #ffffff !important;
+  --on-surface-variant: #cbd5e1 !important;
+  --border-subtle: #26322B !important;
+  --ink-slate: #ffffff !important;
+  --text-muted: #94a3b8 !important;
 }
 
 .admin-shell main, 
@@ -947,7 +947,7 @@ h1, h2, h3, h4, h5, h6 {
 .admin-shell tbody tr:hover td,
 .admin-theme tr:hover,
 .admin-theme tbody tr:hover,
-.admin-shell .group:hover,
+.admin-shell .group:not(aside a):hover,
 .admin-shell [class*="group-hover:bg-"] {
   background-color: #19231F !important;
 }
@@ -1042,6 +1042,25 @@ input[type="checkbox"] {
 
 .light-theme .animate-marquee img {
   filter: none !important;
+}
+
+/* Hero section absolute overlay gradient override in light theme */
+.light-theme .relative.overflow-hidden.bg-\[\#0a0f0d\] div[style*="linear-gradient"] {
+  background: linear-gradient(to right, #f1f4f2 0%, #f1f4f2 38%, rgba(241, 244, 242, 0.7) 50%, rgba(241, 244, 242, 0.15) 75%, rgba(241, 244, 242, 0) 100%) !important;
+}
+
+/* Scrolling marquee top banner background and border overrides in light theme */
+.light-theme .w-full.bg-\[\#050807\].text-white {
+  background-color: #f0fdf4 !important;
+  color: #006e1b !important;
+  border-bottom-color: #bbcbb5 !important;
+}
+.light-theme .w-full.bg-\[\#050807\].text-white span {
+  color: #006e1b !important;
+  border-right-color: #bbcbb5 !important;
+}
+.light-theme .w-full.bg-\[\#050807\].text-white img {
+  filter: brightness(0) saturate(100%) invert(24%) sepia(85%) saturate(1313%) hue-rotate(97deg) brightness(96%) contrast(102%) !important;
 }
 
 /* Home Page Light Mode Contrast Overrides */

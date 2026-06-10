@@ -394,32 +394,30 @@ const InventoryPage = () => {
           totalItems={total}
           pageSize={ITEMS_PER_PAGE}
         />
-      </div>
-
-      {adjustModal && (
+        {adjustModal && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200 scale-in-center overflow-hidden">
+          <div className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-[#26322B] scale-in-center overflow-hidden">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Update Stock Quantity</h2>
-              <button onClick={() => setAdjustModal(null)} className="p-2 rounded-full hover:bg-slate-50 transition-colors">
-                <X className="w-6 h-6 text-slate-500" />
+              <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Update Stock Quantity</h2>
+              <button onClick={() => setAdjustModal(null)} className="p-2 rounded-full hover:bg-slate-50 dark:hover:bg-[#1E2722] transition-colors">
+                <X className="w-6 h-6 text-slate-500 dark:text-slate-400" />
               </button>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-8">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#1E2722] border border-slate-200 dark:border-[#26322B] mb-8">
                <div className="flex items-center justify-between">
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Current Stock</div>
-                  <div className="text-lg font-black text-slate-900">{adjustModal.stock_quantity} Units</div>
+                  <div className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Current Stock</div>
+                  <div className="text-lg font-black text-slate-900 dark:text-white">{adjustModal.stock_quantity} Units</div>
                </div>
             </div>
 
             <div className="space-y-6">
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Change Quantity</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Change Quantity</label>
                 <input 
                   type="number" 
                   autoFocus
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  className="w-full rounded-xl border border-slate-200 dark:border-[#26322B] px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none bg-white dark:bg-[#131B17] text-slate-900 dark:text-white"
                   placeholder="Enter quantity..." 
                   value={adjustQty} 
                   onChange={(e) => setAdjustQty(e.target.value)}
@@ -430,7 +428,7 @@ const InventoryPage = () => {
                 <button 
                   disabled={saving} 
                   onClick={() => handleAdjust('add')}
-                  className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border border-emerald-100 bg-emerald-50/50 text-emerald-600 hover:bg-emerald-50 transition-all group"
+                  className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-all group"
                 >
                   <PlusCircle className="w-8 h-8 group-hover:scale-110 transition-transform" />
                   <span className="text-[10px] font-black uppercase tracking-widest">Add Stock</span>
@@ -438,7 +436,7 @@ const InventoryPage = () => {
                 <button 
                   disabled={saving} 
                   onClick={() => handleAdjust('remove')}
-                  className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border border-rose-100 bg-rose-50/50 text-rose-600 hover:bg-rose-50 transition-all group"
+                  className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border border-rose-100 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all group"
                 >
                   <MinusCircle className="w-8 h-8 group-hover:scale-110 transition-transform" />
                   <span className="text-[10px] font-black uppercase tracking-widest">Remove Stock</span>
@@ -446,7 +444,7 @@ const InventoryPage = () => {
               </div>
             </div>
             
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center mt-8 leading-relaxed">
+            <p className="text-[10px] text-slate-500 dark:text-slate-450 font-bold uppercase tracking-widest text-center mt-8 leading-relaxed">
               All stock changes are logged for records.
             </p>
           </div>
