@@ -468,12 +468,13 @@ const OrderDetailsPage = () => {
   };
 
   const handleBuyItAgain = async (item) => {
+    // Show toast immediately to make it feel responsive
+    toast.success(`${item.product_name} added to cart`, { duration: 2500 });
     try {
       await addToCart(item.product_id, 1);
-      toast.success(`${item.product_name} added to cart`);
       navigate('/cart');
     } catch (err) {
-      toast.error('Failed to add item to cart');
+      toast.error('Failed to add item to cart', { duration: 2500 });
     }
   };
 
