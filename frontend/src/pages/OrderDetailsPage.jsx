@@ -930,6 +930,13 @@ const OrderDetailsPage = () => {
             </div>
 
             <form onSubmit={handleSubmitReturn} className="space-y-5">
+              <div className="bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 text-[10px] rounded-xl p-3 border border-amber-100/60 dark:border-amber-900/30 flex gap-2 items-start font-semibold">
+                <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <p className="leading-normal">
+                  <strong>Return Policy:</strong> Return or exchange requests must be submitted within <strong>3 days</strong> of the delivery date.
+                </p>
+              </div>
+
               <div className="space-y-3">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Select Items to Return</label>
                 <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1">
@@ -1775,6 +1782,13 @@ const OrderDetailsPage = () => {
               </div>
 
               <form onSubmit={handleSubmitSelfShip} className="space-y-4">
+                <div className="bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 text-[10px] rounded-xl p-3 border border-amber-100/60 dark:border-amber-900/30 flex gap-2 items-start font-semibold">
+                  <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <p className="leading-normal">
+                    <strong>Self-Shipping Deadline:</strong> Please ship the item and submit your courier details within <strong>7 days</strong> of return approval.
+                  </p>
+                </div>
+
                 <div className="space-y-1">
                   <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Courier / Carrier Name *</label>
                   <select

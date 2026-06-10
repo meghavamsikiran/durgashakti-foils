@@ -84,9 +84,9 @@ function AppRoutes() {
     const root = window.document.documentElement;
     if (themeMode === 'dark') {
       root.classList.add('dark');
-      root.classList.remove('light');
+      root.classList.remove('light-theme');
     } else {
-      root.classList.add('light');
+      root.classList.add('light-theme');
       root.classList.remove('dark');
     }
   }, [themeMode]);

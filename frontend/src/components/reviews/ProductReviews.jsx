@@ -180,15 +180,15 @@ const ProductReviews = ({ productId, summary }) => {
   if (!ratingsEnabled) return null;
 
   return (
-    <section className="mt-16 border-t border-slate-100 pt-12 max-w-6xl mx-auto">
+    <section className="mt-16 border-t border-slate-100 dark:border-[#26322B] pt-12 max-w-6xl mx-auto">
       <div className="flex flex-col gap-2 mb-8 text-center md:text-left">
-        <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight font-manrope">
+        <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight font-manrope">
           Customer Reviews
         </h2>
         {count > 0 && (
           <div className="mt-1 flex flex-wrap items-center justify-center md:justify-start gap-3">
             <StarRating value={average} count={count} size="md" />
-            <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">Verified purchase feedback</span>
+            <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-[#26322B] px-2.5 py-1 rounded-full">Verified purchase feedback</span>
           </div>
         )}
       </div>
@@ -196,9 +196,9 @@ const ProductReviews = ({ productId, summary }) => {
       {count > 0 && (
         <>
         {mediaItems.length > 0 && (
-          <div className="mb-10 bg-slate-50/50 border border-slate-100 p-6 rounded-2xl">
+          <div className="mb-10 bg-slate-50/50 dark:bg-[#131B17]/40 border border-slate-100 dark:border-[#26322B] p-6 rounded-2xl">
             <div className="mb-4 flex items-center justify-between gap-4">
-              <h3 className="text-base font-black text-slate-800 tracking-tight font-manrope">Photos & videos from customers</h3>
+              <h3 className="text-base font-black text-slate-800 dark:text-slate-200 tracking-tight font-manrope">Photos & videos from customers</h3>
               {mediaItems.length > 6 && (
                 <button
                   type="button"
@@ -265,17 +265,17 @@ const ProductReviews = ({ productId, summary }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8 items-start">
           {/* Summary Box */}
-          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 space-y-6">
+          <div className="bg-slate-50 dark:bg-[#131B17] border border-slate-100 dark:border-[#26322B] rounded-2xl p-6 space-y-6">
             <div className="text-center md:text-left">
-              <span className="text-5xl font-black text-slate-800 tracking-tight">{average.toFixed(1)}</span>
-              <span className="text-sm font-bold text-slate-400 ml-1">/ 5</span>
+              <span className="text-5xl font-black text-slate-800 dark:text-white tracking-tight">{average.toFixed(1)}</span>
+              <span className="text-sm font-bold text-slate-400 dark:text-slate-500 ml-1">/ 5</span>
               <div className="flex justify-center md:justify-start mt-2.5">
                 <StarRating value={average} size="md" />
               </div>
-              <p className="text-xs text-slate-400 font-semibold mt-2">Based on {count} verified ratings</p>
+              <p className="text-xs text-slate-400 dark:text-slate-550 font-semibold mt-2">Based on {count} verified ratings</p>
             </div>
             
-            <div className="border-t border-slate-200/60 my-4" />
+            <div className="border-t border-slate-200/60 dark:border-[#26322B] my-4" />
             
             <div className="space-y-2.5">
               {[5, 4, 3, 2, 1].map((r) => {
@@ -287,18 +287,18 @@ const ProductReviews = ({ productId, summary }) => {
                     key={r}
                     type="button"
                     onClick={() => setSelectedRating(isSelected ? 'all' : String(r))}
-                    className={`w-full flex items-center gap-3 text-xs font-semibold text-slate-600 hover:text-primary transition-all p-1.5 rounded-lg text-left ${
+                    className={`w-full flex items-center gap-3 text-xs font-semibold text-slate-650 dark:text-slate-400 hover:text-primary dark:hover:text-[#25D958] transition-all p-1.5 rounded-lg text-left ${
                       isSelected 
-                        ? 'bg-primary/10 text-primary font-bold' 
-                        : 'hover:bg-white border border-transparent hover:border-slate-100'
+                        ? 'bg-primary/10 text-primary dark:text-[#25D958] font-bold' 
+                        : 'hover:bg-white dark:hover:bg-[#26322B] border border-transparent hover:border-slate-100 dark:hover:border-[#26322B]'
                     }`}
                     title={isSelected ? "Clear filter" : `Filter by ${r} star reviews`}
                   >
-                    <span className="w-10 shrink-0 text-slate-500 font-bold">{r} Star</span>
-                    <div className="h-2 flex-1 rounded-full bg-slate-200/60 overflow-hidden">
+                    <span className="w-10 shrink-0 text-slate-550 dark:text-slate-450 font-bold">{r} Star</span>
+                    <div className="h-2 flex-1 rounded-full bg-slate-200/60 dark:bg-[#26322B] overflow-hidden">
                       <div className="h-full bg-amber-400 rounded-full" style={{ width: `${percent}%` }} />
                     </div>
-                    <span className="w-9 text-right shrink-0 text-slate-400 font-bold">{percent}%</span>
+                    <span className="w-9 text-right shrink-0 text-slate-450 dark:text-slate-550 font-bold">{percent}%</span>
                   </button>
                 );
               })}
@@ -308,9 +308,9 @@ const ProductReviews = ({ productId, summary }) => {
           {/* Reviews List & Controls */}
           <div className="space-y-6">
             {/* Header controls with single Filter Dropdown */}
-            <div className="flex flex-col gap-2 border-b border-slate-100 pb-4">
+            <div className="flex flex-col gap-2 border-b border-slate-100 dark:border-[#26322B] pb-4">
               <div className="flex items-center justify-between gap-4">
-                <h3 className="text-base font-bold text-slate-800">
+                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
                   {selectedRating === 'all' ? 'All Reviews' : 
                    selectedRating === '5' ? '5 Star Reviews' :
                    selectedRating === '4_above' ? '4 Stars & Above' :
@@ -319,18 +319,18 @@ const ProductReviews = ({ productId, summary }) => {
                    selectedRating === '1_above' ? '1 Star & Above' :
                    selectedRating === '1_only' ? 'Only 1 Star Reviews' :
                    `${selectedRating} Star Reviews`} 
-                  <span className="text-xs font-normal text-slate-400 ml-2">({filteredAndSortedReviews.length})</span>
+                  <span className="text-xs font-normal text-slate-450 dark:text-slate-500 ml-2">({filteredAndSortedReviews.length})</span>
                 </h3>
                 
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
-                    className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-[#26322B] rounded-xl bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:hover:bg-[#26322B] text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                     <span>Filter & Sort</span>
-                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isFilterMenuOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-555 transition-transform duration-200 ${isFilterMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {isFilterMenuOpen && (
@@ -493,27 +493,31 @@ const ProductReviews = ({ productId, summary }) => {
                   return (
                     <article
                       key={review.id}
-                      className={`border rounded-2xl p-6 bg-white shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-300 ${isHidden ? 'border-slate-200 opacity-60' : 'border-slate-100'}`}
+                      className={`border rounded-2xl p-6 bg-white dark:bg-[#131B17] shadow-sm hover:shadow-md hover:border-slate-200 dark:hover:border-[#26322B] transition-all duration-300 ${
+                        isHidden 
+                          ? 'border-slate-200 dark:border-[#26322B] opacity-60' 
+                          : 'border-slate-100 dark:border-[#26322B]'
+                      }`}
                     >
                       {/* Review header */}
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-xs font-black text-slate-600 tracking-tighter">
+                          <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-[#26322B] border border-slate-100 dark:border-[#26322B] flex items-center justify-center text-xs font-black text-slate-600 dark:text-slate-300 tracking-tighter">
                             {initials}
                           </div>
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-bold text-slate-800">{review.public_name}</span>
-                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100/50">
+                              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{review.public_name}</span>
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 border border-emerald-100/50 dark:border-emerald-900/30">
                                 <BadgeCheck className="w-3 h-3" /> Verified
                               </span>
                               {isHidden && (
-                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">
+                                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 dark:bg-[#26322B] text-slate-500 dark:text-slate-450 border border-slate-200 dark:border-[#26322B]">
                                   Hidden
                                 </span>
                               )}
                             </div>
-                            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
                               Reviewed on {new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                             </p>
                           </div>
@@ -521,15 +525,15 @@ const ProductReviews = ({ productId, summary }) => {
 
                         {/* Admin action icons */}
                         {user && (user.id === review.user_id || isAdmin) && (
-                          <div className="flex items-center gap-1 shrink-0 bg-slate-50 rounded-lg p-0.5 border border-slate-150">
+                          <div className="flex items-center gap-1 shrink-0 bg-slate-50 dark:bg-[#26322B] rounded-lg p-0.5 border border-slate-150 dark:border-[#26322B]/60">
                             {isAdmin && (
                               <button
                                 onClick={() => handleToggleStatus(review)}
                                 disabled={savingId === review.id}
                                 className={`p-1.5 rounded-md transition-all disabled:opacity-50 ${
                                   isHidden
-                                    ? 'text-emerald-500 hover:bg-emerald-50'
-                                    : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                                    ? 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'
+                                    : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20'
                                 }`}
                                 title={isHidden ? 'Publish review' : 'Hide review'}
                               >
@@ -539,7 +543,7 @@ const ProductReviews = ({ productId, summary }) => {
                             {user.id === review.user_id && (
                               <button
                                 onClick={() => navigate(`/review/${review.order_id}/${productId}`)}
-                                className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-md transition-all"
+                                className="p-1.5 text-slate-400 dark:text-slate-400 hover:text-primary dark:hover:text-[#25D958] hover:bg-slate-50 dark:hover:bg-[#19231F] rounded-md transition-all"
                                 title="Edit Review"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -547,7 +551,7 @@ const ProductReviews = ({ productId, summary }) => {
                             )}
                             <button
                               onClick={() => handleDelete(review.id)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all"
+                              className="p-1.5 text-slate-400 dark:text-slate-450 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-md transition-all"
                               title="Delete Review"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -559,12 +563,12 @@ const ProductReviews = ({ productId, summary }) => {
                       {/* Rating stars & Title */}
                       <div className="mt-4 flex items-center gap-2">
                         <StarRating value={review.rating} size="sm" />
-                        <h4 className="font-bold text-slate-900 text-sm">{review.title}</h4>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">{review.title}</h4>
                       </div>
 
                       {/* Comment body */}
                       {review.comment && (
-                        <p className="text-sm text-slate-600 leading-relaxed mt-2.5 whitespace-pre-line font-medium">
+                        <p className="text-sm text-slate-650 dark:text-slate-350 leading-relaxed mt-2.5 whitespace-pre-line font-medium">
                           {review.comment}
                         </p>
                       )}

@@ -430,6 +430,9 @@ const Navbar = () => {
             <div className="relative" ref={searchRef}>
               {isSearchOpen ? (
                 <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+                  <div className="absolute left-2.5 flex items-center pointer-events-none">
+                    <Search className="w-3.5 h-3.5 text-slate-400" />
+                  </div>
                   <input
                     type="text"
                     placeholder="Search products..."
@@ -437,13 +440,10 @@ const Navbar = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onFocus={() => { if (searchQuery.trim()) setShowDropdown(true); }}
-                    className="w-48 lg:w-56 h-9 bg-white text-slate-800 placeholder-slate-400 text-xs px-3 pr-16 rounded-lg border border-slate-250 focus:outline-none focus:border-[#25d958] focus:ring-1 focus:ring-[#25d958]/20 transition-all font-semibold"
+                    className="w-48 lg:w-56 h-9 bg-white text-slate-800 placeholder-slate-450 text-xs pl-8 pr-7 rounded-lg border border-slate-250 focus:outline-none focus:border-[#25d958] focus:ring-1 focus:ring-[#25d958]/20 transition-all font-semibold"
                     autoFocus
                   />
-                  <button type="submit" className="absolute right-7 p-1 text-slate-400 hover:text-[#25d958] transition-colors">
-                    <Search className="w-3.5 h-3.5" />
-                  </button>
-                  <button type="button" onClick={closeSearch} className="absolute right-1.5 p-1 text-slate-450 hover:text-slate-700 transition-colors">
+                  <button type="button" onClick={closeSearch} className="absolute right-2 p-1 text-slate-450 hover:text-slate-700 transition-colors">
                     <X className="w-3.5 h-3.5" />
                   </button>
 
@@ -527,6 +527,9 @@ const Navbar = () => {
         {isMobileSearchOpen && (
           <div className="md:hidden py-3 border-t border-white/10 relative" ref={mobileSearchRef}>
             <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
+              <div className="absolute left-3.5 flex items-center pointer-events-none">
+                <Search className="w-4 h-4 text-slate-400" />
+              </div>
               <input
                 type="text"
                 placeholder="Search products..."
@@ -534,12 +537,9 @@ const Navbar = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onFocus={() => { if (searchQuery.trim()) setShowDropdown(true); }}
-                className="w-full h-10 bg-white text-slate-800 placeholder-slate-400 text-sm px-4 pr-16 rounded-lg border border-slate-250 focus:outline-none focus:border-[#25d958]"
+                className="w-full h-10 bg-white text-slate-800 placeholder-slate-450 text-sm pl-10 pr-9 rounded-lg border border-slate-250 focus:outline-none focus:border-[#25d958]"
                 autoFocus
               />
-              <button type="submit" className="absolute right-9 p-1 text-slate-400 hover:text-[#25d958]">
-                <Search className="w-4 h-4" />
-              </button>
               <button type="button" onClick={closeSearch} className="absolute right-2.5 p-1 text-slate-450 hover:text-slate-700 transition-colors">
                 <X className="w-4 h-4" />
               </button>
