@@ -870,10 +870,10 @@ const AdminOrderDetailsPage = () => {
 
           {/* Shipment Courier Info (If shipped) */}
           {order.tracking_id && (
-            <div className="bg-sky-50/60 border border-sky-100/80 rounded-3xl p-5 shadow-sm flex items-start gap-4 animate-in fade-in duration-300">
-              <Truck className="w-6 h-6 text-sky-600 shrink-0 mt-0.5" />
+            <div className="bg-sky-50/60 dark:bg-[#19231F] border border-sky-100/80 dark:border-[#26322B] rounded-3xl p-5 shadow-sm flex items-start gap-4 animate-in fade-in duration-300">
+              <Truck className="w-6 h-6 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-[10px] font-black text-sky-700 uppercase tracking-widest mb-1.5">Courier & Tracking details</h4>
+                <h4 className="text-[10px] font-black text-sky-700 dark:text-sky-400 uppercase tracking-widest mb-1.5">Courier & Tracking details</h4>
                 <div className="text-xs text-slate-600 leading-relaxed font-semibold">
                   <p>Carrier Name: <span className="font-extrabold text-slate-900">{order.carrier || 'Courier'}</span></p>
                    <p className="mt-0.5 flex items-center gap-1.5">
@@ -908,10 +908,10 @@ const AdminOrderDetailsPage = () => {
 
           {/* Return Details Panel inside modal */}
           {order.return_reason && (
-            <div className="bg-amber-50/70 border border-amber-100 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row gap-6 items-start animate-in slide-in-from-bottom-2 duration-300">
+            <div className="bg-amber-50/70 dark:bg-[#19231F] border border-amber-100 dark:border-[#26322B] rounded-3xl p-6 shadow-sm flex flex-col md:flex-row gap-6 items-start animate-in slide-in-from-bottom-2 duration-300">
               <div className="flex-1 space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-amber-100/50">
-                  <h4 className="text-[10px] font-black text-amber-700 uppercase tracking-widest flex items-center gap-2">
+                <div className="flex items-center justify-between pb-2 border-b border-amber-100/50 dark:border-[#26322B]">
+                  <h4 className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest flex items-center gap-2">
                     <RefreshCcw className="w-4 h-4 shrink-0" />
                     Return Request Details
                   </h4>
@@ -929,20 +929,20 @@ const AdminOrderDetailsPage = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Customer Return Reason</div>
-                    <div className="text-xs font-bold text-slate-800 bg-white p-3 rounded-xl border border-slate-100/60 leading-relaxed shadow-sm">{order.return_reason}</div>
+                    <div className="text-[9px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Customer Return Reason</div>
+                    <div className="text-xs font-bold text-slate-800 dark:text-white bg-white dark:bg-[#131B17] p-3 rounded-xl border border-slate-100/60 dark:border-[#26322B] leading-relaxed shadow-sm">{order.return_reason}</div>
                   </div>
 
                   {order.admin_message && (
                     <div className="space-y-1">
-                      <div className="text-[9px] font-black text-primary uppercase tracking-widest">Admin Resolution Remarks</div>
-                      <div className="text-xs font-bold text-slate-800 bg-white p-3 rounded-xl border border-slate-100/60 leading-relaxed shadow-sm">{order.admin_message}</div>
+                      <div className="text-[9px] font-black text-primary dark:text-[#25D958] uppercase tracking-widest">Admin Resolution Remarks</div>
+                      <div className="text-xs font-bold text-slate-800 dark:text-white bg-white dark:bg-[#131B17] p-3 rounded-xl border border-slate-100/60 dark:border-[#26322B] leading-relaxed shadow-sm">{order.admin_message}</div>
                     </div>
                   )}
                 </div>
 
                 <div className="mt-4 space-y-3.5">
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Items In This Return Request</div>
+                  <div className="text-[10px] font-black text-slate-500 dark:text-slate-300 uppercase tracking-widest">Items In This Return Request</div>
                   <div className="space-y-3">
                     {order.items?.filter(item => item.return_status).map((item, idx) => (
                       <div key={idx} className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
@@ -1185,7 +1185,7 @@ const AdminOrderDetailsPage = () => {
 
               {order.return_image_url && (
                 <div className="w-full md:w-44 shrink-0 space-y-2">
-                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Uploaded Return Proof</div>
+                  <div className="text-[9px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Uploaded Return Proof</div>
                   <div className="flex flex-wrap gap-2">
                     {order.return_image_url.split(',').map((url, idx) => {
                       const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
