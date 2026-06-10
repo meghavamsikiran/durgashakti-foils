@@ -394,6 +394,7 @@ const InventoryPage = () => {
           totalItems={total}
           pageSize={ITEMS_PER_PAGE}
         />
+      </div>
         {adjustModal && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4 animate-in fade-in duration-300">
           <div className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200 dark:border-[#26322B] scale-in-center overflow-hidden">
