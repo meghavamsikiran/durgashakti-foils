@@ -437,13 +437,13 @@ const Navbar = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onFocus={() => { if (searchQuery.trim()) setShowDropdown(true); }}
-                    className="w-48 lg:w-56 h-9 bg-white/10 text-white placeholder-white/50 text-xs px-3 pr-8 rounded-lg border border-white/15 focus:outline-none focus:border-[#25d958] focus:ring-1 focus:ring-[#25d958]/20 transition-all font-semibold"
+                    className="w-48 lg:w-56 h-9 bg-white text-slate-800 placeholder-slate-400 text-xs px-3 pr-16 rounded-lg border border-slate-250 focus:outline-none focus:border-[#25d958] focus:ring-1 focus:ring-[#25d958]/20 transition-all font-semibold"
                     autoFocus
                   />
-                  <button type="submit" className="absolute right-8 p-1 text-white/70 hover:text-[#25d958] transition-colors">
+                  <button type="submit" className="absolute right-7 p-1 text-slate-400 hover:text-[#25d958] transition-colors">
                     <Search className="w-3.5 h-3.5" />
                   </button>
-                  <button type="button" onClick={closeSearch} className="absolute right-2 p-1 text-white/50 hover:text-white transition-colors">
+                  <button type="button" onClick={closeSearch} className="absolute right-1.5 p-1 text-slate-450 hover:text-slate-700 transition-colors">
                     <X className="w-3.5 h-3.5" />
                   </button>
 
@@ -534,13 +534,13 @@ const Navbar = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onFocus={() => { if (searchQuery.trim()) setShowDropdown(true); }}
-                className="w-full h-10 bg-white/10 text-white placeholder-white/50 text-sm px-4 pr-16 rounded-lg border border-white/15 focus:outline-none focus:border-[#25d958]"
+                className="w-full h-10 bg-white text-slate-800 placeholder-slate-400 text-sm px-4 pr-16 rounded-lg border border-slate-250 focus:outline-none focus:border-[#25d958]"
                 autoFocus
               />
-              <button type="submit" className="absolute right-10 p-1 text-white/70 hover:text-[#25d958]">
+              <button type="submit" className="absolute right-9 p-1 text-slate-400 hover:text-[#25d958]">
                 <Search className="w-4 h-4" />
               </button>
-              <button type="button" onClick={closeSearch} className="absolute right-3 p-1 text-white/50 hover:text-white transition-colors">
+              <button type="button" onClick={closeSearch} className="absolute right-2.5 p-1 text-slate-450 hover:text-slate-700 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </form>
