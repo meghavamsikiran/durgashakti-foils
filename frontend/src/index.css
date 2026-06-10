@@ -956,6 +956,14 @@ h1, h2, h3, h4, h5, h6 {
   color: #ffffff !important;
 }
 
+.admin-shell input:focus, 
+.admin-shell select:focus, 
+.admin-shell textarea:focus {
+  background-color: #19231F !important;
+  color: #ffffff !important;
+  border-color: #25D958 !important;
+}
+
 .admin-shell input::placeholder, 
 .admin-shell textarea::placeholder {
   color: #64748B !important;
