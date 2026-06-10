@@ -62,21 +62,17 @@
                     if (theme === 'dark' || isAdmin) {
                         document.documentElement.classList.add('dark');
                         document.documentElement.classList.remove('light-theme');
+                        document.write('<style>html, body { background-color: #0C1310 !important; color: #ffffff !important; }</style>');
                     } else {
                         document.documentElement.classList.add('light-theme');
                         document.documentElement.classList.remove('dark');
+                        document.write('<style>html, body { background-color: #f7faf8 !important; color: #181c1b !important; }</style>');
                     }
                 } catch (e) {}
             })();
         </script>
-        <style>
-            html, body {
-                background-color: #0C1310 !important;
-                color: #ffffff;
-            }
-        </style>
     </head>
-    <body style="background-color: #0C1310; margin: 0;">
+    <body style="margin: 0;">
         <noscript>You need to enable JavaScript to run this app.</noscript>
         <div id="root"></div>
         <!--
