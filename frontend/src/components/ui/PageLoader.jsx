@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
 /**
  * PageLoader — A premium, full-screen centered circular spinner loader.
@@ -6,31 +6,8 @@ import React, { useState, useEffect } from 'react';
  * orange trident icon, and customized uppercase labels.
  *
  * Fully transparent background — no blur, no overlay tint.
- * Suppressed completely during page transition, browser refresh, or initial load
- * to prevent overlapping or consecutive loader flashes.
  */
 const PageLoader = () => {
-  const [suppressed, setSuppressed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return !!(window.__routeTransitionActive || window.__initialPageLoadActive);
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    if (suppressed) {
-      const interval = setInterval(() => {
-        if (typeof window !== 'undefined' && !window.__routeTransitionActive && !window.__initialPageLoadActive) {
-          setSuppressed(false);
-          clearInterval(interval);
-        }
-      }, 100);
-      return () => clearInterval(interval);
-    }
-  }, [suppressed]);
-
-  if (suppressed) return null;
-
   return (
     <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center pointer-events-none">
       <div className="flex flex-col items-center justify-center gap-5">
