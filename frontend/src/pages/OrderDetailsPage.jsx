@@ -973,7 +973,7 @@ const OrderDetailsPage = () => {
                                   [item.product_id]: { ...returnInfo, quantity: parseInt(e.target.value) }
                                 }));
                               }}
-                              className="px-2 py-1 rounded-lg border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] focus:outline-none"
+                                                            className="px-2 py-1 rounded-lg border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] text-slate-800 dark:text-white focus:outline-none"
                             >
                               {[...Array(item.quantity)].map((_, i) => (
                                 <option key={i+1} value={i+1}>{i+1}</option>
@@ -1027,7 +1027,7 @@ const OrderDetailsPage = () => {
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   required
-                  className="w-full h-12 px-4 rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                   className="w-full h-12 px-4 rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                 >
                   <option value="">Select a reason...</option>
                   <option value="Damaged/Defective Product">Damaged or Defective Product</option>
@@ -1788,7 +1788,7 @@ const OrderDetailsPage = () => {
                         setCourierName(val);
                       }
                     }}
-                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                   >
                     <option value="">Select Courier</option>
                     {COURIER_OPTIONS.map(opt => (

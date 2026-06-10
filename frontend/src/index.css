@@ -106,6 +106,21 @@ h1, h2, h3, h4, h5, h6 {
         --warning-orange: #F97316;
     }
 
+    .dark {
+        --ink-slate: #ffffff;
+    }
+
+    /* Fix native browser select option visibility in dark mode */
+    .dark select {
+        color: #ffffff !important;
+        background-color: #131B17 !important;
+    }
+
+    .dark select option {
+        background-color: #131B17 !important;
+        color: #ffffff !important;
+    }
+
     .glass {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(20px);
