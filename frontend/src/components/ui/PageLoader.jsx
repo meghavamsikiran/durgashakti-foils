@@ -9,7 +9,7 @@ import React from 'react';
  */
 const PageLoader = () => {
   return (
-    <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center pointer-events-none">
+    <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center bg-background">
       <div className="flex flex-col items-center justify-center gap-5">
         <div className="relative w-16 h-16 flex items-center justify-center">
           {/* Circular track */}
