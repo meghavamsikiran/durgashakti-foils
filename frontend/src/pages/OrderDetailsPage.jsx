@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star, Clock, Copy } from 'lucide-react';
+import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star, Clock, Copy, ChevronDown } from 'lucide-react';
 import { Button } from './../components/ui/button';
 import { formatImageUrl } from './../utils/api';
 import { useProgress } from './../components/ui/ProgressToast';
@@ -53,6 +53,17 @@ const OrderDetailsPage = () => {
   const [notes, setNotes] = useState('');
   const [invoiceFile, setInvoiceFile] = useState(null);
   const [submittingSelfShip, setSubmittingSelfShip] = useState(false);
+  const [courierDropdownOpen, setCourierDropdownOpen] = useState(false);
+  const [isCustomCourier, setIsCustomCourier] = useState(false);
+
+  React.useEffect(() => {
+    if (selfShipModal) {
+      setCourierName('');
+      setTrackingNumber('');
+      setCourierDropdownOpen(false);
+      setIsCustomCourier(false);
+    }
+  }, [selfShipModal]);
 
   React.useEffect(() => {
     if (isReturning && order?.items) {
@@ -1791,32 +1802,68 @@ const OrderDetailsPage = () => {
 
                 <div className="space-y-1">
                   <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Courier / Carrier Name *</label>
-                  <select
-                    required
-                    value={COURIER_OPTIONS.includes(courierName) ? courierName : (courierName ? 'Other' : '')}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === 'Other') {
-                        setCourierName('');
-                      } else {
-                        setCourierName(val);
-                      }
-                    }}
-                    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                  >
-                    <option value="">Select Courier</option>
-                    {COURIER_OPTIONS.map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                  {courierName && (!COURIER_OPTIONS.includes(courierName) || courierName === 'Other') && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setCourierDropdownOpen(!courierDropdownOpen)}
+                      className="w-full h-11 px-3.5 rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none flex items-center justify-between text-left cursor-pointer"
+                    >
+                      <span>
+                        {isCustomCourier 
+                          ? 'Other' 
+                          : (courierName || 'Select Courier')}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${courierDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {courierDropdownOpen && (
+                      <div className="absolute z-[999999] w-full mt-1.5 rounded-xl border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#131B17] shadow-xl max-h-[180px] overflow-y-auto">
+                        <div className="p-1 space-y-0.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCourierName('');
+                              setIsCustomCourier(false);
+                              setCourierDropdownOpen(false);
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs font-bold rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#19231F] transition-all cursor-pointer"
+                          >
+                            Select Courier
+                          </button>
+                          {COURIER_OPTIONS.map(opt => (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                if (opt === 'Other') {
+                                  setCourierName('');
+                                  setIsCustomCourier(true);
+                                } else {
+                                  setCourierName(opt);
+                                  setIsCustomCourier(false);
+                                }
+                                setCourierDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                                (opt === 'Other' && isCustomCourier) || (!isCustomCourier && courierName === opt)
+                                  ? 'bg-primary/10 text-primary'
+                                  : 'text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#19231F]'
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {isCustomCourier && (
                     <input
                       type="text"
                       required
                       placeholder="Enter custom courier name"
                       value={courierName}
                       onChange={(e) => setCourierName(e.target.value)}
-                      className="w-full h-11 mt-2 px-3.5 rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                      className="w-full h-11 mt-2 px-3.5 rounded-xl border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] text-slate-800 dark:text-white focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     />
                   )}
                 </div>
