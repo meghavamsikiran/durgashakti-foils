@@ -151,14 +151,16 @@ const DurgaMaaLoader = () => {
         muted
         playsInline
         loop
+        autoPlay
         preload="auto"
         style={{ 
-          opacity: 0.001, 
+          opacity: 0.01, 
           position: 'absolute', 
-          width: '100px', 
-          height: '80px', 
+          width: '100%', 
+          height: '100%', 
           pointerEvents: 'none', 
-          zIndex: -1 
+          objectFit: 'cover',
+          zIndex: 0
         }}
       />
 
@@ -170,6 +172,8 @@ const DurgaMaaLoader = () => {
         className="w-full h-full"
         style={{
           display: 'block',
+          position: 'relative',
+          zIndex: 1,
           background: 'transparent',
           backgroundColor: 'transparent',
           filter: 'contrast(1.2) brightness(1.1)',
