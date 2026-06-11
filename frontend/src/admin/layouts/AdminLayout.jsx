@@ -192,7 +192,7 @@ const AdminLayout = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 md:ml-64 min-h-screen bg-[#0C1310]">
-        <div className="mx-auto max-w-[1280px] p-3 md:py-3.5 md:px-6">
+        <div className={location.pathname.endsWith('/shop') ? 'w-full' : 'mx-auto max-w-[1280px] p-3 md:py-3.5 md:px-6'}>
           <Outlet />
         </div>
       </main>
