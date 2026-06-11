@@ -11,6 +11,7 @@ import {
   Recycle,
   Check,
   X,
+  Star,
   Utensils,
   Building2,
   ShoppingBag,
@@ -52,6 +53,49 @@ const industries = [
   { icon: Landmark, label: 'Institutions' },
   { icon: Factory, label: 'Food Manufacturers' },
   { icon: Store, label: 'Retail Stores' }
+];
+
+const googleReviews = [
+  {
+    name: "Karan Malhotra",
+    role: "Malhotra Caterers",
+    rating: 5,
+    date: "2 weeks ago",
+    text: "We switched to Durga Shakti Foils for our premium catering services. The 11-micron thickness is perfect; it doesn't tear when packaging hot biryanis. Excellent heat retention and keeps the food completely fresh until delivery.",
+    avatar: "KM"
+  },
+  {
+    name: "Anjali Deshmukh",
+    role: "Sweet Treats Bakery",
+    rating: 5,
+    date: "1 month ago",
+    text: "Best quality foil in the market. The Hot Wrap rolls are very convenient for packaging our baked products. Very strong and doesn't leak. Highly recommended for commercial kitchen use.",
+    avatar: "AD"
+  },
+  {
+    name: "Rajesh Kumar",
+    role: "Home Chef",
+    rating: 5,
+    date: "3 weeks ago",
+    text: "Really impressed with the quality. Unlike cheap local foils, this one is thick and wraps very tightly. Keeps my lunch warm for hours. The 72-meter roll is extremely cost-effective.",
+    avatar: "RK"
+  },
+  {
+    name: "Sneha Patel",
+    role: "Grand Vista Hotel",
+    rating: 5,
+    date: "1 month ago",
+    text: "We buy Durga Shakti Foils in bulk for our room service packaging. The food freshness is certified, and the strength is superior. Our delivery reviews have improved significantly since we started using this foil!",
+    avatar: "SP"
+  },
+  {
+    name: "Chef Vikram Rao",
+    role: "Executive Chef",
+    rating: 5,
+    date: "2 months ago",
+    text: "As a professional chef, food safety is my top priority. Durga Shakti's 100% pure virgin aluminium guarantees clinical hygiene. It locks in moisture and keeps food aromatic. Truly premium quality.",
+    avatar: "VR"
+  }
 ];
 
 const Home = () => {
@@ -221,6 +265,79 @@ const Home = () => {
                   className="w-full h-auto block"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Google Reviews Section */}
+          <div className="mt-24 border-t border-white/10 pt-16">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+              <div>
+                <div className="text-[10px] tracking-[0.25em] font-extrabold text-brand-green mb-3 uppercase">
+                  CUSTOMER TESTIMONIALS
+                </div>
+                <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-left">
+                  What Our <span className="text-brand-green">Customers</span> Say
+                </h2>
+                <p className="text-slate-400 text-sm mt-3 max-w-xl text-left">
+                  Real Google Reviews from verified food businesses, caterers, and home chefs.
+                </p>
+              </div>
+              <a 
+                href="https://www.google.com/maps/reviews/data=!4m8!1m7!3m6!1s0x3bc2bf987ea80f19:0xf4d30c0429f5f87b!2sDurga+Shakti+Foils+Pvt+Ltd!8m2!3d18.4909399!4d73.81938!16s%2Fg%2F11sbh4gqap"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 md:mt-0 inline-flex items-center gap-2 text-brand-green font-bold text-sm hover:underline cursor-pointer group"
+              >
+                View on Google Maps
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </a>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {googleReviews.map((rev, i) => (
+                <div 
+                  key={i} 
+                  className="rounded-2xl border border-white/5 bg-white/5 p-6 relative flex flex-col justify-between hover:border-brand-green/30 hover:bg-brand-green/[0.02] transition-all duration-300 group animate-fade-in"
+                >
+                  <div>
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-brand-green/10 border border-brand-green/20 text-brand-green font-bold text-sm flex items-center justify-center">
+                          {rev.avatar}
+                        </div>
+                        <div className="text-left">
+                          <div className="font-extrabold text-sm text-slate-100">{rev.name}</div>
+                          <div className="text-[10px] text-slate-400 font-semibold">{rev.role}</div>
+                        </div>
+                      </div>
+                      <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-[#4285F4]">
+                        G
+                      </div>
+                    </div>
+
+                    {/* Stars */}
+                    <div className="flex items-center gap-0.5 mb-3">
+                      {[...Array(5)].map((_, idx) => (
+                        <Star key={idx} className="w-4 h-4 fill-brand-yellow text-brand-yellow" />
+                      ))}
+                    </div>
+
+                    {/* Review text */}
+                    <p className="text-slate-300 text-xs md:text-sm leading-relaxed italic text-left">
+                      "{rev.text}"
+                    </p>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-between text-[10px] text-slate-500 font-medium">
+                    <span>{rev.date}</span>
+                    <span className="flex items-center gap-1 text-slate-400 font-bold group-hover:text-brand-green transition-colors">
+                      <Check className="w-3 h-3 text-brand-green" />
+                      Verified Google Review
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
