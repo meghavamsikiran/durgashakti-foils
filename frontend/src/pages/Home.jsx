@@ -60,13 +60,13 @@ const industries = [
 
 const googleReviews = [
   {
-    name: "Paritosh Debbarma",
+    name: "Mharishnaick Mharishnaick",
     rating: 5,
     date: "3 months ago",
-    text: "Good quality product in affordable price. Satisfied with the service.😜👍",
-    avatar: "PD",
-    avatarBg: "bg-teal-700",
-    shareUrl: "https://maps.app.goo.gl/ArQNtUWttRxpy5P27"
+    text: "Durgashakti Foils Pvt Ltd stands out for its premium quality and trustworthy service. The finishing and durability of their products are top-notch. Customer handling is very professional and friendly. Delivery is always on time, and they maintain high standards in everything they do. Proud to see such a growing and promising company. Highly recommended.",
+    avatar: "MM",
+    avatarBg: "bg-indigo-700",
+    shareUrl: "https://maps.app.goo.gl/Bvgxaf6kD6MbhJZ99"
   },
   {
     name: "Mili Mili",
@@ -76,24 +76,6 @@ const googleReviews = [
     avatar: "MM",
     avatarBg: "bg-pink-700",
     shareUrl: "https://maps.app.goo.gl/FDfwnyBdn9SRZFWL6"
-  },
-  {
-    name: "Akash Das",
-    rating: 5,
-    date: "3 months ago",
-    text: "Very advanced technology used, good quality products and very low prices",
-    avatar: "AD",
-    avatarBg: "bg-blue-700",
-    shareUrl: "https://maps.app.goo.gl/e6bCGRGvdU1pmdnP9"
-  },
-  {
-    name: "Mharishnaick Mharishnaick",
-    rating: 5,
-    date: "3 months ago",
-    text: "Durgashakti Foils Pvt Ltd stands out for its premium quality and trustworthy service. The finishing and durability of their products are top-notch. Customer handling is very professional and friendly. Delivery is always on time, and they maintain high standards in everything they do. Proud to see such a growing and promising company. Highly recommended.",
-    avatar: "MM",
-    avatarBg: "bg-indigo-700",
-    shareUrl: "https://maps.app.goo.gl/Bvgxaf6kD6MbhJZ99"
   },
   {
     name: "Varma",
@@ -112,15 +94,37 @@ const googleReviews = [
     avatar: "HB",
     avatarBg: "bg-yellow-700",
     shareUrl: "https://maps.app.goo.gl/bcWq5kQTxQKBwSqx8"
+  },
+  {
+    name: "Paritosh Debbarma",
+    rating: 5,
+    date: "3 months ago",
+    text: "Good quality product in affordable price. Satisfied with the service.😜👍",
+    avatar: "PD",
+    avatarBg: "bg-teal-700",
+    shareUrl: "https://maps.app.goo.gl/ArQNtUWttRxpy5P27"
+  },
+  {
+    name: "Akash Das",
+    rating: 5,
+    date: "3 months ago",
+    text: "Very advanced technology used, good quality products and very low prices",
+    avatar: "AD",
+    avatarBg: "bg-blue-700",
+    shareUrl: "https://maps.app.goo.gl/e6bCGRGvdU1pmdnP9"
   }
 ];
 
 const Home = () => {
   const navigate = useNavigate();
   const [themeMode, setThemeMode] = React.useState(() => localStorage.getItem('themeMode') || 'dark');
+  const [theme, setTheme] = React.useState(() => localStorage.getItem('themeMode') || 'dark');
 
   React.useEffect(() => {
-    const handleTheme = (e) => setThemeMode(e.detail);
+    const handleTheme = (e) => {
+      setThemeMode(e.detail);
+      setTheme(e.detail);
+    };
     window.addEventListener('theme-toggle', handleTheme);
     return () => window.removeEventListener('theme-toggle', handleTheme);
   }, []);
@@ -128,12 +132,12 @@ const Home = () => {
   const isLight = themeMode === 'light';
 
   const [likes, setLikes] = useState({
-    0: { count: 3, liked: false },
+    0: { count: 7, liked: false },
     1: { count: 5, liked: false },
-    2: { count: 2, liked: false },
-    3: { count: 7, liked: false },
-    4: { count: 4, liked: false },
-    5: { count: 6, liked: false }
+    2: { count: 4, liked: false },
+    3: { count: 6, liked: false },
+    4: { count: 3, liked: false },
+    5: { count: 2, liked: false }
   });
 
   const [gmapStats, setGmapStats] = useState({
