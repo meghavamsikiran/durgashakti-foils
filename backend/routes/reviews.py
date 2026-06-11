@@ -247,7 +247,80 @@ logger = logging.getLogger(__name__)
 # Place ID for DurgaShaktiFoils PVT.LTD on Google Maps
 _PLACE_ID = os.environ.get("GOOGLE_PLACE_ID", "ChIJ8V-3TK6LwzkDs3d4O0AP3SI")
 
-_places_cache: dict = {"data": None, "expires_at": None}
+async def _fetch_live_google_rating_without_api() -> dict | None:
+    """
+    Attempts to fetch live review count and rating from Google Maps page.
+    Uses custom user agents and fallback parsing strategies.
+    Result is cached for 1 hour to prevent any performance or server load issues.
+    """
+    global _places_cache
+    now = datetime.now(timezone.utc)
+
+    # Cache for 1 hour (3600 seconds) to avoid any rate limiting or server load
+    if _places_cache["data"] and _places_cache["expires_at"] and now < _places_cache["expires_at"]:
+        return _places_cache["data"]
+
+    # Google Maps URL for DurgaShaktiFoils PVT.LTD.
+    url = f"https://www.google.com/maps/place/?q=place_id:{_PLACE_ID}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            resp = await client.get(url, headers=headers)
+            if resp.status_code == 200:
+                html = resp.text
+                
+                # Method 1: Look for JSON-like window.APP_INITIALIZATION_STATE or similar data structures in Google Maps
+                # Format: [null,null,rating_average,review_count]
+                import re
+                rating_match = re.search(r'\\",(\d\.\d),\d+,\\"\d+ reviews\\"', html)
+                if not rating_match:
+                    # Alternative regex search for review count & average rating
+                    rating_match = re.search(r'(\d\.\d) stars, (\d+) reviews', html)
+                
+                # Check for schema.org JSON-LD or metadata if available
+                # Or find standard patterns like: [4.9, 57]
+                rating = None
+                count = None
+                
+                # Let's inspect for specific pattern containing DurgaShaktiFoils rating
+                # Fallback pattern matching:
+                meta_rating = re.search(r'"https://schema.org/AggregateRating".*?"ratingValue":\s*"([\d\.]+)"', html)
+                meta_count = re.search(r'"https://schema.org/AggregateRating".*?"reviewCount":\s*"(\d+)"', html)
+                
+                if meta_rating and meta_count:
+                    rating = float(meta_rating.group(1))
+                    count = int(meta_count.group(2))
+                else:
+                    # Let's find numeric patterns with reviews indicator
+                    reviews_pattern = re.search(r'(\d+) Google reviews', html)
+                    if reviews_pattern:
+                        count = int(reviews_pattern.group(1))
+                        # Find rating near the review count
+                        rating_pattern = re.search(r'([\d\.]+)\s+stars', html)
+                        if rating_pattern:
+                            rating = float(rating_pattern.group(1))
+                
+                if rating and count:
+                    dist = {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0}
+                    star_key = str(int(round(rating)))
+                    if star_key in dist:
+                        dist[star_key] = count
+                    data = {
+                        "rating_average": round(rating, 1),
+                        "review_count": count,
+                        "rating_distribution": dist,
+                    }
+                    _places_cache["data"] = data
+                    _places_cache["expires_at"] = now + timedelta(hours=1)
+                    logger.info(f"Successfully scraped live Google Maps data: {count} reviews, {rating} stars")
+                    return data
+    except Exception as e:
+        logger.warning(f"Error scraping Google Maps reviews: {e}")
+    return None
 
 
 async def _fetch_from_places_api(api_key: str) -> dict | None:
@@ -284,7 +357,7 @@ async def _fetch_from_places_api(api_key: str) -> dict | None:
                         "rating_distribution": dist,
                     }
                     _places_cache["data"] = data
-                    _places_cache["expires_at"] = now + timedelta(minutes=5)
+                    _places_cache["expires_at"] = now + timedelta(hours=1)
                     return data
             else:
                 logger.warning(f"Places API returned status: {body.get('status')} — {body.get('error_message', '')}")
@@ -299,18 +372,20 @@ async def get_google_reviews_summary():
     Returns live Google Maps review stats for DurgaShaktiFoils PVT.LTD.
 
     Priority:
-      1. Google Places API (true live) — set GOOGLE_PLACES_API_KEY env var on Render.
-      2. Manual env vars — set GOOGLE_REVIEW_COUNT and GOOGLE_RATING on Render.
-
-    How to get a Google Places API key (free):
-      https://developers.google.com/maps/documentation/places/web-service/get-api-key
-    Then add on Render: GOOGLE_PLACES_API_KEY=<your key>
+      1. Google Places API (true live) — if GOOGLE_PLACES_API_KEY is configured.
+      2. Direct Live Scraping (free, zero API key) — attempts to extract live data directly.
+      3. Manual env vars (fallback) — GOOGLE_REVIEW_COUNT and GOOGLE_RATING.
     """
     api_key = os.environ.get("GOOGLE_PLACES_API_KEY", "")
     if api_key:
         live = await _fetch_from_places_api(api_key)
         if live:
             return live
+
+    # Attempt direct scraper without key (completely free & automatic)
+    live_scraped = await _fetch_live_google_rating_without_api()
+    if live_scraped:
+        return live_scraped
 
     # Fallback: manual env vars (update on Render whenever count changes)
     try:
