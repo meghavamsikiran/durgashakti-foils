@@ -12,6 +12,9 @@ import {
   Check,
   X,
   Star,
+  ThumbsUp,
+  Share2,
+  MoreVertical,
   Utensils,
   Building2,
   ShoppingBag,
@@ -57,44 +60,44 @@ const industries = [
 
 const googleReviews = [
   {
-    name: "Karan Malhotra",
-    role: "Malhotra Caterers",
+    name: "Paritosh Debbarma",
     rating: 5,
-    date: "2 weeks ago",
-    text: "We switched to Durga Shakti Foils for our premium catering services. The 11-micron thickness is perfect; it doesn't tear when packaging hot biryanis. Excellent heat retention and keeps the food completely fresh until delivery.",
-    avatar: "KM"
+    date: "3 months ago",
+    text: "Good quality product in affordable price. Satisfied with the service.😜👍",
+    avatar: "PD",
+    avatarBg: "bg-teal-700"
   },
   {
-    name: "Anjali Deshmukh",
-    role: "Sweet Treats Bakery",
+    name: "Mili Mili",
     rating: 5,
-    date: "1 month ago",
-    text: "Best quality foil in the market. The Hot Wrap rolls are very convenient for packaging our baked products. Very strong and doesn't leak. Highly recommended for commercial kitchen use.",
-    avatar: "AD"
+    date: "3 months ago",
+    text: "Good and affordable in price.\nIt helped me a lot to keep my food hot and fresh thankyou durgashakti foils I bought a 72 m foil roll the owner gave me free a 6m roll also. Very happy and satisfied by service of them.",
+    avatar: "MM",
+    avatarBg: "bg-pink-700"
   },
   {
-    name: "Rajesh Kumar",
-    role: "Home Chef",
+    name: "Akash Das",
     rating: 5,
-    date: "3 weeks ago",
-    text: "Really impressed with the quality. Unlike cheap local foils, this one is thick and wraps very tightly. Keeps my lunch warm for hours. The 72-meter roll is extremely cost-effective.",
-    avatar: "RK"
+    date: "3 months ago",
+    text: "Very advanced technology used, good quality products and very low prices",
+    avatar: "AD",
+    avatarBg: "bg-blue-700"
   },
   {
-    name: "Sneha Patel",
-    role: "Grand Vista Hotel",
+    name: "Mharishnaick Mharishnaick",
     rating: 5,
-    date: "1 month ago",
-    text: "We buy Durga Shakti Foils in bulk for our room service packaging. The food freshness is certified, and the strength is superior. Our delivery reviews have improved significantly since we started using this foil!",
-    avatar: "SP"
+    date: "3 months ago",
+    text: "Durgashakti Foils Pvt Ltd stands out for its premium quality and trustworthy service. The finishing and durability of their products are top-notch. Customer handling is very professional and friendly. Delivery is always on time, and they maintain high standards in everything they do. Proud to see such a growing and promising company. Highly recommended.",
+    avatar: "MM",
+    avatarBg: "bg-indigo-700"
   },
   {
-    name: "Chef Vikram Rao",
-    role: "Executive Chef",
+    name: "Varma",
     rating: 5,
-    date: "2 months ago",
-    text: "As a professional chef, food safety is my top priority. Durga Shakti's 100% pure virgin aluminium guarantees clinical hygiene. It locks in moisture and keeps food aromatic. Truly premium quality.",
-    avatar: "VR"
+    date: "4 months ago",
+    text: "They provide Good quality house foil. Which keeps food hot for soo long i have bought couple of their products in affordable price and superb quality. 👌 the owner is also very polite and well behaved with me very satisfied with the service.",
+    avatar: "V",
+    avatarBg: "bg-slate-700"
   }
 ];
 
@@ -297,44 +300,57 @@ const Home = () => {
               {googleReviews.map((rev, i) => (
                 <div 
                   key={i} 
-                  className="rounded-2xl border border-white/5 bg-white/5 p-6 relative flex flex-col justify-between hover:border-brand-green/30 hover:bg-brand-green/[0.02] transition-all duration-300 group animate-fade-in"
+                  className="rounded-2xl border border-white/5 bg-[#121c18] p-6 relative flex flex-col justify-between hover:border-brand-green/30 transition-all duration-300 group shadow-md"
                 >
                   <div>
                     {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-brand-green/10 border border-brand-green/20 text-brand-green font-bold text-sm flex items-center justify-center">
+                        <div className={`w-10 h-10 rounded-full ${rev.avatarBg} text-white font-extrabold text-sm flex items-center justify-center`}>
                           {rev.avatar}
                         </div>
                         <div className="text-left">
-                          <div className="font-extrabold text-sm text-slate-100">{rev.name}</div>
-                          <div className="text-[10px] text-slate-400 font-semibold">{rev.role}</div>
+                          <a 
+                            href="https://www.google.com/maps/reviews/data=!4m8!1m7!3m6!1s0x3bc2bf987ea80f19:0xf4d30c0429f5f87b!2sDurga+Shakti+Foils+Pvt+Ltd!8m2!3d18.4909399!4d73.81938!16s%2Fg%2F11sbh4gqap"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-bold text-sm text-slate-100 hover:underline cursor-pointer"
+                          >
+                            {rev.name}
+                          </a>
                         </div>
                       </div>
-                      <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-bold text-[#4285F4]">
-                        G
+                      <button className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/5 transition-colors">
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Stars & Age Inline */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="flex items-center gap-0.5">
+                        {[...Array(5)].map((_, idx) => (
+                          <Star key={idx} className="w-4 h-4 fill-[#fbbc04] text-[#fbbc04]" />
+                        ))}
                       </div>
+                      <span className="text-xs text-slate-400 font-normal">{rev.date}</span>
                     </div>
 
-                    {/* Stars */}
-                    <div className="flex items-center gap-0.5 mb-3">
-                      {[...Array(5)].map((_, idx) => (
-                        <Star key={idx} className="w-4 h-4 fill-brand-yellow text-brand-yellow" />
-                      ))}
-                    </div>
-
-                    {/* Review text */}
-                    <p className="text-slate-300 text-xs md:text-sm leading-relaxed italic text-left">
-                      "{rev.text}"
+                    {/* Review text with newlines preserved */}
+                    <p className="text-slate-200 text-xs md:text-sm leading-relaxed text-left whitespace-pre-line font-medium mb-6">
+                      {rev.text}
                     </p>
                   </div>
 
-                  <div className="mt-6 flex items-center justify-between text-[10px] text-slate-500 font-medium">
-                    <span>{rev.date}</span>
-                    <span className="flex items-center gap-1 text-slate-400 font-bold group-hover:text-brand-green transition-colors">
-                      <Check className="w-3 h-3 text-brand-green" />
-                      Verified Google Review
-                    </span>
+                  {/* Actions (Like & Share) */}
+                  <div className="border-t border-white/5 pt-4 flex items-center gap-6">
+                    <button className="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-brand-green transition-colors cursor-pointer p-1 rounded hover:bg-white/5">
+                      <ThumbsUp className="w-4 h-4" />
+                      <span>Like</span>
+                    </button>
+                    <button className="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-brand-green transition-colors cursor-pointer p-1 rounded hover:bg-white/5">
+                      <Share2 className="w-4 h-4" />
+                      <span>Share</span>
+                    </button>
                   </div>
                 </div>
               ))}
