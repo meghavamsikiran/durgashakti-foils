@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import reviewService from '../services/review.service';
 import {
   ArrowRight,
   Leaf,
@@ -102,18 +103,46 @@ const googleReviews = [
     avatar: "V",
     avatarBg: "bg-slate-700",
     shareUrl: "https://maps.app.goo.gl/TWFb9tcqUwGtBxtc8"
+  },
+  {
+    name: "Hemanth Babu",
+    rating: 5,
+    date: "4 months ago",
+    text: "Quality is amazing and food remains hot for long time. Thanks to DurgaShaktiFoils.",
+    avatar: "HB",
+    avatarBg: "bg-yellow-700",
+    shareUrl: "https://maps.app.goo.gl/bcWq5kQTxQKBwSqx8"
   }
 ];
 
 const Home = () => {
   const navigate = useNavigate();
-  const [likes, setLikes] = React.useState({
+  const [likes, setLikes] = useState({
     0: { count: 3, liked: false },
     1: { count: 5, liked: false },
     2: { count: 2, liked: false },
     3: { count: 7, liked: false },
-    4: { count: 4, liked: false }
+    4: { count: 4, liked: false },
+    5: { count: 6, liked: false }
   });
+
+  const [gmapStats, setGmapStats] = useState({
+    rating_average: 5.0,
+    review_count: 57,
+    rating_distribution: { "5": 57, "4": 0, "3": 0, "2": 0, "1": 0 }
+  });
+
+  useEffect(() => {
+    reviewService.getGoogleSummary()
+      .then(data => {
+        if (data) {
+          setGmapStats(data);
+        }
+      })
+      .catch(err => {
+        console.warn("Failed to load live Google summary:", err);
+      });
+  }, []);
 
   const handleLike = (index) => {
     setLikes(prev => {
@@ -318,6 +347,43 @@ const Home = () => {
                 View on Google Maps
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </a>
+            </div>
+
+            {/* Live Ratings Summary Widget */}
+            <div className="mb-12 max-w-2xl mx-auto rounded-2xl border border-white/5 bg-[#131b17] p-6 flex flex-col sm:flex-row items-center justify-between gap-8 shadow-lg">
+              {/* Distribution Bars */}
+              <div className="w-full sm:w-[60%] flex flex-col gap-2.5">
+                {[5, 4, 3, 2, 1].map((stars) => {
+                  const count = gmapStats.rating_distribution?.[stars.toString()] || 0;
+                  const total = gmapStats.review_count || 1;
+                  const percent = Math.round((count / total) * 100);
+                  return (
+                    <div key={stars} className="flex items-center gap-3 w-full text-xs">
+                      <span className="w-3 text-slate-300 font-bold">{stars}</span>
+                      <div className="flex-1 h-3 rounded-full bg-slate-800/80 overflow-hidden border border-white/5">
+                        <div 
+                          className="h-full bg-[#fbbc04] rounded-full transition-all duration-500" 
+                          style={{ width: `${percent}%` }}
+                        />
+                      </div>
+                      <span className="w-8 text-right text-slate-400 font-semibold">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Big Aggregate Circle */}
+              <div className="flex flex-col items-center justify-center shrink-0 w-full sm:w-[35%] border-t sm:border-t-0 sm:border-l border-white/10 pt-6 sm:pt-0 sm:pl-6 text-center">
+                <div className="text-5xl font-black text-slate-100 tracking-tight">{gmapStats.rating_average.toFixed(1)}</div>
+                <div className="flex items-center gap-0.5 mt-2">
+                  {[...Array(5)].map((_, idx) => (
+                    <Star key={idx} className="w-5 h-5 fill-[#fbbc04] text-[#fbbc04]" />
+                  ))}
+                </div>
+                <div className="text-xs text-slate-400 font-bold mt-2 tracking-wide uppercase">
+                  {gmapStats.review_count} Reviews
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

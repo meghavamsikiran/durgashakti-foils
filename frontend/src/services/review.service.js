@@ -65,6 +65,11 @@ const reviewService = {
     apiClient.invalidateCache('/products');
     return response.data;
   },
+
+  getGoogleSummary: async () => {
+    const response = await apiClient.cachedGet('/reviews/google-summary', { ttl: 60000 });
+    return response.data;
+  },
 };
 
 export default reviewService;

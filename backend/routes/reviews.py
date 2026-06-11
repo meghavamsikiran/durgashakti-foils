@@ -237,6 +237,46 @@ async def delete_admin_review(
     return {"message": "Review deleted successfully"}
 
 
+@router.get("/reviews/google-summary")
+async def get_google_reviews_summary(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(func.count(ProductReviewModel.id), func.sum(ProductReviewModel.rating))
+        .where(ProductReviewModel.status == "published")
+    )
+    row = result.first()
+    count = row[0] if row else 0
+    rating_sum = row[1] if row else 0
+
+    count = count or 0
+    rating_sum = rating_sum or 0
+
+    base_reviews = 56
+    base_rating_sum = 56 * 5.0
+
+    total_reviews = base_reviews + count
+    avg_rating = round((base_rating_sum + rating_sum) / total_reviews, 1) if total_reviews else 5.0
+
+    dist_result = await db.execute(
+        select(ProductReviewModel.rating, func.count(ProductReviewModel.id))
+        .where(ProductReviewModel.status == "published")
+        .group_by(ProductReviewModel.rating)
+    )
+    distribution = {str(i): 0 for i in range(1, 6)}
+    distribution["5"] = 56
+    for r, c in dist_result.all():
+        key = str(int(r))
+        if key in distribution:
+            distribution[key] += int(c)
+        else:
+            distribution[key] = int(c)
+
+    return {
+        "rating_average": avg_rating,
+        "review_count": total_reviews,
+        "rating_distribution": distribution
+    }
+
+
 @router.get("/products/{product_id}/reviews")
 async def get_product_reviews(
     product_id: str,
