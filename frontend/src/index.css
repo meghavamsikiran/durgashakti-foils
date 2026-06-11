@@ -1520,7 +1520,86 @@ button[role="radio"] {
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Form inputs in light theme */
+/* ── LIGHT THEME: FULL HOME PAGE (beyond hero) ──────────────────── */
+.light-theme main[data-testid="home-page"] {
+  background-color: #f8faf8 !important;
+  color: #181c1b !important;
+}
+.light-theme main[data-testid="home-page"] h2,
+.light-theme main[data-testid="home-page"] h3,
+.light-theme main[data-testid="home-page"] h4 {
+  color: #0f1f15 !important;
+}
+.light-theme main[data-testid="home-page"] .text-brand-green,
+.light-theme main[data-testid="home-page"] span.text-brand-green {
+  color: oklch(0.45 0.18 145) !important;
+}
+.light-theme main[data-testid="home-page"] .text-slate-400,
+.light-theme main[data-testid="home-page"] .text-slate-300 {
+  color: #5a706a !important;
+}
+.light-theme main[data-testid="home-page"] .text-slate-200,
+.light-theme main[data-testid="home-page"] .text-slate-100 {
+  color: #1e2d28 !important;
+}
+/* Borders / dividers */
+.light-theme main[data-testid="home-page"] .border-white\/10,
+.light-theme main[data-testid="home-page"] .border-white\/5 {
+  border-color: #d1ddd8 !important;
+}
+/* Feature / metric cards */
+.light-theme main[data-testid="home-page"] .bg-white\/5 {
+  background-color: #ffffff !important;
+  border-color: #d1ddd8 !important;
+}
+/* Comparison table */
+.light-theme main[data-testid="home-page"] table {
+  background-color: #ffffff !important;
+}
+.light-theme main[data-testid="home-page"] thead tr {
+  background-color: #f1f7f3 !important;
+}
+.light-theme main[data-testid="home-page"] tbody tr {
+  border-color: #e2ebe5 !important;
+}
+.light-theme main[data-testid="home-page"] tbody tr:hover {
+  background-color: #f5f9f6 !important;
+}
+.light-theme main[data-testid="home-page"] td,
+.light-theme main[data-testid="home-page"] th {
+  color: #1e2d28 !important;
+}
+/* ── Individual review cards ── */
+.light-theme main[data-testid="home-page"] .bg-\[\#131b17\] {
+  background-color: #ffffff !important;
+  border-color: #d1ddd8 !important;
+}
+.light-theme main[data-testid="home-page"] .hover\:border-brand-green\/30:hover {
+  border-color: #86c993 !important;
+}
+/* Card borders */
+.light-theme main[data-testid="home-page"] .border-t.border-white\/5 {
+  border-color: #e2ebe5 !important;
+}
+/* Like button */
+.light-theme main[data-testid="home-page"] .text-slate-300 {
+  color: #4a5e58 !important;
+}
+/* Three-dot icon */
+.light-theme main[data-testid="home-page"] .text-slate-400 {
+  color: #6a847c !important;
+}
+/* Industries grid */
+.light-theme main[data-testid="home-page"] .aspect-square.rounded-2xl {
+  background-color: #ffffff !important;
+  border-color: #d1ddd8 !important;
+}
+.light-theme main[data-testid="home-page"] .aspect-square.rounded-2xl:hover {
+  background-color: #f0f7f2 !important;
+  border-color: #86c993 !important;
+}
+
+
 .light-theme input,
 .light-theme textarea,
 .light-theme select {

@@ -117,6 +117,16 @@ const googleReviews = [
 
 const Home = () => {
   const navigate = useNavigate();
+  const [themeMode, setThemeMode] = React.useState(() => localStorage.getItem('themeMode') || 'dark');
+
+  React.useEffect(() => {
+    const handleTheme = (e) => setThemeMode(e.detail);
+    window.addEventListener('theme-toggle', handleTheme);
+    return () => window.removeEventListener('theme-toggle', handleTheme);
+  }, []);
+
+  const isLight = themeMode === 'light';
+
   const [likes, setLikes] = useState({
     0: { count: 3, liked: false },
     1: { count: 5, liked: false },
@@ -340,25 +350,36 @@ const Home = () => {
 
             {/* Live Ratings Summary Widget – Google Maps style */}
             <div className="mb-12 max-w-2xl mx-auto">
-              <div className="rounded-2xl overflow-hidden shadow-xl" style={{ background: '#131b17', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div
+                className="rounded-2xl overflow-hidden shadow-xl"
+                style={{
+                  background: isLight ? '#ffffff' : '#131b17',
+                  border: isLight ? '1px solid #d1ddd8' : '1px solid rgba(255,255,255,0.07)'
+                }}
+              >
                 {/* Top strip with Google branding */}
-                <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                <div
+                  className="flex items-center justify-between px-6 pt-5 pb-3 border-b"
+                  style={{ borderColor: isLight ? '#e2ebe5' : 'rgba(255,255,255,0.06)' }}
+                >
                   <div className="flex items-center gap-2">
-                    {/* Google "G" logo SVG */}
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5" aria-hidden="true">
                       <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.5 6.5 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
                       <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.4 18.9 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.5 6.5 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
                       <path fill="#4CAF50" d="M24 44c5.5 0 10.4-2 14.1-5.3l-6.5-5.5C29.5 35 26.9 36 24 36c-5.3 0-9.7-3.3-11.3-7.9l-6.5 5C9.6 39.6 16.3 44 24 44z"/>
                       <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.3 4.1-4.2 5.4l6.5 5.5C41.8 36 44 30.4 44 24c0-1.3-.1-2.6-.4-3.9z"/>
                     </svg>
-                    <span className="text-sm font-bold text-slate-200">Google Reviews</span>
+                    <span className="text-sm font-bold" style={{ color: isLight ? '#1e2d28' : '#e2e8f0' }}>Google Reviews</span>
                   </div>
                   <a
                     href="https://www.google.com/maps/place/DurgaShaktiFoils+PVT.LTD/@17.5565275,78.3685954,19z/data=!4m8!3m7!1s0x3bcb8dae4cb75cf1:0x72850fd00e387dd3!8m2!3d17.5565262!4d78.3692391!9m1!1b1!16s%2Fg%2F11y16ptlbn?entry=ttu&g_ep=EgoyMDI2MDYwMy4xIKXMDSoASAFQAw%3D%3D"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs font-semibold px-3 py-1.5 rounded-full transition-colors"
-                    style={{ background: 'rgba(255,255,255,0.07)', color: '#7dd5a8' }}
+                    style={{
+                      background: isLight ? '#eaf2ec' : 'rgba(255,255,255,0.07)',
+                      color: isLight ? '#006e1b' : '#7dd5a8'
+                    }}
                   >
                     View on Google Maps →
                   </a>
@@ -367,8 +388,11 @@ const Home = () => {
                 {/* Main content */}
                 <div className="flex flex-col sm:flex-row items-stretch">
                   {/* Left – Big score */}
-                  <div className="flex flex-col items-center justify-center gap-1.5 px-8 py-7 shrink-0 sm:border-r" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-                    <div className="text-[4.5rem] font-black leading-none tracking-tight" style={{ color: '#f1f5f0' }}>
+                  <div
+                    className="flex flex-col items-center justify-center gap-1.5 px-8 py-7 shrink-0 sm:border-r"
+                    style={{ borderColor: isLight ? '#e2ebe5' : 'rgba(255,255,255,0.06)' }}
+                  >
+                    <div className="text-[4.5rem] font-black leading-none tracking-tight" style={{ color: isLight ? '#0f1f15' : '#f1f5f0' }}>
                       {gmapStats.rating_average.toFixed(1)}
                     </div>
                     <div className="flex items-center gap-0.5 mt-1">
@@ -376,7 +400,7 @@ const Home = () => {
                         <Star key={idx} className="w-5 h-5" style={{ fill: '#fbbc04', color: '#fbbc04' }} />
                       ))}
                     </div>
-                    <div className="text-xs font-semibold mt-1" style={{ color: '#94a3b8' }}>
+                    <div className="text-xs font-semibold mt-1" style={{ color: isLight ? '#5a706a' : '#94a3b8' }}>
                       {gmapStats.review_count} reviews
                     </div>
                   </div>
@@ -389,15 +413,15 @@ const Home = () => {
                       const percent = Math.round((count / total) * 100);
                       return (
                         <div key={stars} className="flex items-center gap-3 w-full">
-                          <span className="w-3 text-right text-xs font-semibold shrink-0" style={{ color: '#94a3b8' }}>{stars}</span>
+                          <span className="w-3 text-right text-xs font-semibold shrink-0" style={{ color: isLight ? '#5a706a' : '#94a3b8' }}>{stars}</span>
                           <Star className="w-3 h-3 shrink-0" style={{ fill: '#fbbc04', color: '#fbbc04' }} />
-                          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: isLight ? '#e8f0eb' : 'rgba(255,255,255,0.07)' }}>
                             <div
                               className="h-full rounded-full transition-all duration-700"
                               style={{ width: `${percent}%`, background: percent === 0 ? 'transparent' : '#fbbc04' }}
                             />
                           </div>
-                          <span className="w-6 text-right text-xs font-semibold shrink-0" style={{ color: '#64748b' }}>{count}</span>
+                          <span className="w-6 text-right text-xs font-semibold shrink-0" style={{ color: isLight ? '#4a5e58' : '#64748b' }}>{count}</span>
                         </div>
                       );
                     })}
@@ -406,11 +430,18 @@ const Home = () => {
               </div>
             </div>
 
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {googleReviews.map((rev, i) => (
-                <div 
-                  key={i} 
-                  className="rounded-2xl border border-white/5 bg-[#131b17] p-6 relative flex flex-col justify-between hover:border-brand-green/30 transition-all duration-300 group shadow-md"
+                <div
+                  key={i}
+                  className="rounded-2xl border p-6 relative flex flex-col justify-between transition-all duration-300 group shadow-md"
+                  style={{
+                    background: isLight ? '#ffffff' : '#131b17',
+                    borderColor: isLight ? '#d1ddd8' : 'rgba(255,255,255,0.05)'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = isLight ? '#86c993' : 'rgba(74,193,107,0.3)'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = isLight ? '#d1ddd8' : 'rgba(255,255,255,0.05)'}
                 >
                   <div>
                     {/* Header */}
@@ -420,11 +451,12 @@ const Home = () => {
                           {rev.avatar}
                         </div>
                         <div className="text-left">
-                          <a 
+                          <a
                             href={rev.shareUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-bold text-sm text-slate-100 hover:underline cursor-pointer"
+                            className="font-bold text-sm hover:underline cursor-pointer"
+                            style={{ color: isLight ? '#0f1f15' : '#f1f5f9' }}
                           >
                             {rev.name}
                           </a>
@@ -451,13 +483,13 @@ const Home = () => {
                     </div>
 
                     {/* Review text with newlines preserved */}
-                    <p className="text-slate-200 text-xs md:text-sm leading-relaxed text-left whitespace-pre-line font-medium mb-6">
+                    <p className="text-xs md:text-sm leading-relaxed text-left whitespace-pre-line font-medium mb-6" style={{ color: isLight ? '#2c3e38' : '#cbd5e1' }}>
                       {rev.text}
                     </p>
                   </div>
 
                   {/* Actions (Like) */}
-                  <div className="border-t border-white/5 pt-4 flex items-center gap-6">
+                  <div className="border-t pt-4 flex items-center gap-6" style={{ borderColor: isLight ? '#e2ebe5' : 'rgba(255,255,255,0.05)' }}>
                     <button 
                       onClick={() => handleLike(i)}
                       className={`flex items-center gap-2 text-xs font-bold transition-colors cursor-pointer p-1 rounded hover:bg-white/5 ${
