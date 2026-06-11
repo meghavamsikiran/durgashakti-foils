@@ -13,7 +13,6 @@ import {
   X,
   Star,
   ThumbsUp,
-  Share2,
   MoreVertical,
   Utensils,
   Building2,
@@ -371,7 +370,7 @@ const Home = () => {
                     </p>
                   </div>
 
-                  {/* Actions (Like & Share) */}
+                  {/* Actions (Like) */}
                   <div className="border-t border-white/5 pt-4 flex items-center gap-6">
                     <button 
                       onClick={() => handleLike(i)}
@@ -382,15 +381,6 @@ const Home = () => {
                       <ThumbsUp className={`w-4 h-4 ${likes[i].liked ? 'fill-brand-green' : ''}`} />
                       <span>{likes[i].liked ? 'Liked' : 'Like'} ({likes[i].count})</span>
                     </button>
-                    <a 
-                      href={rev.shareUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-brand-green transition-colors cursor-pointer p-1 rounded hover:bg-white/5"
-                    >
-                      <Share2 className="w-4 h-4" />
-                      <span>Share</span>
-                    </a>
                   </div>
                 </div>
               ))}
