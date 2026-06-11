@@ -492,11 +492,21 @@ const Home = () => {
                   <div className="border-t pt-4 flex items-center gap-6" style={{ borderColor: isLight ? '#e2ebe5' : 'rgba(255,255,255,0.05)' }}>
                     <button 
                       onClick={() => handleLike(i)}
-                      className={`flex items-center gap-2 text-xs font-bold transition-colors cursor-pointer p-1 rounded hover:bg-white/5 ${
-                        likes[i].liked ? 'text-brand-green' : 'text-slate-300 hover:text-brand-green'
-                      }`}
+                      className="flex items-center gap-2 text-xs font-bold transition-colors cursor-pointer p-1 rounded hover:bg-black/5 dark:hover:bg-white/5"
+                      style={{
+                        color: likes[i].liked 
+                          ? (isLight ? '#006e1b' : 'oklch(0.78 0.22 145)') 
+                          : (isLight ? '#5a706a' : '#94a3b8')
+                      }}
                     >
-                      <ThumbsUp className={`w-4 h-4 ${likes[i].liked ? 'fill-brand-green' : ''}`} />
+                      <ThumbsUp 
+                        className="w-4 h-4" 
+                        style={{ 
+                          fill: likes[i].liked 
+                            ? (isLight ? '#006e1b' : 'oklch(0.78 0.22 145)') 
+                            : 'transparent' 
+                        }} 
+                      />
                       <span>{likes[i].liked ? 'Liked' : 'Like'} ({likes[i].count})</span>
                     </button>
                   </div>

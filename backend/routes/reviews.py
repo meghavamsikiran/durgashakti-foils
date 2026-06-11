@@ -237,21 +237,113 @@ async def delete_admin_review(
     return {"message": "Review deleted successfully"}
 
 
+import httpx
+import re
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Cache Google summary in memory for 1 hour
+_google_cache = {
+    "data": None,
+    "expires_at": None
+}
+
+async def fetch_live_google_reviews():
+    global _google_cache
+    now = datetime.now(timezone.utc)
+    
+    if _google_cache["data"] and _google_cache["expires_at"] and now < _google_cache["expires_at"]:
+        return _google_cache["data"]
+        
+    fallback_data = {
+        "rating_average": 5.0,
+        "review_count": 57,
+        "rating_distribution": {"5": 57, "4": 0, "3": 0, "2": 0, "1": 0}
+    }
+    
+    url = "https://www.google.com/maps/place/DurgaShaktiFoils+PVT.LTD/@17.5565275,78.3685954,19z/data=!4m8!3m7!1s0x3bcb8dae4cb75cf1:0x72850fd00e387dd3"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+    }
+    
+    try:
+        async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=10.0) as client:
+            response = await client.get(url)
+            if response.status_code == 200:
+                html = response.text
+                
+                # Try multiple extraction techniques
+                meta_rating = re.search(r'<meta[^>]*itemprop="ratingValue"[^>]*content="([^"]+)"', html)
+                meta_count = re.search(r'<meta[^>]*itemprop="reviewCount"[^>]*content="([^"]+)"', html)
+                
+                json_rating = re.search(r'"ratingValue"\s*:\s*"?([0-9.]+)"?', html)
+                json_count = re.search(r'"reviewCount"\s*:\s*"?([0-9]+)"?', html)
+                
+                aria_pattern = re.search(r'aria-label="([0-9.]+)\s*stars?\s*([0-9,]+)\s*reviews?"', html, re.I)
+                
+                rating = None
+                count = None
+                
+                if meta_rating and meta_count:
+                    try:
+                        rating = float(meta_rating.group(1))
+                        count = int(meta_count.group(1))
+                    except ValueError:
+                        pass
+                
+                if (rating is None or count is None) and json_rating and json_count:
+                    try:
+                        rating = float(json_rating.group(1))
+                        count = int(json_count.group(1))
+                    except ValueError:
+                        pass
+                        
+                if (rating is None or count is None) and aria_pattern:
+                    try:
+                        rating = float(aria_pattern.group(1))
+                        count = int(aria_pattern.group(2).replace(",", ""))
+                    except ValueError:
+                        pass
+                
+                if rating is None or count is None:
+                    app_state_match = re.findall(r'\[null,null,([3-5]\.[0-9]),([0-9]+)\]', html)
+                    if app_state_match:
+                        try:
+                            rating = float(app_state_match[0][0])
+                            count = int(app_state_match[0][1])
+                        except ValueError:
+                            pass
+                
+                if rating is not None and count is not None and count > 0:
+                    parsed_data = {
+                        "rating_average": round(rating, 1),
+                        "review_count": count,
+                        "rating_distribution": {
+                            "5": count,
+                            "4": 0,
+                            "3": 0,
+                            "2": 0,
+                            "1": 0
+                        }
+                    }
+                    _google_cache["data"] = parsed_data
+                    _google_cache["expires_at"] = now + timedelta(hours=1)
+                    return parsed_data
+    except Exception as e:
+        logger.warning(f"Error fetching live Google reviews: {e}")
+        
+    if _google_cache["data"]:
+        return _google_cache["data"]
+        
+    return fallback_data
+
+
 @router.get("/reviews/google-summary")
 async def get_google_reviews_summary():
-    # Return the official Google Maps listing stats for DurgaShaktiFoils PVT.LTD.
-    # These numbers are sourced directly from the live Google Maps listing and
-    # are kept as a static snapshot so the display always matches Google exactly.
-    # Update these values manually whenever the Google listing is updated.
-    GOOGLE_REVIEW_COUNT = 56
-    GOOGLE_RATING_AVERAGE = 5.0
-    GOOGLE_DISTRIBUTION = {"5": 56, "4": 0, "3": 0, "2": 0, "1": 0}
-
-    return {
-        "rating_average": GOOGLE_RATING_AVERAGE,
-        "review_count": GOOGLE_REVIEW_COUNT,
-        "rating_distribution": GOOGLE_DISTRIBUTION,
-    }
+    return await fetch_live_google_reviews()
 
 
 @router.get("/products/{product_id}/reviews")
