@@ -128,8 +128,8 @@ const Home = () => {
 
   const [gmapStats, setGmapStats] = useState({
     rating_average: 5.0,
-    review_count: 57,
-    rating_distribution: { "5": 57, "4": 0, "3": 0, "2": 0, "1": 0 }
+    review_count: 56,
+    rating_distribution: { "5": 56, "4": 0, "3": 0, "2": 0, "1": 0 }
   });
 
   useEffect(() => {
@@ -326,62 +326,82 @@ const Home = () => {
 
           {/* Google Reviews Section */}
           <div className="mt-24 border-t border-white/10 pt-16">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
-              <div>
-                <div className="text-[10px] tracking-[0.25em] font-extrabold text-brand-green mb-3 uppercase">
-                  GOOGLE REVIEWS
-                </div>
-                <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-left">
-                  What Our <span className="text-brand-green">Customers</span> Say
-                </h2>
-                <p className="text-slate-400 text-sm mt-3 max-w-xl text-left">
-                  Trusted by commercial kitchens, caterers, and home cooks.
-                </p>
+            <div className="mb-12">
+              <div className="text-[10px] tracking-[0.25em] font-extrabold text-brand-green mb-3 uppercase">
+                GOOGLE REVIEWS
               </div>
-              <a 
-                href="https://www.google.com/maps/place/DurgaShaktiFoils+PVT.LTD/@17.5565275,78.3685954,19z/data=!4m8!3m7!1s0x3bcb8dae4cb75cf1:0x72850fd00e387dd3!8m2!3d17.5565262!4d78.3692391!9m1!1b1!16s%2Fg%2F11y16ptlbn?entry=ttu&g_ep=EgoyMDI2MDYwMy4xIKXMDSoASAFQAw%3D%3D"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 md:mt-0 inline-flex items-center gap-2 text-brand-green font-bold text-sm hover:underline cursor-pointer group"
-              >
-                View on Google Maps
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </a>
+              <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-black tracking-tight">
+                What Our <span className="text-brand-green">Customers</span> Say
+              </h2>
+              <p className="text-slate-400 text-sm mt-3 max-w-xl">
+                Trusted by commercial kitchens, caterers, and home cooks across India.
+              </p>
             </div>
 
-            {/* Live Ratings Summary Widget */}
-            <div className="mb-12 max-w-2xl mx-auto rounded-2xl border border-white/5 bg-[#131b17] p-6 flex flex-col sm:flex-row items-center justify-between gap-8 shadow-lg">
-              {/* Distribution Bars */}
-              <div className="w-full sm:w-[60%] flex flex-col gap-2.5">
-                {[5, 4, 3, 2, 1].map((stars) => {
-                  const count = gmapStats.rating_distribution?.[stars.toString()] || 0;
-                  const total = gmapStats.review_count || 1;
-                  const percent = Math.round((count / total) * 100);
-                  return (
-                    <div key={stars} className="flex items-center gap-3 w-full text-xs">
-                      <span className="w-3 text-slate-300 font-bold">{stars}</span>
-                      <div className="flex-1 h-3 rounded-full bg-slate-800/80 overflow-hidden border border-white/5">
-                        <div 
-                          className="h-full bg-[#fbbc04] rounded-full transition-all duration-500" 
-                          style={{ width: `${percent}%` }}
-                        />
-                      </div>
-                      <span className="w-8 text-right text-slate-400 font-semibold">{count}</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Big Aggregate Circle */}
-              <div className="flex flex-col items-center justify-center shrink-0 w-full sm:w-[35%] border-t sm:border-t-0 sm:border-l border-white/10 pt-6 sm:pt-0 sm:pl-6 text-center">
-                <div className="text-5xl font-black text-slate-100 tracking-tight">{gmapStats.rating_average.toFixed(1)}</div>
-                <div className="flex items-center gap-0.5 mt-2">
-                  {[...Array(5)].map((_, idx) => (
-                    <Star key={idx} className="w-5 h-5 fill-[#fbbc04] text-[#fbbc04]" />
-                  ))}
+            {/* Live Ratings Summary Widget – Google Maps style */}
+            <div className="mb-12 max-w-2xl mx-auto">
+              <div className="rounded-2xl overflow-hidden shadow-xl" style={{ background: '#131b17', border: '1px solid rgba(255,255,255,0.07)' }}>
+                {/* Top strip with Google branding */}
+                <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                  <div className="flex items-center gap-2">
+                    {/* Google "G" logo SVG */}
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" className="w-5 h-5" aria-hidden="true">
+                      <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.5 6.5 29.6 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
+                      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.4 18.9 12 24 12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34.5 6.5 29.6 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+                      <path fill="#4CAF50" d="M24 44c5.5 0 10.4-2 14.1-5.3l-6.5-5.5C29.5 35 26.9 36 24 36c-5.3 0-9.7-3.3-11.3-7.9l-6.5 5C9.6 39.6 16.3 44 24 44z"/>
+                      <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.3 4.1-4.2 5.4l6.5 5.5C41.8 36 44 30.4 44 24c0-1.3-.1-2.6-.4-3.9z"/>
+                    </svg>
+                    <span className="text-sm font-bold text-slate-200">Google Reviews</span>
+                  </div>
+                  <a
+                    href="https://www.google.com/maps/place/DurgaShaktiFoils+PVT.LTD/@17.5565275,78.3685954,19z/data=!4m8!3m7!1s0x3bcb8dae4cb75cf1:0x72850fd00e387dd3!8m2!3d17.5565262!4d78.3692391!9m1!1b1!16s%2Fg%2F11y16ptlbn?entry=ttu&g_ep=EgoyMDI2MDYwMy4xIKXMDSoASAFQAw%3D%3D"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold px-3 py-1.5 rounded-full transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.07)', color: '#7dd5a8' }}
+                  >
+                    View on Google Maps →
+                  </a>
                 </div>
-                <div className="text-xs text-slate-400 font-bold mt-2 tracking-wide uppercase">
-                  {gmapStats.review_count} Reviews
+
+                {/* Main content */}
+                <div className="flex flex-col sm:flex-row items-stretch">
+                  {/* Left – Big score */}
+                  <div className="flex flex-col items-center justify-center gap-1.5 px-8 py-7 shrink-0 sm:border-r" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+                    <div className="text-[4.5rem] font-black leading-none tracking-tight" style={{ color: '#f1f5f0' }}>
+                      {gmapStats.rating_average.toFixed(1)}
+                    </div>
+                    <div className="flex items-center gap-0.5 mt-1">
+                      {[...Array(5)].map((_, idx) => (
+                        <Star key={idx} className="w-5 h-5" style={{ fill: '#fbbc04', color: '#fbbc04' }} />
+                      ))}
+                    </div>
+                    <div className="text-xs font-semibold mt-1" style={{ color: '#94a3b8' }}>
+                      {gmapStats.review_count} reviews
+                    </div>
+                  </div>
+
+                  {/* Right – Distribution bars */}
+                  <div className="flex-1 flex flex-col justify-center gap-2.5 px-6 py-7">
+                    {[5, 4, 3, 2, 1].map((stars) => {
+                      const count = gmapStats.rating_distribution?.[stars.toString()] || 0;
+                      const total = gmapStats.review_count || 1;
+                      const percent = Math.round((count / total) * 100);
+                      return (
+                        <div key={stars} className="flex items-center gap-3 w-full">
+                          <span className="w-3 text-right text-xs font-semibold shrink-0" style={{ color: '#94a3b8' }}>{stars}</span>
+                          <Star className="w-3 h-3 shrink-0" style={{ fill: '#fbbc04', color: '#fbbc04' }} />
+                          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                            <div
+                              className="h-full rounded-full transition-all duration-700"
+                              style={{ width: `${percent}%`, background: percent === 0 ? 'transparent' : '#fbbc04' }}
+                            />
+                          </div>
+                          <span className="w-6 text-right text-xs font-semibold shrink-0" style={{ color: '#64748b' }}>{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
