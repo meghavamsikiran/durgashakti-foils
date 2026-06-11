@@ -8,27 +8,21 @@ import React, { useRef, useEffect } from 'react';
  * `mix-blend-mode: multiply` on <video> elements is NOT respected by mobile browsers
  * because the browser's video decoder renders to a separate GPU compositor layer that
  * bypasses CSS compositing entirely. The only reliable cross-platform solution is to:
- *   1. Keep the <video> element hidden (display:none).
- *   2. Draw video frames onto a <canvas> every animation frame.
+ *   1. Keep the <video> element hidden or at ultra-low opacity.
+ *   2. Draw video frames onto a <canvas> every animation frame when active.
  *   3. Pixel-key (chroma-key) white/near-white pixels to transparent alpha.
- *
- * The video is served from same-origin (/durgamaloader.mp4) so getImageData is allowed.
  */
-const DurgaMaaLoader = () => {
+const DurgaMaaLoader = ({ show = true }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
 
+  // 1. Video Playback & Lifecycle (runs once on mount)
   useEffect(() => {
     const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return;
+    if (!video) return;
 
-    // Use 2d context with willReadFrequently hint for better mobile perf
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
-
-    // Start playback
+    // Start playback setup
     video.muted = true;
     video.playsInline = true;
     video.loop = true;
@@ -36,15 +30,9 @@ const DurgaMaaLoader = () => {
     video.setAttribute('webkit-playsinline', 'true');
 
     const startPlay = () => {
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          console.warn("Autoplay blocked, waiting for user interaction:", err);
-          setTimeout(() => {
-            video.play().catch(() => {});
-          }, 300);
-        });
-      }
+      video.play().catch((err) => {
+        console.warn("Autoplay blocked/failed, waiting for gesture:", err);
+      });
     };
 
     if (video.readyState >= 1) {
@@ -57,24 +45,48 @@ const DurgaMaaLoader = () => {
     }
 
     const forcePlay = () => {
-      if (video.paused) {
+      if (video && video.paused) {
         video.play().catch(() => {});
       }
     };
     window.addEventListener('touchstart', forcePlay, { passive: true });
     window.addEventListener('click', forcePlay, { passive: true });
 
+    return () => {
+      video.removeEventListener('loadedmetadata', startPlay);
+      video.removeEventListener('loadeddata', startPlay);
+      video.removeEventListener('canplay', startPlay);
+      window.removeEventListener('touchstart', forcePlay);
+      window.removeEventListener('click', forcePlay);
+    };
+  }, []);
+
+  // 2. Active Canvas Render Loop (starts/stops based on visibility)
+  useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    if (!video || !canvas || !show) {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      return;
+    }
+
+    // Use 2d context with willReadFrequently hint for better mobile performance
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+
     // Fallback static image draw when video is not decodable
     const fallbackImg = new Image();
     fallbackImg.src = '/favicon.webp';
 
-    // Per-frame rendering loop
     const renderFrame = () => {
       const W = canvas.width;
       const H = canvas.height;
 
       if (video.readyState >= 1 && !video.paused && !video.ended) {
-        // Clear to fully transparent before drawing
         ctx.clearRect(0, 0, W, H);
 
         // Fit video into canvas (cover)
@@ -129,22 +141,20 @@ const DurgaMaaLoader = () => {
     rafRef.current = requestAnimationFrame(renderFrame);
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      video.removeEventListener('loadedmetadata', startPlay);
-      video.removeEventListener('loadeddata', startPlay);
-      video.removeEventListener('canplay', startPlay);
-      window.removeEventListener('touchstart', forcePlay);
-      window.removeEventListener('click', forcePlay);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
-  }, []);
+  }, [show]);
 
   return (
     <div
       className="relative w-64 h-52 md:w-80 md:h-64 flex items-center justify-center select-none pointer-events-none"
       style={{ background: 'transparent', backgroundColor: 'transparent' }}
     >
-      {/* Hidden video source — decoded frames are drawn to canvas
-           CRITICAL: Do NOT use display:none, iOS Safari will suspend the video decoder! */}
+      {/* Invisible video source — loops continuously in the DOM to bypass iOS suspension.
+          Using playsinline, autoPlay, and opacity 0.01 so WebKit detects active layout. */}
       <video
         ref={videoRef}
         src="/durgamaloader.mp4"

@@ -75,17 +75,16 @@ const RouteTransitionLoader = () => {
   }, [show, duration]);
 
 
-  if (!show) return null;
-
   return (
     <>
-      {/* Trishul top progress bar sweep */}
-      <TrishoolLoader />
-      {/* Durga Maa centre animation overlay */}
+      {show && <TrishoolLoader />}
+      {/* Durga Maa centre animation overlay — ALWAYS mounted to keep video playing and prevent WebKit decoder freeze */}
       <div
-        className="fixed inset-0 z-[99999] flex items-center justify-center bg-transparent pointer-events-none"
+        className={`fixed inset-0 z-[99999] flex items-center justify-center bg-transparent pointer-events-none transition-all duration-300 ${
+          show ? 'opacity-100 visible' : 'opacity-0 invisible'
+        }`}
       >
-        <DurgaMaaLoader />
+        <DurgaMaaLoader show={show} />
       </div>
     </>
   );
