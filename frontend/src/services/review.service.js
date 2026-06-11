@@ -67,7 +67,7 @@ const reviewService = {
   },
 
   getGoogleSummary: async () => {
-    const response = await apiClient.cachedGet('/reviews/google-summary', { ttl: 60000 });
+    const response = await apiClient.get('/reviews/google-summary');
     return response.data;
   },
 };

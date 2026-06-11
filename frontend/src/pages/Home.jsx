@@ -493,38 +493,35 @@ const Home = () => {
                   </div>
 
                   {/* Actions (Like) */}
-                  <div className="border-t pt-4 flex items-center gap-6" style={{ borderColor: isLight ? '#e2ebe5' : 'rgba(255,255,255,0.05)' }}>
+                  <div className="border-t pt-4 flex items-center" style={{ borderColor: isLight ? '#e2ebe5' : 'rgba(255,255,255,0.05)' }}>
                     <button 
                       onClick={() => handleLike(i)}
-                      className="flex items-center gap-2 text-xs font-bold transition-colors cursor-pointer p-1 rounded hover:bg-black/5 dark:hover:bg-white/5"
+                      className="flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer px-2 py-1 rounded-full"
                       style={{
                         color: likes[i].liked 
-                          ? (isLight ? '#006e1b' : 'oklch(0.78 0.22 145)') 
-                          : (isLight ? '#5a706a' : '#94a3b8')
+                          ? (isLight ? '#006e1b' : '#4ade80') 
+                          : (isLight ? '#6b7280' : '#94a3b8'),
+                        background: likes[i].liked 
+                          ? (isLight ? '#dcfce7' : 'rgba(74,222,128,0.1)') 
+                          : 'transparent',
                       }}
                     >
-                      {likes[i].liked ? (
-                        <svg 
-                          xmlns="http://www.w3.org/2000/svg" 
-                          viewBox="0 0 20 20" 
-                          fill="currentColor" 
-                          className="w-4 h-4"
-                        >
-                          <path d="M1 8.25c0-1.242 1.008-2.25 2.25-2.25h1A2.25 2.25 0 0 1 6.5 8.25v6a2.25 2.25 0 0 1-2.25 2.25h-1A2.25 2.25 0 0 1 1 14.25v-6ZM16.5 9c0-.62-.22-1.19-.588-1.636.27-.406.406-.906.33-1.42a1.75 1.75 0 0 0-2.316-1.42c-.228.067-.442.185-.632.342-.128-.432-.397-.812-.767-1.077A1.75 1.75 0 0 0 9.873 4.14l-.003.008-1.5 3A.75.75 0 0 0 8 7.5v7c0 .195.076.383.212.522l4.5 4.5a.75.75 0 0 0 1.222-.393c.123-.483.21-.986.26-1.5.006-.062-.01-.122-.045-.173A1.75 1.75 0 0 0 16.5 15c0-.19-.03-.377-.09-.553.493-.244.757-.732.748-1.247 0-.31-.097-.61-.278-.857.4-.3.62-.77.62-1.263Z" />
-                        </svg>
-                      ) : (
-                        <svg 
-                          xmlns="http://www.w3.org/2000/svg" 
-                          fill="none" 
-                          viewBox="0 0 20 20" 
-                          strokeWidth="1.5" 
-                          stroke="currentColor" 
-                          className="w-4 h-4"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M11.54 2.224a.75.75 0 0 1 .632.342l1.5 3A.75.75 0 0 1 13 6.25h2.25a1.75 1.75 0 0 1 1.75 1.75c0 .546-.25 1.033-.642 1.353.411.33.642.827.642 1.397 0 .524-.2.998-.533 1.35.321.36.483.843.433 1.348a1.75 1.75 0 0 1-1.745 1.579H10.1c-.266 0-.527-.058-.767-.17l-1.3-.65V7.79l1.44-2.88a.75.75 0 0 1 .33-.362ZM2.75 7a1.75 1.75 0 0 0-1.75 1.75v5.5c0 .966.784 1.75 1.75 1.75h1.5A1.75 1.75 0 0 0 6 14.25v-5.5A1.75 1.75 0 0 0 4.25 7h-1.5Z" />
-                        </svg>
-                      )}
-                      <span>{likes[i].liked ? 'Liked' : 'Like'} ({likes[i].count})</span>
+                      {/* Material Design / Google Maps thumbs-up icon */}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        className="w-3.5 h-3.5 flex-shrink-0"
+                        fill={likes[i].liked ? 'currentColor' : 'none'}
+                        stroke="currentColor"
+                        strokeWidth={likes[i].liked ? '0' : '1.8'}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M7.5 15h-2a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h2m0 7V8m0 7h8.06a1 1 0 0 0 .98-.8l1-5A1 1 0 0 0 16.56 8H13V5a2 2 0 0 0-2-2 .5.5 0 0 0-.45.28L7.5 9"
+                        />
+                      </svg>
+                      <span>{likes[i].liked ? 'Helpful' : 'Helpful'} ({likes[i].count})</span>
                     </button>
                   </div>
                 </div>
