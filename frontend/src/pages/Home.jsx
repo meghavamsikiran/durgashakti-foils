@@ -300,13 +300,13 @@ const Home = () => {
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
               <div>
                 <div className="text-[10px] tracking-[0.25em] font-extrabold text-brand-green mb-3 uppercase">
-                  CUSTOMER TESTIMONIALS
+                  GOOGLE REVIEWS
                 </div>
                 <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-left">
                   What Our <span className="text-brand-green">Customers</span> Say
                 </h2>
                 <p className="text-slate-400 text-sm mt-3 max-w-xl text-left">
-                  Real Google Reviews from verified food businesses, caterers, and home chefs.
+                  Trusted by commercial kitchens, caterers, and home cooks.
                 </p>
               </div>
               <a 
