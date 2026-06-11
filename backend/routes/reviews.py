@@ -324,7 +324,7 @@ async def _fetch_live_google_rating_without_api() -> dict | None:
                         "rating_distribution": dist,
                     }
                     _places_cache["data"] = data
-                    _places_cache["expires_at"] = now + timedelta(hours=1)
+                    _places_cache["expires_at"] = now + timedelta(minutes=5)
                     logger.info(f"Successfully scraped live Google Maps data: {count} reviews, {rating} stars")
                     return data
     except Exception as e:
@@ -366,7 +366,7 @@ async def _fetch_from_places_api(api_key: str) -> dict | None:
                         "rating_distribution": dist,
                     }
                     _places_cache["data"] = data
-                    _places_cache["expires_at"] = now + timedelta(hours=1)
+                    _places_cache["expires_at"] = now + timedelta(minutes=5)
                     return data
             else:
                 logger.warning(f"Places API returned status: {body.get('status')} — {body.get('error_message', '')}")
