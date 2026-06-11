@@ -258,15 +258,17 @@ async def fetch_live_google_reviews():
         
     fallback_data = {
         "rating_average": 5.0,
-        "review_count": 57,
-        "rating_distribution": {"5": 57, "4": 0, "3": 0, "2": 0, "1": 0}
+        "review_count": 56,
+        "rating_distribution": {"5": 56, "4": 0, "3": 0, "2": 0, "1": 0}
     }
     
-    url = "https://www.google.com/maps/place/DurgaShaktiFoils+PVT.LTD/@17.5565275,78.3685954,19z/data=!4m8!3m7!1s0x3bcb8dae4cb75cf1:0x72850fd00e387dd3"
+    url = "https://maps.google.com/?cid=8252042732959825363"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cookie": "CONSENT=YES+cb.20210328-17-p0.en+FX+434",
+        "Referer": "https://www.google.com/",
     }
     
     try:
