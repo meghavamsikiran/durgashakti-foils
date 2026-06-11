@@ -228,11 +228,11 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-[#0C1310] font-sans text-white" data-testid="shop-page">
       {/* Premium Header Banner - full width img element with controlled height for professional UI */}
-      <div className="w-full overflow-hidden border-b border-[#26322B] h-auto aspect-[1024/436] bg-[#111111]">
+      <div className="w-full overflow-hidden border-b border-[#26322B] h-auto aspect-[1024/194] md:aspect-none md:h-[295px] lg:h-[345px] bg-[#111111]">
         <img 
           src="/product_display_poster.png" 
           alt="Our Products - Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene."
-          className="w-full h-full object-cover object-center block"
+          className="w-full h-full object-cover object-top block"
         />
       </div>
 
