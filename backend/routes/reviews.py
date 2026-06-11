@@ -247,6 +247,8 @@ logger = logging.getLogger(__name__)
 # Place ID for DurgaShaktiFoils PVT.LTD on Google Maps
 _PLACE_ID = os.environ.get("GOOGLE_PLACE_ID", "ChIJ8V-3TK6LwzkDs3d4O0AP3SI")
 
+_places_cache = {"data": None, "expires_at": None}
+
 async def _fetch_live_google_rating_without_api() -> dict | None:
     """
     Attempts to fetch live review count and rating from Google Maps page.
