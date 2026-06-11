@@ -305,10 +305,19 @@ async def _fetch_live_google_rating_without_api() -> dict | None:
                             rating = float(rating_pattern.group(1))
                 
                 if rating and count:
-                    dist = {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0}
-                    star_key = str(int(round(rating)))
-                    if star_key in dist:
-                        dist[star_key] = count
+                    dist = {"5": count, "4": 0, "3": 0, "2": 0, "1": 0}
+                    if rating < 5.0 and count > 0:
+                        total_stars = int(round(rating * count))
+                        fives = total_stars - 4 * count
+                        if fives >= 0 and fives <= count:
+                            fives = max(0, min(fives, count))
+                            dist["5"] = fives
+                            dist["4"] = count - fives
+                        else:
+                            star_key = str(max(1, min(5, int(round(rating)))))
+                            dist = {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0}
+                            dist[star_key] = count
+
                     data = {
                         "rating_average": round(rating, 1),
                         "review_count": count,
@@ -392,22 +401,36 @@ async def get_google_reviews_summary():
         count = int(os.environ.get("GOOGLE_REVIEW_COUNT", "57"))
     except (ValueError, TypeError):
         count = 57
-
     try:
         rating = float(os.environ.get("GOOGLE_RATING", "5.0"))
     except (ValueError, TypeError):
         rating = 5.0
 
+    # Dynamically build rating distribution based on the average rating:
+    # If the rating is exactly 5.0, all reviews are 5-star.
+    # If the rating is 4.9, we put 1 review in the 4-star bucket and the rest in 5-star.
+    dist = {"5": count, "4": 0, "3": 0, "2": 0, "1": 0}
+    if rating < 5.0 and count > 0:
+        # e.g., 4.9 rating on 57 reviews means sum of stars is round(4.9 * 57) = 279
+        # Let x be number of 5-star reviews, y be number of 4-star reviews.
+        # x + y = 57, 5x + 4y = 279 => x = 279 - 4*57 = 279 - 228 = 51. y = 6.
+        total_stars = int(round(rating * count))
+        # 5x + 4(count - x) = total_stars => x = total_stars - 4 * count
+        fives = total_stars - 4 * count
+        if fives >= 0 and fives <= count:
+            fives = max(0, min(fives, count))
+            dist["5"] = fives
+            dist["4"] = count - fives
+        else:
+            # Simple fallback: round down to average stars
+            star_key = str(max(1, min(5, int(round(rating)))))
+            dist = {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0}
+            dist[star_key] = count
+
     return {
         "rating_average": rating,
         "review_count": count,
-        "rating_distribution": {
-            "5": count if rating >= 4.5 else 0,
-            "4": count if 3.5 <= rating < 4.5 else 0,
-            "3": 0,
-            "2": 0,
-            "1": 0,
-        },
+        "rating_distribution": dist,
     }
 
 
