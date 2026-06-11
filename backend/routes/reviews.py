@@ -238,25 +238,85 @@ async def delete_admin_review(
 
 
 import os
+import httpx
 import logging
+from datetime import datetime, timezone, timedelta
 
 logger = logging.getLogger(__name__)
+
+# Place ID for DurgaShaktiFoils PVT.LTD on Google Maps
+_PLACE_ID = os.environ.get("GOOGLE_PLACE_ID", "ChIJ8V-3TK6LwzkDs3d4O0AP3SI")
+
+_places_cache: dict = {"data": None, "expires_at": None}
+
+
+async def _fetch_from_places_api(api_key: str) -> dict | None:
+    """Call Google Places API (Details) — works from cloud servers."""
+    global _places_cache
+    now = datetime.now(timezone.utc)
+
+    if _places_cache["data"] and _places_cache["expires_at"] and now < _places_cache["expires_at"]:
+        return _places_cache["data"]
+
+    url = "https://maps.googleapis.com/maps/api/place/details/json"
+    params = {
+        "place_id": _PLACE_ID,
+        "fields": "rating,user_ratings_total",
+        "key": api_key,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get(url, params=params)
+            body = resp.json()
+            if body.get("status") == "OK":
+                result = body.get("result", {})
+                rating = float(result.get("rating", 5.0))
+                count = int(result.get("user_ratings_total", 0))
+                if count > 0:
+                    # Build distribution: all in the star bucket matching floor(rating)
+                    dist = {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0}
+                    star_key = str(int(round(rating)))
+                    if star_key in dist:
+                        dist[star_key] = count
+                    data = {
+                        "rating_average": round(rating, 1),
+                        "review_count": count,
+                        "rating_distribution": dist,
+                    }
+                    _places_cache["data"] = data
+                    _places_cache["expires_at"] = now + timedelta(minutes=5)
+                    return data
+            else:
+                logger.warning(f"Places API returned status: {body.get('status')} — {body.get('error_message', '')}")
+    except Exception as e:
+        logger.warning(f"Places API error: {e}")
+    return None
 
 
 @router.get("/reviews/google-summary")
 async def get_google_reviews_summary():
     """
-    Returns Google Maps review stats for DurgaShaktiFoils PVT.LTD.
-    Values are controlled via environment variables on Render:
-      GOOGLE_REVIEW_COUNT  (integer, e.g. 56)
-      GOOGLE_RATING        (float,   e.g. 5.0)
-    Update these env vars on Render whenever the Google listing changes.
-    No redeploy required — env var changes take effect on next request.
+    Returns live Google Maps review stats for DurgaShaktiFoils PVT.LTD.
+
+    Priority:
+      1. Google Places API (true live) — set GOOGLE_PLACES_API_KEY env var on Render.
+      2. Manual env vars — set GOOGLE_REVIEW_COUNT and GOOGLE_RATING on Render.
+
+    How to get a Google Places API key (free):
+      https://developers.google.com/maps/documentation/places/web-service/get-api-key
+    Then add on Render: GOOGLE_PLACES_API_KEY=<your key>
     """
+    api_key = os.environ.get("GOOGLE_PLACES_API_KEY", "")
+    if api_key:
+        live = await _fetch_from_places_api(api_key)
+        if live:
+            return live
+
+    # Fallback: manual env vars (update on Render whenever count changes)
     try:
-        count = int(os.environ.get("GOOGLE_REVIEW_COUNT", "56"))
+        count = int(os.environ.get("GOOGLE_REVIEW_COUNT", "57"))
     except (ValueError, TypeError):
-        count = 56
+        count = 57
 
     try:
         rating = float(os.environ.get("GOOGLE_RATING", "5.0"))
@@ -267,8 +327,8 @@ async def get_google_reviews_summary():
         "rating_average": rating,
         "review_count": count,
         "rating_distribution": {
-            "5": count,
-            "4": 0,
+            "5": count if rating >= 4.5 else 0,
+            "4": count if 3.5 <= rating < 4.5 else 0,
             "3": 0,
             "2": 0,
             "1": 0,

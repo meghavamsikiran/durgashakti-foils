@@ -491,39 +491,6 @@ const Home = () => {
                       {rev.text}
                     </p>
                   </div>
-
-                  {/* Actions (Like) */}
-                  <div className="border-t pt-4 flex items-center" style={{ borderColor: isLight ? '#e2ebe5' : 'rgba(255,255,255,0.05)' }}>
-                    <button 
-                      onClick={() => handleLike(i)}
-                      className="flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer px-2 py-1 rounded-full"
-                      style={{
-                        color: likes[i].liked 
-                          ? (isLight ? '#006e1b' : '#4ade80') 
-                          : (isLight ? '#6b7280' : '#94a3b8'),
-                        background: likes[i].liked 
-                          ? (isLight ? '#dcfce7' : 'rgba(74,222,128,0.1)') 
-                          : 'transparent',
-                      }}
-                    >
-                      {/* Material Design / Google Maps thumbs-up icon */}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        className="w-3.5 h-3.5 flex-shrink-0"
-                        fill={likes[i].liked ? 'currentColor' : 'none'}
-                        stroke="currentColor"
-                        strokeWidth={likes[i].liked ? '0' : '1.8'}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M7.5 15h-2a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h2m0 7V8m0 7h8.06a1 1 0 0 0 .98-.8l1-5A1 1 0 0 0 16.56 8H13V5a2 2 0 0 0-2-2 .5.5 0 0 0-.45.28L7.5 9"
-                        />
-                      </svg>
-                      <span>{likes[i].liked ? 'Helpful' : 'Helpful'} ({likes[i].count})</span>
-                    </button>
-                  </div>
                 </div>
               ))}
             </div>
