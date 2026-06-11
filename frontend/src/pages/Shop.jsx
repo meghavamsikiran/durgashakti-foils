@@ -225,10 +225,15 @@ const Shop = () => {
     }
   };
 
+  const isAdminPath = typeof window !== 'undefined' && (window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/superadmin'));
+
   return (
     <div className="min-h-screen bg-[#0C1310] font-sans text-white" data-testid="shop-page">
       {/* Premium Header Banner - full width img element with controlled height for professional UI */}
-      <div className="w-full overflow-hidden border-b border-[#26322B] h-auto aspect-[1024/270] md:aspect-none md:h-[370px] lg:h-[420px] bg-[#111111]">
+      <div className={isAdminPath 
+        ? "w-full overflow-hidden border-b border-[#26322B] h-auto aspect-[1024/270] md:aspect-none md:h-[420px] bg-[#111111]" 
+        : "w-full overflow-hidden border-b border-[#26322B] h-auto aspect-[1024/270] md:aspect-none md:h-[370px] lg:h-[420px] bg-[#111111]"
+      }>
         <img 
           src="/product_display_poster.png" 
           alt="Our Products - Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene."
