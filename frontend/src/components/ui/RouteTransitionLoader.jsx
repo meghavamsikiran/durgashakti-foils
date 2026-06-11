@@ -8,7 +8,7 @@ import DurgaMaaLoader from '../loaders/DurgaMaaLoader';
  * for all subsequent SPA navigations because the module remains in memory.
  * On refresh → browser re-evaluates the module → resets back to true.
  */
-let isInitialPageLoad = true;
+let isInitialPageLoad = false;
 
 /**
  * RouteTransitionLoader — Shows loader only when:
