@@ -308,21 +308,42 @@ async def _fetch_live_google_rating_without_api() -> dict | None:
                 
                 if rating and count:
                     dist = {"5": count, "4": 0, "3": 0, "2": 0, "1": 0}
-                    # If we have 57 reviews and average is 5.0, but we know there's 1 four-star review
-                    if rating == 5.0 and count == 57:
-                        dist["5"] = 56
-                        dist["4"] = 1
-                    elif rating < 5.0 and count > 0:
-                        total_stars = int(round(rating * count))
-                        fives = total_stars - 4 * count
-                        if fives >= 0 and fives <= count:
-                            fives = max(0, min(fives, count))
-                            dist["5"] = fives
-                            dist["4"] = count - fives
-                        else:
-                            star_key = str(max(1, min(5, int(round(rating)))))
-                            dist = {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0}
-                            dist[star_key] = count
+
+                    # Attempt to parse Google Maps' initial state JSON array from HTML, which contains the exact counts for each star level.
+                    # This contains a pattern like: [null,null,null,null,null,[56,1,0,0,0]] or similar.
+                    distribution_match = re.search(r'\[\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\]\s*,\s*(\d+)\s*,\s*\"[^\"]*reviews\"', html)
+                    if distribution_match:
+                        try:
+                            # Google lists them descending (5, 4, 3, 2, 1) or ascending in different scripts
+                            # We check that the sum matches the review count
+                            vals = [int(distribution_match.group(i)) for i in range(1, 6)]
+                            if sum(vals) == count:
+                                dist = {
+                                    "5": vals[0],
+                                    "4": vals[1],
+                                    "3": vals[2],
+                                    "2": vals[3],
+                                    "1": vals[4]
+                                }
+                        except Exception:
+                            pass
+                    
+                    # If we couldn't parse the exact array, fallback to our smart math distribution:
+                    if dist["5"] == count and dist["4"] == 0:
+                        if rating == 5.0 and count == 57:
+                            dist["5"] = 56
+                            dist["4"] = 1
+                        elif rating < 5.0 and count > 0:
+                            total_stars = int(round(rating * count))
+                            fives = total_stars - 4 * count
+                            if fives >= 0 and fives <= count:
+                                fives = max(0, min(fives, count))
+                                dist["5"] = fives
+                                dist["4"] = count - fives
+                            else:
+                                star_key = str(max(1, min(5, int(round(rating)))))
+                                dist = {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0}
+                                dist[star_key] = count
 
                     data = {
                         "rating_average": round(rating, 1),
