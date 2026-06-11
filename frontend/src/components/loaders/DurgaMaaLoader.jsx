@@ -36,24 +36,44 @@ const DurgaMaaLoader = () => {
     video.setAttribute('webkit-playsinline', 'true');
 
     const startPlay = () => {
-      video.play().catch(() => {
-        setTimeout(() => video.play().catch(() => {}), 300);
-      });
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn("Autoplay blocked, waiting for user interaction:", err);
+          setTimeout(() => {
+            video.play().catch(() => {});
+          }, 300);
+        });
+      }
     };
 
-    if (video.readyState >= 2) {
+    if (video.readyState >= 1) {
       startPlay();
     } else {
+      video.addEventListener('loadedmetadata', startPlay, { once: true });
+      video.addEventListener('loadeddata', startPlay, { once: true });
       video.addEventListener('canplay', startPlay, { once: true });
       video.load();
     }
 
+    const forcePlay = () => {
+      if (video.paused) {
+        video.play().catch(() => {});
+      }
+    };
+    window.addEventListener('touchstart', forcePlay, { passive: true });
+    window.addEventListener('click', forcePlay, { passive: true });
+
+    // Fallback static image draw when video is not decodable
+    const fallbackImg = new Image();
+    fallbackImg.src = '/favicon.webp';
+
     // Per-frame rendering loop
     const renderFrame = () => {
-      if (video.readyState >= 2 && !video.paused && !video.ended) {
-        const W = canvas.width;
-        const H = canvas.height;
+      const W = canvas.width;
+      const H = canvas.height;
 
+      if (video.readyState >= 1 && !video.paused && !video.ended) {
         // Clear to fully transparent before drawing
         ctx.clearRect(0, 0, W, H);
 
@@ -95,9 +115,12 @@ const DurgaMaaLoader = () => {
 
           ctx.putImageData(imgData, 0, 0);
         } catch (e) {
-          // getImageData failed (should not happen for same-origin).
-          // Still show canvas with white bg rather than nothing.
+          // getImageData failed
         }
+      } else {
+        // Fallback layout - Draw favicon static in center
+        ctx.clearRect(0, 0, W, H);
+        ctx.drawImage(fallbackImg, (W - 380) / 2, (H - 380) / 2, 380, 380);
       }
 
       rafRef.current = requestAnimationFrame(renderFrame);
@@ -107,17 +130,21 @@ const DurgaMaaLoader = () => {
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      video.removeEventListener('loadedmetadata', startPlay);
+      video.removeEventListener('loadeddata', startPlay);
       video.removeEventListener('canplay', startPlay);
+      window.removeEventListener('touchstart', forcePlay);
+      window.removeEventListener('click', forcePlay);
     };
   }, []);
 
   return (
     <div
-      className="relative w-[104px] h-[83px] md:w-40 md:h-32 flex items-center justify-center select-none pointer-events-none"
+      className="relative w-64 h-52 md:w-80 md:h-64 flex items-center justify-center select-none pointer-events-none"
       style={{ background: 'transparent', backgroundColor: 'transparent' }}
     >
       {/* Hidden video source — decoded frames are drawn to canvas
-          CRITICAL: Do NOT use display:none, iOS Safari will suspend the video decoder! */}
+           CRITICAL: Do NOT use display:none, iOS Safari will suspend the video decoder! */}
       <video
         ref={videoRef}
         src="/durgamaloader.mp4"
@@ -125,12 +152,11 @@ const DurgaMaaLoader = () => {
         playsInline
         loop
         preload="auto"
-        crossOrigin="anonymous"
         style={{ 
           opacity: 0.001, 
           position: 'absolute', 
-          width: '1px', 
-          height: '1px', 
+          width: '100px', 
+          height: '80px', 
           pointerEvents: 'none', 
           zIndex: -1 
         }}
@@ -139,8 +165,8 @@ const DurgaMaaLoader = () => {
       {/* Canvas renders transparent frames via pixel keying */}
       <canvas
         ref={canvasRef}
-        width={160}
-        height={128}
+        width={600}
+        height={480}
         className="w-full h-full"
         style={{
           display: 'block',

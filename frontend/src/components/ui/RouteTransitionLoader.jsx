@@ -34,25 +34,11 @@ const RouteTransitionLoader = () => {
 
   const [duration, setDuration] = useState(600);
 
-  // Synchronously initialize isMobile to prevent brief UI flashes during hydration
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const mobileWidth = window.innerWidth < 768;
-      return mobileUA || mobileWidth;
-    }
-    return false;
-  });
+  // Enable loaders globally on all layouts and sizes
+  const isMobile = false;
 
   useEffect(() => {
-    const checkMobile = () => {
-      const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const mobileWidth = window.innerWidth < 768;
-      setIsMobile(mobileUA || mobileWidth);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    // Mobile resize checks removed to keep loading layout uniform
   }, []);
 
   // Listen for login-triggered loader event
