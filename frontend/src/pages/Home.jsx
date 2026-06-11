@@ -65,7 +65,8 @@ const googleReviews = [
     date: "3 months ago",
     text: "Good quality product in affordable price. Satisfied with the service.😜👍",
     avatar: "PD",
-    avatarBg: "bg-teal-700"
+    avatarBg: "bg-teal-700",
+    shareUrl: "https://maps.app.goo.gl/ArQNtUWttRxpy5P27"
   },
   {
     name: "Mili Mili",
@@ -73,7 +74,8 @@ const googleReviews = [
     date: "3 months ago",
     text: "Good and affordable in price.\nIt helped me a lot to keep my food hot and fresh thankyou durgashakti foils I bought a 72 m foil roll the owner gave me free a 6m roll also. Very happy and satisfied by service of them.",
     avatar: "MM",
-    avatarBg: "bg-pink-700"
+    avatarBg: "bg-pink-700",
+    shareUrl: "https://maps.app.goo.gl/FDfwnyBdn9SRZFWL6"
   },
   {
     name: "Akash Das",
@@ -81,7 +83,8 @@ const googleReviews = [
     date: "3 months ago",
     text: "Very advanced technology used, good quality products and very low prices",
     avatar: "AD",
-    avatarBg: "bg-blue-700"
+    avatarBg: "bg-blue-700",
+    shareUrl: "https://maps.app.goo.gl/e6bCGRGvdU1pmdnP9"
   },
   {
     name: "Mharishnaick Mharishnaick",
@@ -89,7 +92,8 @@ const googleReviews = [
     date: "3 months ago",
     text: "Durgashakti Foils Pvt Ltd stands out for its premium quality and trustworthy service. The finishing and durability of their products are top-notch. Customer handling is very professional and friendly. Delivery is always on time, and they maintain high standards in everything they do. Proud to see such a growing and promising company. Highly recommended.",
     avatar: "MM",
-    avatarBg: "bg-indigo-700"
+    avatarBg: "bg-indigo-700",
+    shareUrl: "https://maps.app.goo.gl/Bvgxaf6kD6MbhJZ99"
   },
   {
     name: "Varma",
@@ -97,12 +101,33 @@ const googleReviews = [
     date: "4 months ago",
     text: "They provide Good quality house foil. Which keeps food hot for soo long i have bought couple of their products in affordable price and superb quality. 👌 the owner is also very polite and well behaved with me very satisfied with the service.",
     avatar: "V",
-    avatarBg: "bg-slate-700"
+    avatarBg: "bg-slate-700",
+    shareUrl: "https://maps.app.goo.gl/TWFb9tcqUwGtBxtc8"
   }
 ];
 
 const Home = () => {
   const navigate = useNavigate();
+  const [likes, setLikes] = React.useState({
+    0: { count: 3, liked: false },
+    1: { count: 5, liked: false },
+    2: { count: 2, liked: false },
+    3: { count: 7, liked: false },
+    4: { count: 4, liked: false }
+  });
+
+  const handleLike = (index) => {
+    setLikes(prev => {
+      const current = prev[index];
+      return {
+        ...prev,
+        [index]: {
+          count: current.liked ? current.count - 1 : current.count + 1,
+          liked: !current.liked
+        }
+      };
+    });
+  };
 
   return (
     <main className="min-h-screen bg-[#0c1310] text-white font-inter selection:bg-brand-green/30" data-testid="home-page">
@@ -286,7 +311,7 @@ const Home = () => {
                 </p>
               </div>
               <a 
-                href="https://www.google.com/maps/reviews/data=!4m8!1m7!3m6!1s0x3bc2bf987ea80f19:0xf4d30c0429f5f87b!2sDurga+Shakti+Foils+Pvt+Ltd!8m2!3d18.4909399!4d73.81938!16s%2Fg%2F11sbh4gqap"
+                href="https://www.google.com/maps/place/DurgaShaktiFoils+PVT.LTD/@17.5565275,78.3685954,19z/data=!4m8!3m7!1s0x3bcb8dae4cb75cf1:0x72850fd00e387dd3!8m2!3d17.5565262!4d78.3692391!9m1!1b1!16s%2Fg%2F11y16ptlbn?entry=ttu&g_ep=EgoyMDI2MDYwMy4xIKXMDSoASAFQAw%3D%3D"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-6 md:mt-0 inline-flex items-center gap-2 text-brand-green font-bold text-sm hover:underline cursor-pointer group"
@@ -300,7 +325,7 @@ const Home = () => {
               {googleReviews.map((rev, i) => (
                 <div 
                   key={i} 
-                  className="rounded-2xl border border-white/5 bg-[#121c18] p-6 relative flex flex-col justify-between hover:border-brand-green/30 transition-all duration-300 group shadow-md"
+                  className="rounded-2xl border border-white/5 bg-[#131b17] p-6 relative flex flex-col justify-between hover:border-brand-green/30 transition-all duration-300 group shadow-md"
                 >
                   <div>
                     {/* Header */}
@@ -311,7 +336,7 @@ const Home = () => {
                         </div>
                         <div className="text-left">
                           <a 
-                            href="https://www.google.com/maps/reviews/data=!4m8!1m7!3m6!1s0x3bc2bf987ea80f19:0xf4d30c0429f5f87b!2sDurga+Shakti+Foils+Pvt+Ltd!8m2!3d18.4909399!4d73.81938!16s%2Fg%2F11sbh4gqap"
+                            href={rev.shareUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-bold text-sm text-slate-100 hover:underline cursor-pointer"
@@ -320,9 +345,14 @@ const Home = () => {
                           </a>
                         </div>
                       </div>
-                      <button className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/5 transition-colors">
+                      <a 
+                        href={rev.shareUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-white/5 transition-colors cursor-pointer"
+                      >
                         <MoreVertical className="w-4 h-4" />
-                      </button>
+                      </a>
                     </div>
 
                     {/* Stars & Age Inline */}
@@ -343,14 +373,24 @@ const Home = () => {
 
                   {/* Actions (Like & Share) */}
                   <div className="border-t border-white/5 pt-4 flex items-center gap-6">
-                    <button className="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-brand-green transition-colors cursor-pointer p-1 rounded hover:bg-white/5">
-                      <ThumbsUp className="w-4 h-4" />
-                      <span>Like</span>
+                    <button 
+                      onClick={() => handleLike(i)}
+                      className={`flex items-center gap-2 text-xs font-bold transition-colors cursor-pointer p-1 rounded hover:bg-white/5 ${
+                        likes[i].liked ? 'text-brand-green' : 'text-slate-300 hover:text-brand-green'
+                      }`}
+                    >
+                      <ThumbsUp className={`w-4 h-4 ${likes[i].liked ? 'fill-brand-green' : ''}`} />
+                      <span>{likes[i].liked ? 'Liked' : 'Like'} ({likes[i].count})</span>
                     </button>
-                    <button className="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-brand-green transition-colors cursor-pointer p-1 rounded hover:bg-white/5">
+                    <a 
+                      href={rev.shareUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-brand-green transition-colors cursor-pointer p-1 rounded hover:bg-white/5"
+                    >
                       <Share2 className="w-4 h-4" />
                       <span>Share</span>
-                    </button>
+                    </a>
                   </div>
                 </div>
               ))}
