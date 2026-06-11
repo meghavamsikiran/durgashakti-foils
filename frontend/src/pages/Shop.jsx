@@ -232,7 +232,7 @@ const Shop = () => {
         <img 
           src="/product_display_poster.png" 
           alt="Our Products - Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene."
-          className="w-full h-full object-cover object-center block"
+          className="w-full h-full object-cover object-[center_38%] block"
         />
       </div>
 
