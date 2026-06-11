@@ -74,6 +74,13 @@ const DurgaMaaLoader = ({ show = true }) => {
       return;
     }
 
+    // Force play immediately when loader is shown
+    if (video.paused) {
+      video.play().catch((err) => {
+        console.warn("Play failed on show:", err);
+      });
+    }
+
     // Use 2d context with willReadFrequently hint for better mobile performance
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
@@ -130,6 +137,10 @@ const DurgaMaaLoader = ({ show = true }) => {
           // getImageData failed
         }
       } else {
+        // If not playing, keep attempting to play if shown
+        if (video.paused && show) {
+          video.play().catch(() => {});
+        }
         // Fallback layout - Draw favicon static in center
         ctx.clearRect(0, 0, W, H);
         ctx.drawImage(fallbackImg, (W - 380) / 2, (H - 380) / 2, 380, 380);
@@ -160,6 +171,7 @@ const DurgaMaaLoader = ({ show = true }) => {
         src="/durgamaloader.mp4"
         muted
         playsInline
+        webkit-playsinline="true"
         loop
         autoPlay
         preload="auto"
