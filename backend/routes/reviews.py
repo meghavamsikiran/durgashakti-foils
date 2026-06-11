@@ -330,7 +330,7 @@ async def fetch_live_google_reviews():
                         }
                     }
                     _google_cache["data"] = parsed_data
-                    _google_cache["expires_at"] = now + timedelta(hours=1)
+                    _google_cache["expires_at"] = now + timedelta(seconds=30)
                     return parsed_data
     except Exception as e:
         logger.warning(f"Error fetching live Google reviews: {e}")
