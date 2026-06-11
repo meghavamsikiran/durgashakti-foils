@@ -176,12 +176,12 @@ const DurgaMaaLoader = ({ show = true }) => {
         autoPlay
         preload="auto"
         style={{ 
-          opacity: 0.01, 
+          opacity: 0.0001, 
           position: 'absolute', 
-          width: '100%', 
-          height: '100%', 
+          width: '1px', 
+          height: '1px', 
+          overflow: 'hidden',
           pointerEvents: 'none', 
-          objectFit: 'cover',
           zIndex: 0
         }}
       />
