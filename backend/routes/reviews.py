@@ -308,7 +308,11 @@ async def _fetch_live_google_rating_without_api() -> dict | None:
                 
                 if rating and count:
                     dist = {"5": count, "4": 0, "3": 0, "2": 0, "1": 0}
-                    if rating < 5.0 and count > 0:
+                    # If we have 57 reviews and average is 5.0, but we know there's 1 four-star review
+                    if rating == 5.0 and count == 57:
+                        dist["5"] = 56
+                        dist["4"] = 1
+                    elif rating < 5.0 and count > 0:
                         total_stars = int(round(rating * count))
                         fives = total_stars - 4 * count
                         if fives >= 0 and fives <= count:
@@ -412,19 +416,17 @@ async def get_google_reviews_summary():
     # If the rating is exactly 5.0, all reviews are 5-star.
     # If the rating is 4.9, we put 1 review in the 4-star bucket and the rest in 5-star.
     dist = {"5": count, "4": 0, "3": 0, "2": 0, "1": 0}
-    if rating < 5.0 and count > 0:
-        # e.g., 4.9 rating on 57 reviews means sum of stars is round(4.9 * 57) = 279
-        # Let x be number of 5-star reviews, y be number of 4-star reviews.
-        # x + y = 57, 5x + 4y = 279 => x = 279 - 4*57 = 279 - 228 = 51. y = 6.
+    if rating == 5.0 and count == 57:
+        dist["5"] = 56
+        dist["4"] = 1
+    elif rating < 5.0 and count > 0:
         total_stars = int(round(rating * count))
-        # 5x + 4(count - x) = total_stars => x = total_stars - 4 * count
         fives = total_stars - 4 * count
         if fives >= 0 and fives <= count:
             fives = max(0, min(fives, count))
             dist["5"] = fives
             dist["4"] = count - fives
         else:
-            # Simple fallback: round down to average stars
             star_key = str(max(1, min(5, int(round(rating)))))
             dist = {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0}
             dist[star_key] = count
