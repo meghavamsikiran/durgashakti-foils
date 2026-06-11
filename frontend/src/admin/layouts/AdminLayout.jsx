@@ -7,12 +7,13 @@ import {
   Users, CreditCard, BarChart3, FileText,
   UserCog, ShieldAlert, Settings, LogOut, Package2, Layers,
   MessageSquare, Menu, X, Ticket, Star, User, Building2,
-  Sun, Moon
+  Sun, Moon, ShoppingBag
 } from 'lucide-react';
 
 const ICON_MAP = {
   'Dashboard': LayoutDashboard,
   'Products': Package,
+  'Shop': ShoppingBag,
   'Categories': Layers,
   'Stock': Boxes,
   'Orders': ShoppingCart,
