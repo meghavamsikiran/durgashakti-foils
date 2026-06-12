@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import adminService from '../services/admin.service';
 import apiClient from '../../services/core/apiClient';
 import { 
@@ -9,7 +9,7 @@ import {
 import { 
   TrendingUp, Package, Users, ShoppingBag, IndianRupee, 
   Download, Calendar, Search, Activity, Zap, Trophy,
-  AlertTriangle, CheckCircle, Percent, Clock, ChevronRight
+  AlertTriangle, CheckCircle, Percent, Clock, CreditCard
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
@@ -32,16 +32,21 @@ const AnalyticsPage = () => {
     const cached = adminService.getCached('/admin/analytics/summary', { timeframe: 'All Time' });
     return cached?.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] };
   });
+  
   const [loading, setLoading] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary', { timeframe: 'All Time' });
     return !cached;
   });
+  
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [topLimit, setTopLimit] = useState(10);
   const [timeframe, setTimeframe] = useState('All Time');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
   const { startProgress, updateProgress, finishProgress } = useProgress();
+
+  const isFirstLoad = useRef(true);
 
   const load = useCallback(async () => {
     const isCustom = timeframe === 'Date Range';
@@ -51,10 +56,11 @@ const AnalyticsPage = () => {
       if (customEnd) params.end_date = customEnd;
     }
 
-    const cached = adminService.getCached('/admin/analytics/summary', { timeframe, ...params });
-    if (!cached) {
-      setLoading(true);
+    // Use background refreshing instead of unmounting page loader after first load
+    if (!isFirstLoad.current) {
+      setRefreshing(true);
     }
+    
     try {
       const response = await adminService.getDashboardMetrics(timeframe, params);
       setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
@@ -62,6 +68,8 @@ const AnalyticsPage = () => {
       toast.error("Failed to load dashboard metrics");
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      isFirstLoad.current = false;
     }
   }, [timeframe, customStart, customEnd]);
 
@@ -85,7 +93,7 @@ const AnalyticsPage = () => {
     loadSilent();
   }, [load, loadSilent]);
 
-  // Periodic silent polling in the background (every 10 seconds) for real-time updates
+  // Periodic silent polling in the background (every 10 seconds)
   useEffect(() => {
     const timer = setInterval(() => {
       loadSilent();
@@ -119,13 +127,14 @@ const AnalyticsPage = () => {
     .slice(0, topLimit)
     .map(p => ({ name: p.name, value: p.stock_left }));
   
-  const inventory = summary.inventory || [];
   const filteredInventory = (summary.inventory || [])
     .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
     .slice(0, topLimit);
+
   const categoryAnalytics = (summary.category_analytics || [])
     .filter(c => (c.category || '').toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => (b.revenue || 0) - (a.revenue || 0));
+
   const categoryChartData = categoryAnalytics
     .slice(0, topLimit)
     .map(c => ({
@@ -134,11 +143,19 @@ const AnalyticsPage = () => {
       stockValue: Number(c.stock_value || 0),
       unitsSold: Number(c.units_sold || 0),
     }));
+
   const categoryTotals = categoryAnalytics.reduce((acc, c) => ({
     revenue: acc.revenue + Number(c.revenue || 0),
     stockValue: acc.stockValue + Number(c.stock_value || 0),
     unitsSold: acc.unitsSold + Number(c.units_sold || 0),
   }), { revenue: 0, stockValue: 0, unitsSold: 0 });
+
+  // Payment method data calculations
+  const paymentBreakdownData = [
+    { name: 'Razorpay / Prepaid', value: (metrics.paid_payments_count || 0) - (metrics.cod_payments_count || 0) },
+    { name: 'Cash On Delivery', value: metrics.cod_payments_count || 0 },
+    { name: 'Failed / Overdue', value: metrics.failed_payments_count || 0 },
+  ].filter(d => d.value > 0);
 
   const handleExport = () => {
     const progressId = startProgress({
@@ -180,26 +197,32 @@ const AnalyticsPage = () => {
     }
   };
 
-  const renderEmptyState = () => (
-    <div className="h-64 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-      <Search className="w-8 h-8 mb-2 opacity-30 text-slate-400" />
-      <p className="text-sm font-semibold text-slate-500">No data matching filters</p>
+  const renderEmptyState = (title) => (
+    <div className="h-64 flex flex-col items-center justify-center bg-slate-50/30 rounded-2xl border border-dashed border-slate-200 p-6 text-center">
+      <div className="p-3 bg-slate-100 rounded-full text-slate-400 mb-3">
+        <Search className="w-6 h-6 text-slate-400" />
+      </div>
+      <p className="text-sm font-bold text-slate-700">No {title} Data</p>
+      <p className="text-xs text-slate-400 mt-1 max-w-[220px]">There is no record matching the selected filters for this timeframe.</p>
     </div>
   );
 
-  // Custom tooltips for Recharts
+  // Custom tooltips with styled readability overlays
   const CustomChartTooltip = ({ active, payload, label, prefix = '₹', suffix = '' }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-slate-900/95 backdrop-blur-md text-white p-4 rounded-xl border border-slate-700/50 shadow-2xl text-xs space-y-1.5 min-w-[150px]">
-          <p className="font-bold text-slate-300 border-b border-slate-800 pb-1 mb-1">{label}</p>
+        <div 
+          className="bg-slate-900 text-white p-4 rounded-xl border border-slate-700 shadow-2xl text-xs space-y-1.5 min-w-[170px]"
+          style={{ backgroundColor: '#0f172a', border: '1px solid #334155', color: '#f8fafc', zIndex: 9999 }}
+        >
+          <p className="font-bold border-b border-slate-800 pb-1 mb-1" style={{ color: '#cbd5e1' }}>{label}</p>
           {payload.map((item, idx) => (
             <div key={idx} className="flex justify-between items-center gap-4">
-              <span className="flex items-center gap-1.5 text-slate-400">
-                <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: item.color || item.fill }} />
+              <span className="flex items-center gap-1.5" style={{ color: '#94a3b8' }}>
+                <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: item.color || item.fill }} />
                 {item.name === 'revenue' ? 'Revenue' : item.name === 'stockValue' ? 'Stock Value' : item.name === 'value' ? 'Quantity' : item.name}
               </span>
-              <span className="font-extrabold text-white">
+              <span className="font-extrabold" style={{ color: '#ffffff' }}>
                 {item.name === 'unitsSold' || item.name === 'value' ? '' : prefix}
                 {Number(item.value).toLocaleString('en-IN')}
                 {suffix}
@@ -213,7 +236,12 @@ const AnalyticsPage = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto pb-12">
+    <div className="space-y-8 max-w-[1600px] mx-auto pb-12 relative">
+      {/* Visual background loader line when background updates are fetching */}
+      {refreshing && (
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-500 animate-pulse z-50 rounded-full" />
+      )}
+
       {/* Top Banner and Navigation */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
         <div>
@@ -393,7 +421,7 @@ const AnalyticsPage = () => {
               Total Invoiced: ₹{Number(metrics.total_revenue || 0).toLocaleString('en-IN')}
             </span>
           </div>
-          {(!trendData || trendData.length === 0) ? renderEmptyState() : (
+          {(!trendData || trendData.length === 0) ? renderEmptyState("Revenue Trend") : (
             <ResponsiveContainer width="100%" height={320}>
               <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                 <defs>
@@ -415,7 +443,7 @@ const AnalyticsPage = () => {
                   tick={{ fontSize: 11, fill: '#64748b' }} 
                   tickFormatter={(val) => `₹${Number(val).toLocaleString('en-IN')}`} 
                 />
-                <Tooltip content={<CustomChartTooltip prefix="₹" />} />
+                <Tooltip content={<CustomChartTooltip prefix="₹" />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }} />
                 <Area 
                   type="monotone" 
                   dataKey="value" 
@@ -441,7 +469,7 @@ const AnalyticsPage = () => {
           </div>
 
           <div className="relative flex justify-center items-center my-2">
-            {(!statusData || statusData.length === 0) ? renderEmptyState() : (
+            {(!statusData || statusData.length === 0) ? renderEmptyState("Order Status") : (
               <>
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
@@ -460,7 +488,7 @@ const AnalyticsPage = () => {
                   </PieChart>
                 </ResponsiveContainer>
                 {/* Center Text inside Doughnut */}
-                <div className="absolute flex flex-col items-center justify-center">
+                <div className="absolute flex flex-col items-center justify-center pointer-events-none">
                   <span className="text-2xl font-black text-slate-900">{totalOrdersCount}</span>
                   <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Total Orders</span>
                 </div>
@@ -503,7 +531,7 @@ const AnalyticsPage = () => {
             </div>
           </div>
 
-          {(!categoryChartData || categoryChartData.length === 0) ? renderEmptyState() : (
+          {(!categoryChartData || categoryChartData.length === 0) ? renderEmptyState("Category Performance") : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={categoryChartData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -529,8 +557,8 @@ const AnalyticsPage = () => {
         </div>
 
         {/* Category breakdown listing */}
-        <div className="xl:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between overflow-hidden">
-          <div className="px-8 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+        <div className="xl:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col overflow-hidden h-full">
+          <div className="px-8 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between shrink-0">
             <div>
               <h3 className="font-bold text-slate-800">Category Share List</h3>
               <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Sales contribution breakdown</p>
@@ -540,8 +568,8 @@ const AnalyticsPage = () => {
             </span>
           </div>
 
-          <div className="divide-y divide-slate-100 overflow-y-auto max-h-[300px]">
-            {categoryAnalytics.slice(0, 6).map((cat, idx) => {
+          <div className="divide-y divide-slate-100 overflow-y-auto flex-1">
+            {categoryAnalytics.slice(0, 10).map((cat, idx) => {
               const contribution = categoryTotals.revenue > 0 
                 ? Math.round((Number(cat.revenue || 0) / categoryTotals.revenue) * 100) 
                 : 0;
@@ -579,6 +607,118 @@ const AnalyticsPage = () => {
         </div>
       </div>
 
+      {/* NEW: Financial, Payments, and Success Rate Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Payment Methods Breakdown Card */}
+        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-950 mb-1 flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              Payment Gateway Share
+            </h2>
+            <p className="text-xs text-slate-500 mb-6 font-medium">Breakdown of online vs COD transactions</p>
+          </div>
+
+          <div className="relative flex justify-center items-center my-2">
+            {paymentBreakdownData.length === 0 ? renderEmptyState("Payment Breakdown") : (
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={paymentBreakdownData}
+                      innerRadius={65}
+                      outerRadius={88}
+                      paddingAngle={4}
+                      dataKey="value"
+                    >
+                      {paymentBreakdownData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomChartTooltip prefix="" suffix=" Payments" />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-2xl font-black text-slate-900">{metrics.paid_payments_count || 0}</span>
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Paid Logs</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="space-y-2 mt-4 border-t border-slate-50 pt-4">
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-500 font-medium flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-500" /> Razorpay / Prepaid:
+              </span>
+              <span className="font-extrabold text-slate-800">{((metrics.paid_payments_count || 0) - (metrics.cod_payments_count || 0))} txns</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-500 font-medium flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500" /> Cash On Delivery (COD):
+              </span>
+              <span className="font-extrabold text-slate-800">{metrics.cod_payments_count || 0} txns</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-500 font-medium flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-500" /> Overdue / Failed:
+              </span>
+              <span className="font-extrabold text-slate-800">{metrics.failed_payments_count || 0} txns</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Sales Velocity Meter (2/3 width) */}
+        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-950 mb-1 flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+              Sales Velocity & Business Pace
+            </h2>
+            <p className="text-xs text-slate-500 mb-6 font-medium">Daily average sales and replenishment indexes</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center flex-1 my-2">
+            <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100/50 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider">AOV (Average Order)</span>
+                <Percent className="w-4 h-4 text-emerald-600" />
+              </div>
+              <h4 className="text-2xl font-black text-slate-900">
+                ₹{metrics.total_orders > 0 ? Math.round(metrics.total_revenue / metrics.total_orders).toLocaleString('en-IN') : 0}
+              </h4>
+              <p className="text-[10px] font-bold text-slate-400">Total average spent per invoice</p>
+            </div>
+
+            <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100/50 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black text-blue-800 uppercase tracking-wider">Daily Velocity</span>
+                <Zap className="w-4 h-4 text-blue-600" />
+              </div>
+              <h4 className="text-2xl font-black text-slate-900">
+                {metrics.sales_velocity || 0} Units/D
+              </h4>
+              <p className="text-[10px] font-bold text-slate-400">Total units sold daily</p>
+            </div>
+
+            <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100/50 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black text-indigo-800 uppercase tracking-wider">Total Units Dispatched</span>
+                <Trophy className="w-4 h-4 text-indigo-600" />
+              </div>
+              <h4 className="text-2xl font-black text-slate-900">
+                {metrics.total_units_sold || 0} Units
+              </h4>
+              <p className="text-[10px] font-bold text-slate-400">Total product units sold all-time</p>
+            </div>
+          </div>
+
+          <div className="text-xs text-slate-500 font-semibold pt-4 border-t border-slate-50">
+            * Stock Value locked: <span className="font-extrabold text-slate-800">₹{Number(metrics.total_inventory_value || 0).toLocaleString('en-IN')}</span>. Top Performer Product: <span className="font-extrabold text-emerald-700">{metrics.top_performer?.name || 'N/A'}</span>
+          </div>
+        </div>
+      </div>
+
       {/* Stock Levels & Best Sellers Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Stock Level Matrix */}
@@ -590,7 +730,7 @@ const AnalyticsPage = () => {
             </h2>
             <p className="text-xs text-slate-500 mb-6 font-medium">Current warehouse levels of best-performing SKUs</p>
           </div>
-          {(!inventoryData || inventoryData.length === 0) ? renderEmptyState() : (
+          {(!inventoryData || inventoryData.length === 0) ? renderEmptyState("Stock Health") : (
             <ResponsiveContainer width="100%" height={320}>
               <BarChart
                 layout="vertical"
@@ -628,7 +768,7 @@ const AnalyticsPage = () => {
             </h2>
             <p className="text-xs text-slate-500 mb-6 font-medium">Highest volume products by total units sold</p>
           </div>
-          {(!productData || productData.length === 0) ? renderEmptyState() : (
+          {(!productData || productData.length === 0) ? renderEmptyState("Top Sellers") : (
             <ResponsiveContainer width="100%" height={320}>
               <BarChart
                 layout="vertical"
