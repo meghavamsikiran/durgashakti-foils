@@ -1098,16 +1098,16 @@ input[type="checkbox"] {
 }
 
 /* Scrolling marquee top banner background and border overrides in light theme */
-.light-theme .w-full.bg-\[\#050807\].text-white {
-  background-color: #f0fdf4 !important;
+.light-theme .w-full.bg-\[\#030504\].text-white {
+  background-color: #f7faf8 !important;
   color: #006e1b !important;
   border-bottom-color: #bbcbb5 !important;
 }
-.light-theme .w-full.bg-\[\#050807\].text-white span {
+.light-theme .w-full.bg-\[\#030504\].text-white span {
   color: #006e1b !important;
   border-right-color: #bbcbb5 !important;
 }
-.light-theme .w-full.bg-\[\#050807\].text-white img {
+.light-theme .w-full.bg-\[\#030504\].text-white img {
   filter: brightness(0) saturate(100%) invert(53%) sepia(93%) saturate(1450%) hue-rotate(352deg) brightness(101%) contrast(97%) !important;
 }
 
