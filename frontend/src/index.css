@@ -2286,7 +2286,7 @@ html.light-theme body,
   transition: background-color 0.2s ease !important;
 }
 
-.admin-shell table tbody tr:hover {
+.light-theme .admin-shell table tbody tr:hover {
   background-color: #f8fafc !important;
 }
 
