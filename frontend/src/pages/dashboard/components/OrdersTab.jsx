@@ -290,7 +290,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
       {orders.length > 0 && (
-        <div className="bg-[#19231F] p-5 rounded-2xl border border-[#26322B] shadow-sm space-y-4">
+        <div className="bg-[#19231F] p-5 rounded-2xl border border-[#26322B] shadow-sm space-y-4 relative">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             {/* Quick Stats Pills inline */}
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400">
@@ -340,122 +340,128 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
 
           {/* Advanced Filters drawer details if open */}
           {filterOpen && (
-            <div className="p-4 border-t border-[#26322B]/60 bg-[#131B17]/60 rounded-xl space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
-              {/* Quick status chips inside the filter section */}
-              <div className="space-y-1.5 pb-2 border-b border-[#26322B]/40">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">Quick Filters</label>
-                <div className="flex flex-wrap items-center gap-2">
-                  {['all', 'paid', 'shipped', 'returned'].map((filterVal) => {
-                    const active = quickFilter === filterVal;
-                    return (
-                      <button
-                        key={filterVal}
-                        type="button"
-                        onClick={() => {
-                          setQuickFilter(filterVal);
+            <>
+              <div className="fixed inset-0 bg-black/40 z-40 xl:hidden" onClick={() => setFilterOpen(false)} />
+              <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 xl:absolute xl:translate-y-0 xl:inset-auto xl:right-0 xl:mt-2 w-auto xl:w-72 bg-[#19231F] border border-[#26322B] rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="space-y-4 text-white">
+                  <h3 className="text-sm font-black font-serif">Order Filters</h3>
+                  {/* Quick status chips inside the filter section */}
+                  <div className="space-y-1.5 pb-2 border-b border-[#26322B]/40">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400">Quick Filters</label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {['all', 'paid', 'shipped', 'returned'].map((filterVal) => {
+                        const active = quickFilter === filterVal;
+                        return (
+                          <button
+                            key={filterVal}
+                            type="button"
+                            onClick={() => {
+                              setQuickFilter(filterVal);
+                              setOrdersPage(1);
+                            }}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-full border transition-all ${
+                              active 
+                                ? 'bg-[#25D958] text-[#0C1310] border-[#25D958] font-bold shadow-sm'
+                                : 'bg-[#131B17] text-slate-300 border-[#26322B] hover:bg-[#19231F]/50 hover:text-white'
+                            }`}
+                          >
+                            {filterVal.charAt(0).toUpperCase() + filterVal.slice(1)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Order Status</label>
+                      <CustomSelect
+                        value={statusFilter}
+                        onChange={(val) => {
+                          setStatusFilter(val);
                           setOrdersPage(1);
                         }}
-                        className={`px-4 py-1.5 text-xs font-semibold rounded-full border transition-all ${
-                          active 
-                            ? 'bg-[#25D958] text-[#0C1310] border-[#25D958] font-bold shadow-sm'
-                            : 'bg-[#131B17] text-slate-300 border-[#26322B] hover:bg-[#19231F]/50 hover:text-white'
-                        }`}
-                      >
-                        {filterVal.charAt(0).toUpperCase() + filterVal.slice(1)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Order Status</label>
-                  <CustomSelect
-                    value={statusFilter}
-                    onChange={(val) => {
-                      setStatusFilter(val);
-                      setOrdersPage(1);
-                    }}
-                    options={statusOptions}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Courier</label>
-                  <CustomSelect
-                    value={courierFilter}
-                    onChange={(val) => {
-                      setCourierFilter(val);
-                      setOrdersPage(1);
-                    }}
-                    options={courierOptions}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Timeframe</label>
-                  <CustomSelect
-                    value={timeframeFilter}
-                    onChange={(val) => {
-                      setTimeframeFilter(val);
-                      setOrdersPage(1);
-                    }}
-                    options={timeframeOptions}
-                  />
-                </div>
-              </div>
-
-              {timeframeFilter === 'custom' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Start Date</label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => {
-                        setStartDate(e.target.value);
-                        setOrdersPage(1);
-                      }}
-                      className="w-full rounded-xl border border-[#26322B] p-2 text-sm bg-[#131B17] text-white focus:outline-none"
-                    />
+                        options={statusOptions}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Courier</label>
+                      <CustomSelect
+                        value={courierFilter}
+                        onChange={(val) => {
+                          setCourierFilter(val);
+                          setOrdersPage(1);
+                        }}
+                        options={courierOptions}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5">Timeframe</label>
+                      <CustomSelect
+                        value={timeframeFilter}
+                        onChange={(val) => {
+                          setTimeframeFilter(val);
+                          setOrdersPage(1);
+                        }}
+                        options={timeframeOptions}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">End Date</label>
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => {
-                        setEndDate(e.target.value);
-                        setOrdersPage(1);
+
+                  {timeframeFilter === 'custom' && (
+                    <div className="space-y-2 pt-2 border-t border-[#26322B]/60">
+                      <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Start Date</label>
+                        <input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => {
+                            setStartDate(e.target.value);
+                            setOrdersPage(1);
+                          }}
+                          className="w-full rounded-xl border border-[#26322B] p-2 text-sm bg-[#131B17] text-white focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">End Date</label>
+                        <input
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => {
+                            setEndDate(e.target.value);
+                            setOrdersPage(1);
+                          }}
+                          className="w-full rounded-xl border border-[#26322B] p-2 text-sm bg-[#131B17] text-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-[#26322B]/60">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setStatusFilter('all');
+                        setCourierFilter('all');
+                        setTimeframeFilter('all');
+                        setQuickFilter('all');
+                        setStartDate('');
+                        setEndDate('');
+                        setFilterOpen(false);
                       }}
-                      className="w-full rounded-xl border border-[#26322B] p-2 text-sm bg-[#131B17] text-white focus:outline-none"
-                    />
+                      className="text-xs px-3 py-1.5 h-auto text-slate-400 hover:bg-white/5 hover:text-white rounded-lg"
+                    >
+                      Reset
+                    </Button>
+                    <Button
+                      onClick={() => setFilterOpen(false)}
+                      className="text-xs px-3 py-1.5 h-auto bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] rounded-lg font-bold"
+                    >
+                      Apply & Close
+                    </Button>
                   </div>
                 </div>
-              )}
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#26322B]/60">
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setStatusFilter('all');
-                    setCourierFilter('all');
-                    setTimeframeFilter('all');
-                    setQuickFilter('all');
-                    setStartDate('');
-                    setEndDate('');
-                    setFilterOpen(false);
-                  }}
-                  className="text-xs px-3 py-1.5 h-auto text-slate-400 hover:bg-white/5 hover:text-white rounded-lg"
-                >
-                  Reset
-                </Button>
-                <Button
-                  onClick={() => setFilterOpen(false)}
-                  className="text-xs px-3 py-1.5 h-auto bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] rounded-lg font-bold"
-                >
-                  Apply & Close
-                </Button>
               </div>
-            </div>
+            </>
           )}
         </div>
       )}

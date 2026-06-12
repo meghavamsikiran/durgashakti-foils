@@ -25,7 +25,9 @@ const AdminDashboard = () => {
 
   const load = useCallback(async (timeframe = 'All Time', rangeParams = {}) => {
     const cached = adminService.getCached('/admin/analytics/summary', { timeframe, ...rangeParams });
-    if (!cached) {
+    if (cached) {
+      setMetrics(cached.data?.metrics || {});
+    } else {
       setLoading(true);
     }
     try {

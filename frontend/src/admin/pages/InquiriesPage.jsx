@@ -328,10 +328,10 @@ const InquiriesPage = () => {
                       key={opt.key}
                       type="button"
                       onClick={() => setTempPreset(opt.key)}
-                      className={`px-3 py-2 rounded-lg text-xs font-semibold text-center transition-all ${
+                      className={`px-3 py-2 rounded-lg text-xs font-semibold text-center transition-all admin-preset-btn ${
                         tempPreset === opt.key 
-                          ? 'bg-primary text-white shadow-sm' 
-                          : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                          ? 'active-preset' 
+                          : ''
                       }`}
                     >
                       {opt.label}
@@ -426,16 +426,6 @@ const InquiriesPage = () => {
                   const end = new Date(dateFilter.end_date);
                   end.setHours(23, 59, 59, 999);
                   if (itemDate < start || itemDate > end) return false;
-                }
-                // 3. Search Filter
-                if (search) {
-                  const q = search.toLowerCase();
-                  const matchName = String(item.name || '').toLowerCase().includes(q);
-                  const matchEmail = String(item.email || '').toLowerCase().includes(q);
-                  const matchPhone = String(item.phone || '').toLowerCase().includes(q);
-                  const matchMessage = String(item.message || '').toLowerCase().includes(q);
-                  const matchSubject = String(item.subject || '').toLowerCase().includes(q);
-                  if (!matchName && !matchEmail && !matchPhone && !matchMessage && !matchSubject) return false;
                 }
                 return true;
               });

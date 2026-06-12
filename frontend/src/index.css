@@ -1642,6 +1642,8 @@ button[role="radio"] {
 
 .admin-filter-btn.active-filter:hover {
   background-color: rgba(0, 110, 27, 0.18) !important;
+  color: #006e1b !important;
+  border-color: rgba(0, 110, 27, 0.4) !important;
 }
 
 .dark .admin-filter-btn.active-filter {
@@ -1652,6 +1654,48 @@ button[role="radio"] {
 
 .dark .admin-filter-btn.active-filter:hover {
   background-color: rgba(22, 227, 74, 0.18) !important;
+  color: #16E34A !important;
+  border-color: rgba(22, 227, 74, 0.4) !important;
+}
+
+/* Date preset buttons inside popovers */
+.admin-preset-btn {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.admin-preset-btn:hover {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+}
+
+.admin-preset-btn.active-preset {
+  background-color: #006e1b !important;
+  color: #ffffff !important;
+  border-color: #006e1b !important;
+}
+
+/* Dark theme overrides */
+.dark .admin-preset-btn {
+  background-color: #131B17 !important;
+  color: #cbd5e1 !important;
+  border-color: #26322B !important;
+}
+
+.dark .admin-preset-btn:hover {
+  background-color: #19231F !important;
+  color: #ffffff !important;
+  border-color: #26322B !important;
+}
+
+.dark .admin-preset-btn.active-preset {
+  background-color: #16E34A !important;
+  color: #050807 !important;
+  border-color: #16E34A !important;
+  font-weight: 800 !important;
 }
 
 /* ── LIGHT THEME HERO CONTAINER RESTORATION ──────────────────────── */

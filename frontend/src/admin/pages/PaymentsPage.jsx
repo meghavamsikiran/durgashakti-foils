@@ -294,10 +294,10 @@ const PaymentsPage = () => {
                             onClick={() => {
                               setTempDatePreset(p.key);
                             }}
-                            className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center border transition-all ${
+                            className={`px-2 py-1.5 rounded-lg text-xs font-semibold text-center border transition-all admin-preset-btn ${
                               tempDatePreset === p.key 
-                                ? 'bg-primary text-white border-primary' 
-                                : 'bg-slate-50 text-slate-700 border-slate-100 hover:bg-slate-100'
+                                ? 'active-preset' 
+                                : ''
                             }`}
                           >
                             {p.label}

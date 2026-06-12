@@ -634,11 +634,11 @@ const ProductReviews = ({ productId, summary }) => {
 
                       {/* Official Reply — Display Mode */}
                       {review.admin_reply && !isEditing && (
-                        <div className="mt-4 rounded-xl border-l-4 border-l-primary border border-slate-100 bg-slate-50/50 p-4">
+                        <div className="mt-4 rounded-xl border-l-4 border-l-primary border border-slate-100 dark:border-[#26322B] bg-slate-50/50 dark:bg-[#131B17] p-4">
                           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                             <div className="inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-primary">
                               <span>Durga Shakti Foils</span>
-                              <span className="inline-flex items-center gap-0.5 rounded-full border border-primary/20 bg-emerald-50/60 px-2 py-0.5 text-[8px] text-primary">
+                              <span className="inline-flex items-center gap-0.5 rounded-full border border-primary/20 bg-emerald-50/60 dark:bg-emerald-950/35 px-2 py-0.5 text-[8px] text-primary">
                                 <BadgeCheck className="h-3 w-3" /> Verified Official
                               </span>
                             </div>
@@ -650,7 +650,7 @@ const ProductReviews = ({ productId, summary }) => {
                                     setEditingReplyId(review.id);
                                     setReplyDrafts((d) => ({ ...d, [review.id]: review.admin_reply || '' }));
                                   }}
-                                  className="rounded-lg border border-slate-200 bg-white p-1 text-slate-600 transition-all hover:bg-slate-50"
+                                  className="rounded-lg border border-slate-200 dark:border-[#26322B]/80 bg-white dark:bg-[#19231F] p-1 text-slate-600 dark:text-slate-400 transition-all hover:bg-slate-50 dark:hover:bg-[#131B17]"
                                   title="Edit reply"
                                 >
                                   <Edit2 className="h-3 w-3" />
@@ -659,7 +659,7 @@ const ProductReviews = ({ productId, summary }) => {
                                   type="button"
                                   onClick={() => handleDeleteReply(review.id)}
                                   disabled={savingId === review.id}
-                                  className="rounded-lg border border-slate-200 bg-white p-1 text-rose-600 transition-all hover:bg-slate-50 disabled:opacity-50"
+                                  className="rounded-lg border border-slate-200 dark:border-[#26322B]/80 bg-white dark:bg-[#19231F] p-1 text-rose-600 transition-all hover:bg-slate-50 dark:hover:bg-[#131B17] disabled:opacity-50"
                                   title="Delete reply"
                                 >
                                   <Trash2 className="h-3 w-3" />
@@ -667,14 +667,14 @@ const ProductReviews = ({ productId, summary }) => {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-600 leading-relaxed font-semibold">{review.admin_reply}</p>
+                          <p className="text-xs text-slate-600 dark:text-slate-350 leading-relaxed font-semibold">{review.admin_reply}</p>
                         </div>
                       )}
 
                       {/* Official Reply — Edit Mode */}
                       {(isEditing || isNewReply) && (
-                        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-                          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                        <div className="mt-4 rounded-xl border border-slate-200 dark:border-[#26322B] bg-slate-50 dark:bg-[#131B17] p-4 space-y-3">
+                          <label className="text-[9px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                             <MessageSquareReply className="w-3.5 h-3.5 text-primary" />
                             {review.admin_reply ? 'Edit Official Reply' : 'New Official Reply'}
                           </label>
@@ -683,14 +683,14 @@ const ProductReviews = ({ productId, summary }) => {
                             onChange={(e) => setReplyDrafts((d) => ({ ...d, [review.id]: e.target.value }))}
                             rows={3}
                             placeholder="Reply as Durga Shakti Foils..."
-                            className="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20"
+                            className="w-full rounded-xl border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#0C1310] p-3 text-xs font-semibold text-slate-700 dark:text-slate-350 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                             autoFocus
                           />
                           <div className="flex flex-wrap justify-end gap-2">
                             <button
                               type="button"
                               onClick={() => { setEditingReplyId(null); setNewReplyId(null); setReplyDrafts((d) => ({ ...d, [review.id]: review.admin_reply || '' })); }}
-                              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-50"
+                              className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#19231F] px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#131B17]"
                             >
                               <X className="h-3 w-3" />
                               Cancel
