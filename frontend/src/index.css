@@ -1738,6 +1738,52 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: #10b981 !important;
 }
 
+/* Dark theme overrides for payment status card and its inner details */
+.dark .admin-shell .bg-sky-50 {
+  background-color: rgba(14, 165, 233, 0.08) !important;
+  border-color: rgba(14, 165, 233, 0.2) !important;
+  color: #38bdf8 !important;
+}
+.dark .admin-shell .text-sky-900,
+.dark .admin-shell .text-sky-700,
+.dark .admin-shell .text-sky-600 {
+  color: #38bdf8 !important;
+}
+.dark .admin-shell .border-sky-200,
+.dark .admin-shell .border-sky-100 {
+  border-color: rgba(14, 165, 233, 0.2) !important;
+}
+
+.dark .admin-shell .bg-rose-50 {
+  background-color: rgba(244, 63, 94, 0.08) !important;
+  border-color: rgba(244, 63, 94, 0.2) !important;
+  color: #fb7185 !important;
+}
+.dark .admin-shell .text-rose-800,
+.dark .admin-shell .text-rose-700 {
+  color: #fb7185 !important;
+}
+
+.dark .admin-shell .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+}
+.dark .admin-shell .text-emerald-800,
+.dark .admin-shell .text-emerald-700 {
+  color: #34d399 !important;
+}
+
+.dark .admin-shell .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.08) !important;
+  border-color: rgba(245, 158, 11, 0.2) !important;
+  color: #fbbf24 !important;
+}
+.dark .admin-shell .text-amber-800,
+.dark .admin-shell .text-amber-700 {
+  color: #fbbf24 !important;
+}
+
 /* Modal overlay backgrounds */
 .dark .admin-shell div[role="dialog"],
 .dark .admin-shell .fixed.inset-0.bg-black\/80 + div > div {
