@@ -398,7 +398,7 @@ const PopupBanner = () => {
             </span>
           </div>
 
-          <h2 className={`text-4xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r ${text_gradient} uppercase select-none animate-pulse`}>
+          <h2 className={`text-4xl md:text-5xl font-black tracking-tight uppercase select-none animate-pulse bg-gradient-to-r ${text_gradient}`} style={{ color: 'transparent', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             {theme.title}
           </h2>
           

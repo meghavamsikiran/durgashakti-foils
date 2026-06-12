@@ -2184,26 +2184,33 @@ html.light-theme body,
 }
 
 .admin-shell table thead {
-  background-color: #f8fafc/60 !important;
   backdrop-filter: blur(10px) !important;
 }
 
+/* Table header typography (shared between themes) */
 .admin-shell table thead th {
   font-size: 0.65rem !important;
   font-weight: 900 !important;
   letter-spacing: 0.08em !important;
   text-transform: uppercase !important;
-  color: #64748b !important;
-  background-color: #f8fafc !important;
   padding: 1.1rem 1.5rem !important;
-  border-bottom: 1px solid #f1f5f9 !important;
 }
 
 .admin-shell table tbody td {
   padding: 1.1rem 1.5rem !important;
-  border-bottom: 1px solid #f8fafc !important;
   font-size: 0.8rem !important;
-  color: #334155 !important;
+}
+
+/* Light theme table colors */
+.light-theme .admin-shell table thead th {
+  color: #475569 !important;
+  background-color: #f1f5f9 !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+}
+
+.light-theme .admin-shell table tbody td {
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #1e293b !important;
 }
 
 .admin-shell table tbody tr {

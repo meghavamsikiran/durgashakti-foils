@@ -412,11 +412,11 @@ const ReviewsPage = () => {
 
                 {/* ── Official Reply (display mode) ── */}
                 {review.admin_reply && !isReplying && (
-                  <div className="mt-4 bg-emerald-50/60 border border-emerald-100 rounded-xl p-4">
+                  <div className="mt-4 bg-[#0d2818] border border-emerald-800/50 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">Official Reply</span>
-                        <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider bg-white border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded-full select-none">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Official Reply</span>
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-900/50 border border-emerald-700/50 text-emerald-300 px-2 py-0.5 rounded-full select-none">
                           <ShieldCheck className="w-2.5 h-2.5" />
                           Verified
                         </span>
@@ -424,7 +424,7 @@ const ReviewsPage = () => {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => { setReplyOpenId(review.id); setReplyDrafts((d) => ({ ...d, [review.id]: review.admin_reply || '' })); }}
-                          className="p-1.5 text-emerald-600 hover:text-primary hover:bg-white rounded-lg transition-all border border-transparent hover:border-slate-100"
+                          className="p-1.5 text-emerald-400 hover:text-[#25D958] hover:bg-emerald-900/30 rounded-lg transition-all border border-transparent hover:border-emerald-700/50"
                           title="Edit reply"
                         >
                           <Pencil className="w-3.5 h-3.5" />
@@ -439,7 +439,7 @@ const ReviewsPage = () => {
                         </button>
                       </div>
                     </div>
-                    <p className="text-sm text-slate-700 leading-relaxed font-medium">{review.admin_reply}</p>
+                    <p className="text-sm text-slate-200 leading-relaxed font-medium">{review.admin_reply}</p>
                   </div>
                 )}
 
@@ -487,7 +487,7 @@ const ReviewsPage = () => {
 
                 {/* ── Reply button (when no reply and not editing) ── */}
                 {!review.admin_reply && !isReplying && (
-                  <div className="mt-4 flex items-center justify-between bg-slate-50/70 border border-slate-100 rounded-xl px-4 py-3">
+                  <div className="mt-4 flex items-center justify-between bg-[#131B17] border border-[#26322B] rounded-xl px-4 py-3">
                     <span className="text-xs text-slate-400 font-medium">No official reply yet</span>
                     <button
                       onClick={() => { setReplyOpenId(review.id); setReplyDrafts((d) => ({ ...d, [review.id]: '' })); }}

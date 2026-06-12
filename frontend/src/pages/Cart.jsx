@@ -365,41 +365,17 @@ const Cart = () => {
                   Order Summary
                 </h2>
                 {(() => {
-                  const {
-                    config,
-                    shipping: calculatedShipping,
-                    codCharge,
-                    cgst,
-                    sgst,
-                    grandTotal
-                  } = calculateCheckoutPricing(total, shippingSettings, paymentMethod);
+                  const cgst = Math.round(total * 0.09 * 100) / 100;
+                  const sgst = Math.round(total * 0.09 * 100) / 100;
+                  const grandTotal = total + cgst + sgst;
 
                   return (
                     <>
-                      {config.enableShipping && config.enableFreeShipping && total < config.freeShippingThreshold && (
-                        <div className="bg-[#25D958]/5 border border-[#25D958]/20 text-[#25D958] text-[11px] rounded-lg p-3.5 mb-5 font-bold flex items-center gap-2 animate-pulse font-mono tracking-wide">
-                          <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                          <span>ADD ₹{(config.freeShippingThreshold - total).toFixed(2)} MORE FOR FREE SHIPPING!</span>
-                        </div>
-                      )}
-
                       <div className="space-y-4 mb-6 font-sans">
                         <div className="flex justify-between">
                           <span className="text-slate-400 text-sm font-semibold">Subtotal</span>
                           <span className="font-bold text-white font-mono" data-testid="cart-subtotal">₹{total.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-400 text-sm font-semibold">Shipping Charges</span>
-                          <span className="font-bold text-white font-mono">
-                            {calculatedShipping > 0 ? `₹${calculatedShipping.toFixed(2)}` : 'FREE'}
-                          </span>
-                        </div>
-                        {codCharge > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-slate-400 text-sm font-semibold">COD Handling Fee</span>
-                            <span className="font-bold text-white font-mono">₹{codCharge.toFixed(2)}</span>
-                          </div>
-                        )}
                         <div className="flex justify-between">
                           <span className="text-slate-400 text-sm font-semibold">SGST (9%)</span>
                           <span className="font-bold text-white font-mono">₹{sgst.toFixed(2)}</span>

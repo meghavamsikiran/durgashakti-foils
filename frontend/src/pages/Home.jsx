@@ -242,7 +242,9 @@ const Home = () => {
             </h1>
 
             <p className="mt-6 text-slate-300 text-sm md:text-base leading-relaxed text-left max-w-2xl hero-subtitle-text">
-              Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminium foil engineered for commercial strength and clinical hygiene.
+              Choose Hot Wrap Foils for a healthier & greener tomorrow.<br />
+              Premium food-grade aluminium foil engineered<br />
+              for commercial strength and clinical hygiene.
             </p>
 
             <button
