@@ -18,6 +18,7 @@ module.exports = {
         sans: ['Inter', 'sans-serif'],
         manrope: ['Manrope', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
+        serif: ['Playfair Display', 'serif'],
       },
   		colors: {
   			background: 'hsl(var(--background))',
