@@ -1111,6 +1111,28 @@ input[type="checkbox"] {
   filter: brightness(0) saturate(100%) invert(53%) sepia(93%) saturate(1450%) hue-rotate(352deg) brightness(101%) contrast(97%) !important;
 }
 
+/* Light theme navbar tweaks to integrate seamlessly without looking separated */
+.light-theme nav.sticky.top-0 {
+  background-color: #f7faf8 !important;
+  border-bottom: 1px solid #bbcbb5 !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05) !important; /* Extremely soft, professional shadow */
+}
+
+/* Ensure the top marquee inner border is clean */
+.light-theme nav.sticky.top-0 div.border-b.border-white\/10 {
+  border-bottom-color: #bbcbb5 !important;
+}
+
+/* Seamless sidebar top & borders in light theme */
+.light-theme aside.border-r.border-\[\#19231F\],
+.light-theme aside.border-r.border-\[\#19231f\],
+.light-theme .border-\[\#19231F\],
+.light-theme .border-\[\#19231f\],
+.light-theme .border-\[\#19231F\]\/60,
+.light-theme .border-\[\#19231f\]\/60 {
+  border-color: #bbcbb5 !important;
+}
+
 /* Home Page Light Mode Contrast Overrides */
 .light-theme .bg-\[\#0a0f0d\] {
   background-color: #0a0f0d !important;
