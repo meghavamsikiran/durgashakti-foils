@@ -159,41 +159,101 @@ const AnalyticsPage = () => {
 
   const handleExport = () => {
     const progressId = startProgress({
-      label: `Durgashakti_Analytics_${new Date().toISOString().split('T')[0]}.xlsx`,
+      label: `Durgashakti_Business_Report_${new Date().toISOString().split('T')[0]}.xlsx`,
       type: 'export',
       fileType: 'spreadsheet',
-      message: 'Preparing analytics data...',
+      message: 'Preparing full business analytics report...',
     });
 
     try {
-      if (!summary.inventory || summary.inventory.length === 0) {
-        finishProgress(progressId, { message: 'No data available to export', isError: true });
-        return;
+      updateProgress(progressId, { progress: 20, message: 'Structuring executive summary KPIs...' });
+
+      const rows = [];
+      
+      // Title Block
+      rows.push(["DURGASHAKTI FOILS - BUSINESS ANALYTICS REPORT"]);
+      rows.push(["Generated On:", new Date().toLocaleString()]);
+      rows.push(["Timeframe:", timeframe]);
+      rows.push([]);
+
+      // Executive KPIs
+      rows.push(["EXECUTIVE KPI SUMMARY"]);
+      rows.push(["Metric", "Value"]);
+      rows.push(["Total Revenue (INR)", Number(metrics.total_revenue || 0)]);
+      rows.push(["Total Orders Count", Number(metrics.total_orders || 0)]);
+      rows.push(["Orders Placed Today", Number(metrics.orders_today || 0)]);
+      rows.push(["Stock Health Rate", `${metrics.stock_health || 100}%`]);
+      rows.push(["Out Of Stock Products", Number(metrics.out_of_stock_count || 0)]);
+      rows.push(["Low Stock Products", Number(metrics.low_stock_count || 0)]);
+      rows.push(["Average Delivery Time", `${metrics.avg_delivery_time_hours || 0} hrs`]);
+      rows.push(["Prepaid (Online) Orders", Number((metrics.paid_payments_count || 0) - (metrics.cod_payments_count || 0))]);
+      rows.push(["Cash On Delivery (COD) Orders", Number(metrics.cod_payments_count || 0)]);
+      rows.push(["Average Order Value (AOV)", metrics.total_orders > 0 ? Math.round(metrics.total_revenue / metrics.total_orders) : 0]);
+      rows.push([]);
+
+      // Category Performance
+      updateProgress(progressId, { progress: 50, message: 'Structuring category performance...' });
+      rows.push(["CATEGORY BREAKDOWN PERFORMANCE"]);
+      rows.push(["Category Name", "Revenue (INR)", "Units Sold", "Stock In Warehouse", "Stock Value (INR)", "Product Count"]);
+      if (categoryAnalytics && categoryAnalytics.length > 0) {
+        categoryAnalytics.forEach(cat => {
+          rows.push([
+            cat.category || 'Uncategorized',
+            Number(cat.revenue || 0),
+            Number(cat.units_sold || 0),
+            Number(cat.stock_quantity || 0),
+            Number(cat.stock_value || 0),
+            Number(cat.product_count || 0)
+          ]);
+        });
+      } else {
+        rows.push(["No category data available"]);
+      }
+      rows.push([]);
+
+      // Top Selling Products
+      rows.push(["TOP SELLING PRODUCTS"]);
+      rows.push(["Product Name", "Units Sold"]);
+      const bestProducts = summary.best_products || [];
+      if (bestProducts.length > 0) {
+        bestProducts.forEach(p => {
+          rows.push([p.name, Number(p.quantity || 0)]);
+        });
+      } else {
+        rows.push(["No top seller logs"]);
+      }
+      rows.push([]);
+
+      // Detailed Warehouse Inventory
+      updateProgress(progressId, { progress: 80, message: 'Structuring inventory levels...' });
+      rows.push(["DETAILED WAREHOUSE INVENTORY LIST"]);
+      rows.push(["Product Name", "SKU / Batch", "Stock Left", "Units Sold", "Status"]);
+      const inventoryList = summary.inventory || [];
+      if (inventoryList.length > 0) {
+        inventoryList.forEach(p => {
+          rows.push([
+            p.name,
+            p.sku || 'N/A',
+            Number(p.stock_left || 0),
+            Number(p.units_sold || 0),
+            p.stock_left <= 0 ? 'Depleted' : p.stock_left <= 20 ? 'Low Stock' : 'Healthy'
+          ]);
+        });
+      } else {
+        rows.push(["No inventory registers"]);
       }
 
-      updateProgress(progressId, { progress: 30, message: 'Building workbook rows...' });
-
-      const headers = ["Product Name", "SKU", "Stock Left", "Units Sold", "Category"];
-      const rows = summary.inventory.map(p => [
-        `"${p.name}"`,
-        `"${p.sku || 'N/A'}"`,
-        p.stock_left,
-        p.units_sold,
-        `"${p.category || 'General'}"`
-      ]);
-
-      updateProgress(progressId, { progress: 60, message: 'Generating file...' });
-      updateProgress(progressId, { progress: 90, message: 'Downloading...' });
+      updateProgress(progressId, { progress: 95, message: 'Downloading report...' });
 
       downloadXlsx({
-        filename: `Durgashakti_Product_Analytics_${new Date().toISOString().split('T')[0]}.xlsx`,
-        sheetName: 'Product Analytics',
-        rows: [headers, ...rows.map((row) => row.map((cell) => String(cell).replace(/^"|"$/g, '')))]
+        filename: `Durgashakti_Business_Report_${new Date().toISOString().split('T')[0]}.xlsx`,
+        sheetName: 'Business Analytics',
+        rows: rows
       });
       
-      finishProgress(progressId, { message: 'Report downloaded successfully!' });
+      finishProgress(progressId, { message: 'Business report downloaded successfully!' });
     } catch (err) {
-      finishProgress(progressId, { message: 'Failed to generate export', isError: true });
+      finishProgress(progressId, { message: 'Failed to compile and download report', isError: true });
     }
   };
 
@@ -272,7 +332,7 @@ const AnalyticsPage = () => {
             className="rounded-2xl border-slate-200 font-semibold shadow-sm hover:bg-slate-50 gap-2 h-10 px-4" 
             onClick={handleExport}
           >
-            <Download className="w-4 h-4 text-slate-500" /> Export Sheet
+            <Download className="w-4 h-4 text-slate-500" /> Download Data
           </Button>
         </div>
       </div>
