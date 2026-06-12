@@ -284,8 +284,61 @@ const ReviewsPage = () => {
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             <div className="text-xs font-semibold text-slate-400 mt-3">Loading reviews...</div>
           </div>
-        ) : (
-          rows.map((review) => {
+        ) : (() => {
+          const filteredReviews = (rows || []).filter(review => {
+            // 1. Status Filter
+            if (status && status !== 'all') {
+              if ((review.status || '').toLowerCase() !== status.toLowerCase()) return false;
+            }
+            // 2. Rating Filter
+            if (rating && rating !== 'all') {
+              if (Number(review.rating) !== Number(rating)) return false;
+            }
+            // 3. Date Range Filter
+            if (dateRange && dateRange !== 'all') {
+              const reviewDate = new Date(review.created_at || review.updated_at);
+              const now = new Date();
+              if (dateRange === 'today') {
+                const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                if (reviewDate < startOfToday) return false;
+              } else if (dateRange === 'week') {
+                const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                if (reviewDate < oneWeekAgo) return false;
+              } else if (dateRange === 'month') {
+                const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                if (reviewDate < oneMonthAgo) return false;
+              } else if (dateRange === 'custom') {
+                if (customStart) {
+                  const start = new Date(customStart);
+                  if (reviewDate < start) return false;
+                }
+                if (customEnd) {
+                  const end = new Date(customEnd);
+                  end.setHours(23, 59, 59, 999);
+                  if (reviewDate > end) return false;
+                }
+              }
+            }
+            // 4. Search Filter
+            if (search) {
+              const q = search.toLowerCase();
+              const matchComment = String(review.comment || '').toLowerCase().includes(q);
+              const matchName = String(review.user?.full_name || review.customer_name || '').toLowerCase().includes(q);
+              const matchProduct = String(review.product?.name || '').toLowerCase().includes(q);
+              if (!matchComment && !matchName && !matchProduct) return false;
+            }
+            return true;
+          });
+
+          if (filteredReviews.length === 0) {
+            return (
+              <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                <div className="text-xs font-semibold text-slate-400">No matching reviews found.</div>
+              </div>
+            );
+          }
+
+          return filteredReviews.map((review) => {
           const hidden = review.status === 'hidden';
           const isReplying = replyOpenId === review.id;
           const isBusy = savingId === review.id;

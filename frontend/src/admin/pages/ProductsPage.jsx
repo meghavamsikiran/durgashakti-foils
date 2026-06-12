@@ -423,7 +423,34 @@ const ProductsPage = () => {
     form.category || DEFAULT_CATEGORY,
   ]));
   const hasInvalidCategory = form.category && !validCategoryNames.has(form.category);
-  const paginatedProducts = rows;
+  const paginatedProducts = (rows || []).filter(product => {
+    // 1. Category Filter
+    if (categoryFilter && categoryFilter !== 'all') {
+      if ((product.category || '').toLowerCase() !== categoryFilter.toLowerCase()) return false;
+    }
+    // 2. Active Filter
+    if (activeFilter && activeFilter !== 'all') {
+      const isProductActive = !!product.is_active;
+      if (activeFilter === 'active' && !isProductActive) return false;
+      if (activeFilter === 'inactive' && isProductActive) return false;
+    }
+    // 3. Stock Filter
+    if (stockFilter && stockFilter !== 'all') {
+      const inStock = (product.stock_quantity || 0) > 0;
+      if (stockFilter === 'in' && !inStock) return false;
+      if (stockFilter === 'out' && inStock) return false;
+    }
+    // 4. Search Filter
+    if (search) {
+      const q = search.toLowerCase();
+      const matchName = String(product.name || '').toLowerCase().includes(q);
+      const matchDesc = String(product.description || '').toLowerCase().includes(q);
+      const matchCategory = String(product.category || '').toLowerCase().includes(q);
+      const matchBatch = String(product.batch_no || '').toLowerCase().includes(q);
+      if (!matchName && !matchDesc && !matchCategory && !matchBatch) return false;
+    }
+    return true;
+  });
 
   const stats = {
     fastestMover: metrics?.fastest_mover?.name || 'N/A',

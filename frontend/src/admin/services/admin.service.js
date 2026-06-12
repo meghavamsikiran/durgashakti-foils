@@ -69,6 +69,7 @@ const adminService = {
       price: product.price,
       image_url: product.image_url,
       category: product.category,
+      is_active: product.is_active,
     }));
     return { data: { ...response.data, items } };
   },

@@ -730,7 +730,58 @@ const OrdersPage = () => {
     }
   };
 
-  const filtered = rows;
+  const filtered = (rows || []).filter(order => {
+    // 1. Status Filter
+    if (filter && filter !== 'ALL') {
+      const displayStatus = getDisplayStatus(order);
+      if (displayStatus.toUpperCase() !== filter.toUpperCase()) {
+        // Special case: 'PACKAGING' matches packed as well
+        if (filter.toUpperCase() === 'PACKAGING') {
+          if (!['PACKAGING', 'PACKED'].includes(displayStatus.toUpperCase())) return false;
+        } else {
+          return false;
+        }
+      }
+    }
+    // 2. Date Filter
+    if (dateFilter?.start_date && dateFilter?.end_date) {
+      const orderDate = new Date(order.created_at);
+      const startDate = new Date(dateFilter.start_date);
+      const endDate = new Date(dateFilter.end_date);
+      endDate.setHours(23, 59, 59, 999);
+      if (orderDate < startDate || orderDate > endDate) return false;
+    }
+    // 3. Courier Filter
+    if (courierFilter) {
+      const orderCourier = (order.courier || '').toLowerCase();
+      if (!orderCourier.includes(courierFilter.toLowerCase())) return false;
+    }
+    // 4. Payment Status Filter
+    if (paymentStatusFilter) {
+      const payStatus = (order.payment_status || '').toLowerCase();
+      if (paymentStatusFilter.toLowerCase() === 'paid') {
+        if (!['paid', 'completed'].includes(payStatus)) return false;
+      } else if (paymentStatusFilter.toLowerCase() === 'pending') {
+        if (['paid', 'completed'].includes(payStatus)) return false;
+      } else if (payStatus !== paymentStatusFilter.toLowerCase()) {
+        return false;
+      }
+    }
+    // 5. Payment Method Filter
+    if (paymentMethodFilter) {
+      const method = (order.payment_method || '').toLowerCase();
+      if (method !== paymentMethodFilter.toLowerCase()) return false;
+    }
+    // 6. Search Filter
+    if (search) {
+      const q = search.toLowerCase();
+      const matchId = String(order.id || '').toLowerCase().includes(q);
+      const matchName = String(order.shipping_address?.name || '').toLowerCase().includes(q);
+      const matchPhone = String(order.shipping_address?.phone || '').toLowerCase().includes(q);
+      if (!matchId && !matchName && !matchPhone) return false;
+    }
+    return true;
+  });
   const totalFilteredPages = Math.ceil(total / PAGE_SIZE);
   const paginatedOrders = filtered;
 
