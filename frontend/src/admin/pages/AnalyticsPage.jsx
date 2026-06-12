@@ -259,7 +259,38 @@ const AnalyticsPage = () => {
         )}
       </div>
 
-      {/* Redundant metrics grid removed as requested to focus on advanced charts */}
+      {/* Interactive KPI Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        {Object.entries({
+          total_revenue: metrics.total_revenue || 0,
+          total_orders: metrics.total_orders || 0,
+          aov: metrics.total_orders ? (metrics.total_revenue / metrics.total_orders) : 0,
+          total_units_sold: metrics.total_units_sold || 0,
+          stock_health: metrics.stock_health || 0
+        }).map(([key, val]) => {
+          let label = metricConfigs[key]?.label || key.replace(/_/g, ' ').toUpperCase();
+          if (key === 'aov') label = 'Avg Order Value';
+          const config = metricConfigs[key] || { icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/10' };
+          const IconComponent = config.icon;
+          
+          return (
+            <div key={key} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-all group">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</span>
+                <div className={`p-2 rounded-2xl ${config.bg} ${config.color} group-hover:scale-110 transition-transform`}>
+                  <IconComponent className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-black text-slate-900">
+                  {key === 'total_revenue' || key === 'aov' ? `₹${Math.round(val).toLocaleString('en-IN')}` : key === 'stock_health' ? `${val}%` : Number(val).toLocaleString('en-IN')}
+                </h3>
+                <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-widest">Active range status</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
