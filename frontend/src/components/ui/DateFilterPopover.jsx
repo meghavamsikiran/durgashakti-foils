@@ -175,33 +175,35 @@ const DateFilterPopover = ({ onChange, initial, customTrigger, inlineOpen = fals
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); if (open) { closePopover(); } else { setOpen(true); } }}
-            className="relative inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+            className={`relative inline-flex items-center gap-2 h-11 px-4 rounded-xl shadow-sm transition-all admin-filter-btn ${
+              open || active ? 'active-filter' : ''
+            }`}
           >
-            <Filter className="w-4 h-4 text-slate-600" />
-            <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
+            <Filter className={`w-4 h-4 transition-colors ${active ? 'text-[#006e1b] dark:text-[#16E34A]' : 'text-slate-500 dark:text-slate-450'}`} />
+            <span className="text-xs font-black uppercase tracking-widest">Filter</span>
             {active ? (
-              <span className="ml-2 inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-primary text-white text-[11px] font-semibold">{labelForPreset(active)}</span>
+              <span className="ml-2 inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold">{labelForPreset(active)}</span>
             ) : null}
           </button>
         )
       )}
 
       {open && (
-        <div className={inlineOpen ? "w-full bg-slate-50/50 dark:bg-[#131B17]/60 border border-slate-200 dark:border-[#26322B] rounded-xl p-3.5 space-y-3" : "absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50"}>
+        <div className={inlineOpen ? "w-full bg-slate-50/50 dark:bg-[#131B17]/60 border border-slate-200 dark:border-[#26322B] rounded-xl p-3.5 space-y-3" : "absolute right-0 mt-2 w-72 bg-white dark:bg-[#19231F] border border-slate-200 dark:border-[#26322B] rounded-2xl shadow-2xl p-4 z-50"}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-primary" />
-              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500">Select Range</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Select Range</div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={clear}
-                className="px-2.5 py-1 rounded-full border border-slate-200 text-slate-500 text-[9px] font-black uppercase tracking-widest hover:bg-slate-50"
+                className="px-2.5 py-1 rounded-full border border-slate-200 dark:border-[#26322B] text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-widest bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:hover:bg-[#19231F]"
               >
                 Clear
               </button>
-              {!inlineOpen && <button type="button" onClick={closePopover} className="text-slate-400 hover:text-slate-700"><X className="w-4 h-4" /></button>}
+              {!inlineOpen && <button type="button" onClick={closePopover} className="text-slate-450 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white"><X className="w-4 h-4" /></button>}
             </div>
           </div>
 
@@ -216,7 +218,7 @@ const DateFilterPopover = ({ onChange, initial, customTrigger, inlineOpen = fals
                   className={`px-2 py-2 rounded-lg text-[10px] font-bold text-center transition-colors ${
                     isSel 
                       ? 'bg-primary text-white' 
-                      : 'bg-white dark:bg-[#26322B] border border-slate-200 dark:border-[#26322B] text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                      : 'bg-white dark:bg-[#26322B] border border-slate-200 dark:border-[#26322B] text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-[#19231F] dark:hover:text-white'
                   }`}
                 >
                   {p.label}
@@ -227,20 +229,20 @@ const DateFilterPopover = ({ onChange, initial, customTrigger, inlineOpen = fals
 
           <div className="mt-3">
             {selected === 'custom' && (
-              <div className="space-y-2 mt-2 border-t border-slate-100/50 pt-2">
+              <div className="space-y-2 mt-2 border-t border-slate-100/50 dark:border-[#26322B]/50 pt-2">
                 <div>
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Start Date</label>
-                  <input type="date" value={custom.start} onChange={(e) => setCustom({ ...custom, start: e.target.value })} className="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white dark:bg-[#26322B]" />
+                  <label className="text-[9px] font-black text-slate-400 dark:text-slate-450 uppercase tracking-widest block mb-1">Start Date</label>
+                  <input type="date" value={custom.start} onChange={(e) => setCustom({ ...custom, start: e.target.value })} className="w-full p-2 rounded-lg border border-slate-200 dark:border-[#26322B] text-xs bg-white dark:bg-[#131B17] text-slate-800 dark:text-slate-200" />
                 </div>
                 <div>
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">End Date</label>
-                  <input type="date" value={custom.end} onChange={(e) => setCustom({ ...custom, end: e.target.value })} className="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white dark:bg-[#26322B]" />
+                  <label className="text-[9px] font-black text-slate-400 dark:text-slate-450 uppercase tracking-widest block mb-1">End Date</label>
+                  <input type="date" value={custom.end} onChange={(e) => setCustom({ ...custom, end: e.target.value })} className="w-full p-2 rounded-lg border border-slate-200 dark:border-[#26322B] text-xs bg-white dark:bg-[#131B17] text-slate-800 dark:text-slate-200" />
                 </div>
               </div>
             )}
-            <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-150/40">
-              <button type="button" onClick={closePopover} className="px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-600 dark:text-slate-350">Cancel</button>
-              <button type="button" onClick={applySelected} className="px-3 py-1.5 rounded-lg bg-primary text-white text-[10px] font-bold">Apply</button>
+            <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-150/40 dark:border-[#26322B]/60">
+              <button type="button" onClick={closePopover} className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-[#26322B] text-[10px] font-bold text-slate-600 dark:text-slate-350 bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:hover:bg-[#19231F]">Cancel</button>
+              <button type="button" onClick={applySelected} className="px-3 py-1.5 rounded-lg bg-primary hover:bg-[#1bb847] text-white text-[10px] font-bold">Apply</button>
             </div>
           </div>
         </div>

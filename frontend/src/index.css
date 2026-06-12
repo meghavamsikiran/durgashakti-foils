@@ -1617,7 +1617,7 @@ button[role="radio"] {
 .admin-filter-btn:hover {
   background-color: #f1f5f9 !important;
   color: #1e293b !important;
-  border-color: #94a3b8 !important;
+  border-color: #006e1b !important;
 }
 
 /* Dark theme overrides for filter buttons */
@@ -1630,7 +1630,8 @@ button[role="radio"] {
 .dark .admin-filter-btn:hover {
   background-color: #19231F !important;
   color: #ffffff !important;
-  border-color: #26322B !important;
+  border-color: #25D958 !important;
+  box-shadow: 0 0 10px rgba(37, 217, 88, 0.15) !important;
 }
 
 /* Active filter state styling */
@@ -1641,9 +1642,9 @@ button[role="radio"] {
 }
 
 .admin-filter-btn.active-filter:hover {
-  background-color: rgba(0, 110, 27, 0.18) !important;
+  background-color: rgba(0, 110, 27, 0.22) !important;
   color: #006e1b !important;
-  border-color: rgba(0, 110, 27, 0.4) !important;
+  border-color: #006e1b !important;
 }
 
 .dark .admin-filter-btn.active-filter {
@@ -1653,9 +1654,10 @@ button[role="radio"] {
 }
 
 .dark .admin-filter-btn.active-filter:hover {
-  background-color: rgba(22, 227, 74, 0.18) !important;
+  background-color: rgba(22, 227, 74, 0.25) !important;
   color: #16E34A !important;
-  border-color: rgba(22, 227, 74, 0.4) !important;
+  border-color: #16E34A !important;
+  box-shadow: 0 0 12px rgba(22, 227, 74, 0.25) !important;
 }
 
 /* Date preset buttons inside popovers */
