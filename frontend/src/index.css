@@ -1237,23 +1237,8 @@ input[type="checkbox"] {
 
 /* Force dark hero section text to always be light */
 .light-theme main[data-testid="home-page"] .hero-section-dark h1,
-.light-theme main[data-testid="home-page"] .hero-section-dark h1 span,
-.light-theme main[data-testid="home-page"] .hero-section-dark h1 span:not(.text-brand-green):not(.text-brand-yellow) {
+.light-theme main[data-testid="home-page"] .hero-section-dark h1 span {
   color: #ffffff !important;
-}
-.light-theme main[data-testid="home-page"] .hero-section-dark p,
-.light-theme main[data-testid="home-page"] .hero-section-dark p.text-slate-300 {
-  color: #cbd5e1 !important;
-}
-.light-theme main[data-testid="home-page"] .hero-section-dark .text-slate-400 {
-  color: #94a3b8 !important;
-}
-.light-theme main[data-testid="home-page"] .hero-section-dark .text-brand-yellow {
-  color: oklch(0.85 0.18 90) !important;
-}
-.light-theme main[data-testid="home-page"] .hero-section-dark .text-brand-green,
-.light-theme main[data-testid="home-page"] .hero-section-dark span.text-brand-green {
-  color: oklch(0.78 0.22 145) !important;
 }
 .light-theme main[data-testid="home-page"] .hero-section-dark .text-white {
   color: #ffffff !important;
@@ -1634,16 +1619,8 @@ button[role="radio"] {
 }
 
 .light-theme .hero-section-dark h1,
-.light-theme .hero-section-dark h1 span:not(.text-brand-yellow):not(.text-brand-green) {
+.light-theme .hero-section-dark h1 span {
   color: #ffffff !important;
-}
-
-.light-theme .hero-section-dark h1 span.text-brand-yellow {
-  color: oklch(0.85 0.18 90) !important;
-}
-
-.light-theme .hero-section-dark h1 span.text-brand-green {
-  color: oklch(0.78 0.22 145) !important;
 }
 
 .light-theme .hero-section-dark p {

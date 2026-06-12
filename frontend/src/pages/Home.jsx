@@ -208,10 +208,10 @@ const Home = () => {
         
         {/* Gradient mask to blend background image seamlessly into dark background on the left */}
         <div
-          className="absolute inset-0 z-0 pointer-events-none hidden md:block"
+          className="absolute inset-y-0 left-0 right-0 z-0 pointer-events-none hidden md:block"
           style={{
             background:
-              'linear-gradient(to right, #0a0f0d 0%, #0a0f0d 50%, rgba(10,15,13,0.7) 65%, rgba(10,15,13,0.15) 80%, rgba(10,15,13,0) 100%)'
+              'linear-gradient(to right, #0a0f0d 0%, #0a0f0d 30%, rgba(10,15,13,0.5) 45%, rgba(10,15,13,0.05) 65%, rgba(10,15,13,0) 100%)'
           }}
         />
 
