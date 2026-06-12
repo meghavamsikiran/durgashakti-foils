@@ -1313,21 +1313,21 @@ input[type="checkbox"] {
 }
 
 /* Override dark text to dark gray for readability */
-.light-theme .text-white:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .text-slate-100:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .text-slate-200:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .text-slate-300:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .text-slate-350:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .text-slate-400:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .admin-shell .text-white:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .admin-shell .text-slate-100:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .admin-shell .text-slate-200:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .admin-shell .text-slate-300:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .admin-shell .text-slate-350:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .admin-shell .text-slate-400:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .admin-shell .text-slate-700:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .admin-shell .text-slate-800:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *),
-.light-theme .admin-shell .text-slate-900:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *) {
+.light-theme .text-white:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .text-slate-100:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .text-slate-200:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .text-slate-300:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .text-slate-350:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .text-slate-400:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .admin-shell .text-white:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .admin-shell .text-slate-100:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .admin-shell .text-slate-200:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .admin-shell .text-slate-300:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .admin-shell .text-slate-350:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .admin-shell .text-slate-400:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .admin-shell .text-slate-700:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .admin-shell .text-slate-800:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *),
+.light-theme .admin-shell .text-slate-900:not([data-force-dark]):not([data-force-dark] *):not(main[data-testid="home-page"] .hero-section-dark *):not(aside):not(aside *) {
   color: #181c1b !important;
 }
 
@@ -1492,16 +1492,16 @@ input[type="checkbox"] {
 }
 
 /* Text elements */
-.light-theme h1:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
-.light-theme h2:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
-.light-theme h3:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
-.light-theme h4:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
-.light-theme h5:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
-.light-theme h6:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
-.light-theme p:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
-.light-theme span:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
-.light-theme label:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
-.light-theme a:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *) {
+.light-theme h1:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *),
+.light-theme h2:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *),
+.light-theme h3:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *),
+.light-theme h4:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *),
+.light-theme h5:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *),
+.light-theme h6:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *),
+.light-theme p:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *),
+.light-theme span:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *),
+.light-theme label:not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *),
+.light-theme a:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *) {
   color: #181c1b !important;
 }
 
@@ -1950,9 +1950,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* Fix text contrast in light theme for settings preview, shipping settings, coupons tab, business profile tab */
-.light-theme .admin-shell .bg-slate-950:not([data-force-dark]), 
-.light-theme .admin-shell .bg-slate-900:not([data-force-dark]),
-.light-theme .admin-shell .bg-slate-800:not([data-force-dark]) {
+.light-theme .admin-shell .bg-slate-950:not([data-force-dark]):not([data-force-dark] *), 
+.light-theme .admin-shell .bg-slate-900:not([data-force-dark]):not([data-force-dark] *),
+.light-theme .admin-shell .bg-slate-800:not([data-force-dark]):not([data-force-dark] *) {
   background-color: #e2e8f0 !important;
   color: #0f172a !important;
   border-color: #cbd5e1 !important;
@@ -1963,10 +1963,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* Fix sacred scrolling banner edge gradients in light theme */
-.light-theme .admin-shell .from-slate-950 {
+.light-theme .admin-shell .from-slate-950:not([data-force-dark]) {
   --tw-gradient-from: #e2e8f0 !important;
 }
-.light-theme .admin-shell .to-slate-950 {
+.light-theme .admin-shell .to-slate-950:not([data-force-dark]) {
   --tw-gradient-to: #e2e8f0 !important;
 }
 
@@ -2265,8 +2265,8 @@ html.light-theme body,
 }
 
 /* Button transitions */
-.admin-shell button,
-.admin-shell .btn {
+.admin-shell button:not(.admin-filter-btn),
+.admin-shell .btn:not(.admin-filter-btn) {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
   border-radius: 0.85rem !important;
 }
