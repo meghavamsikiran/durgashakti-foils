@@ -202,7 +202,7 @@ const Home = () => {
             alt="Durga Shakti Foils Premium Packing Solutions"
             loading="eager"
             fetchpriority="high"
-            className="w-full h-full object-cover object-right"
+            className="w-full h-full object-contain object-right"
           />
         </div>
 
