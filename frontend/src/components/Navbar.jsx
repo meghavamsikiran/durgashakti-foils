@@ -403,7 +403,7 @@ const Navbar = () => {
               />
               <span className="flex flex-col leading-none gap-[2px]">
                 <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '15px', letterSpacing: '-0.01em' }}>Durga Shakti Foils</span>
-                <span className="text-[#25D958]/80 italic font-inter" style={{ fontSize: '9.5px', letterSpacing: '0.02em' }}>Wrap Purity, Seal Freshness</span>
+                <span className="italic font-inter" style={{ fontSize: '9.5px', letterSpacing: '0.02em', color: themeMode === 'light' ? '#006e1b' : 'rgba(37, 217, 88, 0.8)' }}>Wrap Purity, Seal Freshness</span>
               </span>
             </Link>
           </div>

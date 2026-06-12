@@ -6,8 +6,14 @@ import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
 
 const CategoriesPage = () => {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState(() => {
+    const cached = adminService.getCached('/admin/categories');
+    return cached?.data || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = adminService.getCached('/admin/categories');
+    return !cached;
+  });
   const [name, setName] = useState('');
   const [globalDiscountEnabled, setGlobalDiscountEnabled] = useState(false);
   const [globalDiscountPercent, setGlobalDiscountPercent] = useState(0);
@@ -17,9 +23,12 @@ const CategoriesPage = () => {
   const [editingDiscountPercent, setEditingDiscountPercent] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchCategories = useCallback(async () => {
+  const fetchCategories = useCallback(async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) {
+        const cached = adminService.getCached('/admin/categories');
+        if (!cached) setLoading(true);
+      }
       const res = await adminService.getCategories();
       setCategories(res.data || []);
     } catch (err) {

@@ -40,7 +40,7 @@ const ProfileHeader = ({ user, activeTab, onMenuClick }) => {
       </div>
 
       {/* Tab Title */}
-      <div className="py-2">
+      <div className="py-0">
         <h1 className="text-3xl font-normal text-white font-serif tracking-wide">
           {getTabLabel()}
         </h1>
