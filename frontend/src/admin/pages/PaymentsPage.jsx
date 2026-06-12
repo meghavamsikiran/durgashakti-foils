@@ -155,16 +155,38 @@ const PaymentsPage = () => {
   }, [loadSilent, page]);
 
   const filtered = rows.filter(r => {
-    if (filter === 'all') return true;
-    const sLower = String(r.status || '').toLowerCase();
-    const fLower = String(filter).toLowerCase();
-    if (fLower === 'refund initiated') {
-      return sLower === 'refund initiated' || sLower === 'refund_initiated';
+    // 1. Status Filter
+    if (filter && filter !== 'all') {
+      const sLower = String(r.status || '').toLowerCase();
+      const fLower = String(filter).toLowerCase();
+      let matchStatus = false;
+      if (fLower === 'refund initiated') {
+        matchStatus = (sLower === 'refund initiated' || sLower === 'refund_initiated');
+      } else if (fLower === 'refund credited') {
+        matchStatus = (sLower === 'refund credited' || sLower === 'refund_credited');
+      } else {
+        matchStatus = (sLower === fLower);
+      }
+      if (!matchStatus) return false;
     }
-    if (fLower === 'refund credited') {
-      return sLower === 'refund credited' || sLower === 'refund_credited';
+    // 2. Date Filter
+    if (dateFilter?.start_date && dateFilter?.end_date) {
+      const paymentDate = new Date(r.created_at || r.updated_at);
+      const start = new Date(dateFilter.start_date);
+      const end = new Date(dateFilter.end_date);
+      end.setHours(23, 59, 59, 999);
+      if (paymentDate < start || paymentDate > end) return false;
     }
-    return sLower === fLower;
+    // 3. Search Filter
+    if (search) {
+      const q = search.toLowerCase();
+      const matchOrderId = String(r.order_id || '').toLowerCase().includes(q);
+      const matchTransactionId = String(r.transaction_id || '').toLowerCase().includes(q);
+      const matchPaymentMethod = String(r.payment_method || '').toLowerCase().includes(q);
+      const matchAmount = String(r.amount || '').toLowerCase().includes(q);
+      if (!matchOrderId && !matchTransactionId && !matchPaymentMethod && !matchAmount) return false;
+    }
+    return true;
   });
   const paginatedPayments = filtered;
 

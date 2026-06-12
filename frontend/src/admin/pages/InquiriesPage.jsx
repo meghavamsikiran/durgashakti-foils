@@ -413,7 +413,33 @@ const InquiriesPage = () => {
               { key: 'created_at', title: 'Received On' },
               { key: 'actions', title: 'Actions' },
             ]}
-            rows={inquiries.map(item => ({
+            rows={(() => {
+              const filteredInquiries = (inquiries || []).filter(item => {
+                // 1. Status Filter
+                if (statusFilter && statusFilter !== 'all') {
+                  if ((item.status || '').toLowerCase() !== statusFilter.toLowerCase()) return false;
+                }
+                // 2. Date Filter
+                if (dateFilter?.start_date && dateFilter?.end_date) {
+                  const itemDate = new Date(item.created_at || item.updated_at);
+                  const start = new Date(dateFilter.start_date);
+                  const end = new Date(dateFilter.end_date);
+                  end.setHours(23, 59, 59, 999);
+                  if (itemDate < start || itemDate > end) return false;
+                }
+                // 3. Search Filter
+                if (search) {
+                  const q = search.toLowerCase();
+                  const matchName = String(item.name || '').toLowerCase().includes(q);
+                  const matchEmail = String(item.email || '').toLowerCase().includes(q);
+                  const matchPhone = String(item.phone || '').toLowerCase().includes(q);
+                  const matchMessage = String(item.message || '').toLowerCase().includes(q);
+                  const matchSubject = String(item.subject || '').toLowerCase().includes(q);
+                  if (!matchName && !matchEmail && !matchPhone && !matchMessage && !matchSubject) return false;
+                }
+                return true;
+              });
+              return filteredInquiries.map(item => ({
               ...item,
               name: <span className="font-bold text-slate-900">{item.name}</span>,
               contact: (
@@ -456,7 +482,8 @@ const InquiriesPage = () => {
                   Review
                 </button>
               )
-            }))}
+            }));
+          })()}
           />
         </div>
         <TablePagination

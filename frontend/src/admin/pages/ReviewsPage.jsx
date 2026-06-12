@@ -553,7 +553,8 @@ const ReviewsPage = () => {
               </div>
             </article>
           );
-        }))}
+        });
+      })()}
       </div>
 
       {rows.length === 0 && !loading && (
