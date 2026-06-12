@@ -592,7 +592,7 @@ const ProductReviews = ({ productId, summary }) => {
 
                       {/* Comment body */}
                       {review.comment && (
-                        <p className="text-sm text-slate-650 dark:text-slate-350 leading-relaxed mt-2.5 whitespace-pre-line font-medium">
+                        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mt-2.5 whitespace-pre-line font-medium">
                           {review.comment}
                         </p>
                       )}
@@ -667,7 +667,7 @@ const ProductReviews = ({ productId, summary }) => {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-350 leading-relaxed font-semibold">{review.admin_reply}</p>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-semibold">{review.admin_reply}</p>
                         </div>
                       )}
 
@@ -683,7 +683,7 @@ const ProductReviews = ({ productId, summary }) => {
                             onChange={(e) => setReplyDrafts((d) => ({ ...d, [review.id]: e.target.value }))}
                             rows={3}
                             placeholder="Reply as Durga Shakti Foils..."
-                            className="w-full rounded-xl border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#0C1310] p-3 text-xs font-semibold text-slate-700 dark:text-slate-350 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            className="w-full rounded-xl border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#0C1310] p-3 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                             autoFocus
                           />
                           <div className="flex flex-wrap justify-end gap-2">
