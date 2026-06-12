@@ -89,20 +89,27 @@ const CategoriesPage = () => {
       return;
     }
 
+    const oldCategories = [...categories];
+    const updatedCategory = {
+      name: editingName.trim(),
+      global_discount_enabled: editingDiscountEnabled,
+      global_discount_percent: editingDiscountEnabled ? Number(editingDiscountPercent) : 0
+    };
+
+    // Update state instantly for a responsive feel
+    setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updatedCategory } : c));
+    setEditingId(null);
+    setEditingName('');
+    setEditingDiscountEnabled(false);
+    setEditingDiscountPercent(0);
+
     try {
       setSubmitting(true);
-      await adminService.updateCategory(id, { 
-        name: editingName.trim(),
-        global_discount_enabled: editingDiscountEnabled,
-        global_discount_percent: editingDiscountEnabled ? editingDiscountPercent : 0
-      });
+      await adminService.updateCategory(id, updatedCategory);
       toast.success('Category updated successfully');
-      setEditingId(null);
-      setEditingName('');
-      setEditingDiscountEnabled(false);
-      setEditingDiscountPercent(0);
-      fetchCategories();
+      fetchCategories(true);
     } catch (err) {
+      setCategories(oldCategories);
       toast.error(err.response?.data?.detail || 'Failed to update category');
     } finally {
       setSubmitting(false);
@@ -169,7 +176,7 @@ const CategoriesPage = () => {
                 <button
                   type="button"
                   onClick={() => setGlobalDiscountEnabled(!globalDiscountEnabled)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${globalDiscountEnabled ? 'bg-primary' : 'bg-slate-300'}`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${globalDiscountEnabled ? 'bg-primary' : 'bg-slate-300'}`}
                 >
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${globalDiscountEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>
@@ -243,7 +250,7 @@ const CategoriesPage = () => {
                           <button
                             type="button"
                             onClick={() => setEditingDiscountEnabled(!editingDiscountEnabled)}
-                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${editingDiscountEnabled ? 'bg-primary' : 'bg-slate-300'}`}
+                            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${editingDiscountEnabled ? 'bg-primary' : 'bg-slate-300'}`}
                           >
                             <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${editingDiscountEnabled ? 'translate-x-5' : 'translate-x-1'}`} />
                           </button>
