@@ -195,8 +195,14 @@ const Home = () => {
 
       {/* Hero Section */}
       <div className="hero-section-dark relative overflow-hidden bg-[#0a0f0d] border-b border-white/5">
-        {/* Absolute background image - covers the full area for md+ screens */}
-        <div className="absolute inset-0 z-0 hidden md:block">
+        {/* Absolute background image on the right for md+ screens */}
+        <div
+          className="absolute inset-y-0 right-0 z-0 w-full md:w-[60%] lg:w-[55%] xl:w-[50%] hidden md:block"
+          style={{
+            maskImage: 'linear-gradient(to right, transparent 0%, black 15%)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 15%)'
+          }}
+        >
           <img
             src="/hero-products.webp"
             alt="Durga Shakti Foils Premium Packing Solutions"
@@ -205,15 +211,6 @@ const Home = () => {
             className="w-full h-full object-cover object-right"
           />
         </div>
-
-        {/* Gradient mask to blend background image seamlessly and ensure text readability */}
-        <div
-          className="absolute inset-0 z-0 pointer-events-none hidden md:block"
-          style={{
-            background:
-              'linear-gradient(to right, #0a0f0d 0%, #0a0f0d 20%, rgba(10,15,13,0.7) 35%, rgba(10,15,13,0) 50%)'
-          }}
-        />
 
         {/* Hero Content */}
         <div className="relative z-10 max-w-full px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-32 pt-16 md:pt-24 pb-20 grid md:grid-cols-[1.2fr_0.8fr] gap-8 items-center">
