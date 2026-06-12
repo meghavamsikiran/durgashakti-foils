@@ -69,7 +69,7 @@ const AdminLayout = () => {
   return (
     <div className="admin-shell min-h-screen bg-[#0C1310] flex flex-col md:flex-row text-white">
       {/* Mobile Header - Dark background to match the sidebar theme and ensure the logo is visible */}
-      <header className="flex md:hidden items-center justify-between px-6 py-4 bg-[#050807] border-b border-[#26322B] sticky top-0 z-30 shadow-sm">
+      <header data-force-dark className="flex md:hidden items-center justify-between px-6 py-4 bg-[#050807] border-b border-[#26322B] sticky top-0 z-30 shadow-sm">
         <button 
           onClick={() => setSidebarOpen(true)}
           className="p-2 -ml-2 text-slate-300 hover:text-[#25d958] active:text-[#25d958] hover:bg-[#25d958]/10 active:bg-[#25d958]/20 rounded-xl transition-colors focus:outline-none"
@@ -106,7 +106,7 @@ const AdminLayout = () => {
       )}
 
       {/* Sidebar */}
-      <aside className={`w-64 bg-[#050807] text-slate-350 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-[1001] border-r border-[#26322B] font-inter transition-transform duration-300 md:translate-x-0 ${
+      <aside data-force-dark className={`w-64 bg-[#050807] text-slate-350 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-[1001] border-r border-[#26322B] font-inter transition-transform duration-300 md:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="p-5 flex items-center justify-between border-b border-[#26322B] bg-[#050807]">
