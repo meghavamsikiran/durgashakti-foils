@@ -674,7 +674,7 @@ const CouponsPage = () => {
     if (cachedCoupons && cachedSettings) {
       setCoupons(normalizeCouponList(cachedCoupons.data || []));
       setSettings(cachedSettings.data);
-    } else {
+    } else if (coupons.length === 0) {
       setLoading(true);
     }
     try {
@@ -713,7 +713,7 @@ const CouponsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [coupons.length]);
 
   useEffect(() => {
     fetchCouponsAndSettings();
