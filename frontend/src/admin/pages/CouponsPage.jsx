@@ -2140,14 +2140,14 @@ const CouponsPage = () => {
             </div>
 
             {/* Live Preview Widget */}
-            <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+            <div className="p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4" style={{ background: '#0f172a' }}>
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
                 Storefront Banner Preview (Live)
               </h3>
               
               {/* Scaled Banner Container */}
-              <div className="overflow-hidden border border-slate-850 rounded-2xl p-1 bg-slate-955 flex items-center justify-center min-h-[220px]">
+              <div className="overflow-hidden border border-slate-700 rounded-2xl p-1 flex items-center justify-center min-h-[220px]" style={{ background: '#0a0a1a' }}>
                 <div className="w-full max-w-lg select-none font-manrope text-white scale-90 origin-center">
                   <div className={`relative bg-gradient-to-br ${bannerForm.theme_config.background_gradient} rounded-3xl border-4 ${bannerForm.theme_config.border_color} p-6 shadow-2xl overflow-hidden`}>
                     
@@ -2184,7 +2184,7 @@ const CouponsPage = () => {
 
                     <div className="text-center relative z-10 space-y-4">
                       <div className="flex justify-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-white/10 border border-white/20 text-white rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 border border-white/20 text-white rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'rgba(0, 0, 0, 0.2)' }}>
                           {(bannerForm.theme_config.emoji_pattern || '✨').split('')[0]} {bannerForm.theme_context ? `${bannerForm.theme_context} Special` : 'Limited Offer'}
                         </span>
                       </div>
@@ -2200,7 +2200,7 @@ const CouponsPage = () => {
                       {/* Display Coupons Centered */}
                       <div className="flex flex-col items-center gap-3 w-full pt-1">
                         {couponCodes.length === 0 ? (
-                          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 w-full max-w-xs text-center text-xs text-white/50">
+                          <div className="border border-white/10 rounded-2xl p-4 w-full max-w-xs text-center text-xs text-white/50" style={{ background: 'rgba(0, 0, 0, 0.15)' }}>
                             No coupon codes selected yet.
                           </div>
                         ) : (
@@ -2215,13 +2215,13 @@ const CouponsPage = () => {
                                     ? `Rs ${matchingC.discount_value} Off`
                                     : 'Free Shipping';
                               return (
-                                <div key={code} className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/15 text-center space-y-2 w-full">
+                                <div key={code} className="rounded-2xl p-3 border border-white/15 text-center space-y-2 w-full" style={{ background: 'rgba(0, 0, 0, 0.25)' }}>
                                   <p className="text-[10px] font-bold text-yellow-300 uppercase tracking-widest">{label}</p>
                                   <div className="relative flex items-center justify-center w-full px-8">
                                     <span className="font-mono text-sm font-black bg-black/20 px-2.5 py-1 rounded-xl border border-white/20 tracking-wider">
                                       {code}
                                     </span>
-                                    <button type="button" className="absolute right-0 p-1.5 bg-white/5 border border-white/10 rounded-lg text-white/80">
+                                    <button type="button" className="absolute right-0 p-1.5 border border-white/10 rounded-lg text-white/80" style={{ background: 'rgba(0, 0, 0, 0.15)' }}>
                                       <Copy className="w-3.5 h-3.5" />
                                     </button>
                                   </div>

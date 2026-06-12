@@ -384,7 +384,8 @@ const PopupBanner = () => {
         {/* Close Button */}
         <button 
           onClick={handleClose}
-          className="absolute top-4 right-4 z-10 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white/80 hover:text-white transition-all border border-white/10"
+          className="absolute top-4 right-4 z-10 p-2 rounded-full text-white/80 hover:text-white transition-all border border-white/10"
+          style={{ background: 'rgba(0, 0, 0, 0.2)' }}
         >
           <X className="w-5 h-5" />
         </button>
@@ -392,7 +393,7 @@ const PopupBanner = () => {
         {/* Banner Content */}
         <div className="text-center relative z-10 space-y-5">
           <div className="flex justify-center">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/20 text-white rounded-full text-xs font-bold uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 border border-white/20 text-white rounded-full text-xs font-bold uppercase tracking-wider" style={{ background: 'rgba(0, 0, 0, 0.2)' }}>
               {emoji_pattern.split('')[0] || '✨'} {activeTheme ? `${theme.theme_context} Special` : 'Limited Offer'}
             </span>
           </div>
@@ -422,7 +423,8 @@ const PopupBanner = () => {
               return (
                 <div 
                   key={coupon.id || coupon.code}
-                  className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/15 hover:border-white/30 transition-all flex flex-col items-center justify-center text-center gap-4 w-full min-h-[140px]"
+                  className="rounded-2xl p-5 border border-white/15 hover:border-white/30 transition-all flex flex-col items-center justify-center text-center gap-4 w-full min-h-[140px]"
+                  style={{ background: 'rgba(0, 0, 0, 0.25)' }}
                 >
                   <div className="space-y-1.5 w-full relative">
                     <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest">
@@ -434,7 +436,8 @@ const PopupBanner = () => {
                       </span>
                       <button
                         onClick={() => handleCopy(coupon.code)}
-                        className="absolute right-0 p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/80 hover:text-white transition-all border border-white/10"
+                        className="absolute right-0 p-2 rounded-lg text-white/80 hover:text-white transition-all border border-white/10"
+                        style={{ background: 'rgba(0, 0, 0, 0.15)' }}
                         title="Copy Code"
                       >
                         {copiedCode === coupon.code ? (
