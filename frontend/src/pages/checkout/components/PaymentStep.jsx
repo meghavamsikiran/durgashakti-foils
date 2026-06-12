@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Truck, Shield, CreditCard, BadgeCheck, LockKeyhole, ScanQrCode, Sparkles } from 'lucide-react';
+import { Truck, Shield, CreditCard, BadgeCheck, LockKeyhole, ScanQrCode, Sparkles, AlertCircle } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { normalizeShippingSettings } from '../../../utils/checkoutPricing';
 
@@ -10,6 +10,12 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
   const minCod = config.minimumCodAmount;
   const maxCod = config.maximumCodAmount;
   const codCharge = config.codCharge;
+
+  useEffect(() => {
+    if (!codEnabled && paymentMethod === 'cod') {
+      selectPaymentMethod('online');
+    }
+  }, [codEnabled, paymentMethod, selectPaymentMethod]);
 
   const paymentMethods = [{
     id: 'online',
@@ -105,6 +111,24 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
           );
         })}
       </div>
+
+      {!codEnabled && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative mt-6 overflow-hidden rounded-lg bg-amber-950/20 border border-amber-900/50 text-amber-200 p-5 shadow-sm"
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-amber-400 font-bold mb-1">COD Temporarily Unavailable</p>
+              <p className="text-xs font-medium leading-relaxed text-amber-305">
+                Cash on Delivery (COD) is temporarily unavailable. Please place your order using prepaid (Online Payment) options. Thank you for your kind understanding.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {paymentMethod === 'cod' && (
         <motion.div
