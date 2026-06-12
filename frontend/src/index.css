@@ -151,14 +151,6 @@ h1, h2, h3, h4, h5, h6,
         --loader-track-color: rgba(255, 255, 255, 0.1);
     }
 
-    .dark .text-primary {
-        color: #25D958 !important;
-    }
-
-    .dark .text-emerald-600 {
-        color: #34d399 !important;
-    }
-
     .dark, .dark body {
         background-color: #030504 !important;
         color: #ffffff !important;
