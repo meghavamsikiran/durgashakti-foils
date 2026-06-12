@@ -1016,7 +1016,9 @@ h1, h2, h3, h4, h5, h6,
 
   .admin-shell input,
   .admin-shell select,
-  .admin-shell textarea {
+  .admin-shell textarea,
+  .admin-shell input[type="number"],
+  .admin-shell input[type="text"] {
     background-color: #131B17 !important;
     border-color: #26322B !important;
     color: #ffffff !important;
@@ -1937,10 +1939,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background-color: #131B17 !important;
   border-color: #26322B !important;
 }
-
 .dark .admin-shell input,
 .dark .admin-shell select,
-.dark .admin-shell textarea {
+.dark .admin-shell textarea,
+.dark .admin-shell input[type="number"],
+.dark .admin-shell input[type="text"] {
   background-color: #0C1310 !important;
   border-color: #26322B !important;
   color: #ffffff !important;
