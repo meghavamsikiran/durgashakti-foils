@@ -1434,16 +1434,16 @@ input[type="checkbox"] {
 }
 
 /* Text elements */
-.light-theme h1,
-.light-theme h2,
-.light-theme h3,
-.light-theme h4,
-.light-theme h5,
-.light-theme h6,
-.light-theme p:not(.text-white):not(.text-slate-100),
-.light-theme span:not(.text-white):not(.text-slate-100),
-.light-theme label,
-.light-theme a:not(.text-white):not(.text-slate-100) {
+.light-theme h1:not([data-force-dark]):not([data-force-dark] *),
+.light-theme h2:not([data-force-dark]):not([data-force-dark] *),
+.light-theme h3:not([data-force-dark]):not([data-force-dark] *),
+.light-theme h4:not([data-force-dark]):not([data-force-dark] *),
+.light-theme h5:not([data-force-dark]):not([data-force-dark] *),
+.light-theme h6:not([data-force-dark]):not([data-force-dark] *),
+.light-theme p:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *),
+.light-theme span:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *),
+.light-theme label:not([data-force-dark]):not([data-force-dark] *),
+.light-theme a:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *) {
   color: #181c1b !important;
 }
 
