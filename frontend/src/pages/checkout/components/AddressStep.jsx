@@ -262,7 +262,7 @@ const AddressStep = ({
               </div>
               <Input name="address_line2" value={shippingInfo.address_line2} onChange={onInputChange} className="rounded-xl h-12 bg-[#0C1310] border-[#26322B] text-white focus-visible:ring-1 focus-visible:ring-[#25D958] focus-visible:border-[#25D958]" />
               <p className="text-[10px] font-semibold text-amber-500/80 italic ml-1">
-                * Note: Geolocation approximations depend on browser permissions/settings and might not work precisely. Please verify loaded address details.
+                * Note: This might not fetch exact location, please review your location while using it.
               </p>
             </div>
           </div>

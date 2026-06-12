@@ -57,6 +57,8 @@ import PageLoader from './components/ui/PageLoader';
 import './App.css';
 import Maintenance from './pages/Maintenance';
 
+import { Sun, Moon } from 'lucide-react';
+
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -119,17 +121,17 @@ function AppRoutes() {
               localStorage.setItem('themeMode', next);
               window.dispatchEvent(new CustomEvent('theme-toggle', { detail: next }));
             }}
-            className="fixed bottom-20 right-6 md:bottom-6 md:right-6 z-[9999] p-3 rounded-full bg-[#25D958] text-[#0C1310] shadow-[0_4px_20px_rgba(37,217,88,0.3)] hover:scale-110 active:scale-95 transition-all duration-200"
+            className={`fixed bottom-20 right-6 md:bottom-6 md:right-6 z-[9999] p-3 rounded-full backdrop-blur-md border transition-all duration-300 ease-out hover:-translate-y-0.5 active:scale-95 ${
+              themeMode === 'dark'
+                ? 'bg-[#19231F]/80 border-white/10 text-[#25D958] hover:border-[#25D958]/40 shadow-emerald-glow'
+                : 'bg-white/80 border-[#ebefed] text-slate-800 hover:border-slate-300 shadow-premium-shadow'
+            }`}
             aria-label="Toggle Theme"
           >
             {themeMode === 'dark' ? (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
-              </svg>
+              <Sun className="w-6 h-6 animate-[spin_20s_linear_infinite]" />
             ) : (
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
+              <Moon className="w-6 h-6" />
             )}
           </button>
         )}

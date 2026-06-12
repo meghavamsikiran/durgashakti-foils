@@ -174,7 +174,11 @@ const AdminLayout = () => {
           <button 
             type="button" 
             onClick={toggleTheme} 
-            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-bold text-slate-400 transition-all hover:text-white mb-2"
+            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 mb-2 border ${
+              themeMode === 'dark'
+                ? 'text-slate-300 border-transparent hover:text-[#25D958] hover:bg-[#19231F]/50 hover:border-[#25D958]/20'
+                : 'text-slate-600 border-transparent hover:text-slate-900 hover:bg-[#f1f4f2]/80 hover:border-slate-300'
+            }`}
           >
             {themeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             {themeMode === 'dark' ? 'Light Theme' : 'Dark Theme'}

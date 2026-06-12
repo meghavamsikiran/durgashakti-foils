@@ -33,9 +33,7 @@ class UserModel(Base):
     saved_cards = Column(JSONB, default=list, nullable=False, server_default=text("'[]'::jsonb"))
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
 
-    __table_args__ = (
-        Index("ix_users_role", "role"),
-    )
+
 
 
 # ── Addresses ────────────────────────────────────────────────────────────

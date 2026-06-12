@@ -51,6 +51,14 @@ def init_engine():
         return
 
     async_url = _build_async_url(url)
+    is_local = "localhost" in url or "127.0.0.1" in url
+    connect_args = {
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+    }
+    if not is_local:
+        connect_args["ssl"] = "require"
+
     engine = create_async_engine(
         async_url,
         echo=False,
@@ -58,11 +66,7 @@ def init_engine():
         pool_size=10,
         max_overflow=20,
         pool_recycle=300,
-        connect_args={
-            "ssl": "require",
-            "statement_cache_size": 0,
-            "prepared_statement_cache_size": 0,
-        },
+        connect_args=connect_args,
     )
     async_session_factory = sessionmaker(
         engine, class_=AsyncSession, expire_on_commit=False

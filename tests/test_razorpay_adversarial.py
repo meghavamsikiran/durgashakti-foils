@@ -155,6 +155,7 @@ async def test_concurrent_payment_verify_and_webhook(client, auth_setup):
         
     # 2. Fire concurrent verification and webhook requests
     rzp_payment_id = f"pay_{uuid.uuid4().hex[:10]}"
+    total_amount_paise = int(round(float(order_res["total_amount"]) * 100))
     
     # Verify payload
     sig = generate_razorpay_signature(rzp_order_id, rzp_payment_id)
@@ -171,7 +172,7 @@ async def test_concurrent_payment_verify_and_webhook(client, auth_setup):
             "payment": {
                 "entity": {
                     "id": rzp_payment_id,
-                    "amount": 90000,
+                    "amount": total_amount_paise,
                     "order_id": rzp_order_id,
                     "status": "captured"
                 }

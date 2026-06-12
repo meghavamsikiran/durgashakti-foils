@@ -253,7 +253,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
             </div>
             <Input value={addressForm.address_line2} onChange={e => setAddressForm({...addressForm, address_line2: e.target.value})} className="rounded-lg h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 transition-all px-4 text-sm font-medium" />
             <p className="text-[10px] font-semibold text-[#fedb41] italic ml-1">
-              * Note: Geolocation approximations depend on browser permissions/settings and might not work precisely. Please verify loaded address details.
+              * Note: This might not fetch exact location, please review your location while using it.
             </p>
           </div>
 
