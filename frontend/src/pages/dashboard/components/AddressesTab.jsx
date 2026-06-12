@@ -5,10 +5,9 @@ import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import PageLoader from '../../../components/ui/PageLoader';
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
 import { usePincodeLookup } from '../../../hooks/usePincodeLookup';
 import { useGeoLocationAddress } from '../../../hooks/useGeoLocationAddress';
+import { toast } from 'sonner';
 
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", 

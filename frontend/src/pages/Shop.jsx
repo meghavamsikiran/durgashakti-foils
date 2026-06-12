@@ -229,15 +229,11 @@ const Shop = () => {
 
   return (
     <div className="min-h-screen bg-[#0C1310] font-sans text-white" data-testid="shop-page">
-      {/* Premium Header Banner - full width img element with controlled height for professional UI */}
-      <div className={isAdminPath 
-        ? "w-full overflow-hidden border-b border-[#26322B] h-auto aspect-[1024/255] md:aspect-none md:h-[300px] bg-[#0C1310]" 
-        : "w-full overflow-hidden border-b border-[#26322B] h-auto aspect-[1024/255] md:aspect-none md:h-[250px] lg:h-[300px] bg-[#0C1310]"
-      }>
+      <div className="w-full overflow-hidden border-b border-[#26322B] bg-[#0C1310]">
         <img 
           src="/product_display_poster.png" 
           alt="Our Products - Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminum foil commercial strength and clinical hygiene."
-          className="w-full h-full object-cover object-center block"
+          className="w-full h-auto object-contain block"
         />
       </div>
 

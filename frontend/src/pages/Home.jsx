@@ -195,20 +195,6 @@ const Home = () => {
 
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-[#0a0f0d] border-b border-white/5">
-        <img
-          src="/hero-products.webp"
-          alt="Durga Shakti Foils Premium Packing Solutions"
-          loading="eager"
-          fetchpriority="high"
-          className="absolute right-0 bottom-0 z-0 pointer-events-none w-full md:w-[70%] lg:w-[65%] h-auto object-contain hidden md:block"
-        />
-        <div
-          className="absolute inset-0 z-0 pointer-events-none hidden md:block"
-          style={{
-            background:
-              'linear-gradient(to right, #0a0f0d 0%, #0a0f0d 38%, rgba(10,15,13,0.7) 50%, rgba(10,15,13,0.15) 75%, rgba(10,15,13,0) 100%)'
-          }}
-        />
 
         {/* Hero Content */}
         <div className="relative z-10 max-w-full px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-32 pt-16 md:pt-24 pb-20 grid md:grid-cols-[1.2fr_0.8fr] gap-8 items-center">
@@ -254,13 +240,13 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="md:hidden mt-4">
+          <div className="mt-4 flex items-center justify-center">
             <img
               src="/hero-products.webp"
-              alt="Premium Foil Products"
+              alt="Durga Shakti Foils Premium Packing Solutions"
               loading="eager"
               fetchpriority="high"
-              className="w-full h-auto object-contain mx-auto"
+              className="w-full max-w-md md:max-w-none h-auto object-contain mx-auto"
             />
           </div>
         </div>
