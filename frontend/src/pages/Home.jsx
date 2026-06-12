@@ -199,8 +199,8 @@ const Home = () => {
         <div
           className="absolute inset-y-0 right-0 z-0 w-full md:w-[60%] lg:w-[55%] xl:w-[50%] hidden md:block"
           style={{
-            maskImage: 'linear-gradient(to right, transparent 0%, black 15%)',
-            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 15%)'
+            maskImage: 'linear-gradient(to right, transparent 0%, black 5%)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 5%)'
           }}
         >
           <img
