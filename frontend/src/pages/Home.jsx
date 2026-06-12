@@ -211,7 +211,7 @@ const Home = () => {
           className="absolute inset-0 z-0 pointer-events-none hidden md:block"
           style={{
             background:
-              'linear-gradient(to right, #0a0f0d 0%, #0a0f0d 45%, rgba(10,15,13,0.8) 55%, rgba(10,15,13,0) 75%)'
+              'linear-gradient(to right, #0a0f0d 0%, #0a0f0d 20%, rgba(10,15,13,0.7) 35%, rgba(10,15,13,0) 50%)'
           }}
         />
 
