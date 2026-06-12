@@ -288,7 +288,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
   if (loading) return <PageLoader message="Loading orders..." />;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
       {orders.length > 0 && (
         <div className="bg-[#19231F] p-5 rounded-2xl border border-[#26322B] shadow-sm space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

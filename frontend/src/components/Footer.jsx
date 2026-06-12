@@ -78,7 +78,7 @@ const Footer = () => {
           <div>
             <Link to="/" className="inline-flex items-center gap-2 py-1 no-underline">
               <img src="/favicon.webp" alt="Durga Maa" className="h-10 w-10 object-contain shrink-0" />
-              <span className="flex flex-col leading-none">
+              <span className="flex flex-col leading-none gap-[2px]">
                 <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '15px' }}>Durga Shakti Foils</span>
                 <span className="text-[#25D958]/80 italic font-inter" style={{ fontSize: '9.5px', letterSpacing: '0.02em' }}>Wrap Purity, Seal Freshness</span>
               </span>

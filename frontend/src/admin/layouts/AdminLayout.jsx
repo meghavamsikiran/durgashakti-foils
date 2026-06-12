@@ -78,7 +78,7 @@ const AdminLayout = () => {
         </button>
         <Link to="/" className="flex items-center gap-2 py-1 no-underline">
           <img src="/favicon.webp" alt="Durga Maa" className="h-8 w-8 object-contain shrink-0" />
-          <span className="flex flex-col leading-none">
+          <span className="flex flex-col leading-none gap-[2px]">
             <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '14px' }}>Durga Shakti Foils</span>
             <span className="text-[#25D958]/80 italic font-inter" style={{ fontSize: '9px', letterSpacing: '0.02em' }}>Wrap Purity, Seal Freshness</span>
           </span>
@@ -112,7 +112,7 @@ const AdminLayout = () => {
         <div className="p-5 flex items-center justify-between border-b border-[#26322B] bg-[#050807]">
           <Link to="/" className="flex items-center gap-2 py-1 no-underline">
             <img src="/favicon.webp" alt="Durga Maa" className="h-9 w-9 object-contain shrink-0" />
-            <span className="flex flex-col leading-none">
+            <span className="flex flex-col leading-none gap-[2px]">
               <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '14px' }}>Durga Shakti Foils</span>
               <span className="text-[#25D958]/80 italic font-inter" style={{ fontSize: '9px', letterSpacing: '0.02em' }}>Wrap Purity, Seal Freshness</span>
             </span>
