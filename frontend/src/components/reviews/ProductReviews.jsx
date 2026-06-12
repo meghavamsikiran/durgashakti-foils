@@ -246,9 +246,19 @@ const ProductReviews = ({ productId, summary }) => {
   const distribution = ratingSummary.rating_distribution || {};
   const ratingsEnabled = ratingSummary.settings?.ratings_enabled !== false;
   const normalizeReviewMedia = (review) => {
+    if (!review) return [];
     try {
       const media = typeof review.media_urls === 'string' ? JSON.parse(review.media_urls) : (review.media_urls || []);
-      return Array.isArray(media) ? media.filter(item => item?.url).map(item => ({ ...item, review })) : [];
+      return Array.isArray(media) ? media.filter(Boolean).map(item => {
+        if (typeof item === 'string') {
+          return {
+            url: item,
+            type: item.endsWith('.mp4') || item.endsWith('.webm') ? 'video' : 'image',
+            review
+          };
+        }
+        return { ...item, review };
+      }) : [];
     } catch {
       return [];
     }
@@ -698,27 +708,29 @@ const ProductReviews = ({ productId, summary }) => {
                         }
                         return Array.isArray(mediaUrls) && mediaUrls.length > 0 && (
                           <div className="flex gap-2.5 overflow-x-auto mt-4 pb-1">
-                            {mediaUrls.map((media, idx) => {
-                              const globalIndex = mediaItems.findIndex(item => item.review.id === review.id && item.url === media.url);
-                              return (
-                              <button
-                                type="button"
-                                key={`${review.id}-${idx}`}
-                                onClick={() => setSelectedMediaIndex(Math.max(globalIndex, 0))}
-                                className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-150 bg-slate-50 shrink-0 hover:border-primary hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all group"
-                              >
-                                {media.type === 'video' ? (
-                                  <>
-                                    <video src={`${formatImageUrl(media.url)}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
-                                    <span className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors">
-                                      <Play className="h-4 w-4 fill-white text-white" />
-                                    </span>
-                                  </>
-                                ) : (
-                                  <img src={formatImageUrl(media.url)} alt="" className="w-full h-full object-cover" />
-                                )}
-                              </button>
-                            )})}
+                             {mediaUrls.map((media, idx) => {
+                               const mediaUrl = typeof media === 'string' ? media : media.url;
+                               const mediaType = (typeof media === 'string' ? '' : media.type) || (mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.webm') ? 'video' : 'image');
+                               const globalIndex = mediaItems.findIndex(item => item.review?.id === review.id && item.url === mediaUrl);
+                               return (
+                               <button
+                                 type="button"
+                                 key={`${review.id}-${idx}`}
+                                 onClick={() => setSelectedMediaIndex(Math.max(globalIndex, 0))}
+                                 className="relative w-20 h-20 rounded-xl overflow-hidden border border-slate-150 bg-slate-50 shrink-0 hover:border-primary hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all group"
+                               >
+                                 {mediaType === 'video' ? (
+                                   <>
+                                     <video src={`${formatImageUrl(mediaUrl)}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                                     <span className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/35 transition-colors">
+                                       <Play className="h-4 w-4 fill-white text-white" />
+                                     </span>
+                                   </>
+                                 ) : (
+                                   <img src={formatImageUrl(mediaUrl)} alt="" className="w-full h-full object-cover" />
+                                 )}
+                               </button>
+                             )})}
                           </div>
                         );
                       })()}
