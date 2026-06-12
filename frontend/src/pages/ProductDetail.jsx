@@ -354,10 +354,10 @@ const ProductDetail = () => {
             )}
 
             <div className="flex items-center gap-4 mb-6">
-              <span className="text-xs font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant bg-surface-container-low px-2.5 py-1 rounded border border-border-subtle">
+              <span className="text-xs font-mono font-bold uppercase tracking-[0.12em] text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-[#131B17] px-2.5 py-1 rounded border border-slate-200 dark:border-[#26322B]">
                 {product.size}
               </span>
-              <span className="text-xs font-mono font-bold uppercase tracking-[0.12em] text-on-surface-variant bg-surface-container-low px-2.5 py-1 rounded border border-border-subtle">
+              <span className="text-xs font-mono font-bold uppercase tracking-[0.12em] text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-[#131B17] px-2.5 py-1 rounded border border-slate-200 dark:border-[#26322B]">
                 {product.thickness}
               </span>
             </div>

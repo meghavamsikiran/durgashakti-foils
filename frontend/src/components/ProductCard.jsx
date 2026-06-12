@@ -249,7 +249,7 @@ const ProductCard = ({ product }) => {
                 {[...Array(5)].map((_, i) => (
                   <Star 
                     key={i} 
-                    className={`w-3.5 h-3.5 ${i < Math.round(Number(product.rating_average || 5)) 
+                    className={`w-3.5 h-3.5 ${i < Math.round(Number(product.review_count || 0) === 0 ? 0 : Number(product.rating_average || 0)) 
                       ? 'text-amber-400 fill-amber-400' 
                       : 'text-slate-300'}`} 
                   />

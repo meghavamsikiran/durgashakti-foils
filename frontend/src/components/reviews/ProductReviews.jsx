@@ -360,9 +360,9 @@ const ProductReviews = ({ productId, summary }) => {
                   {isFilterMenuOpen && (
                     <>
                       <div className="fixed inset-0 z-40" onClick={() => setIsFilterMenuOpen(false)} />
-                      <div className="absolute right-0 mt-2 w-60 bg-white border border-slate-100 rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-150 space-y-4">
+                      <div className="absolute right-0 mt-2 w-60 bg-white dark:bg-[#19231F] border border-slate-100 dark:border-[#26322B] rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-150 space-y-4">
                         <div className="space-y-1.5">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block px-2">Sort By</span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 block px-2">Sort By</span>
                           <div className="space-y-0.5">
                             {[
                               { value: 'newest', label: 'Newest First' },
@@ -377,8 +377,8 @@ const ProductReviews = ({ productId, summary }) => {
                                 }}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all text-left ${
                                   sortBy === opt.value
-                                    ? 'bg-primary/10 text-primary'
-                                    : 'text-slate-600 hover:bg-slate-50'
+                                    ? 'bg-primary/10 dark:bg-primary/20 text-primary'
+                                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#26322B]'
                                 }`}
                               >
                                 <span>{opt.label}</span>
@@ -388,21 +388,21 @@ const ProductReviews = ({ productId, summary }) => {
                           </div>
                         </div>
 
-                        <div className="border-t border-slate-100 my-1" />
+                        <div className="border-t border-slate-100 dark:border-[#26322B] my-1" />
 
                         <div className="space-y-1.5">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block px-2">Rating Filter</span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 block px-2">Rating Filter</span>
                           <div className="space-y-0.5">
                             <button
                               type="button"
                               onClick={() => {
-                                setSelectedRating('all');
-                                setIsFilterMenuOpen(false);
+                                  setSelectedRating('all');
+                                  setIsFilterMenuOpen(false);
                               }}
                               className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all text-left ${
                                 selectedRating === 'all'
-                                  ? 'bg-primary/10 text-primary'
-                                  : 'text-slate-600 hover:bg-slate-50'
+                                  ? 'bg-primary/10 dark:bg-primary/20 text-primary'
+                                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#26322B]'
                               }`}
                             >
                               <span>All Ratings</span>
@@ -426,10 +426,10 @@ const ProductReviews = ({ productId, summary }) => {
                                 disabled={opt.count === 0}
                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all text-left ${
                                   selectedRating === opt.value
-                                    ? 'bg-primary/10 text-primary'
+                                    ? 'bg-primary/10 dark:bg-primary/20 text-primary'
                                     : opt.count === 0
-                                      ? 'text-slate-350 cursor-not-allowed opacity-50'
-                                      : 'text-slate-600 hover:bg-slate-50'
+                                      ? 'text-slate-350 dark:text-slate-600 cursor-not-allowed opacity-50'
+                                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#26322B]'
                                 }`}
                               >
                                 <span>{opt.label} ({opt.count})</span>
@@ -458,15 +458,25 @@ const ProductReviews = ({ productId, summary }) => {
                         {selectedRating === '1_only' && 'Only 1 Star'}
                         {!['5', '4_above', '3_above', '2_above', '1_above', '1_only'].includes(String(selectedRating)) && `${selectedRating} Star`}
                       </span>
-                      <button type="button" onClick={() => setSelectedRating('all')} className="hover:text-[#005a14] focus:outline-none">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRating('all')}
+                        className="hover:text-red-500 transition-colors"
+                      >
                         <X className="w-3 h-3" />
                       </button>
                     </span>
                   )}
                   {sortBy !== 'newest' && (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/25">
-                      <span>Oldest First</span>
-                      <button type="button" onClick={() => setSortBy('newest')} className="hover:text-[#005a14] focus:outline-none">
+                      <span>
+                        Sort: {sortBy === 'oldest' ? 'Oldest First' : sortBy}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSortBy('newest')}
+                        className="hover:text-red-500 transition-colors"
+                      >
                         <X className="w-3 h-3" />
                       </button>
                     </span>
@@ -475,26 +485,27 @@ const ProductReviews = ({ productId, summary }) => {
               )}
             </div>
 
-            {loading ? (
+            {/* Reviews list container */}
+            {initialLoading ? (
               <div className="space-y-4 animate-pulse">
                 {[1, 2].map((i) => (
-                  <div key={i} className="border border-slate-100 rounded-2xl p-6 bg-white space-y-4">
+                  <div key={i} className="border border-slate-100 dark:border-[#26322B] rounded-2xl p-6 bg-white dark:bg-[#131B17] space-y-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-100"></div>
+                      <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#26322B]"></div>
                       <div className="space-y-2 flex-1">
-                        <div className="h-3 bg-slate-100 rounded w-24"></div>
-                        <div className="h-2 bg-slate-100 rounded w-32"></div>
+                        <div className="h-3 bg-slate-100 dark:bg-[#26322B] rounded w-24"></div>
+                        <div className="h-2 bg-slate-100 dark:bg-[#26322B] rounded w-32"></div>
                       </div>
                     </div>
                     <div className="space-y-2 mt-4">
-                      <div className="h-3 bg-slate-100 rounded w-full"></div>
-                      <div className="h-3 bg-slate-100 rounded w-5/6"></div>
+                      <div className="h-3 bg-slate-100 dark:bg-[#26322B] rounded w-full"></div>
+                      <div className="h-3 bg-slate-100 dark:bg-[#26322B] rounded w-5/6"></div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : filteredAndSortedReviews.length === 0 ? (
-              <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-10 text-center text-slate-500">
+              <div className="bg-white dark:bg-[#131B17] border border-dashed border-slate-200 dark:border-[#26322B] rounded-2xl p-10 text-center text-slate-500 dark:text-slate-400">
                 <p className="font-bold text-sm">No reviews found matching the selected rating filter.</p>
                 <button
                   type="button"
