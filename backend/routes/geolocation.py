@@ -43,7 +43,7 @@ def reverse_geocode(
     if mappls_api_key:
         try:
             url = f"https://apis.mappls.com/advancedmaps/v1/{mappls_api_key}/rev_geocode?lat={lat}&lng={lon}"
-            res = requests.get(url, timeout=10)
+            res = requests.get(url, timeout=10, verify=False)
             if res.status_code == 200:
                 data = res.json()
                 if data and data.get("results"):

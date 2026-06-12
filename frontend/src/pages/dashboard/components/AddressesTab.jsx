@@ -19,8 +19,16 @@ const INDIAN_STATES = [
 
 const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDeleteAddress }) => {
   const ITEMS_PER_PAGE = 4;
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  const [editingAddressId, setEditingAddressId] = useState(null);
+  // Sync showAddressForm state with URL query parameters to persist view on refresh
+  const [showAddressForm, setShowAddressForm] = useState(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.get('action') === 'new' || !!searchParams.get('editId');
+  });
+  const [editingAddressId, setEditingAddressId] = useState(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const editId = searchParams.get('editId');
+    return editId ? Number(editId) || editId : null;
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [addressForm, setAddressForm] = useState({ 
     label: 'Home', full_name: '', phone: '', alternate_phone: '',
@@ -30,6 +38,27 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
 
   const { lookup, loading: checkingPincode } = usePincodeLookup();
   const { detect, loading: detectingLocation } = useGeoLocationAddress();
+
+  // Load editing address data if editId is present in URL on refresh
+  useEffect(() => {
+    if (editingAddressId && addresses && addresses.length > 0) {
+      const addr = addresses.find(a => a.id === editingAddressId || String(a.id) === String(editingAddressId));
+      if (addr) {
+        setAddressForm({
+          label: addr.label,
+          full_name: addr.full_name,
+          phone: addr.phone,
+          alternate_phone: addr.alternate_phone || '',
+          address_line1: addr.address_line1,
+          address_line2: addr.address_line2 || '',
+          city: addr.city,
+          state: addr.state,
+          pincode: addr.pincode,
+          is_default: addr.is_default || false
+        });
+      }
+    }
+  }, [editingAddressId, addresses]);
 
   useEffect(() => {
     const pages = Math.max(1, Math.ceil((addresses?.length || 0) / ITEMS_PER_PAGE));
@@ -104,6 +133,8 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
       setShowAddressForm(false);
       setEditingAddressId(null);
       setAddressForm({ label: 'Home', full_name: '', phone: '', alternate_phone: '', address_line1: '', address_line2: '', city: '', state: '', pincode: '', is_default: false });
+      // Remove query parameters from URL
+      window.history.replaceState(null, '', window.location.pathname);
     }
   };
 
@@ -122,6 +153,11 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
     });
     setEditingAddressId(addr.id);
     setShowAddressForm(true);
+    // Set edit parameter in URL
+    const params = new URLSearchParams(window.location.search);
+    params.set('editId', addr.id);
+    params.delete('action');
+    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -130,11 +166,25 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
   const totalPages = Math.max(1, Math.ceil((addresses?.length || 0) / ITEMS_PER_PAGE));
   const pageItems = (addresses || []).slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
+  const handleNewAddressClick = () => {
+    setShowAddressForm(true);
+    const params = new URLSearchParams(window.location.search);
+    params.set('action', 'new');
+    params.delete('editId');
+    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
+  };
+
+  const handleCancelClick = () => {
+    setShowAddressForm(false);
+    setEditingAddressId(null);
+    window.history.replaceState(null, '', window.location.pathname);
+  };
+
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
       {!showAddressForm && (
         <div className="flex justify-end mb-2">
-          <Button onClick={() => setShowAddressForm(true)} className="rounded-lg h-12 px-6 gap-2 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-bold w-full sm:w-auto font-black uppercase tracking-widest justify-center">
+          <Button onClick={handleNewAddressClick} className="rounded-lg h-12 px-6 gap-2 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-bold w-full sm:w-auto font-black uppercase tracking-widest justify-center">
             <PlusIcon className="w-5 h-5" /> New Address
           </Button>
         </div>
@@ -257,7 +307,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-            <Button type="button" variant="ghost" onClick={() => { setShowAddressForm(false); setEditingAddressId(null); }} className="h-12 rounded-lg font-bold text-slate-400 hover:text-white hover:bg-white/5 text-sm uppercase tracking-wider">Cancel</Button>
+            <Button type="button" variant="ghost" onClick={handleCancelClick} className="h-12 rounded-lg font-bold text-slate-400 hover:text-white hover:bg-white/5 text-sm uppercase tracking-wider">Cancel</Button>
             <Button type="submit" className="h-12 rounded-lg text-sm font-bold bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] uppercase tracking-wider">{editingAddressId ? 'Update Address' : 'Save Address'}</Button>
           </div>
         </form>
