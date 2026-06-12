@@ -74,21 +74,7 @@ const Dashboard = () => {
     } catch (err) {}
   };
 
-  // Respective route wrappers: Hook calls are triggered ONLY when their sub-routes are mounted
-  const OrdersTabWrapper = () => {
-    const { orders, loading, error, fetchOrders, cancelOrder } = useOrders();
-    return <OrdersTab orders={orders} loading={loading} error={error} onRetry={fetchOrders} onCancelOrder={cancelOrder} />;
-  };
 
-  const TransactionsTabWrapper = () => {
-    const { orders, loading, error } = useOrders();
-    return <TransactionsTab orders={orders} loading={loading} error={error} />;
-  };
-
-  const AddressesTabWrapper = () => {
-    const { addresses, loading, addAddress, updateAddress, deleteAddress } = useAddresses();
-    return <AddressesTab addresses={addresses} loading={loading} onAddAddress={addAddress} onUpdateAddress={updateAddress} onDeleteAddress={deleteAddress} />;
-  };
 
   return (
     <div className="min-h-screen bg-[#0C1310] flex flex-col xl:flex-row text-white">
@@ -131,6 +117,22 @@ const Dashboard = () => {
       </main>
     </div>
   );
+};
+
+// Respective route wrappers: Hook calls are triggered ONLY when their sub-routes are mounted
+const OrdersTabWrapper = () => {
+  const { orders, loading, error, fetchOrders, cancelOrder } = useOrders();
+  return <OrdersTab orders={orders} loading={loading} error={error} onRetry={fetchOrders} onCancelOrder={cancelOrder} />;
+};
+
+const TransactionsTabWrapper = () => {
+  const { orders, loading, error } = useOrders();
+  return <TransactionsTab orders={orders} loading={loading} error={error} />;
+};
+
+const AddressesTabWrapper = () => {
+  const { addresses, loading, addAddress, updateAddress, deleteAddress } = useAddresses();
+  return <AddressesTab addresses={addresses} loading={loading} onAddAddress={addAddress} onUpdateAddress={updateAddress} onDeleteAddress={deleteAddress} />;
 };
 
 export default Dashboard;
