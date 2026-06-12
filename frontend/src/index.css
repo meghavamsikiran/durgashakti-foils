@@ -1715,4 +1715,45 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: #ffffff !important;
 }
 
+/* Fix text contrast in light theme for settings preview, shipping settings, coupons tab, business profile tab */
+.light-theme .admin-shell .bg-slate-950, 
+.light-theme .admin-shell .bg-slate-900,
+.light-theme .admin-shell .bg-slate-800 {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+.light-theme .admin-shell .bg-slate-950 * {
+  color: #0f172a !important;
+}
+
+/* Search bar focus outline corner fixes */
+.admin-shell input[type="text"]:focus,
+.admin-shell input[type="search"]:focus,
+input[type="text"]:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px #25d958 !important;
+  border-radius: 0.75rem !important;
+}
+
+.light-theme .admin-shell input[type="text"]:focus {
+  box-shadow: 0 0 0 2px #006e1b !important;
+}
+
+/* Reviews and inquiries text visibility in light theme */
+.light-theme .admin-shell article,
+.light-theme .admin-shell .bg-white {
+  color: #1e293b !important;
+}
+
+.light-theme .admin-shell article h2,
+.light-theme .admin-shell article p,
+.light-theme .admin-shell article span,
+.light-theme .admin-shell tr,
+.light-theme .admin-shell td {
+  color: #1e293b !important;
+}
+
+
 

@@ -200,7 +200,6 @@ export const superAdminSidebar = [
   { label: 'Dashboard', permissions: ['view_dashboard'] },
   { label: 'Orders', permissions: ['view_orders', 'update_order_status', 'cancel_orders', 'view_order_details'] },
   { label: 'Products', permissions: ['view_products', 'create_products', 'edit_products', 'delete_products'] },
-  { label: 'Shop', permissions: ['view_products'] },
   { label: 'Categories', permissions: ['create_products', 'edit_products'] },
   { label: 'Stock', permissions: ['view_inventory', 'update_stock'] },
   { label: 'Customers', permissions: ['view_customers', 'view_customer_history'] },

@@ -257,15 +257,6 @@ const AnalyticsPage = () => {
             />
           </div>
         )}
- 
-        <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#131B17] rounded-xl shadow-sm border border-slate-200 dark:border-[#26322B] ml-auto">
-          <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-tighter">Show:</span>
-          <select value={topLimit} onChange={(e) => setTopLimit(Number(e.target.value))} className="text-sm font-bold text-slate-700 dark:text-slate-200 outline-none bg-transparent">
-            <option value={5} className="dark:bg-[#131B17] dark:text-white">05 Items</option>
-            <option value={10} className="dark:bg-[#131B17] dark:text-white">10 Items</option>
-            <option value={20} className="dark:bg-[#131B17] dark:text-white">20 Items</option>
-          </select>
-        </div>
       </div>
 
       {/* Redundant metrics grid removed as requested to focus on advanced charts */}
