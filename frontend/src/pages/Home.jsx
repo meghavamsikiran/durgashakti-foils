@@ -181,6 +181,23 @@ const Home = () => {
         .text-brand-red { color: oklch(0.62 0.22 25); }
         .border-brand-green { border-color: oklch(0.78 0.22 145); }
 
+        /* Preserve hero section text colors in light theme */
+        .light-theme .hero-section-dark h1 span:first-child {
+          color: #ffffff !important;
+        }
+        .light-theme .hero-section-dark h1 .text-brand-yellow {
+          color: oklch(0.85 0.18 90) !important;
+        }
+        .light-theme .hero-section-dark h1 .text-brand-green {
+          color: oklch(0.78 0.22 145) !important;
+        }
+        .light-theme .hero-section-dark p {
+          color: #cbd5e1 !important;
+        }
+        .light-theme .hero-section-dark .text-white {
+          color: #ffffff !important;
+        }
+
         @keyframes marquee {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
