@@ -174,7 +174,7 @@ const CustomersPage = () => {
     avg: customerStats?.avg_spend || (rows.length ? rows.reduce((sum, row) => sum + Number(row.total_spent || 0), 0) / rows.length : 0)
   };
 
-  if (loading && rows.length === 0) return <PageLoader />;
+
 
   return (
     <div className="space-y-3">
@@ -218,7 +218,7 @@ const CustomersPage = () => {
         </div>
       </div>
 
-      {hasPermission('view_analytics') && metrics && (
+      {hasPermission('view_analytics') && (
         <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
             <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
@@ -273,56 +273,67 @@ const CustomersPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {paginatedCustomers.map((row) => (
-                <tr key={row.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-8 py-6">
-                    <div className="font-bold text-slate-800 group-hover:text-primary transition-colors">
-                      {row.full_name || row.name || 'Anonymous'}
+              {loading && paginatedCustomers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-20">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <div className="text-xs font-semibold text-slate-400">Loading customers...</div>
                     </div>
-                    {row.is_loyal && (
-                      <span className="inline-flex mt-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-black uppercase tracking-wider">
-                        Loyal Customer
-                      </span>
-                    )}
-                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
-                      <Mail className="w-3 h-3" />
-                      {row.email}
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="text-sm text-slate-600 font-medium flex items-center gap-2">
-                      <Phone className="w-3.5 h-3.5 text-slate-300" />
-                      {row.phone || '—'}
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 text-center">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                      (row.orders_count || 0) > 2 ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600'
-                    }`}>
-                      {row.orders_count || 0} Orders
-                    </span>
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    <div className="text-sm font-black text-slate-900">
-                      ₹{Number(row.total_spent || 0).toLocaleString('en-IN')}
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-end gap-1.5">
-                      <Calendar className="w-3 h-3" />
-                      {formatDate(row.created_at)}
-                    </div>
-                  </td>
-                  <td className="px-8 py-6 text-right">
-                    <button
-                      onClick={() => window.open(`${window.location.pathname.startsWith('/superadmin') ? '/superadmin' : '/admin'}/customers/${row.id}`, '_blank')}
-                      className="px-3 py-1.5 rounded-lg bg-primary hover:bg-emerald-hover text-white text-[10px] font-black uppercase tracking-wider shadow-sm hover:shadow-emerald-glow transition-all"
-                    >
-                      View Details
-                    </button>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                paginatedCustomers.map((row) => (
+                  <tr key={row.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-8 py-6">
+                      <div className="font-bold text-slate-800 group-hover:text-primary transition-colors">
+                        {row.full_name || row.name || 'Anonymous'}
+                      </div>
+                      {row.is_loyal && (
+                        <span className="inline-flex mt-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-black uppercase tracking-wider">
+                          Loyal Customer
+                        </span>
+                      )}
+                      <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-1">
+                        <Mail className="w-3 h-3" />
+                        {row.email}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="text-sm text-slate-600 font-medium flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5 text-slate-300" />
+                        {row.phone || '—'}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 text-center">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                        (row.orders_count || 0) > 2 ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600'
+                      }`}>
+                        {row.orders_count || 0} Orders
+                      </span>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <div className="text-sm font-black text-slate-900">
+                        ₹{Number(row.total_spent || 0).toLocaleString('en-IN')}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-end gap-1.5">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(row.created_at)}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <button
+                        onClick={() => window.open(`${window.location.pathname.startsWith('/superadmin') ? '/superadmin' : '/admin'}/customers/${row.id}`, '_blank')}
+                        className="px-3 py-1.5 rounded-lg bg-primary hover:bg-emerald-hover text-white text-[10px] font-black uppercase tracking-wider shadow-sm hover:shadow-emerald-glow transition-all"
+                      >
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
           {paginatedCustomers.length === 0 && !loading && (

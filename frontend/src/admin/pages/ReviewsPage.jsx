@@ -159,7 +159,7 @@ const ReviewsPage = () => {
     }
   };
 
-  if (loading && rows.length === 0) return <PageLoader message="Loading Reviews..." />;
+
 
   const activeFilterCount = (status !== 'all' ? 1 : 0) + (rating !== 'all' ? 1 : 0) + (dateRange !== 'all' ? 1 : 0);
 
@@ -279,8 +279,14 @@ const ReviewsPage = () => {
       </div>
 
       {/* ── Review cards ── */}
-      <div className="flex-1 space-y-4">
-        {rows.map((review) => {
+      <div className="flex-1 space-y-4 h-[calc(100vh-245px)] overflow-y-auto pr-2 sidebar-scrollbar">
+        {loading && rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200 rounded-2xl shadow-sm">
+            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <div className="text-xs font-semibold text-slate-400 mt-3">Loading reviews...</div>
+          </div>
+        ) : (
+          rows.map((review) => {
           const hidden = review.status === 'hidden';
           const isReplying = replyOpenId === review.id;
           const isBusy = savingId === review.id;
@@ -495,7 +501,7 @@ const ReviewsPage = () => {
               </div>
             </article>
           );
-        })}
+        }))}
       </div>
 
       {rows.length === 0 && !loading && (

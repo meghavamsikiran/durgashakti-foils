@@ -144,7 +144,7 @@ const AdminProfilePage = () => {
                 <p className="text-[10px] text-slate-500 max-w-sm font-medium">This circular photo serves as your system profile picture and is visible only to you.</p>
                 <div className="flex items-center justify-center sm:justify-start gap-3 mt-1">
                   <label className="cursor-pointer bg-primary/10 text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border border-primary/20 shadow-sm active:scale-95">
-                    Upload Photo
+                    {user?.permissions?.profile_pic ? 'Change Photo' : 'Upload Photo'}
                     <input 
                       type="file" 
                       accept="image/*" 
