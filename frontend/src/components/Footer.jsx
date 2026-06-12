@@ -135,6 +135,21 @@ const Footer = () => {
                   Cart
                 </Link>
               </li>
+              <li>
+                <Link to="/policies" className="text-sm font-semibold text-white/64 transition">
+                  Order Policies
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacy" className="text-sm font-semibold text-white/64 transition">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="text-sm font-semibold text-white/64 transition">
+                  Terms of Service
+                </Link>
+              </li>
             </ul>
           </div>
 
