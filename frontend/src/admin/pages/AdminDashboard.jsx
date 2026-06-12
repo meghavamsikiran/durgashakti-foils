@@ -59,7 +59,7 @@ const AdminDashboard = () => {
     return () => clearInterval(timer);
   }, [loadSilent]);
 
-  if (loading) return <PageLoader />;
+  if (loading && !metrics) return <PageLoader />;
   
   if (error) return (
     <div className="p-8 bg-rose-50 border border-rose-100 rounded-3xl text-rose-600 font-bold text-sm">
@@ -96,26 +96,24 @@ const AdminDashboard = () => {
         
         {/* TIME RANGE FILTER */}
         <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-1 flex items-center gap-1">
-            <DateFilterPopover onChange={(val) => {
-              if (!val || !val.label) {
-                setActivePreset('All Time');
-                load('All Time');
-                return;
-              }
-              const map = {
-                today: 'Today',
-                last7: 'Last 7 Days',
-                thisWeek: 'Last 7 Days',
-                thisMonth: 'This Month',
-                thisYear: 'Fiscal Year',
-                custom: 'Last 7 Days'
-              };
-              const tf = map[val.label] || 'Last 7 Days';
-              setActivePreset(tf);
-              load(tf, { start_date: val.start_date, end_date: val.end_date });
-            }} />
-          </div>
+          <DateFilterPopover onChange={(val) => {
+            if (!val || !val.label) {
+              setActivePreset('All Time');
+              load('All Time');
+              return;
+            }
+            const map = {
+              today: 'Today',
+              last7: 'Last 7 Days',
+              thisWeek: 'Last 7 Days',
+              thisMonth: 'This Month',
+              thisYear: 'Fiscal Year',
+              custom: 'Last 7 Days'
+            };
+            const tf = map[val.label] || 'Last 7 Days';
+            setActivePreset(tf);
+            load(tf, { start_date: val.start_date, end_date: val.end_date });
+          }} />
         </div>
       </div>
 

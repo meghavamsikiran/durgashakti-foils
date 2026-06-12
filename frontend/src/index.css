@@ -2328,6 +2328,22 @@ html.light-theme body,
   color: #f1f5f9 !important;
 }
 
+/* Light theme preview announcement banner overrides */
+.light-theme .admin-sacred-preview-banner {
+  background-color: #f7faf8 !important;
+  color: #006e1b !important;
+  border-color: #bbcbb5 !important;
+}
+.light-theme .admin-sacred-preview-banner span {
+  color: #006e1b !important;
+}
+.light-theme .admin-sacred-preview-fade-left {
+  background-image: linear-gradient(to right, #f7faf8, transparent) !important;
+}
+.light-theme .admin-sacred-preview-fade-right {
+  background-image: linear-gradient(to left, #f7faf8, transparent) !important;
+}
+
 
 
 

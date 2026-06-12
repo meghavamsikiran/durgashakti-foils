@@ -227,7 +227,6 @@ const OrdersPage = () => {
       setRows(cached.data?.items || []);
       setTotal(cached.data?.total || 0);
     } else {
-      setRows([]);
       setLoading(true);
     }
     try {

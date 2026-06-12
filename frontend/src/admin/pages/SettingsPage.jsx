@@ -441,7 +441,7 @@ const SettingsPage = () => {
                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                         <Play className="w-3 h-3 text-primary" /> Live Preview
                      </h3>
-                     <div data-force-dark className="w-full bg-slate-950 text-white overflow-hidden py-2.5 rounded-xl border border-slate-800 shadow-lg relative flex items-center">
+                     <div className="w-full bg-slate-950 text-white overflow-hidden py-2.5 rounded-xl border border-slate-800 shadow-lg relative flex items-center admin-sacred-preview-banner">
                         <div className="whitespace-nowrap animate-marquee flex items-center">
                            <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-primary-fixed">
                               {p1}
@@ -477,8 +477,8 @@ const SettingsPage = () => {
                            )}
                         </div>
                         {/* Edge Gradients for polished look */}
-                        <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none" />
-                        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none" />
+                        <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-slate-950 to-transparent pointer-events-none admin-sacred-preview-fade-left" />
+                        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none admin-sacred-preview-fade-right" />
                      </div>
                   </div>
 
