@@ -54,7 +54,7 @@ const SettingsPage = () => {
       googleMapsLink: profile.googleMapsLink || '',
       instagramLink: profile.instagramLink || 'https://www.instagram.com/durgashaktifoils_pvt.ltd/',
       facebookLink: profile.facebookLink || '',
-      youtubeLink: profile.youtubeLink || '',
+      whatsappLink: profile.whatsappLink || profile.youtubeLink || '',
       codEnabled: shippingSettings.codEnabled !== false && shippingSettings.codStatus !== 'Inactive' && paymentSettings.cod_enabled !== false,
       bannerText1: bannerSettings.text1 || '',
       bannerText2: bannerSettings.text2 || '',
@@ -82,7 +82,7 @@ const SettingsPage = () => {
   const [googleMapsLink, setGoogleMapsLink] = useState(initialState.googleMapsLink);
   const [instagramLink, setInstagramLink] = useState(initialState.instagramLink);
   const [facebookLink, setFacebookLink] = useState(initialState.facebookLink);
-  const [youtubeLink, setYoutubeLink] = useState(initialState.youtubeLink);
+  const [whatsappLink, setWhatsappLink] = useState(initialState.whatsappLink);
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(initialState.loaded);
   const [me, setMe] = useState(initialState.me);
@@ -159,7 +159,7 @@ const SettingsPage = () => {
       setGoogleMapsLink(profile.googleMapsLink || '');
       setInstagramLink(profile.instagramLink || 'https://www.instagram.com/durgashaktifoils_pvt.ltd/');
       setFacebookLink(profile.facebookLink || '');
-      setYoutubeLink(profile.youtubeLink || '');
+      setWhatsappLink(profile.whatsappLink || profile.youtubeLink || '');
       const shippingSettings = data.shipping_settings || {};
       const paymentSettings = data.payment_settings || {};
       setCodEnabled(shippingSettings.codEnabled !== false && shippingSettings.codStatus !== 'Inactive' && paymentSettings.cod_enabled !== false);
@@ -202,7 +202,7 @@ const SettingsPage = () => {
       setGoogleMapsLink(profile.googleMapsLink || '');
       setInstagramLink(profile.instagramLink || 'https://www.instagram.com/durgashaktifoils_pvt.ltd/');
       setFacebookLink(profile.facebookLink || '');
-      setYoutubeLink(profile.youtubeLink || '');
+      setWhatsappLink(profile.whatsappLink || profile.youtubeLink || '');
       const shippingSettings = data.shipping_settings || {};
       const paymentSettings = data.payment_settings || {};
       setCodEnabled(shippingSettings.codEnabled !== false && shippingSettings.codStatus !== 'Inactive' && paymentSettings.cod_enabled !== false);
@@ -238,7 +238,7 @@ const SettingsPage = () => {
       setSaving(true);
       await adminService.updateSetting({
         key: 'company_profile',
-        value: { companyName, gstNumber, companyPhone, companyEmail, companyAddress, googleMapsLink, instagramLink, facebookLink, youtubeLink }
+        value: { companyName, gstNumber, companyPhone, companyEmail, companyAddress, googleMapsLink, instagramLink, facebookLink, whatsappLink, youtubeLink: whatsappLink }
       });
       toast.success('Settings saved successfully');
     } catch (error) {

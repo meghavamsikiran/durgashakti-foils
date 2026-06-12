@@ -7,11 +7,16 @@ import {
   Mail,
   MapPin,
   Phone,
-  ShieldCheck,
-  Youtube
+  ShieldCheck
 } from 'lucide-react';
 import settingsService from '../services/settings.service';
 import apiClient from '../services/core/apiClient';
+
+const WhatsAppIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={props.className} style={{ width: '1.2em', height: '1.2em' }}>
+    <path d="M12.012 2c-5.506 0-9.988 4.482-9.988 9.988 0 1.761.458 3.479 1.332 4.998L2 22l5.166-1.354c1.47.8 3.123 1.222 4.846 1.222 5.506 0 9.988-4.482 9.988-9.988 0-5.506-4.482-9.988-9.988-9.988zm4.73 13.9c-.2.56-1.16 1.07-1.6 1.1-.38.03-.87.05-2.22-.5-1.72-.7-2.82-2.45-2.9-2.56-.08-.1-1.12-1.48-1.12-2.83 0-1.35.7-2 .95-2.27.2-.23.55-.3.8-.3h.27c.2 0 .72.58.72.58l.72 1.48c.1.2.08.4-.04.56l-.37.5c-.15.17-.32.37-.45.5-.15.15-.3.32-.13.62.17.3.77 1.27 1.65 2.05.75.67 1.38.87 1.73 1.05.35.17.55.15.75-.07.2-.23.87-.97 1.1-1.3.23-.33.47-.27.8-.15.32.13 2.05 1.02 2.4 1.2.35.17.58.25.67.4.08.15.08.87-.12 1.43z" />
+  </svg>
+);
 
 const DEFAULT_PROFILE = {
   companyName: 'Durga Shakti Foils',
@@ -22,6 +27,7 @@ const DEFAULT_PROFILE = {
   googleMapsLink: '',
   instagramLink: 'https://www.instagram.com/durgashaktifoils_pvt.ltd/',
   facebookLink: '',
+  whatsappLink: '',
   youtubeLink: ''
 };
 
@@ -66,7 +72,7 @@ const Footer = () => {
   const socialLinks = [
     { href: profile.instagramLink, label: 'Instagram', Icon: Instagram },
     { href: profile.facebookLink, label: 'Facebook', Icon: Facebook },
-    { href: profile.youtubeLink, label: 'YouTube', Icon: Youtube }
+    { href: profile.whatsappLink || profile.youtubeLink, label: 'WhatsApp', Icon: WhatsAppIcon }
   ].filter((item) => item.href);
 
   const qualityItems = ['ISO Certified', 'BPA Free', 'Food Grade Certified'];
