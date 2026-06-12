@@ -137,6 +137,7 @@ h1, h2, h3, h4, h5, h6,
         --border: 150 18% 12%;
         --input: 150 18% 12%;
         --ring: 135 100% 21.6%;
+        --primary: 137 71% 50%;
         
         --ink-slate: #ffffff;
         --surface: #0C1310;
@@ -148,6 +149,14 @@ h1, h2, h3, h4, h5, h6,
         --surface-container-high: #19231F;
         --surface-container-highest: #26322B;
         --loader-track-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .dark .text-primary {
+        color: #25D958 !important;
+    }
+
+    .dark .text-emerald-600 {
+        color: #34d399 !important;
     }
 
     .dark, .dark body {
