@@ -479,7 +479,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
           <p className="text-slate-500 text-xs mt-1">Try refining your search terms</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="overflow-y-auto customer-table-container pr-2 sidebar-scrollbar space-y-4">
           {filteredOrders.slice((ordersPage - 1) * ORDERS_PER_PAGE, ordersPage * ORDERS_PER_PAGE).map((order) => {
             const badge = getStatusBadge(order);
             return (
@@ -518,7 +518,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                 {/* Middle Column (Items) */}
                 <div className="flex-[2] min-w-[280px] flex flex-wrap gap-2">
                   {(order.items || []).map((item, idx) => (
-                    <div key={idx} className="bg-[#131B17] border border-[#26322B] px-3 py-1 rounded-xl text-xs text-slate-350 flex items-center gap-2 font-medium">
+                    <div key={idx} className="bg-[#131B17] border border-[#26322B] px-3 py-1 rounded-xl text-xs text-slate-355 flex items-center gap-2 font-medium">
                       <span>{item.product_name}</span>
                       <span className="bg-[#fedb41] text-[#0C1310] font-black rounded px-1.5 py-0.5 text-[9px] font-mono leading-none">
                         {item.quantity || 1}

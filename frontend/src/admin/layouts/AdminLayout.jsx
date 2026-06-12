@@ -72,17 +72,16 @@ const AdminLayout = () => {
       <header className="flex md:hidden items-center justify-between px-6 py-4 bg-[#050807] border-b border-[#26322B] sticky top-0 z-30 shadow-sm">
         <button 
           onClick={() => setSidebarOpen(true)}
-          className="p-2 -ml-2 text-slate-300 hover:text-[#25d958] transition-colors focus:outline-none"
+          className="p-2 -ml-2 text-slate-300 hover:text-[#25d958] active:text-[#25d958] hover:bg-[#25d958]/10 active:bg-[#25d958]/20 rounded-xl transition-colors focus:outline-none"
         >
           <Menu className="w-6 h-6" />
         </button>
-        <Link to="/" className="flex items-center py-1">
-          <img
-            src="/logo-durga.webp"
-            alt="Durga Shakti Foils"
-            className="h-9 w-auto object-contain block"
-            style={{ maxWidth: '170px' }}
-          />
+        <Link to="/" className="flex items-center gap-2 py-1 no-underline">
+          <img src="/favicon.webp" alt="Durga Maa" className="h-8 w-8 object-contain shrink-0" />
+          <span className="flex flex-col leading-none">
+            <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '14px' }}>Durga Shakti Foils</span>
+            <span className="text-[#25D958]/80 italic font-inter" style={{ fontSize: '9px', letterSpacing: '0.02em' }}>Wrap Purity, Seal Freshness</span>
+          </span>
         </Link>
         <div className="flex items-center gap-2">
           <button
@@ -111,13 +110,12 @@ const AdminLayout = () => {
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="p-5 flex items-center justify-between border-b border-[#26322B] bg-[#050807]">
-          <Link to="/" className="flex items-center py-1">
-            <img
-              src="/logo-durga.webp"
-              alt="Durga Shakti Foils"
-              className="h-10 w-auto object-contain block"
-              style={{ maxWidth: '190px' }}
-            />
+          <Link to="/" className="flex items-center gap-2 py-1 no-underline">
+            <img src="/favicon.webp" alt="Durga Maa" className="h-9 w-9 object-contain shrink-0" />
+            <span className="flex flex-col leading-none">
+              <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '14px' }}>Durga Shakti Foils</span>
+              <span className="text-[#25D958]/80 italic font-inter" style={{ fontSize: '9px', letterSpacing: '0.02em' }}>Wrap Purity, Seal Freshness</span>
+            </span>
           </Link>
           <button 
             onClick={() => setSidebarOpen(false)}

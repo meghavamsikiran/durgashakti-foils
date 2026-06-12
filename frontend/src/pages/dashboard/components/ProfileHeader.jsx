@@ -20,10 +20,9 @@ const ProfileHeader = ({ user, activeTab, onMenuClick }) => {
       <div className="flex items-center justify-between pb-3 border-b border-[#19231F]">
         {/* User Info with Avatar */}
         <div className="flex items-center gap-3">
-          {/* Mobile Menu Toggle Button */}
           <button 
             onClick={onMenuClick}
-            className="xl:hidden p-2 -ml-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl"
+            className="xl:hidden p-2 -ml-2 text-slate-450 hover:text-[#25D958] active:text-[#25D958] hover:bg-[#25D958]/10 active:bg-[#25D958]/20 rounded-xl transition-colors focus:outline-none"
           >
             <Menu className="w-5 h-5" />
           </button>

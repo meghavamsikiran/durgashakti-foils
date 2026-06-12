@@ -389,19 +389,22 @@ const Navbar = () => {
               <button 
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent('toggle-customer-sidebar'))}
-                className="xl:hidden p-2 -ml-2 text-white hover:text-[#25d958] transition-colors focus:outline-none"
+                className="xl:hidden p-2 -ml-2 text-white hover:text-[#25d958] active:text-[#25d958] hover:bg-[#25d958]/10 active:bg-[#25d958]/20 rounded-xl transition-colors focus:outline-none"
                 aria-label="Toggle Dashboard Menu"
               >
                 <Menu className="w-6 h-6" />
               </button>
             )}
-            <Link to="/" className="flex items-center py-2 h-14" data-testid="navbar-logo">
+            <Link to="/" className="flex items-center gap-2 py-2 h-14 no-underline" data-testid="navbar-logo">
               <img
-                src="/logo-durga.webp"
-                alt="DurgaShakti Foils Pvt Ltd"
-                className="h-11 w-auto object-contain block"
-                style={{ maxWidth: '240px' }}
+                src="/favicon.webp"
+                alt="Durga Maa"
+                className="h-9 w-9 object-contain shrink-0"
               />
+              <span className="flex flex-col leading-none">
+                <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '15px', letterSpacing: '-0.01em' }}>Durga Shakti Foils</span>
+                <span className="text-[#25D958]/80 italic font-inter" style={{ fontSize: '9.5px', letterSpacing: '0.02em' }}>Wrap Purity, Seal Freshness</span>
+              </span>
             </Link>
           </div>
 
