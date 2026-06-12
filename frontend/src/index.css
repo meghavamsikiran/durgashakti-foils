@@ -1633,7 +1633,10 @@ button[role="radio"] {
 }
 
 .light-theme .hero-section-dark h1,
-.light-theme .hero-section-dark h1 span {
+.light-theme .hero-section-dark h1 span,
+.light-theme .hero-section-dark p,
+.light-theme .hero-section-dark span,
+.light-theme .hero-section-dark div {
   color: #ffffff !important;
 }
 
