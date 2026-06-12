@@ -182,16 +182,20 @@ const Home = () => {
         .border-brand-green { border-color: oklch(0.78 0.22 145); }
 
         /* Preserve hero section text colors in light theme */
-        .light-theme .hero-section-dark h1 span:first-child {
-          color: #ffffff !important;
+        .light-theme .hero-section-dark h1 .hero-text-cyan {
+          color: #00E5FF !important;
+          text-shadow: 0 0 30px rgba(0, 229, 255, 0.3) !important;
         }
-        .light-theme .hero-section-dark h1 .text-brand-yellow {
-          color: oklch(0.85 0.18 90) !important;
+        .light-theme .hero-section-dark h1 .hero-text-amber {
+          color: #FFB300 !important;
+          text-shadow: 0 0 30px rgba(255, 179, 0, 0.3) !important;
         }
-        .light-theme .hero-section-dark h1 .text-brand-green {
-          color: oklch(0.78 0.22 145) !important;
+        .light-theme .hero-section-dark h1 .hero-text-emerald {
+          color: #00E676 !important;
+          text-shadow: 0 0 30px rgba(0, 230, 118, 0.3) !important;
         }
-        .light-theme .hero-section-dark p {
+        .light-theme .hero-section-dark p,
+        .light-theme .hero-section-dark .hero-subtitle-text {
           color: #cbd5e1 !important;
         }
         .light-theme .hero-section-dark .text-white {
@@ -232,12 +236,12 @@ const Home = () => {
             </div>
             
             <h1 className="font-display mt-6 text-4xl md:text-5xl lg:text-6xl font-black leading-[1.05] tracking-tight text-left">
-              <span className="block">Wrap it Right,</span>
-              <span className="block text-brand-yellow">Keep it Hot,</span>
-              <span className="block text-brand-green">Keep it Fresh!</span>
+              <span className="block hero-text-cyan" style={{ color: '#00E5FF', textShadow: '0 0 30px rgba(0, 229, 255, 0.3)' }}>Wrap it Right,</span>
+              <span className="block hero-text-amber" style={{ color: '#FFB300', textShadow: '0 0 30px rgba(255, 179, 0, 0.3)' }}>Keep it Hot,</span>
+              <span className="block hero-text-emerald" style={{ color: '#00E676', textShadow: '0 0 30px rgba(0, 230, 118, 0.3)' }}>Keep it Fresh!</span>
             </h1>
 
-            <p className="mt-6 text-slate-300 text-sm md:text-base leading-relaxed text-left max-w-2xl">
+            <p className="mt-6 text-slate-300 text-sm md:text-base leading-relaxed text-left max-w-2xl hero-subtitle-text">
               Choose Hot Wrap Foils for a healthier & greener tomorrow. Premium food-grade aluminium foil engineered for commercial strength and clinical hygiene.
             </p>
 

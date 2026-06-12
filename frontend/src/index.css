@@ -1237,22 +1237,28 @@ input[type="checkbox"] {
 
 /* Force dark hero section text to always be light */
 .light-theme main[data-testid="home-page"] .hero-section-dark h1,
-.light-theme main[data-testid="home-page"] .hero-section-dark h1 span:not(.text-brand-green):not(.text-brand-yellow) {
+.light-theme main[data-testid="home-page"] .hero-section-dark h1 span:not(.hero-text-cyan):not(.hero-text-amber):not(.hero-text-emerald) {
   color: #ffffff !important;
 }
 .light-theme main[data-testid="home-page"] .hero-section-dark p,
-.light-theme main[data-testid="home-page"] .hero-section-dark p.text-slate-300 {
+.light-theme main[data-testid="home-page"] .hero-section-dark p.text-slate-300,
+.light-theme main[data-testid="home-page"] .hero-section-dark .hero-subtitle-text {
   color: #cbd5e1 !important;
 }
 .light-theme main[data-testid="home-page"] .hero-section-dark .text-slate-400 {
   color: #94a3b8 !important;
 }
-.light-theme main[data-testid="home-page"] .hero-section-dark .text-brand-yellow {
-  color: oklch(0.85 0.18 90) !important;
+.light-theme main[data-testid="home-page"] .hero-section-dark .hero-text-cyan {
+  color: #00E5FF !important;
+  text-shadow: 0 0 30px rgba(0, 229, 255, 0.3) !important;
 }
-.light-theme main[data-testid="home-page"] .hero-section-dark .text-brand-green,
-.light-theme main[data-testid="home-page"] .hero-section-dark span.text-brand-green {
-  color: oklch(0.78 0.22 145) !important;
+.light-theme main[data-testid="home-page"] .hero-section-dark .hero-text-amber {
+  color: #FFB300 !important;
+  text-shadow: 0 0 30px rgba(255, 179, 0, 0.3) !important;
+}
+.light-theme main[data-testid="home-page"] .hero-section-dark .hero-text-emerald {
+  color: #00E676 !important;
+  text-shadow: 0 0 30px rgba(0, 230, 118, 0.3) !important;
 }
 .light-theme main[data-testid="home-page"] .hero-section-dark .text-white {
   color: #ffffff !important;
@@ -1358,23 +1364,23 @@ input[type="checkbox"] {
 }
 
 /* Restore dark theme styles for the admin sidebar and mobile header under global light theme */
-.light-theme .admin-shell aside,
-.light-theme .admin-shell aside div,
-.light-theme .admin-shell aside nav,
+/* Only interactive elements (links, buttons, text) get transparent bg - NOT the structural containers */
 .light-theme .admin-shell aside a,
 .light-theme .admin-shell aside button,
 .light-theme .admin-shell aside p,
 .light-theme .admin-shell aside span,
-.light-theme .admin-shell header.bg-\[\#050807\],
-.light-theme .admin-shell header.bg-\[\#050807\] button,
-.light-theme .admin-shell header.bg-\[\#050807\] a,
-.light-theme .admin-shell header.bg-\[\#050807\] span {
+.light-theme .admin-shell header[data-force-dark] button,
+.light-theme .admin-shell header[data-force-dark] a,
+.light-theme .admin-shell header[data-force-dark] span {
   background-color: transparent !important;
 }
 
+/* Keep the sidebar and its structural children always dark */
 .light-theme .admin-shell aside,
 .light-theme .admin-shell aside.bg-\[\#050807\],
+.light-theme .admin-shell aside nav,
 .light-theme .admin-shell aside nav.bg-\[\#050807\],
+.light-theme .admin-shell aside > div,
 .light-theme .admin-shell aside div.bg-\[\#050807\] {
   background-color: #050807 !important;
   border-color: #26322B !important;
@@ -1633,19 +1639,27 @@ button[role="radio"] {
 }
 
 .light-theme .hero-section-dark h1,
-.light-theme .hero-section-dark h1 span:not(.text-brand-yellow):not(.text-brand-green) {
+.light-theme .hero-section-dark h1 span:not(.hero-text-cyan):not(.hero-text-amber):not(.hero-text-emerald) {
   color: #ffffff !important;
 }
 
-.light-theme .hero-section-dark h1 span.text-brand-yellow {
-  color: oklch(0.85 0.18 90) !important;
+.light-theme .hero-section-dark h1 span.hero-text-cyan {
+  color: #00E5FF !important;
+  text-shadow: 0 0 30px rgba(0, 229, 255, 0.3) !important;
 }
 
-.light-theme .hero-section-dark h1 span.text-brand-green {
-  color: oklch(0.78 0.22 145) !important;
+.light-theme .hero-section-dark h1 span.hero-text-amber {
+  color: #FFB300 !important;
+  text-shadow: 0 0 30px rgba(255, 179, 0, 0.3) !important;
 }
 
-.light-theme .hero-section-dark p {
+.light-theme .hero-section-dark h1 span.hero-text-emerald {
+  color: #00E676 !important;
+  text-shadow: 0 0 30px rgba(0, 230, 118, 0.3) !important;
+}
+
+.light-theme .hero-section-dark p,
+.light-theme .hero-section-dark .hero-subtitle-text {
   color: #cbd5e1 !important;
 }
 
@@ -2120,7 +2134,7 @@ html.light-theme body,
 .light-theme [data-force-dark] h4,
 .light-theme [data-force-dark] h5,
 .light-theme [data-force-dark] h6 {
-  color: inherit;
+  color: inherit !important;
 }
 
 /* Text elements inside force-dark scope */
@@ -2129,13 +2143,27 @@ html.light-theme body,
 .light-theme [data-force-dark] label,
 .light-theme [data-force-dark] a,
 .light-theme [data-force-dark] button {
-  color: inherit;
+  color: inherit !important;
 }
 
 /* Gradient text needs transparent color for bg-clip-text to work */
 .light-theme [data-force-dark] .text-transparent {
   color: transparent !important;
 }
+
+/* Preserve popup banner border and background colors in light theme */
+.light-theme [data-force-dark] .border-white\/15,
+.light-theme [data-force-dark] .border-white\/10,
+.light-theme [data-force-dark] .border-white\/20 {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Coupon card text visibility inside popup banner */
+.light-theme [data-force-dark] .text-yellow-300 { color: rgb(253 224 71) !important; }
+.light-theme [data-force-dark] .text-xs.font-bold.uppercase { color: rgb(253 224 71) !important; }
+.light-theme [data-force-dark] .font-mono.text-xl { color: #ffffff !important; }
+.light-theme [data-force-dark] .text-\[9px\] { color: rgba(255, 255, 255, 0.5) !important; }
+.light-theme [data-force-dark] .text-yellow-200 { color: rgb(254 240 138) !important; }
 
 
 /* ── GLOBAL PREMIUM ADMIN PANEL STYLING OVERRIDES ── */
@@ -2224,24 +2252,33 @@ html.light-theme body,
 }
 
 .light-theme main[data-testid="home-page"] .hero-section-dark h1,
-.light-theme main[data-testid="home-page"] .hero-section-dark h1 span,
-.light-theme main[data-testid="home-page"] .hero-section-dark h1 span.block {
+.light-theme main[data-testid="home-page"] .hero-section-dark h1 span:not(.hero-text-cyan):not(.hero-text-amber):not(.hero-text-emerald),
+.light-theme main[data-testid="home-page"] .hero-section-dark h1 span.block:not(.hero-text-cyan):not(.hero-text-amber):not(.hero-text-emerald) {
   color: #ffffff !important;
 }
 
-.light-theme main[data-testid="home-page"] .hero-section-dark span.text-brand-yellow,
-.light-theme main[data-testid="home-page"] .hero-section-dark .text-brand-yellow {
-  color: oklch(0.85 0.18 90) !important;
+.light-theme main[data-testid="home-page"] .hero-section-dark span.hero-text-cyan,
+.light-theme main[data-testid="home-page"] .hero-section-dark .hero-text-cyan {
+  color: #00E5FF !important;
+  text-shadow: 0 0 30px rgba(0, 229, 255, 0.3) !important;
 }
 
-.light-theme main[data-testid="home-page"] .hero-section-dark span.text-brand-green,
-.light-theme main[data-testid="home-page"] .hero-section-dark .text-brand-green {
-  color: oklch(0.78 0.22 145) !important;
+.light-theme main[data-testid="home-page"] .hero-section-dark span.hero-text-amber,
+.light-theme main[data-testid="home-page"] .hero-section-dark .hero-text-amber {
+  color: #FFB300 !important;
+  text-shadow: 0 0 30px rgba(255, 179, 0, 0.3) !important;
+}
+
+.light-theme main[data-testid="home-page"] .hero-section-dark span.hero-text-emerald,
+.light-theme main[data-testid="home-page"] .hero-section-dark .hero-text-emerald {
+  color: #00E676 !important;
+  text-shadow: 0 0 30px rgba(0, 230, 118, 0.3) !important;
 }
 
 .light-theme main[data-testid="home-page"] .hero-section-dark p,
 .light-theme main[data-testid="home-page"] .hero-section-dark p.text-slate-300,
-.light-theme main[data-testid="home-page"] .hero-section-dark .text-slate-300 {
+.light-theme main[data-testid="home-page"] .hero-section-dark .text-slate-300,
+.light-theme main[data-testid="home-page"] .hero-section-dark .hero-subtitle-text {
   color: #cbd5e1 !important;
 }
 
