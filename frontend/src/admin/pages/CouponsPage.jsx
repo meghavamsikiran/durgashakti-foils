@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Ticket, Plus, Search, Edit2, Trash2, Settings, 
-  Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone, Sparkles, Copy, Star, UserCheck, Filter, Download
+  Check, X, TrendingUp, Coins, IndianRupee, Calendar, Info, Loader2, Megaphone, Sparkles, Copy, Star, UserCheck, Filter, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import couponService from '../../services/coupon.service';
@@ -1515,7 +1515,7 @@ const CouponsPage = () => {
 
             <div className="bg-white p-6 rounded-2xl border border-border-subtle shadow-sm flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
-                <DollarSign className="w-6 h-6" />
+                <IndianRupee className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Generated Revenue</p>
