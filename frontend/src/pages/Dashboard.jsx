@@ -95,7 +95,7 @@ const Dashboard = () => {
       {/* Mobile Sidebar Backdrop Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/60 xl:hidden transition-opacity duration-300"
+          className="fixed inset-0 z-[1000] bg-black/60 xl:hidden transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
         />
       )}

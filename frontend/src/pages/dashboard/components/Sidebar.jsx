@@ -64,7 +64,7 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
       </aside>
 
       {/* Mobile Sidebar overlay and drawer */}
-      <aside className={`fixed inset-y-0 left-0 w-64 bg-[#0C1310] z-50 flex flex-col transition-transform duration-300 xl:hidden ${
+      <aside className={`fixed inset-y-0 left-0 w-64 bg-[#0C1310] z-[1001] flex flex-col transition-transform duration-300 xl:hidden ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="flex h-20 items-center justify-between px-6 border-b border-[#19231F]">

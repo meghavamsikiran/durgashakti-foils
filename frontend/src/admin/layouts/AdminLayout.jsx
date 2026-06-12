@@ -101,13 +101,13 @@ const AdminLayout = () => {
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-[#0C1310]/80 backdrop-blur-sm md:hidden transition-opacity"
+          className="fixed inset-0 z-[1000] bg-[#0C1310]/80 backdrop-blur-sm md:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside className={`w-64 bg-[#050807] text-slate-350 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-50 border-r border-[#26322B] font-inter transition-transform duration-300 md:translate-x-0 ${
+      <aside className={`w-64 bg-[#050807] text-slate-350 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-[1001] border-r border-[#26322B] font-inter transition-transform duration-300 md:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="p-5 flex items-center justify-between border-b border-[#26322B] bg-[#050807]">
