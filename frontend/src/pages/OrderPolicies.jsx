@@ -94,6 +94,9 @@ const OrderPolicies = () => {
               <p>
                 To maintain absolute hygiene and ensure our premium products are delivered in pristine condition, we only accept returns or exchanges for unused, unopened rolls in their original packaging.
               </p>
+              <p>
+                <strong>Return & Exchange Request Flow:</strong> For any return refund or return exchange, the customer must first submit a formal return request. Only if Durga Shakti Foils reviews and approves the request, the product will be refunded or exchanged based on the specific choice made by the customer while submitting the request.
+              </p>
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Return Window:</strong> Return requests must be initiated within <strong>3 days</strong> of receiving delivery.</li>
                 <li><strong>Valid Reasons:</strong> Defective items, transit damages, or incorrect items shipped.</li>
@@ -124,7 +127,7 @@ const OrderPolicies = () => {
               </p>
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Self-Shipment:</strong> Return shipping is the customer's responsibility. Durga Shakti Foils pays only for the product price and will not reimburse self-shipment costs, unless the return is due to a verifiable shipping error on our part.</li>
-                <li><strong>COD Return Restriction:</strong> Cash on Delivery (COD) refunds or exchanges are not applicable. All COD return cases will be evaluated and, if approved, refunded exclusively via store credit.</li>
+                <li><strong>COD Return Restriction:</strong> For COD orders, return refund or return exchange is not supported.</li>
               </ul>
             </div>
           </motion.div>
@@ -159,7 +162,7 @@ const OrderPolicies = () => {
                 </div>
               </div>
               <ul className="list-disc pl-5 space-y-2 mt-2">
-                <li><strong>Standard Cards & Netbanking:</strong> Processed within 7-10 business days.</li>
+                <li><strong>Standard Cards & Netbanking:</strong> Processed within 5-7 business days.</li>
                 <li><strong>Verification Check:</strong> Original invoice and tag markings must remain intact to proceed with a refund.</li>
               </ul>
             </div>
