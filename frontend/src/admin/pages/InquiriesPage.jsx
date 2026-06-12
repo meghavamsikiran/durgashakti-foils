@@ -363,30 +363,21 @@ const InquiriesPage = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={handleClearFilters}
-                  className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-750"
+                  className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 text-xs font-bold mr-auto"
                 >
-                  Clear All
+                  Reset
                 </button>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFilterOpen(false)}
-                    className="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold hover:bg-slate-5"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleApplyFilters}
-                    className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest shadow-md hover:bg-[#005a14]"
-                  >
-                    Apply
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleApplyFilters}
+                  className="px-4 py-2 rounded-xl bg-primary hover:bg-[#1bb847] text-white text-xs font-bold"
+                >
+                  Apply & Close
+                </button>
               </div>
             </div>
           )}

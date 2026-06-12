@@ -191,6 +191,11 @@ const OrdersPage = () => {
   const [courierFilter, setCourierFilter] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('');
+  const [tempFilter, setTempFilter] = useState('ALL');
+  const [tempCourierFilter, setTempCourierFilter] = useState('');
+  const [tempPaymentStatusFilter, setTempPaymentStatusFilter] = useState('');
+  const [tempPaymentMethodFilter, setTempPaymentMethodFilter] = useState('');
+  const [tempDateFilter, setTempDateFilter] = useState(null);
   const [metrics, setMetrics] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary');
     return cached?.data || null;
@@ -837,7 +842,18 @@ const OrdersPage = () => {
           <div className="relative">
             <button
               type="button"
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={() => {
+                if (!showFilters) {
+                  setTempFilter(filter);
+                  setTempCourierFilter(courierFilter);
+                  setTempPaymentStatusFilter(paymentStatusFilter);
+                  setTempPaymentMethodFilter(paymentMethodFilter);
+                  setTempDateFilter(dateFilter);
+                  setShowFilters(true);
+                } else {
+                  setShowFilters(false);
+                }
+              }}
               className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-xs font-semibold transition-all shadow-sm h-[40px] admin-filter-btn ${
                 showFilters || courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter || filter !== 'ALL'
                   ? 'active-filter'
@@ -857,30 +873,14 @@ const OrdersPage = () => {
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl border border-slate-200 shadow-xl p-5 z-[1000] space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                     <span className="text-xs font-black uppercase tracking-widest text-slate-500">Filter Options</span>
-                    {(courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter || filter !== 'ALL') && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCourierFilter('');
-                          setPaymentStatusFilter('');
-                          setPaymentMethodFilter('');
-                          setFilter('ALL');
-                          setDateFilter(null);
-                        }}
-                        className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700"
-                      >
-                        Reset
-                      </button>
-                    )}
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Order Status</label>
                     <select
-                      value={filter}
+                      value={tempFilter}
                       onChange={(e) => {
-                        setPage(1);
-                        setFilter(e.target.value || 'ALL');
+                        setTempFilter(e.target.value || 'ALL');
                       }}
                       className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-semibold outline-none transition-colors"
                     >
@@ -904,8 +904,8 @@ const OrdersPage = () => {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Courier</label>
                     <select
-                      value={courierFilter}
-                      onChange={(e) => setCourierFilter(e.target.value)}
+                      value={tempCourierFilter}
+                      onChange={(e) => setTempCourierFilter(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-semibold outline-none transition-colors"
                     >
                       <option value="">All Couriers</option>
@@ -925,8 +925,8 @@ const OrdersPage = () => {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payment Status</label>
                     <select
-                      value={paymentStatusFilter}
-                      onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                      value={tempPaymentStatusFilter}
+                      onChange={(e) => setTempPaymentStatusFilter(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-semibold outline-none transition-colors"
                     >
                       <option value="">All Statuses</option>
@@ -942,8 +942,8 @@ const OrdersPage = () => {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Payment Method</label>
                     <select
-                      value={paymentMethodFilter}
-                      onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                      value={tempPaymentMethodFilter}
+                      onChange={(e) => setTempPaymentMethodFilter(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl text-xs font-semibold outline-none transition-colors"
                     >
                       <option value="">All Methods</option>
@@ -954,7 +954,40 @@ const OrdersPage = () => {
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Date Range</label>
-                    <DateFilterPopover onChange={(v) => setDateFilter(v)} initial={dateFilter} inlineOpen={false} />
+                    <DateFilterPopover onChange={(v) => setTempDateFilter(v)} initial={tempDateFilter} inlineOpen={true} showFooter={false} />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilter('ALL');
+                        setCourierFilter('');
+                        setPaymentStatusFilter('');
+                        setPaymentMethodFilter('');
+                        setDateFilter(null);
+                        setPage(1);
+                        setShowFilters(false);
+                      }}
+                      className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 text-xs font-bold"
+                    >
+                      Reset
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilter(tempFilter);
+                        setCourierFilter(tempCourierFilter);
+                        setPaymentStatusFilter(tempPaymentStatusFilter);
+                        setPaymentMethodFilter(tempPaymentMethodFilter);
+                        setDateFilter(tempDateFilter);
+                        setPage(1);
+                        setShowFilters(false);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-primary hover:bg-[#1bb847] text-white text-xs font-bold"
+                    >
+                      Apply & Close
+                    </button>
                   </div>
                 </div>
               </>

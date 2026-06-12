@@ -597,6 +597,10 @@ const CouponsPage = () => {
   const [dateFilter, setDateFilter] = useState(null);
   const [datePreset, setDatePreset] = useState('');
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
+  const [tempStatusFilter, setTempStatusFilter] = useState('all');
+  const [tempDatePreset, setTempDatePreset] = useState('');
+  const [tempDateFilter, setTempDateFilter] = useState(null);
+  const [tempCustomDateRange, setTempCustomDateRange] = useState({ start: '', end: '' });
   const [promotingId, setPromotingId] = useState(null);
   const [scrollingBanner, setScrollingBanner] = useState({ text1: '', text2: '', timer_enabled: false, timer_target: '', use_favicon: true });
   const [popupBanner, setPopupBanner] = useState({ promoted_coupons: [] });
@@ -1609,9 +1613,19 @@ const CouponsPage = () => {
                   />
                 </div>
                 {/* Unified Filter Button */}
-                <div className="relative" ref={filterRef}>
+                 <div className="relative" ref={filterRef}>
                   <button
-                    onClick={() => setIsFilterOpen(prev => !prev)}
+                    onClick={() => {
+                      if (!isFilterOpen) {
+                        setTempStatusFilter(statusFilter);
+                        setTempDatePreset(datePreset);
+                        setTempDateFilter(dateFilter);
+                        setTempCustomDateRange(customDateRange);
+                        setIsFilterOpen(true);
+                      } else {
+                        setIsFilterOpen(false);
+                      }
+                    }}
                     className={`relative inline-flex items-center gap-2 shadow-sm transition-all admin-filter-btn ${
                       (statusFilter !== 'all' || dateFilter) ? 'active-filter' : ''
                     }`}
@@ -1629,7 +1643,6 @@ const CouponsPage = () => {
                     <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl p-5 z-50">
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-sm font-black text-slate-800 uppercase tracking-wider">Filters</span>
-                        <button onClick={() => { setStatusFilter('all'); setDateFilter(null); setDatePreset(''); setCustomDateRange({ start: '', end: '' }); }} className="text-xs font-bold text-primary hover:underline">Reset All</button>
                       </div>
 
                       {/* Status Section */}
@@ -1639,9 +1652,10 @@ const CouponsPage = () => {
                           {[{ value: 'all', label: 'All' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }].map(opt => (
                             <button
                               key={opt.value}
-                              onClick={() => setStatusFilter(opt.value)}
+                              type="button"
+                              onClick={() => setTempStatusFilter(opt.value)}
                               className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                                statusFilter === opt.value
+                                tempStatusFilter === opt.value
                                   ? 'bg-primary text-white shadow-sm'
                                   : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                               }`}
@@ -1670,14 +1684,14 @@ const CouponsPage = () => {
                               type="button"
                               key={p.key}
                               onClick={() => {
-                                setDatePreset(p.key);
+                                setTempDatePreset(p.key);
                                 if (p.key !== 'custom') {
                                   const r = rangeForPreset(p.key);
-                                  if (r) setDateFilter({ start_date: r.start, end_date: r.end, label: p.key });
+                                  if (r) setTempDateFilter({ start_date: r.start, end_date: r.end, label: p.key });
                                 }
                               }}
                               className={`px-3 py-2 rounded-lg text-xs font-semibold text-left transition-all ${
-                                datePreset === p.key ? 'bg-primary text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                tempDatePreset === p.key ? 'bg-primary text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
                               }`}
                             >
                               {p.label}
@@ -1685,39 +1699,57 @@ const CouponsPage = () => {
                           ))}
                         </div>
 
-                        {datePreset === 'custom' && (
+                        {tempDatePreset === 'custom' && (
                           <div className="mt-3 space-y-2">
                             <div>
                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Start</label>
-                              <input type="date" value={customDateRange.start} onChange={e => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))} className="w-full mt-1 p-2 rounded-lg border border-slate-200 text-sm" />
+                              <input type="date" value={tempCustomDateRange.start} onChange={e => setTempCustomDateRange(prev => ({ ...prev, start: e.target.value }))} className="w-full mt-1 p-2 rounded-lg border border-slate-200 text-sm" />
                             </div>
                             <div>
                               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">End</label>
-                              <input type="date" value={customDateRange.end} onChange={e => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))} className="w-full mt-1 p-2 rounded-lg border border-slate-200 text-sm" />
+                              <input type="date" value={tempCustomDateRange.end} onChange={e => setTempCustomDateRange(prev => ({ ...prev, end: e.target.value }))} className="w-full mt-1 p-2 rounded-lg border border-slate-200 text-sm" />
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (customDateRange.start && customDateRange.end && new Date(customDateRange.start) <= new Date(customDateRange.end)) {
-                                  setDateFilter({ start_date: toISODateStart(new Date(customDateRange.start)), end_date: toISODateEnd(new Date(customDateRange.end)), label: 'custom' });
-                                }
-                              }}
-                              className="w-full mt-1 px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold"
-                            >Apply Range</button>
                           </div>
-                        )}
-
-                        {dateFilter && (
-                          <button
-                            type="button"
-                            onClick={() => { setDateFilter(null); setDatePreset(''); setCustomDateRange({ start: '', end: '' }); }}
-                            className="mt-2 text-xs font-bold text-red-500 hover:underline"
-                          >Clear Date Filter</button>
                         )}
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
-                        <button type="button" onClick={() => setIsFilterOpen(false)} className="px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold">Done</button>
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStatusFilter('all');
+                            setDateFilter(null);
+                            setDatePreset('');
+                            setCustomDateRange({ start: '', end: '' });
+                            setIsFilterOpen(false);
+                          }}
+                          className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 text-xs font-bold mr-auto"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStatusFilter(tempStatusFilter);
+                            setDatePreset(tempDatePreset);
+                            if (tempDatePreset === 'custom') {
+                              if (tempCustomDateRange.start && tempCustomDateRange.end) {
+                                const s = new Date(tempCustomDateRange.start);
+                                const e = new Date(tempCustomDateRange.end);
+                                if (s <= e) {
+                                  setDateFilter({ start_date: toISODateStart(s), end_date: toISODateEnd(e), label: 'custom' });
+                                }
+                              }
+                            } else {
+                              setDateFilter(tempDateFilter);
+                            }
+                            setCustomDateRange(tempCustomDateRange);
+                            setIsFilterOpen(false);
+                          }}
+                          className="px-4 py-2 rounded-xl bg-primary hover:bg-[#1bb847] text-white text-xs font-bold"
+                        >
+                          Apply & Close
+                        </button>
                       </div>
                     </div>
                   )}

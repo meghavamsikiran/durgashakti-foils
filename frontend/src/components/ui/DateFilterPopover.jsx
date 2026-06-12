@@ -73,7 +73,7 @@ function labelForPreset(key) {
   }
 }
 
-const DateFilterPopover = ({ onChange, initial, customTrigger, inlineOpen = false }) => {
+const DateFilterPopover = ({ onChange, initial, customTrigger, inlineOpen = false, showFooter = true }) => {
   const [open, setOpen] = useState(inlineOpen);
   const [active, setActive] = useState((initial && initial.label) || '');
   const [selected, setSelected] = useState((initial && initial.label) || '');
@@ -125,7 +125,32 @@ const DateFilterPopover = ({ onChange, initial, customTrigger, inlineOpen = fals
 
   const applyPreset = (key) => {
     setSelected(key);
-    setOpen(true);
+    if (!showFooter) {
+      if (key !== 'custom') {
+        const r = rangeForPreset(key);
+        if (r && onChange) onChange({ start_date: r.start, end_date: r.end, label: key });
+        setActive(key);
+      } else {
+        setActive('custom');
+      }
+    } else {
+      setOpen(true);
+    }
+  };
+
+  const handleCustomDateChange = (type, val) => {
+    const updatedCustom = { ...custom, [type]: val };
+    setCustom(updatedCustom);
+    if (!showFooter) {
+      if (updatedCustom.start && updatedCustom.end) {
+        const s = new Date(updatedCustom.start);
+        const e = new Date(updatedCustom.end);
+        if (s <= e) {
+          if (onChange) onChange({ start_date: toISODateStart(s), end_date: toISODateEnd(e), label: 'custom' });
+          setActive('custom');
+        }
+      }
+    }
   };
 
   const restorePendingSelection = () => {
@@ -196,13 +221,15 @@ const DateFilterPopover = ({ onChange, initial, customTrigger, inlineOpen = fals
               <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Select Range</div>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={clear}
-                className="px-2.5 py-1 rounded-full border border-slate-200 dark:border-[#26322B] text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-widest bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:hover:bg-[#19231F]"
-              >
-                Clear
-              </button>
+              {showFooter && (
+                <button
+                  type="button"
+                  onClick={clear}
+                  className="px-2.5 py-1 rounded-full border border-slate-200 dark:border-[#26322B] text-slate-500 dark:text-slate-400 text-[9px] font-black uppercase tracking-widest bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:hover:bg-[#19231F]"
+                >
+                  Clear
+                </button>
+              )}
               {!inlineOpen && <button type="button" onClick={closePopover} className="text-slate-450 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white"><X className="w-4 h-4" /></button>}
             </div>
           </div>
@@ -232,18 +259,20 @@ const DateFilterPopover = ({ onChange, initial, customTrigger, inlineOpen = fals
               <div className="space-y-2 mt-2 border-t border-slate-100/50 dark:border-[#26322B]/50 pt-2">
                 <div>
                   <label className="text-[9px] font-black text-slate-400 dark:text-slate-450 uppercase tracking-widest block mb-1">Start Date</label>
-                  <input type="date" value={custom.start} onChange={(e) => setCustom({ ...custom, start: e.target.value })} className="w-full p-2 rounded-lg border border-slate-200 dark:border-[#26322B] text-xs bg-white dark:bg-[#131B17] text-slate-800 dark:text-slate-200" />
+                  <input type="date" value={custom.start} onChange={(e) => handleCustomDateChange('start', e.target.value)} className="w-full p-2 rounded-lg border border-slate-200 dark:border-[#26322B] text-xs bg-white dark:bg-[#131B17] text-slate-800 dark:text-slate-200" />
                 </div>
                 <div>
                   <label className="text-[9px] font-black text-slate-400 dark:text-slate-450 uppercase tracking-widest block mb-1">End Date</label>
-                  <input type="date" value={custom.end} onChange={(e) => setCustom({ ...custom, end: e.target.value })} className="w-full p-2 rounded-lg border border-slate-200 dark:border-[#26322B] text-xs bg-white dark:bg-[#131B17] text-slate-800 dark:text-slate-200" />
+                  <input type="date" value={custom.end} onChange={(e) => handleCustomDateChange('end', e.target.value)} className="w-full p-2 rounded-lg border border-slate-200 dark:border-[#26322B] text-xs bg-white dark:bg-[#131B17] text-slate-800 dark:text-slate-200" />
                 </div>
               </div>
             )}
-            <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-150/40 dark:border-[#26322B]/60">
-              <button type="button" onClick={closePopover} className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-[#26322B] text-[10px] font-bold text-slate-600 dark:text-slate-350 bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:hover:bg-[#19231F]">Cancel</button>
-              <button type="button" onClick={applySelected} className="px-3 py-1.5 rounded-lg bg-primary hover:bg-[#1bb847] text-white text-[10px] font-bold">Apply</button>
-            </div>
+            {showFooter && (
+              <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-slate-150/40 dark:border-[#26322B]/60">
+                <button type="button" onClick={clear} className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-[#26322B] text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:hover:bg-[#19231F]">Reset</button>
+                <button type="button" onClick={applySelected} className="px-3 py-1.5 rounded-lg bg-primary hover:bg-[#1bb847] text-white text-[10px] font-bold">Apply & Close</button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -24,6 +24,11 @@ const ReviewsPage = () => {
   const [dateRange, setDateRange] = useState('all');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [tempStatus, setTempStatus] = useState('all');
+  const [tempRating, setTempRating] = useState('all');
+  const [tempDateRange, setTempDateRange] = useState('all');
+  const [tempCustomStart, setTempCustomStart] = useState('');
+  const [tempCustomEnd, setTempCustomEnd] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(() => {
     const cached = reviewService.getAdminReviewsCached({ page: 1, limit: PAGE_SIZE, search: '' });
@@ -187,7 +192,18 @@ const ReviewsPage = () => {
           <div className="relative">
             <button
               type="button"
-              onClick={() => setShowFilters((prev) => !prev)}
+              onClick={() => {
+                if (!showFilters) {
+                  setTempStatus(status);
+                  setTempRating(rating);
+                  setTempDateRange(dateRange);
+                  setTempCustomStart(customStart);
+                  setTempCustomEnd(customEnd);
+                  setShowFilters(true);
+                } else {
+                  setShowFilters(false);
+                }
+              }}
               className={`h-11 inline-flex items-center justify-center gap-2 shadow-sm transition-all admin-filter-btn ${
                 showFilters || activeFilterCount > 0
                   ? 'active-filter'
@@ -213,7 +229,7 @@ const ReviewsPage = () => {
                     <div className="grid grid-cols-1 gap-4">
                       <div>
                         <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500">Status</label>
-                        <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25">
+                        <select value={tempStatus} onChange={(e) => setTempStatus(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25">
                           <option value="all">All Statuses</option>
                           <option value="published">Published</option>
                           <option value="hidden">Hidden</option>
@@ -221,14 +237,14 @@ const ReviewsPage = () => {
                       </div>
                       <div>
                         <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500">Rating</label>
-                        <select value={rating} onChange={(e) => setRating(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25">
+                        <select value={tempRating} onChange={(e) => setTempRating(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25">
                           <option value="all">All Ratings</option>
                           {[5, 4, 3, 2, 1].map((v) => <option key={v} value={v}>{v} Star</option>)}
                         </select>
                       </div>
                       <div>
                         <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500">Date</label>
-                        <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25">
+                        <select value={tempDateRange} onChange={(e) => setTempDateRange(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25">
                           <option value="all">All Dates</option>
                           <option value="today">Today</option>
                           <option value="yesterday">Yesterday</option>
@@ -238,35 +254,49 @@ const ReviewsPage = () => {
                           <option value="custom">Date Range</option>
                         </select>
                       </div>
-                      {dateRange === 'custom' && (
+                      {tempDateRange === 'custom' && (
                         <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-100">
                           <div>
                             <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">From</label>
-                            <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                            <input type="date" value={tempCustomStart} onChange={(e) => setTempCustomStart(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25" />
                           </div>
                           <div>
                             <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">To</label>
-                            <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                            <input type="date" value={tempCustomEnd} onChange={(e) => setTempCustomEnd(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25" />
                           </div>
                         </div>
                       )}
                     </div>
                     <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                      {activeFilterCount > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => { setStatus('all'); setRating('all'); setDateRange('all'); setCustomStart(''); setCustomEnd(''); }}
-                          className="mr-auto text-xs px-3.5 py-2 border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 font-bold"
-                        >
-                          Reset
-                        </button>
-                      )}
                       <button
                         type="button"
-                        onClick={() => setShowFilters(false)}
-                        className="text-xs px-4 py-2 bg-primary hover:bg-[#005a14] text-white rounded-lg font-bold"
+                        onClick={() => {
+                          setStatus('all');
+                          setRating('all');
+                          setDateRange('all');
+                          setCustomStart('');
+                          setCustomEnd('');
+                          setPage(1);
+                          setShowFilters(false);
+                        }}
+                        className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 text-xs font-bold mr-auto"
                       >
-                        Apply
+                        Reset
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStatus(tempStatus);
+                          setRating(tempRating);
+                          setDateRange(tempDateRange);
+                          setCustomStart(tempCustomStart);
+                          setCustomEnd(tempCustomEnd);
+                          setPage(1);
+                          setShowFilters(false);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-primary hover:bg-[#1bb847] text-white text-xs font-bold"
+                      >
+                        Apply & Close
                       </button>
                     </div>
                   </div>

@@ -44,6 +44,9 @@ const InventoryPage = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [activeFilter, setActiveFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
+  const [tempCategoryFilter, setTempCategoryFilter] = useState('all');
+  const [tempActiveFilter, setTempActiveFilter] = useState('all');
+  const [tempStockFilter, setTempStockFilter] = useState('all');
   const [filterOpen, setFilterOpen] = useState(false);
   const [adjustModal, setAdjustModal] = useState(null);
   const [adjustQty, setAdjustQty] = useState('');
@@ -196,7 +199,16 @@ const InventoryPage = () => {
           <div className="relative">
             <button
               type="button"
-              onClick={() => setFilterOpen((prev) => !prev)}
+              onClick={() => {
+                if (!filterOpen) {
+                  setTempCategoryFilter(categoryFilter);
+                  setTempActiveFilter(activeFilter);
+                  setTempStockFilter(stockFilter);
+                  setFilterOpen(true);
+                } else {
+                  setFilterOpen(false);
+                }
+              }}
               className={`inline-flex items-center gap-2 h-[40px] admin-filter-btn ${
                 categoryFilter !== 'all' || activeFilter !== 'all' || stockFilter !== 'all' || filterOpen
                   ? 'active-filter'
@@ -214,8 +226,8 @@ const InventoryPage = () => {
                     <h3 className="text-sm font-black text-slate-900">Stock Filters</h3>
                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Category</label>
                     <select
-                      value={categoryFilter}
-                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      value={tempCategoryFilter}
+                      onChange={(e) => setTempCategoryFilter(e.target.value)}
                       className="w-full rounded-xl border border-slate-200 p-2 text-sm bg-white"
                     >
                       <option value="all">All Categories</option>
@@ -225,8 +237,8 @@ const InventoryPage = () => {
                     </select>
                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Status</label>
                     <select
-                      value={activeFilter}
-                      onChange={(e) => setActiveFilter(e.target.value)}
+                      value={tempActiveFilter}
+                      onChange={(e) => setTempActiveFilter(e.target.value)}
                       className="w-full rounded-xl border border-slate-200 p-2 text-sm bg-white"
                     >
                       <option value="all">All</option>
@@ -235,8 +247,8 @@ const InventoryPage = () => {
                     </select>
                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500">Stock</label>
                     <select
-                      value={stockFilter}
-                      onChange={(e) => setStockFilter(e.target.value)}
+                      value={tempStockFilter}
+                      onChange={(e) => setTempStockFilter(e.target.value)}
                       className="w-full rounded-xl border border-slate-200 p-2 text-sm bg-white"
                     >
                       <option value="all">All Stock</option>
@@ -244,24 +256,34 @@ const InventoryPage = () => {
                       <option value="out">Out of Stock</option>
                       <option value="low">Low Stock</option>
                     </select>
-                    <div className="flex justify-between gap-2 pt-2">
+                    <div className="flex justify-between gap-2 pt-2 border-t border-slate-100">
                       <button
                         type="button"
                         onClick={() => {
                           setCategoryFilter('all');
                           setActiveFilter('all');
                           setStockFilter('all');
+                          setPage(1);
+                          setFilterOpen(false);
+                          setTimeout(() => load(1), 0);
                         }}
-                        className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest"
+                        className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 text-xs font-bold mr-auto"
                       >
-                        Clear
+                        Reset
                       </button>
                       <button
                         type="button"
-                        onClick={() => { setFilterOpen(false); load(1); }}
-                        className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest"
+                        onClick={() => {
+                          setCategoryFilter(tempCategoryFilter);
+                          setActiveFilter(tempActiveFilter);
+                          setStockFilter(tempStockFilter);
+                          setPage(1);
+                          setFilterOpen(false);
+                          setTimeout(() => load(1), 0);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-primary hover:bg-[#1bb847] text-white text-xs font-bold"
                       >
-                        Apply
+                        Apply & Close
                       </button>
                     </div>
                   </div>

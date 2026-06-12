@@ -251,21 +251,6 @@ const PaymentsPage = () => {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                       <h3 className="text-sm font-black text-slate-900">Payment Filters</h3>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setTempStatus('all');
-                          setTempDatePreset('');
-                          setTempCustomStart('');
-                          setTempCustomEnd('');
-                          setFilter('all');
-                          setDateFilter(null);
-                          setFilterOpen(false);
-                        }}
-                        className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline"
-                      >
-                        Reset All
-                      </button>
                     </div>
 
                     <div className="space-y-1">
@@ -329,43 +314,51 @@ const PaymentsPage = () => {
                       </div>
                     )}
 
-                    <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
-                      <button
-                        type="button"
-                        onClick={() => setFilterOpen(false)}
-                        className="px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest hover:bg-slate-50"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFilter(tempStatus);
-                          if (tempDatePreset) {
-                            if (tempDatePreset === 'custom') {
-                              if (tempCustomStart && tempCustomEnd) {
-                                const s = new Date(tempCustomStart);
-                                const e = new Date(tempCustomEnd);
-                                if (s <= e) {
-                                  setDateFilter({ start_date: toISODateStart(s), end_date: toISODateEnd(e), label: 'custom' });
-                                }
-                              }
-                            } else {
-                              const r = rangeForPreset(tempDatePreset);
-                              if (r) {
-                                setDateFilter({ start_date: r.start, end_date: r.end, label: tempDatePreset });
-                              }
-                            }
-                          } else {
-                            setDateFilter(null);
-                          }
-                          setFilterOpen(false);
-                        }}
-                        className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-black uppercase tracking-widest"
-                      >
-                        Apply Filters
-                      </button>
-                    </div>
+                     <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
+                       <button
+                         type="button"
+                         onClick={() => {
+                           setTempStatus('all');
+                           setTempDatePreset('');
+                           setTempCustomStart('');
+                           setTempCustomEnd('');
+                           setFilter('all');
+                           setDateFilter(null);
+                           setFilterOpen(false);
+                         }}
+                         className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 text-xs font-bold mr-auto"
+                       >
+                         Reset
+                       </button>
+                       <button
+                         type="button"
+                         onClick={() => {
+                           setFilter(tempStatus);
+                           if (tempDatePreset) {
+                             if (tempDatePreset === 'custom') {
+                               if (tempCustomStart && tempCustomEnd) {
+                                 const s = new Date(tempCustomStart);
+                                 const e = new Date(tempCustomEnd);
+                                 if (s <= e) {
+                                   setDateFilter({ start_date: toISODateStart(s), end_date: toISODateEnd(e), label: 'custom' });
+                                 }
+                               }
+                             } else {
+                               const r = rangeForPreset(tempDatePreset);
+                               if (r) {
+                                 setDateFilter({ start_date: r.start, end_date: r.end, label: tempDatePreset });
+                               }
+                             }
+                           } else {
+                             setDateFilter(null);
+                           }
+                           setFilterOpen(false);
+                         }}
+                         className="px-4 py-2 rounded-xl bg-primary hover:bg-[#1bb847] text-white text-xs font-bold"
+                       >
+                         Apply & Close
+                       </button>
+                     </div>
                   </div>
                 </div>
               </>
