@@ -513,7 +513,6 @@ const getCouponExpiryTone = (coupon) => {
 const normalizeCouponList = (list = []) => (
   (list || [])
     .filter(c => c !== null && c !== undefined && c.code)
-    .map(c => isCouponExpired(c) ? { ...c, is_active: false } : c)
 );
 
 function toISODateStart(d) {
