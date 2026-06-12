@@ -1237,7 +1237,6 @@ input[type="checkbox"] {
 
 /* Force dark hero section text to always be light */
 .light-theme main[data-testid="home-page"] .hero-section-dark h1,
-.light-theme main[data-testid="home-page"] .hero-section-dark h1 span,
 .light-theme main[data-testid="home-page"] .hero-section-dark h1 span:not(.text-brand-green):not(.text-brand-yellow) {
   color: #ffffff !important;
 }
