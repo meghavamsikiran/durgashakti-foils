@@ -196,7 +196,7 @@ const Home = () => {
       {/* Hero Section */}
       <div className="hero-section-dark relative overflow-hidden bg-[#0a0f0d] border-b border-white/5">
         {/* Absolute background image on the right for md+ screens */}
-        <div className="absolute inset-y-0 right-0 z-0 w-full md:w-[60%] lg:w-[55%] xl:w-[50%] hidden md:block">
+        <div className="absolute inset-y-0 right-0 z-0 w-full md:w-[35%] lg:w-[30%] xl:w-[25%] hidden md:block">
           <img
             src="/hero-products.webp"
             alt="Durga Shakti Foils Premium Packing Solutions"
