@@ -41,7 +41,7 @@ export const useGeoLocationAddress = () => {
             // Layer 1: Mappls Reverse Geocoding API
             let geocoded = null;
             try {
-              const mapplsApiKey = "oewjoirgyxbhtfasqwnkahawwodaowwicufh";
+              const mapplsApiKey = process.env.REACT_APP_MAPPLS_API_KEY || "oewjoirgyxbhtfasqwnkahawwodaowwicufh";
               const mapplsUrl = `https://apis.mappls.com/advancedmaps/v1/${mapplsApiKey}/rev_geocode?lat=${latitude}&lng=${longitude}`;
               
               const res = await fetch(mapplsUrl);
