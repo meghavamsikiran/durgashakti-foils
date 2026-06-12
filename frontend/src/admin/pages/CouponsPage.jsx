@@ -831,18 +831,31 @@ const CouponsPage = () => {
   };
 
   const handleToggleCouponActive = async (coupon) => {
-    if (!coupon.is_active && isCouponExpired(coupon)) {
-      toast.error('Expired coupons cannot be activated. Extend the expiry date first.');
-      return;
+    let targetExpiry = coupon.expiry_date;
+    const isExpired = isCouponExpired(coupon);
+    
+    if (!coupon.is_active && isExpired) {
+      const newExpiryDate = new Date();
+      newExpiryDate.setDate(newExpiryDate.getDate() + 7);
+      targetExpiry = newExpiryDate.toISOString();
+      toast.info(`Expired coupon detected. Expiry date automatically extended by 7 days (to ${newExpiryDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}) to activate.`);
     }
+
+    const nextActiveState = !coupon.is_active;
+
     // Optimistically update state
-    setCoupons(prev => prev.map(c => c.id === coupon.id ? { ...c, is_active: !c.is_active } : c));
+    setCoupons(prev => prev.map(c => c.id === coupon.id ? { 
+      ...c, 
+      is_active: nextActiveState, 
+      expiry_date: nextActiveState ? targetExpiry : c.expiry_date 
+    } : c));
+
     try {
       const updatedPayload = {
         code: coupon.code,
         discount_type: coupon.discount_type,
         discount_value: coupon.discount_value,
-        expiry_date: coupon.expiry_date,
+        expiry_date: targetExpiry,
         min_cart_value: coupon.min_cart_value,
         max_discount_limit: coupon.max_discount_limit,
         max_usage_count: coupon.max_usage_count,
@@ -854,14 +867,14 @@ const CouponsPage = () => {
         eligible_product_ids: coupon.eligible_product_ids || [],
         eligible_category_ids: coupon.eligible_category_ids || [],
         is_reusable: coupon.is_reusable !== false,
-        is_active: !coupon.is_active
+        is_active: nextActiveState
       };
-       await couponService.updateCoupon(coupon.id, updatedPayload);
-      toast.success(`Coupon ${!coupon.is_active ? 'activated' : 'deactivated'} successfully`);
+      await couponService.updateCoupon(coupon.id, updatedPayload);
+      toast.success(`Coupon ${nextActiveState ? 'activated' : 'deactivated'} successfully`);
       await fetchCouponsAndSettings();
     } catch (error) {
       // Revert state
-      setCoupons(prev => prev.map(c => c.id === coupon.id ? { ...c, is_active: coupon.is_active } : c));
+      setCoupons(prev => prev.map(c => c.id === coupon.id ? { ...c, is_active: coupon.is_active, expiry_date: coupon.expiry_date } : c));
       toast.error('Failed to toggle status');
     }
   };
@@ -1135,11 +1148,19 @@ const CouponsPage = () => {
     e.preventDefault();
     setModalLoading(true);
 
+    let targetExpiryDate = formData.expiry_date ? new Date(formData.expiry_date) : null;
+    if (formData.is_active && targetExpiryDate && targetExpiryDate.getTime() <= Date.now()) {
+      const newExpiryDate = new Date();
+      newExpiryDate.setDate(newExpiryDate.getDate() + 7);
+      targetExpiryDate = newExpiryDate;
+      toast.info(`Expiry date automatically extended by 7 days to allow activation of coupon.`);
+    }
+
     const payload = {
       code: formData.code.trim().toUpperCase(),
       discount_type: formData.discount_type,
       discount_value: Number(formData.discount_value),
-      expiry_date: formData.expiry_date ? new Date(formData.expiry_date).toISOString() : null,
+      expiry_date: targetExpiryDate ? targetExpiryDate.toISOString() : null,
       min_cart_value: Number(formData.min_cart_value),
       max_discount_limit: formData.has_max_discount_limit && formData.max_discount_limit ? Number(formData.max_discount_limit) : null,
       max_usage_count: formData.has_total_use_limit && formData.max_usage_count ? Number(formData.max_usage_count) : null,
@@ -1777,8 +1798,8 @@ const CouponsPage = () => {
                           <td className="px-6 py-4 text-center">
                             <button
                               onClick={() => handleToggleCouponActive(coupon)}
-                              disabled={!coupon.is_active && isExpired}
-                              title={isExpired ? 'Expired coupons stay inactive until the expiry date is extended.' : undefined}
+                              disabled={false}
+                              title={isExpired ? 'Expired coupon. Activating will automatically extend it by 7 days.' : undefined}
                               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
                                 isActuallyActive ? 'bg-primary' : 'bg-slate-200'
                               }`}
