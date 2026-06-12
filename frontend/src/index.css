@@ -22,8 +22,20 @@ code {
     font-family: 'JetBrains Mono', source-code-pro, Menlo, Monaco, Consolas, monospace;
 }
 
-h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+h1, h2, h3, h4, h5, h6,
+.admin-theme h1,
+.admin-theme h2,
+.admin-theme h3,
+.admin-theme h4,
+.admin-theme h5,
+.admin-theme h6,
+.public-theme h1,
+.public-theme h2,
+.public-theme h3,
+.public-theme h4,
+.public-theme h5,
+.public-theme h6 {
+    font-family: 'Playfair Display', serif !important;
 }
 
 @layer base {
@@ -725,36 +737,42 @@ h1, h2, h3, h4, h5, h6 {
   transform: translate(50%, -50%) !important;
 }
 
-/* Custom scrollbar alignment with Industrial Artisan themes */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #ebefed; /* --surface-container */
-  border-radius: 100px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #8faa86;
+  background: rgba(143, 170, 134, 0.4); /* transparent sage green */
   border-radius: 100px;
-  border: 1px solid #ebefed;
+  border: 2px solid transparent;
+  background-clip: padding-box;
   transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #006e1b; /* --primary */
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
-::-webkit-scrollbar-thumb:active {
-  background: #16E34A; /* --emerald-hover */
+.dark ::-webkit-scrollbar-thumb,
+.public-theme.dark ::-webkit-scrollbar-thumb {
+  background: rgba(37, 217, 88, 0.3); /* semi-transparent emerald */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover,
+.public-theme.dark ::-webkit-scrollbar-thumb:hover {
+  background: #25D958;
 }
 
 /* Firefox styling */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: #8faa86 #ebefed;
+  scrollbar-width: auto;
 }
 
 .sidebar-scrollbar {
