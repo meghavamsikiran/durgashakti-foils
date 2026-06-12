@@ -1896,7 +1896,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 .dark .admin-shell .text-slate-900,
 .dark .admin-shell .text-slate-800,
-.dark .admin-shell .text-slate-700 {
+.dark .admin-shell .text-slate-700,
+.dark .text-ink-slate,
+.dark .admin-shell .text-ink-slate {
   color: #f1f5f9 !important;
 }
 

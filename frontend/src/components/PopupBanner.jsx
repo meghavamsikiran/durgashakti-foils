@@ -227,11 +227,12 @@ const PopupBanner = () => {
     }
 
     // Rule 1: Shop page -> show with a slight delay once per page load.
-    if (placement === 'shop' && !loginShownRef.current) {
+    if (placement === 'shop' && !loginShownRef.current && !alreadyShownThisSession) {
       loginShownRef.current = 'shown';
       timerTriggerTypeRef.current = 'login';
       timerRef.current = setTimeout(() => {
         setShow(true);
+        markShownThisSession(sessionKey);
         hideTimerRef.current = setTimeout(() => {
           setShow(false);
         }, POPUP_VISIBLE_MS);
@@ -239,11 +240,12 @@ const PopupBanner = () => {
     }
 
     // Rule 2: Logged-out landing page -> show with a slight delay once per page load.
-    else if (placement === 'landing' && !loggedOutRef.current && !guestHomeShownRef.current) {
+    else if (placement === 'landing' && !user && !loggedOutRef.current && !guestHomeShownRef.current && !alreadyShownThisSession) {
       guestHomeShownRef.current = true;
       timerTriggerTypeRef.current = 'guest';
       timerRef.current = setTimeout(() => {
         setShow(true);
+        markShownThisSession(sessionKey);
         hideTimerRef.current = setTimeout(() => {
           setShow(false);
         }, POPUP_VISIBLE_MS);
