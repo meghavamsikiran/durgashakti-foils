@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   Package, Plus, Search, Tag, Box,
   IndianRupee, TrendingUp, Filter, Trash2,
-  Upload, CheckCircle2, AlertCircle, X, ChevronRight,
+  Upload, CheckCircle2, AlertCircle, X, ChevronRight, ChevronDown,
   Boxes, Edit, Trash, Activity, Trophy, Zap, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -69,6 +69,8 @@ const ProductsPage = () => {
   const ITEMS_PER_PAGE = 10;
   const [isEdit, setIsEdit] = useState(false);
   const [currentId, setCurrentId] = useState(null);
+  const [openVariantBadgeIndex, setOpenVariantBadgeIndex] = useState(null);
+  const [openFormBadge, setOpenFormBadge] = useState(false);
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -786,10 +788,32 @@ const ProductsPage = () => {
                           <td className="px-2 py-2">
                             <input type="number" min="0" step="1" className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm" value={form.stock_quantity} onChange={e => setForm({...form, stock_quantity: Number(e.target.value)})} />
                           </td>
-                          <td className="px-2 py-2">
-                            <select className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm" value={form.badge} onChange={e => setForm({...form, badge: e.target.value})}>
-                              {BADGE_OPTIONS.map(option => <option key={option || 'none'} value={option}>{option || 'No Badge'}</option>)}
-                            </select>
+                          <td className="px-2 py-2 relative">
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setOpenFormBadge(!openFormBadge); setOpenVariantBadgeIndex(null); }}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-left flex justify-between items-center text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 h-9"
+                            >
+                              <span className="truncate">{form.badge || 'No Badge'}</span>
+                              <ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-1" />
+                            </button>
+                            {openFormBadge && (
+                              <div className="absolute z-50 left-2 right-2 mt-1 bg-white dark:bg-[#131B17] border border-slate-200 dark:border-[#26322B] rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                {BADGE_OPTIONS.map(option => (
+                                  <button
+                                    key={option || 'none'}
+                                    type="button"
+                                    onClick={() => {
+                                      setForm({...form, badge: option});
+                                      setOpenFormBadge(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-xs text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold"
+                                  >
+                                    {option || 'No Badge'}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ) : (
@@ -810,10 +834,32 @@ const ProductsPage = () => {
                             <td className="px-2 py-2">
                               <input type="number" min="0" step="1" className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm" value={row.stock_quantity} onChange={e => updateVariantRow(index, 'stock_quantity', e.target.value)} />
                             </td>
-                            <td className="px-2 py-2">
-                              <select className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm" value={row.badge} onChange={e => updateVariantRow(index, 'badge', e.target.value)}>
-                                {BADGE_OPTIONS.map(option => <option key={option || 'none'} value={option}>{option || 'No Badge'}</option>)}
-                              </select>
+                            <td className="px-2 py-2 relative">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setOpenVariantBadgeIndex(openVariantBadgeIndex === index ? null : index); setOpenFormBadge(false); }}
+                                className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm text-left flex justify-between items-center text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/20 h-9"
+                              >
+                                <span className="truncate">{row.badge || 'No Badge'}</span>
+                                <ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-1" />
+                              </button>
+                              {openVariantBadgeIndex === index && (
+                                <div className="absolute z-50 left-2 right-2 mt-1 bg-white dark:bg-[#131B17] border border-slate-200 dark:border-[#26322B] rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                  {BADGE_OPTIONS.map(option => (
+                                    <button
+                                      key={option || 'none'}
+                                      type="button"
+                                      onClick={() => {
+                                        updateVariantRow(index, 'badge', option);
+                                        setOpenVariantBadgeIndex(null);
+                                      }}
+                                      className="w-full text-left px-3 py-2 text-xs text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-semibold"
+                                    >
+                                      {option || 'No Badge'}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                             </td>
                             <td className="px-2 py-2">
                               <button

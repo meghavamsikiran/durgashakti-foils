@@ -1868,6 +1868,12 @@ html.light-theme body,
   border-radius: 0.75rem !important;
 }
 
+/* Prevent hover-induced black corners on input/textarea wrappers */
+.admin-shell .relative.group:hover {
+  background-color: transparent !important;
+}
+
+
 
 
 

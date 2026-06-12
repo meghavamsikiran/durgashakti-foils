@@ -617,8 +617,8 @@ const AdminUsersPage = () => {
 
       {/* Add Modal */}
       {showCreate && createPortal((
-        <div className="admin-shell fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
+          <div className="admin-shell bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Add New Admin</h2>
               <button onClick={() => setShowCreate(false)} className="p-2 rounded-full hover:bg-slate-50 transition-colors">
@@ -694,8 +694,8 @@ const AdminUsersPage = () => {
       ), document.body)}
       {/* Edit Modal */}
       {editModal && createPortal((
-        <div className="admin-shell fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
+          <div className="admin-shell bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Edit Admin</h2>
               <button onClick={() => setEditModal(null)} className="p-2 rounded-full hover:bg-slate-50 transition-colors">
@@ -771,8 +771,8 @@ const AdminUsersPage = () => {
  
       {/* Reset Password Modal */}
       {resetModal && createPortal((
-        <div className="admin-shell fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
+          <div className="admin-shell bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md border border-slate-200">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-2">Reset Password</h2>
             <p className="text-sm text-slate-500 mb-6">Updating password for <span className="font-bold text-primary">{resetModal.full_name}</span></p>
             <div className="space-y-6">
@@ -792,8 +792,8 @@ const AdminUsersPage = () => {
  
       {/* Delete Admin Modal */}
       {deleteTarget && createPortal((
-        <div className="admin-shell fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-slate-200">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/70 backdrop-blur p-4">
+          <div className="admin-shell bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm border border-slate-200">
             <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mb-6">
               <Trash2 className="w-8 h-8" />
             </div>

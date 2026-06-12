@@ -2358,8 +2358,8 @@ const CouponsPage = () => {
 
       {/* Modal - Create/Edit */}
       {isModalOpen && (
-        <div className="admin-shell fixed inset-0 z-[99999] overflow-y-auto flex items-start justify-center bg-black/70 p-4 sm:p-6 lg:p-8 backdrop-blur transition-all duration-300">
-          <div className="bg-white rounded-3xl border border-border-subtle shadow-2xl w-full max-w-5xl max-h-[calc(100vh-4rem)] overflow-hidden font-inter flex flex-col">
+        <div className="fixed inset-0 z-[99999] overflow-y-auto flex items-start justify-center bg-black/70 p-4 sm:p-6 lg:p-8 backdrop-blur transition-all duration-300">
+          <div className="admin-shell bg-white rounded-3xl border border-border-subtle shadow-2xl w-full max-w-5xl max-h-[calc(100vh-4rem)] overflow-hidden font-inter flex flex-col">
             <div className="p-6 border-b border-border-subtle flex items-center justify-between shrink-0">
               <h3 className="text-xl font-black text-ink-slate flex items-center gap-2 uppercase tracking-wide">
                 <Ticket className="w-5 h-5 text-primary" /> {editingCoupon ? 'Edit Coupon' : 'Add Coupon'}

@@ -469,8 +469,8 @@ const InquiriesPage = () => {
 
       {/* Inquiry Detail Modal */}
       {selectedInquiry && createPortal((
-        <div className="admin-shell fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-          <div className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white rounded-[2rem] max-w-3xl w-full max-h-[92vh] overflow-y-auto p-6 md:p-8 shadow-2xl shadow-slate-900/20 border border-white/50 dark:border-[#26322B] flex flex-col scrollbar-thin">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+          <div className="admin-shell bg-white dark:bg-[#131B17] text-slate-900 dark:text-white rounded-[2rem] max-w-3xl w-full max-h-[92vh] overflow-y-auto p-6 md:p-8 shadow-2xl shadow-slate-900/20 border border-white/50 dark:border-[#26322B] flex flex-col scrollbar-thin">
             <div className="flex justify-between items-start mb-8">
               <div>
                 <div className="flex items-center gap-3 mb-2">
