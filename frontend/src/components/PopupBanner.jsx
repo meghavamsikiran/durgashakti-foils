@@ -291,6 +291,7 @@ const PopupBanner = () => {
     timerTriggerTypeRef.current = null;
   };
 
+  if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') return null;
   if (!show || coupons.length === 0) return null;
 
   // Theme configuration values
