@@ -1002,12 +1002,12 @@ const ProductReviews = ({ productId, summary }) => {
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={() => setEditingReview(null)} className="rounded-full font-bold uppercase tracking-wider text-[10px] h-9 px-5 border-[#26322B] bg-[#0C1310] text-slate-350 hover:border-[#25D958] hover:text-[#25D958] transition-all">
+                <button type="button" onClick={() => setEditingReview(null)} className="rounded-full font-bold uppercase tracking-wider text-[10px] h-9 px-5 border border-[#26322B] bg-[#0C1310] text-slate-350 hover:border-[#25D958] hover:text-[#25D958] transition-all">
                   Cancel
-                </Button>
-                <Button type="submit" disabled={submittingEdit} className="rounded-full bg-[#25D958] hover:bg-[#20bd4c] text-[#0C1310] font-black px-8 h-9 text-xs uppercase tracking-wider shadow-sm hover:shadow-emerald-glow transition-all">
+                </button>
+                <button type="submit" disabled={submittingEdit} className="rounded-full bg-[#25D958] hover:bg-[#20bd4c] text-[#0C1310] font-black px-8 h-9 text-xs uppercase tracking-wider shadow-sm hover:shadow-emerald-glow transition-all">
                   {submittingEdit ? 'Saving...' : 'Save Changes'}
-                </Button>
+                </button>
               </div>
             </form>
           </div>
