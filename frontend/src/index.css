@@ -1322,10 +1322,17 @@ input[type="checkbox"] {
 }
 
 /* Restore dark theme styles for the admin sidebar and mobile header under global light theme */
+.light-theme .admin-shell aside,
+.light-theme .admin-shell aside div,
+.light-theme .admin-shell aside nav,
 .light-theme .admin-shell aside a,
 .light-theme .admin-shell aside button,
+.light-theme .admin-shell aside p,
+.light-theme .admin-shell aside span,
+.light-theme .admin-shell header.bg-\[\#050807\],
 .light-theme .admin-shell header.bg-\[\#050807\] button,
-.light-theme .admin-shell header.bg-\[\#050807\] a {
+.light-theme .admin-shell header.bg-\[\#050807\] a,
+.light-theme .admin-shell header.bg-\[\#050807\] span {
   background-color: transparent !important;
 }
 
@@ -1392,16 +1399,16 @@ input[type="checkbox"] {
 }
 
 /* Border color overrides */
-.light-theme .border-\[\#26322B\]:not(.admin-shell aside *):not(aside *),
-.light-theme .border-\[\#26322b\]:not(.admin-shell aside *):not(aside *),
-.light-theme .border-white\/5:not(.admin-shell aside *):not(aside *),
-.light-theme .border-slate-800:not(.admin-shell aside *):not(aside *),
-.light-theme .admin-shell :not(aside):not(aside *) .border-\[\#26322B\],
-.light-theme .admin-shell :not(aside):not(aside *) .border-\[\#26322b\],
-.light-theme .admin-shell :not(aside):not(aside *) .border-white\/5,
-.light-theme .admin-shell :not(aside):not(aside *) .border-white\/10,
-.light-theme .admin-shell :not(aside):not(aside *) .border-slate-200,
-.light-theme .admin-shell :not(aside):not(aside *) .border-slate-100 {
+.light-theme .border-\[\#26322B\],
+.light-theme .border-\[\#26322b\],
+.light-theme .border-white\/5,
+.light-theme .border-slate-800,
+.light-theme .admin-shell .border-\[\#26322B\],
+.light-theme .admin-shell .border-\[\#26322b\],
+.light-theme .admin-shell .border-white\/5,
+.light-theme .admin-shell .border-white\/10,
+.light-theme .admin-shell .border-slate-200,
+.light-theme .admin-shell .border-slate-100 {
   border-color: #bbcbb5 !important;
 }
 
@@ -1427,16 +1434,16 @@ input[type="checkbox"] {
 }
 
 /* Text elements */
-.light-theme h1:not([data-force-dark]):not([data-force-dark] *):not(aside *),
-.light-theme h2:not([data-force-dark]):not([data-force-dark] *):not(aside *),
-.light-theme h3:not([data-force-dark]):not([data-force-dark] *):not(aside *),
-.light-theme h4:not([data-force-dark]):not([data-force-dark] *):not(aside *),
-.light-theme h5:not([data-force-dark]):not([data-force-dark] *):not(aside *),
-.light-theme h6:not([data-force-dark]):not([data-force-dark] *):not(aside *),
-.light-theme p:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *):not(aside *),
-.light-theme span:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *):not(aside *),
-.light-theme label:not([data-force-dark]):not([data-force-dark] *):not(aside *),
-.light-theme a:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *):not(aside *) {
+.light-theme h1:not([data-force-dark]):not([data-force-dark] *),
+.light-theme h2:not([data-force-dark]):not([data-force-dark] *),
+.light-theme h3:not([data-force-dark]):not([data-force-dark] *),
+.light-theme h4:not([data-force-dark]):not([data-force-dark] *),
+.light-theme h5:not([data-force-dark]):not([data-force-dark] *),
+.light-theme h6:not([data-force-dark]):not([data-force-dark] *),
+.light-theme p:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *),
+.light-theme span:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *),
+.light-theme label:not([data-force-dark]):not([data-force-dark] *),
+.light-theme a:not(.text-white):not(.text-slate-100):not([data-force-dark]):not([data-force-dark] *) {
   color: #181c1b !important;
 }
 
