@@ -231,8 +231,8 @@ const Shop = () => {
     <div className="min-h-screen bg-[#0C1310] font-sans text-white" data-testid="shop-page">
       {/* Premium Header Banner - full width img element with controlled height for professional UI */}
       <div className={isAdminPath 
-        ? "w-full overflow-hidden border-b border-[#26322B] h-auto aspect-[1024/270] md:aspect-none md:h-[420px] bg-[#111111]" 
-        : "w-full overflow-hidden border-b border-[#26322B] h-auto aspect-[1024/270] md:aspect-none md:h-[370px] lg:h-[420px] bg-[#111111]"
+        ? "w-full overflow-hidden border-b border-[#26322B] h-auto aspect-[1024/255] md:aspect-none md:h-[300px] bg-[#0C1310]" 
+        : "w-full overflow-hidden border-b border-[#26322B] h-auto aspect-[1024/255] md:aspect-none md:h-[250px] lg:h-[300px] bg-[#0C1310]"
       }>
         <img 
           src="/product_display_poster.png" 
