@@ -1045,7 +1045,7 @@ h1, h2, h3, h4, h5, h6,
 .light-theme {
   background-color: #f7faf8 !important;
   background: #f7faf8 !important;
-  color: #181c1b !important;
+  color: #181c1b;
   --ink-slate: #0F172A !important;
 }
 
