@@ -305,9 +305,9 @@ const ShippingSettingsPage = () => {
               {/* Number Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1 h-5">
                     Free Shipping Threshold (₹)
-                    <Info className="w-3 h-3 text-slate-400" />
+                    <Info className="w-3 h-3 text-slate-400 shrink-0" />
                   </label>
                   <input
                     type="number"
@@ -319,7 +319,9 @@ const ShippingSettingsPage = () => {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Default Shipping Charge (₹)</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1 h-5">
+                    Default Shipping Charge (₹)
+                  </label>
                   <input
                     type="number"
                     disabled={!isEditable || !enableShipping}

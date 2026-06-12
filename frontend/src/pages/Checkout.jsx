@@ -44,7 +44,7 @@ const Checkout = () => {
     }
   };
 
-  const { grandTotal } = calculateCheckoutPricing(total, shippingSettings, paymentMethod, appliedCoupons);
+  const { grandTotal } = calculateCheckoutPricing(total, shippingSettings, paymentMethod, appliedCoupons, shippingInfo);
 
   return (
     <div className="min-h-screen bg-[#0C1310] pb-32 lg:pb-12 text-white font-sans">
@@ -97,6 +97,7 @@ const Checkout = () => {
                 validatingCoupon={validatingCoupon}
                 onApplyCoupon={handleApplyCoupon}
                 onRemoveCoupon={handleRemoveCoupon}
+                shippingAddress={shippingInfo}
               />
             </div>
           </div>

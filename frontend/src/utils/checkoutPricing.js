@@ -29,10 +29,12 @@ export const normalizeShippingSettings = (settings = {}) => {
     minimumCodAmount: toNumber(source.minimumCodAmount, DEFAULT_SHIPPING_SETTINGS.minimumCodAmount),
     maximumCodAmount: toNumber(source.maximumCodAmount, DEFAULT_SHIPPING_SETTINGS.maximumCodAmount),
     codStatus: source.codStatus || DEFAULT_SHIPPING_SETTINGS.codStatus,
+    shippingZonesEnabled: !!source.shippingZonesEnabled,
+    zones: source.zones || []
   };
 };
 
-export const calculateCheckoutPricing = (subtotal, settings = {}, paymentMethod = 'upi', appliedCoupons = []) => {
+export const calculateCheckoutPricing = (subtotal, settings = {}, paymentMethod = 'upi', appliedCoupons = [], shippingAddress = null) => {
   const config = normalizeShippingSettings(settings);
   
   let discountAmount = 0;
@@ -56,8 +58,26 @@ export const calculateCheckoutPricing = (subtotal, settings = {}, paymentMethod 
   discountAmount = Math.min(discountAmount, subtotal);
   
   const taxableAmount = Math.max(0, subtotal - discountAmount);
+  
+  let baseShippingCharge = config.defaultShippingCharge;
+  if (config.shippingZonesEnabled && shippingAddress && shippingAddress.pincode) {
+    const pin = String(shippingAddress.pincode).trim();
+    if (pin.length === 6 && /^\d+$/.test(pin)) {
+      let zoneName = 'North India';
+      if (pin.startsWith('50')) {
+        zoneName = 'Telangana';
+      } else if (pin.startsWith('5') || pin.startsWith('6')) {
+        zoneName = 'South India';
+      }
+      const matchedZone = config.zones.find(z => z.name.toLowerCase() === zoneName.toLowerCase() && z.status === 'Active');
+      if (matchedZone) {
+        baseShippingCharge = toNumber(matchedZone.charge, config.defaultShippingCharge);
+      }
+    }
+  }
+
   const shipping = config.enableShipping && !freeShippingApplied && !(config.enableFreeShipping && taxableAmount >= config.freeShippingThreshold)
-    ? config.defaultShippingCharge
+    ? baseShippingCharge
     : 0;
   const codCharge = paymentMethod === 'cod' ? config.codCharge : 0;
   const cgst = Math.round(taxableAmount * 0.09 * 100) / 100;

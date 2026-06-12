@@ -1275,7 +1275,28 @@ async def create_order(order_data: OrderCreate, current_user: UserSchema = Depen
         if shipping_config["enableFreeShipping"] and taxable_amount >= float(shipping_config["freeShippingThreshold"]):
             shipping_cost = 0.0
         else:
-            shipping_cost = float(shipping_config["defaultShippingCharge"])
+            base_shipping_charge = float(shipping_config["defaultShippingCharge"])
+            if setting_obj and isinstance(setting_obj.value, dict) and setting_obj.value.get("shippingZonesEnabled"):
+                zones_list = setting_obj.value.get("zones") or []
+                pin = str(order_data.shipping_address.pincode).strip()
+                if len(pin) == 6 and pin.isdigit():
+                    zone_name = "North India"
+                    if pin.startswith("50"):
+                        zone_name = "Telangana"
+                    elif pin.startswith("5") or pin.startswith("6"):
+                        zone_name = "South India"
+                    
+                    matched_zone = None
+                    for z in zones_list:
+                        if isinstance(z, dict) and z.get("name", "").strip().lower() == zone_name.lower() and z.get("status") == "Active":
+                            matched_zone = z
+                            break
+                    if matched_zone:
+                        try:
+                            base_shipping_charge = float(matched_zone.get("charge", base_shipping_charge))
+                        except ValueError:
+                            pass
+            shipping_cost = base_shipping_charge
             
     # Calculate COD dynamically with limits validation
     cod_charge = 0.0

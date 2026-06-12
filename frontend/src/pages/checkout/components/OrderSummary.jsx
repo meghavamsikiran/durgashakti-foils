@@ -19,7 +19,8 @@ const OrderSummary = ({
   setCouponInput,
   validatingCoupon = false,
   onApplyCoupon,
-  onRemoveCoupon
+  onRemoveCoupon,
+  shippingAddress
 }) => {
   const { cart } = useCart();
   const { 
@@ -30,7 +31,7 @@ const OrderSummary = ({
     grandTotal, 
     discountAmount, 
     freeShippingApplied 
-  } = calculateCheckoutPricing(total, shippingSettings, paymentMethod, appliedCoupons);
+  } = calculateCheckoutPricing(total, shippingSettings, paymentMethod, appliedCoupons, shippingAddress);
 
   return (
     <div className="relative overflow-hidden bg-[#131B17] rounded-2xl p-6 md:p-8 border border-[#26322B] text-white">

@@ -460,7 +460,7 @@ export const useCheckout = () => {
         }
       }
 
-      const { grandTotal } = calculateCheckoutPricing(subtotal, normalizedShippingSettings, paymentMethod, appliedCoupons);
+      const { grandTotal } = calculateCheckoutPricing(subtotal, normalizedShippingSettings, paymentMethod, appliedCoupons, shippingInfo);
 
       const orderData = {
         items: orderItems,
