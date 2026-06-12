@@ -441,7 +441,7 @@ const SettingsPage = () => {
                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
                         <Play className="w-3 h-3 text-primary" /> Live Preview
                      </h3>
-                     <div className="w-full bg-slate-950 text-white overflow-hidden py-2.5 rounded-xl border border-slate-800 shadow-lg relative flex items-center">
+                     <div data-force-dark className="w-full bg-slate-950 text-white overflow-hidden py-2.5 rounded-xl border border-slate-800 shadow-lg relative flex items-center">
                         <div className="whitespace-nowrap animate-marquee flex items-center">
                            <span className="mx-4 text-xs font-extrabold uppercase tracking-widest text-primary-fixed">
                               {p1}

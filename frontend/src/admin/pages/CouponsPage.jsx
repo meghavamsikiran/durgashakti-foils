@@ -2140,7 +2140,7 @@ const CouponsPage = () => {
             </div>
 
             {/* Live Preview Widget */}
-            <div className="p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4" style={{ background: '#0f172a' }}>
+            <div data-force-dark className="p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4" style={{ background: '#0f172a' }}>
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
                 Storefront Banner Preview (Live)

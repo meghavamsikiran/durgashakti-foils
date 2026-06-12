@@ -1876,15 +1876,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* Fix text contrast in light theme for settings preview, shipping settings, coupons tab, business profile tab */
-.light-theme .admin-shell .bg-slate-950, 
-.light-theme .admin-shell .bg-slate-900,
-.light-theme .admin-shell .bg-slate-800 {
+.light-theme .admin-shell .bg-slate-950:not([data-force-dark]), 
+.light-theme .admin-shell .bg-slate-900:not([data-force-dark]),
+.light-theme .admin-shell .bg-slate-800:not([data-force-dark]) {
   background-color: #e2e8f0 !important;
   color: #0f172a !important;
   border-color: #cbd5e1 !important;
 }
 
-.light-theme .admin-shell .bg-slate-950 * {
+.light-theme .admin-shell .bg-slate-950 *:not([data-force-dark] *):not([data-force-dark]) {
   color: #0f172a !important;
 }
 
@@ -2044,6 +2044,60 @@ html.light-theme body,
 .light-theme button.bg-rose-600,
 .light-theme button.bg-red-600 {
   color: #ffffff !important;
+}
+
+/* ── FORCE-DARK SCOPE ──
+   Elements with [data-force-dark] keep their original dark-themed colors
+   even when the page is in light mode.  Used for the popup banner and
+   the admin live-preview widget whose backgrounds are always dark. */
+
+.light-theme [data-force-dark] .text-white { color: rgb(255 255 255) !important; }
+.light-theme [data-force-dark] .text-white\/80 { color: rgb(255 255 255 / 0.80) !important; }
+.light-theme [data-force-dark] .text-white\/85 { color: rgb(255 255 255 / 0.85) !important; }
+.light-theme [data-force-dark] .text-white\/50 { color: rgb(255 255 255 / 0.50) !important; }
+.light-theme [data-force-dark] .text-white\/30 { color: rgb(255 255 255 / 0.30) !important; }
+.light-theme [data-force-dark] .text-white\/25 { color: rgb(255 255 255 / 0.25) !important; }
+.light-theme [data-force-dark] .text-white\/20 { color: rgb(255 255 255 / 0.20) !important; }
+.light-theme [data-force-dark] .text-white\/15 { color: rgb(255 255 255 / 0.15) !important; }
+.light-theme [data-force-dark] .text-white\/10 { color: rgb(255 255 255 / 0.10) !important; }
+.light-theme [data-force-dark] .text-yellow-300 { color: rgb(253 224 71) !important; }
+.light-theme [data-force-dark] .text-yellow-200 { color: rgb(254 240 138) !important; }
+.light-theme [data-force-dark] .text-emerald-300 { color: rgb(110 231 183) !important; }
+.light-theme [data-force-dark] .text-emerald-400 { color: rgb(52 211 153) !important; }
+.light-theme [data-force-dark] .text-amber-300\/30 { color: rgb(252 211 77 / 0.30) !important; }
+.light-theme [data-force-dark] .text-amber-300\/60 { color: rgb(252 211 77 / 0.60) !important; }
+.light-theme [data-force-dark] .text-amber-400\/20 { color: rgb(251 191 36 / 0.20) !important; }
+.light-theme [data-force-dark] .text-yellow-300\/40 { color: rgb(253 224 71 / 0.40) !important; }
+.light-theme [data-force-dark] .text-yellow-300\/50 { color: rgb(253 224 71 / 0.50) !important; }
+.light-theme [data-force-dark] .text-yellow-400\/30 { color: rgb(250 204 21 / 0.30) !important; }
+.light-theme [data-force-dark] .text-slate-400 { color: rgb(148 163 184) !important; }
+
+.light-theme [data-force-dark] {
+  color: #ffffff !important;
+}
+
+/* Headings inside force-dark scope */
+.light-theme [data-force-dark] h1,
+.light-theme [data-force-dark] h2,
+.light-theme [data-force-dark] h3,
+.light-theme [data-force-dark] h4,
+.light-theme [data-force-dark] h5,
+.light-theme [data-force-dark] h6 {
+  color: inherit;
+}
+
+/* Text elements inside force-dark scope */
+.light-theme [data-force-dark] p,
+.light-theme [data-force-dark] span,
+.light-theme [data-force-dark] label,
+.light-theme [data-force-dark] a,
+.light-theme [data-force-dark] button {
+  color: inherit;
+}
+
+/* Gradient text needs transparent color for bg-clip-text to work */
+.light-theme [data-force-dark] .text-transparent {
+  color: transparent !important;
 }
 
 
