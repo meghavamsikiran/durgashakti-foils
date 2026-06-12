@@ -2101,6 +2101,87 @@ html.light-theme body,
 }
 
 
+/* ── GLOBAL PREMIUM ADMIN PANEL STYLING OVERRIDES ── */
+
+/* Cards and Containers styling */
+.admin-shell .bg-white.border.border-slate-200,
+.admin-shell .bg-white.border.border-slate-100,
+.admin-shell .bg-white.rounded-3xl.border {
+  border-radius: 1.75rem !important;
+  border-color: #f1f5f9 !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.02), 0 8px 16px -6px rgba(15, 23, 42, 0.01) !important;
+}
+
+/* Modern tables look & feel */
+.admin-shell table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.admin-shell table thead {
+  background-color: #f8fafc/60 !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.admin-shell table thead th {
+  font-size: 0.65rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #64748b !important;
+  background-color: #f8fafc !important;
+  padding: 1.1rem 1.5rem !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.admin-shell table tbody td {
+  padding: 1.1rem 1.5rem !important;
+  border-bottom: 1px solid #f8fafc !important;
+  font-size: 0.8rem !important;
+  color: #334155 !important;
+}
+
+.admin-shell table tbody tr {
+  transition: background-color 0.2s ease !important;
+}
+
+.admin-shell table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Restyle form elements for premium touch */
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea,
+.admin-shell input[type="text"],
+.admin-shell select:not([multiple]) {
+  border-radius: 0.85rem !important;
+  border-color: #cbd5e1 !important;
+  font-weight: 500 !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Premium micro widgets (mini-kpis) */
+.admin-shell .bg-white.py-2.px-3.rounded-xl.border.border-slate-200.shadow-sm {
+  border-radius: 1.25rem !important;
+  border-color: #f1f5f9 !important;
+  padding: 1rem 1.25rem !important;
+  box-shadow: 0 4px 15px -3px rgba(15, 23, 42, 0.02) !important;
+}
+
+/* Button transitions */
+.admin-shell button,
+.admin-shell .btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-radius: 0.85rem !important;
+}
+
+.admin-shell button:hover {
+  transform: translateY(-0.5px) !important;
+}
+
+
+
 
 
 

@@ -608,7 +608,7 @@ const AnalyticsPage = () => {
                   tick={{ fontSize: 11, fill: '#64748b' }} 
                   tickFormatter={(val) => `₹${Math.round(val / 1000)}k`} 
                 />
-                <Tooltip content={<CustomChartTooltip prefix="₹" />} />
+                <Tooltip content={<CustomChartTooltip prefix="₹" />} cursor={false} />
                 <Bar dataKey="revenue" fill="#006e1b" radius={[6, 6, 0, 0]} barSize={24} />
                 <Bar dataKey="stockValue" fill="#10b981" radius={[6, 6, 0, 0]} barSize={24} />
               </BarChart>
@@ -808,7 +808,7 @@ const AnalyticsPage = () => {
                   tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }}
                   width={65}
                 />
-                <Tooltip content={<CustomChartTooltip prefix="" suffix=" in stock" />} />
+                <Tooltip content={<CustomChartTooltip prefix="" suffix=" in stock" />} cursor={false} />
                 <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14}>
                   {inventoryData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.value <= 20 ? '#ef4444' : '#10b981'} />
@@ -846,7 +846,7 @@ const AnalyticsPage = () => {
                   tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }}
                   width={65}
                 />
-                <Tooltip content={<CustomChartTooltip prefix="" suffix=" Units" />} />
+                <Tooltip content={<CustomChartTooltip prefix="" suffix=" Units" />} cursor={false} />
                 <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14}>
                   {productData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
