@@ -2041,8 +2041,10 @@ async def get_public_settings(db: AsyncSession = Depends(get_db)):
         for coupon in coupons
         if coupon.code and coupon.is_active and not coupon_is_expired(coupon, now)
     }
+    # Build a code→CouponModel lookup so linked_coupons snapshots get refreshed
+    coupon_map = {coupon.code.upper(): coupon for coupon in coupons if coupon.code}
     if "popup_banner" in d:
-        d["popup_banner"] = filter_public_popup_banner(d["popup_banner"], active_codes)
+        d["popup_banner"] = filter_public_popup_banner(d["popup_banner"], active_codes, coupon_map=coupon_map)
     else:
         d["popup_banner"] = {"promoted_coupons": []}
     if "feedback_settings" not in d:

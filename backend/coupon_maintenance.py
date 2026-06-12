@@ -61,9 +61,18 @@ def clean_popup_banner_value(value: Any, valid_codes: set[str]) -> dict:
     return popup
 
 
-def filter_public_popup_banner(value: Any, valid_codes: set[str]) -> dict:
+def filter_public_popup_banner(value: Any, valid_codes: set[str], coupon_map: dict[str, Any] | None = None) -> dict:
+    """Filter popup_banner for the public API response.
+
+    ``coupon_map`` is an optional *code → CouponModel* mapping.  When
+    provided the stale ``linked_coupons`` snapshot stored in the JSON
+    setting is refreshed with live DB values (expiry_date, is_active,
+    discount_type, discount_value).  This prevents the frontend from
+    seeing an outdated expiry date after the admin extends it.
+    """
     popup = dict(value or {}) if isinstance(value, dict) else {}
     valid_codes = {str(code).upper() for code in valid_codes if code}
+    coupon_map = coupon_map or {}
 
     popup["promoted_coupons"] = [
         coupon for coupon in (popup.get("promoted_coupons") or [])
@@ -82,10 +91,26 @@ def filter_public_popup_banner(value: Any, valid_codes: set[str]) -> dict:
             code for code in (clean_banner.get("coupon_codes") or [])
             if _code_of(code) in valid_codes
         ]
-        clean_banner["linked_coupons"] = [
-            coupon for coupon in (clean_banner.get("linked_coupons") or [])
-            if _code_of(coupon) in valid_codes
-        ]
+
+        # Refresh linked_coupons with live DB data so the frontend sees
+        # current expiry dates and active status instead of stale snapshots.
+        refreshed_linked = []
+        for coupon in (clean_banner.get("linked_coupons") or []):
+            code_upper = _code_of(coupon)
+            if code_upper not in valid_codes:
+                continue
+            db_coupon = coupon_map.get(code_upper)
+            if db_coupon is not None:
+                refreshed = dict(coupon)
+                refreshed["is_active"] = getattr(db_coupon, "is_active", True)
+                exp = getattr(db_coupon, "expiry_date", None)
+                refreshed["expiry_date"] = exp.isoformat() if exp else None
+                refreshed["discount_type"] = getattr(db_coupon, "discount_type", refreshed.get("discount_type"))
+                refreshed["discount_value"] = getattr(db_coupon, "discount_value", refreshed.get("discount_value"))
+                refreshed_linked.append(refreshed)
+            else:
+                refreshed_linked.append(coupon)
+        clean_banner["linked_coupons"] = refreshed_linked
         
         any_active = original_codes and any(_code_of(code) in valid_codes for code in original_codes)
         
