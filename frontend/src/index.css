@@ -1728,6 +1728,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: #0f172a !important;
 }
 
+/* Fix sacred scrolling banner edge gradients in light theme */
+.light-theme .admin-shell .from-slate-950 {
+  --tw-gradient-from: #e2e8f0 !important;
+}
+.light-theme .admin-shell .to-slate-950 {
+  --tw-gradient-to: #e2e8f0 !important;
+}
+
+/* Global html/body theme background color override to eliminate slits and subpixel corner rendering artifacts */
+html.light-theme, 
+html.light-theme body, 
+.light-theme, 
+.light-theme body,
+.light-theme .admin-shell,
+.light-theme .admin-shell main {
+  background-color: #f7faf8 !important;
+  color: #181c1b !important;
+}
+
 /* Global input/textarea readability, border & background overrides in light-theme */
 .light-theme .admin-shell input,
 .light-theme .admin-shell textarea,
@@ -1821,6 +1840,35 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .light-theme .admin-shell td {
   color: #0f172a !important;
 }
+
+/* Muted or heavy text overrides to ensure legibility on light theme background */
+.light-theme .text-slate-950,
+.light-theme .admin-shell .text-slate-950,
+.light-theme .text-slate-900,
+.light-theme .admin-shell .text-slate-900 {
+  color: #0f172a !important;
+}
+
+/* Explicit focus outline/ring radius clipping to prevent black corners on click */
+.admin-shell input:focus,
+.admin-shell textarea:focus,
+.admin-shell select:focus,
+.admin-shell input[type="text"]:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px #25d958 !important;
+  border-radius: 0.75rem !important;
+}
+
+.light-theme .admin-shell input:focus,
+.light-theme .admin-shell textarea:focus,
+.light-theme .admin-shell select:focus,
+.light-theme .admin-shell input[type="text"]:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px #006e1b !important;
+  border-radius: 0.75rem !important;
+}
+
+
 
 
 
