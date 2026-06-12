@@ -161,7 +161,7 @@ const DurgaMaaLoader = ({ show = true }) => {
 
   return (
     <div
-      className="relative w-64 h-52 md:w-80 md:h-64 flex items-center justify-center select-none pointer-events-none"
+      className="relative w-[180px] h-[146px] md:w-[224px] md:h-[180px] flex items-center justify-center select-none pointer-events-none"
       style={{ background: 'transparent', backgroundColor: 'transparent' }}
     >
       {/* Invisible video source — loops continuously in the DOM to bypass iOS suspension.
