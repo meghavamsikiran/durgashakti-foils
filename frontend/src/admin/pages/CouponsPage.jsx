@@ -1612,12 +1612,12 @@ const CouponsPage = () => {
                 <div className="relative" ref={filterRef}>
                   <button
                     onClick={() => setIsFilterOpen(prev => !prev)}
-                    className={`relative inline-flex items-center gap-2 px-3 py-2 rounded-xl border shadow-sm transition-all admin-filter-btn ${
+                    className={`relative inline-flex items-center gap-2 shadow-sm transition-all admin-filter-btn ${
                       (statusFilter !== 'all' || dateFilter) ? 'active-filter' : ''
                     }`}
                   >
-                    <Filter className="w-4 h-4" />
-                    <span className="text-xs font-black uppercase tracking-widest">Filter</span>
+                    <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                    <span>Filter</span>
                     {(statusFilter !== 'all' || dateFilter) && (
                       <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center">
                         {(statusFilter !== 'all' ? 1 : 0) + (dateFilter ? 1 : 0)}

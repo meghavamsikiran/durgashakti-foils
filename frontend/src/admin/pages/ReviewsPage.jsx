@@ -189,14 +189,14 @@ const ReviewsPage = () => {
             <button
               type="button"
               onClick={() => setShowFilters((prev) => !prev)}
-              className={`h-11 inline-flex items-center justify-center gap-2 rounded-xl border px-4 text-xs font-black uppercase tracking-widest shadow-sm transition-all admin-filter-btn ${
+              className={`h-11 inline-flex items-center justify-center gap-2 shadow-sm transition-all admin-filter-btn ${
                 showFilters || activeFilterCount > 0
                   ? 'active-filter'
                   : ''
               }`}
             >
-              <Filter className="w-4 h-4" />
-              Filters
+              <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+              Filter
               {activeFilterCount > 0 && (
                 <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] text-white">
                   {activeFilterCount}

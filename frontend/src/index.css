@@ -282,18 +282,32 @@ h1, h2, h3, h4, h5, h6,
     color: #ffffff;
   }
 
-  .public-theme input,
-  .public-theme textarea,
-  .public-theme select {
+  .public-theme.light-theme input,
+  .public-theme.light-theme textarea,
+  .public-theme.light-theme select {
     min-height: 48px;
     border-color: #bbcbb5;
     background-color: #ffffff;
     color: #181c1b;
   }
 
-  .public-theme input::placeholder,
-  .public-theme textarea::placeholder {
+  .public-theme.light-theme input::placeholder,
+  .public-theme.light-theme textarea::placeholder {
     color: #6c7b68;
+  }
+
+  .public-theme.dark input,
+  .public-theme.dark textarea,
+  .public-theme.dark select {
+    min-height: 48px;
+    border-color: #26322B;
+    background-color: #0C1310;
+    color: #ffffff;
+  }
+
+  .public-theme.dark input::placeholder,
+  .public-theme.dark textarea::placeholder {
+    color: #94a3b8;
   }
 
   .public-theme input:focus,
@@ -1587,15 +1601,21 @@ button[role="radio"] {
 /* ── UNIFIED FILTER BUTTONS STYLING ────────────────────────────── */
 .admin-filter-btn {
   background-color: #ffffff !important;
-  color: #334155 !important;
-  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 0.75rem !important;
+  padding: 0.5rem 1rem !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
   transition: all 0.2s ease-in-out !important;
 }
 
 .admin-filter-btn:hover {
-  background-color: #f8fafc !important;
-  color: #006e1b !important;
-  border-color: #006e1b !important;
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+  border-color: #94a3b8 !important;
 }
 
 /* Dark theme overrides for filter buttons */
@@ -1607,8 +1627,8 @@ button[role="radio"] {
 
 .dark .admin-filter-btn:hover {
   background-color: #19231F !important;
-  color: #16E34A !important;
-  border-color: rgba(22, 227, 74, 0.3) !important;
+  color: #ffffff !important;
+  border-color: #26322B !important;
 }
 
 /* Active filter state styling */

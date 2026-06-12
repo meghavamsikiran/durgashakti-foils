@@ -210,10 +210,12 @@ const PaymentsPage = () => {
                 setTempCustomEnd(dateFilter?.label === 'custom' ? (dateFilter.end_date || '').slice(0, 10) : '');
                 setFilterOpen((prev) => !prev);
               }}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
+              className={`inline-flex items-center gap-2 h-[40px] admin-filter-btn ${
+                filter !== 'all' || dateFilter ? 'active-filter' : ''
+              }`}
             >
-              <Filter className="w-4 h-4 text-slate-600" />
-              <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
+              <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+              <span>Filter</span>
               {(filter !== 'all' || dateFilter) && (
                 <span className="ml-1 px-1.5 py-0.5 text-[9px] bg-primary text-white rounded-full font-black">
                   Active

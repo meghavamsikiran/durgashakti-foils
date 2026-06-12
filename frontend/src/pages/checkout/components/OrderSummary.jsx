@@ -45,7 +45,7 @@ const OrderSummary = ({
           return (
             <div key={item.product_id} className="flex justify-between items-center gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-[#0C1310] border border-[#26322B] flex items-center justify-center font-bold text-xs text-slate-300">
+                <div className="w-12 h-12 rounded-xl bg-[#25D958] border border-[#25D958]/20 flex items-center justify-center font-bold text-xs text-white">
                   {item.quantity}x
                 </div>
                 <div className="text-sm font-bold text-slate-300 truncate max-w-[120px]">{product.name}</div>

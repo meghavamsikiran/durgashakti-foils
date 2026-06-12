@@ -197,14 +197,14 @@ const InventoryPage = () => {
             <button
               type="button"
               onClick={() => setFilterOpen((prev) => !prev)}
-              className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border shadow-sm h-[40px] admin-filter-btn ${
+              className={`inline-flex items-center gap-2 h-[40px] admin-filter-btn ${
                 categoryFilter !== 'all' || activeFilter !== 'all' || stockFilter !== 'all' || filterOpen
                   ? 'active-filter'
                   : ''
               }`}
             >
-              <Filter className="w-4 h-4 text-slate-600 dark:text-slate-350" />
-              <span className="text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-350">Filter</span>
+              <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+              <span>Filter</span>
             </button>
             {filterOpen && (
               <>

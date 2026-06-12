@@ -276,13 +276,13 @@ const InquiriesPage = () => {
         <div className="relative" ref={filterRef}>
           <button
             onClick={handleToggleFilter}
-            className={`h-11 inline-flex items-center justify-center gap-2 rounded-xl border px-4 text-xs font-black uppercase tracking-widest shadow-sm transition-all admin-filter-btn ${
+            className={`h-11 inline-flex items-center justify-center gap-2 shadow-sm transition-all admin-filter-btn ${
               filterOpen || (statusFilter !== 'all' || dateFilter)
                 ? 'active-filter'
                 : ''
             }`}
           >
-            <Filter className="w-4 h-4" />
+            <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
             Filter
             {(statusFilter !== 'all' || dateFilter) && (
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] text-white">

@@ -443,7 +443,7 @@ const Navbar = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onFocus={() => { if (searchQuery.trim()) setShowDropdown(true); }}
-                    className="w-48 lg:w-56 h-9 bg-white text-slate-800 placeholder-slate-450 text-xs pl-8 pr-7 rounded-lg border border-slate-250 focus:outline-none focus:border-[#25d958] focus:ring-1 focus:ring-[#25d958]/20 transition-all font-semibold"
+                    className="w-48 lg:w-56 h-9 bg-[#131B17] text-white placeholder-slate-500 text-xs pl-8 pr-7 rounded-lg border border-[#26322B] focus:outline-none focus:border-[#25d958] focus:ring-1 focus:ring-[#25d958]/20 transition-all font-semibold"
                     autoFocus
                   />
                   <button type="button" onClick={closeSearch} className="absolute right-2 p-1 text-slate-450 hover:text-slate-700 transition-colors">
@@ -540,7 +540,7 @@ const Navbar = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onFocus={() => { if (searchQuery.trim()) setShowDropdown(true); }}
-                className="w-full h-10 bg-white text-slate-800 placeholder-slate-450 text-sm pl-10 pr-9 rounded-lg border border-slate-250 focus:outline-none focus:border-[#25d958]"
+                className="w-full h-10 bg-[#131B17] text-white placeholder-slate-500 text-sm pl-10 pr-9 rounded-lg border border-[#26322B] focus:outline-none focus:border-[#25d958]"
                 autoFocus
               />
               <button type="button" onClick={closeSearch} className="absolute right-2.5 p-1 text-slate-450 hover:text-slate-700 transition-colors">

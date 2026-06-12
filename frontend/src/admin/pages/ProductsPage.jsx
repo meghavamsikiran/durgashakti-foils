@@ -461,10 +461,14 @@ const ProductsPage = () => {
             <button
               type="button"
               onClick={() => setFilterOpen((prev) => !prev)}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-[40px]"
+              className={`inline-flex items-center gap-2 h-[40px] admin-filter-btn ${
+                categoryFilter !== 'all' || activeFilter !== 'all' || stockFilter !== 'all' || filterOpen
+                  ? 'active-filter'
+                  : ''
+              }`}
             >
-              <Filter className="w-4 h-4 text-slate-600" />
-              <span className="text-xs font-black uppercase tracking-widest text-slate-600">Filter</span>
+              <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+              <span>Filter</span>
             </button>
             {filterOpen && (
               <>
