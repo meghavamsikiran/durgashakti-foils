@@ -47,6 +47,27 @@ const ProductReviews = ({ productId, summary }) => {
   const [sortBy, setSortBy] = useState('newest');
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
+  // Edit Review Modal States
+  const [editingReview, setEditingReview] = useState(null);
+  const [submittingEdit, setSubmittingEdit] = useState(false);
+  const [editRating, setEditRating] = useState(0);
+  const [editTitle, setEditTitle] = useState('');
+  const [editComment, setEditComment] = useState('');
+  const [editPublicName, setEditPublicName] = useState('');
+  const [editExistingMedia, setEditExistingMedia] = useState([]);
+  const [editFiles, setEditFiles] = useState([]);
+  const [editFilePreviews, setEditFilePreviews] = useState([]);
+
+  useEffect(() => {
+    const urls = editFiles.map(file => {
+      return { url: URL.createObjectURL(file), type: file.type.startsWith('video/') ? 'video' : 'image', name: file.name };
+    });
+    setEditFilePreviews(urls);
+    return () => {
+      urls.forEach(item => URL.revokeObjectURL(item.url));
+    };
+  }, [editFiles]);
+
   useEffect(() => {
     setVisibleCount(3);
   }, [selectedRating, sortBy]);
@@ -118,6 +139,48 @@ const ProductReviews = ({ productId, summary }) => {
     } catch {
       toast.error('Failed to delete review');
       setReviews(prev);
+    }
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editRating) {
+      toast.error('Please select a star rating');
+      return;
+    }
+    if (!editTitle.trim()) {
+      toast.error('Please add a review title');
+      return;
+    }
+    if (!editPublicName.trim()) {
+      toast.error('Please enter your public name');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('product_id', productId);
+    formData.append('order_id', editingReview.order_id);
+    formData.append('rating', String(editRating));
+    formData.append('title', editTitle);
+    formData.append('comment', editComment);
+    formData.append('public_name', editPublicName);
+    formData.append('existing_media', JSON.stringify(editExistingMedia));
+    editFiles.forEach(file => formData.append('files', file));
+
+    setSubmittingEdit(true);
+    try {
+      await reviewService.submitReview(formData);
+      toast.success('Review updated successfully');
+      setEditingReview(null);
+      
+      // Fetch fresh reviews from server to update list instantly
+      const data = await reviewService.getProductReviews(productId, { limit: 50 });
+      setReviews(data.items || []);
+      setRatingSummary(data);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update review');
+    } finally {
+      setSubmittingEdit(false);
     }
   };
 
@@ -552,8 +615,11 @@ const ProductReviews = ({ productId, summary }) => {
                                 </span>
                               )}
                             </div>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
-                              Reviewed on {new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5 flex flex-wrap gap-x-2">
+                              <span>Reviewed on {new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                              {review.updated_at && new Date(review.updated_at).getTime() - new Date(review.created_at).getTime() > 1000 && (
+                                <span className="text-[#25D958]/85 font-bold">(Edited on {new Date(review.updated_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })})</span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -577,7 +643,21 @@ const ProductReviews = ({ productId, summary }) => {
                             )}
                             {user.id === review.user_id && (
                               <button
-                                onClick={() => navigate(`/review/${review.order_id}/${productId}`)}
+                                onClick={() => {
+                                  setEditingReview(review);
+                                  setEditRating(review.rating);
+                                  setEditTitle(review.title);
+                                  setEditComment(review.comment || '');
+                                  setEditPublicName(review.public_name || user?.full_name || '');
+                                  let mediaUrls = [];
+                                  try {
+                                    mediaUrls = typeof review.media_urls === 'string' ? JSON.parse(review.media_urls) : (review.media_urls || []);
+                                  } catch {
+                                    mediaUrls = [];
+                                  }
+                                  setEditExistingMedia(mediaUrls);
+                                  setEditFiles([]);
+                                }}
                                 className="p-1.5 text-slate-400 dark:text-slate-400 hover:text-primary dark:hover:text-[#25D958] hover:bg-slate-50 dark:hover:bg-[#19231F] rounded-md transition-all"
                                 title="Edit Review"
                               >
@@ -652,6 +732,11 @@ const ProductReviews = ({ productId, summary }) => {
                               <span className="inline-flex items-center gap-0.5 rounded-full border border-primary/20 bg-emerald-50/60 dark:bg-emerald-950/35 px-2 py-0.5 text-[8px] text-primary">
                                 <BadgeCheck className="h-3 w-3" /> Verified Official
                               </span>
+                              {review.admin_reply_at && (
+                                <span className="text-[8px] text-slate-400 dark:text-slate-500 font-semibold normal-case font-mono">
+                                  Replied on {new Date(review.admin_reply_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                </span>
+                              )}
                             </div>
                             {isAdmin && (
                               <span className="inline-flex items-center gap-1">
@@ -765,6 +850,146 @@ const ProductReviews = ({ productId, summary }) => {
         </div>
       )}
 
+      {/* Edit Review Modal */}
+      {editingReview && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] bg-[#131B17] border border-[#26322B] shadow-2xl p-6 md:p-8 text-white space-y-6 animate-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => setEditingReview(null)}
+              className="absolute right-6 top-6 rounded-full bg-[#0C1310]/90 p-2 text-white border border-[#26322B] shadow-sm hover:bg-[#19231F] transition-all hover:scale-105"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <h3 className="text-xl font-bold uppercase tracking-wider text-white">Edit Your Review</h3>
+
+            <form onSubmit={handleEditSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-black text-slate-350 mb-2">Overall rating</label>
+                <StarRating value={editRating} interactive onChange={setEditRating} size="lg" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-black text-slate-350 mb-2">Write a review</label>
+                <textarea
+                  value={editComment}
+                  onChange={(e) => setEditComment(e.target.value)}
+                  rows={4}
+                  maxLength={2000}
+                  placeholder="What should other customers know?"
+                  className="w-full rounded-xl border border-[#26322B] bg-[#0C1310] text-white px-4 py-3 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 resize-y placeholder:text-slate-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-black text-slate-350 mb-2">Share a video or photo</label>
+                <label className="h-20 border border-dashed border-[#26322B] rounded-xl bg-[#0C1310] hover:bg-[#18231e] transition-colors flex flex-col items-center justify-center cursor-pointer text-slate-450">
+                  <Camera className="w-5 h-5 mb-1" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Upload media</span>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.files || []).slice(0, 6);
+                      setEditFiles(selected);
+                    }}
+                  />
+                </label>
+
+                {/* Edit New files preview grid */}
+                {editFilePreviews.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Selected new files to upload</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {editFilePreviews.map((preview, index) => (
+                        <div key={`${preview.name}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-[#26322B] bg-[#0C1310] group">
+                          {preview.type === 'video' ? (
+                            <video src={`${preview.url}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                          ) : (
+                            <img src={preview.url} alt="" className="w-full h-full object-cover" />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setEditFiles(prev => prev.filter((_, i) => i !== index))}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-slate-900 transition-colors z-10"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Edit Existing files preview grid */}
+                {editExistingMedia.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Uploaded media</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {editExistingMedia.map((media, index) => {
+                        const mediaUrl = typeof media === 'string' ? media : media.url;
+                        const mediaType = (typeof media === 'string' ? '' : media.type) || '';
+                        const isVideo = mediaType.startsWith('video') || /\.(mp4|webm|mov)$/i.test(mediaUrl || '');
+                        const fullUrl = formatImageUrl(mediaUrl);
+
+                        return (
+                          <div key={`${mediaUrl}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-[#26322B] bg-[#0C1310] group">
+                            {isVideo ? (
+                              <video src={`${fullUrl}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                            ) : (
+                              <img src={fullUrl} alt="" className="w-full h-full object-cover" />
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setEditExistingMedia(prev => prev.filter((_, i) => i !== index))}
+                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-slate-900 transition-colors z-10"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-black text-slate-350 mb-2">Title your review <span className="font-semibold text-slate-500">(required)</span></label>
+                <input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  maxLength={140}
+                  placeholder="What's most important to know?"
+                  className="w-full h-11 rounded-xl border border-[#26322B] bg-[#0C1310] text-white px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-slate-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-black text-slate-350 mb-2">What is your public name? <span className="font-semibold text-slate-500">(required)</span></label>
+                <input
+                  value={editPublicName}
+                  onChange={(e) => setEditPublicName(e.target.value)}
+                  maxLength={120}
+                  className="w-full h-11 rounded-xl border border-[#26322B] bg-[#0C1310] text-white px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button type="button" variant="outline" onClick={() => setEditingReview(null)} className="rounded-full font-bold uppercase tracking-wider text-[10px] h-9 px-5 border-[#26322B] bg-[#0C1310] text-slate-350 hover:border-[#25D958] hover:text-[#25D958] transition-all">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={submittingEdit} className="rounded-full bg-[#25D958] hover:bg-[#20bd4c] text-[#0C1310] font-black px-8 h-9 text-xs uppercase tracking-wider shadow-sm hover:shadow-emerald-glow transition-all">
+                  {submittingEdit ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {selectedMedia && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
           <div className="relative grid max-h-[88vh] w-full max-w-6xl grid-cols-1 overflow-hidden rounded-2xl bg-white shadow-2xl md:grid-cols-[minmax(0,1fr)_360px]">

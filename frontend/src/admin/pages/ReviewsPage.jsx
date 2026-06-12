@@ -433,8 +433,11 @@ const ReviewsPage = () => {
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
                       <span className="text-xs font-semibold text-slate-600">{review.public_name || review.customer_name}</span>
                       {review.customer_email && <span className="text-[11px] text-slate-400 font-mono">{review.customer_email}</span>}
-                      <span className="text-[10px] font-bold text-slate-400">
-                        {new Date(review.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 flex-wrap">
+                        <span>Posted: {new Date(review.created_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        {review.updated_at && new Date(review.updated_at).getTime() - new Date(review.created_at).getTime() > 1000 && (
+                          <span className="text-emerald-500 font-bold">| Edited: {new Date(review.updated_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        )}
                       </span>
                     </div>
                     {review.comment && <p className="text-sm text-slate-700 leading-relaxed mt-3">{review.comment}</p>}
@@ -496,12 +499,17 @@ const ReviewsPage = () => {
                 {review.admin_reply && !isReplying && (
                   <div className="mt-4 bg-[#0d2818] border border-emerald-800/50 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Official Reply</span>
                         <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase tracking-wider bg-emerald-900/50 border border-emerald-700/50 text-emerald-300 px-2 py-0.5 rounded-full select-none">
                           <ShieldCheck className="w-2.5 h-2.5" />
                           Verified
                         </span>
+                        {review.admin_reply_at && (
+                          <span className="text-[10px] font-bold text-slate-400">
+                            - {new Date(review.admin_reply_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-1">
                         <button

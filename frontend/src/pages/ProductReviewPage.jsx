@@ -124,42 +124,43 @@ const ProductReviewPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-surface py-12 px-6">
-      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto bg-white border border-border-subtle rounded-xl p-6 md:p-8 shadow-sm space-y-7">
-        <div className="flex items-center gap-4 border-b border-border-subtle pb-6">
+    <div className="min-h-screen bg-[#0C1310] py-12 px-6">
+      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto bg-[#131B17] border border-[#26322B] rounded-[2rem] p-6 md:p-8 shadow-xl space-y-7 text-white">
+        <div className="flex items-center gap-4 border-b border-[#26322B] pb-6">
           <img
             src={formatImageUrl(product?.image_url)}
+            onError={(e) => { e.target.src = '/logo-durga.webp'; }}
             alt={product?.name}
-            className="w-20 h-20 rounded-xl object-cover border border-slate-200 bg-slate-50"
+            className="w-20 h-20 rounded-xl object-cover border border-[#26322B] bg-[#0C1310]"
           />
           <div>
-            <h1 className="text-2xl md:text-3xl font-black text-ink-slate tracking-tight">How was the item?</h1>
-            <p className="text-base font-bold text-slate-700 mt-1">{product?.name}</p>
+            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">How was the item?</h1>
+            <p className="text-base font-bold text-slate-350 mt-1">{product?.name}</p>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-black text-slate-900 mb-3">Overall rating</label>
+          <label className="block text-sm font-black text-slate-300 mb-3">Overall rating</label>
           <StarRating value={rating} interactive onChange={setRating} size="lg" />
         </div>
 
         {eligibility?.settings?.comments_enabled !== false && (
           <div>
-            <label className="block text-sm font-black text-slate-900 mb-2">Write a review</label>
+            <label className="block text-sm font-black text-slate-300 mb-2">Write a review</label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={5}
               maxLength={2000}
               placeholder="What should other customers know?"
-              className="w-full rounded-lg border border-border-subtle px-4 py-3 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 resize-y"
+              className="w-full rounded-xl border border-[#26322B] bg-[#0C1310] text-white px-4 py-3 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 resize-y placeholder:text-slate-500"
             />
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-black text-slate-900 mb-2">Share a video or photo</label>
-          <label className="h-24 border border-dashed border-slate-300 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors flex flex-col items-center justify-center cursor-pointer text-slate-500">
+          <label className="block text-sm font-black text-slate-300 mb-2">Share a video or photo</label>
+          <label className="h-24 border border-dashed border-[#26322B] rounded-xl bg-[#0C1310] hover:bg-[#18231e] transition-colors flex flex-col items-center justify-center cursor-pointer text-slate-450">
             <Camera className="w-6 h-6 mb-1" />
             <span className="text-xs font-bold uppercase tracking-wider">Upload media</span>
             <input type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleFiles} />
@@ -171,7 +172,7 @@ const ProductReviewPage = () => {
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Selected new files to upload</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 animate-in fade-in duration-200">
                 {filePreviews.map((preview, index) => (
-                  <div key={`${preview.name}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group">
+                  <div key={`${preview.name}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-[#26322B] bg-[#0C1310] group">
                     {preview.type === 'video' ? (
                       <>
                         <video src={`${preview.url}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
@@ -241,12 +242,12 @@ const ProductReviewPage = () => {
                   });
 
                   return (
-                    <div key={`${mediaUrl}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group">
+                    <div key={`${mediaUrl}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-[#26322B] bg-[#0C1310] group">
                       {isVideo ? (
                         <>
                           <video src={`${fullUrl}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
                           <button
-                            type="button"
+                            type="button; "
                             onClick={() => {
                               setSelectedModalMedia({
                                 urls: mappedExisting,
@@ -293,31 +294,31 @@ const ProductReviewPage = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-black text-slate-900 mb-2">Title your review <span className="font-semibold text-slate-500">(required)</span></label>
+          <label className="block text-sm font-black text-slate-300 mb-2">Title your review <span className="font-semibold text-slate-500">(required)</span></label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={140}
             placeholder="What's most important to know?"
-            className="w-full h-12 rounded-lg border border-border-subtle px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+            className="w-full h-12 rounded-xl border border-[#26322B] bg-[#0C1310] text-white px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-slate-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-black text-slate-900 mb-2">What is your public name? <span className="font-semibold text-slate-500">(required)</span></label>
+          <label className="block text-sm font-black text-slate-300 mb-2">What is your public name? <span className="font-semibold text-slate-500">(required)</span></label>
           <input
             value={publicName}
             onChange={(e) => setPublicName(e.target.value)}
             maxLength={120}
-            className="w-full h-12 rounded-lg border border-border-subtle px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+            className="w-full h-12 rounded-xl border border-[#26322B] bg-[#0C1310] text-white px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
           />
         </div>
 
         <div className="flex justify-end gap-3 pt-3">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)} className="rounded-lg">
+          <Button type="button" variant="outline" onClick={() => navigate(-1)} className="rounded-full font-bold uppercase tracking-wider text-[10px] h-10 px-5 border-[#26322B] bg-[#0C1310] text-slate-350 hover:border-[#25D958] hover:text-[#25D958] transition-all">
             Cancel
           </Button>
-          <Button type="submit" disabled={submitting} className="rounded-lg bg-primary hover:bg-emerald-hover text-white font-black px-8 shadow-sm hover:shadow-emerald-glow transition-all">
+          <Button type="submit" disabled={submitting} className="rounded-full bg-[#25D958] hover:bg-[#20bd4c] text-[#0C1310] font-black px-8 h-10 text-xs uppercase tracking-wider shadow-sm hover:shadow-emerald-glow transition-all">
             {submitting ? 'Submitting...' : 'Submit'}
           </Button>
         </div>
@@ -325,17 +326,17 @@ const ProductReviewPage = () => {
 
       {selectedModalMedia && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-[2rem] bg-[#131B17] border border-[#26322B] shadow-2xl flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-200 text-white">
             <button
               type="button"
               onClick={() => setSelectedModalMedia(null)}
-              className="absolute right-4 top-4 z-20 rounded-full bg-white/90 p-2 text-slate-700 shadow-sm hover:bg-white transition-all hover:scale-105"
+              className="absolute right-4 top-4 z-20 rounded-full bg-[#0C1310]/95 p-2 text-white border border-[#26322B] shadow-sm hover:bg-[#19231F] transition-all hover:scale-105"
             >
               <X className="h-5 w-5" />
             </button>
             
             {/* Media box */}
-            <div className="relative flex-1 min-h-[320px] md:min-h-[480px] bg-slate-950 flex items-center justify-center">
+            <div className="relative flex-1 min-h-[320px] md:min-h-[480px] bg-black flex items-center justify-center">
               {selectedModalMedia.urls.length > 1 && (
                 <button
                   type="button"
@@ -345,7 +346,7 @@ const ProductReviewPage = () => {
                       currentIndex: (prev.currentIndex - 1 + prev.urls.length) % prev.urls.length
                     }));
                   }}
-                  className="absolute left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-sm hover:bg-white hover:scale-105 transition-all"
+                  className="absolute left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-[#0C1310]/90 text-white border border-[#26322B] shadow-sm hover:bg-[#19231F] hover:scale-105 transition-all"
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </button>
@@ -385,7 +386,7 @@ const ProductReviewPage = () => {
                       currentIndex: (prev.currentIndex + 1) % prev.urls.length
                     }));
                   }}
-                  className="absolute right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-sm hover:bg-white hover:scale-105 transition-all"
+                  className="absolute right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-[#0C1310]/90 text-white border border-[#26322B] shadow-sm hover:bg-[#19231F] hover:scale-105 transition-all"
                 >
                   <ChevronRight className="h-6 w-6" />
                 </button>
@@ -393,10 +394,10 @@ const ProductReviewPage = () => {
             </div>
 
             {/* Sidebar or metadata */}
-            <div className="w-full md:w-[300px] p-6 flex flex-col justify-between bg-slate-50 border-t md:border-t-0 md:border-l border-slate-200">
+            <div className="w-full md:w-[300px] p-6 flex flex-col justify-between bg-[#0C1310] border-t md:border-t-0 md:border-l border-[#26322B]">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Attachment Preview</span>
-                <h3 className="mt-3 text-base font-extrabold text-slate-900 leading-tight">
+                <h3 className="mt-3 text-base font-extrabold text-white leading-tight">
                   {selectedModalMedia.title || 'Review Attachment'}
                 </h3>
               </div>
@@ -413,7 +414,7 @@ const ProductReviewPage = () => {
                           key={idx}
                           type="button"
                           onClick={() => setSelectedModalMedia(prev => ({ ...prev, currentIndex: idx }))}
-                          className={`h-12 w-12 overflow-hidden rounded-lg border bg-white transition-all ${selectedModalMedia.currentIndex === idx ? 'border-primary ring-2 ring-primary/25 scale-105 shadow-sm' : 'border-slate-200 hover:border-slate-400'}`}
+                          className={`h-12 w-12 overflow-hidden rounded-lg border bg-[#131B17] transition-all ${selectedModalMedia.currentIndex === idx ? 'border-primary ring-2 ring-primary/25 scale-105 shadow-sm' : 'border-[#26322B] hover:border-primary'}`}
                         >
                           {item.type === 'video' ? (
                             <div className="relative h-full w-full">
