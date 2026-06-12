@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Ticket, Plus, Search, Edit2, Trash2, Settings, 
   Check, X, TrendingUp, Coins, DollarSign, Calendar, Info, Loader2, Megaphone, Sparkles, Copy, Star, UserCheck, Filter, Download
@@ -2357,7 +2358,7 @@ const CouponsPage = () => {
       )}
 
       {/* Modal - Create/Edit */}
-      {isModalOpen && (
+      {isModalOpen && createPortal((
         <div className="fixed inset-0 z-[99999] overflow-y-auto flex items-start justify-center bg-[#f7faf8] dark:bg-[#0C1310] p-4 sm:p-6 lg:p-8 transition-all duration-300">
           <div className="admin-shell bg-white rounded-3xl border border-border-subtle shadow-2xl w-full max-w-5xl max-h-[calc(100vh-4rem)] overflow-hidden font-inter flex flex-col">
             <div className="p-6 border-b border-border-subtle flex items-center justify-between shrink-0">
@@ -2775,7 +2776,7 @@ const CouponsPage = () => {
             </form>
           </div>
         </div>
-      )}
+      ), document.body)}
     </div>
   );
 };
