@@ -7,10 +7,11 @@ import settingsService from '../services/settings.service';
 const POPUP_VISIBLE_MS = 8000;
 const POPUP_SESSION_PREFIX = 'ds_popup_banner_shown';
 
-const getBannerPlacement = (path) => {
-  if (path === '/checkout') return 'checkout';
-  if (path === '/shop') return 'shop';
-  if (path === '/') return 'landing';
+const getBannerPlacement = (path = '') => {
+  const cleanPath = path.split('?')[0].replace(/\/+$/, '') || '/';
+  if (cleanPath === '/checkout') return 'checkout';
+  if (cleanPath === '/shop') return 'shop';
+  if (cleanPath === '/') return 'landing';
   return null;
 };
 
