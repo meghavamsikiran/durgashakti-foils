@@ -225,27 +225,28 @@ const PopupBanner = () => {
       setShow(false);
     }
 
-    // Rule 1: Shop page -> show once per session.
-    if (placement === 'shop' && !loginShownRef.current && !alreadyShownThisSession) {
+    // Rule 1: Shop page -> show with a slight delay once per page load.
+    if (placement === 'shop' && !loginShownRef.current) {
       loginShownRef.current = 'shown';
       timerTriggerTypeRef.current = 'login';
-      setShow(true);
-      markShownThisSession(sessionKey);
-      hideTimerRef.current = setTimeout(() => {
-        setShow(false);
-      }, POPUP_VISIBLE_MS);
+      timerRef.current = setTimeout(() => {
+        setShow(true);
+        hideTimerRef.current = setTimeout(() => {
+          setShow(false);
+        }, POPUP_VISIBLE_MS);
+      }, 1500);
     }
 
-    // Rule 2: Logged-out landing page -> show once per session, but never immediately after logout.
-    else if (placement === 'landing' && !loggedOutRef.current && !guestHomeShownRef.current && !alreadyShownThisSession) {
+    // Rule 2: Logged-out landing page -> show with a slight delay once per page load.
+    else if (placement === 'landing' && !loggedOutRef.current && !guestHomeShownRef.current) {
       guestHomeShownRef.current = true;
-      setShow(true);
-      markShownThisSession(sessionKey);
       timerTriggerTypeRef.current = 'guest';
-      
-      hideTimerRef.current = setTimeout(() => {
-        setShow(false);
-      }, POPUP_VISIBLE_MS);
+      timerRef.current = setTimeout(() => {
+        setShow(true);
+        hideTimerRef.current = setTimeout(() => {
+          setShow(false);
+        }, POPUP_VISIBLE_MS);
+      }, 1500);
     }
 
     // Rule 3: Checkout page -> show once per visit; refresh is allowed to show it again.
@@ -263,8 +264,8 @@ const PopupBanner = () => {
     }
 
     return () => {
-      // Do not clear the shop timer on same-page effect cleanup.
-      if (timerRef.current && timerTriggerTypeRef.current !== 'login') {
+      // Do not clear active login/guest/shop timers during same-page effect updates
+      if (timerRef.current && timerTriggerTypeRef.current !== 'login' && timerTriggerTypeRef.current !== 'guest') {
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
