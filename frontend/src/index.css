@@ -1133,6 +1133,60 @@ input[type="checkbox"] {
   border-color: #bbcbb5 !important;
 }
 
+/* Light theme search dropdown overrides */
+.light-theme nav.sticky.top-0 div.absolute.bg-\[\#0a0f0c\],
+.light-theme nav.sticky.top-0 form div.absolute.bg-\[\#0a0f0c\],
+.light-theme nav.sticky.top-0 div.absolute[style*="max-height"] {
+  background-color: #ffffff !important;
+  border-color: #bbcbb5 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+.light-theme nav.sticky.top-0 div.absolute.bg-\[\#0a0f0c\] p.text-white,
+.light-theme nav.sticky.top-0 div.absolute.bg-\[\#0a0f0c\] p.text-white\/50,
+.light-theme nav.sticky.top-0 div.absolute.bg-\[\#0a0f0c\] span.text-white\/30,
+.light-theme nav.sticky.top-0 div.absolute[style*="max-height"] p.text-white,
+.light-theme nav.sticky.top-0 div.absolute[style*="max-height"] p.text-white\/50,
+.light-theme nav.sticky.top-0 div.absolute[style*="max-height"] span.text-white\/30 {
+  color: #181c1b !important;
+}
+
+.light-theme nav.sticky.top-0 div.absolute.bg-\[\#0a0f0c\] p.text-white\/50,
+.light-theme nav.sticky.top-0 div.absolute[style*="max-height"] p.text-white\/50 {
+  color: #64748b !important;
+}
+
+.light-theme nav.sticky.top-0 div.absolute.bg-\[\#0a0f0c\] span.text-white\/30,
+.light-theme nav.sticky.top-0 div.absolute[style*="max-height"] span.text-white\/30 {
+  color: #94a3b8 !important;
+}
+
+.light-theme nav.sticky.top-0 div.absolute.bg-\[\#0a0f0c\] button,
+.light-theme nav.sticky.top-0 div.absolute[style*="max-height"] button {
+  border-bottom-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.light-theme nav.sticky.top-0 div.absolute.bg-\[\#0a0f0c\] button:hover,
+.light-theme nav.sticky.top-0 div.absolute[style*="max-height"] button:hover {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+.light-theme nav.sticky.top-0 div.absolute.bg-\[\#0a0f0c\] button.bg-\[\#25d958\]\/10,
+.light-theme nav.sticky.top-0 div.absolute[style*="max-height"] button.bg-\[\#25d958\]\/10 {
+  background-color: rgba(37, 217, 88, 0.12) !important;
+}
+
+.light-theme nav.sticky.top-0 div.absolute.bg-\[\#0a0f0c\] button.text-\[\#25d958\],
+.light-theme nav.sticky.top-0 div.absolute[style*="max-height"] button.text-\[\#25d958\] {
+  color: #006e1b !important;
+}
+
+.light-theme nav.sticky.top-0 div.absolute.bg-\[\#0a0f0c\] button.border-t.border-white\/10,
+.light-theme nav.sticky.top-0 div.absolute[style*="max-height"] button.border-t.border-white\/10 {
+  border-top-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+
 /* Home Page Light Mode Contrast Overrides */
 .light-theme .bg-\[\#0a0f0d\] {
   background-color: #0a0f0d !important;
