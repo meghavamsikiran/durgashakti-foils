@@ -194,7 +194,7 @@ const Home = () => {
       `}</style>
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-[#0a0f0d] border-b border-white/5">
+      <div className="hero-section-dark relative overflow-hidden bg-[#0a0f0d] border-b border-white/5">
 
         {/* Hero Content */}
         <div className="relative z-10 max-w-full px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-32 pt-16 md:pt-24 pb-20 grid md:grid-cols-[1.2fr_0.8fr] gap-8 items-center">
@@ -240,13 +240,13 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-center">
+          <div className="relative w-full h-full min-h-[300px] md:min-h-[400px] lg:min-h-[450px] flex items-end justify-end">
             <img
               src="/hero-products.webp"
               alt="Durga Shakti Foils Premium Packing Solutions"
               loading="eager"
               fetchpriority="high"
-              className="w-full max-w-md md:max-w-none h-auto object-contain mx-auto"
+              className="w-full h-full object-contain object-right-bottom block"
             />
           </div>
         </div>
