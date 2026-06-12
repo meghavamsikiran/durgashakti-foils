@@ -196,13 +196,13 @@ const Home = () => {
       {/* Hero Section */}
       <div className="hero-section-dark relative overflow-hidden bg-[#0a0f0d] border-b border-white/5">
         {/* Absolute background image - covers the full area for md+ screens */}
-        <div className="absolute inset-0 z-0 hidden md:block">
+        <div className="absolute inset-0 z-0 hidden md:block overflow-hidden">
           <img
             src="/hero-products.webp"
             alt="Durga Shakti Foils Premium Packing Solutions"
             loading="eager"
             fetchpriority="high"
-            className="w-full h-full object-contain object-right"
+            className="w-full h-auto absolute top-0 right-0"
           />
         </div>
 
