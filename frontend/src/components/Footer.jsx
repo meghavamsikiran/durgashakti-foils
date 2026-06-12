@@ -69,10 +69,20 @@ const Footer = () => {
     };
   }, []);
 
+  const formatWhatsAppLink = (val) => {
+    if (!val) return '';
+    const trimmed = val.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('wa.me/')) {
+      return trimmed.startsWith('wa.me/') ? `https://${trimmed}` : trimmed;
+    }
+    const clean = trimmed.replace(/[^\d]/g, '');
+    return `https://wa.me/${clean}`;
+  };
+
   const socialLinks = [
     { href: profile.instagramLink, label: 'Instagram', Icon: Instagram },
     { href: profile.facebookLink, label: 'Facebook', Icon: Facebook },
-    { href: profile.whatsappLink || profile.youtubeLink, label: 'WhatsApp', Icon: WhatsAppIcon }
+    { href: formatWhatsAppLink(profile.whatsappLink || profile.youtubeLink), label: 'WhatsApp', Icon: WhatsAppIcon }
   ].filter((item) => item.href);
 
   const qualityItems = ['ISO Certified', 'BPA Free', 'Food Grade Certified'];

@@ -227,13 +227,13 @@ const BusinessProfilePage = () => {
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">WhatsApp Link</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">WhatsApp Number</label>
                 <div className="relative group">
                   <input 
                     className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all pl-10 font-semibold text-slate-800 bg-white"
                     value={whatsappLink} 
                     onChange={e => setWhatsappLink(e.target.value)} 
-                    placeholder="https://wa.me/..." 
+                    placeholder="e.g., +91 83675 42954" 
                   />
                   <WhatsApp className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                 </div>
