@@ -77,7 +77,7 @@ class ErrorBoundary extends React.Component {
               </button>
               <button
                 onClick={this.handleGoHome}
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#26322B] px-6 py-3 text-sm font-black text-slate-700 dark:text-slate-350 shadow-sm hover:bg-slate-50 dark:hover:bg-[#19231F] transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#19231F] px-6 py-3 text-sm font-black text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-[#26322B] transition-colors"
               >
                 <Home className="w-4 h-4" />
                 Go Home

@@ -486,7 +486,7 @@ const ProductReviews = ({ productId, summary }) => {
             </div>
 
             {/* Reviews list container */}
-            {initialLoading ? (
+            {loading ? (
               <div className="space-y-4 animate-pulse">
                 {[1, 2].map((i) => (
                   <div key={i} className="border border-slate-100 dark:border-[#26322B] rounded-2xl p-6 bg-white dark:bg-[#131B17] space-y-4">
