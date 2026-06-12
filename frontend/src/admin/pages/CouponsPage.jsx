@@ -1667,6 +1667,7 @@ const CouponsPage = () => {
                             { key: 'custom', label: 'Custom Range' }
                           ].map(p => (
                             <button
+                              type="button"
                               key={p.key}
                               onClick={() => {
                                 setDatePreset(p.key);
@@ -1695,6 +1696,7 @@ const CouponsPage = () => {
                               <input type="date" value={customDateRange.end} onChange={e => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))} className="w-full mt-1 p-2 rounded-lg border border-slate-200 text-sm" />
                             </div>
                             <button
+                              type="button"
                               onClick={() => {
                                 if (customDateRange.start && customDateRange.end && new Date(customDateRange.start) <= new Date(customDateRange.end)) {
                                   setDateFilter({ start_date: toISODateStart(new Date(customDateRange.start)), end_date: toISODateEnd(new Date(customDateRange.end)), label: 'custom' });
@@ -1707,6 +1709,7 @@ const CouponsPage = () => {
 
                         {dateFilter && (
                           <button
+                            type="button"
                             onClick={() => { setDateFilter(null); setDatePreset(''); setCustomDateRange({ start: '', end: '' }); }}
                             className="mt-2 text-xs font-bold text-red-500 hover:underline"
                           >Clear Date Filter</button>
@@ -1714,7 +1717,7 @@ const CouponsPage = () => {
                       </div>
 
                       <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
-                        <button onClick={() => setIsFilterOpen(false)} className="px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold">Done</button>
+                        <button type="button" onClick={() => setIsFilterOpen(false)} className="px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold">Done</button>
                       </div>
                     </div>
                   )}

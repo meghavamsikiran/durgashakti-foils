@@ -275,6 +275,7 @@ const InquiriesPage = () => {
         </div>
         <div className="relative" ref={filterRef}>
           <button
+            type="button"
             onClick={handleToggleFilter}
             className={`h-11 inline-flex items-center justify-center gap-2 shadow-sm transition-all admin-filter-btn ${
               filterOpen || (statusFilter !== 'all' || dateFilter)

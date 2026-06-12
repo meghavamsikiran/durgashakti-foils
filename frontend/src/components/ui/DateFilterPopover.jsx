@@ -173,6 +173,7 @@ const DateFilterPopover = ({ onChange, initial, customTrigger, inlineOpen = fals
       {!inlineOpen && (
         customTrigger ? customTrigger(() => setOpen(true)) : (
           <button
+            type="button"
             onClick={(e) => { e.stopPropagation(); if (open) { closePopover(); } else { setOpen(true); } }}
             className="relative inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:bg-slate-50"
           >
@@ -194,12 +195,13 @@ const DateFilterPopover = ({ onChange, initial, customTrigger, inlineOpen = fals
             </div>
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={clear}
                 className="px-2.5 py-1 rounded-full border border-slate-200 text-slate-500 text-[9px] font-black uppercase tracking-widest hover:bg-slate-50"
               >
                 Clear
               </button>
-              {!inlineOpen && <button onClick={closePopover} className="text-slate-400 hover:text-slate-700"><X className="w-4 h-4" /></button>}
+              {!inlineOpen && <button type="button" onClick={closePopover} className="text-slate-400 hover:text-slate-700"><X className="w-4 h-4" /></button>}
             </div>
           </div>
 

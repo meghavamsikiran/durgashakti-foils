@@ -786,6 +786,7 @@ const OrdersPage = () => {
 
           <div className="relative">
             <button
+              type="button"
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-xs font-semibold transition-all shadow-sm h-[40px] admin-filter-btn ${
                 showFilters || courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter || filter !== 'ALL'
@@ -808,6 +809,7 @@ const OrdersPage = () => {
                     <span className="text-xs font-black uppercase tracking-widest text-slate-500">Filter Options</span>
                     {(courierFilter || dateFilter || paymentStatusFilter || paymentMethodFilter || filter !== 'ALL') && (
                       <button
+                        type="button"
                         onClick={() => {
                           setCourierFilter('');
                           setPaymentStatusFilter('');
