@@ -190,7 +190,7 @@ const PrivacyPolicy = () => {
                   No security measures are perfect or impenetrable, and we cannot guarantee “perfect security.” Any information you send to us may not be secure while in transit. We recommend that you do not use insecure channels to communicate sensitive or confidential information to us.
                 </p>
                 <p>
-                  For requests regarding data privacy or questions about how your information is retained, please reach out to our team at <a href="mailto:info@durgashaktifoils.com" className="text-[#25D958] hover:underline font-semibold">info@durgashaktifoils.com</a>.
+                  For requests regarding data privacy or questions about how your information is retained, please reach out to our team at <a href="mailto:durgashaktifoils@gmail.com" className="text-[#25D958] hover:underline font-semibold">durgashaktifoils@gmail.com</a>.
                 </p>
               </div>
             </div>

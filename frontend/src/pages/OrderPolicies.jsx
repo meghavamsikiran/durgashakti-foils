@@ -179,7 +179,7 @@ const OrderPolicies = () => {
             <p className="text-xs text-slate-450 font-medium">Our support staff is ready to help resolve returns or verify delivery details.</p>
           </div>
           <a
-            href="mailto:info@lskbfoils.com"
+            href="mailto:durgashaktifoils@gmail.com"
             className="px-6 py-3 rounded-lg bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-bold tracking-wider uppercase text-xs transition-colors shrink-0"
           >
             Email Support
