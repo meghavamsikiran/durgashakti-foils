@@ -38,41 +38,65 @@ def reverse_geocode(
 ):
     geocoded = None
 
-    # ── Layer 1: Query BigDataCloud (Free, No Key, High Urban Precision) ────────
-    try:
-        url = f"https://api.bigdatacloud.net/data/reverse-geocode-client?latitude={lat}&longitude={lon}&localityLanguage=en"
-        res = requests.get(url, timeout=10)
-        if res.status_code == 200:
-            data = res.json()
-            raw_pincode = (data.get("postcode") or "").replace(" ", "")[:6]
-            city = data.get("city") or data.get("locality") or ""
-            state = data.get("principalSubdivision") or ""
-            locality = data.get("locality") or ""
-            
-            sublocality = ""
-            route = ""
-            loc_info = data.get("localityInfo", {})
-            for admin in loc_info.get("administrative", []):
-                if admin.get("order") == 3:
-                    sublocality = admin.get("name") or ""
-            for info in loc_info.get("informational", []):
-                if info.get("order") == 0:
-                    route = info.get("name") or ""
-            
-            geocoded = {
-                "source": "BigDataCloud",
-                "pincode": raw_pincode,
-                "city": city,
-                "state": state,
-                "locality": locality,
-                "sublocality": sublocality,
-                "route": route,
-                "building": ""
-            }
-    except Exception:
-        pass
+    # ── Layer 1: Query Mappls Reverse Geocoding API (using MAPPLS_API_KEY from environment) ──
+    mappls_api_key = os.environ.get("MAPPLS_API_KEY") or "oewjoirgyxbhtfasqwnkahawwodaowwicufh"
+    if mappls_api_key:
+        try:
+            url = f"https://apis.mappls.com/advancedmaps/v1/{mappls_api_key}/rev_geocode?lat={lat}&lng={lon}"
+            res = requests.get(url, timeout=10)
+            if res.status_code == 200:
+                data = res.json()
+                if data and data.get("results"):
+                    r = data["results"][0]
+                    geocoded = {
+                        "source": "Mappls",
+                        "pincode": (r.get("pincode") or "").replace(" ", "")[:6],
+                        "city": r.get("city") or r.get("district") or r.get("subDistrict") or "",
+                        "state": r.get("state") or "",
+                        "locality": r.get("locality") or r.get("subLocality") or "",
+                        "sublocality": r.get("subLocality") or "",
+                        "route": r.get("street") or "",
+                        "building": ", ".join(filter(None, [r.get("houseNumber"), r.get("houseName")]))
+                    }
+        except Exception:
+            pass
 
-    # ── Layer 2: Nominatim Fallback if Layer 1 fails ───────────────────────────
+    # ── Layer 2: Query BigDataCloud Fallback ────────
+    if not geocoded or not geocoded.get("pincode"):
+        try:
+            url = f"https://api.bigdatacloud.net/data/reverse-geocode-client?latitude={lat}&longitude={lon}&localityLanguage=en"
+            res = requests.get(url, timeout=10)
+            if res.status_code == 200:
+                data = res.json()
+                raw_pincode = (data.get("postcode") or "").replace(" ", "")[:6]
+                city = data.get("city") or data.get("locality") or ""
+                state = data.get("principalSubdivision") or ""
+                locality = data.get("locality") or ""
+                
+                sublocality = ""
+                route = ""
+                loc_info = data.get("localityInfo", {})
+                for admin in loc_info.get("administrative", []):
+                    if admin.get("order") == 3:
+                        sublocality = admin.get("name") or ""
+                for info in loc_info.get("informational", []):
+                    if info.get("order") == 0:
+                        route = info.get("name") or ""
+                
+                geocoded = {
+                    "source": "BigDataCloud",
+                    "pincode": raw_pincode,
+                    "city": city,
+                    "state": state,
+                    "locality": locality,
+                    "sublocality": sublocality,
+                    "route": route,
+                    "building": ""
+                }
+        except Exception:
+            pass
+
+    # ── Layer 3: Nominatim Fallback if Layer 2 fails ───────────────────────────
     if not geocoded or not geocoded.get("pincode"):
         try:
             url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=18&addressdetails=1"

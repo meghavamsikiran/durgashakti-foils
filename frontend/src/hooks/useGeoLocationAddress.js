@@ -38,32 +38,22 @@ export const useGeoLocationAddress = () => {
           try {
             const { latitude, longitude } = position.coords;
             
-            // Layer 1: Mappls Reverse Geocoding API
+            // Query our Backend proxy to handle Geocoding cleanly, preventing CORS issues
             let geocoded = null;
             try {
-              const mapplsApiKey = process.env.REACT_APP_MAPPLS_API_KEY || "oewjoirgyxbhtfasqwnkahawwodaowwicufh";
-              const mapplsUrl = `https://apis.mappls.com/advancedmaps/v1/${mapplsApiKey}/rev_geocode?lat=${latitude}&lng=${longitude}`;
-              
-              const res = await fetch(mapplsUrl);
-              if (res.ok) {
-                const data = await res.json();
-                if (data && data.results && data.results.length > 0) {
-                  const r = data.results[0];
-                  
-                  // Mappls returns fields like pincode, city, state, formatted_address, street, houseNumber
-                  geocoded = {
-                    source: "Mappls",
-                    pincode: (r.pincode || "").replace(" ", "").slice(0, 6),
-                    city: r.city || r.district || r.subDistrict || "",
-                    state: r.state || "",
-                    locality: r.locality || r.subLocality || "",
-                    address_line1: [r.houseNumber, r.houseName].filter(Boolean).join(", "),
-                    address_line2: [r.street, r.locality, r.subLocality].filter(Boolean).join(", ")
-                  };
-                }
+              const res = await apiClient.get(`/api/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`);
+              if (res.data) {
+                geocoded = {
+                  source: res.data.source || "Backend Proxy",
+                  pincode: res.data.pincode,
+                  city: res.data.city,
+                  state: res.data.state,
+                  address_line1: res.data.address_line1,
+                  address_line2: res.data.address_line2
+                };
               }
             } catch (e) {
-              console.warn("Mappls geocoding failed:", e);
+              console.warn("Backend proxy geocoding failed:", e);
             }
 
             if (!geocoded) {
