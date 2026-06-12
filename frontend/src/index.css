@@ -1306,8 +1306,10 @@ input[type="checkbox"] {
   color: #ffffff !important;
 }
 
-.light-theme .admin-shell aside .text-\[\#25D958\]\/80,
-.light-theme .admin-shell header.bg-\[\#050807\] .text-\[\#25D958\]\/80 {
+.light-theme .admin-shell aside .italic.font-inter,
+.light-theme .admin-shell header.bg-\[\#050807\] .italic.font-inter,
+.light-theme .admin-shell aside .text-\[\#25d958\]\/80,
+.light-theme .admin-shell header.bg-\[\#050807\] .text-\[\#25d958\]\/80 {
   color: rgba(37, 217, 88, 0.8) !important;
 }
 
