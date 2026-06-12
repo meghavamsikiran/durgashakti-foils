@@ -1628,12 +1628,13 @@ button[role="radio"] {
 }
 
 /* ── LIGHT THEME HERO CONTAINER RESTORATION ──────────────────────── */
-.light-theme .hero-section-dark {
-  background-color: #0a0f0d !important;
+.light-theme .hero-section-dark,
+.light-theme .hero-section-dark * {
+  --tw-text-opacity: 1 !important;
 }
 
 .light-theme .hero-section-dark h1,
-.light-theme .hero-section-dark h1 span {
+.light-theme .hero-section-dark h1 span:not(.text-brand-yellow):not(.text-brand-green) {
   color: #ffffff !important;
 }
 
@@ -1645,7 +1646,7 @@ button[role="radio"] {
   color: oklch(0.78 0.22 145) !important;
 }
 
-.light-theme .hero-section-dark p.text-slate-300 {
+.light-theme .hero-section-dark p {
   color: #cbd5e1 !important;
 }
 
