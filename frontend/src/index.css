@@ -1728,23 +1728,90 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: #0f172a !important;
 }
 
-/* Search bar focus outline corner fixes */
-.admin-shell input[type="text"]:focus,
-.admin-shell input[type="search"]:focus,
-input[type="text"]:focus {
-  outline: none !important;
-  box-shadow: 0 0 0 2px #25d958 !important;
-  border-radius: 0.75rem !important;
+/* Global input/textarea readability, border & background overrides in light-theme */
+.light-theme .admin-shell input,
+.light-theme .admin-shell textarea,
+.light-theme .admin-shell select,
+.light-theme .admin-shell input[type="text"],
+.light-theme .admin-shell select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #bbcbb5 !important;
 }
 
-.light-theme .admin-shell input[type="text"]:focus {
-  box-shadow: 0 0 0 2px #006e1b !important;
+.light-theme .admin-shell input::placeholder,
+.light-theme .admin-shell textarea::placeholder {
+  color: #64748b !important;
+}
+
+.light-theme .admin-shell input:focus,
+.light-theme .admin-shell textarea:focus,
+.light-theme .admin-shell select:focus {
+  border-color: #006e1b !important;
+  box-shadow: 0 0 0 2px rgba(0, 110, 27, 0.2) !important;
+}
+
+/* Eliminate sharp black corner backgrounds under rounded corners for inputs, textareas, and cards */
+.admin-shell input,
+.admin-shell textarea,
+.admin-shell select,
+.admin-shell .relative,
+.admin-shell button,
+.admin-shell .rounded-xl,
+.admin-shell .rounded-2xl,
+.admin-shell .rounded-3xl {
+  background-clip: padding-box !important;
+}
+
+/* Select dropdown options style matching and text colors for light/dark themes */
+.light-theme select option {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+}
+
+.dark select option {
+  color: #ffffff !important;
+  background-color: #131B17 !important;
+}
+
+/* Select dropdown color styling for Payment filters / GSTR filters */
+.admin-shell select {
+  color: inherit !important;
+}
+
+.light-theme .admin-shell select {
+  color: #0f172a !important;
+}
+
+/* Filter popover & filter buttons dark theme / light theme style alignment */
+.light-theme .admin-filter-btn {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #bbcbb5 !important;
+}
+
+.light-theme .admin-filter-btn:hover {
+  background-color: #f1f4f2 !important;
+  border-color: #006e1b !important;
+  color: #006e1b !important;
+}
+
+.light-theme .admin-shell .fixed.inset-0.bg-black\/40 + div,
+.light-theme .admin-shell div[role="dialog"],
+.light-theme .admin-shell .absolute.right-0.mt-2 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #bbcbb5 !important;
+}
+
+.light-theme .admin-shell .absolute.right-0.mt-2 * {
+  color: #0f172a !important;
 }
 
 /* Reviews and inquiries text visibility in light theme */
 .light-theme .admin-shell article,
 .light-theme .admin-shell .bg-white {
-  color: #1e293b !important;
+  color: #0f172a !important;
 }
 
 .light-theme .admin-shell article h2,
@@ -1752,8 +1819,9 @@ input[type="text"]:focus {
 .light-theme .admin-shell article span,
 .light-theme .admin-shell tr,
 .light-theme .admin-shell td {
-  color: #1e293b !important;
+  color: #0f172a !important;
 }
+
 
 
 
