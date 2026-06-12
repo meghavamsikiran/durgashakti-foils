@@ -104,6 +104,7 @@ h1, h2, h3, h4, h5, h6 {
         --text-muted: #64748B;
         --alert-red: #EF4444;
         --warning-orange: #F97316;
+        --loader-track-color: rgba(0, 110, 27, 0.08);
     }
 
     .dark {
@@ -130,6 +131,7 @@ h1, h2, h3, h4, h5, h6 {
         --surface-container: #19231F;
         --surface-container-high: #19231F;
         --surface-container-highest: #26322B;
+        --loader-track-color: rgba(255, 255, 255, 0.1);
     }
 
     .dark, .dark body {
@@ -1872,6 +1874,20 @@ html.light-theme body,
 .admin-shell .relative.group:hover {
   background-color: transparent !important;
 }
+
+/* Ensure text is white inside colored background elements in light theme */
+.light-theme .bg-primary,
+.light-theme .bg-primary *,
+.light-theme .bg-rose-600,
+.light-theme .bg-rose-600 *,
+.light-theme .bg-red-600,
+.light-theme .bg-red-600 *,
+.light-theme button.bg-primary,
+.light-theme button.bg-rose-600,
+.light-theme button.bg-red-600 {
+  color: #ffffff !important;
+}
+
 
 
 

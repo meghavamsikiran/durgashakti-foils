@@ -13,7 +13,7 @@ const PageLoader = () => {
       <div className="flex flex-col items-center justify-center gap-5">
         <div className="relative w-16 h-16 flex items-center justify-center">
           {/* Circular track */}
-          <div className="absolute inset-0 rounded-full border-[3.5px] border-slate-200/60" />
+          <div className="absolute inset-0 rounded-full border-[3.5px]" style={{ borderColor: 'var(--loader-track-color, rgba(0, 0, 0, 0.08))' }} />
           {/* Spinning indicator */}
           <div className="absolute inset-0 rounded-full border-[3.5px] border-transparent border-t-primary animate-spin" />
           {/* Branded orange logo in center */}
