@@ -41,7 +41,7 @@ export const useGeoLocationAddress = () => {
             // Query our Backend proxy to handle Geocoding cleanly, preventing CORS issues
             let geocoded = null;
             try {
-              const res = await apiClient.get(`/api/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`);
+              const res = await apiClient.get(`/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`);
               if (res.data) {
                 geocoded = {
                   source: res.data.source || "Backend Proxy",
