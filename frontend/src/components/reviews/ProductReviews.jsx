@@ -241,6 +241,17 @@ const ProductReviews = ({ productId, summary }) => {
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    try {
+      return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch {
+      return '';
+    }
+  };
+
   const average = ratingSummary.rating_average ?? summary?.rating_average ?? 0;
   const count = ratingSummary.review_count ?? summary?.review_count ?? 0;
   const distribution = ratingSummary.rating_distribution || {};
@@ -626,9 +637,9 @@ const ProductReviews = ({ productId, summary }) => {
                               )}
                             </div>
                             <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5 flex flex-wrap gap-x-2">
-                              <span>Reviewed on {new Date(review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                              <span>Reviewed on {formatDate(review.created_at)}</span>
                               {review.updated_at && new Date(review.updated_at).getTime() - new Date(review.created_at).getTime() > 1000 && (
-                                <span className="text-[#25D958]/85 font-bold">(Edited on {new Date(review.updated_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })})</span>
+                                <span className="text-[#25D958]/85 font-bold">(Edited on {formatDate(review.updated_at)})</span>
                               )}
                             </p>
                           </div>
@@ -746,7 +757,7 @@ const ProductReviews = ({ productId, summary }) => {
                               </span>
                               {review.admin_reply_at && (
                                 <span className="text-[8px] text-slate-400 dark:text-slate-500 font-semibold normal-case font-mono">
-                                  Replied on {new Date(review.admin_reply_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                  Replied on {formatDate(review.admin_reply_at)}
                                 </span>
                               )}
                             </div>
@@ -1046,7 +1057,7 @@ const ProductReviews = ({ productId, summary }) => {
                 <StarRating value={selectedMedia.review.rating} />
                 <h3 className="mt-3 text-base font-bold text-slate-900">{selectedMedia.review.title}</h3>
                 <p className="mt-1 text-[10px] text-slate-400 font-semibold">
-                  By {selectedMedia.review.public_name} on {new Date(selectedMedia.review.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  By {selectedMedia.review.public_name} on {formatDate(selectedMedia.review.created_at)}
                 </p>
                 {selectedMedia.review.comment && (
                   <p className="mt-4 text-xs font-semibold leading-relaxed text-slate-600 whitespace-pre-line">{selectedMedia.review.comment}</p>
