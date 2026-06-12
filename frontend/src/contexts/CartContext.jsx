@@ -14,6 +14,7 @@ export const useCart = () => {
 };
 
 const GUEST_CART_KEY = 'ds_guest_cart';
+const CACHED_USER_CART_KEY = 'ds_cached_user_cart';
 
 const getGuestCart = () => {
   try {
@@ -27,8 +28,31 @@ const saveGuestCart = (cart) => {
   localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart));
 };
 
+const getCachedUserCart = () => {
+  try {
+    return JSON.parse(localStorage.getItem(CACHED_USER_CART_KEY) || '{"items":[]}');
+  } catch {
+    return { items: [] };
+  }
+};
+
+const saveCachedUserCart = (cart) => {
+  localStorage.setItem(CACHED_USER_CART_KEY, JSON.stringify(cart));
+};
+
+const removeCachedUserCart = () => {
+  localStorage.removeItem(CACHED_USER_CART_KEY);
+};
+
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState({ items: [] });
+  const [cart, setCart] = useState(() => {
+    const hasToken = !!localStorage.getItem('token');
+    if (hasToken) {
+      return getCachedUserCart();
+    } else {
+      return getGuestCart();
+    }
+  });
   const [loading, setLoading] = useState(true);
   const [cartReady, setCartReady] = useState(false);
   const [pendingQty, setPendingQtyState] = useState({}); // productId -> qty preview before add
@@ -77,7 +101,9 @@ export const CartProvider = ({ children }) => {
     try {
       const response = await apiClient.get('/cart');
       if (activeRequestsCount.current === 0 || force) {
-        setCart(response.data || { items: [] });
+        const fetchedCart = response.data || { items: [] };
+        setCart(fetchedCart);
+        saveCachedUserCart(fetchedCart);
       }
     } catch (error) {
       console.error('Error fetching cart:', error);
@@ -107,6 +133,7 @@ export const CartProvider = ({ children }) => {
       syncGuestCart();
     } else if (!token) {
       setCart(getGuestCart());
+      removeCachedUserCart();
       setCartReady(true);
       setLoading(false);
     }
@@ -130,6 +157,8 @@ export const CartProvider = ({ children }) => {
       const newCart = { ...prev, items: newItems };
       if (!token) {
         saveGuestCart({ ...newCart, items: newItems.map(({ product, ...item }) => item) });
+      } else {
+        saveCachedUserCart(newCart);
       }
       return newCart;
     });
@@ -168,6 +197,8 @@ export const CartProvider = ({ children }) => {
       const newCart = { ...prev, items: newItems };
       if (!token) {
         saveGuestCart({ ...newCart, items: newItems.map(({ product, ...item }) => item) });
+      } else {
+        saveCachedUserCart(newCart);
       }
       return newCart;
     });
@@ -202,6 +233,8 @@ export const CartProvider = ({ children }) => {
       const newCart = { ...prev, items: newItems };
       if (!token) {
         saveGuestCart({ ...newCart, items: newItems.map(({ product, ...item }) => item) });
+      } else {
+        saveCachedUserCart(newCart);
       }
       return newCart;
     });
@@ -235,6 +268,8 @@ export const CartProvider = ({ children }) => {
     if (!token) {
       localStorage.removeItem(GUEST_CART_KEY);
       return;
+    } else {
+      removeCachedUserCart();
     }
 
     setLoading(true);
@@ -254,6 +289,8 @@ export const CartProvider = ({ children }) => {
     setPendingQtyState({});
     if (!token) {
       localStorage.removeItem(GUEST_CART_KEY);
+    } else {
+      removeCachedUserCart();
     }
   }, [token]);
 
