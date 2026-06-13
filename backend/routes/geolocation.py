@@ -59,7 +59,7 @@ def validate_with_india_post(pincode: str):
         return PINCODE_CACHE[pincode]
     try:
         url = f"https://api.postalpincode.in/pincode/{pincode}"
-        res = requests.get(url, timeout=1.0)
+        res = requests.get(url, timeout=3.0, verify=False)
         if res.status_code == 200:
             data = res.json()
             if data and data[0].get("Status") == "Success" and data[0].get("PostOffice"):
@@ -75,6 +75,18 @@ def validate_with_india_post(pincode: str):
     except Exception:
         pass
     return None
+
+def deduplicate_list(lst):
+    seen = set()
+    result = []
+    for item in lst:
+        if item and str(item).strip():
+            normalized = str(item).strip().lower()
+            if normalized not in seen:
+                seen.add(normalized)
+                result.append(str(item).strip())
+    return result
+
 
 def _parse_mappls_result(r):
     """Parse a single Mappls reverse geocode result into our standard format."""
@@ -160,11 +172,11 @@ def reverse_geocode(
     if not geocoded or not geocoded.get("pincode"):
         try:
             url = f"https://api.bigdatacloud.net/data/reverse-geocode-client?latitude={lat}&longitude={lon}&localityLanguage=en"
-            res = requests.get(url, timeout=10)
+            res = requests.get(url, timeout=10, verify=False)
             if res.status_code == 200:
                 data = res.json()
                 raw_pincode = (data.get("postcode") or "").replace(" ", "")[:6]
-                city = data.get("city") or data.get("locality") or ""
+                city = data.get("city") or data.get("locality") or data.get("principalSubdivision") or ""
                 state = data.get("principalSubdivision") or ""
                 locality = data.get("locality") or ""
                 
@@ -196,12 +208,12 @@ def reverse_geocode(
         try:
             url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=18&addressdetails=1"
             headers = {"User-Agent": "DurgaShaktiFoilsAPI/1.0"}
-            res = requests.get(url, headers=headers, timeout=10)
+            res = requests.get(url, headers=headers, timeout=10, verify=False)
             if res.status_code == 200:
                 data = res.json()
                 a = data.get("address", {})
                 raw_pincode = (a.get("postcode") or "").replace(" ", "")[:6]
-                city = a.get("city") or a.get("district") or a.get("suburb") or ""
+                city = a.get("city") or a.get("town") or a.get("municipality") or a.get("state_district") or a.get("county") or a.get("village") or ""
                 state = a.get("state") or ""
                 
                 geocoded = {
@@ -209,10 +221,16 @@ def reverse_geocode(
                     "pincode": raw_pincode,
                     "city": city,
                     "state": state,
-                    "locality": a.get("suburb") or a.get("neighbourhood") or "",
-                    "sublocality": a.get("neighbourhood") or "",
+                    "locality": a.get("suburb") or a.get("neighbourhood") or a.get("village") or a.get("town") or a.get("county") or "",
+                    "sublocality": a.get("neighbourhood") or a.get("village") or a.get("suburb") or "",
                     "route": a.get("road") or "",
-                    "building": ", ".join(filter(None, [a.get("building"), a.get("house_number"), a.get("amenity")]))
+                    "building": ", ".join(filter(None, [a.get("building"), a.get("house_number"), a.get("amenity")])),
+                    "village": a.get("village") or "",
+                    "neighbourhood": a.get("neighbourhood") or "",
+                    "suburb": a.get("suburb") or "",
+                    "hamlet": a.get("hamlet") or "",
+                    "town": a.get("town") or "",
+                    "county": a.get("county") or ""
                 }
         except Exception:
             pass
@@ -266,11 +284,21 @@ def reverse_geocode(
     ]
     line1 = ", ".join(filter(None, line1_parts))
 
-    line2_parts = [
-        geocoded.get("route") or geocoded.get("locality") or locality,
-        geocoded.get("sublocality") if geocoded.get("source") != "Nominatim" else "",
-    ]
-    line2 = ", ".join(filter(None, line2_parts))
+    line2_items = []
+    if geocoded.get("route"):
+        line2_items.append(geocoded.get("route"))
+    
+    # Try all sublocality details to form a complete "Area, Street, Landmark" string
+    for key in ["sublocality", "locality", "village", "neighbourhood", "suburb", "hamlet", "town", "county"]:
+        val = geocoded.get(key)
+        if val:
+            line2_items.append(val)
+            
+    if locality:
+        line2_items.append(locality)
+        
+    line2_parts = deduplicate_list(line2_items)
+    line2 = ", ".join(line2_parts)
 
     print(f"[Geolocation] Source: {geocoded['source']}, Pincode: {pin}, City: {city}, State: {state}, Locality: {locality}")
 
