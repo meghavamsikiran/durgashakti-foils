@@ -20,7 +20,7 @@ export const useGeoLocationAddress = () => {
             const { latitude, longitude } = position.coords;
             
             // All geocoding logic runs on the backend:
-            // Mappls → BigDataCloud → Nominatim → India Post validation
+            // BigDataCloud → Nominatim → India Post validation
             const res = await apiClient.get(`/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`);
             
             if (!res.data || !res.data.pincode) {
