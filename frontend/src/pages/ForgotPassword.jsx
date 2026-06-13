@@ -87,7 +87,7 @@ const ForgotPassword = () => {
       style={{ 
         backgroundImage: isDark
           ? "linear-gradient(rgba(19, 27, 23, 0.82), rgba(19, 27, 23, 0.82)), url('/login_bg.webp')"
-          : "linear-gradient(rgba(247, 250, 248, 0.78), rgba(247, 250, 248, 0.78)), url('/login_bg.webp')",
+          : "linear-gradient(rgba(247, 250, 248, 0.72), rgba(247, 250, 248, 0.72)), url('/login_bg.webp')",
         backgroundSize: "360px",
         backgroundRepeat: "repeat",
         backgroundPosition: "center"
