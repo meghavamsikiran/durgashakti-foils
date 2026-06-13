@@ -182,8 +182,15 @@ const Login = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center py-12 px-6 bg-cover bg-center bg-no-repeat" 
-      style={{ backgroundImage: "url('/login_bg.webp')" }} 
+      className="min-h-screen flex items-center justify-center py-12 px-6" 
+      style={{ 
+        backgroundImage: isDark
+          ? "linear-gradient(rgba(19, 27, 23, 0.92), rgba(19, 27, 23, 0.92)), url('/login_bg.webp')"
+          : "linear-gradient(rgba(247, 250, 248, 0.88), rgba(247, 250, 248, 0.88)), url('/login_bg.webp')",
+        backgroundSize: "360px",
+        backgroundRepeat: "repeat",
+        backgroundPosition: "center"
+      }} 
       data-testid="login-page"
     >
       <motion.div
@@ -192,7 +199,13 @@ const Login = () => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <div className="bg-[#131B17] border border-[#26322B] rounded-sm p-8 shadow-float text-white">
+        <div 
+          className={`border rounded-lg p-8 shadow-2xl transition-all duration-300 ${
+            isDark 
+              ? 'bg-[#131B17]/95 border-[#26322B] text-white' 
+              : 'bg-[#f4f7f5]/95 backdrop-blur-md border-[#c8d4cd] text-[#181c1b]'
+          }`}
+        >
           <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Manrope' }} data-testid="login-title">
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h1>
@@ -206,7 +219,7 @@ const Login = () => {
             {!isLogin && (
               <>
                 <div>
-                  <Label htmlFor="fullName" className="text-slate-200">Full Name</Label>
+                  <Label htmlFor="fullName" className={isDark ? "text-slate-200" : "text-slate-700 font-semibold"}>Full Name</Label>
                   <Input
                     id="fullName"
                     type="text"
@@ -219,7 +232,7 @@ const Login = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone" className="text-slate-200">Phone Number</Label>
+                  <Label htmlFor="phone" className={isDark ? "text-slate-200" : "text-slate-700 font-semibold"}>Phone Number</Label>
                   <Input
                     id="phone"
                     type="text"
@@ -239,7 +252,7 @@ const Login = () => {
             )}
 
             <div>
-              <Label htmlFor="email" className="text-slate-200">{isLogin ? 'Email or Gmail Username' : 'Email'}</Label>
+              <Label htmlFor="email" className={isDark ? "text-slate-200" : "text-slate-700 font-semibold"}>{isLogin ? 'Email or Gmail Username' : 'Email'}</Label>
               <Input
                 id="email"
                 type="text"
@@ -254,7 +267,7 @@ const Login = () => {
             </div>
 
             <div>
-              <Label htmlFor="password" className="text-slate-200">Password</Label>
+              <Label htmlFor="password" className={isDark ? "text-slate-200" : "text-slate-700 font-semibold"}>Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -287,7 +300,7 @@ const Login = () => {
                   className="mt-1 h-4 w-4 rounded border-[#26322B] text-primary focus:ring-primary/25 bg-[#131B17] accent-primary cursor-pointer"
                   required
                 />
-                <label htmlFor="acceptTerms" className="text-xs font-semibold text-slate-300 leading-normal select-none cursor-pointer">
+                <label htmlFor="acceptTerms" className={`text-xs font-semibold leading-normal select-none cursor-pointer ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   I accept the{' '}
                   <button
                     type="button"

@@ -16,6 +16,15 @@ const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   const navigate = useNavigate();
+  const [isDark, setIsDark] = useState(() => localStorage.getItem('themeMode') !== 'light');
+
+  React.useEffect(() => {
+    const handleThemeToggle = (e) => {
+      setIsDark(e.detail === 'dark');
+    };
+    window.addEventListener('theme-toggle', handleThemeToggle);
+    return () => window.removeEventListener('theme-toggle', handleThemeToggle);
+  }, []);
 
   React.useEffect(() => {
     let timer;
@@ -74,15 +83,28 @@ const ForgotPassword = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center py-12 px-6 bg-cover bg-center bg-no-repeat" 
-      style={{ backgroundImage: "url('/login_bg.webp')" }}
+      className="min-h-screen flex items-center justify-center py-12 px-6" 
+      style={{ 
+        backgroundImage: isDark
+          ? "linear-gradient(rgba(19, 27, 23, 0.92), rgba(19, 27, 23, 0.92)), url('/login_bg.webp')"
+          : "linear-gradient(rgba(247, 250, 248, 0.88), rgba(247, 250, 248, 0.88)), url('/login_bg.webp')",
+        backgroundSize: "360px",
+        backgroundRepeat: "repeat",
+        backgroundPosition: "center"
+      }}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="bg-[#131B17] border border-[#26322B] rounded-sm p-8 shadow-float text-white">
+        <div 
+          className={`border rounded-lg p-8 shadow-2xl transition-all duration-300 ${
+            isDark 
+              ? 'bg-[#131B17]/95 border-[#26322B] text-white' 
+              : 'bg-[#f4f7f5]/95 backdrop-blur-md border-[#c8d4cd] text-[#181c1b]'
+          }`}
+        >
           <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Manrope' }}>
             {step === 1 ? 'Forgot Password?' : 'Verify OTP'}
           </h1>
@@ -95,7 +117,7 @@ const ForgotPassword = () => {
           {step === 1 ? (
             <form onSubmit={handleSendOTP} className="space-y-4">
               <div>
-                <Label htmlFor="email" className="text-slate-200">Email Address</Label>
+                <Label htmlFor="email" className={isDark ? "text-slate-200" : "text-slate-700 font-semibold"}>Email Address</Label>
                 <Input
                   id="email"
                   type="email"
@@ -113,7 +135,7 @@ const ForgotPassword = () => {
           ) : (
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
-                <Label htmlFor="otp" className="text-slate-200">6-Digit Code</Label>
+                <Label htmlFor="otp" className={isDark ? "text-slate-200" : "text-slate-700 font-semibold"}>6-Digit Code</Label>
                 <Input
                   id="otp"
                   type="text"
@@ -143,7 +165,7 @@ const ForgotPassword = () => {
                 </div>
               </div>
               <div>
-                <Label htmlFor="newPassword" className="text-slate-200">New Password</Label>
+                <Label htmlFor="newPassword" className={isDark ? "text-slate-200" : "text-slate-700 font-semibold"}>New Password</Label>
                 <Input
                   id="newPassword"
                   type="password"
