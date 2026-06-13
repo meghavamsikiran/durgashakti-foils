@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X, Filter, Image as ImageIcon, Copy, Check, Search, Paperclip, Play } from 'lucide-react';
 import AdminTable from '../components/AdminTable';
@@ -81,6 +81,15 @@ const InquiriesPage = () => {
   const [replyUrls, setReplyUrls] = useState([]);
   const [uploadingReplyFiles, setUploadingReplyFiles] = useState(false);
   const { caseId } = useParams();
+  const navigate = useNavigate();
+
+  const handleClose = () => {
+    setSelectedInquiry(null);
+    if (caseId) {
+      const isSuperadmin = window.location.pathname.startsWith('/superadmin');
+      navigate(isSuperadmin ? '/superadmin/cases' : '/admin/cases');
+    }
+  };
 
   useEffect(() => {
     if (caseId && inquiries.length > 0) {
@@ -356,11 +365,11 @@ const InquiriesPage = () => {
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'resolved': return 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-[#0c3a21] dark:text-[#25D958] dark:border-emerald-500/30';
-      case 'replied': return 'bg-primary/10 text-primary border-primary/20 dark:bg-[#0a361a] dark:text-[#25D958] dark:border-[#25D958]/30';
-      case 'reopened': return 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-[#3d2a04] dark:text-amber-500 dark:border-amber-500/30';
-      case 'in_progress': return 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-[#3d2a04] dark:text-amber-500 dark:border-amber-500/30';
-      default: return 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-[#1e2924] dark:text-slate-350 dark:border-slate-700/50';
+      case 'resolved': return '!bg-emerald-50 !text-emerald-600 !border-emerald-200 dark:!bg-[#0c3a21] dark:!text-[#25D958] dark:!border-emerald-500/30';
+      case 'replied': return '!bg-primary/10 !text-primary !border-primary/20 dark:!bg-[#0a361a] dark:!text-[#25D958] dark:!border-[#25D958]/30';
+      case 'reopened': return '!bg-amber-50 !text-amber-600 !border-amber-200 dark:!bg-[#3d2a04] dark:!text-amber-500 dark:!border-amber-500/30';
+      case 'in_progress': return '!bg-amber-50 !text-amber-600 !border-amber-200 dark:!bg-[#3d2a04] dark:!text-amber-500 dark:!border-amber-500/30';
+      default: return '!bg-slate-50 !text-slate-600 !border-slate-200 dark:!bg-[#1e2924] dark:!text-slate-350 dark:!border-slate-700/50';
     }
   };
 
@@ -611,7 +620,7 @@ const InquiriesPage = () => {
                   value={item.status || 'pending'}
                   disabled={item.status === 'resolved'}
                   onChange={(e) => handleUpdateStatus(item.id, e.target.value)}
-                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative bg-white dark:bg-[#131B17] text-slate-900 dark:text-white ${item.status === 'resolved' ? 'opacity-65 cursor-not-allowed' : ''} ${getStatusStyle(item.status || 'pending')}`}
+                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative ${item.status === 'resolved' ? 'opacity-65 cursor-not-allowed' : ''} ${getStatusStyle(item.status || 'pending')}`}
                   style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
                 >
                   <option value="pending" className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white">Pending</option>
@@ -675,7 +684,7 @@ const InquiriesPage = () => {
                 </div>
               </div>
               <button 
-                onClick={() => setSelectedInquiry(null)}
+                onClick={handleClose}
                 className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-[#1E2722] text-slate-500 dark:text-slate-450 hover:bg-rose-100 dark:hover:bg-rose-950/30 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
               >
                 <X className="w-4 h-4" />
@@ -786,7 +795,7 @@ const InquiriesPage = () => {
                   value={selectedInquiry.status || 'pending'}
                   disabled={selectedInquiry.status === 'resolved'}
                   onChange={(e) => handleUpdateStatus(selectedInquiry.id, e.target.value)}
-                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative bg-white dark:bg-[#131B17] text-slate-900 dark:text-white ${selectedInquiry.status === 'resolved' ? 'opacity-60 cursor-not-allowed' : ''} ${getStatusStyle(selectedInquiry.status || 'pending')}`}
+                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative ${selectedInquiry.status === 'resolved' ? 'opacity-60 cursor-not-allowed' : ''} ${getStatusStyle(selectedInquiry.status || 'pending')}`}
                   style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
                 >
                   <option value="pending" className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white">Pending</option>
@@ -969,7 +978,7 @@ const InquiriesPage = () => {
 
             <div className="mt-8 flex justify-end gap-3.5">
               <Button 
-                onClick={() => setSelectedInquiry(null)}
+                onClick={handleClose}
                 className="bg-slate-900 dark:bg-[#1E2722] text-white font-extrabold text-sm px-6 py-4 rounded-2xl tracking-wide hover:bg-slate-800 transition-all shadow-lg active:scale-95 border border-transparent dark:border-[#26322B]"
               >
                 Cancel

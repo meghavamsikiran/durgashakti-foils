@@ -312,8 +312,20 @@ const TicketsTab = () => {
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-[#26322B] pb-6 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <span className="font-mono text-xl font-bold text-primary dark:text-[#25D958] tracking-wider bg-primary/5 dark:bg-[#25D958]/10 px-3 py-1.5 rounded-xl">
+                <span className="font-mono text-xl font-bold text-primary dark:text-[#25D958] tracking-wider bg-primary/5 dark:bg-[#25D958]/10 px-3 py-1.5 rounded-xl flex items-center gap-2">
                   {ticket.ticket_id}
+                  <button
+                    type="button"
+                    onClick={(e) => handleCopy(e, ticket.ticket_id)}
+                    className="hover:text-primary dark:hover:text-[#25D958] transition-colors p-0.5 rounded focus:outline-none flex items-center justify-center"
+                    title="Copy Ticket ID"
+                  >
+                    {copiedTicketId === ticket.ticket_id ? (
+                      <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    ) : (
+                      <Copy className="w-4 h-4 opacity-60 hover:opacity-100 text-primary dark:text-[#25D958]" />
+                    )}
+                  </button>
                 </span>
                 {getStatusBadge(ticket.status, ticket.reply_message)}
               </div>
