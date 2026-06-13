@@ -427,14 +427,6 @@ const Login = () => {
             <div className="px-6 py-4 border-t border-[#26322B] flex justify-end gap-3 bg-[#0C1310]">
               <Button
                 type="button"
-                variant="outline"
-                onClick={() => setShowTermsModal(false)}
-                className="rounded-lg border-[#26322B] bg-[#131B17] text-slate-300 hover:bg-white/5 font-bold"
-              >
-                Close
-              </Button>
-              <Button
-                type="button"
                 onClick={() => {
                   setAcceptTerms(true);
                   setShowTermsModal(false);
@@ -443,6 +435,14 @@ const Login = () => {
                 data-testid="terms-modal-accept"
               >
                 Accept Terms
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowTermsModal(false)}
+                className="rounded-lg border-[#26322B] bg-[#131B17] text-slate-300 hover:bg-white/5 font-bold"
+              >
+                Close
               </Button>
             </div>
           </div>

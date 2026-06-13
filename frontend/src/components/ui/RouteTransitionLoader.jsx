@@ -80,8 +80,8 @@ const RouteTransitionLoader = () => {
       {show && <TrishoolLoader />}
       {/* Durga Maa centre animation overlay — ALWAYS mounted to keep video playing and prevent WebKit decoder freeze */}
       <div
-        className={`fixed inset-0 z-[99999] flex items-center justify-center bg-transparent pointer-events-none transition-all duration-300 ${
-          show ? 'opacity-100 visible' : 'opacity-0 invisible'
+        className={`fixed inset-0 z-[99999] flex items-center justify-center bg-white dark:bg-[#0C1310] transition-all duration-300 ${
+          show ? 'opacity-100 visible pointer-events-auto' : 'opacity-0 invisible pointer-events-none'
         }`}
       >
         <DurgaMaaLoader show={show} />

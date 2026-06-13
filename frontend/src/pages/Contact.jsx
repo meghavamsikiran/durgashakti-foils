@@ -49,6 +49,16 @@ const Contact = () => {
     }
   }, [user]);
 
+  const [isDark, setIsDark] = React.useState(() => localStorage.getItem('themeMode') !== 'light');
+
+  React.useEffect(() => {
+    const handleThemeToggle = (e) => {
+      setIsDark(e.detail === 'dark');
+    };
+    window.addEventListener('theme-toggle', handleThemeToggle);
+    return () => window.removeEventListener('theme-toggle', handleThemeToggle);
+  }, []);
+
   React.useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -234,22 +244,27 @@ const Contact = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 rounded-2xl overflow-hidden border-2 border-[#25D958] bg-[#0C1310] relative">
             
             {/* 1. LEFT COLUMN: dynamic Google Map (Swapped to Left) */}
-            <div className="w-full h-[450px] lg:h-auto min-h-[450px] relative bg-[#0C1310] flex flex-col overflow-hidden min-w-0">
+            <div className="w-full h-[450px] lg:h-auto min-h-[450px] relative bg-[#FAFAF9] dark:bg-[#0C1310] flex flex-col overflow-hidden min-w-0">
               <iframe 
                 title="Durga Shakti Foils Location"
                 src={getEmbedMapUrl(profile.googleMapsLink, profile.companyAddress, profile.companyName)}
                 width="100%" 
                 height="100%" 
-                style={{ border: 0, minHeight: '100%', flexGrow: 1, filter: 'invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%)' }} 
+                style={{ 
+                  border: 0, 
+                  minHeight: '100%', 
+                  flexGrow: 1, 
+                  filter: isDark ? 'invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%)' : 'none' 
+                }} 
                 allowFullScreen="" 
                 loading="eager" 
                 referrerPolicy="no-referrer-when-downgrade"
               />
               
               {/* Floating Get Directions CTA overlay */}
-              <div className="absolute bottom-4 left-4 right-4 bg-[#0C1310]/95 backdrop-blur border border-[#26322B] p-4 rounded-xl shadow-lg flex justify-between items-center gap-4 animate-in fade-in duration-300">
+              <div className="absolute bottom-4 left-4 right-4 bg-white/95 dark:bg-[#0C1310]/95 backdrop-blur border border-slate-200 dark:border-[#26322B] p-4 rounded-xl shadow-lg flex justify-between items-center gap-4 animate-in fade-in duration-300">
                 <div>
-                  <h4 className="font-bold text-sm text-white leading-tight font-sans">
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white leading-tight font-sans">
                     {profile.companyName}
                   </h4>
                   <p className="text-[9px] text-[#25D958] font-bold uppercase mt-1 font-mono tracking-widest">LIVE LOCATION PIN</p>
@@ -518,6 +533,12 @@ const Contact = () => {
 
             <div className="pt-4 border-t flex gap-3">
               <Button 
+                onClick={() => setShowTermsModal(false)}
+                className="flex-1 bg-slate-100 text-slate-700 font-bold text-xs uppercase py-3 rounded-xl tracking-wider hover:bg-slate-200"
+              >
+                Close
+              </Button>
+              <Button 
                 onClick={() => {
                   setAcceptedTerms(true);
                   setShowTermsModal(false);
@@ -525,12 +546,6 @@ const Contact = () => {
                 className="flex-1 bg-primary text-white font-bold text-xs uppercase py-3 rounded-xl tracking-wider hover:bg-primary/95"
               >
                 Accept Terms
-              </Button>
-              <Button 
-                onClick={() => setShowTermsModal(false)}
-                className="flex-1 bg-slate-100 text-slate-700 font-bold text-xs uppercase py-3 rounded-xl tracking-wider hover:bg-slate-200"
-              >
-                Close
               </Button>
             </div>
           </div>
