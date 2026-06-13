@@ -372,8 +372,9 @@ const Contact = () => {
                         required
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        readOnly={!!user}
                         placeholder="Enter your Name" 
-                        className="h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium w-full text-left" 
+                        className={`h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium w-full text-left ${user ? 'opacity-80 cursor-not-allowed bg-slate-900/40' : ''}`} 
                       />
                     </div>
                     
@@ -384,8 +385,9 @@ const Contact = () => {
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        readOnly={!!user}
                         placeholder="Enter a valid email address" 
-                        className="h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium w-full text-left" 
+                        className={`h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium w-full text-left ${user ? 'opacity-80 cursor-not-allowed bg-slate-900/40' : ''}`} 
                       />
                     </div>
 
@@ -400,8 +402,9 @@ const Contact = () => {
                            const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                            setFormData({ ...formData, phone: val });
                         }}
+                        readOnly={!!user}
                         placeholder="Enter 10-digit phone number"
-                        className="h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium w-full text-left"
+                        className={`h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium w-full text-left ${user ? 'opacity-80 cursor-not-allowed bg-slate-900/40' : ''}`} 
                       />
                     </div>
                     
