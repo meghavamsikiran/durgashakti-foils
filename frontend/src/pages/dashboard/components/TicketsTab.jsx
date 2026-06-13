@@ -203,7 +203,7 @@ const TicketsTab = () => {
       if (isNaN(date.getTime())) {
         return utcTimestampStr;
       }
-      return date.toLocaleString('en-IN', {
+      return date.toLocaleString(undefined, {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
