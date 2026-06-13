@@ -349,7 +349,17 @@ const Login = () => {
               onClick={handleGoogleLogin}
               disabled={loading}
               variant="outline"
-              className="w-full h-12 rounded-sm font-semibold flex items-center justify-center gap-3 border-[#26322B] bg-[#131B17] text-white hover:bg-white/5 hover:text-[#25D958] transition-colors mt-2"
+              className={`w-full h-12 rounded-sm font-semibold flex items-center justify-center gap-3 transition-colors mt-2 ${
+                isDark 
+                  ? 'text-white hover:bg-white/10 hover:text-[#25D958]' 
+                  : 'text-[#181c1b] hover:bg-black/5'
+              }`}
+              style={{
+                backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.85)",
+                borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#bbcbb5",
+                borderWidth: "1px",
+                borderStyle: "solid"
+              }}
             >
               <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
                 <path
