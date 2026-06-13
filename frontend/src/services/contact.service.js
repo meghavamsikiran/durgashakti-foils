@@ -4,7 +4,22 @@ const contactService = {
   submitContact: async (formData) => {
     const response = await apiClient.post('/contact', formData);
     return response.data;
+  },
+  getMyTickets: async () => {
+    const response = await apiClient.get('/contacts/my');
+    return response.data;
+  },
+  uploadAttachment: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/contacts/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
   }
 };
 
 export default contactService;
+

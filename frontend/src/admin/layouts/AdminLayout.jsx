@@ -19,6 +19,7 @@ const ICON_MAP = {
   'Orders': ShoppingCart,
   'Customers': Users,
   'Inquiries': MessageSquare,
+  'Cases': MessageSquare,
   'Reviews': Star,
   'Payments': CreditCard,
   'Analytics': BarChart3,

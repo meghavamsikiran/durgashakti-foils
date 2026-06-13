@@ -46,11 +46,11 @@ export const PERMISSION_GROUPS = [
     ]
   },
   {
-    title: 'Inquiries',
+    title: 'Cases',
     permissions: [
-      { id: 'view_inquiries', label: 'View Inquiries', desc: 'Browse contact requests, inquiries, and customer feedback' },
-      { id: 'update_inquiry_status', label: 'Update Inquiry Status', desc: 'Mark inquiries as pending, in-progress, or completed' },
-      { id: 'reply_inquiry', label: 'Resolve/Reply to Inquiry', desc: 'Compose and dispatch direct email replies to inquiries' }
+      { id: 'view_inquiries', label: 'View Cases', desc: 'Browse contact requests, cases, and customer feedback' },
+      { id: 'update_inquiry_status', label: 'Update Case Status', desc: 'Mark cases as pending, in-progress, or completed' },
+      { id: 'reply_inquiry', label: 'Resolve/Reply to Case', desc: 'Compose and dispatch direct email replies to cases' }
     ]
   },
   {
@@ -203,7 +203,7 @@ export const superAdminSidebar = [
   { label: 'Categories', permissions: ['create_products', 'edit_products'] },
   { label: 'Stock', permissions: ['view_inventory', 'update_stock'] },
   { label: 'Customers', permissions: ['view_customers', 'view_customer_history'] },
-  { label: 'Inquiries', permissions: ['view_inquiries', 'update_inquiry_status', 'reply_inquiry'] },
+  { label: 'Cases', permissions: ['view_inquiries', 'update_inquiry_status', 'reply_inquiry'] },
   { label: 'Reviews', permissions: ['view_reviews', 'moderate_reviews', 'reply_reviews'] },
   { label: 'Payments', permissions: ['view_transactions', 'update_payment_status', 'export_payment_reports'] },
   { label: 'Analytics', permissions: ['view_analytics'] },

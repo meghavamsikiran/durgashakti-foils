@@ -546,50 +546,55 @@ def forgot_password_email(otp: str) -> tuple[str, str]:
 # ─────────────────────────────────────────────────────────────────────────────
 # 13. INQUIRIES & CONTACT
 # ─────────────────────────────────────────────────────────────────────────────
-def contact_acknowledgement_email(name: str, message: str) -> tuple[str, str]:
+def contact_acknowledgement_email(name: str, message: str, ticket_id: str) -> tuple[str, str]:
+    # Extract clean message without attachments block if present for email preview
+    clean_message = message.split("\n\n[Attachments]\n")[0] if message else ""
     content = f"""
-    <p style="font-size:24px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">We've Received Your Inquiry! 🛡️</p>
-    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Hello <strong>{name}</strong>, thank you for reaching out to DurgaShakti Foils.</p>
+    <p style="font-size:24px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">We've Received Your Ticket! 🛡️</p>
+    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Hello <strong>{name}</strong>, thank you for reaching out to DurgaShakti Foils support.</p>
     <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <p style="margin:0 0 12px;color:{BRAND_DARK};font-weight:700;font-size:16px;">Inquiry Details</p>
-      <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;font-style:italic;">"{message}"</p>
+      <p style="margin:0 0 12px;color:{BRAND_DARK};font-weight:700;font-size:16px;">Ticket Details</p>
+      <p style="margin:0 0 8px;font-size:14px;color:#374151;"><strong>Ticket ID:</strong> {ticket_id}</p>
+      <p style="margin:0;font-size:14px;color:#374151;line-height:1.6;font-style:italic;">"{clean_message}"</p>
     </div>
-    <p style="color:#4b5563;font-size:14px;line-height:1.6;">Our customer support team is currently reviewing your inquiry and will get back to you shortly.</p>
+    <p style="color:#4b5563;font-size:14px;line-height:1.6;">Our customer support team is currently reviewing your ticket and will get back to you shortly.</p>
     """
-    return "We've received your inquiry - DurgaShakti Foils", _base(content, "Inquiry Received")
+    return f"We've received your ticket {ticket_id} - DurgaShakti Foils", _base(content, "Ticket Received")
 
 
-def contact_reply_email(name: str, original_message: str, reply_message: str, date_str: str) -> tuple[str, str]:
+def contact_reply_email(name: str, original_message: str, reply_message: str, date_str: str, ticket_id: str) -> tuple[str, str]:
+    clean_orig = original_message.split("\n\n[Attachments]\n")[0] if original_message else ""
     content = f"""
-    <p style="font-size:24px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">New Response to Your Inquiry ✉️</p>
-    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Dear <strong>{name}</strong>, our support team has responded to your inquiry submitted on {date_str}.</p>
+    <p style="font-size:24px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">New Response to Your Ticket {ticket_id} ✉️</p>
+    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Dear <strong>{name}</strong>, our support team has responded to your ticket submitted on {date_str}.</p>
     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:24px;margin-bottom:20px;border-left:5px solid #2563eb;">
       <p style="margin:0 0 12px;color:#1e40af;font-weight:700;font-size:16px;">Our Response</p>
       <p style="margin:0;font-size:14px;color:#1e3a8a;line-height:1.6;white-space:pre-wrap;">{reply_message}</p>
     </div>
     <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <p style="margin:0 0 8px;color:#6b7280;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Your Original Inquiry</p>
-      <p style="margin:0;font-size:14px;color:#4b5563;line-height:1.6;font-style:italic;">"{original_message}"</p>
+      <p style="margin:0 0 8px;color:#6b7280;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Your Original Message</p>
+      <p style="margin:0;font-size:14px;color:#4b5563;line-height:1.6;font-style:italic;">"{clean_orig}"</p>
     </div>
-    <p style="color:#4b5563;font-size:14px;line-height:1.6;">If you have further questions or need additional details, please submit a new contact request or reply to this thread.</p>
+    <p style="color:#4b5563;font-size:14px;line-height:1.6;">If you have further questions or need additional details, you can reply directly inside your Support Tickets dashboard.</p>
     """
-    return "Reply to your inquiry - DurgaShakti Foils", _base(content, "Inquiry Response")
+    return f"Response to ticket {ticket_id} - DurgaShakti Foils", _base(content, "Ticket Response")
 
 
-def contact_resolved_email(name: str, original_message: str, date_str: str) -> tuple[str, str]:
+def contact_resolved_email(name: str, original_message: str, date_str: str, ticket_id: str) -> tuple[str, str]:
+    clean_orig = original_message.split("\n\n[Attachments]\n")[0] if original_message else ""
     content = f"""
-    <p style="font-size:24px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">Inquiry Closed Successfully 🛡️</p>
-    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Dear <strong>{name}</strong>, we have closed your inquiry submitted on {date_str}.</p>
+    <p style="font-size:24px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">Ticket Closed Successfully 🛡️</p>
+    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Dear <strong>{name}</strong>, we have closed your ticket {ticket_id} submitted on {date_str}.</p>
     <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:24px;margin-bottom:20px;border-left:5px solid #059669;">
-      <p style="margin:0;font-size:15px;color:#065f46;line-height:1.6;font-weight:600;">Closed your inquiry. Thank you for reaching us!</p>
+      <p style="margin:0;font-size:15px;color:#065f46;line-height:1.6;font-weight:600;">Closed ticket {ticket_id}. Thank you for reaching us!</p>
     </div>
     <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin-bottom:28px;">
-      <p style="margin:0 0 8px;color:#6b7280;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Original Inquiry Details</p>
-      <p style="margin:0;font-size:14px;color:#4b5563;line-height:1.6;font-style:italic;">"{original_message}"</p>
+      <p style="margin:0 0 8px;color:#6b7280;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Original Ticket Details</p>
+      <p style="margin:0;font-size:14px;color:#4b5563;line-height:1.6;font-style:italic;">"{clean_orig}"</p>
     </div>
-    <p style="color:#4b5563;font-size:14px;line-height:1.6;">We hope we resolved your query. Please don't hesitate to reach back out if you require further assistance.</p>
+    <p style="color:#4b5563;font-size:14px;line-height:1.6;">We hope we resolved your query. Please don't hesitate to contact us again if you require further assistance.</p>
     """
-    return "Your inquiry has been resolved - DurgaShakti Foils", _base(content, "Inquiry Resolved")
+    return f"Ticket {ticket_id} Resolved - DurgaShakti Foils", _base(content, "Ticket Resolved")
 
 
 def refund_credited_email(name: str, order: dict, refunded_items: list, item_refund_total: float, courier_total: float = 0.0) -> tuple[str, str, list]:

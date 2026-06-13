@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, ArrowRight, Navigation, Clock, Shield } from 'lucide-react';
+import { Mail, Phone, MapPin, ArrowRight, Navigation, Clock, Shield, Paperclip, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -18,6 +18,10 @@ const Contact = () => {
   const [submitting, setSubmitting] = React.useState(false);
   const [acceptedTerms, setAcceptedTerms] = React.useState(false);
   const [showTermsModal, setShowTermsModal] = React.useState(false);
+  
+  const [uploadedUrls, setUploadedUrls] = React.useState([]);
+  const [uploadingFiles, setUploadingFiles] = React.useState(false);
+  const [submittedTicketId, setSubmittedTicketId] = React.useState('');
   const getInitialProfile = () => {
     const cachedResponse = apiClient.getCachedDataSync('/settings/public');
     const cp = cachedResponse?.data?.company_profile || {};
@@ -86,6 +90,44 @@ const Contact = () => {
     loadSettingsSilent();
   }, []);
 
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    if (uploadedUrls.length + files.length > 3) {
+      toast.error("You can upload a maximum of 3 images.");
+      return;
+    }
+
+    for (const file of files) {
+      const ct = file.type.toLowerCase();
+      if (ct.includes('video') || file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.mov')) {
+        toast.error("Video files are not supported.");
+        return;
+      }
+      if (!ct.startsWith('image/')) {
+        toast.error("Only image files (PNG, JPG, JPEG, WEBP) are supported.");
+        return;
+      }
+
+      try {
+        setUploadingFiles(true);
+        const res = await contactService.uploadAttachment(file);
+        setUploadedUrls(prev => [...prev, res.url]);
+        toast.success(`Uploaded ${file.name} successfully`);
+      } catch (err) {
+        console.error(err);
+        toast.error(`Failed to upload ${file.name}: ${err.message || 'Error'}`);
+      } finally {
+        setUploadingFiles(false);
+      }
+    }
+  };
+
+  const removeFile = (indexToRemove) => {
+    setUploadedUrls(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!acceptedTerms) {
@@ -108,14 +150,18 @@ const Contact = () => {
     }
     try {
       setSubmitting(true);
-      await contactService.submitContact({ ...formData, phone: cleanPhone });
+      const payload = {
+        ...formData,
+        phone: cleanPhone,
+        attachment_urls: uploadedUrls
+      };
+      const res = await contactService.submitContact(payload);
+      setSubmittedTicketId(res.ticket_id || '');
       setSubmitted(true);
       setFormData({ name: '', email: '', phone: '', message: '' });
+      setUploadedUrls([]);
       setAcceptedTerms(false);
-      toast.success('Your message has been sent successfully!');
-      setTimeout(() => {
-        setSubmitted(false);
-      }, 5000);
+      toast.success('Your support ticket has been created successfully!');
     } catch (err) {
       console.error('Failed to submit contact form:', err);
       toast.error(err.message || 'Failed to submit form. Please try again.');
@@ -194,10 +240,29 @@ const Contact = () => {
                   <motion.div 
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-[#25D958]/10 text-[#25D958] border border-[#25D958]/20 p-6 rounded-lg text-center my-auto font-mono text-xs font-bold tracking-wide"
+                    className="bg-[#25D958]/10 text-white border border-[#25D958]/20 p-6 rounded-2xl text-center my-auto flex flex-col items-center space-y-4"
                   >
-                    <span className="text-sm font-black block mb-1">🎉 MESSAGE SENT!</span>
-                    <span className="leading-relaxed">Thank you. We will get back to you shortly.</span>
+                    <div className="w-12 h-12 rounded-full bg-[#25D958]/20 flex items-center justify-center border border-[#25D958]/30">
+                      <span className="text-xl">🎉</span>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-white font-sans uppercase tracking-wider">TICKET SUBMITTED</h3>
+                      <p className="text-xs text-slate-400 mt-1">Our support team will review it shortly.</p>
+                    </div>
+                    <div className="bg-[#0C1310] border border-[#26322B] p-4 rounded-xl w-full text-center">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">YOUR CASE TICKET ID</span>
+                      <span className="font-mono text-base font-black text-[#25D958] tracking-widest">{submittedTicketId}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-normal max-w-xs">
+                      An email confirmation has been sent to your inbox. You can track this ticket in your dashboard.
+                    </p>
+                    <Button 
+                      onClick={() => setSubmitted(false)}
+                      variant="outline" 
+                      className="text-xs font-bold uppercase tracking-wider h-10 px-6 border-slate-700 bg-transparent hover:bg-slate-800 text-white rounded-lg mt-2"
+                    >
+                      Submit Another Query
+                    </Button>
                   </motion.div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4">
@@ -251,6 +316,52 @@ const Contact = () => {
                       />
                     </div>
 
+                    {/* Attachment Upload Field */}
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between ml-1">
+                        <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest font-sans">
+                          Attachments (Optional)
+                        </Label>
+                        <span className="text-[9px] text-[#25D958]/85 font-mono font-bold">
+                          {uploadedUrls.length}/3 Images
+                        </span>
+                      </div>
+                      
+                      <label className="flex items-center justify-center gap-2 w-full h-12 bg-[#131B17] border border-[#26322B] hover:border-[#25D958]/50 rounded-xl cursor-pointer transition-colors px-4 text-xs font-bold text-slate-350 select-none">
+                        <Paperclip className="w-4 h-4 text-[#25D958]" />
+                        <span>{uploadingFiles ? 'Uploading...' : 'Choose Image (Max 3)'}</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          disabled={uploadingFiles || uploadedUrls.length >= 3}
+                          className="hidden"
+                        />
+                      </label>
+                      <p className="text-[9px] text-slate-500 leading-normal mt-0.5 ml-1">
+                        Supported: PNG, JPG, JPEG, WEBP. Videos are blocked. Images will be automatically compressed/converted to WebP to save storage.
+                      </p>
+
+                      {/* File Previews */}
+                      {uploadedUrls.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          {uploadedUrls.map((url, index) => (
+                            <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-[#26322B] bg-[#19231F]/30 group">
+                              <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => removeFile(index)}
+                                className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-rose-600 rounded-lg text-white transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex items-center gap-2 py-2">
                       <input 
                         type="checkbox" 
@@ -267,7 +378,7 @@ const Contact = () => {
 
                     <Button 
                       type="submit" 
-                      disabled={submitting}
+                      disabled={submitting || uploadingFiles}
                       className="w-full h-12 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-black uppercase tracking-wider rounded-lg text-sm transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 duration-200"
                     >
                       {submitting ? 'SUBMITTING...' : 'SUBMIT'}

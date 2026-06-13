@@ -15,6 +15,7 @@ import WishlistTab from './dashboard/components/WishlistTab';
 import AddressesTab from './dashboard/components/AddressesTab';
 import SettingsTab from './dashboard/components/SettingsTab';
 import TransactionsTab from './dashboard/components/TransactionsTab';
+import TicketsTab from './dashboard/components/TicketsTab';
 
 const Dashboard = () => {
   const { user, loading: authLoading, logout } = useAuth();
@@ -26,7 +27,7 @@ const Dashboard = () => {
     const parts = pathname.split('/').filter(Boolean);
     if (parts.length > 1) {
       const sub = parts[1];
-      if (['orders', 'transactions', 'wishlist', 'addresses', 'settings'].includes(sub)) {
+      if (['orders', 'transactions', 'wishlist', 'addresses', 'settings', 'tickets'].includes(sub)) {
         return sub;
       }
     }
@@ -110,6 +111,7 @@ const Dashboard = () => {
             <Route path="transactions" element={<TransactionsTabWrapper />} />
             <Route path="wishlist" element={<WishlistTab wishlist={wishlist} onToggleWishlist={toggleWishlist} onClearWishlist={clearWishlist} />} />
             <Route path="addresses" element={<AddressesTabWrapper />} />
+            <Route path="tickets" element={<TicketsTab />} />
             <Route path="settings" element={<SettingsTab user={user} onUpdateProfile={handleUpdateProfile} />} />
             <Route path="*" element={<Navigate to="orders" replace />} />
           </Routes>

@@ -1,37 +1,86 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from typing import Optional
 from database import get_db
 from models import ContactModel, utcnow
 from datetime import datetime, timezone
-from deps import require_permission, UserSchema, ContactCreate, send_email
+from deps import require_permission, UserSchema, ContactCreate, send_email, get_current_user
 from email_templates import (
     contact_acknowledgement_email,
     contact_reply_email,
     contact_resolved_email
 )
+from storage_service import upload_image
 
 router = APIRouter(prefix="/api")
 
 # ── Public Endpoints ─────────────────────────────────────────────────────
+@router.post("/contacts/upload")
+async def upload_contact_image(
+    file: UploadFile = File(...),
+    current_user: UserSchema = Depends(get_current_user)
+):
+    # Verify it is an image and not video
+    ct = (file.content_type or "").lower()
+    if not ct.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files are supported")
+    if ct.startswith("video/") or "video" in ct:
+        raise HTTPException(status_code=400, detail="Video files are not supported")
+
+    raw = await file.read()
+    url = await upload_image(raw, ct, prefix="ticket")
+    return {"url": url}
+
+@router.get("/contacts/my")
+async def list_my_contacts(
+    current_user: UserSchema = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    q = select(ContactModel).where(ContactModel.email == current_user.email).order_by(ContactModel.created_at.desc())
+    res = await db.execute(q)
+    rows = res.scalars().all()
+    items = [
+        {
+            "id": str(c.id),
+            "ticket_id": f"DS-TKT-{str(c.id)[:8].upper()}",
+            "name": c.name,
+            "email": c.email,
+            "phone": c.phone,
+            "message": c.message,
+            "status": c.status,
+            "reply_message": c.reply_message,
+            "replied_at": c.replied_at.isoformat() if c.replied_at else None,
+            "created_at": c.created_at.isoformat()
+        }
+        for c in rows
+    ]
+    return {"items": items}
+
 @router.post("/contact")
 async def submit_contact(payload: ContactCreate, db: AsyncSession = Depends(get_db)):
+    final_message = payload.message
+    if payload.attachment_urls:
+        attachments_text = "\n\n[Attachments]\n" + "\n".join(payload.attachment_urls)
+        final_message += attachments_text
+
     contact = ContactModel(
         name=payload.name,
         email=payload.email,
-        message=payload.message,
+        message=final_message,
         phone=payload.phone
     )
     db.add(contact)
     await db.flush()
 
+    ticket_id = f"DS-TKT-{str(contact.id)[:8].upper()}"
+
     # Send auto-acknowledgement email
-    subj, email_body = contact_acknowledgement_email(payload.name, payload.message)
+    subj, email_body = contact_acknowledgement_email(payload.name, payload.message, ticket_id)
     import asyncio
     asyncio.create_task(send_email(payload.email, subj, email_body))
 
-    return {"message": "Message submitted successfully", "id": str(contact.id)}
+    return {"message": "Message submitted successfully", "id": str(contact.id), "ticket_id": ticket_id}
 
 # ── Admin Endpoints ──────────────────────────────────────────────────────
 @router.get("/admin/contacts")
@@ -83,6 +132,7 @@ async def list_contacts(
     items = [
         {
             "id": str(c.id),
+            "ticket_id": f"DS-TKT-{str(c.id)[:8].upper()}",
             "name": c.name,
             "email": c.email,
             "phone": c.phone,
@@ -119,7 +169,8 @@ async def update_contact_status(
 
     if status == "resolved":
         date_str = contact.created_at.strftime('%Y-%m-%d %H:%M:%S')
-        subj, resolve_email_body = contact_resolved_email(contact.name, contact.message, date_str)
+        ticket_id = f"DS-TKT-{str(contact.id)[:8].upper()}"
+        subj, resolve_email_body = contact_resolved_email(contact.name, contact.message, date_str, ticket_id)
         import asyncio
         asyncio.create_task(send_email(contact.email, subj, resolve_email_body))
 
@@ -153,7 +204,8 @@ async def reply_contact(
     await db.flush()
 
     date_str = contact.created_at.strftime('%Y-%m-%d %H:%M:%S')
-    subj, customer_email_body = contact_reply_email(contact.name, contact.message, reply_body, date_str)
+    ticket_id = f"DS-TKT-{str(contact.id)[:8].upper()}"
+    subj, customer_email_body = contact_reply_email(contact.name, contact.message, reply_body, date_str, ticket_id)
     sent, err_msg = await send_email(contact.email, subj, customer_email_body)
 
     return {

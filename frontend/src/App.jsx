@@ -189,7 +189,7 @@ function AppRoutes() {
               <Route path="orders/:id" element={<ProtectedAdminRoute permission="view_order_details"><AdminOrderDetailsPage /></ProtectedAdminRoute>} />
               <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
               <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
-              <Route path="inquiries" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
+              <Route path="cases" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
               <Route path="reviews" element={<ProtectedAdminRoute permission="view_reviews"><ReviewsPage /></ProtectedAdminRoute>} />
               <Route
                 path="payments"
@@ -271,7 +271,7 @@ function AppRoutes() {
               <Route path="orders/:id" element={<ProtectedAdminRoute permission="view_order_details"><AdminOrderDetailsPage /></ProtectedAdminRoute>} />
               <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
               <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
-              <Route path="inquiries" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
+              <Route path="cases" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
               <Route path="reviews" element={<ProtectedAdminRoute permission="view_reviews"><ReviewsPage /></ProtectedAdminRoute>} />
               <Route
                 path="payments"

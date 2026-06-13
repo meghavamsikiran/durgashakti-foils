@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X, Filter } from 'lucide-react';
+import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X, Filter, Image as ImageIcon } from 'lucide-react';
 import AdminTable from '../components/AdminTable';
 import apiClient from '../../services/core/apiClient';
 import { Button } from '../../components/ui/button';
@@ -269,9 +269,9 @@ const InquiriesPage = () => {
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-primary" />
-            Customer Inquiries
+            Customer Support Cases
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5 font-medium">Manage and respond to messages submitted through the Contact Us form.</p>
+          <p className="text-xs text-slate-500 mt-0.5 font-medium">Manage and respond to tickets submitted by customers through the Support Cases system.</p>
         </div>
         <div className="relative" ref={filterRef}>
           <button
@@ -397,6 +397,7 @@ const InquiriesPage = () => {
         <div className="overflow-x-auto overflow-y-hidden admin-table-container-standard">
           <AdminTable
             columns={[
+              { key: 'ticket_id', title: 'Case ID' },
               { key: 'name', title: 'Customer' },
               { key: 'contact', title: 'Contact Info' },
               { key: 'message', title: 'Message Preview' },
@@ -422,6 +423,11 @@ const InquiriesPage = () => {
               });
               return filteredInquiries.map(item => ({
               ...item,
+              ticket_id: (
+                <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg">
+                  {item.ticket_id}
+                </span>
+              ),
               name: <span className="font-bold text-slate-900">{item.name}</span>,
               contact: (
                 <div className="flex flex-col gap-1">
@@ -441,12 +447,17 @@ const InquiriesPage = () => {
                   {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               ),
-              message: <span className="text-sm text-slate-600 truncate max-w-[200px] block">{item.message}</span>,
+              message: (
+                <span className="text-sm text-slate-600 truncate max-w-[200px] block">
+                  {item.message ? item.message.split('\n\n[Attachments]\n')[0] : ''}
+                </span>
+              ),
               status: (
                 <select
                   value={item.status || 'pending'}
+                  disabled={item.status === 'resolved'}
                   onChange={(e) => handleUpdateStatus(item.id, e.target.value)}
-                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative ${getStatusStyle(item.status || 'pending')}`}
+                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative ${item.status === 'resolved' ? 'opacity-65 cursor-not-allowed' : ''} ${getStatusStyle(item.status || 'pending')}`}
                   style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
                 >
                   <option value="pending">Pending</option>
@@ -487,10 +498,10 @@ const InquiriesPage = () => {
                     <MessageSquare className="w-5 h-5" />
                   </div>
                   <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                    Inquiry Details
+                    Case Details
                   </h3>
                 </div>
-                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium ml-13">ID: {selectedInquiry.id}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium ml-13">Case Ticket ID: {selectedInquiry.ticket_id}</p>
               </div>
               <button 
                 onClick={() => setSelectedInquiry(null)}
@@ -544,15 +555,56 @@ const InquiriesPage = () => {
                 </div>
               </div>
 
-              {/* Message Content */}
-              <div className="flex flex-col gap-3 text-slate-700 dark:text-slate-300 bg-gradient-to-b from-slate-50/80 to-slate-100/50 dark:from-[#1E2722]/50 dark:to-[#1E2722] p-6 rounded-3xl border border-slate-200/60 dark:border-[#26322B] shadow-inner">
-                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-450 font-black uppercase text-[10px] tracking-widest">
-                  <FileText className="w-4 h-4 text-primary" /> Full Message
-                </div>
-                <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-[#26322B] font-medium">
-                  {selectedInquiry.message}
-                </p>
-              </div>
+              {/* Message Content & Attachments */}
+              {(() => {
+                const parseMessageAndAttachments = (message) => {
+                  if (!message) return { cleanMessage: '', attachments: [] };
+                  const parts = message.split('\n\n[Attachments]\n');
+                  if (parts.length > 1) {
+                    const cleanMessage = parts[0];
+                    const attachments = parts[1].split('\n').filter(url => url.trim().length > 0);
+                    return { cleanMessage, attachments };
+                  }
+                  return { cleanMessage: message, attachments: [] };
+                };
+                const { cleanMessage, attachments } = parseMessageAndAttachments(selectedInquiry.message);
+                return (
+                  <>
+                    <div className="flex flex-col gap-3 text-slate-700 dark:text-slate-300 bg-gradient-to-b from-slate-50/80 to-slate-100/50 dark:from-[#1E2722]/50 dark:to-[#1E2722] p-6 rounded-3xl border border-slate-200/60 dark:border-[#26322B] shadow-inner">
+                      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-450 font-black uppercase text-[10px] tracking-widest">
+                        <FileText className="w-4 h-4 text-primary" /> Full Message
+                      </div>
+                      <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-[#26322B] font-medium font-sans">
+                        {cleanMessage}
+                      </p>
+                    </div>
+
+                    {attachments.length > 0 && (
+                      <div className="flex flex-col gap-3 p-6 bg-slate-50/80 dark:bg-[#1E2722] rounded-3xl border border-slate-200/60 dark:border-[#26322B] shadow-inner">
+                        <div className="text-slate-500 dark:text-slate-450 font-black uppercase text-[10px] tracking-widest flex items-center gap-1.5 font-sans">
+                          <ImageIcon className="w-4 h-4 text-primary" /> Attachment Images
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {attachments.map((url, idx) => (
+                            <a 
+                              key={idx} 
+                              href={url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="group relative aspect-square bg-[#050807] rounded-2xl overflow-hidden border border-slate-200 dark:border-[#26322B] hover:border-primary transition-all"
+                            >
+                              <img src={url} alt={`Attachment ${idx + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                              <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-white bg-primary px-2.5 py-1 rounded-lg">View Full</span>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* Status Update */}
               <div className="flex items-center justify-between bg-white dark:bg-[#1E2722] p-4 rounded-2xl border border-slate-200 dark:border-[#26322B] shadow-sm">
@@ -561,8 +613,9 @@ const InquiriesPage = () => {
                 </span>
                 <select
                   value={selectedInquiry.status || 'pending'}
+                  disabled={selectedInquiry.status === 'resolved'}
                   onChange={(e) => handleUpdateStatus(selectedInquiry.id, e.target.value)}
-                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative bg-white dark:bg-[#131B17] text-slate-900 dark:text-white ${getStatusStyle(selectedInquiry.status || 'pending')}`}
+                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative bg-white dark:bg-[#131B17] text-slate-900 dark:text-white ${selectedInquiry.status === 'resolved' ? 'opacity-60 cursor-not-allowed' : ''} ${getStatusStyle(selectedInquiry.status || 'pending')}`}
                   style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
                 >
                   <option value="pending" className="dark:bg-[#131B17] dark:text-white">Pending</option>
@@ -578,7 +631,7 @@ const InquiriesPage = () => {
                   <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest">
                     <Mail className="w-4 h-4" /> Reply Sent {selectedInquiry.replied_at && `on ${new Date(selectedInquiry.replied_at).toLocaleString()}`}
                   </div>
-                  <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                  <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-medium font-sans">
                     {selectedInquiry.reply_message}
                   </p>
                 </div>
@@ -586,9 +639,9 @@ const InquiriesPage = () => {
 
               {/* Send Reply Email */}
               {selectedInquiry.status === 'resolved' ? (
-                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-400 rounded-2xl p-4 text-xs font-semibold flex items-center gap-2">
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-400 rounded-2xl p-4 text-xs font-semibold flex items-center gap-2 font-sans">
                   <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                  This inquiry is closed. You cannot send replies unless it is re-opened (change status to Pending or In Progress).
+                  This case is closed. You cannot send replies unless it is re-opened (click Re-Open Case below).
                 </div>
               ) : (
                 <form onSubmit={handleSendReply} className="space-y-4 pt-4 border-t border-slate-100 dark:border-[#26322B]">
@@ -615,13 +668,28 @@ const InquiriesPage = () => {
               )}
             </div>
 
-            <div className="mt-8 flex justify-end">
+            <div className="mt-8 flex justify-end gap-3.5">
               <Button 
                 onClick={() => setSelectedInquiry(null)}
-                className="bg-slate-900 dark:bg-[#1E2722] text-white font-extrabold text-sm px-8 py-4 rounded-2xl tracking-wide hover:bg-primary dark:hover:bg-primary transition-all shadow-lg hover:shadow-emerald-glow active:scale-95 border border-transparent dark:border-[#26322B]"
+                className="bg-slate-900 dark:bg-[#1E2722] text-white font-extrabold text-sm px-6 py-4 rounded-2xl tracking-wide hover:bg-slate-800 transition-all shadow-lg active:scale-95 border border-transparent dark:border-[#26322B]"
               >
-                Close Details
+                Cancel
               </Button>
+              {selectedInquiry.status === 'resolved' ? (
+                <Button 
+                  onClick={() => handleUpdateStatus(selectedInquiry.id, 'pending')}
+                  className="bg-primary hover:bg-[#1bb847] text-white font-extrabold text-sm px-8 py-4 rounded-2xl tracking-wide transition-all shadow-lg active:scale-95 border border-transparent"
+                >
+                  Re-Open Case
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => handleUpdateStatus(selectedInquiry.id, 'resolved')}
+                  className="bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-sm px-8 py-4 rounded-2xl tracking-wide transition-all shadow-lg active:scale-95 border border-transparent"
+                >
+                  Close Inquiry
+                </Button>
+              )}
             </div>
           </div>
         </div>
