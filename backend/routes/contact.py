@@ -51,7 +51,7 @@ async def list_my_contacts(
     items = [
         {
             "id": str(c.id),
-            "ticket_id": f"DS-TKT-{str(c.id)[:8].upper()}",
+            "ticket_id": f"DSF-TKT-{str(c.id)[:8].upper()}",
             "name": c.name,
             "email": c.email,
             "phone": c.phone,
@@ -81,7 +81,7 @@ async def submit_contact(payload: ContactCreate, db: AsyncSession = Depends(get_
     db.add(contact)
     await db.flush()
 
-    ticket_id = f"DS-TKT-{str(contact.id)[:8].upper()}"
+    ticket_id = f"DSF-TKT-{str(contact.id)[:8].upper()}"
 
     # Send auto-acknowledgement email
     subj, email_body = contact_acknowledgement_email(payload.name, payload.message, ticket_id)
@@ -107,7 +107,7 @@ async def customer_reopen_contact(
     
     # Trigger reopened email
     date_str = contact.created_at.strftime('%Y-%m-%d %H:%M:%S')
-    ticket_id = f"DS-TKT-{str(contact.id)[:8].upper()}"
+    ticket_id = f"DSF-TKT-{str(contact.id)[:8].upper()}"
     subj, reopen_email_body = contact_reopened_email(contact.name, contact.message, date_str, ticket_id)
     import asyncio
     asyncio.create_task(send_email(contact.email, subj, reopen_email_body))
@@ -202,7 +202,7 @@ async def list_contacts(
     items = [
         {
             "id": str(c.id),
-            "ticket_id": f"DS-TKT-{str(c.id)[:8].upper()}",
+            "ticket_id": f"DSF-TKT-{str(c.id)[:8].upper()}",
             "name": c.name,
             "email": c.email,
             "phone": c.phone,
@@ -240,13 +240,13 @@ async def update_contact_status(
 
     if status == "resolved":
         date_str = contact.created_at.strftime('%Y-%m-%d %H:%M:%S')
-        ticket_id = f"DS-TKT-{str(contact.id)[:8].upper()}"
+        ticket_id = f"DSF-TKT-{str(contact.id)[:8].upper()}"
         subj, resolve_email_body = contact_resolved_email(contact.name, contact.message, date_str, ticket_id)
         import asyncio
         asyncio.create_task(send_email(contact.email, subj, resolve_email_body))
     elif old_status == "resolved" and status == "pending":
         date_str = contact.created_at.strftime('%Y-%m-%d %H:%M:%S')
-        ticket_id = f"DS-TKT-{str(contact.id)[:8].upper()}"
+        ticket_id = f"DSF-TKT-{str(contact.id)[:8].upper()}"
         subj, reopen_email_body = contact_reopened_email(contact.name, contact.message, date_str, ticket_id)
         import asyncio
         asyncio.create_task(send_email(contact.email, subj, reopen_email_body))
@@ -294,7 +294,7 @@ async def reply_contact(
     await db.flush()
 
     date_str = contact.created_at.strftime('%Y-%m-%d %H:%M:%S')
-    ticket_id = f"DS-TKT-{str(contact.id)[:8].upper()}"
+    ticket_id = f"DSF-TKT-{str(contact.id)[:8].upper()}"
     subj, customer_email_body = contact_reply_email(contact.name, contact.message, reply_body, date_str, ticket_id)
     
     # Run email asynchronously to return response instantly
