@@ -229,180 +229,47 @@ const Contact = () => {
 
       {/* ── VISUAL ARCHITECTURE 3-COLUMN LAYOUT ─────────────────── */}
       <section className="pb-24 bg-[#0C1310]">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[95vw] mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="grid grid-cols-1 lg:grid-cols-3 rounded-2xl overflow-hidden border-2 border-[#25D958] bg-[#0C1310] relative">
             
-            {/* 1. LEFT COLUMN: Contact Form */}
-            <div className="p-8 md:p-12 flex flex-col justify-between bg-[#0C1310]">
-              <div>
-                <h2 className="text-base font-black text-white font-sans mb-8 uppercase tracking-widest">
-                  CONTACT FORM
-                </h2>
-
-                {/* Patience Note Banner */}
-                <div className="bg-amber-500/5 dark:bg-[#25D958]/5 border border-[#25D958]/25 rounded-2xl p-4 text-xs text-amber-600 dark:text-slate-350 font-semibold flex items-center gap-2 mb-6">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-[#25D958]" />
-                  <span>Please be patient. It takes a maximum of 2-3 business days to get a response from our support team.</span>
+            {/* 1. LEFT COLUMN: dynamic Google Map (Swapped to Left) */}
+            <div className="w-full h-[450px] lg:h-auto min-h-[450px] relative bg-[#0C1310] flex flex-col overflow-hidden min-w-0">
+              <iframe 
+                title="Durga Shakti Foils Location"
+                src={getEmbedMapUrl(profile.googleMapsLink, profile.companyAddress, profile.companyName)}
+                width="100%" 
+                height="100%" 
+                style={{ border: 0, minHeight: '100%', flexGrow: 1, filter: 'invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%)' }} 
+                allowFullScreen="" 
+                loading="eager" 
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+              
+              {/* Floating Get Directions CTA overlay */}
+              <div className="absolute bottom-4 left-4 right-4 bg-[#0C1310]/95 backdrop-blur border border-[#26322B] p-4 rounded-xl shadow-lg flex justify-between items-center gap-4 animate-in fade-in duration-300">
+                <div>
+                  <h4 className="font-bold text-sm text-white leading-tight font-sans">
+                    {profile.companyName}
+                  </h4>
+                  <p className="text-[9px] text-[#25D958] font-bold uppercase mt-1 font-mono tracking-widest">LIVE LOCATION PIN</p>
                 </div>
                 
-                {submitted ? (
-                  <motion.div 
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="bg-[#25D958]/10 text-white border border-[#25D958]/20 p-6 rounded-2xl text-center my-auto flex flex-col items-center space-y-4"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-[#25D958]/20 flex items-center justify-center border border-[#25D958]/30">
-                      <span className="text-xl">🎉</span>
-                    </div>
-                    <div>
-                      <h3 className="text-base font-black text-white font-sans uppercase tracking-wider">TICKET SUBMITTED</h3>
-                      <p className="text-xs text-slate-400 mt-1">Our support team will review it shortly.</p>
-                    </div>
-                    <div className="bg-[#0C1310] border border-[#26322B] p-4 rounded-xl w-full text-center">
-                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">YOUR CASE TICKET ID</span>
-                      <span className="font-mono text-base font-black text-[#25D958] tracking-widest">{submittedTicketId}</span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 leading-normal max-w-xs">
-                      An email confirmation has been sent to your inbox. You can track this ticket in your dashboard.
-                    </p>
-                    <Button 
-                      onClick={() => setSubmitted(false)}
-                      variant="outline" 
-                      className="text-xs font-bold uppercase tracking-wider h-10 px-6 border-slate-700 bg-transparent hover:bg-slate-800 text-white rounded-lg mt-2"
-                    >
-                      Submit Another Query
-                    </Button>
-                  </motion.div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="flex flex-col gap-1.5">
-                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans">NAME</Label>
-                      <Input 
-                        required
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="Enter your Name" 
-                        className="h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium" 
-                      />
-                    </div>
-                    
-                    <div className="flex flex-col gap-1.5">
-                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans">EMAIL</Label>
-                      <Input 
-                        required
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="Enter a valid email address" 
-                        className="h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium" 
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans">PHONE NUMBER</Label>
-                      <Input 
-                        required
-                        type="text"
-                        maxLength={10}
-                        value={formData.phone}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                          setFormData({ ...formData, phone: val });
-                        }}
-                        placeholder="Enter 10-digit phone number"
-                        className="h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium"
-                      />
-                    </div>
-                    
-                    <div className="flex flex-col gap-1.5">
-                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans">MESSAGE</Label>
-                      <textarea 
-                        required
-                        value={formData.message}
-                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                        placeholder="Your message here..."
-                        className="w-full min-h-[100px] rounded-lg border border-[#26322B] bg-[#131B17] p-4 text-sm focus:border-[#25D958] transition-all outline-none text-white font-medium placeholder:text-slate-550"
-                      />
-                    </div>
-
-                    {/* Attachment Upload Field */}
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center justify-between ml-1">
-                        <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest font-sans">
-                          Attachments (Optional)
-                        </Label>
-                        <span className="text-[9px] text-[#25D958]/85 font-mono font-bold">
-                          {uploadedUrls.length}/3 Images
-                        </span>
-                      </div>
-                      
-                      <label className="flex items-center justify-center gap-2 w-full h-12 bg-[#131B17] border border-[#26322B] hover:border-[#25D958]/50 rounded-xl cursor-pointer transition-colors px-4 text-xs font-bold text-slate-350 select-none">
-                        <Paperclip className="w-4 h-4 text-[#25D958]" />
-                        <span>{uploadingFiles ? 'Uploading...' : 'Choose Image (Max 3)'}</span>
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          disabled={uploadingFiles || uploadedUrls.length >= 3}
-                          className="hidden"
-                        />
-                      </label>
-                      <p className="text-[9px] text-slate-500 leading-normal mt-0.5 ml-1">
-                        Supported: PNG, JPG, JPEG, WEBP. Videos are blocked.
-                      </p>
-
-                      {/* File Previews */}
-                      {uploadedUrls.length > 0 && (
-                        <div className="grid grid-cols-3 gap-2 mt-2">
-                          {uploadedUrls.map((url, index) => (
-                            <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-[#26322B] bg-[#19231F]/30 group">
-                              <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
-                              <button
-                                type="button"
-                                onClick={() => removeFile(index)}
-                                className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-rose-600 rounded-lg text-white transition-colors"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 py-2">
-                      <input 
-                        type="checkbox" 
-                        required 
-                        id="terms" 
-                        checked={acceptedTerms}
-                        onChange={(e) => setAcceptedTerms(e.target.checked)}
-                        className="rounded border-[#26322B] text-[#25D958] focus:ring-[#25D958] bg-[#131B17] w-4 h-4 cursor-pointer" 
-                      />
-                      <label htmlFor="terms" className="text-[10px] text-slate-400 font-bold cursor-pointer uppercase tracking-wider font-sans">
-                        I ACCEPT THE <span onClick={() => setShowTermsModal(true)} className="underline hover:text-[#1bb847] text-[#25D958] font-bold">TERMS OF SERVICE</span>
-                      </label>
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      disabled={submitting || uploadingFiles}
-                      className="w-full h-12 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-black uppercase tracking-wider rounded-lg text-sm transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 duration-200"
-                    >
-                      {submitting ? 'SUBMITTING...' : 'SUBMIT'}
-                    </Button>
-                  </form>
-                )}
-              </div>
-              
-              <div className="mt-8 pt-6 border-t border-[#26322B] flex items-center gap-2 text-slate-500 font-mono">
-                <Shield className="w-4 h-4 text-[#25D958]/55" />
-                <span className="text-[9px] font-bold uppercase tracking-widest">Secure end-to-end processing</span>
+                <motion.a 
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  href={profile.googleMapsLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 bg-[#F5C451] hover:bg-[#e0b23f] text-[#0C1310] font-black px-4 py-2.5 rounded-lg shadow-sm text-[10px] tracking-wide uppercase transition-colors"
+                >
+                  <Navigation className="w-3.5 h-3.5 fill-[#0C1310] text-[#0C1310]" />
+                  Get Directions
+                </motion.a>
               </div>
             </div>
 
+            {/* 2. MIDDLE COLUMN: Contact Details */}
             <div className="bg-[#0C1310] text-white p-8 md:p-12 flex flex-col justify-center text-center space-y-12 relative overflow-hidden border-y lg:border-y-0 lg:border-x border-[#E5B54F]/20 min-h-[450px]">
 
               {/* Call Us section */}
@@ -441,39 +308,173 @@ const Contact = () => {
               )}
             </div>
 
-            {/* 3. RIGHT COLUMN: dynamic Google Map */}
-            <div className="w-full h-[400px] lg:h-auto min-h-[400px] relative bg-[#0C1310] flex flex-col overflow-hidden min-w-0">
-              <iframe 
-                title="Durga Shakti Foils Location"
-                src={getEmbedMapUrl(profile.googleMapsLink, profile.companyAddress, profile.companyName)}
-                width="100%" 
-                height="100%" 
-                style={{ border: 0, minHeight: '100%', flexGrow: 1, filter: 'invert(90%) hue-rotate(180deg) brightness(95%) contrast(90%)' }} 
-                allowFullScreen="" 
-                loading="eager" 
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-              
-              {/* Floating Get Directions CTA overlay */}
-              <div className="absolute bottom-4 left-4 right-4 bg-[#0C1310]/95 backdrop-blur border border-[#26322B] p-4 rounded-xl shadow-lg flex justify-between items-center gap-4">
-                <div>
-                  <h4 className="font-bold text-sm text-white leading-tight font-sans">
-                    {profile.companyName}
-                  </h4>
-                  <p className="text-[9px] text-[#25D958] font-bold uppercase mt-1 font-mono tracking-widest">LIVE LOCATION PIN</p>
+            {/* 3. RIGHT COLUMN: Contact Form (Swapped to Right) */}
+            <div className="p-8 md:p-12 flex flex-col justify-between bg-[#0C1310]">
+              <div className="text-left w-full">
+                <h2 className="text-base font-black text-white font-sans mb-8 uppercase tracking-widest text-left">
+                  CONTACT FORM
+                </h2>
+
+                {/* Patience Note Banner */}
+                <div className="bg-amber-500/5 dark:bg-[#25D958]/5 border border-[#25D958]/25 rounded-2xl p-4 text-xs text-amber-600 dark:text-slate-350 font-semibold flex items-start text-left gap-2 mb-6">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-[#25D958] mt-0.5" />
+                  <span>Please be patient. It takes a maximum of 2-3 business days to get a response from our support team.</span>
                 </div>
                 
-                <motion.a 
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  href={profile.googleMapsLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 bg-[#F5C451] hover:bg-[#e0b23f] text-[#0C1310] font-black px-4 py-2.5 rounded-lg shadow-sm text-[10px] tracking-wide uppercase transition-colors"
-                >
-                  <Navigation className="w-3.5 h-3.5 fill-[#0C1310] text-[#0C1310]" />
-                  Get Directions
-                </motion.a>
+                {submitted ? (
+                  <motion.div 
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-[#25D958]/10 text-white border border-[#25D958]/20 p-6 rounded-2xl text-center my-auto flex flex-col items-center space-y-4"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-[#25D958]/20 flex items-center justify-center border border-[#25D958]/30">
+                      <span className="text-xl">🎉</span>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-white font-sans uppercase tracking-wider">TICKET SUBMITTED</h3>
+                      <p className="text-xs text-slate-400 mt-1">Our support team will review it shortly.</p>
+                    </div>
+                    <div className="bg-[#0C1310] border border-[#26322B] p-4 rounded-xl w-full text-center">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1">YOUR CASE TICKET ID</span>
+                      <span className="font-mono text-base font-black text-[#25D958] tracking-widest">{submittedTicketId}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-normal max-w-xs">
+                      An email confirmation has been sent to your inbox. You can track this ticket in your dashboard.
+                    </p>
+                    <Button 
+                      onClick={() => setSubmitted(false)}
+                      variant="outline" 
+                      className="text-xs font-bold uppercase tracking-wider h-10 px-6 border-slate-700 bg-transparent hover:bg-slate-800 text-white rounded-lg mt-2"
+                    >
+                      Submit Another Query
+                    </Button>
+                  </motion.div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-4 text-left w-full">
+                    <div className="flex flex-col gap-1.5 w-full">
+                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans text-left">NAME</Label>
+                      <Input 
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Enter your Name" 
+                        className="h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium w-full text-left" 
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col gap-1.5 w-full">
+                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans text-left">EMAIL</Label>
+                      <Input 
+                        required
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        placeholder="Enter a valid email address" 
+                        className="h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium w-full text-left" 
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 w-full">
+                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans text-left">PHONE NUMBER</Label>
+                      <Input 
+                        required
+                        type="text"
+                        maxLength={10}
+                        value={formData.phone}
+                        onChange={(e) => {
+                           const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                           setFormData({ ...formData, phone: val });
+                        }}
+                        placeholder="Enter 10-digit phone number"
+                        className="h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium w-full text-left"
+                      />
+                    </div>
+                    
+                    <div className="flex flex-col gap-1.5 w-full">
+                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans text-left">MESSAGE</Label>
+                      <textarea 
+                        required
+                        value={formData.message}
+                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                        placeholder="Your message here..."
+                        className="w-full min-h-[100px] rounded-lg border border-[#26322B] bg-[#131B17] p-4 text-sm focus:border-[#25D958] transition-all outline-none text-white font-medium placeholder:text-slate-550 text-left"
+                      />
+                    </div>
+
+                    {/* Attachment Upload Field */}
+                    <div className="flex flex-col gap-1.5 w-full">
+                      <div className="flex items-center justify-between ml-1">
+                        <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest font-sans text-left">
+                          Attachments (Optional)
+                        </Label>
+                        <span className="text-[9px] text-[#25D958]/85 font-mono font-bold">
+                          {uploadedUrls.length}/3 Images
+                        </span>
+                      </div>
+                      
+                      <label className="flex items-center justify-center gap-2 w-full h-12 bg-[#131B17] border border-[#26322B] hover:border-[#25D958]/50 rounded-xl cursor-pointer transition-colors px-4 text-xs font-bold text-slate-350 select-none">
+                        <Paperclip className="w-4 h-4 text-[#25D958]" />
+                        <span>{uploadingFiles ? 'Uploading...' : 'Choose Image (Max 3)'}</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          disabled={uploadingFiles || uploadedUrls.length >= 3}
+                          className="hidden"
+                        />
+                      </label>
+                      <p className="text-[9px] text-slate-500 leading-normal mt-0.5 ml-1 text-left">
+                        Supported: PNG, JPG, JPEG, WEBP. Videos are blocked.
+                      </p>
+
+                      {/* File Previews */}
+                      {uploadedUrls.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                          {uploadedUrls.map((url, index) => (
+                            <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-[#26322B] bg-[#19231F]/30 group">
+                              <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => removeFile(index)}
+                                className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-rose-600 rounded-lg text-white transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 py-2 w-full justify-start">
+                      <input 
+                        type="checkbox" 
+                        required 
+                        id="terms" 
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        className="rounded border-[#26322B] text-[#25D958] focus:ring-[#25D958] bg-[#131B17] w-4 h-4 cursor-pointer" 
+                      />
+                      <label htmlFor="terms" className="text-[10px] text-slate-400 font-bold cursor-pointer uppercase tracking-wider font-sans text-left">
+                        I ACCEPT THE <span onClick={() => setShowTermsModal(true)} className="underline hover:text-[#1bb847] text-[#25D958] font-bold">TERMS OF SERVICE</span>
+                      </label>
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      disabled={submitting || uploadingFiles}
+                      className="w-full h-12 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-black uppercase tracking-wider rounded-lg text-sm transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 duration-200"
+                    >
+                      {submitting ? 'SUBMITTING...' : 'SUBMIT'}
+                    </Button>
+                  </form>
+                )}
+              </div>
+              
+              <div className="mt-8 pt-6 border-t border-[#26322B] flex items-center gap-2 text-slate-500 font-mono w-full justify-start">
+                <Shield className="w-4 h-4 text-[#25D958]/55" />
+                <span className="text-[9px] font-bold uppercase tracking-widest text-left">Secure end-to-end processing</span>
               </div>
             </div>
 

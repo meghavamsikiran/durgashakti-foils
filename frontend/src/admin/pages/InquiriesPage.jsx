@@ -819,12 +819,40 @@ const InquiriesPage = () => {
                   return { cleanMessage: message, attachments: [] };
                 };
 
+                const formatToLocalTime = (utcTimestampStr) => {
+                  if (!utcTimestampStr) return '';
+                  try {
+                    let dateStr = utcTimestampStr.trim();
+                    if (!dateStr.toUpperCase().endsWith('UTC') && !dateStr.toUpperCase().endsWith('GMT') && !dateStr.includes('+') && !dateStr.includes('-')) {
+                      dateStr = dateStr.replace(',', '') + ' UTC';
+                    }
+                    const date = new Date(dateStr);
+                    if (isNaN(date.getTime())) {
+                      return utcTimestampStr;
+                    }
+                    return date.toLocaleString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true
+                    });
+                  } catch (e) {
+                    return utcTimestampStr;
+                  }
+                };
+
                 const parseReplies = (replyMessage) => {
                   if (!replyMessage) return [];
-                  const blocks = replyMessage.split(/\n\n(?=\[(?:Admin|Customer) -)/);
+                  // Split on [Admin - or [Customer - or old format [DD MMM YYYY, hh:mm AM/PM]
+                  const blocks = replyMessage.split(/\n\n(?=\[(?:Admin\s*-\s*|Customer\s*-\s*|\d{1,2}\s+[A-Za-z]{3}\s+\d{4}))/);
                   return blocks.map(block => {
-                    if (block.startsWith('[Admin -') || block.startsWith('[Customer -')) {
-                      const lines = block.split('\n');
+                    const trimmedBlock = block.trim();
+                    if (!trimmedBlock) return null;
+
+                    if (trimmedBlock.startsWith('[Admin -') || trimmedBlock.startsWith('[Customer -')) {
+                      const lines = trimmedBlock.split('\n');
                       const header = lines[0];
                       const rawContent = lines.slice(1).join('\n');
                       
@@ -839,12 +867,19 @@ const InquiriesPage = () => {
                       }
                       
                       const { cleanMessage, attachments } = parseMessageAndAttachments(rawContent);
-                      return { sender, timestamp, content: cleanMessage, attachments };
+                      return { sender, timestamp: formatToLocalTime(timestamp), content: cleanMessage, attachments };
+                    } else if (trimmedBlock.startsWith('[')) {
+                      const lines = trimmedBlock.split('\n');
+                      const header = lines[0];
+                      const rawContent = lines.slice(1).join('\n');
+                      const timestamp = header.replace(/^\[|\]$/g, '');
+                      const { cleanMessage, attachments } = parseMessageAndAttachments(rawContent);
+                      return { sender: 'DSF Support Team', timestamp: formatToLocalTime(timestamp), content: cleanMessage, attachments };
                     } else {
-                      const { cleanMessage, attachments } = parseMessageAndAttachments(block);
+                      const { cleanMessage, attachments } = parseMessageAndAttachments(trimmedBlock);
                       return { sender: 'DSF Support Team', timestamp: null, content: cleanMessage, attachments };
                     }
-                  });
+                  }).filter(Boolean);
                 };
 
                 const replies = parseReplies(selectedInquiry.reply_message);
