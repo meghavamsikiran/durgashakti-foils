@@ -3,10 +3,12 @@ import apiClient from './core/apiClient';
 const contactService = {
   submitContact: async (formData) => {
     const response = await apiClient.post('/contact', formData);
+    apiClient.invalidateCache('/contacts/my');
+    apiClient.invalidateCache('/admin/contacts');
     return response.data;
   },
   getMyTickets: async () => {
-    const response = await apiClient.get('/contacts/my');
+    const response = await apiClient.cachedGet('/contacts/my');
     return response.data;
   },
   uploadAttachment: async (file) => {

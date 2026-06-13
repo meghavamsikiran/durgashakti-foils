@@ -597,6 +597,23 @@ def contact_resolved_email(name: str, original_message: str, date_str: str, tick
     return f"Ticket {ticket_id} Resolved - DurgaShakti Foils", _base(content, "Ticket Resolved")
 
 
+def contact_reopened_email(name: str, original_message: str, date_str: str, ticket_id: str) -> tuple[str, str]:
+    clean_orig = original_message.split("\n\n[Attachments]\n")[0] if original_message else ""
+    content = f"""
+    <p style="font-size:24px;font-weight:800;color:{BRAND_DARK};margin:0 0 8px;">Ticket Re-Opened 🛡️</p>
+    <p style="color:#6b7280;font-size:15px;margin:0 0 28px;">Dear <strong>{name}</strong>, your ticket {ticket_id} submitted on {date_str} has been successfully re-opened.</p>
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:24px;margin-bottom:20px;border-left:5px solid #d97706;">
+      <p style="margin:0;font-size:15px;color:#92400e;line-height:1.6;font-weight:600;">Re-opened ticket {ticket_id}. Our support team will review it shortly!</p>
+    </div>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:24px;margin-bottom:28px;">
+      <p style="margin:0 0 8px;color:#6b7280;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Original Ticket Details</p>
+      <p style="margin:0;font-size:14px;color:#4b5563;line-height:1.6;font-style:italic;">"{clean_orig}"</p>
+    </div>
+    <p style="color:#4b5563;font-size:14px;line-height:1.6;">You will receive email updates once an agent responds.</p>
+    """
+    return f"Ticket {ticket_id} Re-Opened - DurgaShakti Foils", _base(content, "Ticket Re-Opened")
+
+
 def refund_credited_email(name: str, order: dict, refunded_items: list, item_refund_total: float, courier_total: float = 0.0) -> tuple[str, str, list]:
     """Email template sent to customer when a refund is credited, with a Credit Note PDF attached."""
     first = escape((name.split()[0] if name else "Customer"))

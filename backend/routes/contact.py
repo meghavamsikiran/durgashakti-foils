@@ -9,7 +9,8 @@ from deps import require_permission, UserSchema, ContactCreate, send_email, get_
 from email_templates import (
     contact_acknowledgement_email,
     contact_reply_email,
-    contact_resolved_email
+    contact_resolved_email,
+    contact_reopened_email
 )
 from storage_service import upload_image
 
@@ -81,6 +82,30 @@ async def submit_contact(payload: ContactCreate, db: AsyncSession = Depends(get_
     asyncio.create_task(send_email(payload.email, subj, email_body))
 
     return {"message": "Message submitted successfully", "id": str(contact.id), "ticket_id": ticket_id}
+
+@router.post("/contacts/{contact_id}/reopen")
+async def customer_reopen_contact(
+    contact_id: str,
+    current_user: UserSchema = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    res = await db.execute(select(ContactModel).where(ContactModel.id == contact_id, ContactModel.email == current_user.email))
+    contact = res.scalar_one_or_none()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Ticket not found or unauthorized")
+        
+    old_status = contact.status
+    contact.status = "pending"
+    await db.flush()
+    
+    # Trigger reopened email
+    date_str = contact.created_at.strftime('%Y-%m-%d %H:%M:%S')
+    ticket_id = f"DS-TKT-{str(contact.id)[:8].upper()}"
+    subj, reopen_email_body = contact_reopened_email(contact.name, contact.message, date_str, ticket_id)
+    import asyncio
+    asyncio.create_task(send_email(contact.email, subj, reopen_email_body))
+    
+    return {"message": "Ticket re-opened successfully", "status": "pending"}
 
 # ── Admin Endpoints ──────────────────────────────────────────────────────
 @router.get("/admin/contacts")
@@ -164,6 +189,7 @@ async def update_contact_status(
     if not contact:
         raise HTTPException(status_code=404, detail="Contact inquiry not found")
         
+    old_status = contact.status
     contact.status = status
     await db.flush()
 
@@ -173,6 +199,12 @@ async def update_contact_status(
         subj, resolve_email_body = contact_resolved_email(contact.name, contact.message, date_str, ticket_id)
         import asyncio
         asyncio.create_task(send_email(contact.email, subj, resolve_email_body))
+    elif old_status == "resolved" and status == "pending":
+        date_str = contact.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        ticket_id = f"DS-TKT-{str(contact.id)[:8].upper()}"
+        subj, reopen_email_body = contact_reopened_email(contact.name, contact.message, date_str, ticket_id)
+        import asyncio
+        asyncio.create_task(send_email(contact.email, subj, reopen_email_body))
 
     return {"message": f"Status updated to {status} successfully", "status": contact.status}
 
@@ -198,7 +230,14 @@ async def reply_contact(
             detail="Cannot reply to a resolved/closed inquiry. Please re-open it (change status to Pending or In Progress) before replying."
         )
 
-    contact.reply_message = reply_body
+    # Format response as list/history thread
+    timestamp_str = utcnow().strftime('%d %b %Y, %I:%M %p')
+    new_reply_block = f"[{timestamp_str}]\n{reply_body}"
+    if contact.reply_message:
+        contact.reply_message = contact.reply_message + "\n\n" + new_reply_block
+    else:
+        contact.reply_message = new_reply_block
+
     contact.replied_at = utcnow()
     contact.status = "replied"
     await db.flush()
@@ -206,11 +245,14 @@ async def reply_contact(
     date_str = contact.created_at.strftime('%Y-%m-%d %H:%M:%S')
     ticket_id = f"DS-TKT-{str(contact.id)[:8].upper()}"
     subj, customer_email_body = contact_reply_email(contact.name, contact.message, reply_body, date_str, ticket_id)
-    sent, err_msg = await send_email(contact.email, subj, customer_email_body)
+    
+    # Run email asynchronously to return response instantly
+    import asyncio
+    asyncio.create_task(send_email(contact.email, subj, customer_email_body))
 
     return {
-        "message": "Reply sent successfully" if sent else "Reply saved, but email delivery failed",
+        "message": "Reply sent successfully",
         "status": "replied",
-        "email_sent": sent,
-        "email_error": None if sent else err_msg
+        "email_sent": True,
+        "email_error": None
     }

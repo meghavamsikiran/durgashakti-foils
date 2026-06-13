@@ -6,22 +6,31 @@ import {
   FileText, CornerDownRight, Search
 } from 'lucide-react';
 import contactService from '../../../services/contact.service';
+import apiClient from '../../../services/core/apiClient';
 import PageLoader from '../../../components/ui/PageLoader';
 import { toast } from 'sonner';
 
 const TicketsTab = () => {
-  const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tickets, setTickets] = useState(() => {
+    const cached = apiClient.getCachedDataSync('/contacts/my');
+    return cached?.data?.items || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    const cached = apiClient.getCachedDataSync('/contacts/my');
+    return !cached;
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedTicketId, setExpandedTicketId] = useState(null);
 
   useEffect(() => {
-    fetchTickets();
+    fetchTickets(false);
   }, []);
 
-  const fetchTickets = async () => {
+  const fetchTickets = async (showSpinner = true) => {
     try {
-      setLoading(true);
+      if (showSpinner) {
+        setLoading(true);
+      }
       const res = await contactService.getMyTickets();
       setTickets(res.items || []);
     } catch (err) {
@@ -29,6 +38,23 @@ const TicketsTab = () => {
       toast.error("Failed to load your support tickets");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReopen = async (ticketId) => {
+    try {
+      await apiClient.post(`/contacts/${ticketId}/reopen`);
+      toast.success("Ticket re-opened successfully");
+      
+      // Invalidate both cache routes immediately so user & admin see updates
+      apiClient.invalidateCache('/contacts/my');
+      apiClient.invalidateCache('/admin/contacts');
+      
+      // Refresh list in background
+      await fetchTickets(false);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.detail || "Failed to re-open ticket");
     }
   };
 
@@ -41,6 +67,21 @@ const TicketsTab = () => {
       return { cleanMessage, attachments };
     }
     return { cleanMessage: message, attachments: [] };
+  };
+
+  const parseReplies = (replyMessage) => {
+    if (!replyMessage) return [];
+    if (!replyMessage.startsWith('[')) {
+      return [{ timestamp: null, content: replyMessage }];
+    }
+    const parts = replyMessage.split(/\n\n(?=\[)/);
+    return parts.map(part => {
+      const lines = part.split('\n');
+      const header = lines[0];
+      const content = lines.slice(1).join('\n');
+      const timestamp = header.replace(/^\[|\]$/g, '');
+      return { timestamp, content };
+    });
   };
 
   const getStatusBadge = (status) => {
@@ -212,29 +253,37 @@ const TicketsTab = () => {
 
                         {/* Replies */}
                         {ticket.reply_message ? (
-                          <div className="border-t border-[#26322B]/60 pt-6">
-                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                          <div className="border-t border-[#26322B]/60 pt-6 space-y-4">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1.5">
                               <CornerDownRight className="w-3.5 h-3.5 text-[#25D958]" />
-                              Support Reply
+                              Support Reply History
                             </h4>
-                            <div className="bg-[#25D958]/5 border border-[#25D958]/20 rounded-xl p-5 space-y-3">
-                              <div className="flex items-center justify-between gap-2 border-b border-[#25D958]/10 pb-2.5">
-                                <span className="text-xs font-bold text-[#25D958] uppercase tracking-wider">DS Support Team</span>
-                                {ticket.replied_at && (
-                                  <span className="text-[10px] font-mono text-slate-500">
-                                    {new Date(ticket.replied_at).toLocaleDateString(undefined, {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-sm text-slate-350 leading-relaxed whitespace-pre-wrap">
-                                {ticket.reply_message}
-                              </p>
+                            <div className="space-y-3">
+                              {parseReplies(ticket.reply_message).map((reply, idx) => (
+                                <div key={idx} className="bg-[#25D958]/5 border border-[#25D958]/20 rounded-xl p-5 space-y-2">
+                                  <div className="flex items-center justify-between gap-2 border-b border-[#25D958]/10 pb-2.5">
+                                    <span className="text-xs font-bold text-[#25D958] uppercase tracking-wider">DS Support Team</span>
+                                    {reply.timestamp ? (
+                                      <span className="text-[10px] font-mono text-slate-500">{reply.timestamp}</span>
+                                    ) : (
+                                      ticket.replied_at && (
+                                        <span className="text-[10px] font-mono text-slate-500">
+                                          {new Date(ticket.replied_at).toLocaleDateString(undefined, {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </span>
+                                      )
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-slate-350 leading-relaxed whitespace-pre-wrap">
+                                    {reply.content}
+                                  </p>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         ) : (
@@ -246,6 +295,19 @@ const TicketsTab = () => {
                                 Our customer success team will review your ticket and reply shortly. You will receive an email confirmation.
                               </div>
                             </div>
+                          </div>
+                        )}
+
+                        {/* Customer Re-Open Action */}
+                        {(ticket.status === 'resolved' || ticket.status === 'closed') && (
+                          <div className="border-t border-[#26322B]/60 pt-6 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => handleReopen(ticket.id)}
+                              className="px-5 py-2.5 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-sm active:scale-95 duration-200"
+                            >
+                              Re-Open Case
+                            </button>
                           </div>
                         )}
                       </div>

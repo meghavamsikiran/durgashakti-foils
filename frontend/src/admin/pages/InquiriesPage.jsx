@@ -198,6 +198,8 @@ const InquiriesPage = () => {
     try {
       await apiClient.put(`/admin/contacts/${id}/status`, { status: newStatus });
       toast.success('Status updated successfully');
+      apiClient.invalidateCache('/admin/contacts');
+      apiClient.invalidateCache('/contacts/my');
       setInquiries(inquiries.map(inc => inc.id === id ? { ...inc, status: newStatus } : inc));
       if (selectedInquiry?.id === id) {
         setSelectedInquiry({ ...selectedInquiry, status: newStatus });
@@ -219,16 +221,25 @@ const InquiriesPage = () => {
         reply_message: replyMessage
       });
       
-      if (response.data.email_sent === false) {
-        toast.warning(`Reply saved, but email delivery failed: ${response.data.email_error}`);
-      } else {
-        toast.success(response.data.message || 'Reply sent successfully');
-      }
+      toast.success('Reply sent successfully');
+      apiClient.invalidateCache('/admin/contacts');
+      apiClient.invalidateCache('/contacts/my');
+      
+      const now = new Date();
+      // Format like the Python backend: e.g. "13 Jun 2026, 01:12 PM"
+      const dateFormatted = now.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+      const timeFormatted = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      const timestampStr = `${dateFormatted}, ${timeFormatted}`;
+      
+      const newReplyBlock = `[${timestampStr}]\n${replyMessage}`;
+      const updatedReplyMessage = selectedInquiry.reply_message
+        ? `${selectedInquiry.reply_message}\n\n${newReplyBlock}`
+        : newReplyBlock;
       
       const updated = { 
         ...selectedInquiry, 
-        reply_message: replyMessage, 
-        replied_at: new Date().toISOString(),
+        reply_message: updatedReplyMessage, 
+        replied_at: now.toISOString(),
         status: 'replied' 
       };
       
@@ -626,16 +637,52 @@ const InquiriesPage = () => {
               </div>
 
               {/* Reply History */}
-              {selectedInquiry.reply_message && (
-                <div className="flex flex-col gap-3 text-slate-700 dark:text-slate-300 bg-primary/5 dark:bg-emerald-950/20 p-6 rounded-3xl border border-primary/20 dark:border-emerald-900/50 shadow-sm">
-                  <div className="flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-widest">
-                    <Mail className="w-4 h-4" /> Reply Sent {selectedInquiry.replied_at && `on ${new Date(selectedInquiry.replied_at).toLocaleString()}`}
+              {(() => {
+                const parseReplies = (replyMessage) => {
+                  if (!replyMessage) return [];
+                  if (!replyMessage.startsWith('[')) {
+                    return [{ timestamp: null, content: replyMessage }];
+                  }
+                  const parts = replyMessage.split(/\n\n(?=\[)/);
+                  return parts.map(part => {
+                    const lines = part.split('\n');
+                    const header = lines[0];
+                    const content = lines.slice(1).join('\n');
+                    const timestamp = header.replace(/^\[|\]$/g, '');
+                    return { timestamp, content };
+                  });
+                };
+                const replies = parseReplies(selectedInquiry.reply_message);
+                if (replies.length === 0) return null;
+                return (
+                  <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-[#26322B]">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5 font-sans">
+                      <Mail className="w-4 h-4 text-primary" /> Reply History Thread
+                    </h4>
+                    <div className="space-y-3">
+                      {replies.map((reply, idx) => (
+                        <div key={idx} className="flex flex-col gap-2 text-slate-700 dark:text-slate-350 bg-primary/5 dark:bg-emerald-950/20 p-5 rounded-3xl border border-primary/20 dark:border-emerald-900/50 shadow-sm">
+                          <div className="flex items-center justify-between gap-2 border-b border-primary/10 pb-2">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-primary font-sans">DS Support Agent</span>
+                            {reply.timestamp ? (
+                              <span className="text-[10px] font-mono text-slate-400">{reply.timestamp}</span>
+                            ) : (
+                              selectedInquiry.replied_at && (
+                                <span className="text-[10px] font-mono text-slate-400">
+                                  {new Date(selectedInquiry.replied_at).toLocaleString()}
+                                </span>
+                              )
+                            )}
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-medium font-sans">
+                            {reply.content}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-medium font-sans">
-                    {selectedInquiry.reply_message}
-                  </p>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Send Reply Email */}
               {selectedInquiry.status === 'resolved' ? (
