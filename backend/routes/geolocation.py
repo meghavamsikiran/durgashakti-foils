@@ -1,10 +1,55 @@
 import os
+import time
 import requests
 from fastapi import APIRouter, Query, HTTPException
 
 router = APIRouter(prefix="/api/geolocation")
 
 PINCODE_CACHE = {}
+
+# ── Mappls OAuth2 Token Cache ──────────────────────────────────────────────────
+_mappls_token_cache = {"access_token": None, "expires_at": 0}
+
+def get_mappls_access_token():
+    """Generate or return cached Mappls OAuth2 access token."""
+    now = time.time()
+    if _mappls_token_cache["access_token"] and now < _mappls_token_cache["expires_at"]:
+        return _mappls_token_cache["access_token"]
+
+    client_id = os.environ.get("MAPPLS_CLIENT_ID", "")
+    client_secret = os.environ.get("MAPPLS_CLIENT_SECRET", "")
+
+    # Also support the legacy single API key as client_id
+    if not client_id:
+        client_id = os.environ.get("MAPPLS_API_KEY", "")
+
+    if not client_id or not client_secret:
+        print("[Mappls] Missing MAPPLS_CLIENT_ID / MAPPLS_CLIENT_SECRET environment variables")
+        return None
+
+    try:
+        token_url = "https://outpost.mappls.com/api/security/oauth/token"
+        payload = {
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret,
+        }
+        res = requests.post(token_url, data=payload, timeout=10, verify=False)
+        if res.status_code == 200:
+            data = res.json()
+            token = data.get("access_token")
+            # Token is valid for ~24 hours, refresh 1 hour before expiry
+            expires_in = data.get("expires_in", 86400)
+            _mappls_token_cache["access_token"] = token
+            _mappls_token_cache["expires_at"] = now + expires_in - 3600
+            print(f"[Mappls] OAuth token generated successfully (expires in {expires_in}s)")
+            return token
+        else:
+            print(f"[Mappls] Token generation failed: {res.status_code} - {res.text[:200]}")
+    except Exception as e:
+        print(f"[Mappls] Token generation error: {e}")
+
+    return None
 
 def validate_with_india_post(pincode: str):
     """Authoritative validation and naming from Government India Post database."""
@@ -38,17 +83,17 @@ def reverse_geocode(
 ):
     geocoded = None
 
-    # ── Layer 1: Query Mappls Reverse Geocoding API (using MAPPLS_API_KEY from environment) ──
-    mappls_api_key = os.environ.get("MAPPLS_API_KEY") or "oewjoirgyxbhtfasqwnkahawwodaowwicufh"
-    if mappls_api_key:
+    # ── Layer 1: Query Mappls Reverse Geocoding API via OAuth2 ──────────────────
+    mappls_token = get_mappls_access_token()
+    if mappls_token:
         try:
-            # Use the current Mappls reverse geocode endpoint (post-Aug 2025)
-            url = f"https://search.mappls.com/search/address/rev-geocode?lat={lat}&lng={lon}&access_token={mappls_api_key}"
-            res = requests.get(url, timeout=10)
+            # Use bearer token with the Mappls reverse geocode endpoint
+            rev_url = f"https://apis.mappls.com/advancedmaps/v1/{mappls_token}/rev_geocode?lat={lat}&lng={lon}"
+            res = requests.get(rev_url, timeout=10, verify=False)
+            print(f"[Mappls] rev_geocode status={res.status_code}")
             if res.status_code == 200:
                 data = res.json()
-                # New endpoint returns "responseList" instead of "results"
-                results = data.get("responseList") or data.get("results") or []
+                results = data.get("results") or []
                 if results:
                     r = results[0]
                     geocoded = {
@@ -61,9 +106,17 @@ def reverse_geocode(
                         "route": r.get("street") or r.get("formatted_address") or "",
                         "building": ", ".join(filter(None, [r.get("houseNumber"), r.get("houseName"), r.get("poi")]))
                     }
-            elif res.status_code == 401 or res.status_code == 403:
-                # Try the legacy endpoint as fallback
-                legacy_url = f"https://apis.mappls.com/advancedmaps/v1/{mappls_api_key}/rev_geocode?lat={lat}&lng={lon}"
+                    print(f"[Mappls] Success: pin={geocoded['pincode']}, city={geocoded['city']}, state={geocoded['state']}")
+            else:
+                print(f"[Mappls] rev_geocode failed: {res.text[:300]}")
+        except Exception as e:
+            print(f"[Mappls] rev_geocode error: {e}")
+    else:
+        # Fallback: try legacy REST API key directly (for backward compatibility)
+        legacy_key = os.environ.get("MAPPLS_API_KEY", "")
+        if legacy_key:
+            try:
+                legacy_url = f"https://apis.mappls.com/advancedmaps/v1/{legacy_key}/rev_geocode?lat={lat}&lng={lon}"
                 legacy_res = requests.get(legacy_url, timeout=10, verify=False)
                 if legacy_res.status_code == 200:
                     data = legacy_res.json()
@@ -79,9 +132,10 @@ def reverse_geocode(
                             "route": r.get("street") or "",
                             "building": ", ".join(filter(None, [r.get("houseNumber"), r.get("houseName")]))
                         }
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
+                else:
+                    print(f"[Mappls Legacy] Failed: {legacy_res.status_code} - {legacy_res.text[:200]}")
+            except Exception as e:
+                print(f"[Mappls Legacy] Error: {e}")
 
     # ── Layer 2: Query BigDataCloud Fallback ────────
     if not geocoded or not geocoded.get("pincode"):
