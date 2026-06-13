@@ -2,25 +2,6 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import apiClient from '../services/core/apiClient';
 
-// Layer 2: India Post official pincode API (authoritative client-side validation)
-const validateWithIndiaPost = async (pincode) => {
-  if (!pincode || pincode.length !== 6) return null;
-  try {
-    const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
-    const data = await res.json();
-    if (data?.[0]?.Status === 'Success' && data[0].PostOffice?.length > 0) {
-      const po = data[0].PostOffice[0];
-      return {
-        pincode,
-        state: po.State,
-        city: po.District,
-        locality: po.Name,
-      };
-    }
-  } catch (_) {}
-  return null;
-};
-
 export const useGeoLocationAddress = () => {
   const [loading, setLoading] = useState(false);
 
@@ -38,108 +19,24 @@ export const useGeoLocationAddress = () => {
           try {
             const { latitude, longitude } = position.coords;
             
-            // Query Mappls client-side first if key is configured, otherwise fallback to Backend proxy
-            let geocoded = null;
-            const clientMapplsKey = process.env.REACT_APP_MAPPLS_API_KEY || "oewjoirgyxbhtfasqwnkahawwodaowwicufh";
+            // All geocoding logic runs on the backend:
+            // Mappls → BigDataCloud → Nominatim → India Post validation
+            const res = await apiClient.get(`/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`);
             
-            if (clientMapplsKey && clientMapplsKey !== 'oewjoirgyxbhtfasqwnkahawwodaowwicufh') {
-              try {
-                const mapplsUrl = `https://apis.mappls.com/advancedmaps/v1/${clientMapplsKey}/rev_geocode?lat=${latitude}&lng=${longitude}`;
-                const res = await fetch(mapplsUrl);
-                if (res.ok) {
-                  const data = await res.json();
-                  if (data && data.results && data.results.length > 0) {
-                    const r = data.results[0];
-                    geocoded = {
-                      source: "Mappls",
-                      pincode: (r.pincode || "").replace(" ", "").slice(0, 6),
-                      city: r.city || r.district || r.subDistrict || "",
-                      state: r.state || "",
-                      locality: r.locality || r.subLocality || "",
-                      address_line1: [r.houseNumber, r.houseName].filter(Boolean).join(", "),
-                      address_line2: [r.street, r.locality, r.subLocality].filter(Boolean).join(", ")
-                    };
-                  }
-                }
-              } catch (e) {
-                console.warn("Client-side Mappls geocoding failed:", e);
-              }
-            }
-
-            if (!geocoded) {
-              try {
-                const res = await apiClient.get(`/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`);
-                if (res.data) {
-                  geocoded = {
-                    source: res.data.source || "Backend Proxy",
-                    pincode: res.data.pincode,
-                    city: res.data.city,
-                    state: res.data.state,
-                    address_line1: res.data.address_line1,
-                    address_line2: res.data.address_line2
-                  };
-                }
-              } catch (e) {
-                console.warn("Backend proxy geocoding failed:", e);
-              }
-            }
-
-            if (!geocoded) {
+            if (!res.data || !res.data.pincode) {
               throw new Error('Failed to retrieve valid geocoded address.');
             }
 
-            let pin = geocoded.pincode;
-            let city = geocoded.city;
-            let state = geocoded.state;
-            let locality = geocoded.locality || '';
-            const source = geocoded.source;
-
-            // ── Cross-Validate with India Post API ───────────────────────
-            // Only cross-validate/override with India Post if source is not Mappls to preserve precise details
-            let indiaPostData = null;
-            if (source !== 'Mappls') {
-              indiaPostData = await validateWithIndiaPost(pin);
-
-              if (!indiaPostData && pin.length === 6) {
-                const stateUpper = (state || '').toLowerCase();
-                const corrections = [];
-                if (/telangana|andhra/.test(stateUpper)) {
-                  corrections.push('5' + pin.slice(1));
-                } else if (/maharashtra/.test(stateUpper)) {
-                  corrections.push('4' + pin.slice(1));
-                } else if (/karnataka/.test(stateUpper)) {
-                  corrections.push('5' + pin.slice(1), '6' + pin.slice(1));
-                } else if (/tamil|kerala/.test(stateUpper)) {
-                  corrections.push('6' + pin.slice(1));
-                } else if (/delhi/.test(stateUpper)) {
-                  corrections.push('1' + pin.slice(1));
-                }
-
-                for (const candidate of corrections) {
-                  const validated = await validateWithIndiaPost(candidate);
-                  if (validated) {
-                    indiaPostData = validated;
-                    pin = candidate;
-                    break;
-                  }
-                }
-              }
-
-              if (indiaPostData) {
-                city = indiaPostData.city || city;
-                state = indiaPostData.state || state;
-                if (!locality && indiaPostData.locality) locality = indiaPostData.locality;
-                console.info(`Pincode validated via India Post (${source} coords → IndiaPost)`);
-              }
-            }
+            const { source, pincode, city, state, locality, address_line1, address_line2 } = res.data;
+            console.info(`Location detected via ${source}`);
 
             toast.success("Location auto-detected successfully!");
             resolve({
-              pincode: pin,
+              pincode,
               state,
               city,
-              address_line1: geocoded.address_line1 || '',
-              address_line2: geocoded.address_line2 || locality,
+              address_line1: address_line1 || '',
+              address_line2: address_line2 || locality || '',
             });
           } catch (err) {
             console.error('Location detection failed:', err);

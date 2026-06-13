@@ -42,24 +42,46 @@ def reverse_geocode(
     mappls_api_key = os.environ.get("MAPPLS_API_KEY") or "oewjoirgyxbhtfasqwnkahawwodaowwicufh"
     if mappls_api_key:
         try:
-            url = f"https://apis.mappls.com/advancedmaps/v1/{mappls_api_key}/rev_geocode?lat={lat}&lng={lon}"
-            res = requests.get(url, timeout=10, verify=False)
+            # Use the current Mappls reverse geocode endpoint (post-Aug 2025)
+            url = f"https://search.mappls.com/search/address/rev-geocode?lat={lat}&lng={lon}&access_token={mappls_api_key}"
+            res = requests.get(url, timeout=10)
             if res.status_code == 200:
                 data = res.json()
-                if data and data.get("results"):
-                    r = data["results"][0]
+                # New endpoint returns "responseList" instead of "results"
+                results = data.get("responseList") or data.get("results") or []
+                if results:
+                    r = results[0]
                     geocoded = {
                         "source": "Mappls",
-                        "pincode": (r.get("pincode") or "").replace(" ", "")[:6],
+                        "pincode": (r.get("pincode") or r.get("area_code") or "").replace(" ", "")[:6],
                         "city": r.get("city") or r.get("district") or r.get("subDistrict") or "",
                         "state": r.get("state") or "",
-                        "locality": r.get("locality") or r.get("subLocality") or "",
-                        "sublocality": r.get("subLocality") or "",
-                        "route": r.get("street") or "",
-                        "building": ", ".join(filter(None, [r.get("houseNumber"), r.get("houseName")]))
+                        "locality": r.get("locality") or r.get("subLocality") or r.get("area") or "",
+                        "sublocality": r.get("subLocality") or r.get("subSubLocality") or "",
+                        "route": r.get("street") or r.get("formatted_address") or "",
+                        "building": ", ".join(filter(None, [r.get("houseNumber"), r.get("houseName"), r.get("poi")]))
                     }
-        except Exception:
-            pass
+            elif res.status_code == 401 or res.status_code == 403:
+                # Try the legacy endpoint as fallback
+                legacy_url = f"https://apis.mappls.com/advancedmaps/v1/{mappls_api_key}/rev_geocode?lat={lat}&lng={lon}"
+                legacy_res = requests.get(legacy_url, timeout=10, verify=False)
+                if legacy_res.status_code == 200:
+                    data = legacy_res.json()
+                    if data and data.get("results"):
+                        r = data["results"][0]
+                        geocoded = {
+                            "source": "Mappls",
+                            "pincode": (r.get("pincode") or "").replace(" ", "")[:6],
+                            "city": r.get("city") or r.get("district") or r.get("subDistrict") or "",
+                            "state": r.get("state") or "",
+                            "locality": r.get("locality") or r.get("subLocality") or "",
+                            "sublocality": r.get("subLocality") or "",
+                            "route": r.get("street") or "",
+                            "building": ", ".join(filter(None, [r.get("houseNumber"), r.get("houseName")]))
+                        }
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
 
     # ── Layer 2: Query BigDataCloud Fallback ────────
     if not geocoded or not geocoded.get("pincode"):
@@ -177,11 +199,14 @@ def reverse_geocode(
     ]
     line2 = ", ".join(filter(None, line2_parts))
 
+    print(f"[Geolocation] Source: {geocoded['source']}, Pincode: {pin}, City: {city}, State: {state}, Locality: {locality}")
+
     return {
         "source": geocoded["source"],
         "pincode": pin,
         "city": city,
         "state": state,
+        "locality": locality,
         "address_line1": line1,
         "address_line2": line2
     }
