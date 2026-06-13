@@ -131,36 +131,38 @@ def reverse_geocode(
     locality = geocoded["locality"]
 
     # ── Layer 3: Authoritative Auto-Healing and Validation via India Post ──────
-    india_post_data = validate_with_india_post(pin)
+    # Only use India Post fallback/validation if geocoding source is not Mappls to preserve Mappls' precise details
+    if geocoded.get("source") != "Mappls":
+        india_post_data = validate_with_india_post(pin)
 
-    if not india_post_data and len(pin) == 6:
-        # Cross-region typo auto-healing
-        state_lower = state.lower()
-        corrections = []
-        if "telangana" in state_lower or "andhra" in state_lower:
-            corrections.append("5" + pin[1:])
-        elif "maharashtra" in state_lower:
-            corrections.append("4" + pin[1:])
-        elif "karnataka" in state_lower:
-            corrections.append("5" + pin[1:])
-            corrections.append("6" + pin[1:])
-        elif "tamil" in state_lower or "kerala" in state_lower:
-            corrections.append("6" + pin[1:])
-        elif "delhi" in state_lower:
-            corrections.append("1" + pin[1:])
+        if not india_post_data and len(pin) == 6:
+            # Cross-region typo auto-healing
+            state_lower = state.lower()
+            corrections = []
+            if "telangana" in state_lower or "andhra" in state_lower:
+                corrections.append("5" + pin[1:])
+            elif "maharashtra" in state_lower:
+                corrections.append("4" + pin[1:])
+            elif "karnataka" in state_lower:
+                corrections.append("5" + pin[1:])
+                corrections.append("6" + pin[1:])
+            elif "tamil" in state_lower or "kerala" in state_lower:
+                corrections.append("6" + pin[1:])
+            elif "delhi" in state_lower:
+                corrections.append("1" + pin[1:])
 
-        for candidate in corrections:
-            validated = validate_with_india_post(candidate)
-            if validated:
-                india_post_data = validated
-                pin = candidate
-                break
+            for candidate in corrections:
+                validated = validate_with_india_post(candidate)
+                if validated:
+                    india_post_data = validated
+                    pin = candidate
+                    break
 
-    if india_post_data:
-        city = india_post_data["city"] or city
-        state = india_post_data["state"] or state
-        if not locality and india_post_data["locality"]:
-            locality = india_post_data["locality"]
+        if india_post_data:
+            city = india_post_data["city"] or city
+            state = india_post_data["state"] or state
+            if not locality and india_post_data["locality"]:
+                locality = india_post_data["locality"]
 
     # ── Build beautifully parsed, deduplicated address components ──────────────
     line1_parts = [

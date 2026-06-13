@@ -67,38 +67,42 @@ export const useGeoLocationAddress = () => {
             const source = geocoded.source;
 
             // ── Cross-Validate with India Post API ───────────────────────
-            let indiaPostData = await validateWithIndiaPost(pin);
+            // Only cross-validate/override with India Post if source is not Mappls to preserve precise details
+            let indiaPostData = null;
+            if (source !== 'Mappls') {
+              indiaPostData = await validateWithIndiaPost(pin);
 
-            if (!indiaPostData && pin.length === 6) {
-              const stateUpper = (state || '').toLowerCase();
-              const corrections = [];
-              if (/telangana|andhra/.test(stateUpper)) {
-                corrections.push('5' + pin.slice(1));
-              } else if (/maharashtra/.test(stateUpper)) {
-                corrections.push('4' + pin.slice(1));
-              } else if (/karnataka/.test(stateUpper)) {
-                corrections.push('5' + pin.slice(1), '6' + pin.slice(1));
-              } else if (/tamil|kerala/.test(stateUpper)) {
-                corrections.push('6' + pin.slice(1));
-              } else if (/delhi/.test(stateUpper)) {
-                corrections.push('1' + pin.slice(1));
-              }
+              if (!indiaPostData && pin.length === 6) {
+                const stateUpper = (state || '').toLowerCase();
+                const corrections = [];
+                if (/telangana|andhra/.test(stateUpper)) {
+                  corrections.push('5' + pin.slice(1));
+                } else if (/maharashtra/.test(stateUpper)) {
+                  corrections.push('4' + pin.slice(1));
+                } else if (/karnataka/.test(stateUpper)) {
+                  corrections.push('5' + pin.slice(1), '6' + pin.slice(1));
+                } else if (/tamil|kerala/.test(stateUpper)) {
+                  corrections.push('6' + pin.slice(1));
+                } else if (/delhi/.test(stateUpper)) {
+                  corrections.push('1' + pin.slice(1));
+                }
 
-              for (const candidate of corrections) {
-                const validated = await validateWithIndiaPost(candidate);
-                if (validated) {
-                  indiaPostData = validated;
-                  pin = candidate;
-                  break;
+                for (const candidate of corrections) {
+                  const validated = await validateWithIndiaPost(candidate);
+                  if (validated) {
+                    indiaPostData = validated;
+                    pin = candidate;
+                    break;
+                  }
                 }
               }
-            }
 
-            if (indiaPostData) {
-              city = indiaPostData.city || city;
-              state = indiaPostData.state || state;
-              if (!locality && indiaPostData.locality) locality = indiaPostData.locality;
-              console.info(`Pincode validated via India Post (${source} coords → IndiaPost)`);
+              if (indiaPostData) {
+                city = indiaPostData.city || city;
+                state = indiaPostData.state || state;
+                if (!locality && indiaPostData.locality) locality = indiaPostData.locality;
+                console.info(`Pincode validated via India Post (${source} coords → IndiaPost)`);
+              }
             }
 
             toast.success("Location auto-detected successfully!");
