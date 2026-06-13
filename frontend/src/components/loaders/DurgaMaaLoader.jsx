@@ -110,6 +110,16 @@ const DurgaMaaLoader = ({ show = true }) => {
           sy = (vH - sh) / 2;
         }
 
+        // Crop 8 pixels from all sides to eliminate edge lines and boxy borders in the source video
+        const cropX = 8;
+        const cropY = 8;
+        if (sw > cropX * 2 && sh > cropY * 2) {
+          sx += cropX;
+          sy += cropY;
+          sw -= cropX * 2;
+          sh -= cropY * 2;
+        }
+
         ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
 
         try {

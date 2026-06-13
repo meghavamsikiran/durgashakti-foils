@@ -501,40 +501,40 @@ const Contact = () => {
       {/* ── TERMS AND CONDITIONS MODAL ───────────────────────────────────── */}
       {showTermsModal && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[80vh] overflow-y-auto p-8 shadow-2xl border border-slate-100 flex flex-col space-y-6">
-            <div className="flex justify-between items-center border-b pb-4">
-              <h3 className="text-xl font-extrabold text-slate-900" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          <div className={`rounded-3xl max-w-lg w-full max-h-[80vh] overflow-y-auto p-8 shadow-2xl border flex flex-col space-y-6 transition-all duration-200 ${isDark ? 'bg-[#131B17] text-white border-[#26322B]' : 'bg-white text-slate-900 border-slate-100'}`}>
+            <div className={`flex justify-between items-center border-b pb-4 ${isDark ? 'border-[#26322B]' : 'border-slate-100'}`}>
+              <h3 className={`text-xl font-extrabold ${isDark ? 'text-white' : 'text-slate-900'}`} style={{ fontFamily: 'Manrope, sans-serif' }}>
                 Terms & Conditions
               </h3>
               <button 
                 onClick={() => setShowTermsModal(false)}
-                className="text-slate-400 hover:text-slate-600 font-bold text-sm"
+                className={`font-bold text-sm transition-colors ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
               >
                 ✕
               </button>
             </div>
             
-            <div className="text-slate-600 text-xs space-y-4 leading-relaxed overflow-y-auto flex-1 pr-2">
-              <p className="font-bold">Welcome to Durga Shakti Foils!</p>
+            <div className={`text-xs space-y-4 leading-relaxed overflow-y-auto flex-1 pr-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+              <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Welcome to Durga Shakti Foils!</p>
               <p>These terms and conditions outline the rules and regulations for the use of Durga Shakti Foils' Website and Services.</p>
               
-              <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[10px] mt-4">1. Privacy Policy</h4>
+              <h4 className={`font-bold uppercase tracking-wider text-[10px] mt-4 ${isDark ? 'text-white' : 'text-slate-800'}`}>1. Privacy Policy</h4>
               <p>Your privacy is extremely important to us. Any customer details, including Name, Email, and Phone Number submitted through our contact form, are strictly used for answering inquiry purposes and processed under safe end-to-end encryption.</p>
               
-              <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[10px] mt-4">2. Manufacturing & Quality Standard</h4>
+              <h4 className={`font-bold uppercase tracking-wider text-[10px] mt-4 ${isDark ? 'text-white' : 'text-slate-800'}`}>2. Manufacturing & Quality Standard</h4>
               <p>All aluminum foils manufactured by Durga Shakti Foils are ISO 9001:2015 certified, conforming to high-grade packaging food safety and commercial-grade thickness standards.</p>
               
-              <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[10px] mt-4">3. Custom Sizing & Bulk Orders</h4>
+              <h4 className={`font-bold uppercase tracking-wider text-[10px] mt-4 ${isDark ? 'text-white' : 'text-slate-800'}`}>3. Custom Sizing & Bulk Orders</h4>
               <p>Bulk inquiries are processed individually. Sizing specifications provided by the client are strictly adhered to, and order confirmations require prior payment confirmations as agreed upon during invoice generation.</p>
 
-              <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[10px] mt-4">4. Shipping & Deliveries</h4>
+              <h4 className={`font-bold uppercase tracking-wider text-[10px] mt-4 ${isDark ? 'text-white' : 'text-slate-800'}`}>4. Shipping & Deliveries</h4>
               <p>Deliveries are executed through authorized regional logistical partners. Durga Shakti Foils is committed to maintaining high standards of transport safety and shipping schedules.</p>
             </div>
 
-            <div className="pt-4 border-t flex gap-3">
+            <div className={`pt-4 border-t flex gap-3 ${isDark ? 'border-[#26322B]' : 'border-slate-100'}`}>
               <Button 
                 onClick={() => setShowTermsModal(false)}
-                className="flex-1 bg-slate-100 text-slate-700 font-bold text-xs uppercase py-3 rounded-xl tracking-wider hover:bg-slate-200"
+                className={`flex-1 font-bold text-xs uppercase py-3 rounded-xl tracking-wider transition-all ${isDark ? 'bg-[#1E2722] text-slate-300 hover:bg-[#26322B]' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
               >
                 Close
               </Button>
@@ -543,7 +543,7 @@ const Contact = () => {
                   setAcceptedTerms(true);
                   setShowTermsModal(false);
                 }}
-                className="flex-1 bg-primary text-white font-bold text-xs uppercase py-3 rounded-xl tracking-wider hover:bg-primary/95"
+                className="flex-1 bg-[#25D958] text-[#0C1310] font-bold text-xs uppercase py-3 rounded-xl tracking-wider hover:bg-[#1bb847]"
               >
                 Accept Terms
               </Button>
