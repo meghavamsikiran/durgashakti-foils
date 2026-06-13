@@ -117,9 +117,26 @@ const invalidateCache = (urlPrefix) => {
   } catch (e) {}
 };
 
+const clearAllCache = () => {
+  apiCache.clear();
+  try {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('ds_api_cache:') || key.startsWith('admin_order_detail_') || key === 'pending_razorpay_order' || key === 'ds_cached_user_cart')) {
+        keysToRemove.push(key);
+      }
+    }
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key);
+    }
+  } catch (e) {}
+};
+
 apiClient.cachedGet = cachedGet;
 apiClient.getCachedDataSync = getCachedDataSync;
 apiClient.invalidateCache = invalidateCache;
+apiClient.clearAllCache = clearAllCache;
 
 export default apiClient;
 

@@ -105,6 +105,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('ds_guest_cart');
+    apiClient.clearAllCache();
   }, []);
 
   const hasPermission = useCallback((permission) => {
