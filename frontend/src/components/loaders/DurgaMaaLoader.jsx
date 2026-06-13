@@ -26,12 +26,10 @@ const DurgaMaaLoader = ({ show = true }) => {
     video.muted = true;
     video.playsInline = true;
     video.loop = true;
-    video.playbackRate = 1.3;
     video.setAttribute('playsinline', 'true');
     video.setAttribute('webkit-playsinline', 'true');
 
     const startPlay = () => {
-      video.playbackRate = 1.3;
       video.play().catch((err) => {
         console.warn("Autoplay blocked/failed, waiting for gesture:", err);
       });
@@ -47,11 +45,8 @@ const DurgaMaaLoader = ({ show = true }) => {
     }
 
     const forcePlay = () => {
-      if (video) {
-        video.playbackRate = 1.3;
-        if (video.paused) {
-          video.play().catch(() => {});
-        }
+      if (video && video.paused) {
+        video.play().catch(() => {});
       }
     };
     window.addEventListener('touchstart', forcePlay, { passive: true });
@@ -81,7 +76,6 @@ const DurgaMaaLoader = ({ show = true }) => {
 
     // Force play immediately when loader is shown
     if (video.paused) {
-      video.playbackRate = 1.3;
       video.play().catch((err) => {
         console.warn("Play failed on show:", err);
       });
@@ -155,7 +149,6 @@ const DurgaMaaLoader = ({ show = true }) => {
       } else {
         // If not playing, keep attempting to play if shown
         if (video.paused && show) {
-          video.playbackRate = 1.3;
           video.play().catch(() => {});
         }
         // Fallback layout - Draw favicon static in center
