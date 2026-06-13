@@ -38,22 +38,50 @@ export const useGeoLocationAddress = () => {
           try {
             const { latitude, longitude } = position.coords;
             
-            // Query our Backend proxy to handle Geocoding cleanly, preventing CORS issues
+            // Query Mappls client-side first if key is configured, otherwise fallback to Backend proxy
             let geocoded = null;
-            try {
-              const res = await apiClient.get(`/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`);
-              if (res.data) {
-                geocoded = {
-                  source: res.data.source || "Backend Proxy",
-                  pincode: res.data.pincode,
-                  city: res.data.city,
-                  state: res.data.state,
-                  address_line1: res.data.address_line1,
-                  address_line2: res.data.address_line2
-                };
+            const clientMapplsKey = process.env.REACT_APP_MAPPLS_API_KEY || "oewjoirgyxbhtfasqwnkahawwodaowwicufh";
+            
+            if (clientMapplsKey && clientMapplsKey !== 'oewjoirgyxbhtfasqwnkahawwodaowwicufh') {
+              try {
+                const mapplsUrl = `https://apis.mappls.com/advancedmaps/v1/${clientMapplsKey}/rev_geocode?lat=${latitude}&lng=${longitude}`;
+                const res = await fetch(mapplsUrl);
+                if (res.ok) {
+                  const data = await res.json();
+                  if (data && data.results && data.results.length > 0) {
+                    const r = data.results[0];
+                    geocoded = {
+                      source: "Mappls",
+                      pincode: (r.pincode || "").replace(" ", "").slice(0, 6),
+                      city: r.city || r.district || r.subDistrict || "",
+                      state: r.state || "",
+                      locality: r.locality || r.subLocality || "",
+                      address_line1: [r.houseNumber, r.houseName].filter(Boolean).join(", "),
+                      address_line2: [r.street, r.locality, r.subLocality].filter(Boolean).join(", ")
+                    };
+                  }
+                }
+              } catch (e) {
+                console.warn("Client-side Mappls geocoding failed:", e);
               }
-            } catch (e) {
-              console.warn("Backend proxy geocoding failed:", e);
+            }
+
+            if (!geocoded) {
+              try {
+                const res = await apiClient.get(`/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`);
+                if (res.data) {
+                  geocoded = {
+                    source: res.data.source || "Backend Proxy",
+                    pincode: res.data.pincode,
+                    city: res.data.city,
+                    state: res.data.state,
+                    address_line1: res.data.address_line1,
+                    address_line2: res.data.address_line2
+                  };
+                }
+              } catch (e) {
+                console.warn("Backend proxy geocoding failed:", e);
+              }
             }
 
             if (!geocoded) {
