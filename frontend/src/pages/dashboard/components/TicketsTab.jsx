@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquare, Clock, CheckCircle2, AlertCircle, 
@@ -21,13 +22,23 @@ const TicketsTab = () => {
     return !cached;
   });
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedTicketId, setExpandedTicketId] = useState(null);
+  const { ticketId } = useParams();
+  const [expandedTicketId, setExpandedTicketId] = useState(ticketId || null);
   const [copiedTicketId, setCopiedTicketId] = useState(null);
 
   // States for Customer Response composer inside open tickets
   const [replyTexts, setReplyTexts] = useState({});
   const [replyUrls, setReplyUrls] = useState({});
   const [uploadingReplyFiles, setUploadingReplyFiles] = useState({});
+
+  useEffect(() => {
+    if (ticketId && tickets.length > 0) {
+      const found = tickets.find(t => t.id === ticketId || t.ticket_id === ticketId);
+      if (found) {
+        setExpandedTicketId(found.id);
+      }
+    }
+  }, [ticketId, tickets]);
 
   useEffect(() => {
     fetchTickets(false);
@@ -183,27 +194,29 @@ const TicketsTab = () => {
 
   const parseReplies = (replyMessage) => {
     if (!replyMessage) return [];
-    if (!replyMessage.startsWith('[')) {
-      return [{ sender: 'DS Support Team', timestamp: null, content: replyMessage, attachments: [] }];
-    }
-    const parts = replyMessage.split(/\n\n(?=\[)/);
-    return parts.map(part => {
-      const lines = part.split('\n');
-      const header = lines[0];
-      const rawContent = lines.slice(1).join('\n');
-      
-      let sender = 'DS Support Team';
-      let timestamp = header.replace(/^\[|\]$/g, '');
-      if (timestamp.startsWith('Customer - ')) {
-        sender = 'You';
-        timestamp = timestamp.replace('Customer - ', '');
-      } else if (timestamp.startsWith('Admin - ')) {
-        sender = 'DS Support Team';
-        timestamp = timestamp.replace('Admin - ', '');
+    const blocks = replyMessage.split(/\n\n(?=\[(?:Admin|Customer) -)/);
+    return blocks.map(block => {
+      if (block.startsWith('[Admin -') || block.startsWith('[Customer -')) {
+        const lines = block.split('\n');
+        const header = lines[0];
+        const rawContent = lines.slice(1).join('\n');
+
+        let sender = 'DS Support Team';
+        let timestamp = header.replace(/^\[|\]$/g, '');
+        if (timestamp.startsWith('Customer - ')) {
+          sender = 'You';
+          timestamp = timestamp.replace('Customer - ', '');
+        } else if (timestamp.startsWith('Admin - ')) {
+          sender = 'DS Support Team';
+          timestamp = timestamp.replace('Admin - ', '');
+        }
+
+        const { cleanMessage, attachments } = parseMessageAndAttachments(rawContent);
+        return { sender, timestamp, content: cleanMessage, attachments };
+      } else {
+        const { cleanMessage, attachments } = parseMessageAndAttachments(block);
+        return { sender: 'DS Support Team', timestamp: null, content: cleanMessage, attachments };
       }
-      
-      const { cleanMessage, attachments } = parseMessageAndAttachments(rawContent);
-      return { sender, timestamp, content: cleanMessage, attachments };
     });
   };
 
@@ -278,6 +291,12 @@ const TicketsTab = () => {
         </div>
       </div>
 
+      {/* Patience Note Banner */}
+      <div className="bg-amber-500/5 dark:bg-[#25D958]/5 border border-amber-500/10 dark:border-[#25D958]/20 rounded-2xl p-4 text-xs text-amber-650 dark:text-slate-350 font-semibold flex items-center gap-2">
+        <AlertCircle className="w-4 h-4 shrink-0 text-amber-500 dark:text-[#25D958]" />
+        <span>Please be patient. It takes a maximum of 2-3 business days to get a response from our support team.</span>
+      </div>
+
       {filteredTickets.length === 0 ? (
         <div className="text-center py-20 bg-slate-50 dark:bg-[#131B17] rounded-2xl border border-dashed border-slate-200 dark:border-[#26322B]">
           <MessageSquare className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto mb-4" />
@@ -312,7 +331,15 @@ const TicketsTab = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-3 mb-2">
                       <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-primary dark:text-[#25D958] tracking-wider bg-primary/5 dark:bg-[#25D958]/10 px-2.5 py-1 rounded-lg">
-                        <span>{ticket.ticket_id}</span>
+                        <a 
+                          href={`/dashboard/tickets/${ticket.id}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          onClick={(e) => e.stopPropagation()} 
+                          className="hover:underline"
+                        >
+                          {ticket.ticket_id}
+                        </a>
                         <button
                           type="button"
                           onClick={(e) => handleCopy(e, ticket.ticket_id)}

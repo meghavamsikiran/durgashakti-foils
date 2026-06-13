@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X, Filter, Image as ImageIcon, Copy, Check, Search, Paperclip, Play } from 'lucide-react';
 import AdminTable from '../components/AdminTable';
@@ -79,6 +80,16 @@ const InquiriesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [replyUrls, setReplyUrls] = useState([]);
   const [uploadingReplyFiles, setUploadingReplyFiles] = useState(false);
+  const { caseId } = useParams();
+
+  useEffect(() => {
+    if (caseId && inquiries.length > 0) {
+      const found = inquiries.find(item => item.id === caseId || item.ticket_id === caseId);
+      if (found) {
+        setSelectedInquiry(found);
+      }
+    }
+  }, [caseId, inquiries]);
 
   useEffect(() => {
     if (!selectedInquiry) {
@@ -549,11 +560,14 @@ const InquiriesPage = () => {
                 }
                 return true;
               });
+              const isSuperadmin = window.location.pathname.startsWith('/superadmin');
+              const basePath = isSuperadmin ? '/superadmin/cases' : '/admin/cases';
+
               return filteredInquiries.map(item => ({
               ...item,
               ticket_id: (
                 <div className="inline-flex items-center gap-1.5 font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg">
-                  <span>{item.ticket_id}</span>
+                  <a href={`${basePath}/${item.id}`} target="_blank" rel="noopener noreferrer" className="hover:underline">{item.ticket_id}</a>
                   <button
                     type="button"
                     onClick={(e) => handleCopy(e, item.ticket_id)}
@@ -608,12 +622,14 @@ const InquiriesPage = () => {
                 </select>
               ),
               actions: (
-                <button 
-                  onClick={() => setSelectedInquiry(item)}
-                  className="bg-slate-100 hover:bg-primary hover:text-white text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm active:scale-95"
+                <a 
+                  href={`${basePath}/${item.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-slate-100 hover:bg-primary hover:text-white text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm active:scale-95 inline-block text-center"
                 >
                   Review
-                </button>
+                </a>
               )
             }));
           })()}
@@ -796,27 +812,29 @@ const InquiriesPage = () => {
 
                 const parseReplies = (replyMessage) => {
                   if (!replyMessage) return [];
-                  if (!replyMessage.startsWith('[')) {
-                    return [{ sender: 'DS Support Agent', timestamp: null, content: replyMessage, attachments: [] }];
-                  }
-                  const parts = replyMessage.split(/\n\n(?=\[)/);
-                  return parts.map(part => {
-                    const lines = part.split('\n');
-                    const header = lines[0];
-                    const rawContent = lines.slice(1).join('\n');
-                    
-                    let sender = 'DS Support Agent';
-                    let timestamp = header.replace(/^\[|\]$/g, '');
-                    if (timestamp.startsWith('Customer - ')) {
-                      sender = 'Customer';
-                      timestamp = timestamp.replace('Customer - ', '');
-                    } else if (timestamp.startsWith('Admin - ')) {
-                      sender = 'DS Support Agent';
-                      timestamp = timestamp.replace('Admin - ', '');
+                  const blocks = replyMessage.split(/\n\n(?=\[(?:Admin|Customer) -)/);
+                  return blocks.map(block => {
+                    if (block.startsWith('[Admin -') || block.startsWith('[Customer -')) {
+                      const lines = block.split('\n');
+                      const header = lines[0];
+                      const rawContent = lines.slice(1).join('\n');
+                      
+                      let sender = 'DS Support Team';
+                      let timestamp = header.replace(/^\[|\]$/g, '');
+                      if (timestamp.startsWith('Customer - ')) {
+                        sender = 'Customer';
+                        timestamp = timestamp.replace('Customer - ', '');
+                      } else if (timestamp.startsWith('Admin - ')) {
+                        sender = 'DS Support Team';
+                        timestamp = timestamp.replace('Admin - ', '');
+                      }
+                      
+                      const { cleanMessage, attachments } = parseMessageAndAttachments(rawContent);
+                      return { sender, timestamp, content: cleanMessage, attachments };
+                    } else {
+                      const { cleanMessage, attachments } = parseMessageAndAttachments(block);
+                      return { sender: 'DS Support Team', timestamp: null, content: cleanMessage, attachments };
                     }
-                    
-                    const { cleanMessage, attachments } = parseMessageAndAttachments(rawContent);
-                    return { sender, timestamp, content: cleanMessage, attachments };
                   });
                 };
 

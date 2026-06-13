@@ -112,6 +112,7 @@ const Dashboard = () => {
             <Route path="wishlist" element={<WishlistTab wishlist={wishlist} onToggleWishlist={toggleWishlist} onClearWishlist={clearWishlist} />} />
             <Route path="addresses" element={<AddressesTabWrapper />} />
             <Route path="tickets" element={<TicketsTab />} />
+            <Route path="tickets/:ticketId" element={<TicketsTab />} />
             <Route path="settings" element={<SettingsTab user={user} onUpdateProfile={handleUpdateProfile} />} />
             <Route path="*" element={<Navigate to="orders" replace />} />
           </Routes>

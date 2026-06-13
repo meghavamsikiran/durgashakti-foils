@@ -190,6 +190,7 @@ function AppRoutes() {
               <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
               <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
               <Route path="cases" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
+              <Route path="cases/:caseId" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
               <Route path="reviews" element={<ProtectedAdminRoute permission="view_reviews"><ReviewsPage /></ProtectedAdminRoute>} />
               <Route
                 path="payments"
@@ -272,6 +273,7 @@ function AppRoutes() {
               <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
               <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
               <Route path="cases" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
+              <Route path="cases/:caseId" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
               <Route path="reviews" element={<ProtectedAdminRoute permission="view_reviews"><ReviewsPage /></ProtectedAdminRoute>} />
               <Route
                 path="payments"
