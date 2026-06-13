@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X, Filter, Image as ImageIcon, Copy, Check } from 'lucide-react';
+import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X, Filter, Image as ImageIcon, Copy, Check, Search, Paperclip, Play } from 'lucide-react';
 import AdminTable from '../components/AdminTable';
 import apiClient from '../../services/core/apiClient';
 import { Button } from '../../components/ui/button';
@@ -76,6 +76,74 @@ const InquiriesPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState(null);
   const [copiedTicketId, setCopiedTicketId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [replyUrls, setReplyUrls] = useState([]);
+  const [uploadingReplyFiles, setUploadingReplyFiles] = useState(false);
+
+  useEffect(() => {
+    if (!selectedInquiry) {
+      setReplyMessage('');
+      setReplyUrls([]);
+      setUploadingReplyFiles(false);
+    }
+  }, [selectedInquiry]);
+
+  const handleAdminReplyFileChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Count existing uploads
+    const imageCount = replyUrls.filter(url => !url.toLowerCase().endsWith('.mp4') && !url.toLowerCase().endsWith('.mov')).length;
+    const videoCount = replyUrls.filter(url => url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov')).length;
+
+    for (const file of files) {
+      const ct = file.type.toLowerCase();
+      const isVideo = ct.includes('video') || file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.mov');
+      
+      if (isVideo) {
+        if (videoCount >= 1) {
+          toast.error("You can upload a maximum of 1 video.");
+          return;
+        }
+        if (file.size > 15 * 1024 * 1024) {
+          toast.error("Video file size must be less than 15MB.");
+          return;
+        }
+      } else if (ct.startsWith('image/')) {
+        if (imageCount >= 3) {
+          toast.error("You can upload a maximum of 3 images.");
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error("Image file size must be less than 5MB.");
+          return;
+        }
+      } else {
+        toast.error("Only image (PNG, JPG, JPEG, WEBP) or video files are supported.");
+        return;
+      }
+
+      try {
+        setUploadingReplyFiles(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiClient.post('/contacts/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        setReplyUrls(prev => [...prev, response.data.url]);
+        toast.success(`Uploaded ${file.name} successfully`);
+      } catch (err) {
+        console.error(err);
+        toast.error(`Failed to upload ${file.name}: ${err.message || 'Error'}`);
+      } finally {
+        setUploadingReplyFiles(false);
+      }
+    }
+  };
+
+  const removeAdminReplyFile = (indexToRemove) => {
+    setReplyUrls(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
 
   const handleCopy = (e, text) => {
     e.stopPropagation();
@@ -233,7 +301,8 @@ const InquiriesPage = () => {
     try {
       setSubmittingReply(true);
       const response = await apiClient.post(`/admin/contacts/${selectedInquiry.id}/reply`, {
-        reply_message: replyMessage
+        reply_message: replyMessage,
+        attachment_urls: replyUrls
       });
       
       toast.success('Reply sent successfully');
@@ -246,7 +315,12 @@ const InquiriesPage = () => {
       const timeFormatted = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
       const timestampStr = `${dateFormatted}, ${timeFormatted}`;
       
-      const newReplyBlock = `[${timestampStr}]\n${replyMessage}`;
+      let finalReplyText = replyMessage;
+      if (replyUrls.length > 0) {
+        finalReplyText += "\n\n[Attachments]\n" + replyUrls.join('\n');
+      }
+
+      const newReplyBlock = `[Admin - ${timestampStr}]\n${finalReplyText}`;
       const updatedReplyMessage = selectedInquiry.reply_message
         ? `${selectedInquiry.reply_message}\n\n${newReplyBlock}`
         : newReplyBlock;
@@ -261,6 +335,7 @@ const InquiriesPage = () => {
       setInquiries(inquiries.map(inc => inc.id === selectedInquiry.id ? updated : inc));
       setSelectedInquiry(updated);
       setReplyMessage('');
+      setReplyUrls([]);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to send reply');
     } finally {
@@ -301,114 +376,128 @@ const InquiriesPage = () => {
           </h1>
           <p className="text-xs text-slate-500 mt-0.5 font-medium">Manage and respond to tickets submitted by customers through the Support Cases system.</p>
         </div>
-        <div className="relative" ref={filterRef}>
-          <button
-            type="button"
-            onClick={handleToggleFilter}
-            className={`h-11 inline-flex items-center justify-center gap-2 shadow-sm transition-all admin-filter-btn ${
-              filterOpen || (statusFilter !== 'all' || dateFilter)
-                ? 'active-filter'
-                : ''
-            }`}
-          >
-            <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-            Filter
-            {(statusFilter !== 'all' || dateFilter) && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] text-white">
-                !
-              </span>
-            )}
-          </button>
+        <div className="flex items-center gap-3">
+          <div className="relative group flex items-center">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search cases..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64"
+            />
+          </div>
 
-          {filterOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl p-5 z-50 space-y-4 text-left">
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Status</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { key: 'all', label: 'All' },
-                    { key: 'pending', label: 'Pending' },
-                    { key: 'in_progress', label: 'In Progress' },
-                    { key: 'replied', label: 'Replied' },
-                    { key: 'resolved', label: 'Closed' }
-                  ].map(opt => (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      onClick={() => setTempStatus(opt.key)}
-                      className={`px-3 py-2 rounded-lg text-xs font-semibold text-center transition-all ${
-                        tempStatus === opt.key 
-                          ? 'bg-primary text-white shadow-sm' 
-                          : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Date Range</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {DATE_PRESETS.map(opt => (
-                    <button
-                      key={opt.key}
-                      type="button"
-                      onClick={() => setTempPreset(opt.key)}
-                      className={`px-3 py-2 rounded-lg text-xs font-semibold text-center transition-all admin-preset-btn ${
-                        tempPreset === opt.key 
-                          ? 'active-preset' 
-                          : ''
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {tempPreset === 'custom' && (
-                <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Start Date</label>
-                    <input
-                      type="date"
-                      value={tempCustom.start}
-                      onChange={(e) => setTempCustom({ ...tempCustom, start: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">End Date</label>
-                    <input
-                      type="date"
-                      value={tempCustom.end}
-                      onChange={(e) => setTempCustom({ ...tempCustom, end: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-none"
-                    />
-                  </div>
-                </div>
+          <div className="relative" ref={filterRef}>
+            <button
+              type="button"
+              onClick={handleToggleFilter}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-xs font-semibold transition-all shadow-sm h-[40px] admin-filter-btn ${
+                filterOpen || (statusFilter !== 'all' || dateFilter)
+                  ? 'active-filter'
+                  : ''
+              }`}
+            >
+              <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+              Filter
+              {(statusFilter !== 'all' || dateFilter) && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] text-white">
+                  !
+                </span>
               )}
+            </button>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 text-xs font-bold mr-auto"
-                >
-                  Reset
-                </button>
-                <button
-                  type="button"
-                  onClick={handleApplyFilters}
-                  className="px-4 py-2 rounded-xl bg-primary hover:bg-[#1bb847] text-white text-xs font-bold"
-                >
-                  Apply & Close
-                </button>
+            {filterOpen && (
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl p-5 z-50 space-y-4 text-left">
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Status</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { key: 'all', label: 'All' },
+                      { key: 'pending', label: 'Pending' },
+                      { key: 'reopened', label: 'Re-opened' },
+                      { key: 'in_progress', label: 'In Progress' },
+                      { key: 'replied', label: 'Replied' },
+                      { key: 'resolved', label: 'Closed' }
+                    ].map(opt => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setTempStatus(opt.key)}
+                        className={`px-3 py-2 rounded-lg text-xs font-semibold text-center transition-all ${
+                          tempStatus === opt.key 
+                            ? 'bg-primary text-white shadow-sm' 
+                            : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">Date Range</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {DATE_PRESETS.map(opt => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => setTempPreset(opt.key)}
+                        className={`px-3 py-2 rounded-lg text-xs font-semibold text-center transition-all admin-preset-btn ${
+                          tempPreset === opt.key 
+                            ? 'active-preset' 
+                            : ''
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {tempPreset === 'custom' && (
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Start Date</label>
+                      <input
+                        type="date"
+                        value={tempCustom.start}
+                        onChange={(e) => setTempCustom({ ...tempCustom, start: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">End Date</label>
+                      <input
+                        type="date"
+                        value={tempCustom.end}
+                        onChange={(e) => setTempCustom({ ...tempCustom, end: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 text-xs font-bold mr-auto"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleApplyFilters}
+                    className="px-4 py-2 rounded-xl bg-primary hover:bg-[#1bb847] text-white text-xs font-bold"
+                  >
+                    Apply & Close
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -435,11 +524,22 @@ const InquiriesPage = () => {
             ]}
             rows={(() => {
               const filteredInquiries = (inquiries || []).filter(item => {
-                // 1. Status Filter
+                // 1. Search query filter
+                if (searchQuery) {
+                  const q = searchQuery.toLowerCase();
+                  const ticketId = (item.ticket_id || '').toLowerCase();
+                  const name = (item.name || '').toLowerCase();
+                  const email = (item.email || '').toLowerCase();
+                  const message = (item.message || '').toLowerCase();
+                  if (!ticketId.includes(q) && !name.includes(q) && !email.includes(q) && !message.includes(q)) {
+                    return false;
+                  }
+                }
+                // 2. Status Filter
                 if (statusFilter && statusFilter !== 'all') {
                   if ((item.status || '').toLowerCase() !== statusFilter.toLowerCase()) return false;
                 }
-                // 2. Date Filter
+                // 3. Date Filter
                 if (dateFilter?.start_date && dateFilter?.end_date) {
                   const itemDate = new Date(item.created_at || item.updated_at);
                   const start = new Date(dateFilter.start_date);
@@ -683,20 +783,43 @@ const InquiriesPage = () => {
 
               {/* Reply History */}
               {(() => {
+                const parseMessageAndAttachments = (message) => {
+                  if (!message) return { cleanMessage: '', attachments: [] };
+                  const parts = message.split('\n\n[Attachments]\n');
+                  if (parts.length > 1) {
+                    const cleanMessage = parts[0];
+                    const attachments = parts[1].split('\n').filter(url => url.trim().length > 0);
+                    return { cleanMessage, attachments };
+                  }
+                  return { cleanMessage: message, attachments: [] };
+                };
+
                 const parseReplies = (replyMessage) => {
                   if (!replyMessage) return [];
                   if (!replyMessage.startsWith('[')) {
-                    return [{ timestamp: null, content: replyMessage }];
+                    return [{ sender: 'DS Support Agent', timestamp: null, content: replyMessage, attachments: [] }];
                   }
                   const parts = replyMessage.split(/\n\n(?=\[)/);
                   return parts.map(part => {
                     const lines = part.split('\n');
                     const header = lines[0];
-                    const content = lines.slice(1).join('\n');
-                    const timestamp = header.replace(/^\[|\]$/g, '');
-                    return { timestamp, content };
+                    const rawContent = lines.slice(1).join('\n');
+                    
+                    let sender = 'DS Support Agent';
+                    let timestamp = header.replace(/^\[|\]$/g, '');
+                    if (timestamp.startsWith('Customer - ')) {
+                      sender = 'Customer';
+                      timestamp = timestamp.replace('Customer - ', '');
+                    } else if (timestamp.startsWith('Admin - ')) {
+                      sender = 'DS Support Agent';
+                      timestamp = timestamp.replace('Admin - ', '');
+                    }
+                    
+                    const { cleanMessage, attachments } = parseMessageAndAttachments(rawContent);
+                    return { sender, timestamp, content: cleanMessage, attachments };
                   });
                 };
+
                 const replies = parseReplies(selectedInquiry.reply_message);
                 if (replies.length === 0) return null;
                 return (
@@ -708,7 +831,7 @@ const InquiriesPage = () => {
                       {replies.map((reply, idx) => (
                         <div key={idx} className="flex flex-col gap-2 text-slate-700 dark:text-slate-350 bg-primary/5 dark:bg-emerald-950/20 p-5 rounded-3xl border border-primary/20 dark:border-emerald-900/50 shadow-sm">
                           <div className="flex items-center justify-between gap-2 border-b border-primary/10 pb-2">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-primary font-sans">DS Support Agent</span>
+                            <span className="text-[10px] font-black uppercase tracking-wider text-primary font-sans">{reply.sender}</span>
                             {reply.timestamp ? (
                               <span className="text-[10px] font-mono text-slate-400">{reply.timestamp}</span>
                             ) : (
@@ -722,6 +845,30 @@ const InquiriesPage = () => {
                           <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-medium font-sans">
                             {reply.content}
                           </p>
+                          {reply.attachments && reply.attachments.length > 0 && (
+                            <div className="grid grid-cols-3 gap-2 pt-2">
+                              {reply.attachments.map((url, imgIdx) => {
+                                const isVid = url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov');
+                                return (
+                                  <a 
+                                    key={imgIdx} 
+                                    href={url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="relative aspect-square bg-[#050807] rounded-xl overflow-hidden border border-slate-200 dark:border-[#26322B]"
+                                  >
+                                    {isVid ? (
+                                      <div className="w-full h-full flex items-center justify-center bg-black">
+                                        <Play className="w-6 h-6 text-white" />
+                                      </div>
+                                    ) : (
+                                      <img src={url} alt="Attachment" className="w-full h-full object-cover" />
+                                    )}
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -729,7 +876,6 @@ const InquiriesPage = () => {
                 );
               })()}
 
-              {/* Send Reply Email */}
               {selectedInquiry.status === 'resolved' ? (
                 <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-400 rounded-2xl p-4 text-xs font-semibold flex items-center gap-2 font-sans">
                   <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
@@ -749,13 +895,56 @@ const InquiriesPage = () => {
                       className="w-full min-h-[100px] rounded-xl border border-slate-200 dark:border-[#26322B] bg-slate-50/50 dark:bg-[#1E2722] p-4 text-sm focus:border-primary focus:ring-0 transition-all outline-none text-slate-900 dark:text-white"
                     />
                   </div>
-                  <Button
-                    type="submit"
-                    disabled={submittingReply}
-                    className="w-full bg-primary hover:bg-emerald-hover text-white font-black uppercase tracking-widest py-3 rounded-xl text-xs transition-all shadow-md disabled:opacity-50"
-                  >
-                    {submittingReply ? 'Sending Email...' : 'Send Reply Email'}
-                  </Button>
+
+                  {/* Admin Attachment Previews */}
+                  {replyUrls.length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      {replyUrls.map((url, imgIdx) => {
+                        const isVid = url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov');
+                        return (
+                          <div key={imgIdx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-[#26322B] bg-slate-50 dark:bg-[#1E2722]/30 group">
+                            {isVid ? (
+                              <div className="w-full h-full flex items-center justify-center bg-black">
+                                <Play className="w-6 h-6 text-white" />
+                              </div>
+                            ) : (
+                              <img src={url} alt="Uploaded attachment" className="w-full h-full object-cover" />
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeAdminReplyFile(imgIdx)}
+                              className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-rose-600 rounded-lg text-white transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <label className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1E2722] dark:hover:bg-[#26322B] text-slate-700 dark:text-slate-350 rounded-xl cursor-pointer text-xs font-bold transition-colors select-none border border-slate-200 dark:border-[#26322B]">
+                      <Paperclip className="w-4 h-4 text-primary" />
+                      <span>{uploadingReplyFiles ? 'Uploading...' : 'Attach Files (Max 3 img, 1 vid)'}</span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*,video/*"
+                        onChange={handleAdminReplyFileChange}
+                        disabled={uploadingReplyFiles}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <Button
+                      type="submit"
+                      disabled={submittingReply || uploadingReplyFiles || !replyMessage.trim()}
+                      className="h-10 px-6 bg-primary hover:bg-[#1bb847] text-white font-bold uppercase tracking-wider rounded-xl text-xs"
+                    >
+                      {submittingReply ? 'Replying...' : 'Reply'}
+                    </Button>
+                  </div>
                 </form>
               )}
             </div>

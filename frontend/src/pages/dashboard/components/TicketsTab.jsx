@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquare, Clock, CheckCircle2, AlertCircle, 
   ChevronDown, ChevronUp, Image as ImageIcon, Send,
-  FileText, CornerDownRight, Search, Copy, Check, Paperclip, X
+  FileText, CornerDownRight, Search, Copy, Check, Paperclip, X, Play
 } from 'lucide-react';
 import contactService from '../../../services/contact.service';
 import apiClient from '../../../services/core/apiClient';
@@ -87,19 +87,33 @@ const TicketsTab = () => {
     if (files.length === 0) return;
 
     const currentUrls = replyUrls[ticketId] || [];
-    if (currentUrls.length + files.length > 3) {
-      toast.error("You can upload a maximum of 3 images.");
-      return;
-    }
+    const imageCount = currentUrls.filter(url => !url.toLowerCase().endsWith('.mp4') && !url.toLowerCase().endsWith('.mov')).length;
+    const videoCount = currentUrls.filter(url => url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov')).length;
 
     for (const file of files) {
       const ct = file.type.toLowerCase();
-      if (ct.includes('video') || file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.mov')) {
-        toast.error("Video files are not supported.");
-        return;
-      }
-      if (!ct.startsWith('image/')) {
-        toast.error("Only image files (PNG, JPG, JPEG, WEBP) are supported.");
+      const isVideo = ct.includes('video') || file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.mov');
+
+      if (isVideo) {
+        if (videoCount >= 1) {
+          toast.error("You can upload a maximum of 1 video.");
+          return;
+        }
+        if (file.size > 15 * 1024 * 1024) {
+          toast.error("Video file size must be less than 15MB.");
+          return;
+        }
+      } else if (ct.startsWith('image/')) {
+        if (imageCount >= 3) {
+          toast.error("You can upload a maximum of 3 images.");
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error("Image file size must be less than 5MB.");
+          return;
+        }
+      } else {
+        toast.error("Only image (PNG, JPG, JPEG, WEBP) or video files are supported.");
         return;
       }
 
@@ -414,17 +428,26 @@ const TicketsTab = () => {
                                     {/* Inline reply attachments if any */}
                                     {reply.attachments && reply.attachments.length > 0 && (
                                       <div className="grid grid-cols-3 gap-1.5 pt-2">
-                                        {reply.attachments.map((url, imgIdx) => (
-                                          <a 
-                                            key={imgIdx} 
-                                            href={url} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            className="relative aspect-square bg-white dark:bg-[#131B17] rounded-lg border border-slate-200 dark:border-[#26322B] overflow-hidden"
-                                          >
-                                            <img src={url} alt="Attachment" className="w-full h-full object-cover" />
-                                          </a>
-                                        ))}
+                                        {reply.attachments.map((url, imgIdx) => {
+                                          const isVid = url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov');
+                                          return (
+                                            <a 
+                                              key={imgIdx} 
+                                              href={url} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer" 
+                                              className="relative aspect-square bg-[#050807] rounded-lg border border-slate-200 dark:border-[#26322B] overflow-hidden flex items-center justify-center"
+                                            >
+                                              {isVid ? (
+                                                <div className="w-full h-full flex items-center justify-center bg-black">
+                                                  <Play className="w-5 h-5 text-white" />
+                                                </div>
+                                              ) : (
+                                                <img src={url} alt="Attachment" className="w-full h-full object-cover" />
+                                              )}
+                                            </a>
+                                          );
+                                        })}
                                       </div>
                                     )}
                                   </div>
@@ -452,31 +475,40 @@ const TicketsTab = () => {
                               {/* Attachment preview */}
                               {replyUrls[ticket.id] && replyUrls[ticket.id].length > 0 && (
                                 <div className="grid grid-cols-4 gap-2 mt-2">
-                                  {replyUrls[ticket.id].map((url, imgIdx) => (
-                                    <div key={imgIdx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#19231F]/30 group">
-                                      <img src={url} alt="Uploaded attachment" className="w-full h-full object-cover" />
-                                      <button
-                                        type="button"
-                                        onClick={() => removeReplyFile(ticket.id, imgIdx)}
-                                        className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-rose-600 rounded-lg text-white transition-colors"
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                  ))}
+                                  {replyUrls[ticket.id].map((url, imgIdx) => {
+                                    const isVid = url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov');
+                                    return (
+                                      <div key={imgIdx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#19231F]/30 group">
+                                        {isVid ? (
+                                          <div className="w-full h-full flex items-center justify-center bg-black">
+                                            <Play className="w-6 h-6 text-white" />
+                                          </div>
+                                        ) : (
+                                          <img src={url} alt="Uploaded attachment" className="w-full h-full object-cover" />
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => removeReplyFile(ticket.id, imgIdx)}
+                                          className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-rose-600 rounded-lg text-white transition-colors"
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
 
                               <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                                 <label className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1E2722] dark:hover:bg-[#26322B] text-slate-650 dark:text-slate-350 rounded-xl cursor-pointer text-xs font-bold transition-colors select-none border border-slate-200 dark:border-[#26322B]">
                                   <Paperclip className="w-4 h-4 text-primary" />
-                                  <span>{uploadingReplyFiles[ticket.id] ? 'Uploading...' : 'Attach Image (Max 3)'}</span>
+                                  <span>{uploadingReplyFiles[ticket.id] ? 'Uploading...' : 'Attach Files (Max 3 img, 1 vid)'}</span>
                                   <input
                                     type="file"
                                     multiple
-                                    accept="image/*"
+                                    accept="image/*,video/*"
                                     onChange={(e) => handleReplyFileChange(ticket.id, e)}
-                                    disabled={uploadingReplyFiles[ticket.id] || (replyUrls[ticket.id] || []).length >= 3}
+                                    disabled={uploadingReplyFiles[ticket.id]}
                                     className="hidden"
                                   />
                                 </label>

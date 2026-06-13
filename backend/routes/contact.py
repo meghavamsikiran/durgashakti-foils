@@ -12,7 +12,7 @@ from email_templates import (
     contact_resolved_email,
     contact_reopened_email
 )
-from storage_service import upload_image
+from storage_service import upload_image, upload_media
 
 router = APIRouter(prefix="/api")
 
@@ -22,15 +22,22 @@ async def upload_contact_image(
     file: UploadFile = File(...),
     current_user: UserSchema = Depends(get_current_user)
 ):
-    # Verify it is an image and not video
     ct = (file.content_type or "").lower()
-    if not ct.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Only image files are supported")
-    if ct.startswith("video/") or "video" in ct:
-        raise HTTPException(status_code=400, detail="Video files are not supported")
+    is_image = ct.startswith("image/")
+    is_video = ct.startswith("video/") or "video" in ct or file.filename.lower().endswith(".mp4") or file.filename.lower().endswith(".mov")
+    
+    if not (is_image or is_video):
+        raise HTTPException(status_code=400, detail="Only image or video files are supported")
 
     raw = await file.read()
-    url = await upload_image(raw, ct, prefix="ticket")
+    size = len(raw)
+    
+    if is_image and size > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image size must be less than 5MB")
+    if is_video and size > 15 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Video size must be less than 15MB")
+
+    url = await upload_media(raw, ct, prefix="ticket")
     return {"url": url}
 
 @router.get("/contacts/my")
@@ -254,6 +261,7 @@ async def reply_contact(
     db: AsyncSession = Depends(get_db)
 ):
     reply_body = data.get("reply_message")
+    attachment_urls = data.get("attachment_urls") or []
     if not reply_body:
         raise HTTPException(status_code=400, detail="Reply message is required")
 
@@ -270,7 +278,12 @@ async def reply_contact(
 
     # Format response as list/history thread
     timestamp_str = utcnow().strftime('%d %b %Y, %I:%M %p')
-    new_reply_block = f"[Admin - {timestamp_str}]\n{reply_body}"
+    final_reply = reply_body
+    if attachment_urls:
+        attachments_text = "\n\n[Attachments]\n" + "\n".join(attachment_urls)
+        final_reply += attachments_text
+
+    new_reply_block = f"[Admin - {timestamp_str}]\n{final_reply}"
     if contact.reply_message:
         contact.reply_message = contact.reply_message + "\n\n" + new_reply_block
     else:

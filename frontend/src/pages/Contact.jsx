@@ -109,6 +109,10 @@ const Contact = () => {
         toast.error("Only image files (PNG, JPG, JPEG, WEBP) are supported.");
         return;
       }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image file size must be less than 5MB.");
+        return;
+      }
 
       try {
         setUploadingFiles(true);
