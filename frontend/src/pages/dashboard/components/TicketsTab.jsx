@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquare, Clock, CheckCircle2, AlertCircle, 
   ChevronDown, ChevronUp, Image as ImageIcon, Send,
-  FileText, CornerDownRight, Search, Copy, Check
+  FileText, CornerDownRight, Search, Copy, Check, Paperclip, X
 } from 'lucide-react';
 import contactService from '../../../services/contact.service';
 import apiClient from '../../../services/core/apiClient';
 import PageLoader from '../../../components/ui/PageLoader';
+import { Button } from '../../../components/ui/button';
 import { toast } from 'sonner';
 
 const TicketsTab = () => {
@@ -23,8 +24,20 @@ const TicketsTab = () => {
   const [expandedTicketId, setExpandedTicketId] = useState(null);
   const [copiedTicketId, setCopiedTicketId] = useState(null);
 
+  // States for Customer Response composer inside open tickets
+  const [replyTexts, setReplyTexts] = useState({});
+  const [replyUrls, setReplyUrls] = useState({});
+  const [uploadingReplyFiles, setUploadingReplyFiles] = useState({});
+
   useEffect(() => {
     fetchTickets(false);
+    
+    // Auto-poll support tickets every 12 seconds in background to reflect admin replies/closings immediately
+    const pollInterval = setInterval(() => {
+      fetchTickets(false);
+    }, 12000);
+    
+    return () => clearInterval(pollInterval);
   }, []);
 
   const fetchTickets = async (showSpinner = true) => {
@@ -32,6 +45,8 @@ const TicketsTab = () => {
       if (showSpinner) {
         setLoading(true);
       }
+      // Stale-While-Revalidate refresh
+      apiClient.invalidateCache('/contacts/my');
       const res = await contactService.getMyTickets();
       setTickets(res.items || []);
     } catch (err) {
@@ -67,6 +82,80 @@ const TicketsTab = () => {
     }
   };
 
+  const handleReplyFileChange = async (ticketId, e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const currentUrls = replyUrls[ticketId] || [];
+    if (currentUrls.length + files.length > 3) {
+      toast.error("You can upload a maximum of 3 images.");
+      return;
+    }
+
+    for (const file of files) {
+      const ct = file.type.toLowerCase();
+      if (ct.includes('video') || file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.mov')) {
+        toast.error("Video files are not supported.");
+        return;
+      }
+      if (!ct.startsWith('image/')) {
+        toast.error("Only image files (PNG, JPG, JPEG, WEBP) are supported.");
+        return;
+      }
+
+      try {
+        setUploadingReplyFiles(prev => ({ ...prev, [ticketId]: true }));
+        const res = await contactService.uploadAttachment(file);
+        setReplyUrls(prev => ({
+          ...prev,
+          [ticketId]: [...(prev[ticketId] || []), res.url]
+        }));
+        toast.success(`Uploaded ${file.name} successfully`);
+      } catch (err) {
+        console.error(err);
+        toast.error(`Failed to upload ${file.name}: ${err.message || 'Error'}`);
+      } finally {
+        setUploadingReplyFiles(prev => ({ ...prev, [ticketId]: false }));
+      }
+    }
+  };
+
+  const removeReplyFile = (ticketId, indexToRemove) => {
+    setReplyUrls(prev => ({
+      ...prev,
+      [ticketId]: (prev[ticketId] || []).filter((_, idx) => idx !== indexToRemove)
+    }));
+  };
+
+  const handleCustomerReplySubmit = async (ticketId) => {
+    const text = replyTexts[ticketId] || '';
+    if (!text.trim()) {
+      toast.error("Please enter a message");
+      return;
+    }
+    try {
+      await apiClient.post(`/contacts/${ticketId}/reply`, {
+        reply_message: text,
+        attachment_urls: replyUrls[ticketId] || []
+      });
+      toast.success("Reply sent successfully");
+      
+      // Reset composer states
+      setReplyTexts(prev => ({ ...prev, [ticketId]: '' }));
+      setReplyUrls(prev => ({ ...prev, [ticketId]: [] }));
+      
+      // Invalidate caches
+      apiClient.invalidateCache('/contacts/my');
+      apiClient.invalidateCache('/admin/contacts');
+      
+      // Refresh list
+      await fetchTickets(false);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.detail || "Failed to send reply");
+    }
+  };
+
   const parseMessageAndAttachments = (message) => {
     if (!message) return { cleanMessage: '', attachments: [] };
     const parts = message.split('\n\n[Attachments]\n');
@@ -81,44 +170,61 @@ const TicketsTab = () => {
   const parseReplies = (replyMessage) => {
     if (!replyMessage) return [];
     if (!replyMessage.startsWith('[')) {
-      return [{ timestamp: null, content: replyMessage }];
+      return [{ sender: 'DS Support Team', timestamp: null, content: replyMessage, attachments: [] }];
     }
     const parts = replyMessage.split(/\n\n(?=\[)/);
     return parts.map(part => {
       const lines = part.split('\n');
       const header = lines[0];
-      const content = lines.slice(1).join('\n');
-      const timestamp = header.replace(/^\[|\]$/g, '');
-      return { timestamp, content };
+      const rawContent = lines.slice(1).join('\n');
+      
+      let sender = 'DS Support Team';
+      let timestamp = header.replace(/^\[|\]$/g, '');
+      if (timestamp.startsWith('Customer - ')) {
+        sender = 'You';
+        timestamp = timestamp.replace('Customer - ', '');
+      } else if (timestamp.startsWith('Admin - ')) {
+        sender = 'DS Support Team';
+        timestamp = timestamp.replace('Admin - ', '');
+      }
+      
+      const { cleanMessage, attachments } = parseMessageAndAttachments(rawContent);
+      return { sender, timestamp, content: cleanMessage, attachments };
     });
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, replyMessage) => {
     const s = (status || '').toLowerCase();
-    switch (s) {
-      case 'resolved':
-      case 'closed':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Resolved
-          </span>
-        );
-      case 'replied':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20">
-            <MessageSquare className="w-3.5 h-3.5" />
-            Replied
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            <Clock className="w-3.5 h-3.5" />
-            Open
-          </span>
-        );
+    if (s === 'resolved' || s === 'closed') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          Resolved
+        </span>
+      );
     }
+    if (s === 'replied') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+          <MessageSquare className="w-3.5 h-3.5" />
+          Replied
+        </span>
+      );
+    }
+    if (s === 'reopened' || s === 're-opened') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-500 border border-amber-500/20">
+          <Clock className="w-3.5 h-3.5" />
+          Re-opened
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-450 border border-amber-500/20">
+        <Clock className="w-3.5 h-3.5" />
+        Open
+      </span>
+    );
   };
 
   const filteredTickets = tickets.filter(ticket => {
@@ -138,12 +244,12 @@ const TicketsTab = () => {
     <motion.div 
       initial={{ opacity: 0, x: 20 }} 
       animate={{ opacity: 1, x: 0 }} 
-      className="space-y-6 text-foreground"
+      className="space-y-6 text-slate-800 dark:text-foreground"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black uppercase tracking-tighter text-white">Support Tickets</h2>
-          <p className="text-sm text-slate-400 mt-1">Track and manage your cases with Durga Shakti Foils support.</p>
+          <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900 dark:text-white">Support Tickets</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Track and manage your cases with Durga Shakti Foils support.</p>
         </div>
 
         <div className="relative w-full sm:w-72">
@@ -153,16 +259,16 @@ const TicketsTab = () => {
             placeholder="Search tickets..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#131B17] border border-[#26322B] rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[#25D958]/30 transition-all"
+            className="w-full bg-white dark:bg-[#131B17] border border-slate-200 dark:border-[#26322B] rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[#25D958]/30 transition-all"
           />
         </div>
       </div>
 
       {filteredTickets.length === 0 ? (
-        <div className="text-center py-20 bg-[#131B17] rounded-2xl border border-dashed border-[#26322B]">
-          <MessageSquare className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400 font-bold">No tickets found</p>
-          <p className="text-xs text-slate-550 mt-1">Submit a contact form query to raise a new support ticket.</p>
+        <div className="text-center py-20 bg-slate-50 dark:bg-[#131B17] rounded-2xl border border-dashed border-slate-200 dark:border-[#26322B]">
+          <MessageSquare className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400 font-bold">No tickets found</p>
+          <p className="text-xs text-slate-400 dark:text-slate-555 mt-1 font-medium">Submit a contact form query to raise a new support ticket.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -177,10 +283,12 @@ const TicketsTab = () => {
               minute: '2-digit'
             });
 
+            const isOpen = ticket.status !== 'resolved' && ticket.status !== 'closed';
+
             return (
               <div 
                 key={ticket.id} 
-                className="bg-[#131B17] border border-[#26322B] rounded-2xl overflow-hidden hover:border-[#25D958]/30 transition-all duration-300"
+                className="bg-white dark:bg-[#131B17] border border-slate-200 dark:border-[#26322B] rounded-2xl overflow-hidden hover:border-[#25D958]/30 transition-all duration-300 shadow-sm dark:shadow-none"
               >
                 {/* Accordion Header */}
                 <div 
@@ -189,39 +297,39 @@ const TicketsTab = () => {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-3 mb-2">
-                      <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-[#25D958] tracking-wider bg-[#25D958]/10 px-2.5 py-1 rounded-lg">
+                      <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-primary dark:text-[#25D958] tracking-wider bg-primary/5 dark:bg-[#25D958]/10 px-2.5 py-1 rounded-lg">
                         <span>{ticket.ticket_id}</span>
                         <button
                           type="button"
                           onClick={(e) => handleCopy(e, ticket.ticket_id)}
-                          className="hover:text-white transition-colors p-0.5 rounded focus:outline-none flex items-center justify-center"
+                          className="hover:text-primary transition-colors p-0.5 rounded focus:outline-none flex items-center justify-center"
                           title="Copy Ticket ID"
                         >
                           {copiedTicketId === ticket.ticket_id ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                           ) : (
-                            <Copy className="w-3.5 h-3.5 opacity-60 hover:opacity-100 text-[#25D958]" />
+                            <Copy className="w-3.5 h-3.5 opacity-60 hover:opacity-100 text-primary dark:text-[#25D958]" />
                           )}
                         </button>
                       </div>
-                      {getStatusBadge(ticket.status)}
+                      {getStatusBadge(ticket.status, ticket.reply_message)}
                       <span className="text-xs text-slate-500 font-mono">
                         {dateFormatted}
                       </span>
                     </div>
-                    <p className="text-sm font-medium text-slate-350 truncate">
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-350 truncate">
                       {cleanMessage}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-3 self-end md:self-center shrink-0">
                     {attachments.length > 0 && (
-                      <span className="flex items-center gap-1 text-xs text-slate-500 bg-[#19231F] px-2 py-1 rounded-md">
+                      <span className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 dark:bg-[#19231F] px-2 py-1 rounded-md">
                         <ImageIcon className="w-3.5 h-3.5" />
                         {attachments.length} {attachments.length === 1 ? 'file' : 'files'}
                       </span>
                     )}
-                    <button className="p-1 text-slate-400 hover:text-white transition-colors">
+                    <button className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
                       {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                     </button>
                   </div>
@@ -234,14 +342,14 @@ const TicketsTab = () => {
                       initial={{ height: 0 }}
                       animate={{ height: 'auto' }}
                       exit={{ height: 0 }}
-                      className="overflow-hidden border-t border-[#26322B]/60"
+                      className="overflow-hidden border-t border-slate-150 dark:border-[#26322B]/60"
                     >
-                      <div className="p-6 bg-[#19231F]/30 space-y-6">
+                      <div className="p-6 bg-slate-50 dark:bg-[#19231F] space-y-6">
                         {/* Original Message */}
                         <div>
                           <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Your Inquiry</h4>
-                          <div className="bg-[#131B17]/60 rounded-xl p-4 border border-[#26322B]/40">
-                            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{cleanMessage}</p>
+                          <div className="bg-white dark:bg-[#131B17] rounded-xl p-4 border border-slate-200/60 dark:border-[#26322B]/40 shadow-sm dark:shadow-none">
+                            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium">{cleanMessage}</p>
                           </div>
                         </div>
 
@@ -256,7 +364,7 @@ const TicketsTab = () => {
                                   href={url} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  className="group relative aspect-square bg-[#131B17] rounded-xl border border-[#26322B] overflow-hidden hover:border-[#25D958]/40 transition-all"
+                                  className="group relative aspect-square bg-white dark:bg-[#131B17] rounded-xl border border-slate-200 dark:border-[#26322B] overflow-hidden hover:border-primary transition-all"
                                 >
                                   <img 
                                     src={url} 
@@ -264,7 +372,7 @@ const TicketsTab = () => {
                                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                   />
                                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <span className="text-[11px] font-bold uppercase tracking-wider text-white bg-[#25D958] px-2 py-1 rounded-md">View Original</span>
+                                    <span className="text-[11px] font-bold uppercase tracking-wider text-white bg-primary px-2 py-1 rounded-md">View Original</span>
                                   </div>
                                 </a>
                               ))}
@@ -272,60 +380,130 @@ const TicketsTab = () => {
                           </div>
                         )}
 
-                        {/* Replies */}
-                        {ticket.reply_message ? (
-                          <div className="border-t border-[#26322B]/60 pt-6 space-y-4">
-                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1.5">
-                              <CornerDownRight className="w-3.5 h-3.5 text-[#25D958]" />
-                              Support Reply History
+                        {/* Replies Thread */}
+                        {ticket.reply_message && (
+                          <div className="border-t border-slate-200/60 dark:border-[#26322B]/60 pt-6 space-y-4">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1.5 font-sans">
+                              <CornerDownRight className="w-3.5 h-3.5 text-primary dark:text-[#25D958]" />
+                              Support Conversation Thread
                             </h4>
-                            <div className="space-y-3">
-                              {parseReplies(ticket.reply_message).map((reply, idx) => (
-                                <div key={idx} className="bg-[#25D958]/5 border border-[#25D958]/20 rounded-xl p-5 space-y-2">
-                                  <div className="flex items-center justify-between gap-2 border-b border-[#25D958]/10 pb-2.5">
-                                    <span className="text-xs font-bold text-[#25D958] uppercase tracking-wider">DS Support Team</span>
-                                    {reply.timestamp ? (
-                                      <span className="text-[10px] font-mono text-slate-500">{reply.timestamp}</span>
-                                    ) : (
-                                      ticket.replied_at && (
-                                        <span className="text-[10px] font-mono text-slate-500">
-                                          {new Date(ticket.replied_at).toLocaleDateString(undefined, {
-                                            year: 'numeric',
-                                            month: 'short',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                          })}
-                                        </span>
-                                      )
+                            <div className="space-y-3.5">
+                              {parseReplies(ticket.reply_message).map((reply, idx) => {
+                                const isSelf = reply.sender === 'You';
+                                return (
+                                  <div 
+                                    key={idx} 
+                                    className={`p-5 rounded-2xl border space-y-2.5 shadow-sm max-w-[85%] ${
+                                      isSelf 
+                                        ? 'bg-slate-100/60 dark:bg-white/5 border-slate-250 dark:border-white/10 ml-auto' 
+                                        : 'bg-emerald-500/5 dark:bg-[#25D958]/5 border-emerald-500/10 dark:border-[#25D958]/20 mr-auto'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between gap-4 border-b border-slate-200/50 dark:border-white/10 pb-2">
+                                      <span className={`text-[10px] font-black uppercase tracking-wider ${isSelf ? 'text-slate-500 dark:text-slate-400' : 'text-primary dark:text-[#25D958]'}`}>
+                                        {reply.sender}
+                                      </span>
+                                      {reply.timestamp && (
+                                        <span className="text-[9px] font-mono text-slate-450 dark:text-slate-500">{reply.timestamp}</span>
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-slate-700 dark:text-slate-350 leading-relaxed whitespace-pre-wrap font-medium">
+                                      {reply.content}
+                                    </p>
+                                    
+                                    {/* Inline reply attachments if any */}
+                                    {reply.attachments && reply.attachments.length > 0 && (
+                                      <div className="grid grid-cols-3 gap-1.5 pt-2">
+                                        {reply.attachments.map((url, imgIdx) => (
+                                          <a 
+                                            key={imgIdx} 
+                                            href={url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="relative aspect-square bg-white dark:bg-[#131B17] rounded-lg border border-slate-200 dark:border-[#26322B] overflow-hidden"
+                                          >
+                                            <img src={url} alt="Attachment" className="w-full h-full object-cover" />
+                                          </a>
+                                        ))}
+                                      </div>
                                     )}
                                   </div>
-                                  <p className="text-sm text-slate-350 leading-relaxed whitespace-pre-wrap font-sans">
-                                    {reply.content}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="border-t border-[#26322B]/60 pt-6">
-                            <div className="flex items-center gap-3 text-slate-500 bg-[#131B17]/30 border border-[#26322B]/30 rounded-xl p-4">
-                              <Clock className="w-5 h-5 shrink-0 text-amber-500/80" />
-                              <div className="text-xs font-sans">
-                                <span className="font-semibold text-slate-400 block mb-0.5 font-sans">Awaiting agent response</span>
-                                Our customer success team will review your ticket and reply shortly. You will receive an email confirmation.
-                              </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
 
-                        {/* Customer Re-Open Action */}
-                        {(ticket.status === 'resolved' || ticket.status === 'closed') && (
-                          <div className="border-t border-[#26322B]/60 pt-6 flex justify-end">
+                        {/* Customer Reply Composer (Only if Open) */}
+                        {isOpen ? (
+                          <div className="border-t border-slate-200/60 dark:border-[#26322B]/60 pt-6 space-y-4">
+                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                              <CornerDownRight className="w-3.5 h-3.5 text-primary" />
+                              Write Response
+                            </h4>
+                            <div className="space-y-3">
+                              <textarea
+                                value={replyTexts[ticket.id] || ''}
+                                onChange={(e) => setReplyTexts(prev => ({ ...prev, [ticket.id]: e.target.value }))}
+                                placeholder="Type your response to Durga Shakti support..."
+                                className="w-full min-h-[100px] rounded-xl border border-slate-250 dark:border-[#26322B] bg-white dark:bg-[#1E2722] p-4 text-sm focus:border-primary focus:ring-0 transition-all outline-none text-slate-800 dark:text-white font-medium"
+                              />
+
+                              {/* Attachment preview */}
+                              {replyUrls[ticket.id] && replyUrls[ticket.id].length > 0 && (
+                                <div className="grid grid-cols-4 gap-2 mt-2">
+                                  {replyUrls[ticket.id].map((url, imgIdx) => (
+                                    <div key={imgIdx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#19231F]/30 group">
+                                      <img src={url} alt="Uploaded attachment" className="w-full h-full object-cover" />
+                                      <button
+                                        type="button"
+                                        onClick={() => removeReplyFile(ticket.id, imgIdx)}
+                                        className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-rose-600 rounded-lg text-white transition-colors"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                                <label className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1E2722] dark:hover:bg-[#26322B] text-slate-650 dark:text-slate-350 rounded-xl cursor-pointer text-xs font-bold transition-colors select-none border border-slate-200 dark:border-[#26322B]">
+                                  <Paperclip className="w-4 h-4 text-primary" />
+                                  <span>{uploadingReplyFiles[ticket.id] ? 'Uploading...' : 'Attach Image (Max 3)'}</span>
+                                  <input
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={(e) => handleReplyFileChange(ticket.id, e)}
+                                    disabled={uploadingReplyFiles[ticket.id] || (replyUrls[ticket.id] || []).length >= 3}
+                                    className="hidden"
+                                  />
+                                </label>
+
+                                <Button
+                                  onClick={() => handleCustomerReplySubmit(ticket.id)}
+                                  disabled={uploadingReplyFiles[ticket.id] || !(replyTexts[ticket.id] || '').trim()}
+                                  className="h-10 px-6 bg-primary hover:bg-[#1bb847] text-white font-bold uppercase tracking-wider rounded-xl text-xs"
+                                >
+                                  Send Message
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="border-t border-slate-200/60 dark:border-[#26322B]/60 pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-100/40 dark:bg-emerald-950/5 p-4 rounded-xl border border-slate-200 dark:border-emerald-500/10">
+                            <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                              <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" />
+                              <div className="text-xs font-medium">
+                                This case is resolved. If you still need assistance, you can re-open it.
+                              </div>
+                            </div>
+                            
                             <button
                               type="button"
                               onClick={() => handleReopen(ticket.id)}
-                              className="px-5 py-2.5 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-sm active:scale-95 duration-200 font-sans"
+                              className="px-5 py-2.5 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-sm active:scale-95 duration-200 shrink-0 font-sans"
                             >
                               Re-Open Case
                             </button>

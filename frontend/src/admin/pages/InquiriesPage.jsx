@@ -200,7 +200,13 @@ const InquiriesPage = () => {
 
   useEffect(() => {
     loadInquiries();
-    loadInquiriesSilent();
+    
+    // Background polling every 12 seconds to load new support cases instantly
+    const pollInterval = setInterval(() => {
+      loadInquiriesSilent();
+    }, 12000);
+    
+    return () => clearInterval(pollInterval);
   }, [loadInquiries, loadInquiriesSilent]);
 
   const handleUpdateStatus = async (id, newStatus) => {
@@ -266,6 +272,7 @@ const InquiriesPage = () => {
     switch (status) {
       case 'resolved': return 'bg-emerald-50 text-emerald-600 border-emerald-200';
       case 'replied': return 'bg-primary/10 text-primary border-primary/20';
+      case 'reopened': return 'bg-amber-50 text-amber-600 border-amber-200';
       case 'in_progress': return 'bg-amber-50 text-amber-600 border-amber-200';
       default: return 'bg-slate-50 text-slate-600 border-slate-200';
     }
@@ -275,6 +282,7 @@ const InquiriesPage = () => {
     switch (status) {
       case 'resolved': return <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />;
       case 'replied': return <Mail className="w-3.5 h-3.5 mr-1.5" />;
+      case 'reopened': return <Clock className="w-3.5 h-3.5 mr-1.5" />;
       case 'in_progress': return <AlertCircle className="w-3.5 h-3.5 mr-1.5" />;
       default: return <Circle className="w-3.5 h-3.5 mr-1.5" />;
     }
@@ -493,6 +501,7 @@ const InquiriesPage = () => {
                   style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
                 >
                   <option value="pending">Pending</option>
+                  <option value="reopened">Re-opened</option>
                   <option value="in_progress">In Progress</option>
                   <option value="replied">Replied</option>
                   <option value="resolved">Closed</option>
@@ -665,6 +674,7 @@ const InquiriesPage = () => {
                   style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
                 >
                   <option value="pending" className="dark:bg-[#131B17] dark:text-white">Pending</option>
+                  <option value="reopened" className="dark:bg-[#131B17] dark:text-white">Re-opened</option>
                   <option value="in_progress" className="dark:bg-[#131B17] dark:text-white">In Progress</option>
                   <option value="replied" className="dark:bg-[#131B17] dark:text-white">Replied</option>
                   <option value="resolved" className="dark:bg-[#131B17] dark:text-white">Closed</option>
@@ -757,14 +767,7 @@ const InquiriesPage = () => {
               >
                 Cancel
               </Button>
-              {selectedInquiry.status === 'resolved' ? (
-                <Button 
-                  onClick={() => handleUpdateStatus(selectedInquiry.id, 'pending')}
-                  className="bg-primary hover:bg-[#1bb847] text-white font-extrabold text-sm px-8 py-4 rounded-2xl tracking-wide transition-all shadow-lg active:scale-95 border border-transparent"
-                >
-                  Re-Open Case
-                </Button>
-              ) : (
+              {selectedInquiry.status !== 'resolved' && (
                 <Button 
                   onClick={() => handleUpdateStatus(selectedInquiry.id, 'resolved')}
                   className="bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-sm px-8 py-4 rounded-2xl tracking-wide transition-all shadow-lg active:scale-95 border border-transparent"

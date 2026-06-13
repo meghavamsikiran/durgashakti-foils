@@ -95,7 +95,7 @@ async def customer_reopen_contact(
         raise HTTPException(status_code=404, detail="Ticket not found or unauthorized")
         
     old_status = contact.status
-    contact.status = "pending"
+    contact.status = "reopened"
     await db.flush()
     
     # Trigger reopened email
@@ -105,7 +105,45 @@ async def customer_reopen_contact(
     import asyncio
     asyncio.create_task(send_email(contact.email, subj, reopen_email_body))
     
-    return {"message": "Ticket re-opened successfully", "status": "pending"}
+    return {"message": "Ticket re-opened successfully", "status": "reopened"}
+
+@router.post("/contacts/{contact_id}/reply")
+async def customer_reply_contact(
+    contact_id: str,
+    data: dict,
+    current_user: UserSchema = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    reply_body = data.get("reply_message")
+    attachment_urls = data.get("attachment_urls") or []
+    if not reply_body:
+        raise HTTPException(status_code=400, detail="Message is required")
+        
+    res = await db.execute(select(ContactModel).where(ContactModel.id == contact_id, ContactModel.email == current_user.email))
+    contact = res.scalar_one_or_none()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Ticket not found or unauthorized")
+        
+    if contact.status == "resolved":
+        raise HTTPException(status_code=400, detail="Cannot reply to a resolved ticket. Please re-open it first.")
+        
+    # Format customer reply
+    timestamp_str = utcnow().strftime('%d %b %Y, %I:%M %p')
+    final_reply = reply_body
+    if attachment_urls:
+        attachments_text = "\n\n[Attachments]\n" + "\n".join(attachment_urls)
+        final_reply += attachments_text
+        
+    new_reply_block = f"[Customer - {timestamp_str}]\n{final_reply}"
+    if contact.reply_message:
+        contact.reply_message = contact.reply_message + "\n\n" + new_reply_block
+    else:
+        contact.reply_message = new_reply_block
+        
+    contact.status = "reopened" # Reset status to reopened so admin sees it needs attention
+    await db.flush()
+    
+    return {"message": "Message sent successfully", "status": "reopened"}
 
 # ── Admin Endpoints ──────────────────────────────────────────────────────
 @router.get("/admin/contacts")
@@ -232,7 +270,7 @@ async def reply_contact(
 
     # Format response as list/history thread
     timestamp_str = utcnow().strftime('%d %b %Y, %I:%M %p')
-    new_reply_block = f"[{timestamp_str}]\n{reply_body}"
+    new_reply_block = f"[Admin - {timestamp_str}]\n{reply_body}"
     if contact.reply_message:
         contact.reply_message = contact.reply_message + "\n\n" + new_reply_block
     else:
