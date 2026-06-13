@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquare, Clock, CheckCircle2, AlertCircle, 
   ChevronDown, ChevronUp, Image as ImageIcon, Send,
-  FileText, CornerDownRight, Search
+  FileText, CornerDownRight, Search, Copy, Check
 } from 'lucide-react';
 import contactService from '../../../services/contact.service';
 import apiClient from '../../../services/core/apiClient';
@@ -21,6 +21,7 @@ const TicketsTab = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedTicketId, setExpandedTicketId] = useState(null);
+  const [copiedTicketId, setCopiedTicketId] = useState(null);
 
   useEffect(() => {
     fetchTickets(false);
@@ -39,6 +40,14 @@ const TicketsTab = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopy = (e, text) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    setCopiedTicketId(text);
+    toast.success("Copied Ticket ID to clipboard");
+    setTimeout(() => setCopiedTicketId(null), 1500);
   };
 
   const handleReopen = async (ticketId) => {
@@ -153,7 +162,7 @@ const TicketsTab = () => {
         <div className="text-center py-20 bg-[#131B17] rounded-2xl border border-dashed border-[#26322B]">
           <MessageSquare className="w-12 h-12 text-slate-600 mx-auto mb-4" />
           <p className="text-slate-400 font-bold">No tickets found</p>
-          <p className="text-xs text-slate-500 mt-1">Submit a contact form query to raise a new support ticket.</p>
+          <p className="text-xs text-slate-550 mt-1">Submit a contact form query to raise a new support ticket.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -180,9 +189,21 @@ const TicketsTab = () => {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-3 mb-2">
-                      <span className="font-mono text-sm font-bold text-[#25D958] tracking-wider bg-[#25D958]/10 px-2.5 py-1 rounded-lg">
-                        {ticket.ticket_id}
-                      </span>
+                      <div className="flex items-center gap-1.5 font-mono text-sm font-bold text-[#25D958] tracking-wider bg-[#25D958]/10 px-2.5 py-1 rounded-lg">
+                        <span>{ticket.ticket_id}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleCopy(e, ticket.ticket_id)}
+                          className="hover:text-white transition-colors p-0.5 rounded focus:outline-none flex items-center justify-center"
+                          title="Copy Ticket ID"
+                        >
+                          {copiedTicketId === ticket.ticket_id ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5 opacity-60 hover:opacity-100 text-[#25D958]" />
+                          )}
+                        </button>
+                      </div>
                       {getStatusBadge(ticket.status)}
                       <span className="text-xs text-slate-500 font-mono">
                         {dateFormatted}
@@ -279,7 +300,7 @@ const TicketsTab = () => {
                                       )
                                     )}
                                   </div>
-                                  <p className="text-sm text-slate-350 leading-relaxed whitespace-pre-wrap">
+                                  <p className="text-sm text-slate-350 leading-relaxed whitespace-pre-wrap font-sans">
                                     {reply.content}
                                   </p>
                                 </div>
@@ -290,8 +311,8 @@ const TicketsTab = () => {
                           <div className="border-t border-[#26322B]/60 pt-6">
                             <div className="flex items-center gap-3 text-slate-500 bg-[#131B17]/30 border border-[#26322B]/30 rounded-xl p-4">
                               <Clock className="w-5 h-5 shrink-0 text-amber-500/80" />
-                              <div className="text-xs">
-                                <span className="font-semibold text-slate-400 block mb-0.5">Awaiting agent response</span>
+                              <div className="text-xs font-sans">
+                                <span className="font-semibold text-slate-400 block mb-0.5 font-sans">Awaiting agent response</span>
                                 Our customer success team will review your ticket and reply shortly. You will receive an email confirmation.
                               </div>
                             </div>
@@ -304,7 +325,7 @@ const TicketsTab = () => {
                             <button
                               type="button"
                               onClick={() => handleReopen(ticket.id)}
-                              className="px-5 py-2.5 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-sm active:scale-95 duration-200"
+                              className="px-5 py-2.5 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-sm active:scale-95 duration-200 font-sans"
                             >
                               Re-Open Case
                             </button>

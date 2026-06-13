@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X, Filter, Image as ImageIcon } from 'lucide-react';
+import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X, Filter, Image as ImageIcon, Copy, Check } from 'lucide-react';
 import AdminTable from '../components/AdminTable';
 import apiClient from '../../services/core/apiClient';
 import { Button } from '../../components/ui/button';
@@ -75,6 +75,15 @@ const InquiriesPage = () => {
   const [submittingReply, setSubmittingReply] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState(null);
+  const [copiedTicketId, setCopiedTicketId] = useState(null);
+
+  const handleCopy = (e, text) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(text);
+    setCopiedTicketId(text);
+    toast.success("Copied Ticket ID to clipboard");
+    setTimeout(() => setCopiedTicketId(null), 1500);
+  };
 
   const [filterOpen, setFilterOpen] = useState(false);
   const [tempStatus, setTempStatus] = useState('all');
@@ -435,9 +444,21 @@ const InquiriesPage = () => {
               return filteredInquiries.map(item => ({
               ...item,
               ticket_id: (
-                <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg">
-                  {item.ticket_id}
-                </span>
+                <div className="inline-flex items-center gap-1.5 font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg">
+                  <span>{item.ticket_id}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => handleCopy(e, item.ticket_id)}
+                    className="hover:text-primary transition-colors p-0.5 rounded focus:outline-none flex items-center justify-center"
+                    title="Copy Ticket ID"
+                  >
+                    {copiedTicketId === item.ticket_id ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5 opacity-60 hover:opacity-100 text-primary" />
+                    )}
+                  </button>
+                </div>
               ),
               name: <span className="font-bold text-slate-900">{item.name}</span>,
               contact: (
@@ -512,7 +533,21 @@ const InquiriesPage = () => {
                     Case Details
                   </h3>
                 </div>
-                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium ml-13">Case Ticket ID: {selectedInquiry.ticket_id}</p>
+                <div className="text-sm text-slate-500 dark:text-slate-400 font-medium ml-13 flex items-center gap-1.5 select-none">
+                  <span>Case Ticket ID: {selectedInquiry.ticket_id}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => handleCopy(e, selectedInquiry.ticket_id)}
+                    className="hover:text-primary transition-colors p-0.5 rounded focus:outline-none flex items-center justify-center text-slate-400 hover:text-slate-600"
+                    title="Copy Ticket ID"
+                  >
+                    {copiedTicketId === selectedInquiry.ticket_id ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5 opacity-60 hover:opacity-100" />
+                    )}
+                  </button>
+                </div>
               </div>
               <button 
                 onClick={() => setSelectedInquiry(null)}
