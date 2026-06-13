@@ -267,6 +267,236 @@ const TicketsTab = () => {
     return <PageLoader message="Loading your support tickets..." />;
   }
 
+  // If ticketId parameter is present in the URL, render the specific ticket's details directly!
+  if (ticketId) {
+    const ticket = tickets.find(t => t.id === ticketId || t.ticket_id === ticketId);
+    if (!ticket) {
+      return (
+        <div className="text-center py-20 bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm">
+          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+          <p className="text-lg font-bold text-slate-800 dark:text-white">Ticket not found</p>
+          <a href="/dashboard/tickets" className="text-primary hover:underline text-sm font-semibold mt-2 inline-block">Back to Support Tickets</a>
+        </div>
+      );
+    }
+
+    const { cleanMessage, attachments } = parseMessageAndAttachments(ticket.message);
+    const dateFormatted = new Date(ticket.created_at).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    const isOpen = ticket.status !== 'resolved' && ticket.status !== 'closed';
+
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        className="space-y-6 text-slate-800 dark:text-foreground"
+      >
+        <div className="flex items-center gap-3">
+          <a href="/dashboard/tickets" className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm font-bold flex items-center gap-1 select-none">
+            &larr; Back to Tickets
+          </a>
+        </div>
+
+        <div className="bg-white dark:bg-[#131B17] border border-slate-200 dark:border-[#26322B] rounded-3xl p-6 md:p-8 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-[#26322B] pb-6 mb-6">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="font-mono text-xl font-bold text-primary dark:text-[#25D958] tracking-wider bg-primary/5 dark:bg-[#25D958]/10 px-3 py-1.5 rounded-xl">
+                  {ticket.ticket_id}
+                </span>
+                {getStatusBadge(ticket.status, ticket.reply_message)}
+              </div>
+              <span className="text-xs text-slate-500 font-mono">
+                Opened on {dateFormatted}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Original Message */}
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Your Inquiry</h4>
+              <div className="bg-slate-50 dark:bg-[#19231F] rounded-2xl p-5 border border-slate-200/60 dark:border-[#26322B]/45">
+                <p className="text-sm text-slate-700 dark:text-slate-350 leading-relaxed whitespace-pre-wrap font-medium">{cleanMessage}</p>
+              </div>
+            </div>
+
+            {/* Attachments */}
+            {attachments.length > 0 && (
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2.5">Attached Files</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {attachments.map((url, imgIdx) => (
+                    <a 
+                      key={imgIdx} 
+                      href={url} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="group relative aspect-square bg-[#050807] rounded-2xl overflow-hidden border border-slate-200 dark:border-[#26322B]"
+                    >
+                      <img src={url} alt="Attachment" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Support Conversation Thread */}
+            {ticket.reply_message && (
+              <div className="border-t border-slate-200/60 dark:border-[#26322B]/60 pt-6 space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1.5 font-sans">
+                  <CornerDownRight className="w-3.5 h-3.5 text-primary dark:text-[#25D958]" />
+                  Support Conversation Thread
+                </h4>
+                <div className="space-y-3.5">
+                  {parseReplies(ticket.reply_message).map((reply, idx) => {
+                    const isSelf = reply.sender === 'You';
+                    return (
+                      <div 
+                        key={idx} 
+                        className={`p-5 rounded-2xl border space-y-2.5 shadow-sm max-w-[85%] ${
+                          isSelf 
+                            ? 'bg-slate-100/60 dark:bg-white/5 border-slate-250 dark:border-white/10 ml-auto' 
+                            : 'bg-emerald-500/5 dark:bg-[#25D958]/5 border-emerald-500/10 dark:border-[#25D958]/20 mr-auto'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-4 border-b border-slate-200/50 dark:border-white/10 pb-2">
+                          <span className={`text-[10px] font-black uppercase tracking-wider ${isSelf ? 'text-slate-500 dark:text-slate-400' : 'text-primary dark:text-[#25D958]'}`}>
+                            {reply.sender}
+                          </span>
+                          {reply.timestamp && (
+                            <span className="text-[9px] font-mono text-slate-450 dark:text-slate-500">{reply.timestamp}</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-slate-700 dark:text-slate-350 leading-relaxed whitespace-pre-wrap font-medium">
+                          {reply.content}
+                        </p>
+                        
+                        {reply.attachments && reply.attachments.length > 0 && (
+                          <div className="grid grid-cols-3 gap-1.5 pt-2">
+                            {reply.attachments.map((url, imgIdx) => {
+                              const isVid = url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov');
+                              return (
+                                <a 
+                                  key={imgIdx} 
+                                  href={url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="relative aspect-square bg-[#050807] rounded-lg border border-slate-200 dark:border-[#26322B] overflow-hidden flex items-center justify-center"
+                                >
+                                  {isVid ? (
+                                    <div className="w-full h-full flex items-center justify-center bg-black">
+                                      <Play className="w-5 h-5 text-white" />
+                                    </div>
+                                  ) : (
+                                    <img src={url} alt="Attachment" className="w-full h-full object-cover" />
+                                  )}
+                                </a>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Customer Reply Composer */}
+            {isOpen ? (
+              <div className="border-t border-slate-200/60 dark:border-[#26322B]/60 pt-6 space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <CornerDownRight className="w-3.5 h-3.5 text-primary" />
+                  Write Response
+                </h4>
+                <div className="space-y-3">
+                  <textarea
+                    value={replyTexts[ticket.id] || ''}
+                    onChange={(e) => setReplyTexts(prev => ({ ...prev, [ticket.id]: e.target.value }))}
+                    placeholder="Type your response to Durga Shakti support..."
+                    className="w-full min-h-[100px] rounded-xl border border-slate-250 dark:border-[#26322B] bg-white dark:bg-[#1E2722] p-4 text-sm focus:border-primary focus:ring-0 transition-all outline-none text-slate-800 dark:text-white font-medium"
+                  />
+
+                  {replyUrls[ticket.id] && replyUrls[ticket.id].length > 0 && (
+                    <div className="grid grid-cols-4 gap-2 mt-2">
+                      {replyUrls[ticket.id].map((url, imgIdx) => {
+                        const isVid = url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov');
+                        return (
+                          <div key={imgIdx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#19231F]/30 group">
+                            {isVid ? (
+                              <div className="w-full h-full flex items-center justify-center bg-black">
+                                <Play className="w-6 h-6 text-white" />
+                              </div>
+                            ) : (
+                              <img src={url} alt="Uploaded attachment" className="w-full h-full object-cover" />
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeReplyFile(ticket.id, imgIdx)}
+                              className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-rose-600 rounded-lg text-white transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                    <label className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1E2722] dark:hover:bg-[#26322B] text-slate-650 dark:text-slate-350 rounded-xl cursor-pointer text-xs font-bold transition-colors select-none border border-slate-200 dark:border-[#26322B]">
+                      <Paperclip className="w-4 h-4 text-primary" />
+                      <span>{uploadingReplyFiles[ticket.id] ? 'Uploading...' : 'Attach Files (Max 3 img, 1 vid)'}</span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*,video/*"
+                        onChange={(e) => handleReplyFileChange(ticket.id, e)}
+                        disabled={uploadingReplyFiles[ticket.id]}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <Button
+                      onClick={() => handleCustomerReplySubmit(ticket.id)}
+                      disabled={uploadingReplyFiles[ticket.id] || !(replyTexts[ticket.id] || '').trim()}
+                      className="h-10 px-6 bg-primary hover:bg-[#1bb847] text-white font-bold uppercase tracking-wider rounded-xl text-xs"
+                    >
+                      Send Message
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="border-t border-slate-200/60 dark:border-[#26322B]/60 pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-100/40 dark:bg-emerald-950/5 p-4 rounded-xl border border-slate-200 dark:border-emerald-500/10">
+                <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                  <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" />
+                  <div>
+                    <p className="font-bold text-slate-900 dark:text-white text-sm">This ticket is closed</p>
+                    <p className="text-xs">If your issue is not resolved, you can re-open it at any time to resume discussion.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleReopen(ticket.id)}
+                  className="px-5 py-2.5 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-sm active:scale-95 duration-200 shrink-0 font-sans"
+                >
+                  Re-Open Ticket
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div 
       initial={{ opacity: 0, x: 20 }} 
@@ -306,7 +536,6 @@ const TicketsTab = () => {
       ) : (
         <div className="space-y-4">
           {filteredTickets.map(ticket => {
-            const isExpanded = expandedTicketId === ticket.id;
             const { cleanMessage, attachments } = parseMessageAndAttachments(ticket.message);
             const dateFormatted = new Date(ticket.created_at).toLocaleDateString(undefined, {
               year: 'numeric',
@@ -316,16 +545,14 @@ const TicketsTab = () => {
               minute: '2-digit'
             });
 
-            const isOpen = ticket.status !== 'resolved' && ticket.status !== 'closed';
-
             return (
               <div 
                 key={ticket.id} 
                 className="bg-white dark:bg-[#131B17] border border-slate-200 dark:border-[#26322B] rounded-2xl overflow-hidden hover:border-[#25D958]/30 transition-all duration-300 shadow-sm dark:shadow-none"
               >
-                {/* Accordion Header */}
+                {/* View Details Header Row */}
                 <div 
-                  onClick={() => setExpandedTicketId(isExpanded ? null : ticket.id)}
+                  onClick={() => window.open(`/dashboard/tickets/${ticket.id}`, '_blank')}
                   className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none"
                 >
                   <div className="flex-1 min-w-0">
@@ -365,213 +592,22 @@ const TicketsTab = () => {
 
                   <div className="flex items-center gap-3 self-end md:self-center shrink-0">
                     {attachments.length > 0 && (
-                      <span className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 dark:bg-[#19231F] px-2 py-1 rounded-md">
+                      <span className="flex items-center gap-1 text-xs text-slate-500 bg-slate-100 dark:bg-[#19231F] px-2.5 py-1 rounded-md">
                         <ImageIcon className="w-3.5 h-3.5" />
                         {attachments.length} {attachments.length === 1 ? 'file' : 'files'}
                       </span>
                     )}
-                    <button className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
-                      {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                    </button>
+                    <a 
+                      href={`/dashboard/tickets/${ticket.id}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-slate-100 hover:bg-[#25D958] hover:text-[#0C1310] dark:bg-[#1E2722] dark:hover:bg-[#25D958] dark:hover:text-[#0C1310] dark:text-slate-355 text-slate-750 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm inline-block select-none font-sans"
+                    >
+                      View Details
+                    </a>
                   </div>
                 </div>
-
-                {/* Accordion Body */}
-                <AnimatePresence initial={false}>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: 'auto' }}
-                      exit={{ height: 0 }}
-                      className="overflow-hidden border-t border-slate-150 dark:border-[#26322B]/60"
-                    >
-                      <div className="p-6 bg-slate-50 dark:bg-[#19231F] space-y-6">
-                        {/* Original Message */}
-                        <div>
-                          <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Your Inquiry</h4>
-                          <div className="bg-white dark:bg-[#131B17] rounded-xl p-4 border border-slate-200/60 dark:border-[#26322B]/40 shadow-sm dark:shadow-none">
-                            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium">{cleanMessage}</p>
-                          </div>
-                        </div>
-
-                        {/* Attachments */}
-                        {attachments.length > 0 && (
-                          <div>
-                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2.5">Attached Files</h4>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                              {attachments.map((url, index) => (
-                                <a 
-                                  key={index} 
-                                  href={url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="group relative aspect-square bg-white dark:bg-[#131B17] rounded-xl border border-slate-200 dark:border-[#26322B] overflow-hidden hover:border-primary transition-all"
-                                >
-                                  <img 
-                                    src={url} 
-                                    alt={`Attachment ${index + 1}`} 
-                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                  />
-                                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <span className="text-[11px] font-bold uppercase tracking-wider text-white bg-primary px-2 py-1 rounded-md">View Original</span>
-                                  </div>
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Replies Thread */}
-                        {ticket.reply_message && (
-                          <div className="border-t border-slate-200/60 dark:border-[#26322B]/60 pt-6 space-y-4">
-                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1.5 font-sans">
-                              <CornerDownRight className="w-3.5 h-3.5 text-primary dark:text-[#25D958]" />
-                              Support Conversation Thread
-                            </h4>
-                            <div className="space-y-3.5">
-                              {parseReplies(ticket.reply_message).map((reply, idx) => {
-                                const isSelf = reply.sender === 'You';
-                                return (
-                                  <div 
-                                    key={idx} 
-                                    className={`p-5 rounded-2xl border space-y-2.5 shadow-sm max-w-[85%] ${
-                                      isSelf 
-                                        ? 'bg-slate-100/60 dark:bg-white/5 border-slate-250 dark:border-white/10 ml-auto' 
-                                        : 'bg-emerald-500/5 dark:bg-[#25D958]/5 border-emerald-500/10 dark:border-[#25D958]/20 mr-auto'
-                                    }`}
-                                  >
-                                    <div className="flex items-center justify-between gap-4 border-b border-slate-200/50 dark:border-white/10 pb-2">
-                                      <span className={`text-[10px] font-black uppercase tracking-wider ${isSelf ? 'text-slate-500 dark:text-slate-400' : 'text-primary dark:text-[#25D958]'}`}>
-                                        {reply.sender}
-                                      </span>
-                                      {reply.timestamp && (
-                                        <span className="text-[9px] font-mono text-slate-450 dark:text-slate-500">{reply.timestamp}</span>
-                                      )}
-                                    </div>
-                                    <p className="text-sm text-slate-700 dark:text-slate-350 leading-relaxed whitespace-pre-wrap font-medium">
-                                      {reply.content}
-                                    </p>
-                                    
-                                    {/* Inline reply attachments if any */}
-                                    {reply.attachments && reply.attachments.length > 0 && (
-                                      <div className="grid grid-cols-3 gap-1.5 pt-2">
-                                        {reply.attachments.map((url, imgIdx) => {
-                                          const isVid = url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov');
-                                          return (
-                                            <a 
-                                              key={imgIdx} 
-                                              href={url} 
-                                              target="_blank" 
-                                              rel="noopener noreferrer" 
-                                              className="relative aspect-square bg-[#050807] rounded-lg border border-slate-200 dark:border-[#26322B] overflow-hidden flex items-center justify-center"
-                                            >
-                                              {isVid ? (
-                                                <div className="w-full h-full flex items-center justify-center bg-black">
-                                                  <Play className="w-5 h-5 text-white" />
-                                                </div>
-                                              ) : (
-                                                <img src={url} alt="Attachment" className="w-full h-full object-cover" />
-                                              )}
-                                            </a>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Customer Reply Composer (Only if Open) */}
-                        {isOpen ? (
-                          <div className="border-t border-slate-200/60 dark:border-[#26322B]/60 pt-6 space-y-4">
-                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                              <CornerDownRight className="w-3.5 h-3.5 text-primary" />
-                              Write Response
-                            </h4>
-                            <div className="space-y-3">
-                              <textarea
-                                value={replyTexts[ticket.id] || ''}
-                                onChange={(e) => setReplyTexts(prev => ({ ...prev, [ticket.id]: e.target.value }))}
-                                placeholder="Type your response to Durga Shakti support..."
-                                className="w-full min-h-[100px] rounded-xl border border-slate-250 dark:border-[#26322B] bg-white dark:bg-[#1E2722] p-4 text-sm focus:border-primary focus:ring-0 transition-all outline-none text-slate-800 dark:text-white font-medium"
-                              />
-
-                              {/* Attachment preview */}
-                              {replyUrls[ticket.id] && replyUrls[ticket.id].length > 0 && (
-                                <div className="grid grid-cols-4 gap-2 mt-2">
-                                  {replyUrls[ticket.id].map((url, imgIdx) => {
-                                    const isVid = url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov');
-                                    return (
-                                      <div key={imgIdx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#19231F]/30 group">
-                                        {isVid ? (
-                                          <div className="w-full h-full flex items-center justify-center bg-black">
-                                            <Play className="w-6 h-6 text-white" />
-                                          </div>
-                                        ) : (
-                                          <img src={url} alt="Uploaded attachment" className="w-full h-full object-cover" />
-                                        )}
-                                        <button
-                                          type="button"
-                                          onClick={() => removeReplyFile(ticket.id, imgIdx)}
-                                          className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-rose-600 rounded-lg text-white transition-colors"
-                                        >
-                                          <X className="w-3 h-3" />
-                                        </button>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-
-                              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                                <label className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1E2722] dark:hover:bg-[#26322B] text-slate-650 dark:text-slate-350 rounded-xl cursor-pointer text-xs font-bold transition-colors select-none border border-slate-200 dark:border-[#26322B]">
-                                  <Paperclip className="w-4 h-4 text-primary" />
-                                  <span>{uploadingReplyFiles[ticket.id] ? 'Uploading...' : 'Attach Files (Max 3 img, 1 vid)'}</span>
-                                  <input
-                                    type="file"
-                                    multiple
-                                    accept="image/*,video/*"
-                                    onChange={(e) => handleReplyFileChange(ticket.id, e)}
-                                    disabled={uploadingReplyFiles[ticket.id]}
-                                    className="hidden"
-                                  />
-                                </label>
-
-                                <Button
-                                  onClick={() => handleCustomerReplySubmit(ticket.id)}
-                                  disabled={uploadingReplyFiles[ticket.id] || !(replyTexts[ticket.id] || '').trim()}
-                                  className="h-10 px-6 bg-primary hover:bg-[#1bb847] text-white font-bold uppercase tracking-wider rounded-xl text-xs"
-                                >
-                                  Send Message
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="border-t border-slate-200/60 dark:border-[#26322B]/60 pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-100/40 dark:bg-emerald-950/5 p-4 rounded-xl border border-slate-200 dark:border-emerald-500/10">
-                            <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                              <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600" />
-                              <div className="text-xs font-medium">
-                                This case is resolved. If you still need assistance, you can re-open it.
-                              </div>
-                            </div>
-                            
-                            <button
-                              type="button"
-                              onClick={() => handleReopen(ticket.id)}
-                              className="px-5 py-2.5 bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-sm active:scale-95 duration-200 shrink-0 font-sans"
-                            >
-                              Re-Open Case
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
             );
           })}
