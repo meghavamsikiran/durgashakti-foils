@@ -2100,6 +2100,7 @@ async def get_public_settings(db: AsyncSession = Depends(get_db)):
     payment = dict(d.get("payment_settings") or {})
     shipping = d["shipping_settings"]
     payment["cod_enabled"] = shipping.get("codEnabled", True) is not False and shipping.get("codStatus", "Active") == "Active"
+    payment["razorpay_key_id"] = os.environ.get("RAZORPAY_KEY_ID") or "rzp_live_SsPZ6WqWCSv7VP"
     d["payment_settings"] = payment
     return d
 

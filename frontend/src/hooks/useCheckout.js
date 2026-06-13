@@ -76,6 +76,7 @@ export const useCheckout = () => {
   const [paymentMethod, setPaymentMethod] = useState(() => localStorage.getItem('preferredPaymentMethod') || 'online');
   const [codEnabled, setCodEnabled] = useState(true);
   const [shippingSettings, setShippingSettings] = useState(null);
+  const [publicSettings, setPublicSettings] = useState(null);
   const [savedAddresses, setSavedAddresses] = useState(() => {
     const cached = addressService.getCached ? addressService.getCached() : [];
     return Array.isArray(cached) ? cached : [];
@@ -182,6 +183,9 @@ export const useCheckout = () => {
   const fetchSettings = useCallback(async () => {
     try {
       const data = await settingsService.getPublicSettings();
+      if (data) {
+        setPublicSettings(data);
+      }
       if (data && data.shipping_settings) {
         setShippingSettings(data.shipping_settings);
         const isCodActive = data.shipping_settings.codEnabled !== false && data.shipping_settings.codStatus === 'Active';
@@ -499,7 +503,7 @@ export const useCheckout = () => {
         document.body.classList.add('razorpay-premium-launching');
 
         const options = {
-          key: process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_live_SsPZ6WqWCSv7VP',
+          key: publicSettings?.payment_settings?.razorpay_key_id || process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_live_SsPZ6WqWCSv7VP',
           amount: Math.round(totalAmount * 100),
           currency: "INR",
           name: "DurgaShakti Foils",
