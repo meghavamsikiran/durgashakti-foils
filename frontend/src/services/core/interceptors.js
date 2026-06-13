@@ -13,13 +13,9 @@ export const setupInterceptors = (apiClient) => {
         config.headers.Authorization = `Bearer ${token}`;
       }
       
-      // Prevent browser caching for all GET requests
+      // Prevent browser caching for all GET requests by appending a unique timestamp query parameter.
+      // We avoid custom non-safelisted headers (like Cache-Control, Pragma, Expires) to prevent triggering CORS preflight OPTIONS requests, which fail on slow/mobile connections.
       if (config.method?.toLowerCase() === 'get') {
-        config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
-        config.headers['Pragma'] = 'no-cache';
-        config.headers['Expires'] = '0';
-        
-        // Append a timestamp to url query params to bypass browser memory cache
         if (config.url) {
           const separator = config.url.includes('?') ? '&' : '?';
           config.url = `${config.url}${separator}_t=${Date.now()}`;
