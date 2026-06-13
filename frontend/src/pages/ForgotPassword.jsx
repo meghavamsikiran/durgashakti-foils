@@ -86,8 +86,8 @@ const ForgotPassword = () => {
       className="min-h-screen flex items-center justify-center py-12 px-6" 
       style={{ 
         backgroundImage: isDark
-          ? "linear-gradient(rgba(19, 27, 23, 0.92), rgba(19, 27, 23, 0.92)), url('/login_bg.webp')"
-          : "linear-gradient(rgba(247, 250, 248, 0.88), rgba(247, 250, 248, 0.88)), url('/login_bg.webp')",
+          ? "linear-gradient(rgba(19, 27, 23, 0.82), rgba(19, 27, 23, 0.82)), url('/login_bg.webp')"
+          : "linear-gradient(rgba(247, 250, 248, 0.78), rgba(247, 250, 248, 0.78)), url('/login_bg.webp')",
         backgroundSize: "360px",
         backgroundRepeat: "repeat",
         backgroundPosition: "center"
@@ -99,10 +99,10 @@ const ForgotPassword = () => {
         className="w-full max-w-md"
       >
         <div 
-          className={`border rounded-lg p-8 shadow-2xl transition-all duration-300 ${
+          className={`border rounded-xl p-8 shadow-2xl transition-all duration-300 backdrop-blur-lg ${
             isDark 
-              ? 'bg-[#131B17]/95 border-[#26322B] text-white' 
-              : 'bg-[#f4f7f5]/95 backdrop-blur-md border-[#c8d4cd] text-[#181c1b]'
+              ? 'bg-[#131B17]/45 border-white/10 text-white' 
+              : 'bg-white/45 border-black/5 text-[#181c1b]'
           }`}
         >
           <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: 'Manrope' }}>
