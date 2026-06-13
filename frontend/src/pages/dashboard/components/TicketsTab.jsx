@@ -201,13 +201,13 @@ const TicketsTab = () => {
         const header = lines[0];
         const rawContent = lines.slice(1).join('\n');
 
-        let sender = 'DS Support Team';
+        let sender = 'DSF Support Team';
         let timestamp = header.replace(/^\[|\]$/g, '');
         if (timestamp.startsWith('Customer - ')) {
           sender = 'You';
           timestamp = timestamp.replace('Customer - ', '');
         } else if (timestamp.startsWith('Admin - ')) {
-          sender = 'DS Support Team';
+          sender = 'DSF Support Team';
           timestamp = timestamp.replace('Admin - ', '');
         }
 
@@ -215,7 +215,7 @@ const TicketsTab = () => {
         return { sender, timestamp, content: cleanMessage, attachments };
       } else {
         const { cleanMessage, attachments } = parseMessageAndAttachments(block);
-        return { sender: 'DS Support Team', timestamp: null, content: cleanMessage, attachments };
+        return { sender: 'DSF Support Team', timestamp: null, content: cleanMessage, attachments };
       }
     });
   };
@@ -300,6 +300,12 @@ const TicketsTab = () => {
           <a href="/dashboard/tickets" className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm font-bold flex items-center gap-1 select-none">
             &larr; Back to Tickets
           </a>
+        </div>
+
+        {/* Patience Note Banner */}
+        <div className="bg-amber-500/5 dark:bg-[#25D958]/5 border border-amber-500/10 dark:border-[#25D958]/20 rounded-2xl p-4 text-xs text-amber-650 dark:text-slate-350 font-semibold flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 text-amber-500 dark:text-[#25D958]" />
+          <span>Please be patient. It takes a maximum of 2-3 business days to get a response from our support team.</span>
         </div>
 
         <div className="bg-white dark:bg-[#131B17] border border-slate-200 dark:border-[#26322B] rounded-3xl p-6 md:p-8 shadow-sm">

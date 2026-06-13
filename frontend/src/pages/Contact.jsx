@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, ArrowRight, Navigation, Clock, Shield, Paperclip, X } from 'lucide-react';
+import { Mail, Phone, MapPin, ArrowRight, Navigation, Clock, Shield, Paperclip, X, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -239,6 +239,12 @@ const Contact = () => {
                 <h2 className="text-base font-black text-white font-sans mb-8 uppercase tracking-widest">
                   CONTACT FORM
                 </h2>
+
+                {/* Patience Note Banner */}
+                <div className="bg-amber-500/5 dark:bg-[#25D958]/5 border border-[#25D958]/25 rounded-2xl p-4 text-xs text-amber-600 dark:text-slate-350 font-semibold flex items-center gap-2 mb-6">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-[#25D958]" />
+                  <span>Please be patient. It takes a maximum of 2-3 business days to get a response from our support team.</span>
+                </div>
                 
                 {submitted ? (
                   <motion.div 
@@ -344,7 +350,7 @@ const Contact = () => {
                         />
                       </label>
                       <p className="text-[9px] text-slate-500 leading-normal mt-0.5 ml-1">
-                        Supported: PNG, JPG, JPEG, WEBP. Videos are blocked. Images will be automatically compressed/converted to WebP to save storage.
+                        Supported: PNG, JPG, JPEG, WEBP. Videos are blocked.
                       </p>
 
                       {/* File Previews */}

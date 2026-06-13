@@ -356,11 +356,11 @@ const InquiriesPage = () => {
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'resolved': return 'bg-emerald-50 text-emerald-600 border-emerald-200';
-      case 'replied': return 'bg-primary/10 text-primary border-primary/20';
-      case 'reopened': return 'bg-amber-50 text-amber-600 border-amber-200';
-      case 'in_progress': return 'bg-amber-50 text-amber-600 border-amber-200';
-      default: return 'bg-slate-50 text-slate-600 border-slate-200';
+      case 'resolved': return 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-[#0c3a21] dark:text-[#25D958] dark:border-emerald-500/30';
+      case 'replied': return 'bg-primary/10 text-primary border-primary/20 dark:bg-[#0a361a] dark:text-[#25D958] dark:border-[#25D958]/30';
+      case 'reopened': return 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-[#3d2a04] dark:text-amber-500 dark:border-amber-500/30';
+      case 'in_progress': return 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-[#3d2a04] dark:text-amber-500 dark:border-amber-500/30';
+      default: return 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-[#1e2924] dark:text-slate-350 dark:border-slate-700/50';
     }
   };
 
@@ -611,14 +611,14 @@ const InquiriesPage = () => {
                   value={item.status || 'pending'}
                   disabled={item.status === 'resolved'}
                   onChange={(e) => handleUpdateStatus(item.id, e.target.value)}
-                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative ${item.status === 'resolved' ? 'opacity-65 cursor-not-allowed' : ''} ${getStatusStyle(item.status || 'pending')}`}
+                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative bg-white dark:bg-[#131B17] text-slate-900 dark:text-white ${item.status === 'resolved' ? 'opacity-65 cursor-not-allowed' : ''} ${getStatusStyle(item.status || 'pending')}`}
                   style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
                 >
-                  <option value="pending">Pending</option>
-                  <option value="reopened">Re-opened</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="replied">Replied</option>
-                  <option value="resolved">Closed</option>
+                  <option value="pending" className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white">Pending</option>
+                  <option value="reopened" className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white">Re-opened</option>
+                  <option value="in_progress" className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white">In Progress</option>
+                  <option value="replied" className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white">Replied</option>
+                  <option value="resolved" className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white">Closed</option>
                 </select>
               ),
               actions: (
@@ -789,11 +789,11 @@ const InquiriesPage = () => {
                   className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border cursor-pointer outline-none appearance-none pr-8 relative bg-white dark:bg-[#131B17] text-slate-900 dark:text-white ${selectedInquiry.status === 'resolved' ? 'opacity-60 cursor-not-allowed' : ''} ${getStatusStyle(selectedInquiry.status || 'pending')}`}
                   style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
                 >
-                  <option value="pending" className="dark:bg-[#131B17] dark:text-white">Pending</option>
-                  <option value="reopened" className="dark:bg-[#131B17] dark:text-white">Re-opened</option>
-                  <option value="in_progress" className="dark:bg-[#131B17] dark:text-white">In Progress</option>
-                  <option value="replied" className="dark:bg-[#131B17] dark:text-white">Replied</option>
-                  <option value="resolved" className="dark:bg-[#131B17] dark:text-white">Closed</option>
+                  <option value="pending" className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white">Pending</option>
+                  <option value="reopened" className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white">Re-opened</option>
+                  <option value="in_progress" className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white">In Progress</option>
+                  <option value="replied" className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white">Replied</option>
+                  <option value="resolved" className="bg-white dark:bg-[#131B17] text-slate-900 dark:text-white">Closed</option>
                 </select>
               </div>
 
@@ -819,13 +819,13 @@ const InquiriesPage = () => {
                       const header = lines[0];
                       const rawContent = lines.slice(1).join('\n');
                       
-                      let sender = 'DS Support Team';
+                      let sender = 'DSF Support Team';
                       let timestamp = header.replace(/^\[|\]$/g, '');
                       if (timestamp.startsWith('Customer - ')) {
                         sender = 'Customer';
                         timestamp = timestamp.replace('Customer - ', '');
                       } else if (timestamp.startsWith('Admin - ')) {
-                        sender = 'DS Support Team';
+                        sender = 'DSF Support Team';
                         timestamp = timestamp.replace('Admin - ', '');
                       }
                       
@@ -833,7 +833,7 @@ const InquiriesPage = () => {
                       return { sender, timestamp, content: cleanMessage, attachments };
                     } else {
                       const { cleanMessage, attachments } = parseMessageAndAttachments(block);
-                      return { sender: 'DS Support Team', timestamp: null, content: cleanMessage, attachments };
+                      return { sender: 'DSF Support Team', timestamp: null, content: cleanMessage, attachments };
                     }
                   });
                 };
