@@ -228,7 +228,11 @@ const Login = () => {
                     onChange={(e) => setFullName(e.target.value)}
                     required
                     data-testid="register-fullname-input"
-                    className="bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
+                    className={`h-12 transition-all duration-200 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${isDark ? 'text-white placeholder:text-slate-500' : 'text-[#181c1b] placeholder:text-slate-400'}`}
+                    style={{ 
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.85)",
+                      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#bbcbb5"
+                    }}
                   />
                 </div>
                 <div>
@@ -244,8 +248,12 @@ const Login = () => {
                     }}
                     required
                     data-testid="register-phone-input"
-                    className="h-12 bg-[#131B17] border border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                    className={`h-12 transition-all duration-200 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${isDark ? 'text-white placeholder:text-slate-500' : 'text-[#181c1b] placeholder:text-slate-400'}`}
                     placeholder="Enter 10-digit phone number"
+                    style={{ 
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.85)",
+                      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#bbcbb5"
+                    }}
                   />
                 </div>
               </>
@@ -262,7 +270,11 @@ const Login = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 data-testid="login-email-input"
-                className="bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
+                className={`h-12 transition-all duration-200 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${isDark ? 'text-white placeholder:text-slate-500' : 'text-[#181c1b] placeholder:text-slate-400'}`}
+                style={{ 
+                  backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.85)",
+                  borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#bbcbb5"
+                }}
               />
             </div>
 
@@ -276,7 +288,11 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 data-testid="login-password-input"
-                className="bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
+                className={`h-12 transition-all duration-200 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${isDark ? 'text-white placeholder:text-slate-500' : 'text-[#181c1b] placeholder:text-slate-400'}`}
+                style={{ 
+                  backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.85)",
+                  borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#bbcbb5"
+                }}
               />
               {isLogin && (
                 <div className="flex justify-end mt-1">

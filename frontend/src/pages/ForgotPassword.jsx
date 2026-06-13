@@ -125,7 +125,11 @@ const ForgotPassword = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="name@example.com"
-                  className="bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
+                  className={`h-12 transition-all duration-200 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${isDark ? 'text-white placeholder:text-slate-500' : 'text-[#181c1b] placeholder:text-slate-400'}`}
+                  style={{ 
+                    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.85)",
+                    borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#bbcbb5"
+                  }}
                 />
               </div>
               <Button type="submit" disabled={loading} className="w-full h-12 bg-primary hover:bg-[#005a14] text-white font-bold rounded-sm">
@@ -144,7 +148,11 @@ const ForgotPassword = () => {
                   onChange={(e) => setOtp(e.target.value)}
                   required
                   placeholder="000000"
-                  className="tracking-widest text-center font-bold text-lg bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
+                  className={`tracking-widest text-center font-bold text-lg h-12 transition-all duration-200 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${isDark ? 'text-white placeholder:text-slate-500' : 'text-[#181c1b] placeholder:text-slate-400'}`}
+                  style={{ 
+                    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.85)",
+                    borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#bbcbb5"
+                  }}
                 />
                 <div className="flex items-center justify-between mt-2 px-1">
                   <span className="text-[11px] text-muted-foreground">
@@ -173,7 +181,11 @@ const ForgotPassword = () => {
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   placeholder="••••••••"
-                  className="bg-[#131B17] border-[#26322B] text-white placeholder:text-slate-550 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary h-12"
+                  className={`h-12 transition-all duration-200 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary ${isDark ? 'text-white placeholder:text-slate-500' : 'text-[#181c1b] placeholder:text-slate-400'}`}
+                  style={{ 
+                    backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.85)",
+                    borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "#bbcbb5"
+                  }}
                 />
               </div>
               <Button type="submit" disabled={loading} className="w-full h-12 bg-primary hover:bg-[#005a14] text-white font-bold rounded-sm">
