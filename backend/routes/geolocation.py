@@ -14,7 +14,7 @@ def validate_with_india_post(pincode: str):
         return PINCODE_CACHE[pincode]
     try:
         url = f"https://api.postalpincode.in/pincode/{pincode}"
-        res = requests.get(url, timeout=3.0, verify=False)
+        res = requests.get(url, timeout=3.0)
         if res.status_code == 200:
             data = res.json()
             if data and data[0].get("Status") == "Success" and data[0].get("PostOffice"):
@@ -52,7 +52,7 @@ def reverse_geocode(
     # ── Layer 1: Query BigDataCloud Fallback ────────
     try:
         url = f"https://api.bigdatacloud.net/data/reverse-geocode-client?latitude={lat}&longitude={lon}&localityLanguage=en"
-        res = requests.get(url, timeout=10, verify=False)
+        res = requests.get(url, timeout=10)
         if res.status_code == 200:
             data = res.json()
             raw_pincode = (data.get("postcode") or "").replace(" ", "")[:6]
@@ -88,7 +88,7 @@ def reverse_geocode(
         try:
             url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=18&addressdetails=1"
             headers = {"User-Agent": "DurgaShaktiFoilsAPI/1.0"}
-            res = requests.get(url, headers=headers, timeout=10, verify=False)
+            res = requests.get(url, headers=headers, timeout=10)
             if res.status_code == 200:
                 data = res.json()
                 a = data.get("address", {})

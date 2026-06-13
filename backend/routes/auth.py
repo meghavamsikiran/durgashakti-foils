@@ -39,9 +39,7 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
         existing_phone = await db.execute(select(UserModel).where(UserModel.phone == user_data.phone))
         if existing_phone.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Phone number already registered to another account")
-    user_id = str(uuid.uuid4())
     new_user = UserModel(
-        id=user_id,
         email=user_data.email,
         password=hash_password(user_data.password),
         full_name=user_data.full_name,
@@ -51,7 +49,7 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
     )
     db.add(new_user)
     await db.flush()
-    token = create_token(user_id, user_data.email, "customer")
+    token = create_token(str(new_user.id), user_data.email, "customer")
     d = row_to_dict(new_user)
     d.pop('password', None)
     # Send welcome email (fire-and-forget)
@@ -122,11 +120,9 @@ async def google_login(payload: GoogleLoginRequest, db: AsyncSession = Depends(g
 
     if not user_row:
         # Create a new user automatically
-        user_id = str(uuid.uuid4())
         # Generate a highly secure random password hash for Google-based registration
         random_pwd = os.urandom(24).hex()
         user_row = UserModel(
-            id=user_id,
             email=email,
             password=hash_password(random_pwd),
             full_name=name,
@@ -350,6 +346,8 @@ async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(
     if expiry.tzinfo is None:
         expiry = expiry.replace(tzinfo=timezone.utc)
     if datetime.now(timezone.utc) > expiry:
+        await db.delete(reset_record)
+        await db.flush()
         raise HTTPException(status_code=400, detail="OTP has expired")
 
     res_user = await db.execute(select(UserModel).where(UserModel.email == data.email))

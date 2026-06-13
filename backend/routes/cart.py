@@ -169,7 +169,10 @@ async def bulk_sync_cart(items: List[CartItem], current_user: UserSchema = Depen
             max_stock = int(product.stock_quantity or 0)
             existing['quantity'] = min(existing['quantity'] + new_item.quantity, max_stock)
         else:
-            current_items.append(new_item.model_dump())
+            max_stock = int(product.stock_quantity or 0)
+            dumped = new_item.model_dump()
+            dumped['quantity'] = min(new_item.quantity, max_stock)
+            current_items.append(dumped)
 
     now = datetime.now(timezone.utc)
     if cart:
