@@ -73,7 +73,10 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-6">
+    <div 
+      className="min-h-screen flex items-center justify-center py-12 px-6 bg-cover bg-center bg-no-repeat" 
+      style={{ backgroundImage: "url('/login_bg.png')" }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
