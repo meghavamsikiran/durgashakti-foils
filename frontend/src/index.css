@@ -746,7 +746,7 @@ h1, h2, h3, h4, h5, h6,
 
 /* Adjust top-center toaster to clear the header */
 [data-sonner-toaster][data-position="top-center"] {
-  top: 90px !important;
+  top: 100px !important;
 }
 
 /* Force Sonner close button to the right */
