@@ -182,7 +182,7 @@ const Login = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center py-12 px-6" 
+      className="min-h-[calc(100vh-120px)] flex items-center justify-center py-12 px-6" 
       style={{ 
         backgroundImage: isDark
           ? "linear-gradient(rgba(19, 27, 23, 0.82), rgba(19, 27, 23, 0.82)), url('/login_bg.webp')"
