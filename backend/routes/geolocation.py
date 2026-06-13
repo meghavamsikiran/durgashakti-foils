@@ -76,6 +76,19 @@ def validate_with_india_post(pincode: str):
         pass
     return None
 
+def _parse_mappls_result(r):
+    """Parse a single Mappls reverse geocode result into our standard format."""
+    return {
+        "source": "Mappls",
+        "pincode": (r.get("pincode") or r.get("area_code") or "").replace(" ", "")[:6],
+        "city": r.get("city") or r.get("district") or r.get("subDistrict") or "",
+        "state": r.get("state") or "",
+        "locality": r.get("locality") or r.get("subLocality") or r.get("area") or "",
+        "sublocality": r.get("subLocality") or r.get("subSubLocality") or "",
+        "route": r.get("street") or r.get("formatted_address") or "",
+        "building": ", ".join(filter(None, [r.get("houseNumber"), r.get("houseName"), r.get("poi")]))
+    }
+
 @router.get("/reverse-geocode")
 def reverse_geocode(
     lat: float = Query(..., description="Latitude"),
@@ -83,59 +96,65 @@ def reverse_geocode(
 ):
     geocoded = None
 
-    # ── Layer 1: Query Mappls Reverse Geocoding API via OAuth2 ──────────────────
+    # ── Layer 1: Query Mappls Reverse Geocoding API ─────────────────────────────
+    # Try multiple auth approaches: OAuth2 token → Static Key in URL → Static Key as Bearer
+    mappls_key = os.environ.get("MAPPLS_API_KEY", "oewjoirgyxbhtfasqwnkahawwodaowwicufh")
+    
+    # Approach A: OAuth2 token (if client_id + client_secret are set)
     mappls_token = get_mappls_access_token()
     if mappls_token:
         try:
-            # Use bearer token with the Mappls reverse geocode endpoint
             rev_url = f"https://apis.mappls.com/advancedmaps/v1/{mappls_token}/rev_geocode?lat={lat}&lng={lon}"
             res = requests.get(rev_url, timeout=10, verify=False)
-            print(f"[Mappls] rev_geocode status={res.status_code}")
+            print(f"[Mappls OAuth] rev_geocode status={res.status_code}")
             if res.status_code == 200:
                 data = res.json()
                 results = data.get("results") or []
                 if results:
                     r = results[0]
-                    geocoded = {
-                        "source": "Mappls",
-                        "pincode": (r.get("pincode") or r.get("area_code") or "").replace(" ", "")[:6],
-                        "city": r.get("city") or r.get("district") or r.get("subDistrict") or "",
-                        "state": r.get("state") or "",
-                        "locality": r.get("locality") or r.get("subLocality") or r.get("area") or "",
-                        "sublocality": r.get("subLocality") or r.get("subSubLocality") or "",
-                        "route": r.get("street") or r.get("formatted_address") or "",
-                        "building": ", ".join(filter(None, [r.get("houseNumber"), r.get("houseName"), r.get("poi")]))
-                    }
-                    print(f"[Mappls] Success: pin={geocoded['pincode']}, city={geocoded['city']}, state={geocoded['state']}")
+                    geocoded = _parse_mappls_result(r)
+                    print(f"[Mappls OAuth] Success: pin={geocoded['pincode']}, city={geocoded['city']}")
             else:
-                print(f"[Mappls] rev_geocode failed: {res.text[:300]}")
+                print(f"[Mappls OAuth] Failed: {res.text[:300]}")
         except Exception as e:
-            print(f"[Mappls] rev_geocode error: {e}")
-    else:
-        # Fallback: try legacy REST API key directly (for backward compatibility)
-        legacy_key = os.environ.get("MAPPLS_API_KEY", "")
-        if legacy_key:
-            try:
-                legacy_url = f"https://apis.mappls.com/advancedmaps/v1/{legacy_key}/rev_geocode?lat={lat}&lng={lon}"
-                legacy_res = requests.get(legacy_url, timeout=10, verify=False)
-                if legacy_res.status_code == 200:
-                    data = legacy_res.json()
-                    if data and data.get("results"):
-                        r = data["results"][0]
-                        geocoded = {
-                            "source": "Mappls",
-                            "pincode": (r.get("pincode") or "").replace(" ", "")[:6],
-                            "city": r.get("city") or r.get("district") or r.get("subDistrict") or "",
-                            "state": r.get("state") or "",
-                            "locality": r.get("locality") or r.get("subLocality") or "",
-                            "sublocality": r.get("subLocality") or "",
-                            "route": r.get("street") or "",
-                            "building": ", ".join(filter(None, [r.get("houseNumber"), r.get("houseName")]))
-                        }
-                else:
-                    print(f"[Mappls Legacy] Failed: {legacy_res.status_code} - {legacy_res.text[:200]}")
-            except Exception as e:
-                print(f"[Mappls Legacy] Error: {e}")
+            print(f"[Mappls OAuth] Error: {e}")
+
+    # Approach B: Static Key directly in URL path
+    if not geocoded and mappls_key:
+        try:
+            rev_url = f"https://apis.mappls.com/advancedmaps/v1/{mappls_key}/rev_geocode?lat={lat}&lng={lon}"
+            res = requests.get(rev_url, timeout=10, verify=False)
+            print(f"[Mappls Static URL] rev_geocode status={res.status_code}")
+            if res.status_code == 200:
+                data = res.json()
+                results = data.get("results") or []
+                if results:
+                    r = results[0]
+                    geocoded = _parse_mappls_result(r)
+                    print(f"[Mappls Static URL] Success: pin={geocoded['pincode']}, city={geocoded['city']}")
+            else:
+                print(f"[Mappls Static URL] Failed: {res.text[:300]}")
+        except Exception as e:
+            print(f"[Mappls Static URL] Error: {e}")
+
+    # Approach C: Static Key as Bearer token in Authorization header
+    if not geocoded and mappls_key:
+        try:
+            rev_url = f"https://apis.mappls.com/advancedmaps/v1/rev_geocode?lat={lat}&lng={lon}"
+            headers = {"Authorization": f"Bearer {mappls_key}"}
+            res = requests.get(rev_url, headers=headers, timeout=10, verify=False)
+            print(f"[Mappls Bearer] rev_geocode status={res.status_code}")
+            if res.status_code == 200:
+                data = res.json()
+                results = data.get("results") or data.get("responseList") or []
+                if results:
+                    r = results[0]
+                    geocoded = _parse_mappls_result(r)
+                    print(f"[Mappls Bearer] Success: pin={geocoded['pincode']}, city={geocoded['city']}")
+            else:
+                print(f"[Mappls Bearer] Failed: {res.text[:300]}")
+        except Exception as e:
+            print(f"[Mappls Bearer] Error: {e}")
 
     # ── Layer 2: Query BigDataCloud Fallback ────────
     if not geocoded or not geocoded.get("pincode"):
