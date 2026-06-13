@@ -183,7 +183,7 @@ const Login = () => {
   return (
     <div 
       className="min-h-screen flex items-center justify-center py-12 px-6 bg-cover bg-center bg-no-repeat" 
-      style={{ backgroundImage: "url('/login_bg.png')" }} 
+      style={{ backgroundImage: "url('/login_bg.webp')" }} 
       data-testid="login-page"
     >
       <motion.div
