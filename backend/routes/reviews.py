@@ -605,14 +605,19 @@ async def submit_product_review(
     uploaded_media = []
     for file in (files or [])[:6]:
         content_type = file.content_type or ""
-        if not (content_type.startswith("image/") or content_type.startswith("video/")):
+        is_image = content_type.startswith("image/")
+        is_video = content_type.startswith("video/")
+        if not (is_image or is_video):
             raise HTTPException(status_code=400, detail="Only image and video uploads are allowed")
         raw = await file.read()
-        if len(raw) > 10 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="Each review media file must be below 10MB")
+        size = len(raw)
+        if is_image and size > 2 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Image size must be less than 2MB")
+        if is_video and size > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Video size must be less than 10MB")
         uploaded_media.append({
             "url": await upload_media(raw, content_type, prefix=f"review_{product_id}"),
-            "type": "video" if content_type.startswith("video/") else "image",
+            "type": "video" if is_video else "image",
             "name": file.filename,
         })
 

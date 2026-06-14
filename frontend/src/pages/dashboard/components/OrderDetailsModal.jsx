@@ -81,6 +81,11 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Image file size must be less than 2MB.");
+        e.target.value = "";
+        return;
+      }
       setImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -431,7 +436,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                     )}
 
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Upload Proof Image (Optional)</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Upload Proof Image (Max 2MB) (Optional)</label>
                       <div className="relative group border border-dashed border-border-subtle hover:border-primary/50 transition-all duration-300 rounded-lg p-4 flex flex-col items-center justify-center bg-surface hover:bg-primary/5 cursor-pointer min-h-[140px]">
                         <input
                           type="file"
@@ -458,7 +463,7 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                         ) : (
                           <div className="text-center flex flex-col items-center justify-center">
                             <Upload className="w-8 h-8 text-muted-foreground/50 group-hover:text-primary transition-colors mb-2" />
-                            <span className="text-xs font-bold text-muted-foreground/70 group-hover:text-primary">Select Image File</span>
+                            <span className="text-xs font-bold text-muted-foreground/70 group-hover:text-primary">Select Image (Max 2MB)</span>
                           </div>
                         )}
                       </div>

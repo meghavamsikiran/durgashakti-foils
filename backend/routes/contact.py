@@ -12,7 +12,52 @@ from email_templates import (
     contact_resolved_email,
     contact_reopened_email
 )
-from storage_service import upload_image, upload_media
+from storage_service import upload_image, upload_media, delete_asset
+import re
+from datetime import timedelta
+
+async def cleanup_resolved_tickets(db: AsyncSession):
+    try:
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(days=90)
+        
+        # Select resolved tickets that are older than 90 days (from replies or creation)
+        stmt1 = select(ContactModel).where(
+            ContactModel.status == "resolved",
+            ContactModel.replied_at.is_not(None),
+            ContactModel.replied_at < cutoff
+        )
+        stmt2 = select(ContactModel).where(
+            ContactModel.status == "resolved",
+            ContactModel.replied_at.is_(None),
+            ContactModel.created_at < cutoff
+        )
+        
+        res1 = await db.execute(stmt1)
+        res2 = await db.execute(stmt2)
+        expired_tickets = list(res1.scalars().all()) + list(res2.scalars().all())
+        
+        if not expired_tickets:
+            return
+            
+        for ticket in expired_tickets:
+            # Parse all URLs inside message and reply_message
+            urls = []
+            for text in [ticket.message, ticket.reply_message]:
+                if text:
+                    found = re.findall(r'https?://[^\s\n\r]+', text)
+                    urls.extend(found)
+            
+            # Delete attachments from Supabase / local storage
+            for url in urls:
+                await delete_asset(url)
+                
+            # Delete from DB
+            await db.delete(ticket)
+            
+        await db.commit()
+    except Exception as e:
+        print(f"Error running resolved tickets cleanup: {e}")
 
 router = APIRouter(prefix="/api")
 
@@ -24,18 +69,15 @@ async def upload_contact_image(
 ):
     ct = (file.content_type or "").lower()
     is_image = ct.startswith("image/")
-    is_video = ct.startswith("video/") or "video" in ct or file.filename.lower().endswith(".mp4") or file.filename.lower().endswith(".mov")
     
-    if not (is_image or is_video):
-        raise HTTPException(status_code=400, detail="Only image or video files are supported")
+    if not is_image:
+        raise HTTPException(status_code=400, detail="Only image files are supported for tickets (videos and other files are disabled)")
 
     raw = await file.read()
     size = len(raw)
     
-    if is_image and size > 5 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Image size must be less than 5MB")
-    if is_video and size > 15 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Video size must be less than 15MB")
+    if size > 2 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image size must be less than 2MB")
 
     url = await upload_media(raw, ct, prefix="ticket")
     return {"url": url}
@@ -45,6 +87,7 @@ async def list_my_contacts(
     current_user: UserSchema = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    await cleanup_resolved_tickets(db)
     q = select(ContactModel).where(ContactModel.email == current_user.email).order_by(ContactModel.created_at.desc())
     res = await db.execute(q)
     rows = res.scalars().all()
@@ -163,6 +206,7 @@ async def list_contacts(
     admin: UserSchema = Depends(require_permission("view_inquiries")),
     db: AsyncSession = Depends(get_db)
 ):
+    await cleanup_resolved_tickets(db)
     q = select(ContactModel, func.count(ContactModel.id).over().label('total_count'))
 
     # apply optional filters

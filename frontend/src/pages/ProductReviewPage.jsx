@@ -61,6 +61,25 @@ const ProductReviewPage = () => {
 
   const handleFiles = (event) => {
     const selected = Array.from(event.target.files || []).slice(0, 6);
+    for (const file of selected) {
+      const isVideo = file.type.startsWith('video/');
+      const isImage = file.type.startsWith('image/');
+      if (!isImage && !isVideo) {
+        toast.error(`File ${file.name} is not a valid image or video`);
+        event.target.value = "";
+        return;
+      }
+      if (isImage && file.size > 2 * 1024 * 1024) {
+        toast.error(`Image ${file.name} exceeds 2MB limit.`);
+        event.target.value = "";
+        return;
+      }
+      if (isVideo && file.size > 10 * 1024 * 1024) {
+        toast.error(`Video ${file.name} exceeds 10MB limit.`);
+        event.target.value = "";
+        return;
+      }
+    }
     setFiles(selected);
   };
 
@@ -159,7 +178,7 @@ const ProductReviewPage = () => {
         )}
 
         <div>
-          <label className="block text-sm font-black text-slate-300 mb-2">Share a video or photo</label>
+          <label className="block text-sm font-black text-slate-300 mb-2">Share a video (Max 10MB) or photo (Max 2MB)</label>
           <label className="h-24 border border-dashed border-[#26322B] rounded-xl bg-[#0C1310] hover:bg-[#18231e] transition-colors flex flex-col items-center justify-center cursor-pointer text-slate-450">
             <Camera className="w-6 h-6 mb-1" />
             <span className="text-xs font-bold uppercase tracking-wider">Upload media</span>

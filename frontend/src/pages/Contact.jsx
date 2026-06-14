@@ -119,8 +119,8 @@ const Contact = () => {
         toast.error("Only image files (PNG, JPG, JPEG, WEBP) are supported.");
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image file size must be less than 5MB.");
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Image file size must be less than 2MB.");
         return;
       }
 
@@ -432,7 +432,7 @@ const Contact = () => {
                       
                       <label className="flex items-center justify-center gap-2 w-full h-12 bg-[#131B17] border border-[#26322B] hover:border-[#25D958]/50 rounded-xl cursor-pointer transition-colors px-4 text-xs font-bold text-slate-350 select-none">
                         <Paperclip className="w-4 h-4 text-[#25D958]" />
-                        <span>{uploadingFiles ? 'Uploading...' : 'Choose Image (Max 3)'}</span>
+                        <span>{uploadingFiles ? 'Uploading...' : 'Choose Image (Max 3, Max 2MB each)'}</span>
                         <input
                           type="file"
                           multiple

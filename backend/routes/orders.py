@@ -1772,12 +1772,11 @@ async def return_order(
                 continue
             content_type = (f.content_type or '').lower()
             is_image = any(t in content_type for t in {'image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'})
-            is_video = any(t in content_type for t in {'video/mp4', 'video/quicktime', 'video/webm', 'video/ogg', 'video/avi'})
-            if not (is_image or is_video):
-                raise HTTPException(status_code=400, detail='Only png/jpg/jpeg/webp/gif images and mp4/mov/webm/ogg/avi videos are supported')
+            if not is_image:
+                raise HTTPException(status_code=400, detail='Only image files (png/jpg/jpeg/webp/gif) are allowed for return proofs (videos are disabled)')
             raw = await f.read()
-            if len(raw) > 20 * 1024 * 1024:
-                raise HTTPException(status_code=400, detail='Each file must be under 20MB')
+            if len(raw) > 2 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail='Each image must be under 2MB')
             
             from storage_service import upload_media
             url = await upload_media(raw, content_type, prefix=f"return_{order_id}")
@@ -1896,7 +1895,13 @@ async def self_ship_item(
             uploaded_invoice_url = None
             if invoice and invoice.filename:
                 content_type = (invoice.content_type or '').lower()
+                is_image = any(t in content_type for t in {'image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'})
+                is_pdf = 'pdf' in content_type or invoice.filename.lower().endswith('.pdf')
+                if not (is_image or is_pdf):
+                    raise HTTPException(status_code=400, detail='Only images and PDF files are allowed for invoices')
                 raw = await invoice.read()
+                if len(raw) > 2 * 1024 * 1024:
+                    raise HTTPException(status_code=400, detail='Invoice file must be under 2MB')
                 from storage_service import upload_media
                 uploaded_invoice_url = await upload_media(raw, content_type, prefix=f"self_ship_{order_id}_{product_id}")
                 

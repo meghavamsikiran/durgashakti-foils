@@ -388,13 +388,33 @@ const OrderDetailsPage = () => {
   const handleFilesChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length > 0) {
+      for (const file of files) {
+        const ct = file.type.toLowerCase();
+        const isVideo = ct.includes('video') || file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.mov');
+        if (isVideo) {
+          toast.error("Video uploads are disabled for returns. Only image files are allowed.");
+          e.target.value = "";
+          return;
+        }
+        if (!ct.startsWith('image/')) {
+          toast.error("Only image files (PNG, JPG, JPEG, WEBP) are supported.");
+          e.target.value = "";
+          return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+          toast.error(`Image ${file.name} exceeds 2MB limit.`);
+          e.target.value = "";
+          return;
+        }
+      }
+
       setReturnFiles(prev => [...prev, ...files]);
       
       files.forEach(file => {
         const reader = new FileReader();
         reader.onloadend = () => {
           setReturnPreviews(prev => [...prev, {
-            type: file.type.startsWith('video/') ? 'video' : 'image',
+            type: 'image',
             url: reader.result,
             name: file.name
           }]);
@@ -1070,19 +1090,19 @@ const OrderDetailsPage = () => {
               )}
 
               <div className="space-y-2">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Upload Proof (Images/Videos) *</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Upload Proof (Images) *</label>
                 <div className="relative group border-2 border-dashed border-slate-200 dark:border-[#26322B] hover:border-primary transition-all duration-300 rounded-2xl p-6 flex flex-col items-center justify-center bg-white dark:bg-[#131B17] hover:bg-primary/5 cursor-pointer min-h-[140px]">
                   <input
                     type="file"
                     multiple
-                    accept="image/*,video/*"
+                    accept="image/*"
                     onChange={handleFilesChange}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                   />
                   <div className="text-center flex flex-col items-center justify-center pointer-events-none">
                     <Upload className="w-8 h-8 text-slate-400 dark:text-slate-500 group-hover:text-primary transition-colors mb-2" />
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-primary">Select Images / Videos</span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Upload multiple files up to 20MB each</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-primary">Select Images</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Upload images up to 2MB each</span>
                   </div>
                 </div>
 

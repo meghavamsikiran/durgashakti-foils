@@ -98,33 +98,26 @@ const TicketsTab = () => {
     if (files.length === 0) return;
 
     const currentUrls = replyUrls[ticketId] || [];
-    const imageCount = currentUrls.filter(url => !url.toLowerCase().endsWith('.mp4') && !url.toLowerCase().endsWith('.mov')).length;
-    const videoCount = currentUrls.filter(url => url.toLowerCase().endsWith('.mp4') || url.toLowerCase().endsWith('.mov')).length;
+    const imageCount = currentUrls.length;
 
     for (const file of files) {
       const ct = file.type.toLowerCase();
       const isVideo = ct.includes('video') || file.name.toLowerCase().endsWith('.mp4') || file.name.toLowerCase().endsWith('.mov');
 
       if (isVideo) {
-        if (videoCount >= 1) {
-          toast.error("You can upload a maximum of 1 video.");
-          return;
-        }
-        if (file.size > 15 * 1024 * 1024) {
-          toast.error("Video file size must be less than 15MB.");
-          return;
-        }
+        toast.error("Video uploads are disabled for tickets. Only image files are allowed.");
+        return;
       } else if (ct.startsWith('image/')) {
         if (imageCount >= 3) {
           toast.error("You can upload a maximum of 3 images.");
           return;
         }
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error("Image file size must be less than 5MB.");
+        if (file.size > 2 * 1024 * 1024) {
+          toast.error("Image file size must be less than 2MB.");
           return;
         }
       } else {
-        toast.error("Only image (PNG, JPG, JPEG, WEBP) or video files are supported.");
+        toast.error("Only image (PNG, JPG, JPEG, WEBP) files are supported.");
         return;
       }
 
@@ -505,11 +498,11 @@ const TicketsTab = () => {
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                     <label className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1E2722] dark:hover:bg-[#26322B] text-slate-650 dark:text-slate-350 rounded-xl cursor-pointer text-xs font-bold transition-colors select-none border border-slate-200 dark:border-[#26322B]">
                       <Paperclip className="w-4 h-4 text-primary" />
-                      <span>{uploadingReplyFiles[ticket.id] ? 'Uploading...' : 'Attach Files (Max 3 img, 1 vid)'}</span>
+                      <span>{uploadingReplyFiles[ticket.id] ? 'Uploading...' : 'Attach Images (Max 3, Max 2MB each)'}</span>
                       <input
                         type="file"
                         multiple
-                        accept="image/*,video/*"
+                        accept="image/*"
                         onChange={(e) => handleReplyFileChange(ticket.id, e)}
                         disabled={uploadingReplyFiles[ticket.id]}
                         className="hidden"
