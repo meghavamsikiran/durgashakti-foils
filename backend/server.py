@@ -256,6 +256,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+@app.get("/")
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "DurgaShakti Foils API Server is active"}
+
 # ── CORS Middleware ──────────────────────────────────────────────────────
 cors_origins = os.environ.get('CORS_ORIGINS', '').strip()
 cors_list = [o.strip() for o in cors_origins.split(',') if o.strip() and o.strip() != '*']
