@@ -331,7 +331,7 @@ const TicketsTab = () => {
         </div>
 
         {/* Patience Note Banner */}
-        <div className="bg-amber-500/5 dark:bg-[#25D958]/5 border border-amber-500/10 dark:border-[#25D958]/20 rounded-2xl p-4 text-xs text-amber-650 dark:text-slate-350 font-semibold flex items-center gap-2">
+        <div className="bg-amber-500/5 dark:bg-[#25D958]/5 border border-amber-500/10 dark:border-[#25D958]/20 rounded-2xl p-4 text-xs text-amber-650 dark:text-slate-300 font-semibold flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 text-amber-500 dark:text-[#25D958]" />
           <span>Please be patient. It takes a maximum of 2-3 business days to get a response from our support team.</span>
         </div>
@@ -368,7 +368,7 @@ const TicketsTab = () => {
             <div>
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Your Inquiry</h4>
               <div className="bg-slate-50 dark:bg-[#19231F] rounded-2xl p-5 border border-slate-200/60 dark:border-[#26322B]/45">
-                <p className="text-sm text-slate-700 dark:text-slate-350 leading-relaxed whitespace-pre-wrap font-medium">{cleanMessage}</p>
+                <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap font-medium">{cleanMessage}</p>
               </div>
             </div>
 
@@ -419,7 +419,7 @@ const TicketsTab = () => {
                             <span className="text-[9px] font-mono text-slate-450 dark:text-slate-500">{reply.timestamp}</span>
                           )}
                         </div>
-                        <p className="text-sm text-slate-700 dark:text-slate-350 leading-relaxed whitespace-pre-wrap font-medium">
+                        <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap font-medium">
                           {reply.content}
                         </p>
                         
@@ -496,7 +496,7 @@ const TicketsTab = () => {
                   )}
 
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                    <label className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1E2722] dark:hover:bg-[#26322B] text-slate-650 dark:text-slate-350 rounded-xl cursor-pointer text-xs font-bold transition-colors select-none border border-slate-200 dark:border-[#26322B]">
+                    <label className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1E2722] dark:hover:bg-[#26322B] text-slate-600 dark:text-slate-200 rounded-xl cursor-pointer text-xs font-bold transition-colors select-none border border-slate-200 dark:border-[#26322B]">
                       <Paperclip className="w-4 h-4 text-primary" />
                       <span>{uploadingReplyFiles[ticket.id] ? 'Uploading...' : 'Attach Images (Max 3, Max 2MB each)'}</span>
                       <input
@@ -568,7 +568,7 @@ const TicketsTab = () => {
       </div>
 
       {/* Patience Note Banner */}
-      <div className="bg-amber-500/5 dark:bg-[#25D958]/5 border border-amber-500/10 dark:border-[#25D958]/20 rounded-2xl p-4 text-xs text-amber-650 dark:text-slate-350 font-semibold flex items-center gap-2">
+      <div className="bg-amber-500/5 dark:bg-[#25D958]/5 border border-amber-500/10 dark:border-[#25D958]/20 rounded-2xl p-4 text-xs text-amber-650 dark:text-slate-300 font-semibold flex items-center gap-2">
         <AlertCircle className="w-4 h-4 shrink-0 text-amber-500 dark:text-[#25D958]" />
         <span>Please be patient. It takes a maximum of 2-3 business days to get a response from our support team.</span>
       </div>
@@ -631,7 +631,7 @@ const TicketsTab = () => {
                         {dateFormatted}
                       </span>
                     </div>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-350 truncate">
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
                       {cleanMessage}
                     </p>
                   </div>

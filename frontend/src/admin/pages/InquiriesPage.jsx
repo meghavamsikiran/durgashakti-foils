@@ -362,7 +362,7 @@ const InquiriesPage = () => {
       case 'replied': return '!bg-primary/10 !text-primary !border-primary/20 dark:!bg-[#0a361a] dark:!text-[#25D958] dark:!border-[#25D958]/30';
       case 'reopened': return '!bg-amber-50 !text-amber-600 !border-amber-200 dark:!bg-[#3d2a04] dark:!text-amber-500 dark:!border-amber-500/30';
       case 'in_progress': return '!bg-amber-50 !text-amber-600 !border-amber-200 dark:!bg-[#3d2a04] dark:!text-amber-500 dark:!border-amber-500/30';
-      default: return '!bg-slate-50 !text-slate-600 !border-slate-200 dark:!bg-[#1e2924] dark:!text-slate-350 dark:!border-slate-700/50';
+      default: return '!bg-slate-50 !text-slate-600 !border-slate-200 dark:!bg-[#1e2924] dark:!text-slate-300 dark:!border-slate-700/50';
     }
   };
 
@@ -884,7 +884,7 @@ const InquiriesPage = () => {
                     </h4>
                     <div className="space-y-3">
                       {replies.map((reply, idx) => (
-                        <div key={idx} className="flex flex-col gap-2 text-slate-700 dark:text-slate-350 bg-primary/5 dark:bg-emerald-950/20 p-5 rounded-3xl border border-primary/20 dark:border-emerald-900/50 shadow-sm">
+                        <div key={idx} className="flex flex-col gap-2 text-slate-700 dark:text-slate-200 bg-primary/5 dark:bg-emerald-950/20 p-5 rounded-3xl border border-primary/20 dark:border-emerald-900/50 shadow-sm">
                           <div className="flex items-center justify-between gap-2 border-b border-primary/10 pb-2">
                             <span className="text-[10px] font-black uppercase tracking-wider text-primary font-sans">{reply.sender}</span>
                             {reply.timestamp ? (
@@ -979,7 +979,7 @@ const InquiriesPage = () => {
                   )}
 
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                    <label className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1E2722] dark:hover:bg-[#26322B] text-slate-700 dark:text-slate-350 rounded-xl cursor-pointer text-xs font-bold transition-colors select-none border border-slate-200 dark:border-[#26322B]">
+                    <label className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#1E2722] dark:hover:bg-[#26322B] text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer text-xs font-bold transition-colors select-none border border-slate-200 dark:border-[#26322B]">
                       <Paperclip className="w-4 h-4 text-primary" />
                       <span>{uploadingReplyFiles ? 'Uploading...' : 'Attach Images (Max 3, Max 2MB each)'}</span>
                       <input
