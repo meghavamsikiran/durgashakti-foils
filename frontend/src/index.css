@@ -1509,7 +1509,7 @@ input[type="checkbox"] {
 .light-theme .text-primary,
 .light-theme .text-\[\#25D958\],
 .light-theme .text-[#25D958],
-.light-theme .text-brand-green {
+.light-theme .text-brand-green:not(.hero-section-dark):not(.hero-section-dark *) {
   color: #006e1b !important;
 }
 
@@ -1763,8 +1763,8 @@ button[role="radio"] {
 .light-theme main[data-testid="home-page"] h4 {
   color: #0f1f15 !important;
 }
-.light-theme main[data-testid="home-page"] .text-brand-green,
-.light-theme main[data-testid="home-page"] span.text-brand-green {
+.light-theme main[data-testid="home-page"] .text-brand-green:not(.hero-section-dark):not(.hero-section-dark *),
+.light-theme main[data-testid="home-page"] span.text-brand-green:not(.hero-section-dark):not(.hero-section-dark *) {
   color: oklch(0.45 0.18 145) !important;
 }
 .light-theme main[data-testid="home-page"] .text-slate-400,
