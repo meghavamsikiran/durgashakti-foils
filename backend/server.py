@@ -256,9 +256,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-@app.get("/")
-@app.get("/health")
+@app.get("/api/health")
+@app.get("/api/ping")
 async def health_check():
+    """Health check endpoint for uptime monitors and cron keep-alive pings."""
     return {"status": "healthy", "message": "DurgaShakti Foils API Server is active"}
 
 # ── CORS Middleware ──────────────────────────────────────────────────────
