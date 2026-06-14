@@ -71,7 +71,7 @@ export const useOrders = () => {
   // Periodic silent polling in the background for real-time responsiveness
   // Polls every 4 seconds if there is a pending refund, otherwise every 10 seconds.
   useEffect(() => {
-    const hasPendingRefund = orders.some(
+    const hasPendingRefund = Array.isArray(orders) && orders.some(
       (order) => String(order.payment_status || '').toLowerCase() === 'refund_pending'
     );
     const interval = hasPendingRefund ? 4000 : 10000;
