@@ -845,6 +845,7 @@ const AdminOrderDetailsPage = () => {
                         {item.image_url ? (
                           <img
                             src={formatImageUrl(item.image_url)}
+                            onError={(e) => { e.target.src = '/logo-durga.webp'; }}
                             alt=""
                             className="w-12 h-12 rounded-lg object-cover bg-slate-50 border border-slate-100 shrink-0 shadow-sm"
                           />
