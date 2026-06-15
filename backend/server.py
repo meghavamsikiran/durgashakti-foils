@@ -378,68 +378,6 @@ app.include_router(contact_router)
 app.include_router(reviews_router)
 app.include_router(coupons_router)
 
-# Temporary cleanup routes for listing and deleting test records
-@app.get("/api/debug/temp-list-records")
-async def temp_list_records(secret_key: str):
-    if secret_key != "temp_secret_cleanup_9988":
-        return {"error": "Unauthorized"}
-    from database import async_session_factory
-    from models import OrderModel, UserModel
-    from sqlalchemy import select
-    async with async_session_factory() as session:
-        orders_stmt = select(OrderModel).order_by(OrderModel.created_at.desc())
-        orders_res = await session.execute(orders_stmt)
-        orders = orders_res.scalars().all()
-        
-        users_stmt = select(UserModel).order_by(UserModel.created_at.desc())
-        users_res = await session.execute(users_stmt)
-        users = users_res.scalars().all()
-        
-        return {
-            "orders": [
-                {
-                    "id": str(o.id),
-                    "order_number": o.order_number,
-                    "customer_name": o.customer_name,
-                    "total_amount": float(o.total_amount),
-                    "payment_method": o.payment_method,
-                    "payment_status": o.payment_status,
-                    "order_status": o.order_status,
-                    "created_at": o.created_at.isoformat() if o.created_at else None
-                }
-                for o in orders
-            ],
-            "users": [
-                {
-                    "id": str(u.id),
-                    "full_name": u.full_name,
-                    "email": u.email,
-                    "phone": u.phone,
-                    "role": u.role,
-                    "created_at": u.created_at.isoformat() if u.created_at else None
-                }
-                for u in users
-            ]
-        }
-
-@app.post("/api/debug/temp-delete-records")
-async def temp_delete_records(secret_key: str, payload: dict):
-    if secret_key != "temp_secret_cleanup_9988":
-        return {"error": "Unauthorized"}
-    from database import async_session_factory
-    from models import OrderModel, UserModel
-    from sqlalchemy import delete
-    order_ids = payload.get("order_ids", [])
-    user_ids = payload.get("user_ids", [])
-    async with async_session_factory() as session:
-        if order_ids:
-            stmt = delete(OrderModel).where(OrderModel.id.in_(order_ids))
-            await session.execute(stmt)
-        if user_ids:
-            stmt = delete(UserModel).where(UserModel.id.in_(user_ids))
-            await session.execute(stmt)
-        await session.commit()
-        return {"status": "success", "deleted_orders": len(order_ids), "deleted_users": len(user_ids)}
 
 # Mount Uploads directory
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
