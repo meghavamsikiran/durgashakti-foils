@@ -18,7 +18,6 @@ const CategoriesPage = () => {
   const [globalDiscountEnabled, setGlobalDiscountEnabled] = useState(false);
   const [globalDiscountPercent, setGlobalDiscountPercent] = useState(0);
   const [editingId, setEditingId] = useState(null);
-  const [error, setError] = useState(null);
   const [editingName, setEditingName] = useState('');
   const [editingDiscountEnabled, setEditingDiscountEnabled] = useState(false);
   const [editingDiscountPercent, setEditingDiscountPercent] = useState(0);
@@ -26,7 +25,6 @@ const CategoriesPage = () => {
 
   const fetchCategories = useCallback(async (isSilent = false) => {
     try {
-      setError(null);
       if (!isSilent) {
         const cached = adminService.getCached('/admin/categories');
         if (!cached) setLoading(true);
@@ -34,12 +32,7 @@ const CategoriesPage = () => {
       const res = await adminService.getCategories();
       setCategories(res.data || []);
     } catch (err) {
-      setCategories(prev => {
-        if (!prev || prev.length === 0) {
-          setError(err.message || 'Failed to load categories. Please try again.');
-        }
-        return prev;
-      });
+      toast.error('Failed to load categories');
     } finally {
       setLoading(false);
     }
@@ -138,20 +131,6 @@ const CategoriesPage = () => {
   };
 
   if (loading && categories.length === 0) return <PageLoader />;
-
-  if (error && categories.length === 0) return (
-    <div className="text-center py-20 bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm max-w-md mx-auto mt-12">
-      <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-      <p className="text-lg font-bold text-slate-800 dark:text-white">Failed to load categories</p>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
-      <button 
-        onClick={() => fetchCategories()} 
-        className="mt-6 px-6 py-2.5 bg-primary text-white font-bold uppercase tracking-wider rounded-xl text-xs hover:bg-[#1bb847] transition-all"
-      >
-        Retry
-      </button>
-    </div>
-  );
 
   return (
     <div className="space-y-8">

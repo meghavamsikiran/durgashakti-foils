@@ -18,7 +18,6 @@ const CustomerDetailPage = () => {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [replyDrafts, setReplyDrafts] = useState({});
   const [savingId, setSavingId] = useState(null);
   const [activeReplyId, setActiveReplyId] = useState(null);
@@ -26,7 +25,6 @@ const CustomerDetailPage = () => {
 
   const loadCustomer = useCallback(async () => {
     try {
-      setError(null);
       const response = await adminService.getCustomerDetails(id);
       setData(response.data);
       if (response.data && response.data.reviews) {
@@ -35,8 +33,8 @@ const CustomerDetailPage = () => {
           return acc;
         }, {}));
       }
-    } catch (err) {
-      setError(err.message || 'Failed to load customer details.');
+    } catch {
+      toast.error('Failed to load customer details');
     } finally {
       setLoading(false);
     }
@@ -152,21 +150,6 @@ const CustomerDetailPage = () => {
   };
 
   if (loading) return <PageLoader message="Loading intelligence profile..." />;
-
-  if (error && !data) return (
-    <div className="text-center py-20 bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm max-w-md mx-auto mt-12">
-      <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-      <p className="text-lg font-bold text-slate-800 dark:text-white">Failed to load customer details</p>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
-      <button 
-        onClick={() => loadCustomer()} 
-        className="mt-6 px-6 py-2.5 bg-primary text-white font-bold uppercase tracking-wider rounded-xl text-xs hover:bg-[#1bb847] transition-all"
-      >
-        Retry
-      </button>
-    </div>
-  );
-
   if (!data) {
     return (
       <div className="p-8 text-center bg-rose-50 border border-rose-100 rounded-3xl text-rose-600 font-bold text-sm">

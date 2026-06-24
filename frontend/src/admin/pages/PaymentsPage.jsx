@@ -69,7 +69,6 @@ const PaymentsPage = () => {
     return !cached;
   });
   const [filter, setFilter] = useState('all');
-  const [error, setError] = useState(null);
   const [tempStatus, setTempStatus] = useState('all');
   const [tempDatePreset, setTempDatePreset] = useState('');
   const [tempCustomStart, setTempCustomStart] = useState('');
@@ -96,7 +95,6 @@ const PaymentsPage = () => {
       setLoading(true);
     }
     try {
-      setError(null);
       if (dateFilter && dateFilter.start_date && dateFilter.end_date) {
         params.start_date = dateFilter.start_date;
         params.end_date = dateFilter.end_date;
@@ -109,12 +107,7 @@ const PaymentsPage = () => {
         setMetrics(mRes.data?.metrics || null);
       }).catch(() => {});
     } catch (err) {
-      setRows(prev => {
-        if (!prev || prev.length === 0) {
-          setError(err.message || 'Failed to load transaction data. Please try again.');
-        }
-        return prev;
-      });
+      // Silently ignore — cached rows stay visible during cold-start.
     } finally {
       setLoading(false);
     }
@@ -206,20 +199,6 @@ const PaymentsPage = () => {
   };
 
   if (loading && rows.length === 0) return <PageLoader />;
-
-  if (error && rows.length === 0) return (
-    <div className="text-center py-20 bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm max-w-md mx-auto mt-12">
-      <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-      <p className="text-lg font-bold text-slate-800 dark:text-white">Failed to load transaction data</p>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
-      <button 
-        onClick={() => load(1)} 
-        className="mt-6 px-6 py-2.5 bg-primary text-white font-bold uppercase tracking-wider rounded-xl text-xs hover:bg-[#1bb847] transition-all"
-      >
-        Retry
-      </button>
-    </div>
-  );
 
   return (
     <div className="space-y-4">

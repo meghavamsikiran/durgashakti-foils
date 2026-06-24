@@ -4,7 +4,7 @@ import adminService from '../services/admin.service';
 import apiClient from '../../services/core/apiClient';
 import {
   Building2, Phone, Mail, MapPin, Globe, Save,
-  Instagram, Facebook, ShieldCheck, AlertCircle
+  Instagram, Facebook, ShieldCheck
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
@@ -39,7 +39,6 @@ const BusinessProfilePage = () => {
   const [facebookLink, setFacebookLink] = useState(() => getCachedProfile().facebookLink || '');
   const [whatsappLink, setWhatsappLink] = useState(() => getCachedProfile().whatsappLink || '');
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
   const [loaded, setLoaded] = useState(() => {
     const cached = adminService.getCached('/admin/settings') || adminService.getCached('/settings/public');
     return !!cached;
@@ -63,7 +62,6 @@ const BusinessProfilePage = () => {
       setLoaded(false);
     }
     try {
-      setError(null);
       const res = await adminService.getSettings();
       const data = res.data || {};
       const profile = data.company_profile || {};
@@ -77,9 +75,7 @@ const BusinessProfilePage = () => {
       setFacebookLink(profile.facebookLink || '');
       setWhatsappLink(profile.whatsappLink || profile.youtubeLink || '');
     } catch (err) {
-      if (!cached) {
-        setError(err.message || 'Failed to load business profile settings.');
-      }
+      toast.error('Failed to load business profile settings');
     } finally {
       setLoaded(true);
     }
@@ -105,20 +101,6 @@ const BusinessProfilePage = () => {
   };
 
   if (!loaded) return <PageLoader />;
-
-  if (error) return (
-    <div className="text-center py-20 bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm max-w-md mx-auto mt-12">
-      <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-      <p className="text-lg font-bold text-slate-800 dark:text-white">Failed to load business settings</p>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
-      <button 
-        onClick={() => loadSettings()} 
-        className="mt-6 px-6 py-2.5 bg-primary text-white font-bold uppercase tracking-wider rounded-xl text-xs hover:bg-[#1bb847] transition-all"
-      >
-        Retry
-      </button>
-    </div>
-  );
 
   return (
     <div className="space-y-8">

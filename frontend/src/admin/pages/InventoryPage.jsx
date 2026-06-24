@@ -40,7 +40,6 @@ const InventoryPage = () => {
     const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, { page: 1, limit: ITEMS_PER_PAGE, search: '' });
     return !cached;
   });
-  const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -79,7 +78,6 @@ const InventoryPage = () => {
       setLoading(true);
     }
     try {
-      setError(null);
       const response = await adminService.getInventory(params);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
@@ -88,12 +86,7 @@ const InventoryPage = () => {
         setMetrics(mRes.data?.metrics || null);
       }).catch(() => {});
     } catch (err) {
-      setRows(prev => {
-        if (!prev || prev.length === 0) {
-          setError(err.message || 'Failed to load inventory. Please try again.');
-        }
-        return prev;
-      });
+      // Silently ignore — cached rows stay visible during cold-start.
     } finally {
       setLoading(false);
     }
@@ -179,20 +172,6 @@ const InventoryPage = () => {
   };
 
   if (loading && rows.length === 0) return <PageLoader message="Loading Inventory..." />;
-
-  if (error && rows.length === 0) return (
-    <div className="text-center py-20 bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm max-w-md mx-auto mt-12">
-      <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-      <p className="text-lg font-bold text-slate-800 dark:text-white">Failed to load inventory</p>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
-      <button 
-        onClick={() => load(1)} 
-        className="mt-6 px-6 py-2.5 bg-primary text-white font-bold uppercase tracking-wider rounded-xl text-xs hover:bg-[#1bb847] transition-all"
-      >
-        Retry
-      </button>
-    </div>
-  );
 
   return (
     <div className="space-y-3">
