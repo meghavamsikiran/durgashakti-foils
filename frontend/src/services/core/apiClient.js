@@ -53,6 +53,7 @@ const cachedGet = async (url, options = {}) => {
   const ttl = options.ttl || DEFAULT_TTL;
 
   if (entry && (now - entry.time < ttl)) {
+    // Cache is fresh — revalidate silently in the background
     if (!inFlightGets.has(key)) {
       const refresh = apiClient.get(url, { ...options, silent: true })
         .then(res => {
@@ -74,7 +75,13 @@ const cachedGet = async (url, options = {}) => {
     return inFlightGets.get(key);
   }
 
-  const request = apiClient.get(url, options)
+  // Cache is stale or missing — fetch fresh data.
+  // If stale data exists (expired TTL), use silent:true so the user
+  // sees the stale content without an error toast if the request fails.
+  const hasStaleData = !!entry;
+  const fetchOptions = hasStaleData ? { ...options, silent: true } : options;
+
+  const request = apiClient.get(url, fetchOptions)
     .then(res => {
       const serializedData = { data: res.data, status: res.status };
       apiCache.set(key, { data: serializedData, time: Date.now() });
