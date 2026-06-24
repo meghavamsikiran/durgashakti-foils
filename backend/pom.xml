@@ -26,7 +26,7 @@
         <module>catalog-service</module>
         <module>order-service</module>
         <module>admin-service</module>
-        <module>notification-service</module>
+        <module>email-service</module>
         <module>durgashakti-backend-service</module>
     </modules>
 

@@ -1,4 +1,4 @@
-package com.durgashakti.notification.config;
+package com.durgashakti.email.config;
 
 import com.durgashakti.common.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
@@ -17,11 +17,11 @@ import org.springframework.context.annotation.Profile;
 @EnableWebSecurity
 @EnableMethodSecurity
 @Profile("!combined")
-public class NotificationSecurityConfig {
+public class EmailSecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public NotificationSecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public EmailSecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
@@ -32,7 +32,7 @@ public class NotificationSecurityConfig {
             .cors(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/notifications/dispatch").permitAll() // Internal dispatching
+                .requestMatchers("/api/email/send").permitAll() // Internal dispatching
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -31,7 +31,7 @@ public class OrderService {
     private final CouponService couponService;
     private final ProcessedWebhookRepository processedWebhookRepository;
     private final OrderUserRepository userRepository;
-    private final com.durgashakti.common.util.NotificationClient notificationClient;
+    private final com.durgashakti.common.util.EmailClient emailClient;
 
     public OrderService(OrderServiceRepository orderRepository,
                         OrderProductRepository productRepository,
@@ -42,7 +42,7 @@ public class OrderService {
                         CouponService couponService,
                         ProcessedWebhookRepository processedWebhookRepository,
                         OrderUserRepository userRepository,
-                        com.durgashakti.common.util.NotificationClient notificationClient) {
+                        com.durgashakti.common.util.EmailClient emailClient) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.couponRepository = couponRepository;
@@ -52,7 +52,7 @@ public class OrderService {
         this.couponService = couponService;
         this.processedWebhookRepository = processedWebhookRepository;
         this.userRepository = userRepository;
-        this.notificationClient = notificationClient;
+        this.emailClient = emailClient;
     }
 
     public Order createOrder(UUID userId, OrderCreateRequest req) {
@@ -276,7 +276,7 @@ public class OrderService {
                         "Payment Method: " + order.getPaymentMethod() + "\n\n" +
                         "We will notify you once your order is shipped.\n\n" +
                         "Best regards,\nDurga Shakti Foils Team";
-                notificationClient.sendEmail(user.getEmail(), subject, body);
+                emailClient.sendEmail(user.getEmail(), subject, body);
                 order.setReceiptEmailSent(true);
                 orderRepository.save(order);
             });

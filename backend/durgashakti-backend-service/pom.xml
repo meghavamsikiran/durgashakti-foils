@@ -48,7 +48,7 @@
         </dependency>
         <dependency>
             <groupId>com.durgashakti</groupId>
-            <artifactId>notification-service</artifactId>
+            <artifactId>email-service</artifactId>
             <version>${project.version}</version>
         </dependency>
 

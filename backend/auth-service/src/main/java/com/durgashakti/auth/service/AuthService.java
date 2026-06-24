@@ -39,18 +39,18 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final BCryptPasswordEncoder passwordEncoder;
     private final HttpClient httpClient;
-    private final com.durgashakti.common.util.NotificationClient notificationClient;
+    private final com.durgashakti.common.util.EmailClient emailClient;
 
     public AuthService(AuthUserRepository userRepository,
                        PasswordResetRepository passwordResetRepository,
                        AuthCartRepository cartRepository,
                        JwtUtil jwtUtil,
-                       com.durgashakti.common.util.NotificationClient notificationClient) {
+                       com.durgashakti.common.util.EmailClient emailClient) {
         this.userRepository = userRepository;
         this.passwordResetRepository = passwordResetRepository;
         this.cartRepository = cartRepository;
         this.jwtUtil = jwtUtil;
-        this.notificationClient = notificationClient;
+        this.emailClient = emailClient;
         this.passwordEncoder = new BCryptPasswordEncoder();
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
@@ -90,7 +90,7 @@ public class AuthService {
         // Welcome Email
         log.info("Sending welcome email to {}", savedUser.getEmail());
         try {
-            notificationClient.sendEmail(
+            emailClient.sendEmail(
                 savedUser.getEmail(),
                 "Welcome to Durga Shakti Foils!",
                 "Hello " + savedUser.getFullName() + ",\n\nWelcome to Durga Shakti Foils! Your account has been successfully created.\n\nBest regards,\nDurga Shakti Foils Team"
@@ -257,7 +257,7 @@ public class AuthService {
 
         log.info("Sending OTP {} to email {}", otp, user.getEmail());
         try {
-            notificationClient.sendEmail(
+            emailClient.sendEmail(
                 user.getEmail(),
                 "Password Reset OTP - Durga Shakti Foils",
                 "Hello " + user.getFullName() + ",\n\nYour password reset OTP is: " + otp + "\nThis OTP is valid for 15 minutes.\n\nIf you did not request a password reset, please ignore this email.\n\nBest regards,\nDurga Shakti Foils Team"

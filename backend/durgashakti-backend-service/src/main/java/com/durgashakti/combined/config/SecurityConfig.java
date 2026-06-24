@@ -51,8 +51,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/contacts").permitAll()
                 // Razorpay Webhooks
                 .requestMatchers("/api/payment/razorpay/webhook", "/api/orders/webhook").permitAll()
-                // Notifications
-                .requestMatchers("/api/notifications/dispatch").permitAll()
+                // Email Service
+                .requestMatchers("/api/email/send").permitAll()
                 // Actuator/Health
                 .requestMatchers("/actuator/**", "/api/health").permitAll()
                 // Admin Area Gates

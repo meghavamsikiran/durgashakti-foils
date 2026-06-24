@@ -11,7 +11,7 @@ COPY user-service/ user-service/
 COPY catalog-service/ catalog-service/
 COPY order-service/ order-service/
 COPY admin-service/ admin-service/
-COPY notification-service/ notification-service/
+COPY email-service/ email-service/
 COPY durgashakti-backend-service/ durgashakti-backend-service/
 
 # Package the application
