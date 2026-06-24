@@ -1,1 +1,3 @@
-web: cd backend && uvicorn server:app --host 0.0.0.0 --port ${PORT:-8000}
+# This file is intentionally left blank.
+# The application is a Spring Boot / Java project deployed via Docker (render.yaml).
+# See backend/Dockerfile and render.yaml for deployment configuration.
