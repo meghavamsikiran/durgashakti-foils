@@ -4,7 +4,7 @@ import com.durgashakti.common.entity.Category;
 import com.durgashakti.common.entity.Product;
 import com.durgashakti.common.entity.Setting;
 import com.durgashakti.catalog.repository.CategoryRepository;
-import com.durgashakti.catalog.repository.ProductRepository;
+import com.durgashakti.catalog.repository.CatalogProductRepository;
 import com.durgashakti.catalog.repository.ProductReviewRepository;
 import com.durgashakti.catalog.repository.SettingRepository;
 import com.durgashakti.common.exception.ApiException;
@@ -22,12 +22,12 @@ import java.util.*;
 @Transactional(readOnly = true)
 public class CatalogService {
 
-    private final ProductRepository productRepository;
+    private final CatalogProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductReviewRepository reviewRepository;
     private final SettingRepository settingRepository;
 
-    public CatalogService(ProductRepository productRepository,
+    public CatalogService(CatalogProductRepository productRepository,
                           CategoryRepository categoryRepository,
                           ProductReviewRepository reviewRepository,
                           SettingRepository settingRepository) {

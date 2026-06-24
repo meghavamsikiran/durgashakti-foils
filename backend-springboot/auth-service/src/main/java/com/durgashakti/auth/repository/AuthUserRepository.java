@@ -1,4 +1,4 @@
-package com.durgashakti.user.repository;
+package com.durgashakti.auth.repository;
 
 import com.durgashakti.common.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,11 +8,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, UUID> {
-
+public interface AuthUserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
-
-    boolean existsByEmail(String email);
-
-    Optional<User> findByPhone(String phone);
+    Optional<User> findByEmailIgnoreCase(String email);
+    boolean existsByEmailIgnoreCase(String email);
 }

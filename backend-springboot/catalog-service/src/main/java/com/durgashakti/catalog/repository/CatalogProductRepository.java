@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.UUID;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, UUID> {
+public interface CatalogProductRepository extends JpaRepository<Product, UUID> {
     Page<Product> findByIsActiveTrue(Pageable pageable);
 
     @Query("SELECT p FROM Product p WHERE p.isActive = true AND " +

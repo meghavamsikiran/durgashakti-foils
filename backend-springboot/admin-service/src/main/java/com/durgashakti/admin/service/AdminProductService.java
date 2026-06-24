@@ -1,7 +1,7 @@
 package com.durgashakti.admin.service;
 
 import com.durgashakti.common.entity.Product;
-import com.durgashakti.admin.repository.ProductRepository;
+import com.durgashakti.admin.repository.AdminProductRepository;
 import com.durgashakti.common.exception.ApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,9 +15,9 @@ import java.util.UUID;
 @Transactional
 public class AdminProductService {
 
-    private final ProductRepository productRepository;
+    private final AdminProductRepository productRepository;
 
-    public AdminProductService(ProductRepository productRepository) {
+    public AdminProductService(AdminProductRepository productRepository) {
         this.productRepository = productRepository;
     }
 

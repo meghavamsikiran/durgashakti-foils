@@ -3,7 +3,7 @@ package com.durgashakti.auth.service;
 import com.durgashakti.auth.dto.*;
 import com.durgashakti.auth.repository.CartRepository;
 import com.durgashakti.auth.repository.PasswordResetRepository;
-import com.durgashakti.auth.repository.UserRepository;
+import com.durgashakti.auth.repository.AuthUserRepository;
 import com.durgashakti.common.entity.Cart;
 import com.durgashakti.common.entity.PasswordReset;
 import com.durgashakti.common.entity.User;
@@ -33,7 +33,7 @@ public class AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
     private static final Pattern GMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9._%+-]+@gmail\\.com$", Pattern.CASE_INSENSITIVE);
 
-    private final UserRepository userRepository;
+    private final AuthUserRepository userRepository;
     private final PasswordResetRepository passwordResetRepository;
     private final CartRepository cartRepository;
     private final JwtUtil jwtUtil;
@@ -41,7 +41,7 @@ public class AuthService {
     private final HttpClient httpClient;
     private final com.durgashakti.common.util.NotificationClient notificationClient;
 
-    public AuthService(UserRepository userRepository,
+    public AuthService(AuthUserRepository userRepository,
                        PasswordResetRepository passwordResetRepository,
                        CartRepository cartRepository,
                        JwtUtil jwtUtil,

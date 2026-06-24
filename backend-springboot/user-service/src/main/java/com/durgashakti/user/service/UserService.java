@@ -5,8 +5,8 @@ import com.durgashakti.common.exception.ApiException;
 import com.durgashakti.user.dto.UserAddressRequest;
 import com.durgashakti.user.repository.AddressRepository;
 import com.durgashakti.user.repository.NotificationRepository;
-import com.durgashakti.user.repository.ProductRepository;
-import com.durgashakti.user.repository.UserRepository;
+import com.durgashakti.user.repository.UserProductRepository;
+import com.durgashakti.user.repository.UserProfileRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,14 +19,14 @@ import java.util.*;
 public class UserService {
 
     private final AddressRepository addressRepository;
-    private final UserRepository userRepository;
+    private final UserProfileRepository userRepository;
     private final NotificationRepository notificationRepository;
-    private final ProductRepository productRepository;
+    private final UserProductRepository productRepository;
 
     public UserService(AddressRepository addressRepository,
-                       UserRepository userRepository,
+                       UserProfileRepository userRepository,
                        NotificationRepository notificationRepository,
-                       ProductRepository productRepository) {
+                       UserProductRepository productRepository) {
         this.addressRepository = addressRepository;
         this.userRepository = userRepository;
         this.notificationRepository = notificationRepository;

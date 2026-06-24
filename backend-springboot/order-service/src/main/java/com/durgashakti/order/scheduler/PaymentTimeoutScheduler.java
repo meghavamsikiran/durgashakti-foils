@@ -3,7 +3,7 @@ package com.durgashakti.order.scheduler;
 import com.durgashakti.common.entity.Order;
 import com.durgashakti.common.entity.Product;
 import com.durgashakti.order.repository.OrderRepository;
-import com.durgashakti.order.repository.ProductRepository;
+import com.durgashakti.order.repository.OrderProductRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,9 +21,9 @@ public class PaymentTimeoutScheduler {
     private static final Logger log = LoggerFactory.getLogger(PaymentTimeoutScheduler.class);
 
     private final OrderRepository orderRepository;
-    private final ProductRepository productRepository;
+    private final OrderProductRepository productRepository;
 
-    public PaymentTimeoutScheduler(OrderRepository orderRepository, ProductRepository productRepository) {
+    public PaymentTimeoutScheduler(OrderRepository orderRepository, OrderProductRepository productRepository) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
     }

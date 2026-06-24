@@ -1,7 +1,7 @@
 package com.durgashakti.admin.service;
 
 import com.durgashakti.common.entity.User;
-import com.durgashakti.admin.repository.UserRepository;
+import com.durgashakti.admin.repository.AdminUserRepository;
 import com.durgashakti.common.exception.ApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -14,9 +14,9 @@ import java.util.UUID;
 @Transactional
 public class AdminUserService {
 
-    private final UserRepository userRepository;
+    private final AdminUserRepository userRepository;
 
-    public AdminUserService(UserRepository userRepository) {
+    public AdminUserService(AdminUserRepository userRepository) {
         this.userRepository = userRepository;
     }
 

@@ -3,7 +3,7 @@ package com.durgashakti.order.service;
 import com.durgashakti.common.entity.Cart;
 import com.durgashakti.common.entity.Product;
 import com.durgashakti.order.repository.CartRepository;
-import com.durgashakti.order.repository.ProductRepository;
+import com.durgashakti.order.repository.OrderProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +15,9 @@ import java.util.*;
 public class CartService {
 
     private final CartRepository cartRepository;
-    private final ProductRepository productRepository;
+    private final OrderProductRepository productRepository;
 
-    public CartService(CartRepository cartRepository, ProductRepository productRepository) {
+    public CartService(CartRepository cartRepository, OrderProductRepository productRepository) {
         this.cartRepository = cartRepository;
         this.productRepository = productRepository;
     }

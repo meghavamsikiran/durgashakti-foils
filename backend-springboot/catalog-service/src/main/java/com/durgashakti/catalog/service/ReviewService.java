@@ -1,7 +1,7 @@
 package com.durgashakti.catalog.service;
 
+import com.durgashakti.catalog.repository.CatalogProductRepository;
 import com.durgashakti.catalog.repository.OrderRepository;
-import com.durgashakti.catalog.repository.ProductRepository;
 import com.durgashakti.catalog.repository.ProductReviewRepository;
 import com.durgashakti.catalog.repository.SettingRepository;
 import com.durgashakti.common.entity.*;
@@ -35,7 +35,7 @@ public class ReviewService {
     private static final String PLACE_ID = "ChIJb8zHve6f5zsR3k0P15b1j2g"; // or similar placeholder/real ID
 
     private final ProductReviewRepository reviewRepository;
-    private final ProductRepository productRepository;
+    private final CatalogProductRepository productRepository;
     private final SettingRepository settingRepository;
     private final OrderRepository orderRepository;
     private final ObjectMapper objectMapper;
@@ -50,7 +50,7 @@ public class ReviewService {
     private double fallbackRating;
 
     public ReviewService(ProductReviewRepository reviewRepository,
-                         ProductRepository productRepository,
+                         CatalogProductRepository productRepository,
                          SettingRepository settingRepository,
                          OrderRepository orderRepository,
                          ObjectMapper objectMapper) {
