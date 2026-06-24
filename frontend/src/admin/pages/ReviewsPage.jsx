@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ChevronDown, Eye, EyeOff, Filter, MessageSquareReply, Pencil, Search, ShieldCheck, Star, Trash2, X, Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, Eye, EyeOff, Filter, MessageSquareReply, Pencil, Search, ShieldCheck, Star, Trash2, X, Play, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import PageLoader from '../../components/ui/PageLoader';
 import TablePagination from '../../components/ui/TablePagination';
@@ -18,6 +18,7 @@ const ReviewsPage = () => {
     const cached = reviewService.getAdminReviewsCached({ page: 1, limit: PAGE_SIZE, search: '' });
     return !cached;
   });
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [rating, setRating] = useState('all');
@@ -59,6 +60,7 @@ const ReviewsPage = () => {
       setLoading(true);
     }
     try {
+      setError(null);
       const data = await reviewService.getAdminReviews({
         page: pageNum,
         limit: PAGE_SIZE,
@@ -76,8 +78,13 @@ const ReviewsPage = () => {
         acc[review.id] = review.admin_reply || '';
         return acc;
       }, {}));
-    } catch {
-      // Silently ignore — cached rows stay visible during cold-start.
+    } catch (err) {
+      setRows(prev => {
+        if (!prev || prev.length === 0) {
+          setError(err.message || 'Failed to load reviews. Please try again.');
+        }
+        return prev;
+      });
     } finally {
       setLoading(false);
     }
@@ -312,7 +319,19 @@ const ReviewsPage = () => {
         {loading && rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200 rounded-2xl shadow-sm">
             <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <div className="text-xs font-semibold text-slate-400 mt-3">Loading reviews...</div>
+            <div className="text-xs font-semibold text-slate-405 mt-3">Loading reviews...</div>
+          </div>
+        ) : error && rows.length === 0 ? (
+          <div className="text-center py-20 bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm max-w-md mx-auto mt-12">
+            <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+            <p className="text-lg font-bold text-slate-800 dark:text-white">Failed to load reviews</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
+            <button 
+              onClick={() => load(1)} 
+              className="mt-6 px-6 py-2.5 bg-primary text-white font-bold uppercase tracking-wider rounded-xl text-xs hover:bg-[#1bb847] transition-all"
+            >
+              Retry
+            </button>
           </div>
         ) : (() => {
           const filteredReviews = (rows || []).filter(review => {

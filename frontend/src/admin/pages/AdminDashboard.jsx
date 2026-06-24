@@ -64,8 +64,16 @@ const AdminDashboard = () => {
   if (loading && !metrics) return <PageLoader />;
   
   if (error) return (
-    <div className="p-8 bg-rose-50 border border-rose-100 rounded-3xl text-rose-600 font-bold text-sm">
-      Error loading dashboard: {error}
+    <div className="text-center py-20 bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm max-w-md mx-auto mt-12">
+      <ShieldAlert className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+      <p className="text-lg font-bold text-slate-800 dark:text-white">Failed to load dashboard metrics</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
+      <button 
+        onClick={() => load(activePreset)} 
+        className="mt-6 px-6 py-2.5 bg-primary text-white font-bold uppercase tracking-wider rounded-xl text-xs hover:bg-[#1bb847] transition-all"
+      >
+        Retry
+      </button>
     </div>
   );
 

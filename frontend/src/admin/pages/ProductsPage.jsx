@@ -63,6 +63,7 @@ const ProductsPage = () => {
     return !cached;
   });
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imageUploading, setImageUploading] = useState(false);
@@ -158,6 +159,7 @@ const ProductsPage = () => {
       setLoading(true);
     }
     try {
+      setError(null);
       const response = await adminService.getProducts(params);
       setRows(response.data?.items || []);
       setTotal(response.data?.total || 0);
@@ -166,7 +168,12 @@ const ProductsPage = () => {
         setMetrics(mRes.data?.metrics || null);
       }).catch(() => {});
     } catch (err) {
-      // Silently ignore — cached rows stay visible during cold-start.
+      setRows(prev => {
+        if (!prev || prev.length === 0) {
+          setError(err.message || 'Failed to load products. Please try again.');
+        }
+        return prev;
+      });
     } finally {
       setLoading(false);
     }
@@ -464,6 +471,20 @@ const ProductsPage = () => {
   const canEditProducts = isSuperAdmin || hasPermission('edit_products');
 
   if (loading && rows.length === 0) return <PageLoader />;
+
+  if (error && rows.length === 0) return (
+    <div className="text-center py-20 bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm max-w-md mx-auto mt-12">
+      <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+      <p className="text-lg font-bold text-slate-800 dark:text-white">Failed to load products</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
+      <button 
+        onClick={() => fetchRows(1)} 
+        className="mt-6 px-6 py-2.5 bg-primary text-white font-bold uppercase tracking-wider rounded-xl text-xs hover:bg-[#1bb847] transition-all"
+      >
+        Retry
+      </button>
+    </div>
+  );
 
   return (
     <div className="space-y-3">

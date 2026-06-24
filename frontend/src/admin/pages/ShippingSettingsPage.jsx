@@ -43,6 +43,7 @@ const ShippingSettingsPage = () => {
   const initialState = getInitialShippingState();
 
   const [loaded, setLoaded] = useState(initialState.loaded);
+  const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [me, setMe] = useState(initialState.me);
 
@@ -89,6 +90,7 @@ const ShippingSettingsPage = () => {
       setLoaded(false);
     }
     try {
+      setError(null);
       const [settingsRes, meRes] = await Promise.all([
         adminService.getSettings(),
         adminService.getMe()
@@ -128,8 +130,10 @@ const ShippingSettingsPage = () => {
         setCampaigns(config.campaigns);
       }
 
-    } catch (error) {
-      // Silently ignore — cached settings stay visible during cold-start.
+    } catch (err) {
+      if (!(cachedSettings && cachedMe)) {
+        setError(err.message || 'Failed to load shipping configurations.');
+      }
     } finally {
       setLoaded(true);
     }
@@ -238,6 +242,20 @@ const ShippingSettingsPage = () => {
   };
 
   if (!loaded) return <PageLoader />;
+
+  if (error) return (
+    <div className="text-center py-20 bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm max-w-md mx-auto mt-12">
+      <AlertTriangle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+      <p className="text-lg font-bold text-slate-800 dark:text-white">Failed to load shipping configurations</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
+      <button 
+        onClick={() => loadData()} 
+        className="mt-6 px-6 py-2.5 bg-primary text-white font-bold uppercase tracking-wider rounded-xl text-xs hover:bg-[#1bb847] transition-all"
+      >
+        Retry
+      </button>
+    </div>
+  );
 
   const isEditable = me?.role === 'SUPER_ADMIN' || me?.permissions?.manage_settings;
 

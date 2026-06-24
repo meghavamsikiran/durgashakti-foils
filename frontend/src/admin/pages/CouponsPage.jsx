@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Ticket, Plus, Search, Edit2, Trash2, Settings, 
-  Check, X, TrendingUp, Coins, IndianRupee, Calendar, Info, Loader2, Megaphone, Sparkles, Copy, Star, UserCheck, Filter, Download
+  Check, X, TrendingUp, Coins, IndianRupee, Calendar, Info, Loader2, Megaphone, Sparkles, Copy, Star, UserCheck, Filter, Download, AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import couponService from '../../services/coupon.service';
@@ -591,6 +591,7 @@ const CouponsPage = () => {
     const cachedSettings = apiClient.getCachedDataSync('/admin/coupons/settings');
     return !(cachedCoupons && cachedSettings);
   });
+  const [error, setError] = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -682,6 +683,7 @@ const CouponsPage = () => {
       setLoading(true);
     }
     try {
+      setError(null);
       const [couponsData, settingsData, adminSettingsRes, loyalCustomerData, analyticsData] = await Promise.all([
         couponService.getCoupons(),
         couponService.getSettings(),
@@ -712,8 +714,13 @@ const CouponsPage = () => {
       }
       setLoyalCustomers(loyalCustomerData?.items || []);
       setCouponAnalytics(analyticsData);
-    } catch (error) {
-      toast.error('Failed to load coupon data');
+    } catch (err) {
+      setCoupons(prev => {
+        if (!prev || prev.length === 0) {
+          setError(err.message || 'Failed to load coupon data. Please try again.');
+        }
+        return prev;
+      });
     } finally {
       setLoading(false);
     }
@@ -1438,6 +1445,22 @@ const CouponsPage = () => {
     return (
       <div className="min-h-[500px] flex items-center justify-center">
         <PageLoader />
+      </div>
+    );
+  }
+
+  if (error && coupons.length === 0) {
+    return (
+      <div className="text-center py-20 bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm max-w-md mx-auto mt-12">
+        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+        <p className="text-lg font-bold text-slate-800 dark:text-white">Failed to load coupons</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
+        <button 
+          onClick={() => fetchCouponsAndSettings()} 
+          className="mt-6 px-6 py-2.5 bg-primary text-white font-bold uppercase tracking-wider rounded-xl text-xs hover:bg-[#1bb847] transition-all"
+        >
+          Retry
+        </button>
       </div>
     );
   }

@@ -25,6 +25,7 @@ const TicketsTab = () => {
   const { ticketId } = useParams();
   const [expandedTicketId, setExpandedTicketId] = useState(ticketId || null);
   const [copiedTicketId, setCopiedTicketId] = useState(null);
+  const [error, setError] = useState(null);
 
   // States for Customer Response composer inside open tickets
   const [replyTexts, setReplyTexts] = useState({});
@@ -53,6 +54,7 @@ const TicketsTab = () => {
 
   const fetchTickets = async (showSpinner = true, invalidate = false) => {
     try {
+      setError(null);
       if (showSpinner) {
         setLoading(true);
       }
@@ -67,7 +69,12 @@ const TicketsTab = () => {
     } catch (err) {
       // Silently ignore background fetch errors — cached tickets stay visible.
       // Only set empty state if we have nothing to show.
-      setTickets(prev => prev);
+      setTickets(prev => {
+        if (!prev || prev.length === 0) {
+          setError(err.message || 'Failed to load support tickets. Please try again.');
+        }
+        return prev;
+      });
     } finally {
       setLoading(false);
     }
@@ -298,6 +305,22 @@ const TicketsTab = () => {
 
   if (loading) {
     return <PageLoader message="Loading your support tickets..." />;
+  }
+
+  if (error && tickets.length === 0) {
+    return (
+      <div className="text-center py-20 bg-slate-50 dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm max-w-md mx-auto">
+        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+        <p className="text-lg font-bold text-slate-800 dark:text-white">Failed to load support tickets</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
+        <Button 
+          onClick={() => fetchTickets(true)} 
+          className="mt-6 bg-primary hover:bg-[#1bb847] text-white font-bold uppercase tracking-wider rounded-xl text-xs px-6 py-2.5"
+        >
+          Retry
+        </Button>
+      </div>
+    );
   }
 
   // If ticketId parameter is present in the URL, render the specific ticket's details directly!

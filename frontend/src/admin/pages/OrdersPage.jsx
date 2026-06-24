@@ -160,6 +160,7 @@ const OrdersPage = () => {
     return !cached;
   });
   const [filter, setFilter] = useState('ALL');
+  const [error, setError] = useState(null);
   const [copiedOrderId, setCopiedOrderId] = useState(null);
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text);
@@ -198,7 +199,7 @@ const OrdersPage = () => {
   const [tempDateFilter, setTempDateFilter] = useState(null);
   const [metrics, setMetrics] = useState(() => {
     const cached = adminService.getCached('/admin/analytics/summary');
-    return cached?.data || null;
+    return cached?.data?.metrics || {};
   });
   const [showFilters, setShowFilters] = useState(false);
   const [adminMessage, setAdminMessage] = useState('');
@@ -214,11 +215,9 @@ const OrdersPage = () => {
   const [upiVpaInput, setUpiVpaInput] = useState('');
   const [isFetchingVpa, setIsFetchingVpa] = useState(false);
 
-  const load = useCallback(async (p = 1, nextFilter = filter) => {
+  const load = useCallback(async (p = 1) => {
     const params = { page: p, limit: PAGE_SIZE, search };
-    if (nextFilter !== 'ALL') {
-      params.status_filter = nextFilter;
-    }
+    if (filter !== 'ALL') params.status_filter = filter;
     if (dateFilter && dateFilter.start_date && dateFilter.end_date) {
       params.start_date = dateFilter.start_date;
       params.end_date = dateFilter.end_date;
@@ -226,7 +225,7 @@ const OrdersPage = () => {
     if (courierFilter) params.courier = courierFilter;
     if (paymentStatusFilter) params.payment_status = paymentStatusFilter;
     if (paymentMethodFilter) params.payment_method = paymentMethodFilter;
-
+    
     const cached = adminService.getCached('/admin/orders', params);
     if (cached) {
       setRows(cached.data?.items || []);
@@ -235,6 +234,7 @@ const OrdersPage = () => {
       setLoading(true);
     }
     try {
+      setError(null);
       const response = await adminService.getOrders(params);
       setRows(response.data.items || []);
       setTotal(response.data.total || 0);
@@ -243,7 +243,12 @@ const OrdersPage = () => {
         setMetrics(mRes.data || null);
       }).catch(() => {});
     } catch (err) {
-      // Silently ignore fetch errors — cached rows stay visible during cold-start.
+      setRows((prev) => {
+        if (!prev || prev.length === 0) {
+          setError(err.message || 'Failed to load orders. Please try again.');
+        }
+        return prev;
+      });
     } finally {
       setLoading(false);
     }
@@ -815,6 +820,20 @@ const OrdersPage = () => {
   const stats = getStats();
 
   if (loading && rows.length === 0) return <PageLoader />;
+
+  if (error && rows.length === 0) return (
+    <div className="text-center py-20 bg-white dark:bg-[#131B17] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-sm max-w-md mx-auto mt-12">
+      <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+      <p className="text-lg font-bold text-slate-800 dark:text-white">Failed to load orders</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{error}</p>
+      <button 
+        onClick={() => load(1)} 
+        className="mt-6 px-6 py-2.5 bg-primary text-white font-bold uppercase tracking-wider rounded-xl text-xs hover:bg-[#1bb847] transition-all"
+      >
+        Retry
+      </button>
+    </div>
+  );
 
   return (
     <div className="space-y-3">
