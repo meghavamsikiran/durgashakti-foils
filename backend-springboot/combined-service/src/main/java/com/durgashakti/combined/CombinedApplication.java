@@ -6,7 +6,17 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication(scanBasePackages = "com.durgashakti")
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+
+@SpringBootApplication
+@ComponentScan(
+        basePackages = "com.durgashakti",
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.REGEX,
+                pattern = "com\\.durgashakti\\..*Application"
+        )
+)
 @EnableJpaRepositories(basePackages = "com.durgashakti")
 @EntityScan(basePackages = "com.durgashakti")
 @EnableScheduling
