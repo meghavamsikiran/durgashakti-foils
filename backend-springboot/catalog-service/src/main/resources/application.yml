@@ -1,0 +1,36 @@
+server:
+  port: 8012
+
+spring:
+  application:
+    name: catalog-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:db.vddtkiefzhcihdzxxlgp.supabase.co}:${DB_PORT:5432}/${DB_NAME:postgres}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-init-sql: SET timezone = 'UTC'
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
+
+jwt:
+  secret: ${JWT_SECRET:YOUR_STRONG_RANDOM_JWT_SECRET_MIN_48_CHARS}
+  access-token-minutes: ${ACCESS_TOKEN_MINUTES:30}
+  refresh-token-days: ${REFRESH_TOKEN_DAYS:7}
+
+logging:
+  level:
+    com.durgashakti.catalog: DEBUG
+    org.springframework.security: WARN

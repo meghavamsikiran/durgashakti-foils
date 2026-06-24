@@ -1,0 +1,148 @@
+server:
+  port: 8001
+
+spring:
+  application:
+    name: api-gateway
+  main:
+    web-application-type: reactive
+
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://localhost:3001"
+              - "http://127.0.0.1:3000"
+              - "http://127.0.0.1:3001"
+              - "https://durgashakti-foils.vercel.app"
+              - "https://durgashakti-foils-git-main-meghavamsikirans-projects.vercel.app"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+              - HEAD
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+
+      routes:
+        # ── Auth Service ──────────────────────────────────────────
+        - id: auth-service
+          uri: http://localhost:8010
+          predicates:
+            - Path=/api/auth/**
+
+        # ── User Service ──────────────────────────────────────────
+        - id: user-service
+          uri: http://localhost:8011
+          predicates:
+            - Path=/api/user/**
+
+        - id: user-service-addresses
+          uri: http://localhost:8011
+          predicates:
+            - Path=/api/addresses/**
+
+        # ── Catalog Service ───────────────────────────────────────
+        - id: catalog-service-products
+          uri: http://localhost:8012
+          predicates:
+            - Path=/api/products/**
+
+        - id: catalog-service-categories
+          uri: http://localhost:8012
+          predicates:
+            - Path=/api/categories/**
+
+        - id: catalog-service-reviews
+          uri: http://localhost:8012
+          predicates:
+            - Path=/api/reviews/**
+
+        - id: catalog-service-settings
+          uri: http://localhost:8012
+          predicates:
+            - Path=/api/settings/public
+
+        # ── Order Service ─────────────────────────────────────────
+        - id: order-service-orders
+          uri: http://localhost:8013
+          predicates:
+            - Path=/api/orders/**
+
+        - id: order-service-cart
+          uri: http://localhost:8013
+          predicates:
+            - Path=/api/cart/**
+
+        - id: order-service-coupons-validate
+          uri: http://localhost:8013
+          predicates:
+            - Path=/api/coupons/validate
+
+        - id: order-service-coupons-available
+          uri: http://localhost:8013
+          predicates:
+            - Path=/api/coupons/available
+
+        # ── Admin Service ─────────────────────────────────────────
+        - id: admin-service
+          uri: http://localhost:8014
+          predicates:
+            - Path=/api/admin/**
+
+        - id: admin-service-analytics
+          uri: http://localhost:8014
+          predicates:
+            - Path=/api/analytics/**
+
+        - id: admin-service-contacts
+          uri: http://localhost:8014
+          predicates:
+            - Path=/api/contacts/**
+
+        - id: admin-service-support-tickets
+          uri: http://localhost:8014
+          predicates:
+            - Path=/api/support-tickets/**
+
+        - id: admin-service-pincode
+          uri: http://localhost:8014
+          predicates:
+            - Path=/api/pincode/**
+
+        - id: admin-service-serviceability
+          uri: http://localhost:8014
+          predicates:
+            - Path=/api/serviceability/**
+
+        # ── Notification Service ──────────────────────────────────
+        - id: notification-service
+          uri: http://localhost:8015
+          predicates:
+            - Path=/api/notifications/**
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    com.durgashakti.gateway: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    gateway:
+      enabled: true

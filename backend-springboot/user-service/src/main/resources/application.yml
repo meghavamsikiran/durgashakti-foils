@@ -1,0 +1,39 @@
+server:
+  port: 8011
+
+spring:
+  application:
+    name: user-service
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/durgashakti}
+    username: ${DATABASE_USER:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: always
+
+jwt:
+  secret: ${JWT_SECRET:local_dev_only_ds_foils_jwt_secret_change_me}
+  expiration-hours: 168
+
+logging:
+  level:
+    com.durgashakti: DEBUG
+    org.springframework.security: WARN

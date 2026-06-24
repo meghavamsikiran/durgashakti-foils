@@ -1,0 +1,60 @@
+server:
+  port: 8010
+
+spring:
+  application:
+    name: auth-service
+
+  datasource:
+    url: jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:durgashakti}?sslmode=${DATABASE_SSL_MODE:require}
+    username: ${DATABASE_USER:postgres}
+    password: ${DATABASE_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: non_null
+
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASS:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enabled: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+    from: ${SMTP_FROM:${SMTP_USER:noreply@durgashaktifoils.com}}
+    from-name: ${EMAIL_FROM_NAME:Durga Shakti Foils}
+
+# ── JWT Configuration ──
+jwt:
+  secret: ${JWT_SECRET:local_dev_only_ds_foils_jwt_secret_change_me}
+  expiration-hours: ${JWT_EXPIRATION_HOURS:168}
+
+# ── Application Configuration ──
+app:
+  environment: ${ENVIRONMENT:development}
+
+logging:
+  level:
+    com.durgashakti: DEBUG
+    org.springframework.security: INFO
