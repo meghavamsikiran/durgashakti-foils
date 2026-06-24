@@ -166,7 +166,7 @@ const ProductsPage = () => {
         setMetrics(mRes.data?.metrics || null);
       }).catch(() => {});
     } catch (err) {
-      toast.error('Failed to load products');
+      // Silently ignore — cached rows stay visible during cold-start.
     } finally {
       setLoading(false);
     }
@@ -192,7 +192,7 @@ const ProductsPage = () => {
         const fallback = await adminService.getPublicCategories();
         setCategories(fallback.data || []);
       } catch {
-        toast.error('Failed to load categories');
+        // Silently ignore — categories will be unavailable but won't disrupt page.
       }
     }
   }, []);

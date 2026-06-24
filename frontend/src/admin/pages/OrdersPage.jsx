@@ -243,7 +243,7 @@ const OrdersPage = () => {
         setMetrics(mRes.data || null);
       }).catch(() => {});
     } catch (err) {
-      toast.error(err.message);
+      // Silently ignore fetch errors — cached rows stay visible during cold-start.
     } finally {
       setLoading(false);
     }

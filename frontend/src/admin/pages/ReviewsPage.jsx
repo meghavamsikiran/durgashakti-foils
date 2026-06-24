@@ -77,7 +77,7 @@ const ReviewsPage = () => {
         return acc;
       }, {}));
     } catch {
-      toast.error('Failed to load reviews');
+      // Silently ignore — cached rows stay visible during cold-start.
     } finally {
       setLoading(false);
     }

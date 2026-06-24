@@ -107,7 +107,7 @@ const PaymentsPage = () => {
         setMetrics(mRes.data?.metrics || null);
       }).catch(() => {});
     } catch (err) {
-      toast.error('Failed to load transaction data');
+      // Silently ignore — cached rows stay visible during cold-start.
     } finally {
       setLoading(false);
     }

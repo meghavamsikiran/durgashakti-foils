@@ -129,9 +129,7 @@ const ShippingSettingsPage = () => {
       }
 
     } catch (error) {
-      if (!(cachedSettings && cachedMe)) {
-        toast.error('Failed to load shipping configurations.');
-      }
+      // Silently ignore — cached settings stay visible during cold-start.
     } finally {
       setLoaded(true);
     }
