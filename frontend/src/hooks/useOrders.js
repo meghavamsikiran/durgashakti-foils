@@ -25,7 +25,14 @@ export const useOrders = () => {
       const data = await orderService.getOrders(undefined, { silent: true, timeout: 90000 });
       setOrders(data || []);
     } catch (err) {
-      setError('Order history could not be loaded. Please try again.');
+      // Only show error if we have no data to fall back on.
+      // If cached orders are already visible, keep them and fail silently.
+      setOrders(prev => {
+        if (!prev || prev.length === 0) {
+          setError('Order history could not be loaded. Please try again.');
+        }
+        return prev;
+      });
     } finally {
       setLoading(false);
     }
