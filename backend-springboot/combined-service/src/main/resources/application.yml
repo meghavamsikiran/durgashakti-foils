@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: combined
   application:
     name: combined-service
   datasource:

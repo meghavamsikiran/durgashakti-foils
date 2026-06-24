@@ -35,9 +35,9 @@ import org.springframework.context.annotation.Profile;
 @Configuration
 @EnableWebSecurity
 @Profile("!combined")
-public class SecurityConfig {
+public class UserSecurityConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(UserSecurityConfig.class);
 
     @Value("${jwt.secret}")
     private String jwtSecret;

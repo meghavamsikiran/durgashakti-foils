@@ -1,4 +1,4 @@
-package com.durgashakti.order.config;
+package com.durgashakti.notification.config;
 
 import com.durgashakti.common.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
@@ -17,11 +17,11 @@ import org.springframework.context.annotation.Profile;
 @EnableWebSecurity
 @EnableMethodSecurity
 @Profile("!combined")
-public class SecurityConfig {
+public class NotificationSecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public NotificationSecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
@@ -32,7 +32,7 @@ public class SecurityConfig {
             .cors(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/payment/razorpay/webhook").permitAll()
+                .requestMatchers("/api/notifications/dispatch").permitAll() // Internal dispatching
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

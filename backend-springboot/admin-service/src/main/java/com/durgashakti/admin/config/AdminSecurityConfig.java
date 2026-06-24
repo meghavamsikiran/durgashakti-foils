@@ -1,4 +1,4 @@
-package com.durgashakti.auth.config;
+package com.durgashakti.admin.config;
 
 import com.durgashakti.common.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
@@ -17,11 +17,11 @@ import org.springframework.context.annotation.Profile;
 @EnableWebSecurity
 @EnableMethodSecurity
 @Profile("!combined")
-public class SecurityConfig {
+public class AdminSecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public AdminSecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
@@ -32,7 +32,8 @@ public class SecurityConfig {
             .cors(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/google", "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
+                .requestMatchers("/api/contacts").permitAll() // Public contact form submission
+                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN") // Admin gates
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

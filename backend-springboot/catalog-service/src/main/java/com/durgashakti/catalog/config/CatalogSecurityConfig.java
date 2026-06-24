@@ -20,11 +20,11 @@ import org.springframework.context.annotation.Profile;
 @EnableWebSecurity
 @EnableMethodSecurity
 @Profile("!combined")
-public class SecurityConfig {
+public class CatalogSecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
+    public CatalogSecurityConfig(JwtAuthenticationFilter jwtFilter) {
         this.jwtFilter = jwtFilter;
     }
 
