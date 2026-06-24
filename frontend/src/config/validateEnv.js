@@ -5,7 +5,7 @@
 const REQUIRED_ENV = {
   REACT_APP_BACKEND_URL: {
     required: true,
-    description: 'Backend API base URL (e.g., http://localhost:8001)',
+    description: 'Backend API base URL (e.g., http://localhost:8080)',
   },
 };
 
