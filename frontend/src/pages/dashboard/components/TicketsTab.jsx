@@ -12,6 +12,11 @@ import PageLoader from '../../../components/ui/PageLoader';
 import { Button } from '../../../components/ui/button';
 import { toast } from 'sonner';
 
+const getDisplayTicketId = (ticket) => {
+  if (!ticket) return '';
+  return ticket.ticket_id || (ticket.id ? `DSF-TKT-${ticket.id.substring(0, 8).toUpperCase()}` : '');
+};
+
 const TicketsTab = () => {
   const [tickets, setTickets] = useState(() => {
     const cached = apiClient.getCachedDataSync('/contacts/my');
@@ -289,10 +294,13 @@ const TicketsTab = () => {
 
   const filteredTickets = tickets.filter(ticket => {
     const q = searchQuery.toLowerCase();
+    const displayId = getDisplayTicketId(ticket);
+    const messageVal = ticket.message || '';
+    const replyVal = ticket.reply_message || '';
     return (
-      ticket.ticket_id.toLowerCase().includes(q) ||
-      ticket.message.toLowerCase().includes(q) ||
-      (ticket.reply_message && ticket.reply_message.toLowerCase().includes(q))
+      displayId.toLowerCase().includes(q) ||
+      messageVal.toLowerCase().includes(q) ||
+      replyVal.toLowerCase().includes(q)
     );
   });
 
@@ -346,14 +354,14 @@ const TicketsTab = () => {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <span className="font-mono text-xl font-bold text-primary dark:text-[#25D958] tracking-wider bg-primary/5 dark:bg-[#25D958]/10 px-3 py-1.5 rounded-xl flex items-center gap-2">
-                  {ticket.ticket_id}
+                  {getDisplayTicketId(ticket)}
                   <button
                     type="button"
-                    onClick={(e) => handleCopy(e, ticket.ticket_id)}
+                    onClick={(e) => handleCopy(e, getDisplayTicketId(ticket))}
                     className="hover:text-primary dark:hover:text-[#25D958] transition-colors p-0.5 rounded focus:outline-none flex items-center justify-center"
                     title="Copy Ticket ID"
                   >
-                    {copiedTicketId === ticket.ticket_id ? (
+                    {copiedTicketId === getDisplayTicketId(ticket) ? (
                       <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     ) : (
                       <Copy className="w-4 h-4 opacity-60 hover:opacity-100 text-primary dark:text-[#25D958]" />
@@ -616,15 +624,15 @@ const TicketsTab = () => {
                           onClick={(e) => e.stopPropagation()} 
                           className="hover:underline"
                         >
-                          {ticket.ticket_id}
+                          {getDisplayTicketId(ticket)}
                         </a>
                         <button
                           type="button"
-                          onClick={(e) => handleCopy(e, ticket.ticket_id)}
+                          onClick={(e) => handleCopy(e, getDisplayTicketId(ticket))}
                           className="hover:text-primary transition-colors p-0.5 rounded focus:outline-none flex items-center justify-center"
                           title="Copy Ticket ID"
                         >
-                          {copiedTicketId === ticket.ticket_id ? (
+                          {copiedTicketId === getDisplayTicketId(ticket) ? (
                             <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                           ) : (
                             <Copy className="w-3.5 h-3.5 opacity-60 hover:opacity-100 text-primary dark:text-[#25D958]" />
