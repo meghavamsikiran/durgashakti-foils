@@ -2,6 +2,6 @@ services:
   - type: web
     name: durgashakti-api
     env: docker
-    dockerfilePath: backend-springboot/Dockerfile
-    dockerContext: backend-springboot
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
     plan: free
