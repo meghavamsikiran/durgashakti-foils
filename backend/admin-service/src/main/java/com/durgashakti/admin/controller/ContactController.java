@@ -39,4 +39,11 @@ public class ContactController {
         String reply = payload.get("reply");
         return ResponseEntity.ok(contactService.replyToInquiry(id, reply));
     }
+
+    @GetMapping("/contacts/my")
+    public ResponseEntity<Map<String, Object>> getMyTickets(org.springframework.security.core.Authentication authentication) {
+        UUID userId = UUID.fromString((String) authentication.getPrincipal());
+        List<Contact> myTickets = contactService.getMyContacts(userId);
+        return ResponseEntity.ok(Map.of("items", myTickets));
+    }
 }

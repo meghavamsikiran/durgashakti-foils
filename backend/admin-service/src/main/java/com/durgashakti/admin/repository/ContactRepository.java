@@ -8,4 +8,5 @@ import java.util.UUID;
 
 @Repository
 public interface ContactRepository extends JpaRepository<Contact, UUID> {
+    java.util.List<Contact> findByEmailIgnoreCase(String email);
 }
