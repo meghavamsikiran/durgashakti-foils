@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: combined-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:db.vddtkiefzhcihdzxxlgp.supabase.co}:${DB_PORT:5432}/${DB_NAME:postgres}?sslmode=require
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret: ${JWT_SECRET:local_dev_only_ds_foils_jwt_secret_change_me}
+  access-token-minutes: ${ACCESS_TOKEN_MINUTES:30}
+  refresh-token-days: ${REFRESH_TOKEN_DAYS:7}
+
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:fake_key_id}
+  key-secret: ${RAZORPAY_KEY_SECRET:fake_key_secret}
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:fake_webhook_secret}
+
+notification:
+  service:
+    url: http://localhost:8080/api/notifications/dispatch
+
+# Enable fallback to Mock email sender if SMTP keys are missing
+spring.mail:
+  host: ${SMTP_HOST:smtp.gmail.com}
+  port: ${SMTP_PORT:587}
+  username: ${SMTP_USER:noreply@durgashaktifoils.com}
+  password: ${SMTP_PASS:}
+  properties:
+    mail:
+      smtp:
+        auth: true
+        starttls:
+          enable: true
