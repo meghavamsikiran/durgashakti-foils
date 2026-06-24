@@ -75,4 +75,11 @@ public class Contact {
 
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("ticket_id")
+    public String getTicketId() {
+        if (id == null) return null;
+        return "DSF-TKT-" + id.toString().substring(0, 8).toUpperCase();
+    }
 }
