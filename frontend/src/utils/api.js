@@ -3,7 +3,7 @@
  * This file is kept for backward compatibility with pages that still import it.
  * All calls are now routed through the centralized apiClient with interceptors.
  */
-import apiClient from '../services/core/apiClient';
+import apiClient, { getBackendUrl } from '../services/core/apiClient';
 
 export const api = {
   // Products
@@ -100,7 +100,7 @@ export const formatImageUrl = (url) => {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://durgashakti-foils-1.onrender.com';
+  const backendUrl = getBackendUrl();
   
   if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;

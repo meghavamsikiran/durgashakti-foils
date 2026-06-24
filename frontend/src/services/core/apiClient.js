@@ -1,14 +1,24 @@
 import axios from 'axios';
 import { setupInterceptors } from './interceptors';
 
-const API_URL = (process.env.REACT_APP_BACKEND_URL || 'https://durgashakti-foils-1.onrender.com') + '/api';
+export const getBackendUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+    }
+  }
+  return 'https://durgashakti-foils-1.onrender.com';
+};
+
+const API_URL = `${getBackendUrl()}/api`;
 
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
+  timeout: 60000,
 });
 
 setupInterceptors(apiClient);

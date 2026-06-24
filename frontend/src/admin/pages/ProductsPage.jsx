@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
-import apiClient from '../../services/core/apiClient';
+import apiClient, { getBackendUrl } from '../../services/core/apiClient';
 import { formatImageUrl } from '../../utils/api';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -295,7 +295,7 @@ const ProductsPage = () => {
       const uploadToastId = toast.loading(`Uploading ${file.name}...`);
       try {
         const res = await adminService.uploadProductMedia(file);
-        const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://durgashakti-foils-1.onrender.com';
+        const backendUrl = getBackendUrl();
         const absoluteUrl = res.data.url.startsWith("http") ? res.data.url : `${backendUrl}${res.data.url}`;
 
         setForm(prev => ({
@@ -718,7 +718,7 @@ const ProductsPage = () => {
                             const uploadToastId = toast.loading(`Uploading ${file.name}...`);
                             try {
                               const res = await adminService.uploadProductImage(file);
-                              const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://durgashakti-foils-1.onrender.com';
+                              const backendUrl = getBackendUrl();
                               const absoluteUrl = res.data.url.startsWith("http") ? res.data.url : `${backendUrl}${res.data.url}`;
                               setForm(prev => ({ ...prev, image_url: absoluteUrl }));
                               toast.success(`${file.name} uploaded!`, { id: uploadToastId });
