@@ -322,6 +322,8 @@ const CustomersPage = () => {
                       >
                         View Details
                       </button>
+                    </td>
+                  </tr>
                 ))
               }
             </tbody>
