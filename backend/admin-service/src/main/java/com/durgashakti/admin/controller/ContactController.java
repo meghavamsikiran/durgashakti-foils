@@ -15,9 +15,11 @@ import java.util.UUID;
 public class ContactController {
 
     private final ContactService contactService;
+    private final com.durgashakti.common.security.JwtUtil jwtUtil;
 
-    public ContactController(ContactService contactService) {
+    public ContactController(ContactService contactService, com.durgashakti.common.security.JwtUtil jwtUtil) {
         this.contactService = contactService;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/contacts")
@@ -42,8 +44,13 @@ public class ContactController {
 
     @GetMapping("/contacts/my")
     public ResponseEntity<Map<String, Object>> getMyTickets(org.springframework.security.core.Authentication authentication) {
-        UUID userId = UUID.fromString((String) authentication.getPrincipal());
-        List<Contact> myTickets = contactService.getMyContacts(userId);
+        String token = (String) authentication.getCredentials();
+        io.jsonwebtoken.Claims claims = jwtUtil.parseToken(token);
+        String email = claims.get("email", String.class);
+        if (email == null) {
+            throw new com.durgashakti.common.exception.ApiException(org.springframework.http.HttpStatus.BAD_REQUEST, "Email claim missing in token");
+        }
+        List<Contact> myTickets = contactService.getMyContactsByEmail(email);
         return ResponseEntity.ok(Map.of("items", myTickets));
     }
 }

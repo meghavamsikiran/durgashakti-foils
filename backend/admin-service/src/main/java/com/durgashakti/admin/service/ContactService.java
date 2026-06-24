@@ -16,12 +16,9 @@ import java.util.UUID;
 public class ContactService {
 
     private final ContactRepository contactRepository;
-    private final com.durgashakti.admin.repository.AdminUserRepository userRepository;
 
-    public ContactService(ContactRepository contactRepository,
-                          com.durgashakti.admin.repository.AdminUserRepository userRepository) {
+    public ContactService(ContactRepository contactRepository) {
         this.contactRepository = contactRepository;
-        this.userRepository = userRepository;
     }
 
     public Contact submitContact(Contact contact) {
@@ -50,10 +47,7 @@ public class ContactService {
     }
 
     @Transactional(readOnly = true)
-    public List<Contact> getMyContacts(UUID userId) {
-        String email = userRepository.findById(userId)
-                .map(user -> user.getEmail())
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+    public List<Contact> getMyContactsByEmail(String email) {
         return contactRepository.findByEmailIgnoreCase(email);
     }
 }
