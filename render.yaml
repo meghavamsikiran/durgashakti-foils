@@ -1,8 +1,7 @@
 services:
   - type: web
     name: durgashakti-api
-    env: python
-    rootDir: backend
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "uvicorn server:app --host 0.0.0.0 --port $PORT"
+    env: docker
+    dockerfilePath: backend-springboot/Dockerfile
+    dockerContext: backend-springboot
     plan: free
