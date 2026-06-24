@@ -299,7 +299,7 @@ const AnalyticsPage = () => {
     <div className="space-y-8 max-w-[1600px] mx-auto pb-12 relative">
       {/* Visual background loader line when background updates are fetching */}
       {refreshing && (
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-500 animate-pulse z-50 rounded-full" />
+        <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-500 animate-pulse z-[9999]" />
       )}
 
       {/* Top Banner and Navigation */}
