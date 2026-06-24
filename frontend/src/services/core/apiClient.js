@@ -8,7 +8,7 @@ export const getBackendUrl = () => {
       return process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
     }
   }
-  return 'https://durgashakti-foils-1.onrender.com';
+  return 'https://durgashakti-foils-2.onrender.com';
 };
 
 const API_URL = `${getBackendUrl()}/api`;
