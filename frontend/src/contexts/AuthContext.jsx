@@ -44,6 +44,7 @@ export const AuthProvider = ({ children }) => {
     }
     try {
       const response = await apiClient.get('/auth/me', {
+        silent: true,
         headers: { Authorization: `Bearer ${authToken}` }
       });
       const userData = response.data.user || response.data;

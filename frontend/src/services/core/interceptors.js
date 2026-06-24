@@ -72,7 +72,11 @@ export const setupInterceptors = (apiClient) => {
         });
       }
 
-      if (!error.config?.silent) {
+      // Only show network/timeout toasts for user-triggered mutations (POST, PUT, DELETE, PATCH).
+      // GET requests are always background data fetches — a failure should never pop a toast,
+      // regardless of the silent flag, to avoid spamming on cold-start / transient outages.
+      const isGetRequest = (error.config?.method || '').toLowerCase() === 'get';
+      if (!error.config?.silent && !isGetRequest) {
         setLoading(false);
         const now = Date.now();
         const timedOut = error.code === 'ECONNABORTED';
@@ -99,6 +103,8 @@ export const setupInterceptors = (apiClient) => {
         } else if (error.message) {
           toast.error(error.message);
         }
+      } else if (!error.config?.silent && isGetRequest) {
+        setLoading(false);
       }
 
       return Promise.reject(error);
