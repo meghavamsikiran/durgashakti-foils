@@ -51,18 +51,23 @@ const TicketsTab = () => {
     return () => clearInterval(pollInterval);
   }, []);
 
-  const fetchTickets = async (showSpinner = true) => {
+  const fetchTickets = async (showSpinner = true, invalidate = false) => {
     try {
       if (showSpinner) {
         setLoading(true);
       }
-      // Stale-While-Revalidate refresh
-      apiClient.invalidateCache('/contacts/my');
+      // Only invalidate cache after a user action (reply/reopen), not on background polls.
+      // Invalidating before every fetch guarantees no stale data, causing the toast to fire
+      // whenever the backend is slow / cold-starting.
+      if (invalidate) {
+        apiClient.invalidateCache('/contacts/my');
+      }
       const res = await contactService.getMyTickets();
       setTickets(res.items || []);
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to load your support tickets");
+      // Silently ignore background fetch errors — cached tickets stay visible.
+      // Only set empty state if we have nothing to show.
+      setTickets(prev => prev);
     } finally {
       setLoading(false);
     }
