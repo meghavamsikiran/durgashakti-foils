@@ -163,7 +163,7 @@ const ReviewsPage = () => {
     }
   };
 
-
+  if (loading && rows.length === 0) return <PageLoader />;
 
   const activeFilterCount = (status !== 'all' ? 1 : 0) + (rating !== 'all' ? 1 : 0) + (dateRange !== 'all' ? 1 : 0);
 
@@ -239,49 +239,47 @@ const ReviewsPage = () => {
                         <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500">Rating</label>
                         <select value={tempRating} onChange={(e) => setTempRating(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25">
                           <option value="all">All Ratings</option>
-                          {[5, 4, 3, 2, 1].map((v) => <option key={v} value={v}>{v} Star</option>)}
+                          {[5, 4, 3, 2, 1].map((r) => (
+                            <option key={r} value={r}>{r} Star{r > 1 ? 's' : ''}</option>
+                          ))}
                         </select>
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500">Date</label>
+                        <label className="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500">Date Range</label>
                         <select value={tempDateRange} onChange={(e) => setTempDateRange(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25">
-                          <option value="all">All Dates</option>
+                          <option value="all">All Time</option>
                           <option value="today">Today</option>
-                          <option value="yesterday">Yesterday</option>
-                          <option value="this_week">This Week</option>
-                          <option value="this_month">This Month</option>
-                          <option value="this_year">This Year</option>
-                          <option value="custom">Date Range</option>
+                          <option value="week">Past Week</option>
+                          <option value="month">Past Month</option>
+                          <option value="custom">Custom Range</option>
                         </select>
                       </div>
                       {tempDateRange === 'custom' && (
-                        <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-100">
+                        <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">From</label>
-                            <input type="date" value={tempCustomStart} onChange={(e) => setTempCustomStart(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                            <label className="mb-1 block text-[9px] font-black uppercase tracking-widest text-slate-400">Start</label>
+                            <input type="date" value={tempCustomStart} onChange={(e) => setTempCustomStart(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25" />
                           </div>
                           <div>
-                            <label className="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-400">To</label>
-                            <input type="date" value={tempCustomEnd} onChange={(e) => setTempCustomEnd(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25" />
+                            <label className="mb-1 block text-[9px] font-black uppercase tracking-widest text-slate-400">End</label>
+                            <input type="date" value={tempCustomEnd} onChange={(e) => setTempCustomEnd(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white p-2 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/25" />
                           </div>
                         </div>
                       )}
                     </div>
-                    <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                       <button
                         type="button"
                         onClick={() => {
-                          setStatus('all');
-                          setRating('all');
-                          setDateRange('all');
-                          setCustomStart('');
-                          setCustomEnd('');
-                          setPage(1);
-                          setShowFilters(false);
+                          setTempStatus('all');
+                          setTempRating('all');
+                          setTempDateRange('all');
+                          setTempCustomStart('');
+                          setTempCustomEnd('');
                         }}
-                        className="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 text-xs font-bold mr-auto"
+                        className="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-500 text-xs font-bold transition-all"
                       >
-                        Reset
+                        Reset All
                       </button>
                       <button
                         type="button"
@@ -309,12 +307,7 @@ const ReviewsPage = () => {
 
       {/* ── Review cards ── */}
       <div className="flex-1 space-y-4 h-[calc(100vh-245px)] overflow-y-auto pr-2 sidebar-scrollbar">
-        {loading && rows.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200 rounded-2xl shadow-sm">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <div className="text-xs font-semibold text-slate-400 mt-3">Loading reviews...</div>
-          </div>
-        ) : (() => {
+        {(() => {
           const filteredReviews = (rows || []).filter(review => {
             // 1. Status Filter
             if (status && status !== 'all') {

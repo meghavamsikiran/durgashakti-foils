@@ -45,7 +45,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/settings/public").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/reviews/product/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/reviews/google-summary").permitAll()
                 // Contact
                 .requestMatchers(HttpMethod.POST, "/api/contacts", "/api/contact").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/contacts").permitAll()

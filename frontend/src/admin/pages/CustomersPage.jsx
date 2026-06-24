@@ -176,6 +176,8 @@ const CustomersPage = () => {
 
 
 
+  if (loading && rows.length === 0) return <PageLoader />;
+
   return (
     <div className="space-y-3">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2.5 border-b border-slate-200">
@@ -273,17 +275,7 @@ const CustomersPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {loading && paginatedCustomers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-20">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      <div className="text-xs font-semibold text-slate-400">Loading customers...</div>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                paginatedCustomers.map((row) => (
+              {paginatedCustomers.map((row) => (
                   <tr key={row.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-8 py-6">
                       <div className="font-bold text-slate-800 group-hover:text-primary transition-colors">
@@ -330,10 +322,8 @@ const CustomersPage = () => {
                       >
                         View Details
                       </button>
-                    </td>
-                  </tr>
                 ))
-              )}
+              }
             </tbody>
           </table>
           {paginatedCustomers.length === 0 && !loading && (
