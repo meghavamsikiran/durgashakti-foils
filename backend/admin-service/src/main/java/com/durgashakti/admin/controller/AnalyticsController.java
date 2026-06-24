@@ -17,7 +17,7 @@ public class AnalyticsController {
         this.analyticsService = analyticsService;
     }
 
-    @GetMapping("/analytics")
+    @GetMapping({"/analytics", "/admin/analytics/summary"})
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Map<String, Object>> getDashboardSummary() {
         return ResponseEntity.ok(analyticsService.getDashboardSummary());

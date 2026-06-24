@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -20,12 +21,16 @@ public class AdminUserController {
         this.adminUserService = adminUserService;
     }
 
-    @GetMapping("/users")
-    public ResponseEntity<List<User>> listUsers() {
-        return ResponseEntity.ok(adminUserService.listUsers());
+    @GetMapping({"/users", "/customers"})
+    public ResponseEntity<Map<String, Object>> listUsers() {
+        List<User> users = adminUserService.listUsers();
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("items", users);
+        response.put("total", users.size());
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/users/{id}")
+    @GetMapping({"/users/{id}", "/customers/{id}"})
     public ResponseEntity<User> getUser(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(adminUserService.getUser(id));
     }

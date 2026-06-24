@@ -28,8 +28,12 @@ public class AdminOrderController {
     }
 
     @GetMapping("/orders")
-    public ResponseEntity<List<Order>> getAllOrders() {
-        return ResponseEntity.ok(adminOrderService.getAllOrders());
+    public ResponseEntity<Map<String, Object>> getAllOrders() {
+        List<Order> orders = adminOrderService.getAllOrders();
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("items", orders);
+        response.put("total", orders.size());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/orders/{orderId}")

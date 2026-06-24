@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -21,8 +22,12 @@ public class AdminProductController {
     }
 
     @GetMapping("/products")
-    public ResponseEntity<List<Product>> listAll() {
-        return ResponseEntity.ok(adminProductService.listAll());
+    public ResponseEntity<Map<String, Object>> listAll() {
+        List<Product> products = adminProductService.listAll();
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("items", products);
+        response.put("total", products.size());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/products")
