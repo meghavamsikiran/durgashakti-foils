@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface CouponRepository extends JpaRepository<Coupon, UUID> {
+public interface OrderCouponRepository extends JpaRepository<Coupon, UUID> {
     Optional<Coupon> findByCode(String code);
     Optional<Coupon> findByCodeIgnoreCase(String code);
 }

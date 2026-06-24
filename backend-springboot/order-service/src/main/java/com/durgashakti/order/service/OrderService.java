@@ -22,22 +22,22 @@ public class OrderService {
 
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
-    private final OrderRepository orderRepository;
+    private final OrderServiceRepository orderRepository;
     private final OrderProductRepository productRepository;
-    private final CouponRepository couponRepository;
+    private final OrderCouponRepository couponRepository;
     private final CouponUsageRepository couponUsageRepository;
-    private final CartRepository cartRepository;
+    private final OrderCartRepository cartRepository;
     private final PaymentService paymentService;
     private final CouponService couponService;
     private final ProcessedWebhookRepository processedWebhookRepository;
     private final OrderUserRepository userRepository;
     private final com.durgashakti.common.util.NotificationClient notificationClient;
 
-    public OrderService(OrderRepository orderRepository,
+    public OrderService(OrderServiceRepository orderRepository,
                         OrderProductRepository productRepository,
-                        CouponRepository couponRepository,
+                        OrderCouponRepository couponRepository,
                         CouponUsageRepository couponUsageRepository,
-                        CartRepository cartRepository,
+                        OrderCartRepository cartRepository,
                         PaymentService paymentService,
                         CouponService couponService,
                         ProcessedWebhookRepository processedWebhookRepository,

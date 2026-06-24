@@ -1,11 +1,11 @@
 package com.durgashakti.admin.repository;
 
-import com.durgashakti.common.entity.Setting;
+import com.durgashakti.common.entity.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface SettingRepository extends JpaRepository<Setting, String> {
+public interface AdminOrderRepository extends JpaRepository<Order, UUID> {
 }

@@ -3,10 +3,10 @@ package com.durgashakti.catalog.service;
 import com.durgashakti.common.entity.Category;
 import com.durgashakti.common.entity.Product;
 import com.durgashakti.common.entity.Setting;
-import com.durgashakti.catalog.repository.CategoryRepository;
+import com.durgashakti.catalog.repository.CatalogCategoryRepository;
 import com.durgashakti.catalog.repository.CatalogProductRepository;
-import com.durgashakti.catalog.repository.ProductReviewRepository;
-import com.durgashakti.catalog.repository.SettingRepository;
+import com.durgashakti.catalog.repository.CatalogProductReviewRepository;
+import com.durgashakti.catalog.repository.CatalogSettingRepository;
 import com.durgashakti.common.exception.ApiException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,14 +23,14 @@ import java.util.*;
 public class CatalogService {
 
     private final CatalogProductRepository productRepository;
-    private final CategoryRepository categoryRepository;
-    private final ProductReviewRepository reviewRepository;
-    private final SettingRepository settingRepository;
+    private final CatalogCategoryRepository categoryRepository;
+    private final CatalogProductReviewRepository reviewRepository;
+    private final CatalogSettingRepository settingRepository;
 
     public CatalogService(CatalogProductRepository productRepository,
-                          CategoryRepository categoryRepository,
-                          ProductReviewRepository reviewRepository,
-                          SettingRepository settingRepository) {
+                          CatalogCategoryRepository categoryRepository,
+                          CatalogProductReviewRepository reviewRepository,
+                          CatalogSettingRepository settingRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.reviewRepository = reviewRepository;

@@ -1,7 +1,7 @@
 package com.durgashakti.admin.service;
 
 import com.durgashakti.common.entity.Coupon;
-import com.durgashakti.admin.repository.CouponRepository;
+import com.durgashakti.admin.repository.AdminCouponRepository;
 import com.durgashakti.common.exception.ApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,9 +15,9 @@ import java.util.UUID;
 @Transactional
 public class AdminCouponService {
 
-    private final CouponRepository couponRepository;
+    private final AdminCouponRepository couponRepository;
 
-    public AdminCouponService(CouponRepository couponRepository) {
+    public AdminCouponService(AdminCouponRepository couponRepository) {
         this.couponRepository = couponRepository;
     }
 

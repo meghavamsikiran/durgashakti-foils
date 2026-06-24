@@ -1,7 +1,7 @@
 package com.durgashakti.admin.service;
 
 import com.durgashakti.common.entity.Order;
-import com.durgashakti.admin.repository.OrderRepository;
+import com.durgashakti.admin.repository.AdminOrderRepository;
 import com.durgashakti.common.exception.ApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -14,9 +14,9 @@ import java.util.*;
 @Transactional
 public class AdminOrderService {
 
-    private final OrderRepository orderRepository;
+    private final AdminOrderRepository orderRepository;
 
-    public AdminOrderService(OrderRepository orderRepository) {
+    public AdminOrderService(AdminOrderRepository orderRepository) {
         this.orderRepository = orderRepository;
     }
 

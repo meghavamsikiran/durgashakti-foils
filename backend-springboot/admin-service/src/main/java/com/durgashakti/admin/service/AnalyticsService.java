@@ -1,7 +1,7 @@
 package com.durgashakti.admin.service;
 
 import com.durgashakti.common.entity.Order;
-import com.durgashakti.admin.repository.OrderRepository;
+import com.durgashakti.admin.repository.AdminOrderRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,9 +13,9 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class AnalyticsService {
 
-    private final OrderRepository orderRepository;
+    private final AdminOrderRepository orderRepository;
 
-    public AnalyticsService(OrderRepository orderRepository) {
+    public AnalyticsService(AdminOrderRepository orderRepository) {
         this.orderRepository = orderRepository;
     }
 

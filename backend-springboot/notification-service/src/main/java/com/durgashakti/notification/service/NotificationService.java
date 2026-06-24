@@ -1,7 +1,7 @@
 package com.durgashakti.notification.service;
 
 import com.durgashakti.common.entity.Notification;
-import com.durgashakti.notification.repository.NotificationRepository;
+import com.durgashakti.notification.repository.NotificationServiceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.SimpleMailMessage;
@@ -18,10 +18,10 @@ public class NotificationService {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
 
-    private final NotificationRepository notificationRepository;
+    private final NotificationServiceRepository notificationRepository;
     private final JavaMailSender mailSender;
 
-    public NotificationService(NotificationRepository notificationRepository, JavaMailSender mailSender) {
+    public NotificationService(NotificationServiceRepository notificationRepository, JavaMailSender mailSender) {
         this.notificationRepository = notificationRepository;
         this.mailSender = mailSender;
     }

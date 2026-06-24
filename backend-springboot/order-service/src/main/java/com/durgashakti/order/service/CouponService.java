@@ -2,7 +2,7 @@ package com.durgashakti.order.service;
 
 import com.durgashakti.common.entity.Coupon;
 import com.durgashakti.common.exception.ApiException;
-import com.durgashakti.order.repository.CouponRepository;
+import com.durgashakti.order.repository.OrderCouponRepository;
 import com.durgashakti.order.repository.CouponUsageRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,10 +15,10 @@ import java.util.*;
 @Transactional(readOnly = true)
 public class CouponService {
 
-    private final CouponRepository couponRepository;
+    private final OrderCouponRepository couponRepository;
     private final CouponUsageRepository couponUsageRepository;
 
-    public CouponService(CouponRepository couponRepository, CouponUsageRepository couponUsageRepository) {
+    public CouponService(OrderCouponRepository couponRepository, CouponUsageRepository couponUsageRepository) {
         this.couponRepository = couponRepository;
         this.couponUsageRepository = couponUsageRepository;
     }

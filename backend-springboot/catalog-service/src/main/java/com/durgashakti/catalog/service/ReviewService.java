@@ -1,9 +1,9 @@
 package com.durgashakti.catalog.service;
 
 import com.durgashakti.catalog.repository.CatalogProductRepository;
-import com.durgashakti.catalog.repository.OrderRepository;
-import com.durgashakti.catalog.repository.ProductReviewRepository;
-import com.durgashakti.catalog.repository.SettingRepository;
+import com.durgashakti.catalog.repository.CatalogProductReviewRepository;
+import com.durgashakti.catalog.repository.CatalogSettingRepository;
+import com.durgashakti.catalog.repository.CatalogOrderRepository;
 import com.durgashakti.common.entity.*;
 import com.durgashakti.common.exception.ApiException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -34,10 +34,10 @@ public class ReviewService {
     private static final Logger log = LoggerFactory.getLogger(ReviewService.class);
     private static final String PLACE_ID = "ChIJb8zHve6f5zsR3k0P15b1j2g"; // or similar placeholder/real ID
 
-    private final ProductReviewRepository reviewRepository;
+    private final CatalogProductReviewRepository reviewRepository;
     private final CatalogProductRepository productRepository;
-    private final SettingRepository settingRepository;
-    private final OrderRepository orderRepository;
+    private final CatalogSettingRepository settingRepository;
+    private final CatalogOrderRepository orderRepository;
     private final ObjectMapper objectMapper;
 
     @Value("${google.places.api-key:}")
@@ -49,10 +49,10 @@ public class ReviewService {
     @Value("${google.rating:5.0}")
     private double fallbackRating;
 
-    public ReviewService(ProductReviewRepository reviewRepository,
+    public ReviewService(CatalogProductReviewRepository reviewRepository,
                          CatalogProductRepository productRepository,
-                         SettingRepository settingRepository,
-                         OrderRepository orderRepository,
+                         CatalogSettingRepository settingRepository,
+                         CatalogOrderRepository orderRepository,
                          ObjectMapper objectMapper) {
         this.reviewRepository = reviewRepository;
         this.productRepository = productRepository;

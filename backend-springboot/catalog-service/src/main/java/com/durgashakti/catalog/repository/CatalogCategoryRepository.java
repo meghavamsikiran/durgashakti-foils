@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface CategoryRepository extends JpaRepository<Category, UUID> {
+public interface CatalogCategoryRepository extends JpaRepository<Category, UUID> {
     List<Category> findByIsActiveTrueOrderByNameAsc();
     Optional<Category> findByNameIgnoreCase(String name);
 }

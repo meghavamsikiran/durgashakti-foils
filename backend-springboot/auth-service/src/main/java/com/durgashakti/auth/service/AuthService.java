@@ -1,7 +1,7 @@
 package com.durgashakti.auth.service;
 
 import com.durgashakti.auth.dto.*;
-import com.durgashakti.auth.repository.CartRepository;
+import com.durgashakti.auth.repository.AuthCartRepository;
 import com.durgashakti.auth.repository.PasswordResetRepository;
 import com.durgashakti.auth.repository.AuthUserRepository;
 import com.durgashakti.common.entity.Cart;
@@ -35,7 +35,7 @@ public class AuthService {
 
     private final AuthUserRepository userRepository;
     private final PasswordResetRepository passwordResetRepository;
-    private final CartRepository cartRepository;
+    private final AuthCartRepository cartRepository;
     private final JwtUtil jwtUtil;
     private final BCryptPasswordEncoder passwordEncoder;
     private final HttpClient httpClient;
@@ -43,7 +43,7 @@ public class AuthService {
 
     public AuthService(AuthUserRepository userRepository,
                        PasswordResetRepository passwordResetRepository,
-                       CartRepository cartRepository,
+                       AuthCartRepository cartRepository,
                        JwtUtil jwtUtil,
                        com.durgashakti.common.util.NotificationClient notificationClient) {
         this.userRepository = userRepository;

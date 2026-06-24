@@ -1,7 +1,7 @@
 package com.durgashakti.admin.service;
 
 import com.durgashakti.common.entity.Category;
-import com.durgashakti.admin.repository.CategoryRepository;
+import com.durgashakti.admin.repository.AdminCategoryRepository;
 import com.durgashakti.common.exception.ApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,9 +15,9 @@ import java.util.UUID;
 @Transactional
 public class AdminCategoryService {
 
-    private final CategoryRepository categoryRepository;
+    private final AdminCategoryRepository categoryRepository;
 
-    public AdminCategoryService(CategoryRepository categoryRepository) {
+    public AdminCategoryService(AdminCategoryRepository categoryRepository) {
         this.categoryRepository = categoryRepository;
     }
 

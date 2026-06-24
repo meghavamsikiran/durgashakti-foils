@@ -1,13 +1,11 @@
 package com.durgashakti.order.repository;
 
-import com.durgashakti.common.entity.Cart;
+import com.durgashakti.common.entity.Setting;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Repository
-public interface CartRepository extends JpaRepository<Cart, UUID> {
-    Optional<Cart> findByUserId(UUID userId);
+public interface OrderSettingRepository extends JpaRepository<Setting, String> {
 }

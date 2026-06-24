@@ -1,7 +1,7 @@
 package com.durgashakti.admin.service;
 
 import com.durgashakti.common.entity.Order;
-import com.durgashakti.admin.repository.OrderRepository;
+import com.durgashakti.admin.repository.AdminOrderRepository;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
@@ -13,9 +13,9 @@ import java.util.List;
 @Service
 public class GstService {
 
-    private final OrderRepository orderRepository;
+    private final AdminOrderRepository orderRepository;
 
-    public GstService(OrderRepository orderRepository) {
+    public GstService(AdminOrderRepository orderRepository) {
         this.orderRepository = orderRepository;
     }
 
