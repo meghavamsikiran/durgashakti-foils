@@ -6,8 +6,8 @@ spring:
   main:
     allow-bean-definition-overriding: true
   datasource:
-    url: jdbc:postgresql://${DB_HOST:db.vddtkiefzhcihdzxxlgp.supabase.co}:${DB_PORT:5432}/${DB_NAME:postgres}?sslmode=require
-    username: ${DB_USER:postgres}
+    url: jdbc:postgresql://${DB_HOST:aws-0-ap-south-1.pooler.supabase.com}:${DB_PORT:6543}/${DB_NAME:postgres}?sslmode=require
+    username: ${DB_USER:postgres.vddtkiefzhcihdzxxlgp}
     password: ${DB_PASS:}
     driver-class-name: org.postgresql.Driver
   jpa:
