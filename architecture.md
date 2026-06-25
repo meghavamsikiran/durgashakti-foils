@@ -1,6 +1,6 @@
 # Project Architecture: DurgaShakti Foils
 
-This document outlines the architectural design of the DurgaShakti Foils backend, including the hybrid microservice structure, the internal layered architecture of each service, the JWT/Security flow, and the deployment compromises implemented for cost optimization.
+This document outlines the architectural design of the DurgaShakti Foils backend, including the hybrid microservice structure, the internal layered architecture of each service, the JWT/Security flow, database patterns, and the deployment compromises implemented for cost optimization.
 
 ---
 
@@ -37,10 +37,24 @@ graph TD
 
 ---
 
-## 2. Key Modules & Services
+## 2. Maven Module Hierarchy & Dependency Management
 
-The codebase is split into independent Maven modules to maintain high modularity, strict separation of concerns, and clean boundaries:
+The project is structured as a Maven multi-module project. Version control and dependencies are centralized in the parent `pom.xml` to avoid conflicts and simplify updates:
 
+```
+backend/ (Parent POM)
+ ├── shared-core/          (Common entities, JWT utilities, and exceptions)
+ ├── api-gateway/          (Routing and request interception)
+ ├── auth-service/         (Authentication & JWT generation)
+ ├── user-service/         (User profile & address management)
+ ├── catalog-service/      (Product, categories, and inventory)
+ ├── order-service/        (Cart, checkout, payments, and invoices)
+ ├── admin-service/        (Admin controls, imports/exports, and ticketing)
+ ├── email-service/        (Notification dispatches)
+ └── monolith-service/     (Aggregator module & monolithic runtime packaging)
+```
+
+### Module Descriptions
 | Module / Directory Name | Description |
 | :--- | :--- |
 | **[`shared-core`](file:///c:/Users/megha.choda/.gemini/antigravity/scratch/durgashakti-foils/backend/shared-core)** | The shared library containing core domain entities, data transfer objects (DTOs), exception handlers, security configurations, and JWT utilities used by all services. |
@@ -96,7 +110,36 @@ graph TD
 
 ---
 
-## 4. Why `monolith-service` exists (Render Free Tier Cost-Cutting)
+## 4. Shared Database & Cross-Module Queries
+
+In a fully decoupled microservice architecture, each service owns its database. In this hybrid microservices model:
+1. **Logical Separation:** Services only access the tables related to their business functions. For example, `catalog-service` manages `Product` and `Category` entities, while `order-service` manages `Order` and `Cart` entities.
+2. **Shared Database Instance:** To optimize costs and resources, all tables reside in a single PostgreSQL database schema.
+3. **Cross-Module JPA Entities:** To execute queries across domain boundaries without network calls, modules import the entity definitions from `shared-core` and construct local, service-specific repositories. For example, `order-service` includes an [`OrderUserRepository`](file:///c:/Users/megha.choda/.gemini/antigravity/scratch/durgashakti-foils/backend/order-service/src/main/java/com/durgashakti/order/repository/OrderUserRepository.java) that queries the `User` entity directly, avoiding the need for an external REST request to `user-service`.
+
+---
+
+## 5. Cross-Cutting System Concerns
+
+### Asynchronous Operations & Email Scheduling
+* **Non-blocking Dispatches:** Time-consuming operations such as triggering transactional emails or verification links are handled asynchronously to prevent blocking client request threads.
+* **Cron Schedulers:** Tasks like expiring unpaid orders or cleanup schedules are processed using Spring's `@Scheduled` annotation (configured inside the runner configuration).
+
+### Global Exception Translator
+* Errors generated in any layer are caught by Spring's `@ControllerAdvice` via `GlobalExceptionHandler` inside the `shared-core` module.
+* This guarantees that clients receive a standardized, professional API error response format:
+  ```json
+  {
+    "status": 400,
+    "error": "Bad Request",
+    "message": "Detailed error message here",
+    "timestamp": "2026-06-25T13:20:00Z"
+  }
+  ```
+
+---
+
+## 6. Why `monolith-service` exists (Render Free Tier Cost-Cutting)
 
 Although developing in a microservice architectural pattern is highly clean and scalable, running **9 separate JVM processes** (8 microservices + 1 gateway) is highly inefficient and expensive for staging, hobby, or small-scale production deployments. 
 
