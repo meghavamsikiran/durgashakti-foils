@@ -1,6 +1,6 @@
 # Project Architecture: DurgaShakti Foils
 
-This document outlines the architectural design of the DurgaShakti Foils backend, including the hybrid microservice structure and the deployment compromises implemented for cost optimization.
+This document outlines the architectural design of the DurgaShakti Foils backend, including the hybrid microservice structure, the internal layered architecture of each service, the JWT/Security flow, and the deployment compromises implemented for cost optimization.
 
 ---
 
@@ -55,7 +55,48 @@ The codebase is split into independent Maven modules to maintain high modularity
 
 ---
 
-## 3. Why `monolith-service` exists (Render Free Tier Cost-Cutting)
+## 3. Detailed Layered Architecture (Inside Each Microservice)
+
+Every microservice implements a strict, multi-tiered layered structure to ensure code maintainability, clean data mappings, and secure operations.
+
+```mermaid
+graph TD
+    ClientReq[Client HTTP Request] -->|1. Request Interception| SecurityLayer[JWT & Security Layer]
+    SecurityLayer -->|2. Authentication Context Set| ControllerLayer[Controller Layer]
+    ControllerLayer -->|3. DTO Validation| ServiceLayer[Service / Business Layer]
+    ServiceLayer -->|4. Business Rules & Logic| ReposLayer[Repository / JPA Layer]
+    ReposLayer -->|5. SQL Queries| DBLayer[(PostgreSQL Database)]
+```
+
+### 1. JWT & Security Layer
+* **Spring Security Config:** Intercepts incoming HTTP requests. Paths that are public (e.g., product catalog lookup, registration) are permitted directly, while protected paths require authentication.
+* **`JwtAuthenticationFilter`:** Extracts the JWT bearer token from the HTTP `Authorization` header.
+* **`JwtUtil`:** Validates the token's signature, expiration, and extracts claims (such as username, user ID, and roles/authorities).
+* **Security Context:** If validation succeeds, builds a `UsernamePasswordAuthenticationToken` using the user's `UserPrincipal` and injects it into the `SecurityContextHolder`.
+
+### 2. Controller Layer (API / Entry Points)
+* Exposes RESTful API endpoints using `@RestController`.
+* Handles HTTP mappings (`@GetMapping`, `@PostMapping`, etc.).
+* Receives user requests using dedicated DTOs (Data Transfer Objects) and applies validation constraints (using annotations like `@Valid`, `@NotNull`, `@Size`).
+* Returns responses encapsulated inside Spring's `ResponseEntity<T>`.
+
+### 3. Service / Business Logic Layer
+* Marked with `@Service`. 
+* Implements the core business domain logic (e.g., calculating discount coupons, validating order conditions, processing Razorpay integration).
+* Performs transactional management using Spring's `@Transactional`.
+* Coordinates calls across different Spring beans and repositories.
+
+### 4. Repository / JPA Layer
+* Consists of JPA Interfaces extending `JpaRepository<Entity, ID>`.
+* Interacts directly with database objects using Object-Relational Mapping (ORM) managed by Hibernate.
+* Performs write/read database operations and custom native/JPQL queries.
+
+### 5. Shared Core / Common Libraries
+* Shared utilities, custom exception structures (like `ApiException`), global exception translators (`GlobalExceptionHandler`), and data schemas (like `User`, `Order`, `Product`) reside in the [`shared-core`](file:///c:/Users/megha.choda/.gemini/antigravity/scratch/durgashakti-foils/backend/shared-core) module. This ensures all layers across all modules share a unified model.
+
+---
+
+## 4. Why `monolith-service` exists (Render Free Tier Cost-Cutting)
 
 Although developing in a microservice architectural pattern is highly clean and scalable, running **9 separate JVM processes** (8 microservices + 1 gateway) is highly inefficient and expensive for staging, hobby, or small-scale production deployments. 
 
