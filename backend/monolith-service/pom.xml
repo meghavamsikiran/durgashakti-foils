@@ -11,7 +11,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>durgashakti-backend-service</artifactId>
+    <artifactId>monolith-service</artifactId>
     <name>DurgaShakti Foils — Combined Monolithic Runner</name>
     <description>Consolidated runner to deploy all microservices as a single JVM on Render free tier.</description>
 
@@ -19,7 +19,7 @@
         <!-- Service modules -->
         <dependency>
             <groupId>com.durgashakti</groupId>
-            <artifactId>durgashakti-core</artifactId>
+            <artifactId>shared-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.durgashakti</groupId>

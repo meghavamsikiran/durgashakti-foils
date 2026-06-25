@@ -24,7 +24,7 @@
         <!-- Common library — exclude Servlet/JPA transitive deps that conflict with WebFlux -->
         <dependency>
             <groupId>com.durgashakti</groupId>
-            <artifactId>durgashakti-core</artifactId>
+            <artifactId>shared-core</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>

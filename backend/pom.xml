@@ -19,7 +19,7 @@
     <description>E-commerce backend for DurgaShakti Foils, migrated from Python FastAPI to Java Spring Boot Microservices.</description>
 
     <modules>
-        <module>durgashakti-core</module>
+        <module>shared-core</module>
         <module>api-gateway</module>
         <module>auth-service</module>
         <module>user-service</module>
@@ -27,7 +27,7 @@
         <module>order-service</module>
         <module>admin-service</module>
         <module>email-service</module>
-        <module>durgashakti-backend-service</module>
+        <module>monolith-service</module>
     </modules>
 
     <properties>
@@ -54,7 +54,7 @@
             <!-- Internal common library -->
             <dependency>
                 <groupId>com.durgashakti</groupId>
-                <artifactId>durgashakti-core</artifactId>
+                <artifactId>shared-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

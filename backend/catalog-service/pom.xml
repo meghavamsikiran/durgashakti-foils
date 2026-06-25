@@ -32,7 +32,7 @@
         </dependency>
         <dependency>
             <groupId>com.durgashakti</groupId>
-            <artifactId>durgashakti-core</artifactId>
+            <artifactId>shared-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>

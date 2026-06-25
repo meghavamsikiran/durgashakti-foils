@@ -18,7 +18,7 @@
         <!-- Internal common library -->
         <dependency>
             <groupId>com.durgashakti</groupId>
-            <artifactId>durgashakti-core</artifactId>
+            <artifactId>shared-core</artifactId>
         </dependency>
 
         <!-- Spring Boot Starters -->

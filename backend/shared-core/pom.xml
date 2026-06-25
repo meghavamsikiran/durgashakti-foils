@@ -10,7 +10,7 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>durgashakti-core</artifactId>
+    <artifactId>shared-core</artifactId>
     <name>DurgaShakti Core Library</name>
     <description>Shared entities, DTOs, JWT utilities, and exception handling used by all microservices.</description>
 
