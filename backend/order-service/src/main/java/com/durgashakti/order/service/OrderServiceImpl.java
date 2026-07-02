@@ -99,7 +99,7 @@ public class OrderServiceImpl implements OrderService {
             Product product = productRepository.findByIdWithLock(productId)
                     .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Product not found: " + productId));
 
-            int requestedQty = ((Number) item.getOrDefault("quantity", 1)).intValue();
+            int requestedQty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 1)));
             if (product.getStockQuantity() < requestedQty) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Product " + product.getName() + " is out of stock or has insufficient quantity.");
             }
@@ -124,7 +124,7 @@ public class OrderServiceImpl implements OrderService {
             try {
                 Map<String, Object> valResult = couponService.validateCoupons(userId, couponCodes, subtotal);
                 if (Boolean.TRUE.equals(valResult.get("valid"))) {
-                    discount = ((Number) valResult.get("discount_amount")).doubleValue();
+                    discount = Double.parseDouble(String.valueOf(valResult.get("discount_amount")));
                     if (valResult.get("applied_coupons") instanceof List) {
                         List<Map<String, Object>> applied = (List<Map<String, Object>>) valResult.get("applied_coupons");
                         for (Map<String, Object> cMap : applied) {
@@ -155,10 +155,10 @@ public class OrderServiceImpl implements OrderService {
                 enableFreeShipping = !Boolean.FALSE.equals(config.get("enableFreeShipping"));
                 
                 if (config.get("freeShippingThreshold") != null) {
-                    freeShippingThreshold = ((Number) config.get("freeShippingThreshold")).doubleValue();
+                    freeShippingThreshold = Double.parseDouble(String.valueOf(config.get("freeShippingThreshold")));
                 }
                 if (config.get("defaultShippingCharge") != null) {
-                    defaultShippingCharge = ((Number) config.get("defaultShippingCharge")).doubleValue();
+                    defaultShippingCharge = Double.parseDouble(String.valueOf(config.get("defaultShippingCharge")));
                 }
                 shippingZonesEnabled = Boolean.TRUE.equals(config.get("shippingZonesEnabled"));
                 if (config.get("zones") != null && config.get("zones") instanceof List) {
@@ -192,7 +192,7 @@ public class OrderServiceImpl implements OrderService {
                         if (matchedZone.isPresent()) {
                             Object chargeObj = matchedZone.get().get("charge");
                             if (chargeObj != null) {
-                                baseShippingCharge = ((Number) chargeObj).doubleValue();
+                                baseShippingCharge = Double.parseDouble(String.valueOf(chargeObj));
                             }
                         }
                     }
@@ -301,7 +301,7 @@ public class OrderServiceImpl implements OrderService {
             Object pIdObj = item.get("product_id");
             if (pIdObj != null) {
                 UUID productId = UUID.fromString(pIdObj.toString());
-                int qty = ((Number) item.getOrDefault("quantity", 1)).intValue();
+                int qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 1)));
                 productRepository.findById(productId).ifPresent(p -> {
                     p.setStockQuantity(p.getStockQuantity() + qty);
                     productRepository.save(p);
@@ -577,8 +577,8 @@ public class OrderServiceImpl implements OrderService {
         if (order.getShippingAddress() != null && order.getShippingAddress().get("shipping_metadata") instanceof Map) {
             metadata = (Map<String, Object>) order.getShippingAddress().get("shipping_metadata");
         }
-        double originalSubtotal = metadata.get("subtotal") != null ? ((Number) metadata.get("subtotal")).doubleValue() : order.getTotalAmount().doubleValue();
-        double originalDiscount = metadata.get("discount_amount") != null ? ((Number) metadata.get("discount_amount")).doubleValue() : 0.0;
+        double originalSubtotal = metadata.get("subtotal") != null ? Double.parseDouble(String.valueOf(metadata.get("subtotal"))) : order.getTotalAmount().doubleValue();
+        double originalDiscount = metadata.get("discount_amount") != null ? Double.parseDouble(String.valueOf(metadata.get("discount_amount"))) : 0.0;
 
         List<Map<String, Object>> updatedItems = new ArrayList<>();
         boolean anyUpdated = false;
@@ -593,8 +593,8 @@ public class OrderServiceImpl implements OrderService {
             }
 
             if (matched != null) {
-                int retQty = ((Number) matched.getOrDefault("quantity", item.getOrDefault("quantity", 1))).intValue();
-                int originalQty = ((Number) item.getOrDefault("quantity", 1)).intValue();
+                int retQty = (int) Double.parseDouble(String.valueOf(matched.getOrDefault("quantity", item.getOrDefault("quantity", 1))));
+                int originalQty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 1)));
                 if (retQty <= 0 || retQty > originalQty) {
                     throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid return quantity for " + item.get("product_name"));
                 }
@@ -614,7 +614,7 @@ public class OrderServiceImpl implements OrderService {
                 auditTimeline.add(audit);
                 item.put("audit_timeline", auditTimeline);
 
-                double price = ((Number) item.getOrDefault("price", 0.0)).doubleValue();
+                double price = Double.parseDouble(String.valueOf(item.getOrDefault("price", 0.0)));
                 double returnedItemSubtotal = price * retQty;
                 double couponDiscountShare = 0.0;
                 if (originalSubtotal > 0) {

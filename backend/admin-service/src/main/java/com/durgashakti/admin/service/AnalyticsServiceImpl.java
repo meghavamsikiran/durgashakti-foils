@@ -234,18 +234,16 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
         Map<String, Object> topPerformer = null;
         if (topPerformerProd != null) {
-            topPerformer = Map.<String, Object>of(
-                    "name", topPerformerProd.getName(),
-                    "revenue", Math.round(topPerformerRevenue * 100.0) / 100.0
-            );
+            topPerformer = new HashMap<>();
+            topPerformer.put("name", topPerformerProd.getName());
+            topPerformer.put("revenue", Math.round(topPerformerRevenue * 100.0) / 100.0);
         }
 
         Map<String, Object> fastestMover = null;
         if (fastestMoverProd != null) {
-            fastestMover = Map.<String, Object>of(
-                    "name", fastestMoverProd.getName(),
-                    "units_sold", fastestMoverProd.getUnitsSold() != null ? fastestMoverProd.getUnitsSold() : 0
-            );
+            fastestMover = new HashMap<>();
+            fastestMover.put("name", fastestMoverProd.getName());
+            fastestMover.put("units_sold", fastestMoverProd.getUnitsSold() != null ? fastestMoverProd.getUnitsSold() : 0);
         }
 
         double salesVelocity = Math.round((totalUnitsSold / 30.0) * 100.0) / 100.0;
@@ -301,7 +299,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             if (REVENUE_PAYMENT_STATUSES.contains(pStatus) && o.getItems() != null) {
                 for (Map<String, Object> item : o.getItems()) {
                     String name = String.valueOf(item.getOrDefault("product_name", item.getOrDefault("name", "Unknown Product")));
-                    int qty = ((Number) item.getOrDefault("quantity", 0)).intValue();
+                    int qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 0)));
                     bestSellersCounts.put(name, bestSellersCounts.getOrDefault(name, 0) + qty);
                 }
             }
@@ -317,13 +315,15 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         List<Map<String, Object>> inventory = allProducts.stream()
                 .sorted(Comparator.comparingInt(p -> p.getStockQuantity() != null ? p.getStockQuantity() : 0))
                 .limit(50)
-                .map(p -> Map.<String, Object>of(
-                        "id", p.getId().toString(),
-                        "name", p.getName(),
-                        "sku", p.getBatchNo() != null ? p.getBatchNo() : (p.getVariantSku() != null ? p.getVariantSku() : "—"),
-                        "stock_left", p.getStockQuantity() != null ? p.getStockQuantity() : 0,
-                        "units_sold", p.getUnitsSold() != null ? p.getUnitsSold() : 0
-                ))
+                .map(p -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", p.getId().toString());
+                    map.put("name", p.getName());
+                    map.put("sku", p.getBatchNo() != null ? p.getBatchNo() : (p.getVariantSku() != null ? p.getVariantSku() : "—"));
+                    map.put("stock_left", p.getStockQuantity() != null ? p.getStockQuantity() : 0);
+                    map.put("units_sold", p.getUnitsSold() != null ? p.getUnitsSold() : 0);
+                    return map;
+                })
                 .collect(Collectors.toList());
 
         // Revenue Trend Chart grouping
@@ -397,8 +397,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             if (REVENUE_PAYMENT_STATUSES.contains(pStatus) && o.getItems() != null) {
                 for (Map<String, Object> item : o.getItems()) {
                     String pid = String.valueOf(item.get("product_id"));
-                    int qty = ((Number) item.getOrDefault("quantity", 0)).intValue();
-                    double price = ((Number) item.getOrDefault("price", 0.0)).doubleValue();
+                    int qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 0)));
+                    double price = Double.parseDouble(String.valueOf(item.getOrDefault("price", 0.0)));
                     
                     String cat = "Uncategorized";
                     if (prodCategoryMap.containsKey(pid)) {
