@@ -722,6 +722,34 @@ public class OrderServiceImpl implements OrderService {
                     throw new ApiException(HttpStatus.BAD_REQUEST, "Item is not approved for return or exchange");
                 }
 
+                List<Map<String, Object>> validationTimeline = (List<Map<String, Object>>) item.get("audit_timeline");
+                OffsetDateTime approvedAt = null;
+                if (validationTimeline != null) {
+                    for (Map<String, Object> entry : validationTimeline) {
+                        String st = String.valueOf(entry.get("status"));
+                        if ("RETURN_APPROVED".equalsIgnoreCase(st) || "EXCHANGE_APPROVED".equalsIgnoreCase(st)) {
+                            Object tsVal = entry.get("timestamp");
+                            if (tsVal != null) {
+                                try {
+                                    approvedAt = OffsetDateTime.parse(tsVal.toString());
+                                } catch (Exception e) {
+                                    log.warn("Failed to parse timeline timestamp: {}", tsVal);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (approvedAt == null) {
+                    approvedAt = order.getUpdatedAt() != null ? order.getUpdatedAt() : order.getCreatedAt();
+                }
+
+                if (approvedAt != null) {
+                    long daysDiff = java.time.temporal.ChronoUnit.DAYS.between(approvedAt, OffsetDateTime.now());
+                    if (daysDiff > 3) {
+                        throw new ApiException(HttpStatus.BAD_REQUEST, "Self-shipping deadline has expired (3 days max limit from approval). Refund/exchange cannot be processed.");
+                    }
+                }
+
                 String invoiceUrl = null;
                 if (invoice != null && !invoice.isEmpty()) {
                     String contentType = invoice.getContentType();

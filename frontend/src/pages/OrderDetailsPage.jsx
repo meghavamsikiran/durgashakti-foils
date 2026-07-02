@@ -1821,7 +1821,7 @@ const OrderDetailsPage = () => {
                 <div className="bg-amber-50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 text-[10px] rounded-xl p-3 border border-amber-100/60 dark:border-amber-900/30 flex gap-2 items-start font-semibold">
                   <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <p className="leading-normal">
-                    <strong>Self-Shipping Deadline:</strong> Please ship the item and submit your courier details within <strong>7 days</strong> of return approval.
+                    <strong>Self-Shipping Deadline:</strong> Please ship the item and submit your courier details within <strong>3 days</strong> of return approval.
                   </p>
                 </div>
 
