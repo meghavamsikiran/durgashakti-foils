@@ -46,6 +46,7 @@ const AnalyticsPage = () => {
   const [customEnd, setCustomEnd] = useState('');
   const { startProgress, updateProgress, finishProgress } = useProgress();
 
+  // eslint-disable-next-line no-unused-vars
   const isFirstLoad = useRef(true);
 
   const load = useCallback(async () => {

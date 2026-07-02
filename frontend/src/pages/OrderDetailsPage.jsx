@@ -30,6 +30,7 @@ const OrderDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { startProgress, updateProgress, finishProgress } = useProgress();
+  // eslint-disable-next-line no-unused-vars
   const { addToCart, clearCart } = useCart();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
