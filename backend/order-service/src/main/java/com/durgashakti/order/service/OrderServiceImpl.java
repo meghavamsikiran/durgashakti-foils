@@ -4,6 +4,7 @@ import com.durgashakti.common.entity.*;
 import com.durgashakti.common.exception.ApiException;
 import com.durgashakti.order.dto.*;
 import com.durgashakti.order.repository.*;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -315,9 +316,45 @@ public class OrderServiceImpl implements OrderService {
         }
 
         try {
-            log.info("Received Razorpay Webhook event verified successfully.");
+            log.info("Received verified Razorpay Webhook event.");
+            JSONObject json = new JSONObject(eventBody);
+            String event = json.optString("event");
+            
+            if ("payment.captured".equals(event) || "order.paid".equals(event)) {
+                JSONObject payload = json.optJSONObject("payload");
+                if (payload != null) {
+                    JSONObject payment = payload.optJSONObject("payment");
+                    JSONObject entity = payment != null ? payment.optJSONObject("entity") : null;
+                    if (entity != null) {
+                        String rzpOrderId = entity.optString("order_id");
+                        String paymentId = entity.optString("id");
+                        String status = entity.optString("status");
+                        
+                        if (rzpOrderId != null && !rzpOrderId.isEmpty()) {
+                            Order order = orderRepository.findByRazorpayOrderId(rzpOrderId)
+                                    .orElse(null);
+                            
+                            if (order != null) {
+                                String payStatus = order.getPaymentStatus() != null ? order.getPaymentStatus().toLowerCase() : "";
+                                boolean isPaid = "paid".equals(payStatus) || "completed".equals(payStatus);
+                                
+                                if (!isPaid && ("captured".equalsIgnoreCase(status) || "authorized".equalsIgnoreCase(status))) {
+                                    order.setPaymentStatus("paid");
+                                    order.setOrderStatus("placed");
+                                    order.setRazorpayPaymentId(paymentId);
+                                    order.setUpdatedAt(OffsetDateTime.now());
+                                    orderRepository.save(order);
+                                    triggerOrderReceiptEmail(order);
+                                    log.info("Order {} marked as paid via webhook.", order.getOrderNumber());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         } catch (Exception e) {
-            log.error("Failed to parse Razorpay webhook body: {}", e.getMessage());
+            log.error("Failed to parse or process Razorpay webhook body: {}", e.getMessage());
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Webhook processing failed: " + e.getMessage());
         }
     }
 

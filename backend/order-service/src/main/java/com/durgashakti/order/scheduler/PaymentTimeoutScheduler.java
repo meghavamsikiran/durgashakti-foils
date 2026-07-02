@@ -4,6 +4,7 @@ import com.durgashakti.common.entity.Order;
 import com.durgashakti.common.entity.Product;
 import com.durgashakti.order.repository.OrderServiceRepository;
 import com.durgashakti.order.repository.OrderProductRepository;
+import com.durgashakti.order.service.PaymentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,10 +23,14 @@ public class PaymentTimeoutScheduler {
 
     private final OrderServiceRepository orderRepository;
     private final OrderProductRepository productRepository;
+    private final PaymentService paymentService;
 
-    public PaymentTimeoutScheduler(OrderServiceRepository orderRepository, OrderProductRepository productRepository) {
+    public PaymentTimeoutScheduler(OrderServiceRepository orderRepository, 
+                                   OrderProductRepository productRepository,
+                                   PaymentService paymentService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.paymentService = paymentService;
     }
 
     @Scheduled(fixedDelay = 60000)
@@ -38,9 +43,34 @@ public class PaymentTimeoutScheduler {
             return;
         }
 
-        log.info("Found {} orders in pending payment status for more than 15 minutes. Initiating expiration cancellation...", expiredOrders.size());
+        log.info("Found {} orders in pending payment status for more than 15 minutes. Initiating expiration checks...", expiredOrders.size());
 
         for (Order order : expiredOrders) {
+            // Check if the order was paid on Razorpay first to prevent cancelling successful payments
+            String rzpOrderId = order.getRazorpayOrderId();
+            if (rzpOrderId != null && !rzpOrderId.trim().isEmpty()) {
+                try {
+                    Map<String, Object> paymentEntity = paymentService.fetchSuccessfulOrderPayment(rzpOrderId);
+                    if (paymentEntity != null) {
+                        String status = String.valueOf(paymentEntity.get("status"));
+                        if ("captured".equalsIgnoreCase(status) || "authorized".equalsIgnoreCase(status)) {
+                            order.setPaymentStatus("paid");
+                            order.setOrderStatus("placed");
+                            if (paymentEntity.get("id") != null) {
+                                order.setRazorpayPaymentId(String.valueOf(paymentEntity.get("id")));
+                            }
+                            order.setUpdatedAt(OffsetDateTime.now());
+                            orderRepository.save(order);
+                            log.info("Order {} was paid in Razorpay. Auto-reconciled during timeout check instead of cancelling.", order.getOrderNumber());
+                            continue; // Skip cancellation
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to check Razorpay status for order {} during timeout check: {}", order.getOrderNumber(), e.getMessage());
+                }
+            }
+
+            // If not paid, proceed to cancel
             order.setOrderStatus("cancelled");
             order.setPaymentStatus("failed");
             order.setAdminMessage("Payment session expired (15-minute timeout).");
@@ -64,6 +94,7 @@ public class PaymentTimeoutScheduler {
             }
 
             orderRepository.save(order);
+            log.info("Order {} cancelled due to 15-minute payment session timeout.", order.getOrderNumber());
         }
     }
 }
