@@ -2,8 +2,7 @@ package com.durgashakti.order.service;
 
 import com.durgashakti.common.entity.*;
 import com.durgashakti.common.exception.ApiException;
-import com.durgashakti.order.dto.OrderCreateRequest;
-import com.durgashakti.order.dto.PaymentVerifyRequest;
+import com.durgashakti.order.dto.*;
 import com.durgashakti.order.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -239,14 +238,17 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order verifyPayment(UUID userId, PaymentVerifyRequest req) {
-        Order order = orderRepository.findById(UUID.fromString(req.getRazorpayOrderId()))
+        Order order = orderRepository.findByRazorpayOrderId(req.getRazorpayOrderId())
                 .orElse(null);
 
         if (order == null) {
-            order = orderRepository.findAll().stream()
-                    .filter(o -> req.getRazorpayOrderId().equals(o.getRazorpayOrderId()))
-                    .findFirst()
-                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Order not found with razorpay order ID: " + req.getRazorpayOrderId()));
+            try {
+                order = orderRepository.findById(UUID.fromString(req.getRazorpayOrderId())).orElse(null);
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        if (order == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Order not found with razorpay order ID: " + req.getRazorpayOrderId());
         }
 
         boolean valid = paymentService.verifySignature(req.getRazorpayOrderId(), req.getRazorpayPaymentId(), req.getRazorpaySignature());
@@ -340,5 +342,118 @@ public class OrderServiceImpl implements OrderService {
         } catch (Exception e) {
             log.error("Failed to send order placement email for {}: {}", order.getOrderNumber(), e.getMessage());
         }
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> createRazorpayOrderForExistingOrder(UUID userId, ExistingOrderPaymentRequest req) {
+        UUID orderId = UUID.fromString(req.getOrderId());
+        Order order = orderRepository.findByIdAndUserId(orderId, userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Order not found"));
+
+        String payStatus = order.getPaymentStatus() != null ? order.getPaymentStatus().toLowerCase() : "";
+        if ("paid".equals(payStatus) || "completed".equals(payStatus)) {
+            return Map.of(
+                    "success", true,
+                    "message", "Order is already paid",
+                    "order", order,
+                    "razorpay_order_id", order.getRazorpayOrderId() != null ? order.getRazorpayOrderId() : ""
+            );
+        }
+
+        String ordStatus = order.getOrderStatus() != null ? order.getOrderStatus().toLowerCase() : "";
+        if (List.of("cancelled", "refunded", "return_approved", "delivered").contains(ordStatus)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "This order can no longer be paid online");
+        }
+
+        String razorpayOrderId = order.getRazorpayOrderId();
+        if (razorpayOrderId == null || razorpayOrderId.trim().isEmpty()) {
+            try {
+                double totalAmount = order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0;
+                Map<String, Object> rzpOrder = paymentService.createRazorpayOrder(order.getOrderNumber(), totalAmount);
+                razorpayOrderId = String.valueOf(rzpOrder.get("id"));
+            } catch (Exception e) {
+                log.warn("Failed to create Razorpay order for existing order {}: {}", order.getOrderNumber(), e.getMessage());
+                razorpayOrderId = "order_mock_" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
+            }
+        }
+
+        order.setPaymentMethod("online");
+        order.setPaymentStatus("pending");
+        order.setRazorpayOrderId(razorpayOrderId);
+        order.setUpdatedAt(OffsetDateTime.now());
+        Order saved = orderRepository.save(order);
+
+        return Map.of(
+                "success", true,
+                "message", "Razorpay order created successfully",
+                "order", saved,
+                "razorpay_order_id", razorpayOrderId
+        );
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> syncRazorpayPayment(UUID userId, RazorpaySyncRequest req) {
+        Optional<Order> orderOpt = Optional.empty();
+        if (req.getOrderId() != null && !req.getOrderId().trim().isEmpty()) {
+            try {
+                orderOpt = orderRepository.findByIdAndUserId(UUID.fromString(req.getOrderId()), userId);
+            } catch (IllegalArgumentException ignored) {}
+        }
+        if (orderOpt.isEmpty() && req.getOrderNumber() != null && !req.getOrderNumber().trim().isEmpty()) {
+            orderOpt = orderRepository.findAll().stream()
+                    .filter(o -> userId.equals(o.getUserId()) && req.getOrderNumber().equalsIgnoreCase(o.getOrderNumber()))
+                    .findFirst();
+        }
+        if (orderOpt.isEmpty() && req.getRazorpayOrderId() != null && !req.getRazorpayOrderId().trim().isEmpty()) {
+            orderOpt = orderRepository.findByRazorpayOrderId(req.getRazorpayOrderId())
+                    .filter(o -> userId.equals(o.getUserId()));
+        }
+
+        if (orderOpt.isEmpty()) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Order not found");
+        }
+
+        Order order = orderOpt.get();
+
+        String payStatus = order.getPaymentStatus() != null ? order.getPaymentStatus().toLowerCase() : "";
+        boolean wasPaid = "paid".equals(payStatus) || "completed".equals(payStatus);
+
+        boolean reconciled = false;
+        if (!wasPaid) {
+            Map<String, Object> paymentEntity = null;
+            if (req.getRazorpayPaymentId() != null && !req.getRazorpayPaymentId().trim().isEmpty()) {
+                paymentEntity = paymentService.fetchPayment(req.getRazorpayPaymentId());
+            }
+            if (paymentEntity == null && order.getRazorpayOrderId() != null) {
+                paymentEntity = paymentService.fetchSuccessfulOrderPayment(order.getRazorpayOrderId());
+            }
+
+            if (paymentEntity != null) {
+                String status = String.valueOf(paymentEntity.get("status"));
+                if ("captured".equalsIgnoreCase(status) || "authorized".equalsIgnoreCase(status)) {
+                    order.setPaymentStatus("paid");
+                    order.setOrderStatus("placed");
+                    if (paymentEntity.get("id") != null) {
+                        order.setRazorpayPaymentId(String.valueOf(paymentEntity.get("id")));
+                    }
+                    order.setUpdatedAt(OffsetDateTime.now());
+                    orderRepository.save(order);
+                    triggerOrderReceiptEmail(order);
+                    reconciled = true;
+                }
+            }
+        }
+
+        return Map.of(
+                "success", reconciled || wasPaid,
+                "reconciled", reconciled && !wasPaid,
+                "payment_status", order.getPaymentStatus(),
+                "order_status", order.getOrderStatus(),
+                "order_id", order.getId().toString(),
+                "order_number", order.getOrderNumber(),
+                "razorpay_payment_id", order.getRazorpayPaymentId() != null ? order.getRazorpayPaymentId() : ""
+        );
     }
 }

@@ -2,8 +2,7 @@ package com.durgashakti.order.controller;
 
 import com.durgashakti.common.entity.Order;
 import com.durgashakti.common.exception.ApiException;
-import com.durgashakti.order.dto.OrderCreateRequest;
-import com.durgashakti.order.dto.PaymentVerifyRequest;
+import com.durgashakti.order.dto.*;
 import com.durgashakti.order.service.InvoiceService;
 import com.durgashakti.order.service.OrderService;
 import org.slf4j.Logger;
@@ -112,6 +111,40 @@ public class OrderController {
             log.error("Failed to process Razorpay webhook", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("status", "error", "message", "Webhook processing failed"));
+        }
+    }
+
+    @PostMapping("/payment/razorpay/create-for-order")
+    public ResponseEntity<?> createRazorpayOrderForExistingOrder(
+            @RequestBody ExistingOrderPaymentRequest req,
+            Authentication authentication) {
+        try {
+            UUID userId = UUID.fromString((String) authentication.getPrincipal());
+            Map<String, Object> res = orderService.createRazorpayOrderForExistingOrder(userId, req);
+            return ResponseEntity.ok(res);
+        } catch (ApiException e) {
+            return ResponseEntity.status(e.getStatus()).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to create Razorpay order for existing order", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An unexpected error occurred while setting up payment. Please try again."));
+        }
+    }
+
+    @PostMapping("/payment/razorpay/sync")
+    public ResponseEntity<?> syncRazorpayPayment(
+            @RequestBody RazorpaySyncRequest req,
+            Authentication authentication) {
+        try {
+            UUID userId = UUID.fromString((String) authentication.getPrincipal());
+            Map<String, Object> res = orderService.syncRazorpayPayment(userId, req);
+            return ResponseEntity.ok(res);
+        } catch (ApiException e) {
+            return ResponseEntity.status(e.getStatus()).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to sync payment status", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An unexpected error occurred while syncing payment. Please try again."));
         }
     }
 }

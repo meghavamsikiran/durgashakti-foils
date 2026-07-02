@@ -14,6 +14,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -97,6 +98,53 @@ public class PaymentServiceImpl implements PaymentService {
             log.error("Webhook signature verification failed: {}", e.getMessage());
             return false;
         }
+    }
+
+    @Override
+    public Map<String, Object> fetchPayment(String paymentId) {
+        if (isFakeKey(keyId)) {
+            return Map.of("status", "captured", "id", paymentId);
+        }
+        try {
+            RazorpayClient client = new RazorpayClient(keyId, keySecret);
+            com.razorpay.Payment payment = client.payments.fetch(paymentId);
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", payment.get("id"));
+            map.put("status", payment.get("status"));
+            map.put("order_id", payment.get("order_id"));
+            map.put("amount", payment.get("amount"));
+            return map;
+        } catch (RazorpayException e) {
+            log.error("Failed to fetch Razorpay payment {}: {}", paymentId, e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    public Map<String, Object> fetchSuccessfulOrderPayment(String razorpayOrderId) {
+        if (isFakeKey(keyId)) {
+            return Map.of("status", "captured", "id", "pay_mock_" + UUID.randomUUID().toString().replace("-", "").substring(0, 14));
+        }
+        try {
+            RazorpayClient client = new RazorpayClient(keyId, keySecret);
+            List<com.razorpay.Payment> payments = client.orders.fetchPayments(razorpayOrderId);
+            if (payments != null) {
+                for (com.razorpay.Payment p : payments) {
+                    String status = p.get("status");
+                    if ("captured".equalsIgnoreCase(status) || "authorized".equalsIgnoreCase(status)) {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("id", p.get("id"));
+                        map.put("status", p.get("status"));
+                        map.put("order_id", p.get("order_id"));
+                        map.put("amount", p.get("amount"));
+                        return map;
+                    }
+                }
+            }
+        } catch (RazorpayException e) {
+            log.error("Failed to fetch Razorpay payments for order {}: {}", razorpayOrderId, e.getMessage());
+        }
+        return null;
     }
 
     private boolean isFakeKey(String key) {

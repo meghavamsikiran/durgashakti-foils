@@ -15,6 +15,7 @@ import java.util.UUID;
 public interface OrderServiceRepository extends JpaRepository<Order, UUID> {
     List<Order> findByUserIdOrderByCreatedAtDesc(UUID userId);
     Optional<Order> findByIdAndUserId(UUID id, UUID userId);
+    Optional<Order> findByRazorpayOrderId(String razorpayOrderId);
 
     @Query("SELECT o FROM Order o WHERE o.paymentMethod = 'online' AND o.paymentStatus = 'pending' AND o.orderStatus IN ('pending_payment', 'confirmed') AND o.createdAt < :cutoff")
     List<Order> findExpiredPaymentOrders(@Param("cutoff") OffsetDateTime cutoff);

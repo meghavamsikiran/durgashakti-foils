@@ -508,7 +508,7 @@ export const useCheckout = () => {
           currency: "INR",
           name: "DurgaShakti Foils",
           description: `Order #${orderNumber}`,
-          image: "/logo-durga.webp",
+          image: window.location.origin + "/favicon.webp",
           theme: {
             color: '#006e1b',
             hide_topbar: false,

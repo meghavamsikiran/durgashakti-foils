@@ -425,6 +425,7 @@ const Cart = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-[#131B17] border border-[#26322B] max-w-sm w-full p-6 rounded-xl shadow-2xl relative text-white"
+              data-force-dark
               onClick={(e) => e.stopPropagation()}
             >
               <button 
