@@ -19,7 +19,10 @@ public class AnalyticsController {
 
     @GetMapping({"/analytics", "/admin/analytics/summary"})
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<Map<String, Object>> getDashboardSummary() {
-        return ResponseEntity.ok(analyticsService.getDashboardSummary());
+    public ResponseEntity<Map<String, Object>> getDashboardSummary(
+            @RequestParam(value = "timeframe", required = false) String timeframe,
+            @RequestParam(value = "start_date", required = false) String startDate,
+            @RequestParam(value = "end_date", required = false) String endDate) {
+        return ResponseEntity.ok(analyticsService.getDashboardSummary(timeframe, startDate, endDate));
     }
 }
