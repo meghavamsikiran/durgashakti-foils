@@ -60,6 +60,14 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         List<Product> allProducts = productRepository.findAll();
         List<User> allUsers = userRepository.findAll();
         List<AuditLog> allAuditLogs = auditLogRepository.findAll();
+        log.info("Loaded {} orders, {} products, {} users, {} audit logs", allOrders.size(), allProducts.size(), allUsers.size(), allAuditLogs.size());
+        
+        // Debug: log first order's payment_status and order_status if available
+        if (!allOrders.isEmpty()) {
+            Order firstOrder = allOrders.get(0);
+            log.info("Sample order: status={}, paymentStatus={}, totalAmount={}", 
+                firstOrder.getOrderStatus(), firstOrder.getPaymentStatus(), firstOrder.getTotalAmount());
+        }
 
         OffsetDateTime now = OffsetDateTime.now();
         OffsetDateTime startDate = parseDateTime(startDateStr);
