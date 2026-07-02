@@ -56,6 +56,7 @@ public class SecurityConfig {
                 // Actuator/Health
                 .requestMatchers("/actuator/**", "/api/health").permitAll()
                 // Admin Area Gates
+                .requestMatchers("/api/superadmin/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/api/admin/**", "/api/analytics/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 // Everything else (user, cart, orders, reviews) needs authentication
                 .anyRequest().authenticated()

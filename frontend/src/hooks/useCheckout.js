@@ -295,7 +295,7 @@ export const useCheckout = () => {
   };
 
   const validateShipping = async () => {
-    const { full_name, phone, address_line1, city, state, pincode } = shippingInfo;
+    const { full_name, phone, alternate_phone, address_line1, city, state, pincode } = shippingInfo;
     
     // Ensure that if saved addresses exist, the customer has picked one, or filled out the new address form
     if (savedAddresses?.length > 0 && !selectedAddressId && !full_name?.trim()) {
