@@ -27,4 +27,10 @@ public class CouponController {
         Map<String, Object> result = couponService.validateCoupon(userId, req.getCode(), req.getCartItems(), req.getCartTotal());
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/coupons/eligible")
+    public ResponseEntity<Map<String, Object>> getEligibleCoupons(Authentication authentication) {
+        UUID userId = UUID.fromString((String) authentication.getPrincipal());
+        return ResponseEntity.ok(couponService.getEligibleCoupons(userId));
+    }
 }
