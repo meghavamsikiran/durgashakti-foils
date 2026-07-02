@@ -24,6 +24,9 @@ WORKDIR /app
 # Copy the combined executable jar from builder stage
 COPY --from=builder /app/monolith-service/target/monolith-service-1.0.0.jar app.jar
 
+# Copy static uploads folder
+COPY uploads/ uploads/
+
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

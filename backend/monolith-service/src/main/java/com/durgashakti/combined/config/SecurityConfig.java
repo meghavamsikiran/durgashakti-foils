@@ -55,6 +55,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/email/send").permitAll()
                 // Actuator/Health
                 .requestMatchers("/actuator/**", "/api/health").permitAll()
+                // Static Uploads
+                .requestMatchers("/uploads/**").permitAll()
                 // Admin Area Gates
                 .requestMatchers("/api/superadmin/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/api/admin/**", "/api/analytics/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
