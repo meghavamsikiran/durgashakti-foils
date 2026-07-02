@@ -1,6 +1,7 @@
 package com.durgashakti.order.controller;
 
 import com.durgashakti.common.entity.Order;
+import com.durgashakti.common.exception.ApiException;
 import com.durgashakti.order.dto.OrderCreateRequest;
 import com.durgashakti.order.dto.PaymentVerifyRequest;
 import com.durgashakti.order.service.InvoiceService;
@@ -38,10 +39,12 @@ public class OrderController {
             UUID userId = UUID.fromString((String) authentication.getPrincipal());
             Order order = orderService.createOrder(userId, req);
             return ResponseEntity.ok(order);
+        } catch (ApiException e) {
+            return ResponseEntity.status(e.getStatus()).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             log.error("Failed to create order", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Failed to place order: " + e.getMessage()));
+                    .body(Map.of("message", "An unexpected error occurred while placing your order. Please try again."));
         }
     }
 
@@ -51,10 +54,12 @@ public class OrderController {
             UUID userId = UUID.fromString((String) authentication.getPrincipal());
             Order order = orderService.verifyPayment(userId, req);
             return ResponseEntity.ok(order);
+        } catch (ApiException e) {
+            return ResponseEntity.status(e.getStatus()).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             log.error("Failed to verify payment", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Payment verification failed: " + e.getMessage()));
+                    .body(Map.of("message", "An unexpected error occurred during payment verification. Please contact support."));
         }
     }
 
@@ -64,10 +69,12 @@ public class OrderController {
             UUID userId = UUID.fromString((String) authentication.getPrincipal());
             Order order = orderService.cancelOrder(userId, orderId);
             return ResponseEntity.ok(order);
+        } catch (ApiException e) {
+            return ResponseEntity.status(e.getStatus()).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             log.error("Failed to cancel order", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Cancellation failed: " + e.getMessage()));
+                    .body(Map.of("message", "An unexpected error occurred while cancelling the order. Please try again."));
         }
     }
 
@@ -104,7 +111,7 @@ public class OrderController {
         } catch (Exception e) {
             log.error("Failed to process Razorpay webhook", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("status", "error", "message", e.getMessage()));
+                    .body(Map.of("status", "error", "message", "Webhook processing failed"));
         }
     }
 }

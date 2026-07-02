@@ -95,8 +95,8 @@ public class Order {
     @Column(name = "tracking_number", length = 255)
     private String trackingNumber;
 
-    @Column(name = "expected_delivery_date", length = 255)
-    private String expectedDeliveryDate;
+    @Column(name = "expected_delivery_date")
+    private OffsetDateTime expectedDeliveryDate;
 
     @Column(name = "shipment_status", length = 100)
     private String shipmentStatus;
@@ -215,8 +215,8 @@ public class Order {
     public String getTrackingNumber() { return trackingNumber; }
     public void setTrackingNumber(String trackingNumber) { this.trackingNumber = trackingNumber; }
 
-    public String getExpectedDeliveryDate() { return expectedDeliveryDate; }
-    public void setExpectedDeliveryDate(String expectedDeliveryDate) { this.expectedDeliveryDate = expectedDeliveryDate; }
+    public OffsetDateTime getExpectedDeliveryDate() { return expectedDeliveryDate; }
+    public void setExpectedDeliveryDate(OffsetDateTime expectedDeliveryDate) { this.expectedDeliveryDate = expectedDeliveryDate; }
 
     public String getShipmentStatus() { return shipmentStatus; }
     public void setShipmentStatus(String shipmentStatus) { this.shipmentStatus = shipmentStatus; }
