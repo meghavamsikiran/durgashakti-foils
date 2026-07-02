@@ -24,7 +24,7 @@ public class CouponController {
             @RequestBody CouponValidateRequest req,
             Authentication authentication) {
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
-        Map<String, Object> result = couponService.validateCoupon(userId, req.getCode(), req.getCartItems(), req.getCartTotal());
+        Map<String, Object> result = couponService.validateCoupons(userId, req.getCodes(), req.getCartSubtotal());
         return ResponseEntity.ok(result);
     }
 

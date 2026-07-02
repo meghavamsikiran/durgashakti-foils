@@ -101,16 +101,20 @@ public class OrderServiceImpl implements OrderService {
         List<String> couponCodes = req.getCouponCodes();
         List<Coupon> usedCoupons = new ArrayList<>();
         if (couponCodes != null && !couponCodes.isEmpty()) {
-            for (String code : couponCodes) {
-                try {
-                    Map<String, Object> valResult = couponService.validateCoupon(userId, code, verifiedItems, subtotal);
-                    if (Boolean.TRUE.equals(valResult.get("valid"))) {
-                        discount += ((Number) valResult.get("calculated_discount")).doubleValue();
-                        couponRepository.findByCodeIgnoreCase(code).ifPresent(usedCoupons::add);
+            try {
+                Map<String, Object> valResult = couponService.validateCoupons(userId, couponCodes, subtotal);
+                if (Boolean.TRUE.equals(valResult.get("valid"))) {
+                    discount = ((Number) valResult.get("discount_amount")).doubleValue();
+                    if (valResult.get("applied_coupons") instanceof List) {
+                        List<Map<String, Object>> applied = (List<Map<String, Object>>) valResult.get("applied_coupons");
+                        for (Map<String, Object> cMap : applied) {
+                            String codeStr = String.valueOf(cMap.get("code"));
+                            couponRepository.findByCodeIgnoreCase(codeStr).ifPresent(usedCoupons::add);
+                        }
                     }
-                } catch (Exception e) {
-                    log.warn("Coupon {} validation failed during order placement: {}", code, e.getMessage());
                 }
+            } catch (Exception e) {
+                log.warn("Coupon validation failed during order placement: {}", e.getMessage());
             }
         }
 

@@ -5,6 +5,9 @@ import com.durgashakti.order.dto.OrderCreateRequest;
 import com.durgashakti.order.dto.PaymentVerifyRequest;
 import com.durgashakti.order.service.InvoiceService;
 import com.durgashakti.order.service.OrderService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +22,8 @@ import java.util.UUID;
 @RequestMapping("/api")
 public class OrderController {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderController.class);
+
     private final OrderService orderService;
     private final InvoiceService invoiceService;
 
@@ -28,24 +33,42 @@ public class OrderController {
     }
 
     @PostMapping("/orders")
-    public ResponseEntity<Order> createOrder(@RequestBody OrderCreateRequest req, Authentication authentication) {
-        UUID userId = UUID.fromString((String) authentication.getPrincipal());
-        Order order = orderService.createOrder(userId, req);
-        return ResponseEntity.ok(order);
+    public ResponseEntity<?> createOrder(@RequestBody OrderCreateRequest req, Authentication authentication) {
+        try {
+            UUID userId = UUID.fromString((String) authentication.getPrincipal());
+            Order order = orderService.createOrder(userId, req);
+            return ResponseEntity.ok(order);
+        } catch (Exception e) {
+            log.error("Failed to create order", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Failed to place order: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/payment/razorpay/verify")
-    public ResponseEntity<Order> verifyPayment(@RequestBody PaymentVerifyRequest req, Authentication authentication) {
-        UUID userId = UUID.fromString((String) authentication.getPrincipal());
-        Order order = orderService.verifyPayment(userId, req);
-        return ResponseEntity.ok(order);
+    public ResponseEntity<?> verifyPayment(@RequestBody PaymentVerifyRequest req, Authentication authentication) {
+        try {
+            UUID userId = UUID.fromString((String) authentication.getPrincipal());
+            Order order = orderService.verifyPayment(userId, req);
+            return ResponseEntity.ok(order);
+        } catch (Exception e) {
+            log.error("Failed to verify payment", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Payment verification failed: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/orders/{orderId}/cancel")
-    public ResponseEntity<Order> cancelOrder(@PathVariable("orderId") UUID orderId, Authentication authentication) {
-        UUID userId = UUID.fromString((String) authentication.getPrincipal());
-        Order order = orderService.cancelOrder(userId, orderId);
-        return ResponseEntity.ok(order);
+    public ResponseEntity<?> cancelOrder(@PathVariable("orderId") UUID orderId, Authentication authentication) {
+        try {
+            UUID userId = UUID.fromString((String) authentication.getPrincipal());
+            Order order = orderService.cancelOrder(userId, orderId);
+            return ResponseEntity.ok(order);
+        } catch (Exception e) {
+            log.error("Failed to cancel order", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Cancellation failed: " + e.getMessage()));
+        }
     }
 
     @GetMapping("/orders")
@@ -75,7 +98,13 @@ public class OrderController {
     public ResponseEntity<Map<String, String>> processRazorpayWebhook(
             @RequestBody String body,
             @RequestHeader("X-Razorpay-Signature") String signature) {
-        orderService.processRazorpayWebhook(body, signature);
-        return ResponseEntity.ok(Map.of("status", "ok"));
+        try {
+            orderService.processRazorpayWebhook(body, signature);
+            return ResponseEntity.ok(Map.of("status", "ok"));
+        } catch (Exception e) {
+            log.error("Failed to process Razorpay webhook", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", "error", "message", e.getMessage()));
+        }
     }
 }
