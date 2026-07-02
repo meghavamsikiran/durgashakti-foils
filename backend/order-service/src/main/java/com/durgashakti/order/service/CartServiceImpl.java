@@ -31,7 +31,8 @@ public class CartServiceImpl implements CartService {
         if (cartOpt.isEmpty()) {
             return Map.of("items", List.of());
         }
-        return Map.of("items", cartOpt.get().getItems());
+        List<Map<String, Object>> items = cartOpt.get().getItems();
+        return Map.of("items", items != null ? items : List.of());
     }
 
     @Override

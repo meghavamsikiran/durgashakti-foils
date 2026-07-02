@@ -318,7 +318,7 @@ public class AuthServiceImpl implements AuthService {
         map.put("is_active", user.getIsActive());
         map.put("permissions", user.getPermissions());
         map.put("wishlist", user.getWishlist());
-        map.put("created_at", user.getCreatedAt().toString());
+        map.put("created_at", user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
         return map;
     }
 

@@ -974,7 +974,7 @@ const OrderDetailsPage = () => {
               <div className="space-y-3">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Select Items to Return</label>
                 <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1">
-                  {order.items.filter(item => !item.return_status).map((item) => {
+                  {order.items.filter(item => !item.return_status || String(item.return_status).toLowerCase() === 'none' || String(item.return_status).toLowerCase() === 'null').map((item) => {
                     const returnInfo = selectedItemsForReturn[item.product_id] || { selected: false, quantity: 1 };
                     return (
                       <div key={item.product_id} className="flex items-center justify-between p-3 border border-slate-100 dark:border-[#26322B] rounded-xl hover:bg-slate-50 dark:bg-[#26322B]/40 transition-colors">
@@ -1286,7 +1286,7 @@ const OrderDetailsPage = () => {
           const paymentStatus = (order.payment_status || '').toLowerCase();
           
           // Identify specific item return statuses
-          const returnedItems = order.items?.filter(item => item.return_status) || [];
+          const returnedItems = order.items?.filter(item => item.return_status && String(item.return_status).toLowerCase() !== 'none' && String(item.return_status).toLowerCase() !== 'null') || [];
           const hasRequested = returnedItems.some(i => i.return_status === 'RETURN_REQUESTED');
           const hasApproved = returnedItems.some(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
           const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
@@ -1553,7 +1553,7 @@ const OrderDetailsPage = () => {
                       </button>
                     </div>
 
-                    {item.return_status && (
+                    {item.return_status && String(item.return_status).toLowerCase() !== 'none' && String(item.return_status).toLowerCase() !== 'null' && (
                       <div className="mt-3 p-3 bg-slate-50 dark:bg-[#26322B]/40 border border-slate-150 rounded-xl space-y-2 max-w-md">
                         <div className="flex items-center gap-2">
                           <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
@@ -1693,7 +1693,7 @@ const OrderDetailsPage = () => {
                     View your item
                   </button>
                   
-                  {String(order.order_status || '').toLowerCase() === 'delivered' && !item.return_status && order.payment_method?.toLowerCase() !== 'cod' && (
+                  {String(order.order_status || '').toLowerCase() === 'delivered' && (!item.return_status || String(item.return_status).toLowerCase() === 'none' || String(item.return_status).toLowerCase() === 'null') && order.payment_method?.toLowerCase() !== 'cod' && (
                     <button 
                       onClick={() => setIsReturning(item.product_id)}
                       className="w-full bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:bg-[#26322B]/40 border border-slate-300 hover:border-slate-400 font-bold text-slate-700 dark:text-slate-300 text-xs px-4 py-2.5 rounded-xl shadow-sm dark:shadow-none transition-all text-center uppercase tracking-widest text-[9px]"
