@@ -217,7 +217,7 @@ public class ReviewServiceImpl implements ReviewService {
                         uploadsDir.mkdirs();
                     }
                     java.io.File dest = new java.io.File(uploadsDir, filename);
-                    file.transferTo(dest);
+                    file.transferTo(dest.getAbsoluteFile());
                 } catch (Exception e) {
                     log.error("Failed to save uploaded file {}", filename, e);
                 }

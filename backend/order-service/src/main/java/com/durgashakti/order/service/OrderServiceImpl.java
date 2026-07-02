@@ -598,7 +598,7 @@ public class OrderServiceImpl implements OrderService {
                         uploadsDir.mkdirs();
                     }
                     java.io.File dest = new java.io.File(uploadsDir, filename);
-                    file.transferTo(dest);
+                    file.transferTo(dest.getAbsoluteFile());
                 } catch (Exception e) {
                     log.error("Failed to save return image proof {}", filename, e);
                 }
@@ -742,7 +742,7 @@ public class OrderServiceImpl implements OrderService {
                             uploadsDir.mkdirs();
                         }
                         java.io.File dest = new java.io.File(uploadsDir, filename);
-                        invoice.transferTo(dest);
+                        invoice.transferTo(dest.getAbsoluteFile());
                     } catch (Exception e) {
                         log.error("Failed to save self ship invoice {}", filename, e);
                     }

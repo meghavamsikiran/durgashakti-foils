@@ -492,8 +492,24 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
               <div key={order.id} className="flex flex-col xl:flex-row justify-between items-start xl:items-center bg-[#19231F] p-6 rounded-2xl border border-[#26322B] shadow-sm hover:shadow-lg transition-shadow gap-6">
                 {/* Left Column */}
                 <div className="space-y-2 flex-1 min-w-[200px]">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-450 font-medium">
-                    <span className="font-mono">Order #{order.order_number}</span>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-455 font-medium">
+                    <span className="font-mono flex items-center gap-1.5">
+                      Order #{order.order_number}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopy(order.order_number);
+                        }}
+                        className="text-slate-450 hover:text-slate-200 transition-colors p-0.5"
+                        title="Copy order number"
+                      >
+                        {copiedOrderId === order.order_number ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </span>
                     <span>•</span>
                     <span>{order.created_at ? new Date(order.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}</span>
                   </div>
