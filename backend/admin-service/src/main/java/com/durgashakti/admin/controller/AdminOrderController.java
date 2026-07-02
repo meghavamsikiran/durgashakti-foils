@@ -39,11 +39,77 @@ public class AdminOrderController {
     }
 
     @GetMapping("/orders")
-    public ResponseEntity<Map<String, Object>> getAllOrders() {
-        List<Order> orders = adminOrderService.getAllOrders();
-        Map<String, Object> response = new java.util.HashMap<>();
-        response.put("items", orders);
-        response.put("total", orders.size());
+    public ResponseEntity<Map<String, Object>> getAllOrders(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "limit", defaultValue = "20") int limit,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "status_filter", required = false) String statusFilter,
+            @RequestParam(value = "start_date", required = false) String startDateStr,
+            @RequestParam(value = "end_date", required = false) String endDateStr,
+            @RequestParam(value = "courier", required = false) String courier,
+            @RequestParam(value = "payment_status", required = false) String paymentStatus,
+            @RequestParam(value = "payment_method", required = false) String paymentMethod) {
+
+        List<Order> allOrders = adminOrderService.getAllOrders();
+
+        List<Order> filtered = allOrders.stream()
+                .filter(o -> {
+                    if (search != null && !search.trim().isEmpty()) {
+                        String term = search.toLowerCase().trim();
+                        boolean matchNum = o.getOrderNumber() != null && o.getOrderNumber().toLowerCase().contains(term);
+                        boolean matchCust = o.getCustomerName() != null && o.getCustomerName().toLowerCase().contains(term);
+                        if (!matchNum && !matchCust) return false;
+                    }
+                    if (statusFilter != null && !statusFilter.trim().isEmpty() && !"ALL".equalsIgnoreCase(statusFilter)) {
+                        if (o.getOrderStatus() == null || !o.getOrderStatus().equalsIgnoreCase(statusFilter)) {
+                            return false;
+                        }
+                    }
+                    if (startDateStr != null && !startDateStr.trim().isEmpty()) {
+                        try {
+                            OffsetDateTime sd = OffsetDateTime.parse(startDateStr);
+                            if (o.getCreatedAt() == null || o.getCreatedAt().isBefore(sd)) return false;
+                        } catch (Exception ignored) {}
+                    }
+                    if (endDateStr != null && !endDateStr.trim().isEmpty()) {
+                        try {
+                            OffsetDateTime ed = OffsetDateTime.parse(endDateStr);
+                            if (o.getCreatedAt() == null || o.getCreatedAt().isAfter(ed)) return false;
+                        } catch (Exception ignored) {}
+                    }
+                    if (courier != null && !courier.trim().isEmpty()) {
+                        if (o.getCarrier() == null || !o.getCarrier().equalsIgnoreCase(courier)) return false;
+                    }
+                    if (paymentStatus != null && !paymentStatus.trim().isEmpty()) {
+                        if (o.getPaymentStatus() == null || !o.getPaymentStatus().equalsIgnoreCase(paymentStatus)) return false;
+                    }
+                    if (paymentMethod != null && !paymentMethod.trim().isEmpty()) {
+                        if (o.getPaymentMethod() == null || !o.getPaymentMethod().equalsIgnoreCase(paymentMethod)) return false;
+                    }
+                    return true;
+                })
+                .sorted((a, b) -> {
+                    if (a.getCreatedAt() == null) return 1;
+                    if (b.getCreatedAt() == null) return -1;
+                    return b.getCreatedAt().compareTo(a.getCreatedAt());
+                })
+                .collect(Collectors.toList());
+
+        int total = filtered.size();
+        int fromIndex = (page - 1) * limit;
+        List<Order> paginated;
+        if (fromIndex >= total) {
+            paginated = Collections.emptyList();
+        } else {
+            paginated = filtered.subList(fromIndex, Math.min(fromIndex + limit, total));
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("items", paginated);
+        response.put("total", total);
+        response.put("page", page);
+        response.put("limit", limit);
+
         return ResponseEntity.ok(response);
     }
 

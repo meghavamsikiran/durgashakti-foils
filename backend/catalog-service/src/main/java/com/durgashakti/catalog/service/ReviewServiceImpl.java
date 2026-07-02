@@ -113,7 +113,11 @@ public class ReviewServiceImpl implements ReviewService {
     public Map<String, Object> checkReviewEligibility(UUID productId, UUID orderId, UUID userId) {
         Map<String, Object> settings = getFeedbackSettings();
         if (Boolean.FALSE.equals(settings.get("ratings_enabled"))) {
-            return Map.of("can_review", false, "reason", "Ratings are currently disabled", "existing_review", Optional.empty());
+            Map<String, Object> errRes = new HashMap<>();
+            errRes.put("can_review", false);
+            errRes.put("reason", "Ratings are currently disabled");
+            errRes.put("existing_review", null);
+            return errRes;
         }
 
         Optional<ProductReview> existingReview = reviewRepository.findByProductIdAndUserIdAndOrderId(productId, userId, orderId);
@@ -122,23 +126,25 @@ public class ReviewServiceImpl implements ReviewService {
 
         try {
             validatePurchaseForReview(userId, productId, orderId);
-            return Map.of(
-                    "can_review", true,
-                    "reason", Optional.empty(),
-                    "existing_review", existingReview.map(this::serializeReview).orElse(null),
-                    "settings", settings,
-                    "product", Map.of(
-                            "id", product.getId().toString(),
-                            "name", product.getName(),
-                            "image_url", product.getImageUrl()
-                    )
-            );
+            Map<String, Object> successRes = new HashMap<>();
+            successRes.put("can_review", true);
+            successRes.put("reason", null);
+            successRes.put("existing_review", existingReview.map(this::serializeReview).orElse(null));
+            successRes.put("settings", settings);
+            
+            Map<String, Object> productMap = new HashMap<>();
+            productMap.put("id", product.getId().toString());
+            productMap.put("name", product.getName());
+            productMap.put("image_url", product.getImageUrl() != null ? product.getImageUrl() : "");
+            successRes.put("product", productMap);
+            
+            return successRes;
         } catch (ApiException e) {
-            return Map.of(
-                    "can_review", false,
-                    "reason", e.getMessage(),
-                    "existing_review", Optional.empty()
-            );
+            Map<String, Object> errRes = new HashMap<>();
+            errRes.put("can_review", false);
+            errRes.put("reason", e.getMessage());
+            errRes.put("existing_review", null);
+            return errRes;
         }
     }
 

@@ -10,10 +10,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.jdbc.core.JdbcTemplate;
+import jakarta.annotation.PostConstruct;
+import org.springframework.web.multipart.MultipartFile;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
@@ -33,6 +39,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderUserRepository userRepository;
     private final com.durgashakti.common.util.EmailClient emailClient;
     private final OrderSettingRepository settingRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public OrderServiceImpl(OrderServiceRepository orderRepository,
                             OrderProductRepository productRepository,
@@ -44,7 +51,8 @@ public class OrderServiceImpl implements OrderService {
                             ProcessedWebhookRepository processedWebhookRepository,
                             OrderUserRepository userRepository,
                             com.durgashakti.common.util.EmailClient emailClient,
-                            OrderSettingRepository settingRepository) {
+                            OrderSettingRepository settingRepository,
+                            JdbcTemplate jdbcTemplate) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.couponRepository = couponRepository;
@@ -56,6 +64,18 @@ public class OrderServiceImpl implements OrderService {
         this.userRepository = userRepository;
         this.emailClient = emailClient;
         this.settingRepository = settingRepository;
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @PostConstruct
+    public void migrateOrderPrefixes() {
+        try {
+            log.info("Running database migration to replace 'DS-' prefix with 'DSF-' in order numbers...");
+            int rows = jdbcTemplate.update("UPDATE orders SET order_number = REPLACE(order_number, 'DS-', 'DSF-') WHERE order_number LIKE 'DS-%'");
+            log.info("Successfully updated {} order records to 'DSF-' prefix.", rows);
+        } catch (Exception e) {
+            log.error("Failed to run order number prefix migration: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -66,7 +86,7 @@ public class OrderServiceImpl implements OrderService {
 
         String dateStr = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String randomSuffix = String.format("%05d", new Random().nextInt(100000));
-        String orderNumber = "DS-" + dateStr + "-" + randomSuffix;
+        String orderNumber = "DSF-" + dateStr + "-" + randomSuffix;
 
         double subtotal = 0;
         List<Map<String, Object>> verifiedItems = new ArrayList<>();
@@ -492,5 +512,229 @@ public class OrderServiceImpl implements OrderService {
                 "order_number", order.getOrderNumber(),
                 "razorpay_payment_id", order.getRazorpayPaymentId() != null ? order.getRazorpayPaymentId() : ""
         );
+    }
+
+    @Override
+    @Transactional
+    public Order returnOrder(UUID userId, UUID orderId, String reason, String returnType, String itemsJson, List<MultipartFile> images) {
+        Order order = orderRepository.findByIdAndUserId(orderId, userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Order not found"));
+
+        String currentOrderStatus = order.getOrderStatus() != null ? order.getOrderStatus().toLowerCase() : "";
+        if (!"delivered".equals(currentOrderStatus) && !"return_requested".equals(currentOrderStatus) && !"return_approved".equals(currentOrderStatus)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Only delivered orders can be returned");
+        }
+
+        if ("cod".equalsIgnoreCase(order.getPaymentMethod())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Returns are not allowed for Cash on Delivery (COD) orders.");
+        }
+
+        // Return window checking (3 days)
+        OffsetDateTime deliveredDate = order.getDeliveredAt() != null ? order.getDeliveredAt() : order.getUpdatedAt();
+        if (deliveredDate != null) {
+            OffsetDateTime cutoff = deliveredDate.plusDays(3).truncatedTo(ChronoUnit.DAYS);
+            if (OffsetDateTime.now().isAfter(cutoff)) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Return window has closed.");
+            }
+        }
+
+        List<Map<String, Object>> returningItemsList = new ArrayList<>();
+        if (itemsJson != null && !itemsJson.trim().isEmpty()) {
+            try {
+                returningItemsList = new ObjectMapper().readValue(itemsJson, new TypeReference<List<Map<String, Object>>>() {});
+            } catch (Exception e) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid items format");
+            }
+        } else {
+            // Fallback to returning all items
+            for (Map<String, Object> item : order.getItems()) {
+                Map<String, Object> ri = new HashMap<>();
+                ri.put("product_id", item.get("product_id"));
+                ri.put("quantity", item.getOrDefault("quantity", 1));
+                returningItemsList.add(ri);
+            }
+        }
+
+        List<String> uploadedUrls = new ArrayList<>();
+        if (images != null) {
+            for (MultipartFile file : images) {
+                if (file.isEmpty()) continue;
+                String contentType = file.getContentType();
+                boolean isImage = contentType != null && contentType.startsWith("image/");
+                if (!isImage) {
+                    throw new ApiException(HttpStatus.BAD_REQUEST, "Only image files are allowed for return proofs");
+                }
+                if (file.getSize() > 2 * 1024 * 1024) {
+                    throw new ApiException(HttpStatus.BAD_REQUEST, "Each image must be under 2MB");
+                }
+                String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+                String mockUrl = "/uploads/" + filename;
+                uploadedUrls.add(mockUrl);
+            }
+        }
+
+        Map<String, Object> metadata = new HashMap<>();
+        if (order.getShippingAddress() != null && order.getShippingAddress().get("shipping_metadata") instanceof Map) {
+            metadata = (Map<String, Object>) order.getShippingAddress().get("shipping_metadata");
+        }
+        double originalSubtotal = metadata.get("subtotal") != null ? ((Number) metadata.get("subtotal")).doubleValue() : order.getTotalAmount().doubleValue();
+        double originalDiscount = metadata.get("discount_amount") != null ? ((Number) metadata.get("discount_amount")).doubleValue() : 0.0;
+
+        List<Map<String, Object>> updatedItems = new ArrayList<>();
+        boolean anyUpdated = false;
+
+        for (Map<String, Object> item : order.getItems()) {
+            Map<String, Object> matched = null;
+            for (Map<String, Object> ri : returningItemsList) {
+                if (String.valueOf(ri.get("product_id")).equals(String.valueOf(item.get("product_id")))) {
+                    matched = ri;
+                    break;
+                }
+            }
+
+            if (matched != null) {
+                int retQty = ((Number) matched.getOrDefault("quantity", item.getOrDefault("quantity", 1))).intValue();
+                int originalQty = ((Number) item.getOrDefault("quantity", 1)).intValue();
+                if (retQty <= 0 || retQty > originalQty) {
+                    throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid return quantity for " + item.get("product_name"));
+                }
+
+                item.put("return_type", returnType);
+                String statusVal = "exchange".equalsIgnoreCase(returnType) ? "EXCHANGE_REQUESTED" : "RETURN_REQUESTED";
+                item.put("return_status", statusVal);
+                item.put("returned_quantity", retQty);
+                item.put("return_reason", reason);
+                item.put("return_proof_images", uploadedUrls);
+
+                List<Map<String, Object>> auditTimeline = new ArrayList<>();
+                Map<String, Object> audit = new HashMap<>();
+                audit.put("status", statusVal);
+                audit.put("timestamp", OffsetDateTime.now().toString());
+                audit.put("remarks", ("exchange".equalsIgnoreCase(returnType) ? "Exchange" : "Return") + " requested for qty " + retQty + ". Reason: " + reason);
+                auditTimeline.add(audit);
+                item.put("audit_timeline", auditTimeline);
+
+                double price = ((Number) item.getOrDefault("price", 0.0)).doubleValue();
+                double returnedItemSubtotal = price * retQty;
+                double couponDiscountShare = 0.0;
+                if (originalSubtotal > 0) {
+                    couponDiscountShare = Math.round((returnedItemSubtotal / originalSubtotal) * originalDiscount * 100.0) / 100.0;
+                }
+                couponDiscountShare = Math.min(couponDiscountShare, returnedItemSubtotal);
+
+                double taxableAmount = Math.round(Math.max(0.0, returnedItemSubtotal - couponDiscountShare) * 100.0) / 100.0;
+                double cgstAmount = Math.round(taxableAmount * 0.09 * 100.0) / 100.0;
+                double sgstAmount = Math.round(taxableAmount * 0.09 * 100.0) / 100.0;
+                double refundableAmount = Math.round((taxableAmount + cgstAmount + sgstAmount) * 100.0) / 100.0;
+
+                Map<String, Object> refundCalculations = new HashMap<>();
+                refundCalculations.put("taxable_amount", taxableAmount);
+                refundCalculations.put("cgst_amount", cgstAmount);
+                refundCalculations.put("sgst_amount", sgstAmount);
+                refundCalculations.put("coupon_discount_share", couponDiscountShare);
+                refundCalculations.put("refundable_amount", refundableAmount);
+                refundCalculations.put("shipping_reimbursement", 0.0);
+                item.put("refund_calculations", refundCalculations);
+
+                anyUpdated = true;
+            }
+            updatedItems.add(item);
+        }
+
+        if (!anyUpdated) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "No valid items selected for return");
+        }
+
+        order.setItems(updatedItems);
+        order.setOrderStatus("return_requested");
+        order.setReturnReason(reason);
+        order.setReturnImageUrl(!uploadedUrls.isEmpty() ? String.join(",", uploadedUrls) : null);
+        order.setUpdatedAt(OffsetDateTime.now());
+
+        Order saved = orderRepository.save(order);
+
+        // Send return requested email!
+        try {
+            userRepository.findById(saved.getUserId()).ifPresent(user -> {
+                String subject = "Return Request Received - " + saved.getOrderNumber();
+                String body = "Dear " + user.getFullName() + ",\n\n" +
+                        "We have received your return request for Order Number: " + saved.getOrderNumber() + ".\n" +
+                        "Reason: " + reason + "\n\n" +
+                        "Our support team is reviewing your request and proof media. We will update you shortly.\n\n" +
+                        "Best regards,\nDurga Shakti Foils Team";
+                emailClient.sendEmail(user.getEmail(), subject, body);
+            });
+        } catch (Exception e) {
+            log.error("Failed to send return request email", e);
+        }
+
+        return saved;
+    }
+
+    @Override
+    @Transactional
+    public Order selfShipItem(UUID userId, UUID orderId, UUID productId, String courierName, String trackingNumber, String trackingUrl, Double courierCost, String notes, MultipartFile invoice) {
+        Order order = orderRepository.findByIdAndUserId(orderId, userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Order not found"));
+
+        List<Map<String, Object>> updatedItems = new ArrayList<>();
+        boolean foundItem = false;
+
+        for (Map<String, Object> item : order.getItems()) {
+            if (String.valueOf(item.get("product_id")).equals(productId.toString())) {
+                foundItem = true;
+                String currentStatus = String.valueOf(item.get("return_status"));
+                if (!"RETURN_APPROVED".equalsIgnoreCase(currentStatus) && !"return_approved".equalsIgnoreCase(currentStatus) && !"EXCHANGE_APPROVED".equalsIgnoreCase(currentStatus)) {
+                    throw new ApiException(HttpStatus.BAD_REQUEST, "Item is not approved for return or exchange");
+                }
+
+                String invoiceUrl = null;
+                if (invoice != null && !invoice.isEmpty()) {
+                    String contentType = invoice.getContentType();
+                    boolean isImage = contentType != null && contentType.startsWith("image/");
+                    boolean isPdf = contentType != null && contentType.contains("pdf");
+                    if (!isImage && !isPdf) {
+                        throw new ApiException(HttpStatus.BAD_REQUEST, "Only images and PDF files are allowed for invoices");
+                    }
+                    if (invoice.getSize() > 2 * 1024 * 1024) {
+                        throw new ApiException(HttpStatus.BAD_REQUEST, "Invoice file must be under 2MB");
+                    }
+                    String filename = UUID.randomUUID() + "_" + invoice.getOriginalFilename();
+                    invoiceUrl = "/uploads/" + filename;
+                }
+
+                item.put("return_status", "SELF_SHIPPED");
+
+                Map<String, Object> selfShippingDetails = new HashMap<>();
+                selfShippingDetails.put("courier_name", courierName);
+                selfShippingDetails.put("tracking_number", trackingNumber);
+                selfShippingDetails.put("tracking_url", trackingUrl);
+                selfShippingDetails.put("courier_invoice_url", invoiceUrl);
+                selfShippingDetails.put("courier_cost", courierCost != null ? courierCost : 0.0);
+                selfShippingDetails.put("notes", notes);
+                item.put("self_shipping_details", selfShippingDetails);
+
+                List<Map<String, Object>> auditTimeline = (List<Map<String, Object>>) item.get("audit_timeline");
+                if (auditTimeline == null) {
+                    auditTimeline = new ArrayList<>();
+                }
+                Map<String, Object> audit = new HashMap<>();
+                audit.put("status", "SELF_SHIPPED");
+                audit.put("timestamp", OffsetDateTime.now().toString());
+                audit.put("remarks", "Item self-shipped via " + courierName + ". Tracking number: " + trackingNumber);
+                auditTimeline.add(audit);
+                item.put("audit_timeline", auditTimeline);
+            }
+            updatedItems.add(item);
+        }
+
+        if (!foundItem) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Product not found in this order");
+        }
+
+        order.setItems(updatedItems);
+        order.setUpdatedAt(OffsetDateTime.now());
+
+        return orderRepository.save(order);
     }
 }

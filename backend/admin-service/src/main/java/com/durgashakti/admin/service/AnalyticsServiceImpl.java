@@ -13,6 +13,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 
 @Service
 @Transactional(readOnly = true)
@@ -453,15 +455,26 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private OffsetDateTime parseDateTime(String isoStr) {
         if (isoStr == null || isoStr.trim().isEmpty()) return null;
         try {
-            return OffsetDateTime.parse(isoStr);
+            String clean = isoStr.trim();
+            if (clean.length() == 10) { // YYYY-MM-DD format
+                return java.time.LocalDate.parse(clean).atStartOfDay(java.time.ZoneOffset.UTC).toOffsetDateTime();
+            }
+            return OffsetDateTime.parse(clean);
         } catch (Exception e) {
             try {
                 String clean = isoStr.trim();
                 if (clean.endsWith("Z")) {
                     clean = clean.substring(0, clean.length() - 1);
                 }
+                if (clean.contains(" ")) {
+                    clean = clean.replace(" ", "T");
+                }
+                if (clean.length() == 19) { // YYYY-MM-DDTHH:mm:ss format
+                    clean = clean + "Z";
+                }
                 return OffsetDateTime.parse(clean);
             } catch (Exception ex) {
+                log.error("Failed to parse date-time string: {}", isoStr, ex);
                 return null;
             }
         }

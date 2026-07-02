@@ -30,7 +30,7 @@ const OrderDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { startProgress, updateProgress, finishProgress } = useProgress();
-  const { addToCart } = useCart();
+  const { addToCart, clearCart } = useCart();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isReturning, setIsReturning] = useState(false);
@@ -155,6 +155,7 @@ const OrderDetailsPage = () => {
           });
           if (syncResult?.success) {
             sessionStorage.removeItem(`razorpay_payment_${id}`);
+            clearCart().catch(() => {});
             apiClient.invalidateCache(`/orders/${id}`);
             apiClient.invalidateCache('/orders');
             const refreshed = await apiClient.cachedGet(`/orders/${id}`);
@@ -246,6 +247,7 @@ const OrderDetailsPage = () => {
             const result = await paymentService.verifyRazorpayPayment(verifyPayload);
             if (result && result.success) {
               sessionStorage.removeItem(`razorpay_payment_${id}`);
+              clearCart().catch(() => {});
               toast.success('Payment verified successfully!');
               const res = await apiClient.get(`/orders/${id}`);
               setOrder(res.data);
@@ -1407,7 +1409,7 @@ const OrderDetailsPage = () => {
         })()}
 
         {/* Courier Details Card */}
-        {order.tracking_id && (
+        {(order.tracking_id || order.tracking_number) && (
           <div className="bg-sky-50/50 dark:bg-[#0f1f1a] border border-sky-100 dark:border-[#1e3028] rounded-2xl p-5 mb-6 shadow-sm dark:shadow-none flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in duration-300">
             <div className="flex items-start gap-4">
               <Truck className="w-6 h-6 text-sky-600 shrink-0 mt-0.5" />
@@ -1470,13 +1472,13 @@ const OrderDetailsPage = () => {
           <div className="bg-slate-50/70 dark:bg-[#131B17]/70 border-b border-slate-100 dark:border-[#26322B] px-6 py-4 flex flex-wrap justify-between items-center gap-4 font-semibold">
             <div>
               <h2 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-                {order.order_status === 'delivered' 
+                {String(order.order_status || '').toLowerCase() === 'delivered' 
                   ? 'Delivered' 
-                  : order.order_status === 'cancelled'
+                  : String(order.order_status || '').toLowerCase() === 'cancelled'
                   ? 'Cancelled'
-                  : order.order_status === 'return_requested'
+                  : String(order.order_status || '').toLowerCase() === 'return_requested'
                   ? 'Return Pending Approval'
-                  : order.order_status === 'return_approved'
+                  : String(order.order_status || '').toLowerCase() === 'return_approved'
                   ? (() => {
                       const pay = (order.payment_status || '').toLowerCase();
                       if (pay === 'refunded') return 'Refund Credited';
@@ -1488,19 +1490,19 @@ const OrderDetailsPage = () => {
                       if (items.some(i => i.return_status === 'SELF_SHIPPED')) return 'Self-Shipped (Receipt Verification Pending)';
                       return 'Return Approved (Self-Ship Pending)';
                     })()
-                  : order.order_status === 'return_rejected'
+                  : String(order.order_status || '').toLowerCase() === 'return_rejected'
                   ? 'Return Request Declined'
                   : `Preparing shipment • Est. Delivery ${getExpectedDeliveryDate(order.created_at)}`
                 }
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-300 font-medium mt-0.5">
-                {order.order_status === 'delivered' 
+                {String(order.order_status || '').toLowerCase() === 'delivered' 
                   ? `Your package was delivered on ${new Date(order.delivered_at || order.updated_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`
-                  : order.order_status === 'cancelled'
+                  : String(order.order_status || '').toLowerCase() === 'cancelled'
                   ? 'This order has been cancelled and will not be shipped.'
-                  : order.order_status === 'return_requested'
+                  : String(order.order_status || '').toLowerCase() === 'return_requested'
                   ? 'Our team is reviewing your return request and proof media.'
-                  : order.order_status === 'return_approved' || order.order_status === 'refunded'
+                  : String(order.order_status || '').toLowerCase() === 'return_approved' || String(order.order_status || '').toLowerCase() === 'refunded'
                   ? (() => {
                       const pay = (order.payment_status || '').toLowerCase();
                       if (pay === 'refunded') return 'Your return was accepted and the refund has been credited.';
@@ -1691,7 +1693,7 @@ const OrderDetailsPage = () => {
                     View your item
                   </button>
                   
-                  {order.order_status === 'delivered' && !item.return_status && order.payment_method?.toLowerCase() !== 'cod' && (
+                  {String(order.order_status || '').toLowerCase() === 'delivered' && !item.return_status && order.payment_method?.toLowerCase() !== 'cod' && (
                     <button 
                       onClick={() => setIsReturning(item.product_id)}
                       className="w-full bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:bg-[#26322B]/40 border border-slate-300 hover:border-slate-400 font-bold text-slate-700 dark:text-slate-300 text-xs px-4 py-2.5 rounded-xl shadow-sm dark:shadow-none transition-all text-center uppercase tracking-widest text-[9px]"

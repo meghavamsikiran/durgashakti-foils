@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -145,6 +146,51 @@ public class OrderController {
             log.error("Failed to sync payment status", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "An unexpected error occurred while syncing payment. Please try again."));
+        }
+    }
+
+    @PostMapping(value = "/orders/{orderId}/return", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> returnOrder(
+            @PathVariable("orderId") UUID orderId,
+            @RequestParam("reason") String reason,
+            @RequestParam(value = "image", required = false) List<MultipartFile> images,
+            @RequestParam(value = "items", required = false) String itemsJson,
+            @RequestParam(value = "return_type", defaultValue = "refund") String returnType,
+            Authentication authentication) {
+        try {
+            UUID userId = UUID.fromString((String) authentication.getPrincipal());
+            Order order = orderService.returnOrder(userId, orderId, reason, returnType, itemsJson, images);
+            return ResponseEntity.ok(order);
+        } catch (ApiException e) {
+            return ResponseEntity.status(e.getStatus()).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to submit return request", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An unexpected error occurred while submitting your return. Please try again."));
+        }
+    }
+
+    @PostMapping(value = "/orders/{orderId}/items/{productId}/self-ship", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> selfShipItem(
+            @PathVariable("orderId") UUID orderId,
+            @PathVariable("productId") UUID productId,
+            @RequestParam("courier_name") String courierName,
+            @RequestParam("tracking_number") String trackingNumber,
+            @RequestParam(value = "tracking_url", required = false) String trackingUrl,
+            @RequestParam(value = "courier_cost", required = false) Double courierCost,
+            @RequestParam(value = "notes", required = false) String notes,
+            @RequestParam(value = "invoice", required = false) MultipartFile invoice,
+            Authentication authentication) {
+        try {
+            UUID userId = UUID.fromString((String) authentication.getPrincipal());
+            Order order = orderService.selfShipItem(userId, orderId, productId, courierName, trackingNumber, trackingUrl, courierCost, notes, invoice);
+            return ResponseEntity.ok(order);
+        } catch (ApiException e) {
+            return ResponseEntity.status(e.getStatus()).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Failed to submit self ship details", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "An unexpected error occurred while submitting self shipment details. Please try again."));
         }
     }
 }
