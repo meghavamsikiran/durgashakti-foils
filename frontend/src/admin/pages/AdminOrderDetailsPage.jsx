@@ -101,7 +101,12 @@ const AdminOrderDetailsPage = () => {
   const [submittingExShip, setSubmittingExShip] = useState(false);
 
   const fetchOrderDetails = useCallback(async (silent = false) => {
-    if (!silent && !order) setLoading(true);
+    if (!silent) {
+      setOrder(prev => {
+        if (!prev) setLoading(true);
+        return prev;
+      });
+    }
     try {
       const response = await adminService.getOrderDetails(orderId);
       setOrder(response.data);
@@ -113,7 +118,7 @@ const AdminOrderDetailsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [orderId, order]);
+  }, [orderId]);
 
   useEffect(() => {
     fetchOrderDetails();
