@@ -135,6 +135,77 @@ public class AdminOrderController {
         return ResponseEntity.ok(adminOrderService.shipOrder(orderId, carrier, trackingNumber));
     }
 
+    // ── Item Return/Exchange Action (approve or reject) ──────────────────
+    @PostMapping("/orders/{orderId}/items/{productId}/return-action")
+    public ResponseEntity<Map<String, Object>> itemReturnAction(
+            @PathVariable("orderId") UUID orderId,
+            @PathVariable("productId") String productId,
+            @RequestBody Map<String, String> payload) {
+        String action = payload.get("action");
+        String remarks = payload.get("remarks");
+        Order order = adminOrderService.itemReturnAction(orderId, productId, action, remarks);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Item return " + action + "d successfully");
+        response.put("order", order);
+        return ResponseEntity.ok(response);
+    }
+
+    // ── Mark Returned Item as Received ────────────────────────────────────
+    @PostMapping("/orders/{orderId}/items/{productId}/receive")
+    public ResponseEntity<Map<String, Object>> receiveReturnedItem(
+            @PathVariable("orderId") UUID orderId,
+            @PathVariable("productId") String productId) {
+        Order order = adminOrderService.receiveReturnedItem(orderId, productId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Item marked as received");
+        response.put("order", order);
+        return ResponseEntity.ok(response);
+    }
+
+    // ── Process Refund for a Returned Item ────────────────────────────────
+    @PostMapping("/orders/{orderId}/items/{productId}/process-refund")
+    public ResponseEntity<Map<String, Object>> processItemRefund(
+            @PathVariable("orderId") UUID orderId,
+            @PathVariable("productId") String productId,
+            @RequestParam(value = "restock", defaultValue = "true") boolean restock,
+            @RequestParam(value = "manual_amount", required = false) Double manualAmount,
+            @RequestParam(value = "is_manual", defaultValue = "false") boolean isManual) {
+        Order order = adminOrderService.processItemRefund(orderId, productId, restock, manualAmount, isManual);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Refund processed successfully");
+        response.put("order", order);
+        return ResponseEntity.ok(response);
+    }
+
+    // ── Ship Exchange Replacement Item ────────────────────────────────────
+    @PostMapping("/orders/{orderId}/items/{productId}/ship-exchange")
+    public ResponseEntity<Map<String, Object>> shipExchangeItem(
+            @PathVariable("orderId") UUID orderId,
+            @PathVariable("productId") String productId,
+            @RequestBody Map<String, String> payload) {
+        String courier = payload.get("exchange_courier_name");
+        String trackingNumber = payload.get("exchange_tracking_number");
+        String expectedDeliveryDate = payload.get("exchange_expected_delivery_date");
+        String notes = payload.get("exchange_shipment_notes");
+        Order order = adminOrderService.shipExchangeItem(orderId, productId, courier, trackingNumber, expectedDeliveryDate, notes);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Exchange item shipped successfully");
+        response.put("order", order);
+        return ResponseEntity.ok(response);
+    }
+
+    // ── Complete Exchange (delivery confirmed) ───────────────────────────
+    @PostMapping("/orders/{orderId}/items/{productId}/complete-exchange")
+    public ResponseEntity<Map<String, Object>> completeExchangeItem(
+            @PathVariable("orderId") UUID orderId,
+            @PathVariable("productId") String productId) {
+        Order order = adminOrderService.completeExchangeItem(orderId, productId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Exchange item completed successfully");
+        response.put("order", order);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/gstr1/export")
     public ResponseEntity<byte[]> exportGstReport() throws IOException {
         byte[] excelBytes = gstService.exportGstReport();
