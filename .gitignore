@@ -92,7 +92,6 @@ scratch/
 **/*.err
 brain/
 sample_gst_data.csv
-backend/uploads/
 
 # Maven
 target/
