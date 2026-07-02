@@ -32,6 +32,7 @@ public class OrderServiceImpl implements OrderService {
     private final ProcessedWebhookRepository processedWebhookRepository;
     private final OrderUserRepository userRepository;
     private final com.durgashakti.common.util.EmailClient emailClient;
+    private final OrderSettingRepository settingRepository;
 
     public OrderServiceImpl(OrderServiceRepository orderRepository,
                             OrderProductRepository productRepository,
@@ -42,7 +43,8 @@ public class OrderServiceImpl implements OrderService {
                             CouponService couponService,
                             ProcessedWebhookRepository processedWebhookRepository,
                             OrderUserRepository userRepository,
-                            com.durgashakti.common.util.EmailClient emailClient) {
+                            com.durgashakti.common.util.EmailClient emailClient,
+                            OrderSettingRepository settingRepository) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.couponRepository = couponRepository;
@@ -53,6 +55,7 @@ public class OrderServiceImpl implements OrderService {
         this.processedWebhookRepository = processedWebhookRepository;
         this.userRepository = userRepository;
         this.emailClient = emailClient;
+        this.settingRepository = settingRepository;
     }
 
     @Override
@@ -111,7 +114,69 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        double deliveryCharge = (subtotal - discount) > 1099 ? 0.0 : 70.0;
+        Optional<Setting> shippingSettingsOpt = settingRepository.findById("shipping_settings");
+        double deliveryCharge = 70.0;
+        
+        boolean enableShipping = true;
+        boolean enableFreeShipping = true;
+        double freeShippingThreshold = 1099.0;
+        double defaultShippingCharge = 70.0;
+        boolean shippingZonesEnabled = false;
+        List<Map<String, Object>> zones = new ArrayList<>();
+
+        if (shippingSettingsOpt.isPresent()) {
+            Map<String, Object> config = shippingSettingsOpt.get().getValue();
+            if (config != null) {
+                enableShipping = !Boolean.FALSE.equals(config.get("enableShipping")) && !"Inactive".equalsIgnoreCase(String.valueOf(config.get("shippingRuleStatus")));
+                enableFreeShipping = !Boolean.FALSE.equals(config.get("enableFreeShipping"));
+                
+                if (config.get("freeShippingThreshold") != null) {
+                    freeShippingThreshold = ((Number) config.get("freeShippingThreshold")).doubleValue();
+                }
+                if (config.get("defaultShippingCharge") != null) {
+                    defaultShippingCharge = ((Number) config.get("defaultShippingCharge")).doubleValue();
+                }
+                shippingZonesEnabled = Boolean.TRUE.equals(config.get("shippingZonesEnabled"));
+                if (config.get("zones") != null && config.get("zones") instanceof List) {
+                    zones = (List<Map<String, Object>>) config.get("zones");
+                }
+            }
+        }
+
+        if (!enableShipping) {
+            deliveryCharge = 0.0;
+        } else {
+            double taxableAmount = Math.max(0, subtotal - discount);
+            if (enableFreeShipping && taxableAmount >= freeShippingThreshold) {
+                deliveryCharge = 0.0;
+            } else {
+                double baseShippingCharge = defaultShippingCharge;
+                if (shippingZonesEnabled && req.getShippingAddress() != null && req.getShippingAddress().get("pincode") != null) {
+                    String pin = String.valueOf(req.getShippingAddress().get("pincode")).trim();
+                    if (pin.length() == 6 && pin.matches("\\d+")) {
+                        String zoneName = "North India";
+                        if (pin.startsWith("50")) {
+                            zoneName = "Telangana";
+                        } else if (pin.startsWith("5") || pin.startsWith("6")) {
+                            zoneName = "South India";
+                        }
+                        
+                        final String matchedZoneName = zoneName;
+                        Optional<Map<String, Object>> matchedZone = zones.stream()
+                                .filter(z -> matchedZoneName.equalsIgnoreCase(String.valueOf(z.get("name"))) && "Active".equalsIgnoreCase(String.valueOf(z.get("status"))))
+                                .findFirst();
+                        if (matchedZone.isPresent()) {
+                            Object chargeObj = matchedZone.get().get("charge");
+                            if (chargeObj != null) {
+                                baseShippingCharge = ((Number) chargeObj).doubleValue();
+                            }
+                        }
+                    }
+                }
+                deliveryCharge = baseShippingCharge;
+            }
+        }
+
         double total = subtotal - discount + deliveryCharge;
 
         Order order = new Order();

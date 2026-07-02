@@ -114,6 +114,7 @@ public class CatalogServiceImpl implements CatalogService {
         
         Optional<Setting> companyProfile = settingRepository.findById("company_profile");
         Optional<Setting> paymentSettings = settingRepository.findById("payment_settings");
+        Optional<Setting> shippingSettings = settingRepository.findById("shipping_settings");
         
         if (companyProfile.isPresent()) {
             response.put("company_profile", companyProfile.get().getValue());
@@ -125,6 +126,12 @@ public class CatalogServiceImpl implements CatalogService {
             response.put("payment_settings", paymentSettings.get().getValue());
         } else {
             response.put("payment_settings", Map.of("cod_enabled", true));
+        }
+
+        if (shippingSettings.isPresent()) {
+            response.put("shipping_settings", shippingSettings.get().getValue());
+        } else {
+            response.put("shipping_settings", Map.of());
         }
         
         return response;
