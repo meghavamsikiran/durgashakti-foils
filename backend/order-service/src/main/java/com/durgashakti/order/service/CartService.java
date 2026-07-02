@@ -8,4 +8,7 @@ public interface CartService {
     Map<String, Object> getCart(UUID userId);
     Map<String, Object> bulkSyncCart(UUID userId, List<Map<String, Object>> items);
     void clearCart(UUID userId);
+    Map<String, Object> addToCart(UUID userId, UUID productId, int quantity);
+    Map<String, Object> updateCartItem(UUID userId, UUID productId, int quantity);
+    Map<String, Object> removeFromCart(UUID userId, UUID productId);
 }

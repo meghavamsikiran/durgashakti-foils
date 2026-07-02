@@ -39,4 +39,39 @@ public class CartController {
         cartService.clearCart(userId);
         return ResponseEntity.ok(Map.of("message", "Cart cleared successfully"));
     }
+
+    @DeleteMapping("/cart/clear")
+    public ResponseEntity<Map<String, String>> clearCartAlt(Authentication authentication) {
+        UUID userId = UUID.fromString((String) authentication.getPrincipal());
+        cartService.clearCart(userId);
+        return ResponseEntity.ok(Map.of("message", "Cart cleared successfully"));
+    }
+
+    @PostMapping("/cart/add")
+    public ResponseEntity<Map<String, Object>> addToCart(
+            @RequestBody Map<String, Object> req,
+            Authentication authentication) {
+        UUID userId = UUID.fromString((String) authentication.getPrincipal());
+        UUID productId = UUID.fromString(req.get("product_id").toString());
+        int quantity = ((Number) req.getOrDefault("quantity", 1)).intValue();
+        return ResponseEntity.ok(cartService.addToCart(userId, productId, quantity));
+    }
+
+    @PutMapping("/cart/update")
+    public ResponseEntity<Map<String, Object>> updateCartItem(
+            @RequestBody Map<String, Object> req,
+            Authentication authentication) {
+        UUID userId = UUID.fromString((String) authentication.getPrincipal());
+        UUID productId = UUID.fromString(req.get("product_id").toString());
+        int quantity = ((Number) req.get("quantity")).intValue();
+        return ResponseEntity.ok(cartService.updateCartItem(userId, productId, quantity));
+    }
+
+    @DeleteMapping("/cart/remove/{productId}")
+    public ResponseEntity<Map<String, Object>> removeFromCart(
+            @PathVariable("productId") UUID productId,
+            Authentication authentication) {
+        UUID userId = UUID.fromString((String) authentication.getPrincipal());
+        return ResponseEntity.ok(cartService.removeFromCart(userId, productId));
+    }
 }
