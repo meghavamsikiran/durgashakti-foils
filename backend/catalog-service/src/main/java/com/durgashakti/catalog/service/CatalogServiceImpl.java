@@ -2,6 +2,7 @@ package com.durgashakti.catalog.service;
 
 import com.durgashakti.common.entity.Category;
 import com.durgashakti.common.entity.Product;
+import com.durgashakti.common.entity.Setting;
 import com.durgashakti.catalog.repository.CatalogCategoryRepository;
 import com.durgashakti.catalog.repository.CatalogProductRepository;
 import com.durgashakti.catalog.repository.CatalogProductReviewRepository;
@@ -105,5 +106,27 @@ public class CatalogServiceImpl implements CatalogService {
         Double avg = reviewRepository.findAverageRatingByProductId(productId);
         productMap.put("review_count", count);
         productMap.put("rating_average", avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0);
+    }
+
+    @Override
+    public Map<String, Object> getPublicSettings() {
+        Map<String, Object> response = new HashMap<>();
+        
+        Optional<Setting> companyProfile = settingRepository.findById("company_profile");
+        Optional<Setting> paymentSettings = settingRepository.findById("payment_settings");
+        
+        if (companyProfile.isPresent()) {
+            response.put("company_profile", companyProfile.get().getValue());
+        } else {
+            response.put("company_profile", Map.of());
+        }
+        
+        if (paymentSettings.isPresent()) {
+            response.put("payment_settings", paymentSettings.get().getValue());
+        } else {
+            response.put("payment_settings", Map.of("cod_enabled", true));
+        }
+        
+        return response;
     }
 }

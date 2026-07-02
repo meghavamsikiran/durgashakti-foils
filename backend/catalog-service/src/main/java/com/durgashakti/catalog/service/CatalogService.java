@@ -9,4 +9,5 @@ public interface CatalogService {
     Map<String, Object> getProducts(int page, int limit, String search);
     Map<String, Object> getProduct(UUID productId);
     List<Category> getPublicCategories();
+    Map<String, Object> getPublicSettings();
 }

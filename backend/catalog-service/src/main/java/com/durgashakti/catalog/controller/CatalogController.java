@@ -39,4 +39,9 @@ public class CatalogController {
         List<Category> categories = catalogService.getPublicCategories();
         return ResponseEntity.ok(categories);
     }
+
+    @GetMapping("/settings/public")
+    public ResponseEntity<Map<String, Object>> getPublicSettings() {
+        return ResponseEntity.ok(catalogService.getPublicSettings());
+    }
 }
