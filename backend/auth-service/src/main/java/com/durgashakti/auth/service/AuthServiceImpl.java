@@ -134,6 +134,7 @@ public class AuthServiceImpl implements AuthService {
                     .GET()
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            log.info("Google userinfo response: status={}, body={}", response.statusCode(), response.body());
             if (response.statusCode() != 200) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid Google access token");
             }
