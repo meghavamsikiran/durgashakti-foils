@@ -15,6 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -38,6 +40,16 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex
+                // Return 401 Unauthorized (not 403) for unauthenticated requests.
+                // This matches the old Python backend behavior and lets the frontend
+                // interceptor auto-clear the expired token and redirect to /login.
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"detail\":\"Not authenticated\"}");
+                })
+            )
             .authorizeHttpRequests(auth -> auth
                 // Auth Service
                 .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/google", "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
