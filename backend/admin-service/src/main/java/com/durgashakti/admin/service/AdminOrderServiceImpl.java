@@ -11,6 +11,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.durgashakti.common.entity.User;
+import com.durgashakti.common.util.EmailClient;
+import com.durgashakti.admin.repository.AdminUserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -21,13 +26,20 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     private final AdminOrderRepository orderRepository;
     private final AdminProductRepository productRepository;
     private final AuditLogRepository auditLogRepository;
+    private final AdminUserRepository userRepository;
+    private final EmailClient emailClient;
+    private static final Logger log = LoggerFactory.getLogger(AdminOrderServiceImpl.class);
 
     public AdminOrderServiceImpl(AdminOrderRepository orderRepository,
                                  AdminProductRepository productRepository,
-                                 AuditLogRepository auditLogRepository) {
+                                 AuditLogRepository auditLogRepository,
+                                 AdminUserRepository userRepository,
+                                 EmailClient emailClient) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.auditLogRepository = auditLogRepository;
+        this.userRepository = userRepository;
+        this.emailClient = emailClient;
     }
 
     @Override
@@ -49,7 +61,17 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Order not found"));
         order.setOrderStatus(status);
         order.setUpdatedAt(OffsetDateTime.now());
-        return orderRepository.save(order);
+        order = orderRepository.save(order);
+
+        if ("delivered".equalsIgnoreCase(status)) {
+            sendOrderEmail(order, "Order Delivered: " + order.getOrderNumber(), 
+                "Great news! Your order " + order.getOrderNumber() + " has been marked as delivered. We hope you enjoy your purchase!");
+        } else if ("cancelled".equalsIgnoreCase(status)) {
+            sendOrderEmail(order, "Order Cancelled: " + order.getOrderNumber(), 
+                "Your order " + order.getOrderNumber() + " has been cancelled. If this was a mistake, please contact support.");
+        }
+
+        return order;
     }
 
     @Override
@@ -63,7 +85,48 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         order.setShipmentStatus("shipped");
         order.setShipmentDate(OffsetDateTime.now());
         order.setUpdatedAt(OffsetDateTime.now());
-        return orderRepository.save(order);
+        order = orderRepository.save(order);
+
+        sendOrderEmail(order, "Order Shipped: " + order.getOrderNumber(), 
+            "Your order " + order.getOrderNumber() + " has been shipped!\n" +
+            "Carrier: " + carrier + "\nTracking Number: " + trackingNumber + "\n" +
+            "You can track your order using the tracking number above.");
+
+        return order;
+    }
+
+    @Override
+    public Map<String, Object> bulkShipOrders(List<Map<String, String>> shipments) {
+        int successCount = 0;
+        int failCount = 0;
+        List<Map<String, Object>> results = new ArrayList<>();
+        
+        for (Map<String, String> shipment : shipments) {
+            String orderIdStr = shipment.get("order_id");
+            String carrier = shipment.get("carrier");
+            String trackingNumber = shipment.get("tracking_number");
+            
+            Map<String, Object> res = new HashMap<>();
+            res.put("order_id", orderIdStr);
+            
+            try {
+                UUID orderId = UUID.fromString(orderIdStr);
+                shipOrder(orderId, carrier, trackingNumber); 
+                res.put("status", "success");
+                successCount++;
+            } catch (Exception e) {
+                res.put("status", "failed");
+                res.put("error", e.getMessage());
+                failCount++;
+            }
+            results.add(res);
+        }
+        
+        return Map.of(
+            "success_count", successCount,
+            "fail_count", failCount,
+            "results", results
+        );
     }
 
     // ── Admin Return/Exchange Action (approve/reject) ──────────────────────
@@ -126,7 +189,15 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         writeAuditLog("ITEM_RETURN_ACTION", "order", orderId.toString(),
                 Map.of("product_id", productId, "action", action, "remarks", remarks != null ? remarks : ""));
 
-        return orderRepository.save(order);
+        order = orderRepository.save(order);
+        
+        String typeStr = isExchange ? "Exchange" : "Return";
+        String statusStr = "APPROVE".equals(actionUpper) ? "Approved" : "Rejected";
+        sendOrderEmail(order, typeStr + " Request " + statusStr + ": " + order.getOrderNumber(),
+            "Your " + typeStr.toLowerCase() + " request for an item in order " + order.getOrderNumber() + " has been " + statusStr.toLowerCase() + ".\n" +
+            (remarks != null && !remarks.isEmpty() ? "Remarks: " + remarks : ""));
+            
+        return order;
     }
 
     // ── Admin Receive Returned Item ────────────────────────────────────────
@@ -167,7 +238,10 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         writeAuditLog("ITEM_RETURN_RECEIVED", "order", orderId.toString(),
                 Map.of("product_id", productId));
 
-        return orderRepository.save(order);
+        order = orderRepository.save(order);
+        sendOrderEmail(order, "Returned Item Received: " + order.getOrderNumber(),
+            "We have successfully received your returned item at our warehouse. We will process the next steps shortly.");
+        return order;
     }
 
     // ── Admin Process Item Refund ──────────────────────────────────────────
@@ -274,7 +348,69 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         writeAuditLog("ITEM_REFUND_PROCESSED", "order", orderId.toString(),
                 Map.of("product_id", productId, "amount", refundAmount, "restock", restock));
 
-        return orderRepository.save(order);
+        order = orderRepository.save(order);
+        sendOrderEmail(order, "Refund Processed: " + order.getOrderNumber(),
+            "We have processed a refund of Rs. " + refundAmount + " for your order " + order.getOrderNumber() + ".\n" +
+            "It may take a few business days for the amount to reflect in your account.");
+        return order;
+    }
+
+    // ── Admin Retry Refund ──────────────────────────────────────────────
+    @Override
+    public Order retryRefund(UUID orderId, String productId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Order not found"));
+
+        List<Map<String, Object>> items = order.getItems();
+        boolean foundItem = false;
+
+        for (Map<String, Object> item : items) {
+            if (productId.equals(String.valueOf(item.get("product_id")))) {
+                foundItem = true;
+                String currentStatus = (String) item.get("return_status");
+                if (!"REFUND_FAILED".equals(currentStatus) && !"REFUND_INITIATED".equals(currentStatus)) {
+                    throw new ApiException(HttpStatus.BAD_REQUEST, "Refund is not in a failed or initiated state");
+                }
+                
+                item.put("return_status", "REFUND_COMPLETED");
+                addAuditTimeline(item, "REFUND_COMPLETED", "Refund manually forced/retried to completed state by admin");
+            }
+        }
+
+        if (!foundItem) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Item not found in order");
+        }
+
+        order.setItems(items);
+        order.setUpdatedAt(OffsetDateTime.now());
+
+        boolean hasActiveReturns = items.stream().anyMatch(i -> {
+            String rs = (String) i.get("return_status");
+            return rs != null && Set.of("RETURN_REQUESTED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED").contains(rs);
+        });
+        boolean hasPendingRefunds = items.stream().anyMatch(i ->
+                "REFUND_INITIATED".equals(i.get("return_status")));
+
+        if (!hasActiveReturns) {
+            if (hasPendingRefunds) {
+                order.setOrderStatus("return_approved");
+                order.setPaymentStatus("refund_pending");
+            } else {
+                order.setOrderStatus("refunded");
+                order.setPaymentStatus("refunded");
+            }
+        } else if (hasPendingRefunds) {
+            order.setPaymentStatus("refund_pending");
+        }
+
+        writeAuditLog("ITEM_REFUND_RETRIED", "order", orderId.toString(),
+                Map.of("product_id", productId));
+
+        order = orderRepository.save(order);
+        sendOrderEmail(order, "Refund Completed: " + order.getOrderNumber(),
+            "Your refund for order " + order.getOrderNumber() + " has been successfully completed.");
+            
+        return order;
     }
 
     // ── Admin Ship Exchange Item ───────────────────────────────────────────
@@ -322,7 +458,11 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         writeAuditLog("ITEM_EXCHANGE_SHIPPED", "order", orderId.toString(),
                 Map.of("product_id", productId, "courier", courier, "tracking_number", trackingNumber));
 
-        return orderRepository.save(order);
+        order = orderRepository.save(order);
+        sendOrderEmail(order, "Exchange Item Shipped: " + order.getOrderNumber(),
+            "Your exchange item for order " + order.getOrderNumber() + " has been shipped!\n" +
+            "Carrier: " + courier + "\nTracking Number: " + trackingNumber);
+        return order;
     }
 
     // ── Admin Complete Exchange Item ───────────────────────────────────────
@@ -359,7 +499,10 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         writeAuditLog("ITEM_EXCHANGE_COMPLETED", "order", orderId.toString(),
                 Map.of("product_id", productId));
 
-        return orderRepository.save(order);
+        order = orderRepository.save(order);
+        sendOrderEmail(order, "Exchange Completed: " + order.getOrderNumber(),
+            "Your exchange process for order " + order.getOrderNumber() + " is now complete.");
+        return order;
     }
 
     // ── Helper: Add audit timeline entry to an item ───────────────────────
@@ -401,5 +544,19 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         if (val == null) return 0;
         if (val instanceof Number) return ((Number) val).intValue();
         try { return Integer.parseInt(val.toString()); } catch (NumberFormatException e) { return 0; }
+    }
+
+    // ── Helper: Send Order Email ──────────────────────────────────────────
+    private void sendOrderEmail(Order order, String subject, String body) {
+        if (order.getUserId() != null) {
+            userRepository.findById(order.getUserId()).ifPresent(user -> {
+                try {
+                    emailClient.sendEmail(user.getEmail(), subject, 
+                        "Dear " + user.getFullName() + ",\n\n" + body + "\n\nBest regards,\nDurga Shakti Foils Team");
+                } catch (Exception e) {
+                    log.error("Failed to send email for order {} to {}", order.getOrderNumber(), user.getEmail(), e);
+                }
+            });
+        }
     }
 }

@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import java.time.OffsetDateTime;
 import java.util.*;
 
+import com.durgashakti.common.util.EmailClient;
+
 @RestController
 @RequestMapping("/api/superadmin")
 @PreAuthorize("hasRole('SUPER_ADMIN')")
@@ -18,10 +20,12 @@ public class SuperAdminController {
 
     private final AdminUserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final EmailClient emailClient;
 
-    public SuperAdminController(AdminUserRepository userRepository) {
+    public SuperAdminController(AdminUserRepository userRepository, EmailClient emailClient) {
         this.userRepository = userRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
+        this.emailClient = emailClient;
     }
 
     @GetMapping("/admins")
@@ -70,6 +74,18 @@ public class SuperAdminController {
         u.setPermissions(permissionsDict);
 
         userRepository.save(u);
+        
+        try {
+            emailClient.sendEmail(u.getEmail(), "Admin Account Created",
+                "Hello " + u.getFullName() + ",\n\n" +
+                "An admin account has been created for you at Durga Shakti Foils.\n" +
+                "Your temporary password is: " + password + "\n\n" +
+                "Please login and change it immediately.\n\n" +
+                "Best regards,\nDurga Shakti Foils Admin Team");
+        } catch (Exception e) {
+            // Log silently or ignore if email fails
+        }
+
         return ResponseEntity.ok(prepareAdminUser(u));
     }
 
@@ -141,6 +157,18 @@ public class SuperAdminController {
         }
         u.setPassword(passwordEncoder.encode(password));
         userRepository.save(u);
+        
+        try {
+            emailClient.sendEmail(u.getEmail(), "Admin Password Reset",
+                "Hello " + u.getFullName() + ",\n\n" +
+                "Your admin account password has been reset.\n" +
+                "Your new temporary password is: " + password + "\n\n" +
+                "Please login and change it immediately.\n\n" +
+                "Best regards,\nDurga Shakti Foils Admin Team");
+        } catch (Exception e) {
+            // Log silently or ignore
+        }
+        
         return ResponseEntity.ok(Map.of("message", "Password reset successful"));
     }
 

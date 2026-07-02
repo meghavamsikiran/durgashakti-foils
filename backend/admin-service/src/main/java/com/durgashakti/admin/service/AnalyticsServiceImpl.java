@@ -298,8 +298,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             String pStatus = o.getPaymentStatus() != null ? o.getPaymentStatus().toLowerCase() : "";
             if (REVENUE_PAYMENT_STATUSES.contains(pStatus) && o.getItems() != null) {
                 for (Map<String, Object> item : o.getItems()) {
-                    String name = String.valueOf(item.getOrDefault("product_name", item.getOrDefault("name", "Unknown Product")));
-                    int qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 0)));
+                    String name = String.valueOf(item.get("product_name") != null ? item.get("product_name") : item.getOrDefault("name", "Unknown Product"));
+                    int qty = toInt(item.get("quantity"));
                     bestSellersCounts.put(name, bestSellersCounts.getOrDefault(name, 0) + qty);
                 }
             }
@@ -397,15 +397,15 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             if (REVENUE_PAYMENT_STATUSES.contains(pStatus) && o.getItems() != null) {
                 for (Map<String, Object> item : o.getItems()) {
                     String pid = String.valueOf(item.get("product_id"));
-                    int qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 0)));
-                    double price = Double.parseDouble(String.valueOf(item.getOrDefault("price", 0.0)));
+                    int qty = toInt(item.get("quantity"));
+                    double price = toDouble(item.get("price"));
                     
                     String cat = "Uncategorized";
                     if (prodCategoryMap.containsKey(pid)) {
                         cat = prodCategoryMap.get(pid);
                     } else {
                         // Fallback matching by product name if UUID is different
-                        String name = String.valueOf(item.getOrDefault("product_name", item.getOrDefault("name", "")));
+                        String name = String.valueOf(item.get("product_name") != null ? item.get("product_name") : item.getOrDefault("name", ""));
                         for (Product pr : allProducts) {
                             if (pr.getName() != null && pr.getName().equalsIgnoreCase(name)) {
                                 cat = pr.getCategory() != null ? pr.getCategory().trim() : "Uncategorized";
@@ -477,6 +477,26 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 log.error("Failed to parse date-time string: {}", isoStr, ex);
                 return null;
             }
+        }
+    }
+
+    private double toDouble(Object val) {
+        if (val == null) return 0.0;
+        if (val instanceof Number) return ((Number) val).doubleValue();
+        try {
+            return Double.parseDouble(val.toString());
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
+    }
+
+    private int toInt(Object val) {
+        if (val == null) return 0;
+        if (val instanceof Number) return ((Number) val).intValue();
+        try {
+            return (int) Double.parseDouble(val.toString()); // parseDouble to handle "1.0"
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 }

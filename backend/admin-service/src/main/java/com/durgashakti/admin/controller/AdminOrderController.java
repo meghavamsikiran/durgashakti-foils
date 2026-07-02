@@ -135,6 +135,18 @@ public class AdminOrderController {
         return ResponseEntity.ok(adminOrderService.shipOrder(orderId, carrier, trackingNumber));
     }
 
+    // ── Bulk Ship Orders ──
+    @PostMapping("/orders/bulk-ship")
+    @SuppressWarnings("unchecked")
+    public ResponseEntity<Map<String, Object>> bulkShipOrders(@RequestBody Map<String, Object> payload) {
+        List<Map<String, String>> shipments = (List<Map<String, String>>) payload.get("orders");
+        if (shipments == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing 'orders' array"));
+        }
+        Map<String, Object> response = adminOrderService.bulkShipOrders(shipments);
+        return ResponseEntity.ok(response);
+    }
+
     // ── Item Return/Exchange Action (approve or reject) ──────────────────
     @PostMapping("/orders/{orderId}/items/{productId}/return-action")
     public ResponseEntity<Map<String, Object>> itemReturnAction(
@@ -173,6 +185,18 @@ public class AdminOrderController {
         Order order = adminOrderService.processItemRefund(orderId, productId, restock, manualAmount, isManual);
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Refund processed successfully");
+        response.put("order", order);
+        return ResponseEntity.ok(response);
+    }
+
+    // ── Retry Refund for a Failed Refund ──
+    @PostMapping("/orders/{orderId}/items/{productId}/retry-refund")
+    public ResponseEntity<Map<String, Object>> retryRefund(
+            @PathVariable("orderId") UUID orderId,
+            @PathVariable("productId") String productId) {
+        Order order = adminOrderService.retryRefund(orderId, productId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Refund retry processed successfully");
         response.put("order", order);
         return ResponseEntity.ok(response);
     }

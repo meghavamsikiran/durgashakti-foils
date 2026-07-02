@@ -245,15 +245,16 @@ public class OrderServiceImpl implements OrderService {
             couponUsageRepository.save(usage);
         }
 
-        cartRepository.findByUserId(userId).ifPresent(cart -> {
-            cart.setItems(new ArrayList<>());
-            cart.setUpdatedAt(OffsetDateTime.now());
-            cartRepository.save(cart);
-        });
-
         if (!"online".equalsIgnoreCase(savedOrder.getPaymentMethod())) {
+            cartRepository.findByUserId(userId).ifPresent(cart -> {
+                cart.setItems(new ArrayList<>());
+                cart.setUpdatedAt(OffsetDateTime.now());
+                cartRepository.save(cart);
+            });
             triggerOrderReceiptEmail(savedOrder);
         }
+
+
         return savedOrder;
     }
 
@@ -283,6 +284,13 @@ public class OrderServiceImpl implements OrderService {
         order.setRazorpaySignature(req.getRazorpaySignature());
         order.setUpdatedAt(OffsetDateTime.now());
         Order savedOrder = orderRepository.save(order);
+        
+        cartRepository.findByUserId(userId).ifPresent(cart -> {
+            cart.setItems(new ArrayList<>());
+            cart.setUpdatedAt(OffsetDateTime.now());
+            cartRepository.save(cart);
+        });
+        
         triggerOrderReceiptEmail(savedOrder);
         return savedOrder;
     }
@@ -364,6 +372,13 @@ public class OrderServiceImpl implements OrderService {
                                     order.setRazorpayPaymentId(paymentId);
                                     order.setUpdatedAt(OffsetDateTime.now());
                                     orderRepository.save(order);
+                                    
+                                    cartRepository.findByUserId(order.getUserId()).ifPresent(cart -> {
+                                        cart.setItems(new ArrayList<>());
+                                        cart.setUpdatedAt(OffsetDateTime.now());
+                                        cartRepository.save(cart);
+                                    });
+                                    
                                     triggerOrderReceiptEmail(order);
                                     log.info("Order {} marked as paid via webhook.", order.getOrderNumber());
                                 }
@@ -497,6 +512,13 @@ public class OrderServiceImpl implements OrderService {
                     }
                     order.setUpdatedAt(OffsetDateTime.now());
                     orderRepository.save(order);
+                    
+                    cartRepository.findByUserId(order.getUserId()).ifPresent(cart -> {
+                        cart.setItems(new ArrayList<>());
+                        cart.setUpdatedAt(OffsetDateTime.now());
+                        cartRepository.save(cart);
+                    });
+                    
                     triggerOrderReceiptEmail(order);
                     reconciled = true;
                 }
