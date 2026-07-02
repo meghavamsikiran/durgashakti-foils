@@ -591,6 +591,18 @@ public class OrderServiceImpl implements OrderService {
                 }
                 String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
                 String mockUrl = "/uploads/" + filename;
+                
+                try {
+                    java.io.File uploadsDir = new java.io.File("uploads");
+                    if (!uploadsDir.exists()) {
+                        uploadsDir.mkdirs();
+                    }
+                    java.io.File dest = new java.io.File(uploadsDir, filename);
+                    file.transferTo(dest);
+                } catch (Exception e) {
+                    log.error("Failed to save return image proof {}", filename, e);
+                }
+                
                 uploadedUrls.add(mockUrl);
             }
         }
@@ -723,6 +735,17 @@ public class OrderServiceImpl implements OrderService {
                     }
                     String filename = UUID.randomUUID() + "_" + invoice.getOriginalFilename();
                     invoiceUrl = "/uploads/" + filename;
+                    
+                    try {
+                        java.io.File uploadsDir = new java.io.File("uploads");
+                        if (!uploadsDir.exists()) {
+                            uploadsDir.mkdirs();
+                        }
+                        java.io.File dest = new java.io.File(uploadsDir, filename);
+                        invoice.transferTo(dest);
+                    } catch (Exception e) {
+                        log.error("Failed to save self ship invoice {}", filename, e);
+                    }
                 }
 
                 item.put("return_status", "SELF_SHIPPED");

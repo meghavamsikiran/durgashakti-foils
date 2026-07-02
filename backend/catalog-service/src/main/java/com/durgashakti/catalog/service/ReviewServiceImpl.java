@@ -210,6 +210,18 @@ public class ReviewServiceImpl implements ReviewService {
                 }
                 String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
                 String mockUrl = "/uploads/" + filename;
+                
+                try {
+                    java.io.File uploadsDir = new java.io.File("uploads");
+                    if (!uploadsDir.exists()) {
+                        uploadsDir.mkdirs();
+                    }
+                    java.io.File dest = new java.io.File(uploadsDir, filename);
+                    file.transferTo(dest);
+                } catch (Exception e) {
+                    log.error("Failed to save uploaded file {}", filename, e);
+                }
+                
                 uploadedMedia.add(mockUrl);
             }
         }

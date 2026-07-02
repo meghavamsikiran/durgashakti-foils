@@ -93,6 +93,9 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         final OffsetDateTime endVal = endDate;
         final OffsetDateTime filterVal = dateFilter;
 
+        log.info("Filtering analytics orders. timeframe={}, startDate={}, endDate={}, dateFilter={}, total orders database={}", 
+                timeframe, startDate, endDate, dateFilter, allOrders.size());
+
         List<Order> filteredOrders = allOrders.stream()
                 .filter(o -> {
                     if (o.getCreatedAt() == null) return false;
@@ -102,6 +105,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                     return true;
                 })
                 .collect(Collectors.toList());
+
+        log.info("Filtered orders count: {}", filteredOrders.size());
 
         // Basic Counts
         long totalOrders = filteredOrders.size();
@@ -334,8 +339,14 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 })
                 .collect(Collectors.toList());
 
+        // Sort orders chronologically (ascending) for trend chart
+        List<Order> chronologicalOrders = filteredOrders.stream()
+                .filter(o -> o.getCreatedAt() != null)
+                .sorted(Comparator.comparing(Order::getCreatedAt))
+                .collect(Collectors.toList());
+
         // Revenue Trend Chart grouping
-        Map<String, Double> trendMap = new TreeMap<>();
+        Map<String, Double> trendMap = new LinkedHashMap<>();
         long daysDiff = 30; // default All Time range
         if (startVal != null && endVal != null) {
             daysDiff = ChronoUnit.DAYS.between(startVal, endVal);
@@ -350,7 +361,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             formatter = DateTimeFormatter.ofPattern("MMM yyyy");
         }
 
-        for (Order o : filteredOrders) {
+        for (Order o : chronologicalOrders) {
             String oStatus = o.getOrderStatus() != null ? o.getOrderStatus().toLowerCase() : "";
             String pStatus = o.getPaymentStatus() != null ? o.getPaymentStatus().toLowerCase() : "";
             if (REVENUE_ORDER_STATUSES.contains(oStatus) && REVENUE_PAYMENT_STATUSES.contains(pStatus)) {
