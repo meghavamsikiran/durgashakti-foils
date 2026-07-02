@@ -53,6 +53,7 @@ public class AuthServiceImpl implements AuthService {
         this.emailClient = emailClient;
         this.passwordEncoder = new BCryptPasswordEncoder();
         this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
     }
@@ -127,7 +128,9 @@ public class AuthServiceImpl implements AuthService {
     public Map<String, Object> googleLogin(String googleAccessToken) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + googleAccessToken))
+                    .uri(URI.create("https://www.googleapis.com/oauth2/v3/userinfo"))
+                    .header("Authorization", "Bearer " + googleAccessToken)
+                    .timeout(Duration.ofSeconds(10))
                     .GET()
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
