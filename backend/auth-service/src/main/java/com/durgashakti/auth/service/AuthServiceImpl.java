@@ -266,7 +266,7 @@ public class AuthServiceImpl implements AuthService {
         pr.setFailedAttempts(0);
         passwordResetRepository.save(pr);
 
-        log.info("Sending OTP {} to email {}", otp, user.getEmail());
+        log.info("Sending recovery code to email {}", user.getEmail());
         final String otpEmail = user.getEmail();
         final String otpUserName = user.getFullName();
         final String otpCode = otp;
@@ -274,12 +274,14 @@ public class AuthServiceImpl implements AuthService {
             try {
                 emailClient.sendEmail(
                     otpEmail,
-                    "Password Reset OTP - Durga Shakti Foils",
-                    "Hello " + otpUserName + ",\n\nYour password reset OTP is: " + otpCode + "\nThis OTP is valid for 15 minutes.\n\nIf you did not request a password reset, please ignore this email.\n\nBest regards,\nDurga Shakti Foils Team"
+                    "Verify your identity - Durga Shakti Foils",
+                    "Hello " + otpUserName + ",\n\nWe received a request to access your Durga Shakti Foils account. " +
+                    "Your verification security code is: " + otpCode + "\n\nThis security code is valid for 15 minutes. " +
+                    "If you did not make this request, you can safely ignore this message.\n\nBest regards,\nDurga Shakti Foils Team"
                 );
-                log.info("OTP email dispatched successfully to {}", otpEmail);
+                log.info("Identity verification code email dispatched successfully to {}", otpEmail);
             } catch (Exception e) {
-                log.error("CRITICAL: Failed to send OTP email to {}: {}", otpEmail, e.getMessage(), e);
+                log.error("CRITICAL: Failed to send identity verification email to {}: {}", otpEmail, e.getMessage(), e);
             }
         });
     }
@@ -287,18 +289,16 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void resetPassword(ResetPasswordRequest req) {
         PasswordReset pr = passwordResetRepository.findByEmail(req.getEmail().toLowerCase())
-                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Invalid or expired OTP"));
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Invalid or expired security code"));
 
         if (pr.getExpiry().isBefore(OffsetDateTime.now())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "OTP has expired");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Security code has expired");
         }
 
-        // Allow master OTP bypass (999999) for verification fallback
-        boolean isMasterOtp = "999999".equals(req.getOtp());
-        if (!isMasterOtp && !pr.getOtp().equals(req.getOtp())) {
+        if (!pr.getOtp().equals(req.getOtp())) {
             pr.setFailedAttempts(pr.getFailedAttempts() + 1);
             passwordResetRepository.save(pr);
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Wrong OTP");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Wrong security code");
         }
 
         User user = userRepository.findByEmailIgnoreCase(req.getEmail())
