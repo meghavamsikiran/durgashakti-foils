@@ -210,7 +210,27 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        double total = subtotal - discount + deliveryCharge;
+        double taxableAmount = Math.max(0, subtotal - discount);
+        double cgst = Math.round(taxableAmount * 0.09 * 100.0) / 100.0;
+        double sgst = Math.round(taxableAmount * 0.09 * 100.0) / 100.0;
+        
+        double codCharge = 0.0;
+        if ("cod".equalsIgnoreCase(req.getPaymentMethod())) {
+            double defaultCodCharge = 20.0;
+            if (shippingSettingsOpt.isPresent()) {
+                Map<String, Object> config = shippingSettingsOpt.get().getValue();
+                if (config != null) {
+                    if (config.get("codCharge") != null) {
+                        defaultCodCharge = Double.parseDouble(String.valueOf(config.get("codCharge")));
+                    } else if (config.get("cod_extra_service_charge") != null) {
+                        defaultCodCharge = Double.parseDouble(String.valueOf(config.get("cod_extra_service_charge")));
+                    }
+                }
+            }
+            codCharge = defaultCodCharge;
+        }
+
+        double total = Math.round((taxableAmount + deliveryCharge + cgst + sgst + codCharge) * 100.0) / 100.0;
 
         Order order = new Order();
         order.setOrderNumber(orderNumber);
