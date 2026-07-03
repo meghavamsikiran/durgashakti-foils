@@ -40,6 +40,7 @@ public class OrderServiceImpl implements OrderService {
     private final com.durgashakti.common.util.EmailClient emailClient;
     private final OrderSettingRepository settingRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final com.durgashakti.common.util.SupabaseStorageService supabaseStorageService;
 
     public OrderServiceImpl(OrderServiceRepository orderRepository,
                             OrderProductRepository productRepository,
@@ -52,7 +53,8 @@ public class OrderServiceImpl implements OrderService {
                             OrderUserRepository userRepository,
                             com.durgashakti.common.util.EmailClient emailClient,
                             OrderSettingRepository settingRepository,
-                            JdbcTemplate jdbcTemplate) {
+                            JdbcTemplate jdbcTemplate,
+                            com.durgashakti.common.util.SupabaseStorageService supabaseStorageService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.couponRepository = couponRepository;
@@ -65,6 +67,7 @@ public class OrderServiceImpl implements OrderService {
         this.emailClient = emailClient;
         this.settingRepository = settingRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.supabaseStorageService = supabaseStorageService;
     }
 
     @PostConstruct
@@ -593,21 +596,12 @@ public class OrderServiceImpl implements OrderService {
                 if (file.getSize() > 2 * 1024 * 1024) {
                     throw new ApiException(HttpStatus.BAD_REQUEST, "Each image must be under 2MB");
                 }
-                String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-                String mockUrl = "/uploads/" + filename;
-                
                 try {
-                    java.io.File uploadsDir = new java.io.File("uploads");
-                    if (!uploadsDir.exists()) {
-                        uploadsDir.mkdirs();
-                    }
-                    java.io.File dest = new java.io.File(uploadsDir, filename);
-                    file.transferTo(dest.getAbsoluteFile());
+                    String fileUrl = supabaseStorageService.uploadFile(file, "returns");
+                    uploadedUrls.add(fileUrl);
                 } catch (Exception e) {
-                    log.error("Failed to save return image proof {}", filename, e);
+                    log.error("Failed to upload return image proof to Supabase", e);
                 }
-                
-                uploadedUrls.add(mockUrl);
             }
         }
 
@@ -765,18 +759,10 @@ public class OrderServiceImpl implements OrderService {
                     if (invoice.getSize() > 2 * 1024 * 1024) {
                         throw new ApiException(HttpStatus.BAD_REQUEST, "Invoice file must be under 2MB");
                     }
-                    String filename = UUID.randomUUID() + "_" + invoice.getOriginalFilename();
-                    invoiceUrl = "/uploads/" + filename;
-                    
                     try {
-                        java.io.File uploadsDir = new java.io.File("uploads");
-                        if (!uploadsDir.exists()) {
-                            uploadsDir.mkdirs();
-                        }
-                        java.io.File dest = new java.io.File(uploadsDir, filename);
-                        invoice.transferTo(dest.getAbsoluteFile());
+                        invoiceUrl = supabaseStorageService.uploadFile(invoice, "returns");
                     } catch (Exception e) {
-                        log.error("Failed to save self ship invoice {}", filename, e);
+                        log.error("Failed to upload self ship invoice to Supabase", e);
                     }
                 }
 
