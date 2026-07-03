@@ -97,6 +97,12 @@ public class AdminProductController {
         return ResponseEntity.ok(adminProductService.updateProduct(id, product));
     }
 
+    @PutMapping("/products/{id}/status")
+    public ResponseEntity<Product> updateProductStatus(@PathVariable("id") UUID id, @RequestBody Map<String, Object> payload) {
+        Boolean isActive = (Boolean) payload.get("is_active");
+        return ResponseEntity.ok(adminProductService.updateProductStatus(id, isActive));
+    }
+
     @DeleteMapping("/products/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable("id") UUID id) {
         adminProductService.deleteProduct(id);

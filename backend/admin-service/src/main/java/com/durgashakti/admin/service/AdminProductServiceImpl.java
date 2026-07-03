@@ -50,8 +50,22 @@ public class AdminProductServiceImpl implements AdminProductService {
         p.setImageUrl(updatedProduct.getImageUrl());
         p.setMediaUrls(updatedProduct.getMediaUrls());
         p.setFeatures(updatedProduct.getFeatures());
+        p.setCategory(updatedProduct.getCategory());
+        p.setSize(updatedProduct.getSize());
+        p.setThickness(updatedProduct.getThickness());
+        p.setBadge(updatedProduct.getBadge());
+        p.setWidth(updatedProduct.getWidth());
         p.setUpdatedAt(OffsetDateTime.now());
 
+        return productRepository.save(p);
+    }
+
+    @Override
+    public Product updateProductStatus(UUID id, Boolean isActive) {
+        Product p = productRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Product not found"));
+        p.setIsActive(isActive);
+        p.setUpdatedAt(OffsetDateTime.now());
         return productRepository.save(p);
     }
 

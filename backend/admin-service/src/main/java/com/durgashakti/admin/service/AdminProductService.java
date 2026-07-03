@@ -8,5 +8,6 @@ public interface AdminProductService {
     List<Product> listAll();
     Product createProduct(Product product);
     Product updateProduct(UUID id, Product updatedProduct);
+    Product updateProductStatus(UUID id, Boolean isActive);
     void deleteProduct(UUID id);
 }

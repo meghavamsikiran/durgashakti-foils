@@ -16,10 +16,15 @@ public class ContactController {
 
     private final ContactService contactService;
     private final com.durgashakti.common.security.JwtUtil jwtUtil;
+    private final com.durgashakti.common.util.SupabaseStorageService supabaseStorageService;
 
-    public ContactController(ContactService contactService, com.durgashakti.common.security.JwtUtil jwtUtil) {
+    public ContactController(
+            ContactService contactService, 
+            com.durgashakti.common.security.JwtUtil jwtUtil,
+            com.durgashakti.common.util.SupabaseStorageService supabaseStorageService) {
         this.contactService = contactService;
         this.jwtUtil = jwtUtil;
+        this.supabaseStorageService = supabaseStorageService;
     }
 
     @PostMapping("/contacts")
@@ -68,18 +73,11 @@ public class ContactController {
             throw new com.durgashakti.common.exception.ApiException(org.springframework.http.HttpStatus.BAD_REQUEST, "Image size must be less than 2MB");
         }
 
-        String filename = java.util.UUID.randomUUID() + "_" + file.getOriginalFilename();
         try {
-            java.io.File uploadsDir = new java.io.File("uploads");
-            if (!uploadsDir.exists()) {
-                uploadsDir.mkdirs();
-            }
-            java.io.File dest = new java.io.File(uploadsDir, filename);
-            file.transferTo(dest.getAbsoluteFile());
-            
-            return ResponseEntity.ok(java.util.Map.of("url", "/uploads/" + filename));
+            String fileUrl = supabaseStorageService.uploadFile(file, "contacts");
+            return ResponseEntity.ok(java.util.Map.of("url", fileUrl));
         } catch (Exception e) {
-            throw new com.durgashakti.common.exception.ApiException(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save file: " + e.getMessage());
+            throw new com.durgashakti.common.exception.ApiException(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "Failed to upload file: " + e.getMessage());
         }
     }
 }

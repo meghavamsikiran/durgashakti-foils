@@ -30,6 +30,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final CatalogSettingRepository settingRepository;
     private final CatalogOrderRepository orderRepository;
     private final ObjectMapper objectMapper;
+    private final com.durgashakti.common.util.SupabaseStorageService supabaseStorageService;
 
     @Value("${google.review-count:57}")
     private int fallbackReviewCount;
@@ -41,12 +42,14 @@ public class ReviewServiceImpl implements ReviewService {
                              CatalogProductRepository productRepository,
                              CatalogSettingRepository settingRepository,
                              CatalogOrderRepository orderRepository,
-                             ObjectMapper objectMapper) {
+                             ObjectMapper objectMapper,
+                             com.durgashakti.common.util.SupabaseStorageService supabaseStorageService) {
         this.reviewRepository = reviewRepository;
         this.productRepository = productRepository;
         this.settingRepository = settingRepository;
         this.orderRepository = orderRepository;
         this.objectMapper = objectMapper;
+        this.supabaseStorageService = supabaseStorageService;
     }
 
     @Override
@@ -208,21 +211,13 @@ public class ReviewServiceImpl implements ReviewService {
                 if (isVideo && file.getSize() > 10 * 1024 * 1024) {
                     throw new ApiException(HttpStatus.BAD_REQUEST, "Video size must be less than 10MB");
                 }
-                String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-                String mockUrl = "/uploads/" + filename;
-                
                 try {
-                    java.io.File uploadsDir = new java.io.File("uploads");
-                    if (!uploadsDir.exists()) {
-                        uploadsDir.mkdirs();
-                    }
-                    java.io.File dest = new java.io.File(uploadsDir, filename);
-                    file.transferTo(dest.getAbsoluteFile());
+                    String fileUrl = supabaseStorageService.uploadFile(file, "reviews");
+                    uploadedMedia.add(fileUrl);
                 } catch (Exception e) {
-                    log.error("Failed to save uploaded file {}", filename, e);
+                    log.error("Failed to upload review file: {}", file.getOriginalFilename(), e);
+                    throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to upload file: " + file.getOriginalFilename());
                 }
-                
-                uploadedMedia.add(mockUrl);
             }
         }
 
