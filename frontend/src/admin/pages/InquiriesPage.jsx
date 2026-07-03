@@ -140,9 +140,7 @@ const InquiriesPage = () => {
         setUploadingReplyFiles(true);
         const formData = new FormData();
         formData.append('file', file);
-        const response = await apiClient.post('/contacts/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await apiClient.post('/contacts/upload', formData);
         setReplyUrls(prev => [...prev, response.data.url]);
         toast.success(`Uploaded ${file.name} successfully`);
       } catch (err) {

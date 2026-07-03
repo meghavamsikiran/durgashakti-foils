@@ -14,11 +14,7 @@ const contactService = {
   uploadAttachment: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await apiClient.post('/contacts/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    const response = await apiClient.post('/contacts/upload', formData);
     return response.data;
   }
 };
