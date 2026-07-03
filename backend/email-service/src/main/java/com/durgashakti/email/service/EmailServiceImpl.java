@@ -6,6 +6,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import jakarta.mail.internet.MimeMessage;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -17,23 +19,44 @@ public class EmailServiceImpl implements EmailService {
     @org.springframework.beans.factory.annotation.Value("${spring.mail.username:noreply@durgashaktifoils.com}")
     private String fromAddress;
 
+    @org.springframework.beans.factory.annotation.Value("${brevo.api-key:${BREVO_API_KEY:}}")
+    private String brevoApiKey;
+
+    @org.springframework.beans.factory.annotation.Value("${brevo.sender.email:meghavamsikiran@gmail.com}")
+    private String brevoSenderEmail;
+
+    @org.springframework.beans.factory.annotation.Value("${brevo.sender.name:Durga Shakti Foils}")
+    private String brevoSenderName;
+
+    private final java.net.http.HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
     public EmailServiceImpl(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 
     @Override
     public void sendEmail(String to, String subject, String body) {
+        String htmlBody = body.trim().startsWith("<!DOCTYPE html>") || body.trim().startsWith("<html>")
+                ? body 
+                : wrapHtmlTemplate(subject, body);
+
+        // Try Brevo HTTP API first to bypass SMTP port restrictions
+        if (brevoApiKey != null && !brevoApiKey.trim().isEmpty() && !brevoApiKey.contains("YOUR_KEY")) {
+            try {
+                sendViaBrevo(to, subject, htmlBody);
+                return;
+            } catch (Exception e) {
+                log.error("Failed to send email via Brevo HTTP API in EmailServiceImpl, falling back to direct SMTP: {}", e.getMessage(), e);
+            }
+        }
+
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
             helper.setFrom(fromAddress);
             helper.setTo(to);
             helper.setSubject(subject);
-            
-            String htmlBody = body.trim().startsWith("<!DOCTYPE html>") || body.trim().startsWith("<html>")
-                    ? body 
-                    : wrapHtmlTemplate(subject, body);
-                    
             helper.setText(htmlBody, true);
             mailSender.send(mimeMessage);
             log.info("HTML Email sent successfully to {}", to);
@@ -43,6 +66,42 @@ public class EmailServiceImpl implements EmailService {
             log.info("To: {}", to);
             log.info("Subject: {}", subject);
             log.info("Body: {}", body);
+        }
+    }
+
+    private void sendViaBrevo(String to, String subject, String htmlContent) throws Exception {
+        Map<String, Object> senderMap = new HashMap<>();
+        senderMap.put("name", brevoSenderName);
+        senderMap.put("email", brevoSenderEmail);
+
+        Map<String, Object> recipientMap = new HashMap<>();
+        recipientMap.put("email", to);
+
+        java.util.List<Map<String, Object>> toList = new java.util.ArrayList<>();
+        toList.add(recipientMap);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("sender", senderMap);
+        payload.put("to", toList);
+        payload.put("subject", subject);
+        payload.put("htmlContent", htmlContent);
+
+        String json = objectMapper.writeValueAsString(payload);
+
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                .uri(java.net.URI.create("https://api.brevo.com/v3/smtp/email"))
+                .header("accept", "application/json")
+                .header("api-key", brevoApiKey)
+                .header("content-type", "application/json")
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        log.info("Sending HTTP email to {} via Brevo in EmailServiceImpl...", to);
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            log.info("Email successfully sent via Brevo HTTP API. Response: {}", response.body());
+        } else {
+            throw new RuntimeException("Brevo API returned status " + response.statusCode() + ": " + response.body());
         }
     }
 

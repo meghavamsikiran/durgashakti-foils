@@ -30,6 +30,15 @@ public class EmailClient {
     @Value("${email.service.url:http://localhost:8015/api/email/send}")
     private String emailServiceUrl;
 
+    @Value("${brevo.api-key:${BREVO_API_KEY:}}")
+    private String brevoApiKey;
+
+    @Value("${brevo.sender.email:meghavamsikiran@gmail.com}")
+    private String brevoSenderEmail;
+
+    @Value("${brevo.sender.name:Durga Shakti Foils}")
+    private String brevoSenderName;
+
     public EmailClient(@Autowired(required = false) JavaMailSender mailSender) {
         this.mailSender = mailSender;
         if (mailSender != null) {
@@ -41,6 +50,17 @@ public class EmailClient {
 
     public void sendEmail(String to, String subject, String body) {
         String htmlContent = wrapHtmlTemplate(subject, body);
+
+        // If Brevo HTTP API is configured, use it directly to bypass SMTP port blocking
+        if (brevoApiKey != null && !brevoApiKey.trim().isEmpty() && !brevoApiKey.contains("YOUR_KEY")) {
+            try {
+                sendViaBrevo(to, subject, htmlContent);
+                return;
+            } catch (Exception e) {
+                log.error("Failed to send email via Brevo HTTP API, attempting direct SMTP fallback: {}", e.getMessage(), e);
+            }
+        }
+
         if (mailSender != null) {
             try {
                 jakarta.mail.internet.MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -63,6 +83,42 @@ public class EmailClient {
         payload.put("subject", subject);
         payload.put("body", htmlContent);
         dispatch(payload);
+    }
+
+    private void sendViaBrevo(String to, String subject, String htmlContent) throws Exception {
+        Map<String, Object> senderMap = new HashMap<>();
+        senderMap.put("name", brevoSenderName);
+        senderMap.put("email", brevoSenderEmail);
+
+        Map<String, Object> recipientMap = new HashMap<>();
+        recipientMap.put("email", to);
+
+        java.util.List<Map<String, Object>> toList = new java.util.ArrayList<>();
+        toList.add(recipientMap);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("sender", senderMap);
+        payload.put("to", toList);
+        payload.put("subject", subject);
+        payload.put("htmlContent", htmlContent);
+
+        String json = objectMapper.writeValueAsString(payload);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                .header("accept", "application/json")
+                .header("api-key", brevoApiKey)
+                .header("content-type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        log.info("Sending email to {} via Brevo HTTP API...", to);
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            log.info("Email successfully sent via Brevo HTTP API. Response: {}", response.body());
+        } else {
+            throw new RuntimeException("Brevo API returned status " + response.statusCode() + ": " + response.body());
+        }
     }
 
     private void dispatch(Map<String, Object> payload) {
