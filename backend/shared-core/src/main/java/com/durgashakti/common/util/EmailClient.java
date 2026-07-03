@@ -165,18 +165,18 @@ public class EmailClient {
                 "        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 0; color: #333333; }\n" +
                 "        .wrapper { width: 100%; table-layout: fixed; background-color: #f4f6f8; padding: 40px 0; }\n" +
                 "        .content-container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }\n" +
-                "        .header { background: linear-gradient(135deg, #111827 0%, #1f2937 100%); padding: 30px; text-align: center; }\n" +
-                "        .header img { height: 50px; }\n" +
-                "        .body { padding: 40px 30px; line-height: 1.6; font-size: 14px; color: #4b5563; }\n" +
-                "        .footer { background-color: #f9fafb; padding: 20px; text-align: center; font-size: 11px; color: #9ca3af; border-top: 1px solid #f3f4f6; }\n" +
-                "        .footer a { color: #10b981; text-decoration: none; font-weight: bold; }\n" +
+                "        .header { background-color: #ffffff; padding: 25px; text-align: center; border-bottom: 1px solid #e5e7eb; }\n" +
+                "        .header img { height: 60px; max-width: 100%; object-fit: contain; }\n" +
+                "        .body { padding: 45px 35px; line-height: 1.6; font-size: 14px; color: #374151; }\n" +
+                "        .footer { background-color: #f9fafb; padding: 25px; text-align: center; font-size: 11px; color: #6b7280; border-top: 1px solid #e5e7eb; }\n" +
+                "        .footer a { color: #059669; text-decoration: none; font-weight: bold; }\n" +
                 "    </style>\n" +
                 "</head>\n" +
                 "<body>\n" +
                 "    <div class=\"wrapper\">\n" +
                 "        <div class=\"content-container\">\n" +
                 "            <div class=\"header\">\n" +
-                "                <img src=\"https://durgashakti-foils.vercel.app/logo-durga.webp\" alt=\"Durga Shakti Foils Logo\">\n" +
+                "                <img src=\"https://durgashakti-foils.vercel.app/logo-durga.png\" alt=\"Durga Shakti Foils Logo\">\n" +
                 "            </div>\n" +
                 "            <div class=\"body\">\n" +
                 "                " + formattedBody + "\n" +

@@ -29,22 +29,26 @@ export const useAddresses = () => {
 
   const addAddress = async (addressData) => {
     try {
-      await addressService.addAddress(addressData);
+      const newAddr = await addressService.addAddress(addressData);
       toast.success('Address saved successfully');
+      setAddresses(prev => [newAddr, ...prev.filter(a => !newAddr.isDefault || !a.isDefault)]);
       fetchAddresses();
       return true;
     } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to add address');
       return false;
     }
   };
 
   const updateAddress = async (id, addressData) => {
     try {
-      await addressService.updateAddress(id, addressData);
+      const updatedAddr = await addressService.updateAddress(id, addressData);
       toast.success('Address updated successfully');
+      setAddresses(prev => prev.map(a => a.id === id ? updatedAddr : (updatedAddr.isDefault ? { ...a, isDefault: false } : a)));
       fetchAddresses();
       return true;
     } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update address');
       return false;
     }
   };
@@ -53,9 +57,11 @@ export const useAddresses = () => {
     try {
       await addressService.deleteAddress(id);
       toast.success('Address removed');
+      setAddresses(prev => prev.filter(addr => addr.id !== id));
       fetchAddresses();
       return true;
     } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to remove address');
       return false;
     }
   };
