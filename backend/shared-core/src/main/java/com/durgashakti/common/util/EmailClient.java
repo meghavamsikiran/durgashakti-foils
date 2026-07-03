@@ -12,8 +12,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Component
 public class EmailClient {
@@ -49,40 +51,46 @@ public class EmailClient {
     }
 
     public void sendEmail(String to, String subject, String body) {
-        String htmlContent = wrapHtmlTemplate(subject, body);
-
-        // If Brevo HTTP API is configured, use it directly to bypass SMTP port blocking
-        if (brevoApiKey != null && !brevoApiKey.trim().isEmpty() && !brevoApiKey.contains("YOUR_KEY")) {
+        CompletableFuture.runAsync(() -> {
             try {
-                sendViaBrevo(to, subject, htmlContent);
-                return;
-            } catch (Exception e) {
-                log.error("Failed to send email via Brevo HTTP API, attempting direct SMTP fallback: {}", e.getMessage(), e);
-            }
-        }
+                String htmlContent = wrapHtmlTemplate(subject, body);
 
-        if (mailSender != null) {
-            try {
-                jakarta.mail.internet.MimeMessage mimeMessage = mailSender.createMimeMessage();
-                org.springframework.mail.javamail.MimeMessageHelper helper = 
-                    new org.springframework.mail.javamail.MimeMessageHelper(mimeMessage, true, "UTF-8");
-                helper.setFrom(fromAddress);
-                helper.setTo(to);
-                helper.setSubject(subject);
-                helper.setText(htmlContent, true);
-                mailSender.send(mimeMessage);
-                log.info("Direct HTML email sent successfully to {}", to);
-                return;
-            } catch (Exception e) {
-                log.error("Direct HTML email send failed, attempting HTTP fallback to: {}", emailServiceUrl, e);
-            }
-        }
+                // If Brevo HTTP API is configured, use it directly to bypass SMTP port blocking
+                if (brevoApiKey != null && !brevoApiKey.trim().isEmpty() && !brevoApiKey.contains("YOUR_KEY")) {
+                    try {
+                        sendViaBrevo(to, subject, htmlContent);
+                        return;
+                    } catch (Exception e) {
+                        log.error("Failed to send email via Brevo HTTP API, attempting direct SMTP fallback: {}", e.getMessage(), e);
+                    }
+                }
 
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("to", to);
-        payload.put("subject", subject);
-        payload.put("body", htmlContent);
-        dispatch(payload);
+                if (mailSender != null) {
+                    try {
+                        jakarta.mail.internet.MimeMessage mimeMessage = mailSender.createMimeMessage();
+                        org.springframework.mail.javamail.MimeMessageHelper helper = 
+                            new org.springframework.mail.javamail.MimeMessageHelper(mimeMessage, true, "UTF-8");
+                        helper.setFrom(fromAddress);
+                        helper.setTo(to);
+                        helper.setSubject(subject);
+                        helper.setText(htmlContent, true);
+                        mailSender.send(mimeMessage);
+                        log.info("Direct HTML email sent successfully to {}", to);
+                        return;
+                    } catch (Exception e) {
+                        log.error("Direct HTML email send failed, attempting HTTP fallback to: {}", emailServiceUrl, e);
+                    }
+                }
+
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("to", to);
+                payload.put("subject", subject);
+                payload.put("body", htmlContent);
+                dispatch(payload);
+            } catch (Exception e) {
+                log.error("Unhandled error in async email dispatcher to {}: {}", to, e.getMessage(), e);
+            }
+        });
     }
 
     private void sendViaBrevo(String to, String subject, String htmlContent) throws Exception {
@@ -109,6 +117,7 @@ public class EmailClient {
                 .header("accept", "application/json")
                 .header("api-key", brevoApiKey)
                 .header("content-type", "application/json")
+                .timeout(Duration.ofSeconds(10))
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
@@ -127,6 +136,7 @@ public class EmailClient {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(emailServiceUrl))
                     .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(10))
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
 

@@ -69,6 +69,8 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/**", "/api/health").permitAll()
                 // Static Uploads
                 .requestMatchers("/uploads/**").permitAll()
+                // Geolocation API (Public lookup)
+                .requestMatchers("/api/geolocation/**").permitAll()
                 // Admin Area Gates
                 .requestMatchers("/api/superadmin/**").hasRole("SUPER_ADMIN")
                 .requestMatchers("/api/admin/**", "/api/analytics/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
