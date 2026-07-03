@@ -53,4 +53,33 @@ public class ContactController {
         List<Contact> myTickets = contactService.getMyContactsByEmail(email);
         return ResponseEntity.ok(Map.of("items", myTickets));
     }
+
+    @PostMapping(value = "/contacts/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, String>> uploadContactAttachment(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new com.durgashakti.common.exception.ApiException(org.springframework.http.HttpStatus.BAD_REQUEST, "File is empty");
+        }
+        String contentType = file.getContentType();
+        boolean isImage = contentType != null && contentType.startsWith("image/");
+        if (!isImage) {
+            throw new com.durgashakti.common.exception.ApiException(org.springframework.http.HttpStatus.BAD_REQUEST, "Only image uploads are allowed");
+        }
+        if (file.getSize() > 2 * 1024 * 1024) {
+            throw new com.durgashakti.common.exception.ApiException(org.springframework.http.HttpStatus.BAD_REQUEST, "Image size must be less than 2MB");
+        }
+
+        String filename = java.util.UUID.randomUUID() + "_" + file.getOriginalFilename();
+        try {
+            java.io.File uploadsDir = new java.io.File("uploads");
+            if (!uploadsDir.exists()) {
+                uploadsDir.mkdirs();
+            }
+            java.io.File dest = new java.io.File(uploadsDir, filename);
+            file.transferTo(dest.getAbsoluteFile());
+            
+            return ResponseEntity.ok(java.util.Map.of("url", "/uploads/" + filename));
+        } catch (Exception e) {
+            throw new com.durgashakti.common.exception.ApiException(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "Failed to save file: " + e.getMessage());
+        }
+    }
 }

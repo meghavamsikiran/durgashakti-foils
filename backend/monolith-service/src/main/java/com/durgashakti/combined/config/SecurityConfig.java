@@ -59,7 +59,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/settings/public").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/reviews/google-summary").permitAll()
                 // Contact
-                .requestMatchers(HttpMethod.POST, "/api/contacts", "/api/contact").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/contacts", "/api/contact", "/api/contacts/upload").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/contacts").permitAll()
                 // Razorpay Webhooks
                 .requestMatchers("/api/payment/razorpay/webhook", "/api/orders/webhook").permitAll()

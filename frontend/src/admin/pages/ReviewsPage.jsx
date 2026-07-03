@@ -522,7 +522,7 @@ const ReviewsPage = () => {
                         </button>
                       </div>
                     </div>
-                    <p className="text-sm text-slate-200 leading-relaxed font-medium">{review.admin_reply}</p>
+                    <p className="text-sm leading-relaxed font-medium" style={{ color: '#e2e8f0' }}>{review.admin_reply}</p>
                   </div>
                 )}
 
