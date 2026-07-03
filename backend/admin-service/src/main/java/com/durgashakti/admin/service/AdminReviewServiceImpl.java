@@ -88,7 +88,16 @@ public class AdminReviewServiceImpl implements AdminReviewService {
                     map.put("title", r.getTitle());
                     map.put("comment", r.getComment());
                     map.put("public_name", r.getPublicName());
-                    map.put("media_urls", r.getMediaUrls());
+                    List<Map<String, String>> mediaList = new ArrayList<>();
+                    if (r.getMediaUrls() != null) {
+                        for (String url : r.getMediaUrls()) {
+                            Map<String, String> m = new HashMap<>();
+                            m.put("url", url);
+                            m.put("type", url.toLowerCase().endsWith(".mp4") ? "video" : "image");
+                            mediaList.add(m);
+                        }
+                    }
+                    map.put("media_urls", mediaList);
                     map.put("status", r.getStatus());
                     map.put("admin_reply", r.getAdminReply());
                     map.put("is_verified_purchase", true);

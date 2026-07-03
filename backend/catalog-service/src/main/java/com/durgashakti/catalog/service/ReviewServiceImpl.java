@@ -346,7 +346,16 @@ public class ReviewServiceImpl implements ReviewService {
         map.put("title", review.getTitle());
         map.put("comment", review.getComment());
         map.put("public_name", review.getPublicName());
-        map.put("media_urls", review.getMediaUrls());
+        List<Map<String, String>> mediaList = new ArrayList<>();
+        if (review.getMediaUrls() != null) {
+            for (String url : review.getMediaUrls()) {
+                Map<String, String> m = new HashMap<>();
+                m.put("url", url);
+                m.put("type", url.toLowerCase().endsWith(".mp4") ? "video" : "image");
+                mediaList.add(m);
+            }
+        }
+        map.put("media_urls", mediaList);
         map.put("status", review.getStatus());
         map.put("admin_reply", review.getAdminReply());
         map.put("is_verified_purchase", true);
