@@ -1197,7 +1197,7 @@ const AdminOrderDetailsPage = () => {
                       const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
                       const fullUrl = formatImageUrl(url);
                       return (
-                         <div key={idx} className="relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-primary transition-all w-20 h-20 flex items-center justify-center group cursor-pointer">
+                         <div key={idx} className="relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-primary transition-all w-28 h-28 flex items-center justify-center group cursor-pointer">
                           {isVideo ? (
                             <a
                               href={fullUrl}
@@ -1225,7 +1225,7 @@ const AdminOrderDetailsPage = () => {
                                 src={fullUrl}
                                 onError={(e) => { e.target.src = '/logo-durga.webp'; }}
                                 alt="Proof"
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                className="w-full h-full object-contain group-hover:scale-105 transition-transform"
                               />
                             </a>
                           )}

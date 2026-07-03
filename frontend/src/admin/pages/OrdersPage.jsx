@@ -781,9 +781,12 @@ const OrdersPage = () => {
     if (search) {
       const q = search.toLowerCase();
       const matchId = String(order.id || '').toLowerCase().includes(q);
-      const matchName = String(order.shipping_address?.name || '').toLowerCase().includes(q);
+      const matchOrderNum = String(order.order_number || '').toLowerCase().includes(q);
+      const matchName = String(order.shipping_address?.name || order.customer_name || '').toLowerCase().includes(q);
       const matchPhone = String(order.shipping_address?.phone || '').toLowerCase().includes(q);
-      if (!matchId && !matchName && !matchPhone) return false;
+      const matchRzpPayId = String(order.razorpay_payment_id || '').toLowerCase().includes(q);
+      const matchRzpOrdId = String(order.razorpay_order_id || '').toLowerCase().includes(q);
+      if (!matchId && !matchOrderNum && !matchName && !matchPhone && !matchRzpPayId && !matchRzpOrdId) return false;
     }
     return true;
   });
@@ -2153,7 +2156,7 @@ const OrdersPage = () => {
                           const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
                           const fullUrl = formatImageUrl(url);
                           return (
-                             <div key={idx} className="relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-primary transition-all w-20 h-20 flex items-center justify-center group cursor-pointer">
+                             <div key={idx} className="relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-primary transition-all w-28 h-28 flex items-center justify-center group cursor-pointer">
                               {isVideo ? (
                                 <a
                                   href={fullUrl}
@@ -2181,7 +2184,7 @@ const OrdersPage = () => {
                                     src={fullUrl}
                                     onError={(e) => { e.target.src = '/logo-durga.webp'; }}
                                     alt="Proof"
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                    className="w-full h-full object-contain group-hover:scale-105 transition-transform"
                                   />
                                 </a>
                               )}
@@ -2293,7 +2296,7 @@ const OrdersPage = () => {
                 const showRefundActions = (
                   isCod
                     ? ['refund_pending', 'refund_failed'].includes(selectedOrderForModal.payment_status)
-                    : ['refund_failed'].includes(selectedOrderForModal.payment_status)
+                    : ['refund_pending', 'refund_failed'].includes(selectedOrderForModal.payment_status)
                 ) && totalRefundAmount > 0;
                 const showRefundInfo = ['refund_pending', 'refunded', 'refund_failed'].includes(selectedOrderForModal.payment_status) && totalRefundAmount > 0;
 

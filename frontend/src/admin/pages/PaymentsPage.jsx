@@ -181,10 +181,13 @@ const PaymentsPage = () => {
     if (search) {
       const q = search.toLowerCase();
       const matchOrderId = String(r.order_id || '').toLowerCase().includes(q);
+      const matchOrderNum = String(r.order_number || '').toLowerCase().includes(q);
       const matchTransactionId = String(r.transaction_id || '').toLowerCase().includes(q);
       const matchPaymentMethod = String(r.payment_method || '').toLowerCase().includes(q);
+      const matchProvider = String(r.provider || '').toLowerCase().includes(q);
       const matchAmount = String(r.amount || '').toLowerCase().includes(q);
-      if (!matchOrderId && !matchTransactionId && !matchPaymentMethod && !matchAmount) return false;
+      const matchStatus = String(r.status || '').toLowerCase().includes(q);
+      if (!matchOrderId && !matchOrderNum && !matchTransactionId && !matchPaymentMethod && !matchProvider && !matchAmount && !matchStatus) return false;
     }
     return true;
   });

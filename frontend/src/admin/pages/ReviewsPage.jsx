@@ -346,9 +346,11 @@ const ReviewsPage = () => {
             if (search) {
               const q = search.toLowerCase();
               const matchComment = String(review.comment || '').toLowerCase().includes(q);
-              const matchName = String(review.user?.full_name || review.customer_name || '').toLowerCase().includes(q);
-              const matchProduct = String(review.product?.name || '').toLowerCase().includes(q);
-              if (!matchComment && !matchName && !matchProduct) return false;
+              const matchTitle = String(review.title || '').toLowerCase().includes(q);
+              const matchName = String(review.public_name || review.customer_name || review.user?.full_name || '').toLowerCase().includes(q);
+              const matchEmail = String(review.customer_email || '').toLowerCase().includes(q);
+              const matchProduct = String(review.product_name || review.product?.name || '').toLowerCase().includes(q);
+              if (!matchComment && !matchTitle && !matchName && !matchEmail && !matchProduct) return false;
             }
             return true;
           });
