@@ -22,10 +22,10 @@ public class EmailServiceImpl implements EmailService {
     @org.springframework.beans.factory.annotation.Value("${brevo.api-key:${BREVO_API_KEY:}}")
     private String brevoApiKey;
 
-    @org.springframework.beans.factory.annotation.Value("${brevo.sender.email:meghavamsikiran@gmail.com}")
+    @org.springframework.beans.factory.annotation.Value("${brevo.sender.email:${BREVO_SENDER_EMAIL:meghavamsikiran@gmail.com}}")
     private String brevoSenderEmail;
 
-    @org.springframework.beans.factory.annotation.Value("${brevo.sender.name:Durga Shakti Foils}")
+    @org.springframework.beans.factory.annotation.Value("${brevo.sender.name:${BREVO_SENDER_NAME:Durga Shakti Foils}}")
     private String brevoSenderName;
 
     private final java.net.http.HttpClient httpClient = java.net.http.HttpClient.newHttpClient();

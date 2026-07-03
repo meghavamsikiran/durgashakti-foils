@@ -33,10 +33,10 @@ public class EmailClient {
     @Value("${brevo.api-key:${BREVO_API_KEY:}}")
     private String brevoApiKey;
 
-    @Value("${brevo.sender.email:meghavamsikiran@gmail.com}")
+    @Value("${brevo.sender.email:${BREVO_SENDER_EMAIL:meghavamsikiran@gmail.com}}")
     private String brevoSenderEmail;
 
-    @Value("${brevo.sender.name:Durga Shakti Foils}")
+    @Value("${brevo.sender.name:${BREVO_SENDER_NAME:Durga Shakti Foils}}")
     private String brevoSenderName;
 
     public EmailClient(@Autowired(required = false) JavaMailSender mailSender) {
