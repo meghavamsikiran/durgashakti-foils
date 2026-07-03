@@ -104,10 +104,23 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         order.setUpdatedAt(OffsetDateTime.now());
         order = orderRepository.save(order);
 
-        if ("delivered".equalsIgnoreCase(status)) {
+        String statusLower = status.toLowerCase();
+        if ("confirmed".equals(statusLower)) {
+            sendOrderEmail(order, "Order Confirmed: " + order.getOrderNumber(), 
+                "Your order " + order.getOrderNumber() + " has been confirmed and is now being processed.");
+        } else if ("packed".equals(statusLower) || "packaging".equals(statusLower)) {
+            sendOrderEmail(order, "Order Packed: " + order.getOrderNumber(), 
+                "Your order " + order.getOrderNumber() + " has been packed and is ready for courier handover.");
+        } else if ("shipped".equals(statusLower)) {
+            sendOrderEmail(order, "Order Shipped: " + order.getOrderNumber(), 
+                "Your order " + order.getOrderNumber() + " has been shipped! You can track shipping progress on the order details page.");
+        } else if ("out_for_delivery".equals(statusLower) || "out for delivery".equals(statusLower)) {
+            sendOrderEmail(order, "Order Out for Delivery: " + order.getOrderNumber(), 
+                "Your order " + order.getOrderNumber() + " is out for delivery! Our delivery partner will contact you shortly.");
+        } else if ("delivered".equals(statusLower)) {
             sendOrderEmail(order, "Order Delivered: " + order.getOrderNumber(), 
                 "Great news! Your order " + order.getOrderNumber() + " has been marked as delivered. We hope you enjoy your purchase!");
-        } else if ("cancelled".equalsIgnoreCase(status)) {
+        } else if ("cancelled".equals(statusLower)) {
             sendOrderEmail(order, "Order Cancelled: " + order.getOrderNumber(), 
                 "Your order " + order.getOrderNumber() + " has been cancelled. If this was a mistake, please contact support.");
         }
@@ -411,7 +424,6 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
         order = orderRepository.save(order);
 
-        // Send customer email
         boolean refundSucceeded = "REFUND_COMPLETED".equals(
                 items.stream()
                      .filter(i -> productId.equals(String.valueOf(i.get("product_id"))))
@@ -420,24 +432,17 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
         if (refundSucceeded) {
             sendOrderEmail(order,
-                "Refund Initiated – " + order.getOrderNumber(),
-                "Dear Customer,\n\n" +
-                "Great news! We have successfully initiated a refund of ₹" +
-                String.format("%.2f", refundAmount) + " for your order " + order.getOrderNumber() + ".\n\n" +
-                "⚡ Instant Refund: The amount may reflect in your original payment source within seconds.\n" +
-                "⏳ Standard Refund: If the instant refund is not available, it will take 5–7 business days.\n\n" +
-                "You will receive a separate confirmation from Razorpay/your bank once the amount is credited.\n\n" +
-                "If you have any questions, please contact our support team.\n\n" +
-                "Regards,\nDurga Shakti Foils Team");
+                "Refund Completed – " + order.getOrderNumber(),
+                "Great news! We have successfully completed your refund of ₹" +
+                String.format("%.2f", refundAmount) + " for order " + order.getOrderNumber() + ".\n\n" +
+                "⚡ The amount has been credited back to your original payment source.");
         } else {
             sendOrderEmail(order,
                 "Refund Processing Issue – " + order.getOrderNumber(),
-                "Dear Customer,\n\n" +
                 "We encountered an issue while processing your refund of ₹" +
                 String.format("%.2f", refundAmount) + " for order " + order.getOrderNumber() + ".\n\n" +
                 "Our team has been notified and will process it manually within 2 business days.\n\n" +
-                "We sincerely apologise for the inconvenience.\n\n" +
-                "Regards,\nDurga Shakti Foils Team");
+                "We sincerely apologize for the inconvenience.");
         }
         return order;
     }
