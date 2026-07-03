@@ -533,8 +533,19 @@ const AdminOrderDetailsPage = () => {
               </div>
               <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Order Details</h2>
             </div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">
-              Order #{order.order_number} • Placed {new Date(order.created_at).toLocaleString('en-IN')}
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-1.5">
+              <span>Order #{order.order_number}</span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(order.order_number);
+                  toast.success('Order number copied!');
+                }}
+                className="p-0.5 text-slate-450 hover:text-slate-650 transition-colors inline-flex items-center"
+                title="Copy Order Number"
+              >
+                <Copy className="w-3 h-3" />
+              </button>
+              <span>• Placed {new Date(order.created_at).toLocaleString('en-IN')}</span>
             </p>
           </div>
           <button
@@ -1232,6 +1243,7 @@ const AdminOrderDetailsPage = () => {
                   </div>
                 </div>
               </div>
+            </div>
           )}
 
           {/* Return Tracking Timeline */}
