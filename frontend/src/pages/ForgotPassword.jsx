@@ -41,7 +41,7 @@ const ForgotPassword = () => {
       await authService.forgotPassword(email);
       toast.success('OTP sent to your email');
       setStep(2);
-      setResendTimer(30); // Start 30s countdown
+      setResendTimer(60); // Start 60s countdown
     } catch (err) {
       toast.error(err.message || 'Failed to send OTP');
     } finally {
@@ -55,7 +55,7 @@ const ForgotPassword = () => {
     try {
       await authService.forgotPassword(email);
       toast.success('OTP resent to your email');
-      setResendTimer(30); // Restart 30s countdown
+      setResendTimer(60); // Restart 60s countdown
     } catch (err) {
       toast.error(err.message || 'Failed to resend OTP');
     } finally {
