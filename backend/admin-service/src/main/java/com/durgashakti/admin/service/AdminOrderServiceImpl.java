@@ -651,13 +651,15 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     // ── Helper: Send Order Email ──────────────────────────────────────────
     private void sendOrderEmail(Order order, String subject, String body) {
         if (order.getUserId() != null) {
-            userRepository.findById(order.getUserId()).ifPresent(user -> {
-                try {
-                    emailClient.sendEmail(user.getEmail(), subject, 
-                        "Dear " + user.getFullName() + ",\n\n" + body + "\n\nBest regards,\nDurga Shakti Foils Team");
-                } catch (Exception e) {
-                    log.error("Failed to send email for order {} to {}", order.getOrderNumber(), user.getEmail(), e);
-                }
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                userRepository.findById(order.getUserId()).ifPresent(user -> {
+                    try {
+                        emailClient.sendEmail(user.getEmail(), subject, 
+                            "Dear " + user.getFullName() + ",\n\n" + body + "\n\nBest regards,\nDurga Shakti Foils Team");
+                    } catch (Exception e) {
+                        log.error("Failed to send email for order {} to {}", order.getOrderNumber(), user.getEmail(), e);
+                    }
+                });
             });
         }
     }

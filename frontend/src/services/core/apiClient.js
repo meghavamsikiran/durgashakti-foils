@@ -103,7 +103,14 @@ const cachedGet = async (url, options = {}) => {
       } catch (e) {}
       return serializedData;
     })
-    .finally(() => inFlightGets.delete(key));
+    .catch(err => {
+      inFlightGets.delete(key);
+      if (hasStaleData) {
+        return entry.data;
+      }
+      throw err;
+    });
+  
   inFlightGets.set(key, request);
   return request;
 };

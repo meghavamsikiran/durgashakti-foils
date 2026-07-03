@@ -312,7 +312,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setPaymentStatus("paid");
-        order.setOrderStatus("placed");
+        order.setOrderStatus("confirmed");
         order.setRazorpayPaymentId(req.getRazorpayPaymentId());
         order.setRazorpaySignature(req.getRazorpaySignature());
         order.setUpdatedAt(OffsetDateTime.now());
@@ -401,7 +401,7 @@ public class OrderServiceImpl implements OrderService {
                                 
                                 if (!isPaid && ("captured".equalsIgnoreCase(status) || "authorized".equalsIgnoreCase(status))) {
                                     order.setPaymentStatus("paid");
-                                    order.setOrderStatus("placed");
+                                    order.setOrderStatus("confirmed");
                                     order.setRazorpayPaymentId(paymentId);
                                     order.setUpdatedAt(OffsetDateTime.now());
                                     orderRepository.save(order);
@@ -430,23 +430,25 @@ public class OrderServiceImpl implements OrderService {
         if (Boolean.TRUE.equals(order.getReceiptEmailSent())) {
             return;
         }
-        try {
-            userRepository.findById(order.getUserId()).ifPresent(user -> {
-                String subject = "Order Confirmation - " + order.getOrderNumber();
-                String body = "Dear " + user.getFullName() + ",\n\n" +
-                        "Thank you for your order! Your order has been placed successfully.\n\n" +
-                        "Order Number: " + order.getOrderNumber() + "\n" +
-                        "Total Amount: Rs. " + order.getTotalAmount() + "\n" +
-                        "Payment Method: " + order.getPaymentMethod() + "\n\n" +
-                        "We will notify you once your order is shipped.\n\n" +
-                        "Best regards,\nDurga Shakti Foils Team";
-                emailClient.sendEmail(user.getEmail(), subject, body);
-                order.setReceiptEmailSent(true);
-                orderRepository.save(order);
-            });
-        } catch (Exception e) {
-            log.error("Failed to send order placement email for {}: {}", order.getOrderNumber(), e.getMessage());
-        }
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                userRepository.findById(order.getUserId()).ifPresent(user -> {
+                    String subject = "Order Confirmation - " + order.getOrderNumber();
+                    String body = "Dear " + user.getFullName() + ",\n\n" +
+                            "Thank you for your order! Your order has been placed successfully.\n\n" +
+                            "Order Number: " + order.getOrderNumber() + "\n" +
+                            "Total Amount: Rs. " + order.getTotalAmount() + "\n" +
+                            "Payment Method: " + order.getPaymentMethod() + "\n\n" +
+                            "We will notify you once your order is shipped.\n\n" +
+                            "Best regards,\nDurga Shakti Foils Team";
+                    emailClient.sendEmail(user.getEmail(), subject, body);
+                    order.setReceiptEmailSent(true);
+                    orderRepository.save(order);
+                });
+            } catch (Exception e) {
+                log.error("Failed to send order placement email for {}: {}", order.getOrderNumber(), e.getMessage());
+            }
+        });
     }
 
     @Override

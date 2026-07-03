@@ -980,6 +980,36 @@ const AdminOrderDetailsPage = () => {
                           </span>
                         </div>
 
+                        {item.return_proof_images && Array.isArray(item.return_proof_images) && item.return_proof_images.length > 0 && (
+                          <div className="text-[10px] bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col gap-2 w-full mt-2">
+                            <p className="text-[9px] text-slate-500 font-black uppercase tracking-wider">Return Proof Images/Videos</p>
+                            <div className="flex flex-wrap gap-2">
+                              {item.return_proof_images.map((url, idx) => {
+                                const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
+                                const fullUrl = formatImageUrl(url);
+                                return (
+                                  <div key={idx} className="relative rounded-lg border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-primary transition-all w-20 h-20 flex items-center justify-center group cursor-pointer">
+                                    {isVideo ? (
+                                      <a href={fullUrl} target="_blank" rel="noreferrer" className="w-full h-full block relative">
+                                        <video src={fullUrl} className="w-full h-full object-cover" muted autoPlay loop playsInline />
+                                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/50 transition-colors">
+                                          <div className="w-5 h-5 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center text-white border border-white/20">
+                                            <svg className="w-2 h-2 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                          </div>
+                                        </div>
+                                      </a>
+                                    ) : (
+                                      <a href={fullUrl} target="_blank" rel="noreferrer" className="w-full h-full block">
+                                        <img src={fullUrl} onError={(e) => { e.target.src = '/logo-durga.webp'; }} alt="Proof" className="w-full h-full object-contain group-hover:scale-105 transition-transform" />
+                                      </a>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
                         {item.return_type !== 'exchange' && item.refund_calculations && (() => {
                           const prodRefund = Number(item.refund_calculations.refundable_amount || 0);
                           const courierRefund = Number(item.self_shipping_details?.courier_cost || 0);
@@ -1202,54 +1232,6 @@ const AdminOrderDetailsPage = () => {
                   </div>
                 </div>
               </div>
-
-              {order.return_image_url && (
-                <div className="w-full md:w-44 shrink-0 space-y-2">
-                  <div className="text-[9px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest">Uploaded Return Proof</div>
-                  <div className="flex flex-wrap gap-2">
-                    {order.return_image_url.split(',').map((url, idx) => {
-                      const isVideo = url.match(/\.(mp4|mov|webm|ogg|avi)(\?|$)/i) || url.includes('/video/');
-                      const fullUrl = formatImageUrl(url);
-                      return (
-                         <div key={idx} className="relative rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:ring-2 hover:ring-primary transition-all w-28 h-28 flex items-center justify-center group cursor-pointer">
-                          {isVideo ? (
-                            <a
-                              href={fullUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="w-full h-full block relative"
-                            >
-                              <video src={fullUrl} className="w-full h-full object-cover" muted autoPlay loop playsInline />
-                              <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/50 transition-colors">
-                                <div className="w-7 h-7 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center text-white border border-white/20">
-                                  <svg className="w-3 h-3 fill-current ml-0.5" viewBox="0 0 24 24">
-                                    <path d="M8 5v14l11-7z" />
-                                  </svg>
-                                </div>
-                              </div>
-                            </a>
-                          ) : (
-                            <a
-                              href={fullUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="w-full h-full block"
-                            >
-                              <img
-                                src={fullUrl}
-                                onError={(e) => { e.target.src = '/logo-durga.webp'; }}
-                                alt="Proof"
-                                className="w-full h-full object-contain group-hover:scale-105 transition-transform"
-                              />
-                            </a>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
           )}
 
           {/* Return Tracking Timeline */}
