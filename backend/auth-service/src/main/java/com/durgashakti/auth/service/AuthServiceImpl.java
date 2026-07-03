@@ -89,15 +89,19 @@ public class AuthServiceImpl implements AuthService {
         cartRepository.save(cart);
 
         log.info("Sending welcome email to {}", savedUser.getEmail());
-        try {
-            emailClient.sendEmail(
-                savedUser.getEmail(),
-                "Welcome to Durga Shakti Foils!",
-                "Hello " + savedUser.getFullName() + ",\n\nWelcome to Durga Shakti Foils! Your account has been successfully created.\n\nBest regards,\nDurga Shakti Foils Team"
-            );
-        } catch (Exception e) {
-            log.error("Failed to trigger welcome email: {}", e.getMessage());
-        }
+        final String welcomeEmail = savedUser.getEmail();
+        final String welcomeName = savedUser.getFullName();
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                emailClient.sendEmail(
+                    welcomeEmail,
+                    "Welcome to Durga Shakti Foils!",
+                    "Hello " + welcomeName + ",\n\nWelcome to Durga Shakti Foils! Your account has been successfully created.\n\nBest regards,\nDurga Shakti Foils Team"
+                );
+            } catch (Exception e) {
+                log.error("Failed to trigger welcome email to {}: {}", welcomeEmail, e.getMessage(), e);
+            }
+        });
 
         String token = jwtUtil.createAccessToken(savedUser.getId().toString(), savedUser.getEmail(), savedUser.getRole());
         return Map.of("token", token, "user", serializeUser(savedUser));
@@ -263,15 +267,21 @@ public class AuthServiceImpl implements AuthService {
         passwordResetRepository.save(pr);
 
         log.info("Sending OTP {} to email {}", otp, user.getEmail());
-        try {
-            emailClient.sendEmail(
-                user.getEmail(),
-                "Password Reset OTP - Durga Shakti Foils",
-                "Hello " + user.getFullName() + ",\n\nYour password reset OTP is: " + otp + "\nThis OTP is valid for 15 minutes.\n\nIf you did not request a password reset, please ignore this email.\n\nBest regards,\nDurga Shakti Foils Team"
-            );
-        } catch (Exception e) {
-            log.error("Failed to trigger password reset OTP email: {}", e.getMessage());
-        }
+        final String otpEmail = user.getEmail();
+        final String otpUserName = user.getFullName();
+        final String otpCode = otp;
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                emailClient.sendEmail(
+                    otpEmail,
+                    "Password Reset OTP - Durga Shakti Foils",
+                    "Hello " + otpUserName + ",\n\nYour password reset OTP is: " + otpCode + "\nThis OTP is valid for 15 minutes.\n\nIf you did not request a password reset, please ignore this email.\n\nBest regards,\nDurga Shakti Foils Team"
+                );
+                log.info("OTP email dispatched successfully to {}", otpEmail);
+            } catch (Exception e) {
+                log.error("CRITICAL: Failed to send OTP email to {}: {}", otpEmail, e.getMessage(), e);
+            }
+        });
     }
 
     @Override
