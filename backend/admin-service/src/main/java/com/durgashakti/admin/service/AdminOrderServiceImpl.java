@@ -7,6 +7,11 @@ import com.durgashakti.admin.repository.AdminOrderRepository;
 import com.durgashakti.admin.repository.AdminProductRepository;
 import com.durgashakti.admin.repository.AuditLogRepository;
 import com.durgashakti.common.exception.ApiException;
+import com.razorpay.Refund;
+import com.razorpay.RazorpayClient;
+import com.razorpay.RazorpayException;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +35,12 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     private final EmailClient emailClient;
     private static final Logger log = LoggerFactory.getLogger(AdminOrderServiceImpl.class);
 
+    @Value("${razorpay.key-id:fake_key_id}")
+    private String razorpayKeyId;
+
+    @Value("${razorpay.key-secret:fake_key_secret}")
+    private String razorpayKeySecret;
+
     public AdminOrderServiceImpl(AdminOrderRepository orderRepository,
                                  AdminProductRepository productRepository,
                                  AuditLogRepository auditLogRepository,
@@ -40,6 +51,36 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         this.auditLogRepository = auditLogRepository;
         this.userRepository = userRepository;
         this.emailClient = emailClient;
+    }
+
+    /**
+     * Attempts an instant Razorpay refund. Returns true if refund was created successfully.
+     * Falls back gracefully if keys are missing or Razorpay call fails.
+     */
+    private boolean attemptRazorpayRefund(String razorpayPaymentId, double amountInRupees, String orderNumber) {
+        if (razorpayPaymentId == null || razorpayPaymentId.isBlank()) {
+            log.warn("Cannot process Razorpay refund: no razorpay_payment_id on order {}", orderNumber);
+            return false;
+        }
+        if (razorpayKeyId == null || razorpayKeyId.contains("fake") || razorpayKeyId.isBlank()) {
+            log.info("Razorpay keys not configured – skipping live refund for order {}", orderNumber);
+            return false;
+        }
+        long amountInPaise = Math.round(amountInRupees * 100.0);
+        try {
+            RazorpayClient client = new RazorpayClient(razorpayKeyId, razorpayKeySecret);
+            JSONObject refundRequest = new JSONObject();
+            refundRequest.put("amount", amountInPaise);
+            refundRequest.put("speed", "optimum"); // instant if available, else normal
+            refundRequest.put("notes", new JSONObject().put("order_number", orderNumber));
+            Refund refund = client.payments.refund(razorpayPaymentId, refundRequest);
+            String refundId = refund.get("id");
+            log.info("Razorpay refund created successfully: {} for order {} amount ₹{}", refundId, orderNumber, amountInRupees);
+            return true;
+        } catch (RazorpayException e) {
+            log.error("Razorpay refund FAILED for payment {} order {}: {}", razorpayPaymentId, orderNumber, e.getMessage());
+            return false;
+        }
     }
 
     @Override
@@ -284,16 +325,33 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 item.put("refund_calculations", calc);
                 returnedQty = toInt(item.getOrDefault("returned_quantity", 1));
 
-                // For now, mark as REFUND_COMPLETED (manual) or REFUND_INITIATED (automated)
-                // The Python code attempts Razorpay here, but the Java monolith doesn't have
-                // Razorpay SDK integration yet. We mark as REFUND_COMPLETED for manual,
-                // REFUND_INITIATED for non-manual (pending Razorpay integration).
-                String refundStatus = isManual ? "REFUND_COMPLETED" : "REFUND_INITIATED";
-                item.put("return_status", refundStatus);
+                // ── REAL RAZORPAY REFUND INTEGRATION ──────────────────────────
+                String refundStatus;
+                String remark;
 
-                String remark = isManual
-                        ? String.format("Refund of ₹%.2f completed successfully (Manual: true)", refundAmount)
-                        : String.format("Refund of ₹%.2f initiated (Manual: false)", refundAmount);
+                if (isManual) {
+                    // Admin manually marked as refunded (bank transfer / UPI etc)
+                    refundStatus = "REFUND_COMPLETED";
+                    remark = String.format("Refund of ₹%.2f completed manually by admin", refundAmount);
+                } else {
+                    // Attempt live Razorpay instant refund
+                    boolean rzpSuccess = attemptRazorpayRefund(
+                            order.getRazorpayPaymentId(), refundAmount, order.getOrderNumber());
+                    if (rzpSuccess) {
+                        refundStatus = "REFUND_COMPLETED";
+                        remark = String.format(
+                                "Razorpay refund of ₹%.2f initiated successfully (instant/optimum speed). " +
+                                "Amount will reflect in customer's account within seconds to 5–7 business days.",
+                                refundAmount);
+                    } else {
+                        refundStatus = "REFUND_FAILED";
+                        remark = String.format(
+                                "Razorpay refund of ₹%.2f FAILED. Manual intervention required.",
+                                refundAmount);
+                    }
+                }
+
+                item.put("return_status", refundStatus);
                 addAuditTimeline(item, refundStatus, remark);
             }
         }
@@ -331,7 +389,10 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             return rs != null && Set.of("RETURN_REQUESTED", "RETURN_APPROVED", "SELF_SHIPPED", "RETURN_RECEIVED").contains(rs);
         });
         boolean hasPendingRefunds = items.stream().anyMatch(i ->
-                "REFUND_INITIATED".equals(i.get("return_status")));
+                "REFUND_FAILED".equals(i.get("return_status")));
+        boolean allRefunded = items.stream()
+                .filter(i -> i.get("return_status") != null)
+                .allMatch(i -> "REFUND_COMPLETED".equals(i.get("return_status")));
 
         if (!hasActiveReturns) {
             if (hasPendingRefunds) {
@@ -349,9 +410,35 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 Map.of("product_id", productId, "amount", refundAmount, "restock", restock));
 
         order = orderRepository.save(order);
-        sendOrderEmail(order, "Refund Processed: " + order.getOrderNumber(),
-            "We have processed a refund of Rs. " + refundAmount + " for your order " + order.getOrderNumber() + ".\n" +
-            "It may take a few business days for the amount to reflect in your account.");
+
+        // Send customer email
+        boolean refundSucceeded = "REFUND_COMPLETED".equals(
+                items.stream()
+                     .filter(i -> productId.equals(String.valueOf(i.get("product_id"))))
+                     .map(i -> (String) i.get("return_status"))
+                     .findFirst().orElse(""));
+
+        if (refundSucceeded) {
+            sendOrderEmail(order,
+                "Refund Initiated – " + order.getOrderNumber(),
+                "Dear Customer,\n\n" +
+                "Great news! We have successfully initiated a refund of ₹" +
+                String.format("%.2f", refundAmount) + " for your order " + order.getOrderNumber() + ".\n\n" +
+                "⚡ Instant Refund: The amount may reflect in your original payment source within seconds.\n" +
+                "⏳ Standard Refund: If the instant refund is not available, it will take 5–7 business days.\n\n" +
+                "You will receive a separate confirmation from Razorpay/your bank once the amount is credited.\n\n" +
+                "If you have any questions, please contact our support team.\n\n" +
+                "Regards,\nDurga Shakti Foils Team");
+        } else {
+            sendOrderEmail(order,
+                "Refund Processing Issue – " + order.getOrderNumber(),
+                "Dear Customer,\n\n" +
+                "We encountered an issue while processing your refund of ₹" +
+                String.format("%.2f", refundAmount) + " for order " + order.getOrderNumber() + ".\n\n" +
+                "Our team has been notified and will process it manually within 2 business days.\n\n" +
+                "We sincerely apologise for the inconvenience.\n\n" +
+                "Regards,\nDurga Shakti Foils Team");
+        }
         return order;
     }
 
@@ -372,8 +459,23 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                     throw new ApiException(HttpStatus.BAD_REQUEST, "Refund is not in a failed or initiated state");
                 }
                 
-                item.put("return_status", "REFUND_COMPLETED");
-                addAuditTimeline(item, "REFUND_COMPLETED", "Refund manually forced/retried to completed state by admin");
+                @SuppressWarnings("unchecked")
+                Map<String, Object> retryCalc = (Map<String, Object>) item.getOrDefault("refund_calculations", new HashMap<>());
+                double retryAmount = toDouble(retryCalc.get("refundable_amount"));
+
+                // Attempt live Razorpay refund on retry
+                boolean rzpRetrySuccess = attemptRazorpayRefund(
+                        order.getRazorpayPaymentId(), retryAmount, order.getOrderNumber());
+
+                if (rzpRetrySuccess) {
+                    item.put("return_status", "REFUND_COMPLETED");
+                    addAuditTimeline(item, "REFUND_COMPLETED",
+                            String.format("Razorpay refund of ₹%.2f retried successfully", retryAmount));
+                } else {
+                    item.put("return_status", "REFUND_FAILED");
+                    addAuditTimeline(item, "REFUND_FAILED",
+                            String.format("Razorpay refund retry of ₹%.2f FAILED again", retryAmount));
+                }
             }
         }
 

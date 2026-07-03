@@ -58,6 +58,12 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <!-- Razorpay SDK (for processing refunds) -->
+        <dependency>
+            <groupId>com.razorpay</groupId>
+            <artifactId>razorpay-java</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
