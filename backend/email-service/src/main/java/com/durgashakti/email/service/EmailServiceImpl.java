@@ -13,6 +13,9 @@ public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
 
+    @org.springframework.beans.factory.annotation.Value("${spring.mail.username:noreply@durgashaktifoils.com}")
+    private String fromAddress;
+
     public EmailServiceImpl(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
@@ -21,6 +24,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendEmail(String to, String subject, String body) {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(fromAddress);
             msg.setTo(to);
             msg.setSubject(subject);
             msg.setText(body);
