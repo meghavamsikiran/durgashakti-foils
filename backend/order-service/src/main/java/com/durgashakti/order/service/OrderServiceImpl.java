@@ -108,6 +108,10 @@ public class OrderServiceImpl implements OrderService {
             productRepository.save(product);
 
             double price = product.getPrice() != null ? product.getPrice().doubleValue() : 0.0;
+            if (product.getDiscountPrice() != null && product.getDiscountPrice().doubleValue() > 0 
+                    && product.getDiscountPrice().doubleValue() < price) {
+                price = product.getDiscountPrice().doubleValue();
+            }
             subtotal += price * requestedQty;
 
             Map<String, Object> enrichedItem = new HashMap<>(item);

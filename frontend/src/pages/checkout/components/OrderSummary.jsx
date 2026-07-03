@@ -167,7 +167,7 @@ const OrderSummary = ({
         <Button 
           onClick={onPlaceOrder}
           disabled={loading}
-          className="group relative overflow-hidden w-full h-16 rounded-xl mt-8 text-sm font-black uppercase tracking-[0.18em] bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] transition-all shadow-[0_4px_20px_rgba(37,217,88,0.2)] active:scale-[0.98]"
+          className="hidden lg:flex items-center justify-center group relative overflow-hidden w-full h-16 rounded-xl mt-8 text-sm font-black uppercase tracking-[0.18em] bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] transition-all shadow-[0_4px_20px_rgba(37,217,88,0.2)] active:scale-[0.98]"
         >
           <span className="absolute inset-0 bg-[linear-gradient(115deg,transparent,rgba(255,255,255,0.24),transparent)] translate-x-[-120%] group-hover:translate-x-[120%] transition-transform duration-700" />
           {loading ? (

@@ -271,7 +271,7 @@ const AddressStep = ({
         <div className="pt-2">
           <Button 
             onClick={onContinue} 
-            className="w-full h-14 md:h-16 rounded-2xl text-base md:text-lg font-black uppercase tracking-wider bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] transition-all shadow-[0_4px_20px_rgba(37,217,88,0.2)] active:scale-[0.98]"
+            className="hidden lg:flex items-center justify-center w-full h-14 md:h-16 rounded-2xl text-base md:text-lg font-black uppercase tracking-wider bg-[#25D958] hover:bg-[#1bb847] text-[#0C1310] transition-all shadow-[0_4px_20px_rgba(37,217,88,0.2)] active:scale-[0.98]"
           >
             Continue to Payment <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
