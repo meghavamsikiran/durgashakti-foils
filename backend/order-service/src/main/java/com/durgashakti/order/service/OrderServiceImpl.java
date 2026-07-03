@@ -716,16 +716,22 @@ public class OrderServiceImpl implements OrderService {
         // Send return requested email!
         try {
             userRepository.findById(saved.getUserId()).ifPresent(user -> {
-                String subject = "Return Request Received - " + saved.getOrderNumber();
-                String body = "Dear " + user.getFullName() + ",\n\n" +
-                        "We have received your return request for Order Number: " + saved.getOrderNumber() + ".\n" +
-                        "Reason: " + reason + "\n\n" +
-                        "Our support team is reviewing your request and proof media. We will update you shortly.\n\n" +
-                        "Best regards,\nDurga Shakti Foils Team";
-                emailClient.sendEmail(user.getEmail(), subject, body);
+                java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    try {
+                        String subject = "Return Request Received - " + saved.getOrderNumber();
+                        String body = "Dear " + user.getFullName() + ",\n\n" +
+                                "We have received your return request for Order Number: " + saved.getOrderNumber() + ".\n" +
+                                "Reason: " + reason + "\n\n" +
+                                "Our support team is reviewing your request and proof media. We will update you shortly.\n\n" +
+                                "Best regards,\nDurga Shakti Foils Team";
+                        emailClient.sendEmail(user.getEmail(), subject, body);
+                    } catch (Exception e) {
+                        log.error("Failed to send return request email", e);
+                    }
+                });
             });
         } catch (Exception e) {
-            log.error("Failed to send return request email", e);
+            log.error("Failed to initiate return request email dispatch", e);
         }
 
         return saved;
