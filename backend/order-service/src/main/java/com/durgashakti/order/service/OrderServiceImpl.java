@@ -153,6 +153,7 @@ public class OrderServiceImpl implements OrderService {
         double freeShippingThreshold = 1099.0;
         double defaultShippingCharge = 70.0;
         boolean shippingZonesEnabled = false;
+        boolean codEnabled = true;
         List<Map<String, Object>> zones = new ArrayList<>();
 
         if (shippingSettingsOpt.isPresent()) {
@@ -160,6 +161,7 @@ public class OrderServiceImpl implements OrderService {
             if (config != null) {
                 enableShipping = !Boolean.FALSE.equals(config.get("enableShipping")) && !"Inactive".equalsIgnoreCase(String.valueOf(config.get("shippingRuleStatus")));
                 enableFreeShipping = !Boolean.FALSE.equals(config.get("enableFreeShipping"));
+                codEnabled = !Boolean.FALSE.equals(config.get("codEnabled")) && !"Inactive".equalsIgnoreCase(String.valueOf(config.get("codStatus")));
                 
                 if (config.get("freeShippingThreshold") != null) {
                     freeShippingThreshold = Double.parseDouble(String.valueOf(config.get("freeShippingThreshold")));
@@ -225,6 +227,10 @@ public class OrderServiceImpl implements OrderService {
         order.setCreatedAt(now);
         order.setUpdatedAt(now);
         order.setReceiptEmailSent(false);
+
+        if ("cod".equalsIgnoreCase(req.getPaymentMethod()) && !codEnabled) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Cash on Delivery (COD) is temporarily disabled.");
+        }
 
         if ("online".equalsIgnoreCase(req.getPaymentMethod())) {
             order.setOrderStatus("pending_payment");
