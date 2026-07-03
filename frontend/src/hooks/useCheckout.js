@@ -555,7 +555,7 @@ export const useCheckout = () => {
                 razorpay_signature: paymentResponse.razorpay_signature
               };
               const verificationResult = await paymentService.verifyRazorpayPayment(verifyPayload);
-              if (verificationResult && verificationResult.success) {
+              if (verificationResult && (verificationResult.success || verificationResult.id || verificationResult.payment_status === 'paid')) {
                 sessionStorage.removeItem(`razorpay_payment_${orderId}`);
                 localStorage.removeItem(PENDING_RAZORPAY_ORDER_KEY);
                 toast.success('Payment verified successfully!');

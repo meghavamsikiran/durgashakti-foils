@@ -247,7 +247,7 @@ const OrderDetailsPage = () => {
               razorpay_signature: paymentResponse.razorpay_signature
             };
             const result = await paymentService.verifyRazorpayPayment(verifyPayload);
-            if (result && result.success) {
+            if (result && (result.success || result.id || result.payment_status === 'paid')) {
               sessionStorage.removeItem(`razorpay_payment_${id}`);
               clearCart().catch(() => {});
               toast.success('Payment verified successfully!');
