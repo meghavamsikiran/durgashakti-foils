@@ -87,6 +87,8 @@ public class CatalogServiceImpl implements CatalogService {
         map.put("name", p.getName());
         map.put("description", p.getDescription());
         map.put("price", p.getPrice());
+        map.put("base_price", p.getPrice());
+        map.put("discount_price", p.getDiscountPrice());
         map.put("compare_at_price", p.getDiscountPrice());
         map.put("image_url", p.getImageUrl());
         map.put("images", p.getMediaUrls());
@@ -94,7 +96,12 @@ public class CatalogServiceImpl implements CatalogService {
         map.put("stock_quantity", p.getStockQuantity());
         map.put("variant_sku", p.getVariantSku());
         map.put("batch_no", p.getBatchNo());
+        map.put("category", p.getCategory());
         map.put("category_id", p.getCategory());
+        map.put("size", p.getSize());
+        map.put("thickness", p.getThickness());
+        map.put("badge", p.getBadge());
+        map.put("width", p.getWidth());
         map.put("metadata", p.getFeatures());
         map.put("created_at", p.getCreatedAt());
         map.put("updated_at", p.getUpdatedAt());
