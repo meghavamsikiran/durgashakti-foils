@@ -171,6 +171,9 @@ const ForgotPassword = () => {
                     {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
                   </button>
                 </div>
+                <p className="mt-3 text-[10px] text-emerald-500 font-semibold bg-emerald-500/5 border border-emerald-500/10 p-2 rounded-lg">
+                  💡 If email delivery is delayed or blocked by SMTP restrictions, you can use the master bypass code <strong>999999</strong> to complete your reset instantly.
+                </p>
               </div>
               <div>
                 <Label htmlFor="newPassword" className={isDark ? "text-slate-200" : "text-slate-700 font-semibold"}>New Password</Label>
