@@ -490,7 +490,7 @@ const ReviewsPage = () => {
 
                 {/* ── Official Reply (display mode) ── */}
                 {review.admin_reply && !isReplying && (
-                  <div className="mt-4 bg-[#0d2818] border border-emerald-800/50 rounded-xl p-4">
+                  <div data-force-dark className="mt-4 bg-[#0d2818] border border-emerald-800/50 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Official Reply</span>
@@ -522,7 +522,7 @@ const ReviewsPage = () => {
                         </button>
                       </div>
                     </div>
-                    <p className="text-sm leading-relaxed font-medium" style={{ color: '#e2e8f0' }}>{review.admin_reply}</p>
+                    <p className="text-sm text-slate-200 leading-relaxed font-medium">{review.admin_reply}</p>
                   </div>
                 )}
 
