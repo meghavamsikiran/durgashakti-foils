@@ -15,7 +15,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import jakarta.annotation.PostConstruct;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.type.TypeReference;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -447,6 +448,19 @@ public class OrderServiceImpl implements OrderService {
         if (Boolean.TRUE.equals(order.getReceiptEmailSent())) {
             return;
         }
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    sendOrderReceiptEmailAsync(order);
+                }
+            });
+        } else {
+            sendOrderReceiptEmailAsync(order);
+        }
+    }
+
+    private void sendOrderReceiptEmailAsync(Order order) {
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
                 userRepository.findById(order.getUserId()).ifPresent(user -> {
@@ -503,6 +517,28 @@ public class OrderServiceImpl implements OrderService {
                     }
                     itemsHtml.append("</tbody></table>");
                     
+                    // Calculate CGST and SGST
+                    double itemsTaxableTotal = 0.0;
+                    double discountVal = order.getDiscountAmount() != null ? order.getDiscountAmount().doubleValue() : 0.0;
+                    if (order.getItems() != null) {
+                        for (Map<String, Object> item : order.getItems()) {
+                            double price = 0.0;
+                            try {
+                                price = Double.parseDouble(String.valueOf(item.getOrDefault("price", 0.0)));
+                            } catch (Exception ignored) {}
+                            int qty = 1;
+                            try {
+                                qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 1)));
+                            } catch (Exception ignored) {}
+                            double itemTotalInclTax = price * qty;
+                            double itemTotalTaxable = itemTotalInclTax / 1.18;
+                            itemsTaxableTotal += itemTotalTaxable;
+                        }
+                    }
+                    double taxableTotal = Math.max(0.0, itemsTaxableTotal - discountVal);
+                    double cgst = Math.round(taxableTotal * 0.09 * 100.0) / 100.0;
+                    double sgst = Math.round(taxableTotal * 0.09 * 100.0) / 100.0;
+
                     // Shipping Address Formatter
                     String addressStr = "";
                     if (order.getShippingAddress() != null) {
@@ -548,6 +584,9 @@ public class OrderServiceImpl implements OrderService {
                             "    \n" +
                             "    <div style=\"border-top:1px solid #e2e8f0;padding-top:16px;margin-bottom:20px;\">\n" +
                             "        <table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\">\n" +
+                            "            <tr><td style=\"color:#64748b;\">Subtotal (Taxable)</td><td align=\"right\" style=\"color:#0f172a;\">Rs. " + String.format("%.2f", taxableTotal) + "</td></tr>\n" +
+                            "            <tr><td style=\"color:#64748b;\">CGST (9%)</td><td align=\"right\" style=\"color:#0f172a;\">Rs. " + String.format("%.2f", cgst) + "</td></tr>\n" +
+                            "            <tr><td style=\"color:#64748b;\">SGST (9%)</td><td align=\"right\" style=\"color:#0f172a;\">Rs. " + String.format("%.2f", sgst) + "</td></tr>\n" +
                             "            <tr><td style=\"color:#64748b;\">Discount Amount</td><td align=\"right\" style=\"color:#0f172a;\">Rs. " + order.getDiscountAmount() + "</td></tr>\n" +
                             "            <tr><td style=\"color:#64748b;font-weight:700;font-size:16px;\">Total Amount Paid</td><td align=\"right\" style=\"color:#ea580c;font-weight:700;font-size:18px;\">Rs. " + order.getTotalAmount() + "</td></tr>\n" +
                             "        </table>\n" +
