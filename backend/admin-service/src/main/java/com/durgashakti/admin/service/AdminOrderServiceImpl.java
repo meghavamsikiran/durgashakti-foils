@@ -889,7 +889,6 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                     }
                 });
             });
-        }
     }
 
     private String getEmailBreakoutHtml(Order order) {
