@@ -274,14 +274,14 @@ public class AuthServiceImpl implements AuthService {
             try {
                 emailClient.sendEmail(
                     otpEmail,
-                    "Verify your identity - Durga Shakti Foils",
-                    "Hello " + otpUserName + ",\n\nWe received a request to access your Durga Shakti Foils account. " +
-                    "Your verification security code is: " + otpCode + "\n\nThis security code is valid for 15 minutes. " +
+                    "Forgot Password OTP - Durga Shakti Foils",
+                    "Hello " + otpUserName + ",\n\nWe received a request to reset the password for your Durga Shakti Foils account. " +
+                    "Your One-Time Password (OTP) is: " + otpCode + "\n\nThis OTP is valid for 15 minutes. " +
                     "If you did not make this request, you can safely ignore this message.\n\nBest regards,\nDurga Shakti Foils Team"
                 );
-                log.info("Identity verification code email dispatched successfully to {}", otpEmail);
+                log.info("Forgot password OTP email dispatched successfully to {}", otpEmail);
             } catch (Exception e) {
-                log.error("CRITICAL: Failed to send identity verification email to {}: {}", otpEmail, e.getMessage(), e);
+                log.error("CRITICAL: Failed to send forgot password OTP email to {}: {}", otpEmail, e.getMessage(), e);
             }
         });
     }
