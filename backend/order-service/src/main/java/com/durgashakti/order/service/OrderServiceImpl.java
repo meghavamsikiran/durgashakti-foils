@@ -616,9 +616,25 @@ public class OrderServiceImpl implements OrderService {
                             "</body>\n" +
                             "</html>";
                     
-                    byte[] pdfBytes = invoiceService.generateInvoicePdf(order);
-                    String attachmentName = "Tax_Invoice_" + order.getOrderNumber() + ".pdf";
-                    emailClient.sendEmail(user.getEmail(), subject, htmlBody, pdfBytes, attachmentName);
+                    byte[] pdfBytes = null;
+                    String attachmentName = null;
+                    try {
+                        pdfBytes = invoiceService.generateInvoicePdf(order);
+                        if (pdfBytes != null && pdfBytes.length > 0) {
+                            attachmentName = "Tax_Invoice_" + order.getOrderNumber() + ".pdf";
+                            log.info("Invoice PDF generated successfully for order {}: {} bytes", order.getOrderNumber(), pdfBytes.length);
+                        } else {
+                            log.warn("Invoice PDF generation returned empty bytes for order {}", order.getOrderNumber());
+                            pdfBytes = null;
+                        }
+                    } catch (Exception pdfEx) {
+                        log.error("Failed to generate invoice PDF for order {}: {}", order.getOrderNumber(), pdfEx.getMessage(), pdfEx);
+                    }
+                    if (pdfBytes != null && attachmentName != null) {
+                        emailClient.sendEmail(user.getEmail(), subject, htmlBody, pdfBytes, attachmentName);
+                    } else {
+                        emailClient.sendEmail(user.getEmail(), subject, htmlBody);
+                    }
                     order.setReceiptEmailSent(true);
                     orderRepository.save(order);
                 });

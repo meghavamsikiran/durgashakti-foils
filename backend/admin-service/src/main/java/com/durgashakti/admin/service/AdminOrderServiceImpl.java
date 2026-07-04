@@ -871,13 +871,17 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                         
                         byte[] pdfBytes = null;
                         String attachmentName = null;
-                        if ("delivered".equalsIgnoreCase(order.getOrderStatus())) {
-                            try {
-                                pdfBytes = invoiceService.generateInvoicePdf(order);
+                        try {
+                            pdfBytes = invoiceService.generateInvoicePdf(order);
+                            if (pdfBytes != null && pdfBytes.length > 0) {
                                 attachmentName = "Tax_Invoice_" + order.getOrderNumber() + ".pdf";
-                            } catch (Exception ex) {
-                                log.error("Failed to generate invoice on delivery: {}", ex.getMessage());
+                                log.info("Invoice PDF generated for order {} status email: {} bytes", order.getOrderNumber(), pdfBytes.length);
+                            } else {
+                                log.warn("Invoice PDF returned empty for order {}", order.getOrderNumber());
+                                pdfBytes = null;
                             }
+                        } catch (Exception ex) {
+                            log.error("Failed to generate invoice PDF for order {}: {}", order.getOrderNumber(), ex.getMessage(), ex);
                         }
 
                         if (pdfBytes != null && attachmentName != null) {
