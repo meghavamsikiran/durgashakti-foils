@@ -818,16 +818,16 @@ const ProductsPage = () => {
                 </div>
 
                 <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-                  <table className="min-w-[620px] w-full text-left">
+                  <table className="min-w-[800px] w-full text-left">
                     <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>
-                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Size</th>
-                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">SKU</th>
-                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Price</th>
-                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Offer</th>
-                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Stock</th>
-                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500">Badge</th>
-                        {!isEdit && <th className="px-3 py-2 text-right text-[10px] font-black uppercase tracking-widest text-slate-500">Actions</th>}
+                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 min-w-[110px] w-[15%]">Size</th>
+                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 min-w-[150px] w-[20%]">SKU</th>
+                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 min-w-[110px] w-[15%]">Price</th>
+                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 min-w-[110px] w-[15%]">Offer</th>
+                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 min-w-[110px] w-[15%]">Stock</th>
+                        <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 min-w-[170px] w-[20%]">Badge</th>
+                        {!isEdit && <th className="px-3 py-2 text-right text-[10px] font-black uppercase tracking-widest text-slate-500 min-w-[80px]">Actions</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
