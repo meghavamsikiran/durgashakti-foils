@@ -14,7 +14,8 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import com.durgashakti.common.entity.User;
 import com.durgashakti.common.util.EmailClient;
@@ -743,9 +744,23 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
     private void sendOrderEmail(Order order, String subject, String body) {
         if (order.getUserId() != null) {
-            java.util.concurrent.CompletableFuture.runAsync(() -> {
-                userRepository.findById(order.getUserId()).ifPresent(user -> {
-                    try {
+            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        sendOrderEmailAsync(order, subject, body);
+                    }
+                });
+            } else {
+                sendOrderEmailAsync(order, subject, body);
+            }
+        }
+    }
+
+    private void sendOrderEmailAsync(Order order, String subject, String body) {
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            userRepository.findById(order.getUserId()).ifPresent(user -> {
+                try {
                         // Build premium HTML items table
                         StringBuilder itemsHtml = new StringBuilder();
                         if (order.getItems() != null && !order.getItems().isEmpty()) {
