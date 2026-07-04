@@ -854,13 +854,16 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                         String trackingHtml = "";
                         if (order.getTrackingNumber() != null && !order.getTrackingNumber().trim().isEmpty()) {
                             String carrier = order.getCarrier() != null ? order.getCarrier() : "Courier Service";
-                            String trackUrl = order.getTrackingUrl() != null && !order.getTrackingUrl().trim().isEmpty() 
-                                    ? order.getTrackingUrl() 
-                                    : "https://durgashakti-foils.vercel.app/orders";
+                            String cleanNum = order.getTrackingNumber().trim();
+                            String carrierLower = carrier.toLowerCase();
+                            String trackUrl = order.getTrackingUrl();
+                            if (trackUrl == null || trackUrl.trim().isEmpty() || carrierLower.contains("india post") || carrierLower.contains("speed post")) {
+                                trackUrl = "https://t.17track.net/en#nums=" + cleanNum;
+                            }
                             trackingHtml = "<div style=\"background:#fff7ed;border:1px solid #ffedd5;border-radius:12px;padding:20px;margin-bottom:24px;\">\n" +
                                     "  <p style=\"margin:0 0 4px;font-size:12px;color:#c2410c;font-weight:700;text-transform:uppercase;\">Shipment Tracking Information</p>\n" +
                                     "  <p style=\"margin:0 0 12px;font-size:14px;color:#475569;\"><strong>Carrier:</strong> " + carrier + " &nbsp;|&nbsp; <strong>Tracking #:</strong> " + order.getTrackingNumber() + "</p>\n" +
-                                    "  <a href=\"" + trackUrl + "\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:10px 24px;font-weight:700;border-radius:8px;display:inline-block;font-size:13px;box-shadow:0 4px 10px rgba(234,88,12,0.2);\">Track Your Shipment</a>\n" +
+                                    "  <a href=\"" + trackUrl + "\" target=\"_blank\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:10px 24px;font-weight:700;border-radius:8px;display:inline-block;font-size:13px;box-shadow:0 4px 10px rgba(234,88,12,0.2);\">Track Your Shipment</a>\n" +
                                     "</div>";
                         }
 
