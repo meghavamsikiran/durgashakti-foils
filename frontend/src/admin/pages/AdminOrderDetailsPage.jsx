@@ -1191,7 +1191,7 @@ const AdminOrderDetailsPage = () => {
                              <button
                                onClick={() => handleItemReceive(order.id, item.product_id)}
                                disabled={pendingActionIds.has(`${item.product_id}-receive`)}
-                               className="bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all disabled:opacity-50"
+                               className="bg-violet-600 hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all disabled:opacity-50"
                              >
                                {pendingActionIds.has(`${item.product_id}-receive`) ? 'Processing...' : 'Mark Received'}
                              </button>
