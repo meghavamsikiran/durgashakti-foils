@@ -211,6 +211,42 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             sendOrderEmail(order, "Order Delivered: " + order.getOrderNumber(), 
                 "Great news! Your order " + order.getOrderNumber() + " has been marked as delivered. We hope you enjoy your purchase!");
         } else if ("cancelled".equals(statusLower)) {
+            // Restore product stock when admin cancels the order
+            final String finalOrderNum = order.getOrderNumber();
+            List<Map<String, Object>> itemsList = order.getItems();
+            if (itemsList != null) {
+                for (Map<String, Object> item : itemsList) {
+                    Object pIdObj = item.get("product_id");
+                    if (pIdObj != null) {
+                        try {
+                            UUID productId = UUID.fromString(pIdObj.toString());
+                            int qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 1)));
+                            productRepository.findById(productId).ifPresent(p -> {
+                                int currentStock = p.getStockQuantity() != null ? p.getStockQuantity() : 0;
+                                p.setStockQuantity(currentStock + qty);
+                                p.setInStock(true);
+                                productRepository.save(p);
+                                log.info("Restored stock of product {} by quantity {} due to admin cancellation of order {}", productId, qty, finalOrderNum);
+                            });
+                        } catch (Exception ex) {
+                            log.error("Failed to restore stock for item during order cancellation: {}", ex.getMessage());
+                        }
+                    }
+                }
+            }
+
+            // Refund payment if paid/completed
+            String pStatus = order.getPaymentStatus();
+            if ("paid".equalsIgnoreCase(pStatus) || "completed".equalsIgnoreCase(pStatus)) {
+                double refundAmt = order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0;
+                boolean refundedLive = false;
+                if (order.getRazorpayPaymentId() != null && !order.getRazorpayPaymentId().isBlank()) {
+                    refundedLive = attemptRazorpayRefund(order.getRazorpayPaymentId(), refundAmt, order.getOrderNumber());
+                }
+                order.setPaymentStatus(refundedLive ? "refunded" : "refund_pending");
+                log.info("Cancelled paid order {} -- live refund success: {}, final payment status: {}", order.getOrderNumber(), refundedLive, order.getPaymentStatus());
+            }
+
             sendOrderEmail(order, "Order Cancelled: " + order.getOrderNumber(), 
                 "Your order " + order.getOrderNumber() + " has been cancelled. If this was a mistake, please contact support.");
         } else if ("return_approved".equals(statusLower)) {
@@ -966,6 +1002,11 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     private void sendReturnActionEmail(Order order, boolean isApprove, String remarks) {
         String subject;
         String body;
+        String remarksBlock = (remarks != null && !remarks.isEmpty())
+                ? "<div style=\"background-color:#f8fafc; border-left:4px solid #ea580c; padding:15px; margin:20px 0; border-radius:8px; font-size:13px; color:#475569;\">" +
+                  "<strong>Message from Store Admin:</strong><br/>" + remarks + "</div>"
+                : "";
+
         if (isApprove) {
             subject = "Return Request Approved - Action Required: " + order.getOrderNumber();
             body = "Your return request for order <strong>" + order.getOrderNumber() + "</strong> has been approved.<br/><br/>" +
@@ -976,11 +1017,14 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                    "3. Return shipping address: Plot no 54, Shop no 1, Maruthi nagar, Mallampet, Hyderabad, Telangana - 500090.<br/><br/>" +
                    "<strong>IMPORTANT NOTICE:</strong> If you do not self-ship the item and submit the tracking details within 3 days, " +
                    "your return request will automatically expire and the order will no longer be eligible for return or exchange.<br/>" +
-                   (remarks != null && !remarks.isEmpty() ? "<br/>Remarks: " + remarks : "");
+                   remarksBlock;
         } else {
             subject = "Return Request Rejected: " + order.getOrderNumber();
             body = "We regret to inform you that your return request for order <strong>" + order.getOrderNumber() + "</strong> has been rejected.<br/>" +
-                   (remarks != null && !remarks.isEmpty() ? "<br/>Reason/Remarks: " + remarks : "The request does not meet our return policy guidelines.");
+                   (remarksBlock.isEmpty() 
+                       ? "<div style=\"background-color:#fef2f2; border-left:4px solid #ef4444; padding:15px; margin:20px 0; border-radius:8px; font-size:13px; color:#991b1b;\">" +
+                         "<strong>Reason:</strong> The request does not meet our return policy guidelines.</div>"
+                       : remarksBlock);
         }
         sendOrderEmail(order, subject, body);
     }

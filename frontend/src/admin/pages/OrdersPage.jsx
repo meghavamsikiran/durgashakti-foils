@@ -355,7 +355,7 @@ const OrdersPage = () => {
     const hasPendingRefund = rows.some(
       (order) => String(order.payment_status || '').toLowerCase() === 'refund_pending'
     );
-    const interval = hasPendingRefund ? 4000 : 30000;
+    const interval = hasPendingRefund ? 4000 : 5000;
 
     const timer = setInterval(() => {
       loadSilent(page);

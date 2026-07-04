@@ -57,12 +57,15 @@ const OrderDetailsPage = () => {
   const [courierDropdownOpen, setCourierDropdownOpen] = useState(false);
   const [isCustomCourier, setIsCustomCourier] = useState(false);
 
+  const [selfShipSelectedProducts, setSelfShipSelectedProducts] = useState([]);
+
   React.useEffect(() => {
     if (selfShipModal) {
       setCourierName('');
       setTrackingNumber('');
       setCourierDropdownOpen(false);
       setIsCustomCourier(false);
+      setSelfShipSelectedProducts([selfShipModal.product_id]);
     }
   }, [selfShipModal]);
 
@@ -83,21 +86,31 @@ const OrderDetailsPage = () => {
       toast.error('Courier name and Tracking number are required');
       return;
     }
+    if (selfShipSelectedProducts.length === 0) {
+      toast.error('Please select at least one item to ship');
+      return;
+    }
     setSubmittingSelfShip(true);
     try {
-      const formData = new FormData();
-      formData.append('courier_name', courierName);
-      formData.append('tracking_number', trackingNumber);
-      if (trackingUrl) formData.append('tracking_url', trackingUrl);
-      if (courierCost) formData.append('courier_cost', parseFloat(courierCost));
-      if (notes) formData.append('notes', notes);
-      if (invoiceFile) {
-        formData.append('invoice', invoiceFile);
-      }
-      
-      await apiClient.post(`/orders/${id}/items/${selfShipModal.product_id}/self-ship`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const uploadPromises = selfShipSelectedProducts.map(productId => {
+        const formData = new FormData();
+        formData.append('courier_name', courierName);
+        formData.append('tracking_number', trackingNumber);
+        if (trackingUrl) formData.append('tracking_url', trackingUrl);
+        if (courierCost) {
+          const itemCost = parseFloat(courierCost) / selfShipSelectedProducts.length;
+          formData.append('courier_cost', itemCost);
+        }
+        if (notes) formData.append('notes', notes);
+        if (invoiceFile) {
+          formData.append('invoice', invoiceFile);
+        }
+        return apiClient.post(`/orders/${id}/items/${productId}/self-ship`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
       });
+      
+      await Promise.all(uploadPromises);
       apiClient.invalidateCache('/orders');
       apiClient.invalidateCache(`/orders/${id}`);
       toast.success('Self shipping details submitted successfully');
@@ -108,6 +121,7 @@ const OrderDetailsPage = () => {
       setCourierCost('');
       setNotes('');
       setInvoiceFile(null);
+      setSelfShipSelectedProducts([]);
       
       // Reload order
       const res = await apiClient.get(`/orders/${id}`);
@@ -142,7 +156,7 @@ const OrderDetailsPage = () => {
     }
 
     try {
-      const res = await apiClient.cachedGet(`/orders/${id}`);
+      const res = silent ? await apiClient.get(`/orders/${id}`) : await apiClient.cachedGet(`/orders/${id}`);
       let orderData = res.data;
       const isOnlinePending = isOnlinePaymentPendingOrder(orderData);
       const rememberedPaymentId = sessionStorage.getItem(`razorpay_payment_${id}`);
@@ -1824,6 +1838,49 @@ const OrderDetailsPage = () => {
                     <strong>Self-Shipping Deadline:</strong> Please ship the item and submit your courier details within <strong>3 days</strong> of return approval.
                   </p>
                 </div>
+
+                {(() => {
+                  const eligibleItems = (order?.items || []).filter(item => 
+                    item.return_status === 'RETURN_APPROVED' || 
+                    item.return_status === 'return_approved' || 
+                    item.return_status === 'EXCHANGE_APPROVED'
+                  );
+                  if (eligibleItems.length > 1) {
+                    return (
+                      <div className="space-y-2 p-3.5 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
+                          Ship items together (Batch shipping):
+                        </label>
+                        <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
+                          {eligibleItems.map(item => {
+                            const isChecked = selfShipSelectedProducts.includes(item.product_id);
+                            const isOriginal = item.product_id === selfShipModal.product_id;
+                            return (
+                              <label key={item.product_id} className="flex items-center gap-2.5 text-[10px] text-slate-700 dark:text-slate-300 font-bold cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  disabled={isOriginal}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelfShipSelectedProducts(prev => [...prev, item.product_id]);
+                                    } else {
+                                      setSelfShipSelectedProducts(prev => prev.filter(id => id !== item.product_id));
+                                    }
+                                  }}
+                                  className="rounded border-slate-300 text-primary focus:ring-primary/20"
+                                />
+                                <span>{item.product_name}</span>
+                                {isOriginal && <span className="text-[8px] text-slate-400 font-normal italic">(Selected)</span>}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
 
                 <div className="space-y-1">
                   <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Courier / Carrier Name *</label>

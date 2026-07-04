@@ -125,28 +125,36 @@ const getCachedDataSync = (url, params = {}) => {
 };
 
 const invalidateCache = (urlPrefix) => {
-  for (const key of apiCache.keys()) {
-    if (key.startsWith(urlPrefix) || key.includes(urlPrefix)) {
-      apiCache.delete(key);
-    }
+  const prefixes = [urlPrefix];
+  if (urlPrefix.includes('/orders') || urlPrefix.includes('/admin/orders')) {
+    if (!prefixes.includes('/orders')) prefixes.push('/orders');
+    if (!prefixes.includes('/admin/orders')) prefixes.push('/admin/orders');
   }
-  for (const key of inFlightGets.keys()) {
-    if (key.startsWith(urlPrefix) || key.includes(urlPrefix)) {
-      inFlightGets.delete(key);
-    }
-  }
-  try {
-    const keysToRemove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('ds_api_cache:') && (key.includes(urlPrefix) || key.startsWith('ds_api_cache:' + urlPrefix))) {
-        keysToRemove.push(key);
+
+  for (const prefix of prefixes) {
+    for (const key of apiCache.keys()) {
+      if (key.startsWith(prefix) || key.includes(prefix)) {
+        apiCache.delete(key);
       }
     }
-    for (const key of keysToRemove) {
-      localStorage.removeItem(key);
+    for (const key of inFlightGets.keys()) {
+      if (key.startsWith(prefix) || key.includes(prefix)) {
+        inFlightGets.delete(key);
+      }
     }
-  } catch (e) {}
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('ds_api_cache:') && (key.includes(prefix) || key.startsWith('ds_api_cache:' + prefix))) {
+          keysToRemove.push(key);
+        }
+      }
+      for (const key of keysToRemove) {
+        localStorage.removeItem(key);
+      }
+    } catch (e) {}
+  }
 };
 
 const clearAllCache = () => {

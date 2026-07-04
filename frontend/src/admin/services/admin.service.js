@@ -79,8 +79,10 @@ const adminService = {
     return apiClient.post(`/admin/products/${productId}/inventory`, { delta: payload.delta_quantity });
   },
 
-  getOrders: async (params) => {
-    const response = await cachedGet('/admin/orders', { params });
+  getOrders: async (params, bypassCache = false) => {
+    const response = bypassCache
+      ? await apiClient.get('/admin/orders', { params })
+      : await cachedGet('/admin/orders', { params });
     const items = (response.data.items || []).map((order) => ({
       ...order,
       status: (order.order_status || '').toUpperCase(),
