@@ -313,23 +313,21 @@ export const useCheckout = () => {
       ? savedAddresses.find(a => a.id === selectedAddressId)?.state 
       : state;
     
-    if (userCountry !== 'IN') {
-      const indianStates = [
-        "andhra pradesh", "arunachal pradesh", "assam", "bihar", "chhattisgarh", "goa", "gujarat", 
-        "haryana", "himachal pradesh", "jharkhand", "karnataka", "kerala", "madhya pradesh", 
-        "maharashtra", "manipur", "meghalaya", "mizoram", "nagaland", "odisha", "punjab", 
-        "rajasthan", "sikkim", "tamil nadu", "telangana", "tripura", "uttar pradesh", 
-        "uttarakhand", "west bengal", "andaman and nicobar", "chandigarh", "dadra and nagar haveli", 
-        "daman and diu", "delhi", "jammu and kashmir", "ladakh", "lakshadweep", "puducherry",
-        "ap", "ar", "as", "br", "cg", "ga", "gj", "hr", "hp", "jh", "ka", "kl", "mp", "mh", "mn", 
-        "ml", "mz", "nl", "od", "pb", "rj", "sk", "tn", "tg", "tr", "up", "uk", "wb", "an", "ch", 
-        "dn", "dd", "dl", "jk", "la", "ld", "py"
-      ];
-      const stateLower = (activeState || '').trim().toLowerCase();
-      if (!indianStates.includes(stateLower)) {
-        toast.error("Currently we accept orders within India only.");
-        return false;
-      }
+    const indianStates = [
+      "andhra pradesh", "arunachal pradesh", "assam", "bihar", "chhattisgarh", "goa", "gujarat", 
+      "haryana", "himachal pradesh", "jharkhand", "karnataka", "kerala", "madhya pradesh", 
+      "maharashtra", "manipur", "meghalaya", "mizoram", "nagaland", "odisha", "punjab", 
+      "rajasthan", "sikkim", "tamil nadu", "telangana", "tripura", "uttar pradesh", 
+      "uttarakhand", "west bengal", "andaman and nicobar", "chandigarh", "dadra and nagar haveli", 
+      "daman and diu", "delhi", "jammu and kashmir", "ladakh", "lakshadweep", "puducherry",
+      "ap", "ar", "as", "br", "cg", "ga", "gj", "hr", "hp", "jh", "ka", "kl", "mp", "mh", "mn", 
+      "ml", "mz", "nl", "od", "pb", "rj", "sk", "tn", "tg", "tr", "up", "uk", "wb", "an", "ch", 
+      "dn", "dd", "dl", "jk", "la", "ld", "py"
+    ];
+    const stateLower = (activeState || '').trim().toLowerCase();
+    if (!indianStates.includes(stateLower)) {
+      toast.error("Currently we accept orders within India only.");
+      return false;
     }
     
     // Ensure that if saved addresses exist, the customer has picked one, or filled out the new address form
