@@ -170,33 +170,32 @@ public class EmailClient {
                 "<html>\n" +
                 "<head>\n" +
                 "    <meta charset=\"UTF-8\">\n" +
+                "    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n" +
                 "    <title>" + subject + "</title>\n" +
-                "    <style>\n" +
-                "        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 0; color: #333333; }\n" +
-                "        .wrapper { width: 100%; table-layout: fixed; background-color: #f4f6f8; padding: 40px 0; }\n" +
-                "        .content-container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }\n" +
-                "        .header { background-color: #ffffff; padding: 25px; text-align: center; border-bottom: 1px solid #e5e7eb; }\n" +
-                "        .header img { height: 60px; max-width: 100%; object-fit: contain; }\n" +
-                "        .body { padding: 45px 35px; line-height: 1.6; font-size: 14px; color: #374151; }\n" +
-                "        .footer { background-color: #f9fafb; padding: 25px; text-align: center; font-size: 11px; color: #6b7280; border-top: 1px solid #e5e7eb; }\n" +
-                "        .footer a { color: #059669; text-decoration: none; font-weight: bold; }\n" +
-                "    </style>\n" +
                 "</head>\n" +
-                "<body>\n" +
-                "    <div class=\"wrapper\">\n" +
-                "        <div class=\"content-container\">\n" +
-                "            <div class=\"header\">\n" +
-                "                <img src=\"https://durgashakti-foils.vercel.app/logo-durga.png\" alt=\"Durga Shakti Foils Logo\">\n" +
-                "            </div>\n" +
-                "            <div class=\"body\">\n" +
-                "                " + formattedBody + "\n" +
-                "            </div>\n" +
-                "            <div class=\"footer\">\n" +
-                "                <p>&copy; " + java.time.Year.now().getValue() + " Durga Shakti Foils. All rights reserved.</p>\n" +
-                "                <p>For support, contact us at <a href=\"mailto:support@durgashaktifoils.com\">support@durgashaktifoils.com</a></p>\n" +
-                "            </div>\n" +
-                "        </div>\n" +
-                "    </div>\n" +
+                "<body style=\"margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;\">\n" +
+                "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f3f4f6;padding:30px 0;\">\n" +
+                "<tr><td align=\"center\">\n" +
+                "<table width=\"620\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);\">\n" +
+                "  <!-- Header -->\n" +
+                "  <tr><td style=\"background:#ffffff;padding:32px 40px;text-align:center;border-bottom:1px solid #f3f4f6;\">\n" +
+                "    <img src=\"https://durgashakti-foils.vercel.app/logo-orange.png\" width=\"280\" style=\"margin:0 auto;object-fit:contain;display:block;\" alt=\"DurgaShakti Foils Logo\">\n" +
+                "  </td></tr>\n" +
+                "  <!-- Body -->\n" +
+                "  <tr><td style=\"padding:36px 40px;color:#374151;font-size:14px;line-height:1.6;\">\n" +
+                "    " + formattedBody + "\n" +
+                "  </td></tr>\n" +
+                "  <!-- Footer -->\n" +
+                "  <tr><td style=\"background:#f9fafb;border-top:1px solid #e5e7eb;padding:24px 40px;text-align:center;\">\n" +
+                "    <p style=\"margin:0;color:#6b7280;font-size:12px;\">© " + java.time.Year.now().getValue() + " DurgaShakti Foils. All rights reserved.</p>\n" +
+                "    <p style=\"margin:6px 0 0;color:#6b7280;font-size:12px;\">\n" +
+                "      <a href=\"https://durgashakti-foils.vercel.app\" style=\"color:#ea580c;text-decoration:none;font-weight:600;\">Visit our website</a> &nbsp;|&nbsp;\n" +
+                "      <a href=\"https://durgashakti-foils.vercel.app/contact\" style=\"color:#ea580c;text-decoration:none;font-weight:600;\">Contact Support</a>\n" +
+                "    </p>\n" +
+                "    <p style=\"margin:6px 0 0;color:#9ca3af;font-size:11px;\">This is an automated email. Please do not reply directly.</p>\n" +
+                "  </td></tr>\n" +
+                "</table>\n" +
+                "</td></tr></table>\n" +
                 "</body>\n" +
                 "</html>";
     }
