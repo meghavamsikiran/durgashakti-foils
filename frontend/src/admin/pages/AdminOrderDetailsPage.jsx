@@ -174,7 +174,22 @@ const AdminOrderDetailsPage = () => {
       }
     }, 1000);
 
-    return () => clearInterval(timer);
+  }, [order, fetchOrderDetails]);
+
+  // Poll order details every 5 seconds to sync customer updates in real time
+  useEffect(() => {
+    if (!order) return;
+
+    const isTerminal = ['cancelled', 'failed', 'refunded', 'refund_credited'].includes(
+      (order.status || order.order_status || '').toLowerCase()
+    );
+    if (isTerminal) return;
+
+    const pollTimer = setInterval(() => {
+      fetchOrderDetails(true);
+    }, 5000);
+
+    return () => clearInterval(pollTimer);
   }, [order, fetchOrderDetails]);
 
   const handleItemReturnAction = async (orderId, productId, action, remarks = '') => {
