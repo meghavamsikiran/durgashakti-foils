@@ -1,4 +1,4 @@
-package com.durgashakti.order.service;
+package com.durgashakti.common.service;
 
 import com.durgashakti.common.entity.Order;
 

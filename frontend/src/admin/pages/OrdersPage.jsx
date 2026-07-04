@@ -479,6 +479,9 @@ const OrdersPage = () => {
       setTrackingModal(null);
       setTrackingForm({ carrier: '', tracking_id: '', tracking_url: '' });
       setAdminMessage('');
+      try {
+        localStorage.removeItem(`admin_order_detail_${orderId}`);
+      } catch (e) {}
       const response = await adminService.updateOrderStatus(orderId, { status: newStatus, admin_message: message, ...extraData });
       const serverOrder = response?.data?.order;
       if (serverOrder) {
@@ -521,6 +524,9 @@ const OrdersPage = () => {
     });
     const toastId = toast.loading(`${action === 'approve' ? 'Approving' : 'Rejecting'} item return...`);
     try {
+      try {
+        localStorage.removeItem(`admin_order_detail_${orderId}`);
+      } catch (e) {}
       const response = await apiClient.post(`/admin/orders/${orderId}/items/${productId}/return-action`, { action, remarks });
       apiClient.invalidateCache('/admin/orders');
       const serverOrder = response?.data?.order;
@@ -2089,7 +2095,7 @@ const OrdersPage = () => {
                             )}
 
                             <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-50">
-                              {item.return_status === 'RETURN_REQUESTED' && (
+                              {item.return_status === 'RETURN_REQUESTED' && !['return_approved', 'return_rejected', 'refunded'].includes((selectedOrderForModal.order_status || '').toLowerCase()) && (
                                 <>
                                   <button
                                     onClick={() => {

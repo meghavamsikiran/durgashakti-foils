@@ -37,6 +37,11 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendEmail(String to, String subject, String body) {
+        sendEmail(to, subject, body, null, null);
+    }
+
+    @Override
+    public void sendEmail(String to, String subject, String body, byte[] attachmentBytes, String attachmentName) {
         String trimmed = body.trim().toLowerCase();
         String htmlBody = trimmed.startsWith("<!doctype html>") || trimmed.startsWith("<html>")
                 ? body 
@@ -45,7 +50,7 @@ public class EmailServiceImpl implements EmailService {
         // Try Brevo HTTP API first to bypass SMTP port restrictions
         if (brevoApiKey != null && !brevoApiKey.trim().isEmpty() && !brevoApiKey.contains("YOUR_KEY")) {
             try {
-                sendViaBrevo(to, subject, htmlBody);
+                sendViaBrevo(to, subject, htmlBody, attachmentBytes, attachmentName);
                 return;
             } catch (Exception e) {
                 log.error("Failed to send email via Brevo HTTP API in EmailServiceImpl, falling back to direct SMTP: {}", e.getMessage(), e);
@@ -59,6 +64,9 @@ public class EmailServiceImpl implements EmailService {
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
+            if (attachmentBytes != null && attachmentName != null) {
+                helper.addAttachment(attachmentName, new org.springframework.core.io.ByteArrayResource(attachmentBytes));
+            }
             mailSender.send(mimeMessage);
             log.info("HTML Email sent successfully to {}", to);
         } catch (Exception e) {
@@ -70,7 +78,7 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-    private void sendViaBrevo(String to, String subject, String htmlContent) throws Exception {
+    private void sendViaBrevo(String to, String subject, String htmlContent, byte[] attachmentBytes, String attachmentName) throws Exception {
         Map<String, Object> senderMap = new HashMap<>();
         senderMap.put("name", brevoSenderName);
         senderMap.put("email", brevoSenderEmail);
@@ -86,6 +94,13 @@ public class EmailServiceImpl implements EmailService {
         payload.put("to", toList);
         payload.put("subject", subject);
         payload.put("htmlContent", htmlContent);
+
+        if (attachmentBytes != null && attachmentName != null) {
+            Map<String, Object> attachmentMap = new HashMap<>();
+            attachmentMap.put("name", attachmentName);
+            attachmentMap.put("content", java.util.Base64.getEncoder().encodeToString(attachmentBytes));
+            payload.put("attachments", java.util.List.of(attachmentMap));
+        }
 
         String json = objectMapper.writeValueAsString(payload);
 

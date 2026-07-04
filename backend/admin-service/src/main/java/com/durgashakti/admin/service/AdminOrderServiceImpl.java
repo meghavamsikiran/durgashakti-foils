@@ -41,16 +41,20 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     @Value("${razorpay.key-secret:fake_key_secret}")
     private String razorpayKeySecret;
 
+    private final com.durgashakti.common.service.InvoiceService invoiceService;
+
     public AdminOrderServiceImpl(AdminOrderRepository orderRepository,
                                  AdminProductRepository productRepository,
                                  AuditLogRepository auditLogRepository,
                                  AdminUserRepository userRepository,
-                                 EmailClient emailClient) {
+                                 EmailClient emailClient,
+                                 com.durgashakti.common.service.InvoiceService invoiceService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.auditLogRepository = auditLogRepository;
         this.userRepository = userRepository;
         this.emailClient = emailClient;
+        this.invoiceService = invoiceService;
     }
 
     /**
@@ -123,14 +127,72 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     }
 
     @Override
+    public Order updateOrderStatus(UUID orderId, String status, String carrier, String trackingNumber, String expectedDeliveryDate, String shipmentNotes) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Order not found"));
+        
+        if (carrier != null && !carrier.trim().isEmpty()) {
+            order.setCarrier(carrier);
+        }
+        if (trackingNumber != null && !trackingNumber.trim().isEmpty()) {
+            order.setTrackingNumber(trackingNumber);
+            order.setTrackingId(trackingNumber);
+            order.setShipmentStatus("shipped");
+            order.setShipmentDate(OffsetDateTime.now());
+        }
+        if (expectedDeliveryDate != null && !expectedDeliveryDate.trim().isEmpty()) {
+            try {
+                order.setExpectedDeliveryDate(OffsetDateTime.parse(expectedDeliveryDate));
+            } catch (Exception e) {
+                try {
+                    order.setExpectedDeliveryDate(java.time.LocalDate.parse(expectedDeliveryDate).atStartOfDay(java.time.ZoneOffset.UTC).toOffsetDateTime());
+                } catch (Exception ignored) {}
+            }
+        }
+        if (shipmentNotes != null) {
+            order.setShipmentNotes(shipmentNotes);
+        }
+        
+        order = orderRepository.save(order);
+        return updateOrderStatus(orderId, status);
+    }
+
+    @Override
     public Order updateOrderStatus(UUID orderId, String status) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Order not found"));
         order.setOrderStatus(status);
         order.setUpdatedAt(OffsetDateTime.now());
-        order = orderRepository.save(order);
 
         String statusLower = status.toLowerCase();
+        
+        // Sync item return states when overall order status is return_approved or return_rejected
+        if ("return_approved".equals(statusLower)) {
+            List<Map<String, Object>> items = order.getItems();
+            if (items != null) {
+                for (Map<String, Object> item : items) {
+                    if ("RETURN_REQUESTED".equals(item.get("return_status")) || "EXCHANGE_REQUESTED".equals(item.get("return_status"))) {
+                        item.put("return_status", "RETURN_APPROVED");
+                        addAuditTimeline(item, "RETURN_APPROVED", "Return approved via order status update");
+                    }
+                }
+                order.setItems(items);
+            }
+        } else if ("return_rejected".equals(statusLower)) {
+            List<Map<String, Object>> items = order.getItems();
+            if (items != null) {
+                for (Map<String, Object> item : items) {
+                    if ("RETURN_REQUESTED".equals(item.get("return_status")) || "EXCHANGE_REQUESTED".equals(item.get("return_status"))) {
+                        item.put("return_status", "RETURN_REJECTED");
+                        addAuditTimeline(item, "RETURN_REJECTED", "Return rejected via order status update");
+                    }
+                }
+                order.setItems(items);
+            }
+        }
+
+        order = orderRepository.save(order);
+
         if ("confirmed".equals(statusLower)) {
             sendOrderEmail(order, "Order Confirmed: " + order.getOrderNumber(), 
                 "Your order " + order.getOrderNumber() + " has been confirmed and is now being processed.");
@@ -149,6 +211,10 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         } else if ("cancelled".equals(statusLower)) {
             sendOrderEmail(order, "Order Cancelled: " + order.getOrderNumber(), 
                 "Your order " + order.getOrderNumber() + " has been cancelled. If this was a mistake, please contact support.");
+        } else if ("return_approved".equals(statusLower)) {
+            sendReturnActionEmail(order, true, "Approved via bulk status update");
+        } else if ("return_rejected".equals(statusLower)) {
+            sendReturnActionEmail(order, false, "Rejected via bulk status update");
         }
 
         return order;
@@ -271,11 +337,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
         order = orderRepository.save(order);
         
-        String typeStr = isExchange ? "Exchange" : "Return";
-        String statusStr = "APPROVE".equals(actionUpper) ? "Approved" : "Rejected";
-        sendOrderEmail(order, typeStr + " Request " + statusStr + ": " + order.getOrderNumber(),
-            "Your " + typeStr.toLowerCase() + " request for an item in order " + order.getOrderNumber() + " has been " + statusStr.toLowerCase() + ".\n" +
-            (remarks != null && !remarks.isEmpty() ? "Remarks: " + remarks : ""));
+        sendReturnActionEmail(order, "APPROVE".equals(actionUpper), remarks);
             
         return order;
     }
@@ -755,13 +817,11 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                                 "    " + itemsHtml.toString() + "\n" +
                                 "    \n" +
                                 "    <div style=\"border-top:1px solid #f1f5f9;padding-top:16px;margin:24px 0;\">\n" +
-                                "      <table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\">\n" +
-                                "        <tr><td style=\"color:#64748b;font-size:14px;\">Total Order Value</td><td align=\"right\" style=\"color:#ea580c;font-weight:700;font-size:16px;\">Rs. " + order.getTotalAmount() + "</td></tr>\n" +
-                                "      </table>\n" +
+                                "      " + getEmailBreakoutHtml(order) + "\n" +
                                 "    </div>\n" +
                                 "    \n" +
                                 "    <div style=\"text-align:center;margin:32px 0;\">\n" +
-                                "      <a href=\"https://durgashakti-foils.vercel.app/orders\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:12px 28px;font-weight:700;border-radius:8px;display:inline-block;font-size:14px;box-shadow:0 4px 12px rgba(234,88,12,0.25);\">View Order History</a>\n" +
+                                "      <a href=\"https://durgashakti-foils.vercel.app/order/" + order.getId() + "\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:12px 28px;font-weight:700;border-radius:8px;display:inline-block;font-size:14px;box-shadow:0 4px 12px rgba(234,88,12,0.25);\">View Order</a>\n" +
                                 "    </div>\n" +
                                 "    \n" +
                                 "    <p style=\"margin:0;font-size:14px;line-height:1.6;color:#64748b;\">Best regards,<br>The Durga Shakti Foils Team</p>\n" +
@@ -776,12 +836,116 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                                 "</body>\n" +
                                 "</html>";
                         
-                        emailClient.sendEmail(user.getEmail(), subject, htmlBody);
+                        byte[] pdfBytes = null;
+                        String attachmentName = null;
+                        if ("delivered".equalsIgnoreCase(order.getOrderStatus())) {
+                            try {
+                                pdfBytes = invoiceService.generateInvoicePdf(order);
+                                attachmentName = "Tax_Invoice_" + order.getOrderNumber() + ".pdf";
+                            } catch (Exception ex) {
+                                log.error("Failed to generate invoice on delivery: {}", ex.getMessage());
+                            }
+                        }
+
+                        if (pdfBytes != null && attachmentName != null) {
+                            emailClient.sendEmail(user.getEmail(), subject, htmlBody, pdfBytes, attachmentName);
+                        } else {
+                            emailClient.sendEmail(user.getEmail(), subject, htmlBody);
+                        }
                     } catch (Exception e) {
                         log.error("Failed to send email for order {} to {}", order.getOrderNumber(), user.getEmail(), e);
                     }
                 });
             });
         }
+    }
+
+    private String getEmailBreakoutHtml(Order order) {
+        List<Map<String, Object>> items = order.getItems();
+        double subtotalBeforeTax = 0.0;
+        double cgstTotal = 0.0;
+        double sgstTotal = 0.0;
+        if (items != null) {
+            for (Map<String, Object> item : items) {
+                double price = ((Number) item.getOrDefault("price", 0.0)).doubleValue();
+                int qty = ((Number) item.getOrDefault("quantity", 1)).intValue();
+                double itemTotalInclTax = price * qty;
+                double itemTotalTaxable = itemTotalInclTax / 1.18;
+                double itemCgst = itemTotalTaxable * 0.09;
+                double itemSgst = itemTotalTaxable * 0.09;
+                itemTotalTaxable = Math.round(itemTotalTaxable * 100.0) / 100.0;
+                itemCgst = Math.round(itemCgst * 100.0) / 100.0;
+                itemSgst = Math.round(itemSgst * 100.0) / 100.0;
+                subtotalBeforeTax += itemTotalTaxable;
+                cgstTotal += itemCgst;
+                sgstTotal += itemSgst;
+            }
+        }
+        double discount = order.getDiscountAmount() != null ? order.getDiscountAmount().doubleValue() : 0.0;
+        double grandTotal = order.getTotalAmount().doubleValue();
+        double remaining = grandTotal - (subtotalBeforeTax + cgstTotal + sgstTotal - discount);
+        remaining = Math.round(remaining * 100.0) / 100.0;
+
+        double shippingCharge = 0.0;
+        double codCharge = 0.0;
+        if (remaining > 0) {
+            if ("cod".equalsIgnoreCase(order.getPaymentMethod())) {
+                if (remaining >= 20.0) {
+                    codCharge = 20.0;
+                    shippingCharge = remaining - 20.0;
+                } else {
+                    codCharge = remaining;
+                    shippingCharge = 0.0;
+                }
+            } else {
+                shippingCharge = remaining;
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"font-size:13px;color:#475569;\">");
+        sb.append("<tr><td>Subtotal (Taxable)</td><td align=\"right\">Rs. ").append(String.format("%.2f", subtotalBeforeTax)).append("</td></tr>");
+        if (cgstTotal > 0) {
+            sb.append("<tr><td>CGST (9%)</td><td align=\"right\">Rs. ").append(String.format("%.2f", cgstTotal)).append("</td></tr>");
+        }
+        if (sgstTotal > 0) {
+            sb.append("<tr><td>SGST (9%)</td><td align=\"right\">Rs. ").append(String.format("%.2f", sgstTotal)).append("</td></tr>");
+        }
+        if (discount > 0) {
+            sb.append("<tr><td>Coupon Discount</td><td align=\"right\" style=\"color:#16a34a;\">- Rs. ").append(String.format("%.2f", discount)).append("</td></tr>");
+        }
+        if (shippingCharge > 0) {
+            sb.append("<tr><td>Shipping Charges</td><td align=\"right\">Rs. ").append(String.format("%.2f", shippingCharge)).append("</td></tr>");
+        }
+        if (codCharge > 0) {
+            sb.append("<tr><td>COD Service Charge</td><td align=\"right\">Rs. ").append(String.format("%.2f", codCharge)).append("</td></tr>");
+        }
+        sb.append("<tr style=\"font-weight:700;font-size:15px;color:#ea580c;\">");
+        sb.append("<td style=\"border-top:1px solid #e2e8f0;padding-top:8px;\">Total Value</td>");
+        sb.append("<td align=\"right\" style=\"border-top:1px solid #e2e8f0;padding-top:8px;\">Rs. ").append(String.format("%.2f", grandTotal)).append("</td></tr>");
+        sb.append("</table>");
+        return sb.toString();
+    }
+
+    private void sendReturnActionEmail(Order order, boolean isApprove, String remarks) {
+        String subject;
+        String body;
+        if (isApprove) {
+            subject = "Return Request Approved - Action Required: " + order.getOrderNumber();
+            body = "Your return request for order <strong>" + order.getOrderNumber() + "</strong> has been approved.<br/><br/>" +
+                   "<strong>Self-Shipment Instructions:</strong><br/>" +
+                   "1. Please ship the item back to our address within <strong>3 days</strong> (by " + 
+                   OffsetDateTime.now().plusDays(3).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ").<br/>" +
+                   "2. Go to your Order Details page on our website and click 'Track Return Shipment' to submit your courier name and tracking ID.<br/>" +
+                   "3. Return shipping address: Plot no 54, Shop no 1, Maruthi nagar, Mallampet, Hyderabad, Telangana - 500090.<br/><br/>" +
+                   "<strong>IMPORTANT NOTICE:</strong> If you do not self-ship the item and submit the tracking details within 3 days, " +
+                   "your return request will automatically expire and the order will no longer be eligible for return or exchange.<br/>" +
+                   (remarks != null && !remarks.isEmpty() ? "<br/>Remarks: " + remarks : "");
+        } else {
+            subject = "Return Request Rejected: " + order.getOrderNumber();
+            body = "We regret to inform you that your return request for order <strong>" + order.getOrderNumber() + "</strong> has been rejected.<br/>" +
+                   (remarks != null && !remarks.isEmpty() ? "<br/>Reason/Remarks: " + remarks : "The request does not meet our return policy guidelines.");
+        }
+        sendOrderEmail(order, subject, body);
     }
 }

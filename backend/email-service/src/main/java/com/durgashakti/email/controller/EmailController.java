@@ -22,7 +22,18 @@ public class EmailController {
         String subject = String.valueOf(payload.get("subject"));
         String body = String.valueOf(payload.get("body"));
         
-        emailService.sendEmail(to, subject, body);
+        byte[] attachmentBytes = null;
+        String attachmentName = null;
+        if (payload.get("attachment") != null) {
+            attachmentBytes = java.util.Base64.getDecoder().decode(String.valueOf(payload.get("attachment")));
+            attachmentName = String.valueOf(payload.get("attachmentName"));
+        }
+        
+        if (attachmentBytes != null && attachmentName != null) {
+            emailService.sendEmail(to, subject, body, attachmentBytes, attachmentName);
+        } else {
+            emailService.sendEmail(to, subject, body);
+        }
         return ResponseEntity.ok(Map.of("status", "sent"));
     }
 }

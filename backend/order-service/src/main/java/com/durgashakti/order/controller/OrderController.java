@@ -3,7 +3,7 @@ package com.durgashakti.order.controller;
 import com.durgashakti.common.entity.Order;
 import com.durgashakti.common.exception.ApiException;
 import com.durgashakti.order.dto.*;
-import com.durgashakti.order.service.InvoiceService;
+import com.durgashakti.common.service.InvoiceService;
 import com.durgashakti.order.service.OrderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

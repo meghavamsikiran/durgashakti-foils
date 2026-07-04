@@ -1141,7 +1141,7 @@ const AdminOrderDetailsPage = () => {
                         )}
 
                         <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-50">
-                          {(item.return_status === 'RETURN_REQUESTED' || item.return_status === 'EXCHANGE_REQUESTED') && (
+                          {(item.return_status === 'RETURN_REQUESTED' || item.return_status === 'EXCHANGE_REQUESTED') && !['return_approved', 'return_rejected', 'refunded'].includes((order.order_status || '').toLowerCase()) && (
                             <>
                               <button
                                 onClick={() => {

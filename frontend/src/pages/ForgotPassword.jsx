@@ -9,7 +9,7 @@ import authService from '../services/auth.service';
 
 const ForgotPassword = () => {
   const [searchParams] = useSearchParams();
-  const [step, setStep] = useState(1); // 1: Email, 2: OTP & New Password
+  const [step, setStep] = useState(() => searchParams.get('email') ? 2 : 1); // Auto-navigate to OTP entry if email parameter is supplied
   const [email, setEmail] = useState(() => searchParams.get('email') || '');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -25,6 +25,21 @@ const ForgotPassword = () => {
     window.addEventListener('theme-toggle', handleThemeToggle);
     return () => window.removeEventListener('theme-toggle', handleThemeToggle);
   }, []);
+
+  React.useEffect(() => {
+    const savedUserStr = localStorage.getItem('user');
+    if (savedUserStr) {
+      try {
+        const savedUser = JSON.parse(savedUserStr);
+        const urlEmail = searchParams.get('email');
+        if (urlEmail && savedUser.email && savedUser.email.toLowerCase() !== urlEmail.toLowerCase()) {
+          toast.error(`Warning: You are logged in as ${savedUser.email}, but this password reset link is for ${urlEmail}. Please sign out first.`, { duration: 10000 });
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [searchParams]);
 
   React.useEffect(() => {
     let timer;

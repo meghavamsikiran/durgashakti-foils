@@ -51,6 +51,10 @@ public class EmailClient {
     }
 
     public void sendEmail(String to, String subject, String body) {
+        sendEmail(to, subject, body, null, null);
+    }
+
+    public void sendEmail(String to, String subject, String body, byte[] attachmentBytes, String attachmentName) {
         CompletableFuture.runAsync(() -> {
             try {
                 String htmlContent = wrapHtmlTemplate(subject, body);
@@ -58,7 +62,7 @@ public class EmailClient {
                 // If Brevo HTTP API is configured, use it directly to bypass SMTP port blocking
                 if (brevoApiKey != null && !brevoApiKey.trim().isEmpty() && !brevoApiKey.contains("YOUR_KEY")) {
                     try {
-                        sendViaBrevo(to, subject, htmlContent);
+                        sendViaBrevo(to, subject, htmlContent, attachmentBytes, attachmentName);
                         return;
                     } catch (Exception e) {
                         log.error("Failed to send email via Brevo HTTP API, attempting direct SMTP fallback: {}", e.getMessage(), e);
@@ -74,6 +78,9 @@ public class EmailClient {
                         helper.setTo(to);
                         helper.setSubject(subject);
                         helper.setText(htmlContent, true);
+                        if (attachmentBytes != null && attachmentName != null) {
+                            helper.addAttachment(attachmentName, new org.springframework.core.io.ByteArrayResource(attachmentBytes));
+                        }
                         mailSender.send(mimeMessage);
                         log.info("Direct HTML email sent successfully to {}", to);
                         return;
@@ -86,6 +93,10 @@ public class EmailClient {
                 payload.put("to", to);
                 payload.put("subject", subject);
                 payload.put("body", htmlContent);
+                if (attachmentBytes != null && attachmentName != null) {
+                    payload.put("attachment", java.util.Base64.getEncoder().encodeToString(attachmentBytes));
+                    payload.put("attachmentName", attachmentName);
+                }
                 dispatch(payload);
             } catch (Exception e) {
                 log.error("Unhandled error in async email dispatcher to {}: {}", to, e.getMessage(), e);
@@ -93,7 +104,7 @@ public class EmailClient {
         });
     }
 
-    private void sendViaBrevo(String to, String subject, String htmlContent) throws Exception {
+    private void sendViaBrevo(String to, String subject, String htmlContent, byte[] attachmentBytes, String attachmentName) throws Exception {
         Map<String, Object> senderMap = new HashMap<>();
         senderMap.put("name", brevoSenderName);
         senderMap.put("email", brevoSenderEmail);
@@ -109,6 +120,13 @@ public class EmailClient {
         payload.put("to", toList);
         payload.put("subject", subject);
         payload.put("htmlContent", htmlContent);
+
+        if (attachmentBytes != null && attachmentName != null) {
+            Map<String, Object> attachmentMap = new HashMap<>();
+            attachmentMap.put("name", attachmentName);
+            attachmentMap.put("content", java.util.Base64.getEncoder().encodeToString(attachmentBytes));
+            payload.put("attachments", java.util.List.of(attachmentMap));
+        }
 
         String json = objectMapper.writeValueAsString(payload);
 

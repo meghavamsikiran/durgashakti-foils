@@ -124,6 +124,14 @@ public class AdminOrderController {
             @PathVariable("orderId") UUID orderId,
             @RequestBody Map<String, String> payload) {
         String status = payload.get("status");
+        String carrier = payload.get("carrier");
+        String trackingNumber = payload.get("tracking_number");
+        String expectedDeliveryDate = payload.get("expected_delivery_date");
+        String shipmentNotes = payload.get("shipment_notes");
+        
+        if (carrier != null || trackingNumber != null || expectedDeliveryDate != null || shipmentNotes != null) {
+            return ResponseEntity.ok(adminOrderService.updateOrderStatus(orderId, status, carrier, trackingNumber, expectedDeliveryDate, shipmentNotes));
+        }
         return ResponseEntity.ok(adminOrderService.updateOrderStatus(orderId, status));
     }
 

@@ -9,6 +9,7 @@ public interface AdminOrderService {
     List<Order> getAllOrders();
     Order getOrderDetails(UUID orderId);
     Order updateOrderStatus(UUID orderId, String status);
+    Order updateOrderStatus(UUID orderId, String status, String carrier, String trackingNumber, String expectedDeliveryDate, String shipmentNotes);
     Order shipOrder(UUID orderId, String carrier, String trackingNumber);
     Map<String, Object> bulkShipOrders(List<Map<String, String>> shipments);
     Order itemReturnAction(UUID orderId, String productId, String action, String remarks);

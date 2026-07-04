@@ -2,6 +2,7 @@ package com.durgashakti.order.service;
 
 import com.durgashakti.common.entity.*;
 import com.durgashakti.common.exception.ApiException;
+import com.durgashakti.common.service.InvoiceService;
 import com.durgashakti.order.dto.*;
 import com.durgashakti.order.repository.*;
 import org.json.JSONObject;
@@ -41,6 +42,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderSettingRepository settingRepository;
     private final JdbcTemplate jdbcTemplate;
     private final com.durgashakti.common.util.SupabaseStorageService supabaseStorageService;
+    private final InvoiceService invoiceService;
 
     public OrderServiceImpl(OrderServiceRepository orderRepository,
                             OrderProductRepository productRepository,
@@ -54,7 +56,8 @@ public class OrderServiceImpl implements OrderService {
                             com.durgashakti.common.util.EmailClient emailClient,
                             OrderSettingRepository settingRepository,
                             JdbcTemplate jdbcTemplate,
-                            com.durgashakti.common.util.SupabaseStorageService supabaseStorageService) {
+                            com.durgashakti.common.util.SupabaseStorageService supabaseStorageService,
+                            InvoiceService invoiceService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.couponRepository = couponRepository;
@@ -68,6 +71,7 @@ public class OrderServiceImpl implements OrderService {
         this.settingRepository = settingRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.supabaseStorageService = supabaseStorageService;
+        this.invoiceService = invoiceService;
     }
 
     @PostConstruct
@@ -538,7 +542,7 @@ public class OrderServiceImpl implements OrderService {
                             "    </div>\n" +
                             "    \n" +
                             "    <div style=\"text-align:center;margin:30px 0;\">\n" +
-                            "        <a href=\"https://durgashakti-foils.vercel.app/orders\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:12px 28px;font-weight:700;border-radius:8px;display:inline-block;font-size:14px;box-shadow:0 4px 12px rgba(234,88,12,0.25);\">View Order Details</a>\n" +
+                            "        <a href=\"https://durgashakti-foils.vercel.app/order/" + order.getId() + "\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:12px 28px;font-weight:700;border-radius:8px;display:inline-block;font-size:14px;box-shadow:0 4px 12px rgba(234,88,12,0.25);\">View Order Details</a>\n" +
                             "    </div>\n" +
                             "  </td></tr>\n" +
                             "  <!-- Footer -->\n" +
@@ -555,7 +559,9 @@ public class OrderServiceImpl implements OrderService {
                             "</body>\n" +
                             "</html>";
                     
-                    emailClient.sendEmail(user.getEmail(), subject, htmlBody);
+                    byte[] pdfBytes = invoiceService.generateInvoicePdf(order);
+                    String attachmentName = "Tax_Invoice_" + order.getOrderNumber() + ".pdf";
+                    emailClient.sendEmail(user.getEmail(), subject, htmlBody, pdfBytes, attachmentName);
                     order.setReceiptEmailSent(true);
                     orderRepository.save(order);
                 });
