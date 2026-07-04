@@ -367,7 +367,7 @@ const OrderDetailsPage = () => {
   useEffect(() => {
     if (!order) return;
 
-    const isTerminal = ['cancelled', 'failed', 'refunded', 'return_rejected', 'delivered'].includes(
+    const isTerminal = ['cancelled', 'failed', 'refunded', 'refund_credited'].includes(
       (order.order_status || '').toLowerCase()
     );
 
