@@ -15,6 +15,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import jakarta.annotation.PostConstruct;
 import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionSynchronization;
 
