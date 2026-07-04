@@ -331,16 +331,18 @@ const AdminUsersPage = () => {
     }
     try {
       setCreating(true);
-      await adminService.createAdminUser({
+      const res = await adminService.createAdminUser({
         ...form,
         permissions: permissionsWithTemplate(form.permissions, selectedTemplate),
         role_template: selectedTemplate
       });
       toast.success('Admin created successfully');
+      if (res && res.data) {
+        setRows((prev) => [...prev, res.data]);
+      }
       setForm({ full_name: '', email: '', phone: '', password: '', role: 'admin', permissions: templatePermissions('CUSTOM') });
       setSelectedTemplate('CUSTOM');
       setShowCreate(false);
-      load();
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -364,10 +366,12 @@ const AdminUsersPage = () => {
             permissions: permissionsWithTemplate(editForm.permissions, editSelectedTemplate),
             role_template: editSelectedTemplate
           };
-      await adminService.updateAdminUser(editModal.id, payload);
+      const res = await adminService.updateAdminUser(editModal.id, payload);
       toast.success('Admin info updated');
+      if (res && res.data) {
+        setRows((prev) => prev.map((admin) => admin.id === editModal.id ? res.data : admin));
+      }
       setEditModal(null);
-      load();
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -399,9 +403,9 @@ const AdminUsersPage = () => {
     try {
       setDeleteSaving(true);
       await adminService.deleteAdminUser(deleteTarget.id);
+      setRows((prev) => prev.filter((admin) => admin.id !== deleteTarget.id));
       toast.success('Admin account deleted');
       setDeleteTarget(null);
-      load();
     } catch (err) {
       toast.error(err.message);
     } finally {

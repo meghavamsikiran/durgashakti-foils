@@ -2397,5 +2397,85 @@ html.light-theme body,
   color: #ffffff !important;
 }
 
+/* ── SYSTEM-WIDE FORCE DARK & LIGHT THEME COLOR RE-MAPPING ── */
+
+/* Dark Mode Color Mappings (Applies globally to all pages, admin and customer) */
+.dark .bg-white,
+.dark div.bg-white,
+.dark section.bg-white,
+.dark main.bg-white,
+.dark header.bg-white,
+.dark footer.bg-white,
+.dark form.bg-white {
+  background-color: #0b0f0d !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-100,
+.dark .bg-gray-50,
+.dark .bg-gray-100,
+.dark .bg-zinc-50 {
+  background-color: #0c1310 !important;
+}
+
+.dark .text-slate-900,
+.dark .text-slate-800,
+.dark .text-slate-700,
+.dark .text-slate-600,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-zinc-900 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-500,
+.dark .text-slate-400,
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-100,
+.dark .border-gray-200,
+.dark .border-gray-100 {
+  border-color: #19231f !important;
+}
+
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #19231f !important;
+}
+
+/* Light Mode Color Mappings (Applies globally to customer/public pages and admin portal) */
+.light-theme .bg-\[\#0a0f0d\],
+.light-theme .bg-\[\#030504\],
+.light-theme .bg-\[\#0C1310\],
+.light-theme .bg-\[\#090d0b\],
+.light-theme .bg-\[\#0d1511\],
+.light-theme .bg-\[\#121b17\],
+.light-theme .bg-slate-900,
+.light-theme .bg-slate-950,
+.light-theme .bg-black {
+  background-color: #f7faf8 !important;
+}
+
+/* In light theme, if we have white/light text inside a dark container that we converted to light, it should be dark */
+.light-theme .text-white:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *),
+.light-theme .text-slate-100:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *),
+.light-theme .text-slate-200:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *),
+.light-theme .text-slate-300:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *),
+.light-theme .text-gray-100:not(button):not(button *),
+.light-theme .text-zinc-100:not(button):not(button *) {
+  color: #181c1b !important;
+}
+
+.light-theme .border-\[\#19231F\],
+.light-theme .border-\[\#26322B\],
+.light-theme .border-slate-800,
+.light-theme .border-slate-700 {
+  border-color: #e2e8f0 !important;
+}
+
 
 

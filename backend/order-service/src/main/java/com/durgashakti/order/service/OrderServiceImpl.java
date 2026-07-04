@@ -243,6 +243,19 @@ public class OrderServiceImpl implements OrderService {
         order.setCouponCodes(req.getCouponCodes());
         order.setTrackingEventsJson(new ArrayList<>());
 
+        String customerName = "Guest User";
+        Optional<com.durgashakti.common.entity.User> userOpt = userRepository.findById(userId);
+        if (userOpt.isPresent()) {
+            customerName = userOpt.get().getFullName();
+        } else if (req.getShippingAddress() != null) {
+            if (req.getShippingAddress().get("full_name") != null) {
+                customerName = String.valueOf(req.getShippingAddress().get("full_name")).trim();
+            } else if (req.getShippingAddress().get("fullName") != null) {
+                customerName = String.valueOf(req.getShippingAddress().get("fullName")).trim();
+            }
+        }
+        order.setCustomerName(customerName);
+
         OffsetDateTime now = OffsetDateTime.now();
         order.setCreatedAt(now);
         order.setUpdatedAt(now);
@@ -433,15 +446,116 @@ public class OrderServiceImpl implements OrderService {
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
                 userRepository.findById(order.getUserId()).ifPresent(user -> {
-                    String subject = "Order Confirmation - " + order.getOrderNumber();
-                    String body = "Dear " + user.getFullName() + ",\n\n" +
-                            "Thank you for your order! Your order has been placed successfully.\n\n" +
-                            "Order Number: " + order.getOrderNumber() + "\n" +
-                            "Total Amount: Rs. " + order.getTotalAmount() + "\n" +
-                            "Payment Method: " + order.getPaymentMethod() + "\n\n" +
-                            "We will notify you once your order is shipped.\n\n" +
-                            "Best regards,\nDurga Shakti Foils Team";
-                    emailClient.sendEmail(user.getEmail(), subject, body);
+                    String subject = "Order Placed Successfully - " + order.getOrderNumber();
+                    
+                    // Build premium HTML items table
+                    StringBuilder itemsHtml = new StringBuilder();
+                    itemsHtml.append("<table width=\"100%\" cellpadding=\"10\" cellspacing=\"0\" style=\"border-collapse:collapse;margin:20px 0;\">");
+                    itemsHtml.append("<thead><tr style=\"background:#f8fafc;border-bottom:2px solid #e2e8f0;\">");
+                    itemsHtml.append("<th align=\"left\" style=\"font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;\">Item</th>");
+                    itemsHtml.append("<th align=\"center\" style=\"font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;\">Qty</th>");
+                    itemsHtml.append("<th align=\"right\" style=\"font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;\">Price</th>");
+                    itemsHtml.append("<th align=\"right\" style=\"font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;\">Total</th>");
+                    itemsHtml.append("</tr></thead><tbody>");
+                    
+                    if (order.getItems() != null) {
+                        for (Map<String, Object> item : order.getItems()) {
+                            String name = String.valueOf(item.getOrDefault("product_name", "Product"));
+                            String size = item.get("selectedSize") != null ? " (" + item.get("selectedSize") + ")" : "";
+                            int qty = 1;
+                            try {
+                                qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 1)));
+                            } catch (Exception ignored) {}
+                            double price = 0.0;
+                            try {
+                                price = Double.parseDouble(String.valueOf(item.getOrDefault("price", 0.0)));
+                            } catch (Exception ignored) {}
+                            double total = price * qty;
+                            
+                            itemsHtml.append("<tr style=\"border-bottom:1px solid #f1f5f9;\">");
+                            itemsHtml.append("<td style=\"font-size:14px;color:#1e293b;\">").append(name).append(size).append("</td>");
+                            itemsHtml.append("<td align=\"center\" style=\"font-size:14px;color:#1e293b;\">").append(qty).append("</td>");
+                            itemsHtml.append("<td align=\"right\" style=\"font-size:14px;color:#1e293b;\">Rs. ").append(String.format("%.2f", price)).append("</td>");
+                            itemsHtml.append("<td align=\"right\" style=\"font-size:14px;color:#1e293b;font-weight:600;\">Rs. ").append(String.format("%.2f", total)).append("</td>");
+                            itemsHtml.append("</tr>");
+                        }
+                    }
+                    itemsHtml.append("</tbody></table>");
+                    
+                    // Shipping Address Formatter
+                    String addressStr = "";
+                    if (order.getShippingAddress() != null) {
+                        Map<String, Object> addr = order.getShippingAddress();
+                        addressStr = String.format("%s, %s, %s, %s - %s",
+                            addr.getOrDefault("address_line1", addr.getOrDefault("addressLine1", "")),
+                            addr.getOrDefault("city", ""),
+                            addr.getOrDefault("state", ""),
+                            addr.getOrDefault("country", "India"),
+                            addr.getOrDefault("pincode", "")
+                        );
+                    }
+                    
+                    String htmlBody = "<!DOCTYPE html>\n" +
+                            "<html>\n" +
+                            "<head>\n" +
+                            "    <meta charset=\"UTF-8\">\n" +
+                            "    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n" +
+                            "    <title>" + subject + "</title>\n" +
+                            "</head>\n" +
+                            "<body style=\"margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;\">\n" +
+                            "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f3f4f6;padding:30px 0;\">\n" +
+                            "<tr><td align=\"center\">\n" +
+                            "<table width=\"620\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);\">\n" +
+                            "  <!-- Header -->\n" +
+                            "  <tr><td style=\"background:#ffffff;padding:32px 40px;text-align:center;border-bottom:1px solid #f3f4f6;\">\n" +
+                            "    <img src=\"https://durgashakti-foils.vercel.app/logo-durga.png\" width=\"280\" style=\"margin:0 auto;object-fit:contain;display:block;\" alt=\"DurgaShakti Foils Logo\">\n" +
+                            "  </td></tr>\n" +
+                            "  <!-- Body -->\n" +
+                            "  <tr><td style=\"padding:36px 40px;color:#374151;font-size:14px;line-height:1.6;\">\n" +
+                            "    <h2 style=\"margin:0 0 16px;color:#ea580c;font-size:20px;font-weight:700;\">Order Placed Successfully!</h2>\n" +
+                            "    <p style=\"margin:0 0 20px;color:#4b5563;\">Dear " + user.getFullName() + ", thank you for shopping with Durga Shakti Foils. Your order has been registered and is currently being processed.</p>\n" +
+                            "    \n" +
+                            "    <div style=\"background:#f8fafc;border-radius:8px;padding:16px;margin-bottom:20px;\">\n" +
+                            "        <p style=\"margin:0;font-size:13px;color:#64748b;\">Order Number</p>\n" +
+                            "        <p style=\"margin:2px 0 10px;font-size:16px;font-weight:700;color:#0f172a;\">#" + order.getOrderNumber() + "</p>\n" +
+                            "        <p style=\"margin:0;font-size:13px;color:#64748b;\">Payment Method</p>\n" +
+                            "        <p style=\"margin:2px 0 0;font-size:14px;font-weight:600;color:#0f172a;text-transform:uppercase;\">" + order.getPaymentMethod() + "</p>\n" +
+                            "    </div>\n" +
+                            "    \n" +
+                            "    <h3 style=\"margin:20px 0 10px;color:#0f172a;font-size:16px;font-weight:600;\">Items Ordered</h3>\n" +
+                            "    " + itemsHtml.toString() + "\n" +
+                            "    \n" +
+                            "    <div style=\"border-top:1px solid #e2e8f0;padding-top:16px;margin-bottom:20px;\">\n" +
+                            "        <table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\">\n" +
+                            "            <tr><td style=\"color:#64748b;\">Discount Amount</td><td align=\"right\" style=\"color:#0f172a;\">Rs. " + order.getDiscountAmount() + "</td></tr>\n" +
+                            "            <tr><td style=\"color:#64748b;font-weight:700;font-size:16px;\">Total Amount Paid</td><td align=\"right\" style=\"color:#ea580c;font-weight:700;font-size:18px;\">Rs. " + order.getTotalAmount() + "</td></tr>\n" +
+                            "        </table>\n" +
+                            "    </div>\n" +
+                            "    \n" +
+                            "    <div style=\"background:#f8fafc;border-radius:8px;padding:16px;margin-bottom:28px;\">\n" +
+                            "        <p style=\"margin:0;font-size:13px;color:#64748b;font-weight:700;text-transform:uppercase;\">Delivery Address</p>\n" +
+                            "        <p style=\"margin:6px 0 0;color:#334155;font-size:14px;\">" + addressStr + "</p>\n" +
+                            "    </div>\n" +
+                            "    \n" +
+                            "    <div style=\"text-align:center;margin:30px 0;\">\n" +
+                            "        <a href=\"https://durgashakti-foils.vercel.app/orders\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:12px 28px;font-weight:700;border-radius:8px;display:inline-block;font-size:14px;box-shadow:0 4px 12px rgba(234,88,12,0.25);\">View Order Details</a>\n" +
+                            "    </div>\n" +
+                            "  </td></tr>\n" +
+                            "  <!-- Footer -->\n" +
+                            "  <tr><td style=\"background:#f9fafb;border-top:1px solid #e5e7eb;padding:24px 40px;text-align:center;\">\n" +
+                            "    <p style=\"margin:0;color:#6b7280;font-size:12px;\">© " + java.time.Year.now().getValue() + " DurgaShakti Foils. All rights reserved.</p>\n" +
+                            "    <p style=\"margin:6px 0 0;color:#6b7280;font-size:12px;\">\n" +
+                            "      <a href=\"https://durgashakti-foils.vercel.app\" style=\"color:#ea580c;text-decoration:none;font-weight:600;\">Visit our website</a> &nbsp;|&nbsp;\n" +
+                            "      <a href=\"https://durgashakti-foils.vercel.app/contact\" style=\"color:#ea580c;text-decoration:none;font-weight:600;\">Contact Support</a>\n" +
+                            "    </p>\n" +
+                            "  </td></tr>\n" +
+                            "</table>\n" +
+                            "</td></tr>\n" +
+                            "</table>\n" +
+                            "</body>\n" +
+                            "</html>";
+                    
+                    emailClient.sendEmail(user.getEmail(), subject, htmlBody);
                     order.setReceiptEmailSent(true);
                     orderRepository.save(order);
                 });

@@ -130,6 +130,11 @@ const invalidateCache = (urlPrefix) => {
       apiCache.delete(key);
     }
   }
+  for (const key of inFlightGets.keys()) {
+    if (key.startsWith(urlPrefix) || key.includes(urlPrefix)) {
+      inFlightGets.delete(key);
+    }
+  }
   try {
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {

@@ -48,26 +48,28 @@ const CategoriesPage = () => {
       toast.error('Category name cannot be empty');
       return;
     }
-
+ 
     try {
       setSubmitting(true);
-      await adminService.createCategory({ 
+      const res = await adminService.createCategory({ 
         name: name.trim(),
         global_discount_enabled: globalDiscountEnabled,
         global_discount_percent: globalDiscountEnabled ? globalDiscountPercent : 0
       });
       toast.success('Category added successfully');
+      if (res && res.data) {
+        setCategories((prev) => [...prev, res.data]);
+      }
       setName('');
       setGlobalDiscountEnabled(false);
       setGlobalDiscountPercent(0);
-      fetchCategories();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to add category');
     } finally {
       setSubmitting(false);
     }
   };
-
+ 
   const handleToggle = async (cat) => {
     const nextStatus = !cat.is_active;
     // Update state instantly for a premium responsive feel
@@ -82,32 +84,34 @@ const CategoriesPage = () => {
       toast.error('Failed to toggle category status');
     }
   };
-
+ 
   const handleEditSave = async (id) => {
     if (!editingName.trim()) {
       toast.error('Category name cannot be empty');
       return;
     }
-
+ 
     const oldCategories = [...categories];
     const updatedCategory = {
       name: editingName.trim(),
       global_discount_enabled: editingDiscountEnabled,
       global_discount_percent: editingDiscountEnabled ? Number(editingDiscountPercent) : 0
     };
-
+ 
     // Update state instantly for a responsive feel
     setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updatedCategory } : c));
     setEditingId(null);
     setEditingName('');
     setEditingDiscountEnabled(false);
     setEditingDiscountPercent(0);
-
+ 
     try {
       setSubmitting(true);
-      await adminService.updateCategory(id, updatedCategory);
+      const res = await adminService.updateCategory(id, updatedCategory);
       toast.success('Category updated successfully');
-      fetchCategories(true);
+      if (res && res.data) {
+        setCategories((prev) => prev.map((c) => c.id === id ? res.data : c));
+      }
     } catch (err) {
       setCategories(oldCategories);
       toast.error(err.response?.data?.detail || 'Failed to update category');
@@ -115,16 +119,16 @@ const CategoriesPage = () => {
       setSubmitting(false);
     }
   };
-
+ 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this category? Any products currently referencing this category will lose the association.')) {
       return;
     }
-
+ 
     try {
       await adminService.deleteCategory(id);
+      setCategories((prev) => prev.filter((cat) => cat.id !== id));
       toast.success('Category deleted successfully');
-      fetchCategories();
     } catch (err) {
       toast.error('Failed to delete category');
     }

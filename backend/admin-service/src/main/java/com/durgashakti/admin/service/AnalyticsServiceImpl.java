@@ -59,8 +59,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         List<Order> allOrders = orderRepository.findAll();
         List<Product> allProducts = productRepository.findAll();
         List<User> allUsers = userRepository.findAll();
-        List<AuditLog> allAuditLogs = auditLogRepository.findAll();
-        log.info("Loaded {} orders, {} products, {} users, {} audit logs", allOrders.size(), allProducts.size(), allUsers.size(), allAuditLogs.size());
+        log.info("Loaded {} orders, {} products, {} users", allOrders.size(), allProducts.size(), allUsers.size());
         
         // Debug: log first order's payment_status and order_status if available
         if (!allOrders.isEmpty()) {
@@ -262,14 +261,9 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         double salesVelocity = Math.round((totalUnitsSold / 30.0) * 100.0) / 100.0;
         long totalCustomers = allUsers.stream().filter(u -> "customer".equalsIgnoreCase(u.getRole())).count();
 
-        // Audit Logs
-        long securityEventsCount = allAuditLogs.stream()
-                .filter(l -> l.getAction() != null && List.of("ADMIN_CREATED", "ADMIN_PASSWORD_RESET").contains(l.getAction()))
-                .count();
-
-        long destructiveActionsCount = allAuditLogs.stream()
-                .filter(l -> l.getAction() != null && l.getAction().toUpperCase().contains("DELETE"))
-                .count();
+        // Audit Logs using direct DB counts to avoid fetching all logs into memory
+        long securityEventsCount = auditLogRepository.countByActionIn(List.of("ADMIN_CREATED", "ADMIN_PASSWORD_RESET"));
+        long destructiveActionsCount = auditLogRepository.countByActionContainingIgnoreCase("DELETE");
 
         // Populate metrics map
         Map<String, Object> metrics = new HashMap<>();
