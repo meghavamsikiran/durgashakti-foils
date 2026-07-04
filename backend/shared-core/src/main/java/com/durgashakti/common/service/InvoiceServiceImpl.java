@@ -261,13 +261,17 @@ public class InvoiceServiceImpl implements InvoiceService {
             drawText(cb, fontBold, px("x7"), py("y12"), "GSTIN Number: " + gstin, FS.get("fs7"), darkColor, "left");
             drawText(cb, fontBold, px("x7"), py("y13"), "State: " + state, FS.get("fs7"), darkColor, "left");
 
-            // Draw Invoice Details
+            String paymentMethod = order.getPaymentMethod() != null ? order.getPaymentMethod().toLowerCase() : "online";
+            String txnId = order.getRazorpayPaymentId() != null ? order.getRazorpayPaymentId() : ("cod".equalsIgnoreCase(paymentMethod) ? "N/A (COD)" : "Pending");
+            
+            // Align all meta values in a single column at a fixed offset (+130) from px("x8")
+            float metaValueX = px("x8") + sx(130);
             drawText(cb, fontBold, px("x8"), py("ya"), "Invoice No.:", FS.get("fs7"), darkColor, "left");
-            drawText(cb, fontRegular, px("x8") + sx(142), py("ya"), order.getOrderNumber(), FS.get("fs7"), darkColor, "left");
+            drawText(cb, fontRegular, metaValueX, py("ya"), order.getOrderNumber(), FS.get("fs7"), darkColor, "left");
             drawText(cb, fontBold, px("x8"), py("y14"), "Date:", FS.get("fs7"), darkColor, "left");
-            drawText(cb, fontRegular, px("x8") + sx(100), py("y14"), formattedDate, FS.get("fs7"), darkColor, "left");
+            drawText(cb, fontRegular, metaValueX, py("y14"), formattedDate, FS.get("fs7"), darkColor, "left");
             drawText(cb, fontBold, px("x8"), py("y15"), "Place of Supply:", FS.get("fs7"), darkColor, "left");
-            drawText(cb, fontRegular, px("x8") + sx(190), py("y15"), state, FS.get("fs7"), darkColor, "left");
+            drawText(cb, fontRegular, metaValueX, py("y15"), state, FS.get("fs7"), darkColor, "left");
 
             // Shipping lines on the right
             drawText(cb, fontBold, px("x9"), py("y16"), "Ship To :", FS.get("fs5"), greenColor, "left");
@@ -278,8 +282,6 @@ public class InvoiceServiceImpl implements InvoiceService {
                 drawText(cb, fontRegular, px("x9"), py(shipYKeys[i]), shipLines.get(i), FS.get("fs7"), darkColor, "left");
             }
 
-            String paymentMethod = order.getPaymentMethod() != null ? order.getPaymentMethod().toLowerCase() : "online";
-            String txnId = order.getRazorpayPaymentId() != null ? order.getRazorpayPaymentId() : ("cod".equalsIgnoreCase(paymentMethod) ? "N/A (COD)" : "Pending");
             drawText(cb, fontBold, px("x9"), py("y11"), "Transaction ID: " + txnId, FS.get("fs7"), darkColor, "left");
 
             // Calculate rows for items
@@ -390,6 +392,16 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             double taxableTotal = Math.max(0.0, itemsTaxableTotal - discount);
             double gstTotal = itemsGstTotal - (discount > 0 ? Math.round(discount * 0.18 * 100.0) / 100.0 : 0.0);
+
+            // Draw Table Headers
+            drawText(cb, fontBold, px("x7"), py("y19"), "#", FS.get("fs7") * 0.92f, whiteColor, "left");
+            drawText(cb, fontBold, px("xb"), py("y19"), "Item name", FS.get("fs7") * 0.92f, whiteColor, "left");
+            drawText(cb, fontBold, px("xd"), py("y19"), "HSN", FS.get("fs7") * 0.92f, whiteColor, "left");
+            drawText(cb, fontBold, sx(388), py("y19"), "Quantity", FS.get("fs7") * 0.92f, whiteColor, "left");
+            drawText(cb, fontBold, sx(474), py("y19"), "Unit", FS.get("fs7") * 0.92f, whiteColor, "left");
+            drawText(cb, fontBold, sx(568), py("y19"), "Price/ Unit", FS.get("fs7") * 0.92f, whiteColor, "left");
+            drawText(cb, fontBold, sx(692), py("y19"), "GST", FS.get("fs7") * 0.92f, whiteColor, "left");
+            drawText(cb, fontBold, RIGHT_COLUMN_X - sx(45), py("y19"), "Amount", FS.get("fs7") * 0.92f, whiteColor, "left");
 
             // Draw Table items
             String[] rowKeys = {"y1a", "y1d", "y1e", "y1f", "y20"};
