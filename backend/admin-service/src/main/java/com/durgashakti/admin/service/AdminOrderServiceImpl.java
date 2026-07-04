@@ -751,6 +751,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                         if (order.getItems() != null && !order.getItems().isEmpty()) {
                             itemsHtml.append("<table width=\"100%\" cellpadding=\"8\" cellspacing=\"0\" style=\"border-collapse:collapse;margin:20px 0;background:#f8fafc;border-radius:12px;overflow:hidden;\">");
                             itemsHtml.append("<thead style=\"background:#e2e8f0;\"><tr>");
+                            itemsHtml.append("<th align=\"left\" style=\"font-size:12px;color:#475569;font-weight:700;padding:12px;width:60px;\">Image</th>");
                             itemsHtml.append("<th align=\"left\" style=\"font-size:12px;color:#475569;font-weight:700;padding:12px;\">Product</th>");
                             itemsHtml.append("<th align=\"center\" style=\"font-size:12px;color:#475569;font-weight:700;padding:12px;\">Qty</th>");
                             itemsHtml.append("<th align=\"right\" style=\"font-size:12px;color:#475569;font-weight:700;padding:12px;\">Total</th>");
@@ -769,7 +770,20 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                                 } catch (Exception ignored) {}
                                 double total = price * qty;
                                 
+                                String rawImg = String.valueOf(item.get("image_url"));
+                                String imageUrl = "https://durgashakti-foils.vercel.app/logo-durga.png";
+                                if (rawImg != null && !rawImg.trim().isEmpty() && !"null".equalsIgnoreCase(rawImg)) {
+                                    if (rawImg.startsWith("http://") || rawImg.startsWith("https://")) {
+                                        imageUrl = rawImg;
+                                    } else if (rawImg.startsWith("/")) {
+                                        imageUrl = "https://durgashakti-foils.vercel.app" + rawImg;
+                                    } else {
+                                        imageUrl = "https://durgashakti-foils.vercel.app/" + rawImg;
+                                    }
+                                }
+
                                 itemsHtml.append("<tr style=\"border-bottom:1px solid #f1f5f9;\">");
+                                itemsHtml.append("<td style=\"padding:10px;\"><img src=\"").append(imageUrl).append("\" width=\"40\" height=\"40\" style=\"border-radius:6px;object-fit:cover;display:block;\" alt=\"Product\" /></td>");
                                 itemsHtml.append("<td style=\"font-size:13px;color:#1e293b;padding:12px;\">").append(name).append(size).append("</td>");
                                 itemsHtml.append("<td align=\"center\" style=\"font-size:13px;color:#1e293b;padding:12px;\">").append(qty).append("</td>");
                                 itemsHtml.append("<td align=\"right\" style=\"font-size:13px;color:#1e293b;font-weight:600;padding:12px;\">Rs. ").append(String.format("%.2f", total)).append("</td>");

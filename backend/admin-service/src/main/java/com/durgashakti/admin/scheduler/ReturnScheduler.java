@@ -46,6 +46,11 @@ public class ReturnScheduler {
                     continue;
                 }
 
+                String ordStatus = (order.getOrderStatus() != null ? order.getOrderStatus() : "").toLowerCase();
+                if ("refunded".equals(ordStatus) || "refund_credited".equals(ordStatus) || "cancelled".equals(ordStatus)) {
+                    continue;
+                }
+
                 boolean orderUpdated = false;
                 List<Map<String, Object>> items = order.getItems();
 
@@ -149,7 +154,7 @@ public class ReturnScheduler {
                           "You have <strong>24 hours remaining</strong> to ship the item and submit courier details in your order dashboard.<br/><br/>" +
                           "<strong>Action Required:</strong> Please ship the item and click 'Track Return Shipment' on our website to provide tracking info.<br/>" +
                           "If tracking information is not submitted within 24 hours, your return eligibility will expire, and this request will be closed.";
-            sendEmail(user, subject, body);
+            sendEmail(user, order, subject, body);
         });
     }
 
@@ -161,11 +166,11 @@ public class ReturnScheduler {
                           "Since self-shipment details were not provided within the required 3-day window, this request has been closed, " +
                           "and this order is no longer eligible for return or exchange.<br/><br/>" +
                           "If you have already shipped the package, please contact support immediately with your courier receipt.";
-            sendEmail(user, subject, body);
+            sendEmail(user, order, subject, body);
         });
     }
 
-    private void sendEmail(User user, String subject, String body) {
+    private void sendEmail(User user, Order order, String subject, String body) {
         try {
             String htmlBody = "<html>\n" +
                     "<body style=\"margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;\">\n" +
@@ -182,6 +187,10 @@ public class ReturnScheduler {
                     "    \n" +
                     "    <p style=\"margin:0 0 20px;font-size:15px;line-height:1.6;color:#334155;\">Dear " + user.getFullName() + ",</p>\n" +
                     "    <p style=\"margin:0 0 24px;font-size:15px;line-height:1.6;color:#334155;\">" + body + "</p>\n" +
+                    "    \n" +
+                    "    <div style=\"text-align:center;margin:32px 0;\">\n" +
+                    "      <a href=\"https://durgashakti-foils.vercel.app/order/" + order.getId() + "\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:12px 28px;font-weight:700;border-radius:8px;display:inline-block;font-size:14px;box-shadow:0 4px 12px rgba(234,88,12,0.25);\">View Order</a>\n" +
+                    "    </div>\n" +
                     "    \n" +
                     "    <p style=\"margin:0;font-size:14px;line-height:1.6;color:#64748b;\">Best regards,<br>The Durga Shakti Foils Team</p>\n" +
                     "  </td></tr>\n" +

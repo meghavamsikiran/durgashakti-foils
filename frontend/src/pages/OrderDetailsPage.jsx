@@ -703,7 +703,7 @@ const OrderDetailsPage = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            {((order.payment_status || '').toLowerCase() === 'paid' || (order.payment_status || '').toLowerCase() === 'completed') && (
+            {['paid', 'completed', 'refunded', 'refund_credited', 'refund completed'].includes((order.payment_status || '').toLowerCase()) && (
               <button
                 onClick={handleDownloadInvoice}
                 className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:text-primary border border-slate-300 rounded-xl px-4 py-2.5 bg-white dark:bg-[#131B17] transition-all shadow-sm dark:shadow-none hover:bg-slate-50 dark:bg-[#26322B]/40"

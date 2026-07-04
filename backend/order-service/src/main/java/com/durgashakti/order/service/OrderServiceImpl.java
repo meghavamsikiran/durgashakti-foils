@@ -456,6 +456,7 @@ public class OrderServiceImpl implements OrderService {
                     StringBuilder itemsHtml = new StringBuilder();
                     itemsHtml.append("<table width=\"100%\" cellpadding=\"10\" cellspacing=\"0\" style=\"border-collapse:collapse;margin:20px 0;\">");
                     itemsHtml.append("<thead><tr style=\"background:#f8fafc;border-bottom:2px solid #e2e8f0;\">");
+                    itemsHtml.append("<th align=\"left\" style=\"font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;width:60px;\">Image</th>");
                     itemsHtml.append("<th align=\"left\" style=\"font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;\">Item</th>");
                     itemsHtml.append("<th align=\"center\" style=\"font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;\">Qty</th>");
                     itemsHtml.append("<th align=\"right\" style=\"font-size:12px;color:#475569;text-transform:uppercase;font-weight:700;\">Price</th>");
@@ -476,7 +477,20 @@ public class OrderServiceImpl implements OrderService {
                             } catch (Exception ignored) {}
                             double total = price * qty;
                             
+                            String rawImg = String.valueOf(item.get("image_url"));
+                            String imageUrl = "https://durgashakti-foils.vercel.app/logo-durga.png";
+                            if (rawImg != null && !rawImg.trim().isEmpty() && !"null".equalsIgnoreCase(rawImg)) {
+                                if (rawImg.startsWith("http://") || rawImg.startsWith("https://")) {
+                                    imageUrl = rawImg;
+                                } else if (rawImg.startsWith("/")) {
+                                    imageUrl = "https://durgashakti-foils.vercel.app" + rawImg;
+                                } else {
+                                    imageUrl = "https://durgashakti-foils.vercel.app/" + rawImg;
+                                }
+                            }
+
                             itemsHtml.append("<tr style=\"border-bottom:1px solid #f1f5f9;\">");
+                            itemsHtml.append("<td style=\"padding:10px;\"><img src=\"").append(imageUrl).append("\" width=\"40\" height=\"40\" style=\"border-radius:6px;object-fit:cover;display:block;\" alt=\"Product\" /></td>");
                             itemsHtml.append("<td style=\"font-size:14px;color:#1e293b;\">").append(name).append(size).append("</td>");
                             itemsHtml.append("<td align=\"center\" style=\"font-size:14px;color:#1e293b;\">").append(qty).append("</td>");
                             itemsHtml.append("<td align=\"right\" style=\"font-size:14px;color:#1e293b;\">Rs. ").append(String.format("%.2f", price)).append("</td>");
