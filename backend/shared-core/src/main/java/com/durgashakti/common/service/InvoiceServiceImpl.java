@@ -198,8 +198,8 @@ public class InvoiceServiceImpl implements InvoiceService {
             document.open();
 
             // Set up Fonts
-            BaseFont fontRegular = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.WINANSI, BaseFont.EMBEDDED);
-            BaseFont fontBold = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.WINANSI, BaseFont.EMBEDDED);
+            BaseFont fontRegular = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
+            BaseFont fontBold = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
 
             PdfContentByte cb = writer.getDirectContent();
 
