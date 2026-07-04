@@ -1524,26 +1524,26 @@ const OrderDetailsPage = () => {
 
           {/* Items Row list */}
           <div className="p-6 divide-y divide-slate-100 dark:divide-[#26322B]">
-            {order.items.map((item, idx) => (
+            {(order.items || []).map((item, idx) => (
               <div key={idx} className="py-6 first:pt-0 last:pb-0 flex flex-col md:flex-row gap-6 items-start justify-between">
                 
                 {/* Product Detail Left Section */}
                 <div className="flex gap-5 flex-1 min-w-0">
                   <img 
-                    src={formatImageUrl(item.image_url)} 
+                    src={formatImageUrl(item?.image_url)} 
                     onError={(e) => { e.target.src = '/logo-durga.webp'; }}
-                    alt={item.product_name} 
+                    alt={item?.product_name} 
                     className="w-24 h-24 rounded-xl object-cover bg-slate-50 dark:bg-[#26322B]/40 border border-slate-200 dark:border-[#26322B] shrink-0 shadow-sm dark:shadow-none"
                     loading="lazy"
                   />
                   <div className="space-y-1.5 min-w-0">
                     <h4 className="font-extrabold text-slate-900 dark:text-white text-sm hover:text-primary transition-colors cursor-pointer leading-snug">
-                      {item.product_name}
+                      {item?.product_name}
                     </h4>
                     <p className="text-xs text-slate-400 dark:text-slate-500 font-bold">Sold by: <span className="text-primary font-black">DurgaShakti Foils</span></p>
                     <p className="text-sm font-black text-slate-900 dark:text-white mt-1">
-                      ₹{item.price.toLocaleString('en-IN')} 
-                      <span className="text-slate-400 dark:text-slate-500 font-bold text-xs pl-2">Quantity: {item.quantity}</span>
+                      ₹{(Number(item?.price) || 0).toLocaleString('en-IN')} 
+                      <span className="text-slate-400 dark:text-slate-500 font-bold text-xs pl-2">Quantity: {item?.quantity || 1}</span>
                     </p>
                     
                     <div className="pt-2 flex flex-wrap gap-2">
