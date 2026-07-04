@@ -482,10 +482,13 @@ public class OrderServiceImpl implements OrderService {
                             if (rawImg != null && !rawImg.trim().isEmpty() && !"null".equalsIgnoreCase(rawImg)) {
                                 if (rawImg.startsWith("http://") || rawImg.startsWith("https://")) {
                                     imageUrl = rawImg;
-                                } else if (rawImg.startsWith("/")) {
-                                    imageUrl = "https://durgashakti-foils.vercel.app" + rawImg;
                                 } else {
-                                    imageUrl = "https://durgashakti-foils.vercel.app/" + rawImg;
+                                    String cleanImg = rawImg.startsWith("/") ? rawImg : "/" + rawImg;
+                                    if (cleanImg.startsWith("/uploads/")) {
+                                        imageUrl = "https://durgashakti-foils-2.onrender.com" + cleanImg;
+                                    } else {
+                                        imageUrl = "https://durgashakti-foils.vercel.app" + cleanImg;
+                                    }
                                 }
                             }
 
