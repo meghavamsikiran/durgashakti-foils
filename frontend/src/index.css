@@ -2447,33 +2447,34 @@ html.light-theme body,
   border-color: #19231f !important;
 }
 
-/* Light Mode Color Mappings (Applies globally to customer/public pages and admin portal) */
-.light-theme .bg-\[\#0a0f0d\],
-.light-theme .bg-\[\#030504\],
-.light-theme .bg-\[\#0C1310\],
-.light-theme .bg-\[\#090d0b\],
-.light-theme .bg-\[\#0d1511\],
-.light-theme .bg-\[\#121b17\],
-.light-theme .bg-slate-900,
-.light-theme .bg-slate-950,
-.light-theme .bg-black {
+/* Light Mode Color Mappings (Applies globally to customer/public pages and admin portal, excluding force-dark elements like aside) */
+.light-theme .bg-\[\#0a0f0d\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-\[\#030504\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-\[\#0C1310\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-\[\#090d0b\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-\[\#0d1511\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-\[\#121b17\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-slate-900:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-slate-950:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-black:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *) {
   background-color: #f7faf8 !important;
 }
 
 /* In light theme, if we have white/light text inside a dark container that we converted to light, it should be dark */
-.light-theme .text-white:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *),
-.light-theme .text-slate-100:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *),
-.light-theme .text-slate-200:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *),
-.light-theme .text-slate-300:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *),
-.light-theme .text-gray-100:not(button):not(button *),
-.light-theme .text-zinc-100:not(button):not(button *) {
+.light-theme .text-white:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .text-slate-100:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .text-slate-200:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .text-slate-300:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .text-slate-350:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .text-gray-100:not(button):not(button *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .text-zinc-100:not(button):not(button *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *) {
   color: #181c1b !important;
 }
 
-.light-theme .border-\[\#19231F\],
-.light-theme .border-\[\#26322B\],
-.light-theme .border-slate-800,
-.light-theme .border-slate-700 {
+.light-theme .border-\[\#19231F\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .border-\[\#26322B\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .border-slate-800:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .border-slate-700:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *) {
   border-color: #e2e8f0 !important;
 }
 

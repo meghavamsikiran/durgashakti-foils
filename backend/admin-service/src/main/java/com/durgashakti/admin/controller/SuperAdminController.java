@@ -76,12 +76,37 @@ public class SuperAdminController {
         userRepository.save(u);
         
         try {
-            emailClient.sendEmail(u.getEmail(), "Admin Account Created",
-                "Hello " + u.getFullName() + ",\n\n" +
-                "An admin account has been created for you at Durga Shakti Foils.\n" +
-                "Your temporary password is: " + password + "\n\n" +
-                "Please login and change it immediately.\n\n" +
-                "Best regards,\nDurga Shakti Foils Admin Team");
+            String htmlBody = "<html>\n" +
+                    "<body style=\"margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;\">\n" +
+                    "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f3f4f6;padding:30px 0;\">\n" +
+                    "<tr><td align=\"center\">\n" +
+                    "<table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);\">\n" +
+                    "  <tr><td style=\"background:#ffffff;padding:32px 40px;text-align:center;border-bottom:1px solid #f3f4f6;\">\n" +
+                    "    <img src=\"https://durgashakti-foils.vercel.app/logo-durga.png\" width=\"250\" style=\"display:block;margin:0 auto;\" alt=\"DurgaShakti Logo\">\n" +
+                    "  </td></tr>\n" +
+                    "  <tr><td style=\"padding:40px 40px 20px;color:#1e293b;\">\n" +
+                    "    <h2 style=\"margin:0 0 16px;color:#ea580c;font-size:22px;font-weight:700;\">Admin Account Created</h2>\n" +
+                    "    <p style=\"margin:0 0 20px;font-size:15px;line-height:1.6;color:#475569;\">Hello " + u.getFullName() + ",</p>\n" +
+                    "    <p style=\"margin:0 0 20px;font-size:15px;line-height:1.6;color:#475569;\">An administrative account has been created for you at Durga Shakti Foils. Please use the temporary credentials below to sign in:</p>\n" +
+                    "    <div style=\"background:#f8fafc;border-radius:12px;padding:20px;margin:24px 0;border:1px solid #e2e8f0;\">\n" +
+                    "      <p style=\"margin:0 0 8px;font-size:14px;color:#64748b;\"><strong>Username / Email:</strong> " + u.getEmail() + "</p>\n" +
+                    "      <p style=\"margin:0;font-size:14px;color:#64748b;\"><strong>Temporary Password:</strong> <code style=\"font-family:monospace;font-size:15px;color:#ea580c;font-weight:bold;\">" + password + "</code></p>\n" +
+                    "    </div>\n" +
+                    "    <p style=\"margin:0 0 24px;font-size:15px;line-height:1.6;color:#475569;\">For security reasons, you will be prompted to reset this password upon your first login.</p>\n" +
+                    "    <div style=\"text-align:center;margin:32px 0;\">\n" +
+                    "      <a href=\"https://durgashakti-foils.vercel.app/login\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:14px 32px;font-weight:700;border-radius:8px;display:inline-block;font-size:15px;box-shadow:0 4px 12px rgba(234,88,12,0.25);\">Log in to Admin Panel</a>\n" +
+                    "    </div>\n" +
+                    "    <p style=\"margin:0;font-size:14px;line-height:1.6;color:#64748b;\">Best regards,<br>The Durga Shakti Foils Super Admin Team</p>\n" +
+                    "  </td></tr>\n" +
+                    "  <tr><td style=\"background:#f8fafc;padding:24px;text-align:center;border-top:1px solid #f1f5f9;\">\n" +
+                    "    <p style=\"margin:0;font-size:12px;color:#94a3b8;\">© " + java.time.Year.now().getValue() + " Durga Shakti Foils. All rights reserved.</p>\n" +
+                    "  </td></tr>\n" +
+                    "</table>\n" +
+                    "</td></tr>\n" +
+                    "</table>\n" +
+                    "</body>\n" +
+                    "</html>";
+            emailClient.sendEmail(u.getEmail(), "Admin Account Created", htmlBody);
         } catch (Exception e) {
             // Log silently or ignore if email fails
         }
@@ -159,12 +184,36 @@ public class SuperAdminController {
         userRepository.save(u);
         
         try {
-            emailClient.sendEmail(u.getEmail(), "Admin Password Reset",
-                "Hello " + u.getFullName() + ",\n\n" +
-                "Your admin account password has been reset.\n" +
-                "Your new temporary password is: " + password + "\n\n" +
-                "Please login and change it immediately.\n\n" +
-                "Best regards,\nDurga Shakti Foils Admin Team");
+            String htmlBody = "<html>\n" +
+                    "<body style=\"margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;\">\n" +
+                    "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f3f4f6;padding:30px 0;\">\n" +
+                    "<tr><td align=\"center\">\n" +
+                    "<table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);\">\n" +
+                    "  <tr><td style=\"background:#ffffff;padding:32px 40px;text-align:center;border-bottom:1px solid #f3f4f6;\">\n" +
+                    "    <img src=\"https://durgashakti-foils.vercel.app/logo-durga.png\" width=\"250\" style=\"display:block;margin:0 auto;\" alt=\"DurgaShakti Logo\">\n" +
+                    "  </td></tr>\n" +
+                    "  <tr><td style=\"padding:40px 40px 20px;color:#1e293b;\">\n" +
+                    "    <h2 style=\"margin:0 0 16px;color:#ea580c;font-size:22px;font-weight:700;\">Admin Password Reset</h2>\n" +
+                    "    <p style=\"margin:0 0 20px;font-size:15px;line-height:1.6;color:#475569;\">Hello " + u.getFullName() + ",</p>\n" +
+                    "    <p style=\"margin:0 0 20px;font-size:15px;line-height:1.6;color:#475569;\">Your administrative account password has been successfully reset. Please use the temporary password below to sign in:</p>\n" +
+                    "    <div style=\"background:#f8fafc;border-radius:12px;padding:20px;margin:24px 0;border:1px solid #e2e8f0;\">\n" +
+                    "      <p style=\"margin:0;font-size:14px;color:#64748b;\"><strong>Temporary Password:</strong> <code style=\"font-family:monospace;font-size:15px;color:#ea580c;font-weight:bold;\">" + password + "</code></p>\n" +
+                    "    </div>\n" +
+                    "    <p style=\"margin:0 0 24px;font-size:15px;line-height:1.6;color:#475569;\">For security reasons, you will be prompted to reset this password upon your first login.</p>\n" +
+                    "    <div style=\"text-align:center;margin:32px 0;\">\n" +
+                    "      <a href=\"https://durgashakti-foils.vercel.app/login\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:14px 32px;font-weight:700;border-radius:8px;display:inline-block;font-size:15px;box-shadow:0 4px 12px rgba(234,88,12,0.25);\">Log in to Admin Panel</a>\n" +
+                    "    </div>\n" +
+                    "    <p style=\"margin:0;font-size:14px;line-height:1.6;color:#64748b;\">Best regards,<br>The Durga Shakti Foils Super Admin Team</p>\n" +
+                    "  </td></tr>\n" +
+                    "  <tr><td style=\"background:#f8fafc;padding:24px;text-align:center;border-top:1px solid #f1f5f9;\">\n" +
+                    "    <p style=\"margin:0;font-size:12px;color:#94a3b8;\">© " + java.time.Year.now().getValue() + " Durga Shakti Foils. All rights reserved.</p>\n" +
+                    "  </td></tr>\n" +
+                    "</table>\n" +
+                    "</td></tr>\n" +
+                    "</table>\n" +
+                    "</body>\n" +
+                    "</html>";
+            emailClient.sendEmail(u.getEmail(), "Admin Password Reset", htmlBody);
         } catch (Exception e) {
             // Log silently or ignore
         }

@@ -37,7 +37,8 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendEmail(String to, String subject, String body) {
-        String htmlBody = body.trim().startsWith("<!DOCTYPE html>") || body.trim().startsWith("<html>")
+        String trimmed = body.trim().toLowerCase();
+        String htmlBody = trimmed.startsWith("<!doctype html>") || trimmed.startsWith("<html>")
                 ? body 
                 : wrapHtmlTemplate(subject, body);
 

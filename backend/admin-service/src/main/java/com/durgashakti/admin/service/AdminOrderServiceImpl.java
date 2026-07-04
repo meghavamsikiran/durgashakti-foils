@@ -653,14 +653,104 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         try { return Integer.parseInt(val.toString()); } catch (NumberFormatException e) { return 0; }
     }
 
-    // ── Helper: Send Order Email ──────────────────────────────────────────
     private void sendOrderEmail(Order order, String subject, String body) {
         if (order.getUserId() != null) {
             java.util.concurrent.CompletableFuture.runAsync(() -> {
                 userRepository.findById(order.getUserId()).ifPresent(user -> {
                     try {
-                        emailClient.sendEmail(user.getEmail(), subject, 
-                            "Dear " + user.getFullName() + ",\n\n" + body + "\n\nBest regards,\nDurga Shakti Foils Team");
+                        // Build premium HTML items table
+                        StringBuilder itemsHtml = new StringBuilder();
+                        if (order.getItems() != null && !order.getItems().isEmpty()) {
+                            itemsHtml.append("<table width=\"100%\" cellpadding=\"8\" cellspacing=\"0\" style=\"border-collapse:collapse;margin:20px 0;background:#f8fafc;border-radius:12px;overflow:hidden;\">");
+                            itemsHtml.append("<thead style=\"background:#e2e8f0;\"><tr>");
+                            itemsHtml.append("<th align=\"left\" style=\"font-size:12px;color:#475569;font-weight:700;padding:12px;\">Product</th>");
+                            itemsHtml.append("<th align=\"center\" style=\"font-size:12px;color:#475569;font-weight:700;padding:12px;\">Qty</th>");
+                            itemsHtml.append("<th align=\"right\" style=\"font-size:12px;color:#475569;font-weight:700;padding:12px;\">Total</th>");
+                            itemsHtml.append("</tr></thead><tbody>");
+                            
+                            for (Map<String, Object> item : order.getItems()) {
+                                String name = String.valueOf(item.getOrDefault("product_name", "Product"));
+                                String size = item.get("selectedSize") != null ? " (" + item.get("selectedSize") + ")" : "";
+                                int qty = 1;
+                                try {
+                                    qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 1)));
+                                } catch (Exception ignored) {}
+                                double price = 0.0;
+                                try {
+                                    price = Double.parseDouble(String.valueOf(item.getOrDefault("price", 0.0)));
+                                } catch (Exception ignored) {}
+                                double total = price * qty;
+                                
+                                itemsHtml.append("<tr style=\"border-bottom:1px solid #f1f5f9;\">");
+                                itemsHtml.append("<td style=\"font-size:13px;color:#1e293b;padding:12px;\">").append(name).append(size).append("</td>");
+                                itemsHtml.append("<td align=\"center\" style=\"font-size:13px;color:#1e293b;padding:12px;\">").append(qty).append("</td>");
+                                itemsHtml.append("<td align=\"right\" style=\"font-size:13px;color:#1e293b;font-weight:600;padding:12px;\">Rs. ").append(String.format("%.2f", total)).append("</td>");
+                                itemsHtml.append("</tr>");
+                            }
+                            itemsHtml.append("</tbody></table>");
+                        }
+
+                        // Determine order status indicator colors or icons
+                        String statusName = order.getOrderStatus() != null ? order.getOrderStatus().toUpperCase() : "PROCESSING";
+                        
+                        // Tracking Section
+                        String trackingHtml = "";
+                        if (order.getTrackingNumber() != null && !order.getTrackingNumber().trim().isEmpty()) {
+                            String carrier = order.getCarrier() != null ? order.getCarrier() : "Courier Service";
+                            String trackUrl = order.getTrackingUrl() != null && !order.getTrackingUrl().trim().isEmpty() 
+                                    ? order.getTrackingUrl() 
+                                    : "https://durgashakti-foils.vercel.app/orders";
+                            trackingHtml = "<div style=\"background:#fff7ed;border:1px solid #ffedd5;border-radius:12px;padding:20px;margin-bottom:24px;\">\n" +
+                                    "  <p style=\"margin:0 0 4px;font-size:12px;color:#c2410c;font-weight:700;text-transform:uppercase;\">Shipment Tracking Information</p>\n" +
+                                    "  <p style=\"margin:0 0 12px;font-size:14px;color:#475569;\"><strong>Carrier:</strong> " + carrier + " &nbsp;|&nbsp; <strong>Tracking #:</strong> " + order.getTrackingNumber() + "</p>\n" +
+                                    "  <a href=\"" + trackUrl + "\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:10px 24px;font-weight:700;border-radius:8px;display:inline-block;font-size:13px;box-shadow:0 4px 10px rgba(234,88,12,0.2);\">Track Your Shipment</a>\n" +
+                                    "</div>";
+                        }
+
+                        String htmlBody = "<html>\n" +
+                                "<body style=\"margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;\">\n" +
+                                "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f3f4f6;padding:30px 0;\">\n" +
+                                "<tr><td align=\"center\">\n" +
+                                "<table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);\">\n" +
+                                "  <!-- Header -->\n" +
+                                "  <tr><td style=\"background:#ffffff;padding:32px 40px;text-align:center;border-bottom:1px solid #f3f4f6;\">\n" +
+                                "    <img src=\"https://durgashakti-foils.vercel.app/logo-durga.png\" width=\"250\" style=\"display:block;margin:0 auto;\" alt=\"DurgaShakti Logo\">\n" +
+                                "  </td></tr>\n" +
+                                "  <!-- Body -->\n" +
+                                "  <tr><td style=\"padding:40px 40px 20px;color:#1e293b;\">\n" +
+                                "    <h2 style=\"margin:0 0 8px;color:#ea580c;font-size:20px;font-weight:700;\">" + subject + "</h2>\n" +
+                                "    <p style=\"margin:0 0 24px;font-size:14px;color:#64748b;\">Order Number: #" + order.getOrderNumber() + " &nbsp;|&nbsp; Status: <strong>" + statusName + "</strong></p>\n" +
+                                "    \n" +
+                                "    <p style=\"margin:0 0 20px;font-size:15px;line-height:1.6;color:#334155;\">Dear " + user.getFullName() + ",</p>\n" +
+                                "    <p style=\"margin:0 0 24px;font-size:15px;line-height:1.6;color:#334155;\">" + body + "</p>\n" +
+                                "    \n" +
+                                "    " + trackingHtml + "\n" +
+                                "    \n" +
+                                "    " + itemsHtml.toString() + "\n" +
+                                "    \n" +
+                                "    <div style=\"border-top:1px solid #f1f5f9;padding-top:16px;margin:24px 0;\">\n" +
+                                "      <table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\">\n" +
+                                "        <tr><td style=\"color:#64748b;font-size:14px;\">Total Order Value</td><td align=\"right\" style=\"color:#ea580c;font-weight:700;font-size:16px;\">Rs. " + order.getTotalAmount() + "</td></tr>\n" +
+                                "      </table>\n" +
+                                "    </div>\n" +
+                                "    \n" +
+                                "    <div style=\"text-align:center;margin:32px 0;\">\n" +
+                                "      <a href=\"https://durgashakti-foils.vercel.app/orders\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:12px 28px;font-weight:700;border-radius:8px;display:inline-block;font-size:14px;box-shadow:0 4px 12px rgba(234,88,12,0.25);\">View Order History</a>\n" +
+                                "    </div>\n" +
+                                "    \n" +
+                                "    <p style=\"margin:0;font-size:14px;line-height:1.6;color:#64748b;\">Best regards,<br>The Durga Shakti Foils Team</p>\n" +
+                                "  </td></tr>\n" +
+                                "  <!-- Footer -->\n" +
+                                "  <tr><td style=\"background:#f8fafc;padding:24px;text-align:center;border-top:1px solid #f1f5f9;\">\n" +
+                                "    <p style=\"margin:0;font-size:12px;color:#94a3b8;\">© " + java.time.Year.now().getValue() + " Durga Shakti Foils. All rights reserved.</p>\n" +
+                                "  </td></tr>\n" +
+                                "</table>\n" +
+                                "</td></tr>\n" +
+                                "</table>\n" +
+                                "</body>\n" +
+                                "</html>";
+                        
+                        emailClient.sendEmail(user.getEmail(), subject, htmlBody);
                     } catch (Exception e) {
                         log.error("Failed to send email for order {} to {}", order.getOrderNumber(), user.getEmail(), e);
                     }

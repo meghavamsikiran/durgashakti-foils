@@ -93,10 +93,35 @@ public class AuthServiceImpl implements AuthService {
         final String welcomeName = savedUser.getFullName();
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
+                String htmlBody = "<html>\n" +
+                        "<body style=\"margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;\">\n" +
+                        "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f3f4f6;padding:30px 0;\">\n" +
+                        "<tr><td align=\"center\">\n" +
+                        "<table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);\">\n" +
+                        "  <tr><td style=\"background:#ffffff;padding:32px 40px;text-align:center;border-bottom:1px solid #f3f4f6;\">\n" +
+                        "    <img src=\"https://durgashakti-foils.vercel.app/logo-durga.png\" width=\"250\" style=\"display:block;margin:0 auto;\" alt=\"DurgaShakti Logo\">\n" +
+                        "  </td></tr>\n" +
+                        "  <tr><td style=\"padding:40px 40px 20px;color:#1e293b;\">\n" +
+                        "    <h2 style=\"margin:0 0 16px;color:#ea580c;font-size:22px;font-weight:700;\">Welcome to Durga Shakti Foils!</h2>\n" +
+                        "    <p style=\"margin:0 0 20px;font-size:15px;line-height:1.6;color:#475569;\">Dear " + welcomeName + ",</p>\n" +
+                        "    <p style=\"margin:0 0 24px;font-size:15px;line-height:1.6;color:#475569;\">Thank you for creating an account with us. We are dedicated to providing premium quality aluminum foils and packaging solutions directly to your doorstep.</p>\n" +
+                        "    <div style=\"text-align:center;margin:32px 0;\">\n" +
+                        "      <a href=\"https://durgashakti-foils.vercel.app/shop\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:14px 32px;font-weight:700;border-radius:8px;display:inline-block;font-size:15px;box-shadow:0 4px 12px rgba(234,88,12,0.25);\">Start Shopping Now</a>\n" +
+                        "    </div>\n" +
+                        "    <p style=\"margin:0;font-size:14px;line-height:1.6;color:#64748b;\">Best regards,<br>The Durga Shakti Foils Team</p>\n" +
+                        "  </td></tr>\n" +
+                        "  <tr><td style=\"background:#f8fafc;padding:24px;text-align:center;border-top:1px solid #f1f5f9;\">\n" +
+                        "    <p style=\"margin:0;font-size:12px;color:#94a3b8;\">© " + java.time.Year.now().getValue() + " Durga Shakti Foils. All rights reserved.</p>\n" +
+                        "  </td></tr>\n" +
+                        "</table>\n" +
+                        "</td></tr>\n" +
+                        "</table>\n" +
+                        "</body>\n" +
+                        "</html>";
                 emailClient.sendEmail(
                     welcomeEmail,
                     "Welcome to Durga Shakti Foils!",
-                    "Hello " + welcomeName + ",\n\nWelcome to Durga Shakti Foils! Your account has been successfully created.\n\nBest regards,\nDurga Shakti Foils Team"
+                    htmlBody
                 );
             } catch (Exception e) {
                 log.error("Failed to trigger welcome email to {}: {}", welcomeEmail, e.getMessage(), e);
@@ -272,12 +297,38 @@ public class AuthServiceImpl implements AuthService {
         final String otpCode = otp;
         java.util.concurrent.CompletableFuture.runAsync(() -> {
             try {
+                String htmlBody = "<html>\n" +
+                        "<body style=\"margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;\">\n" +
+                        "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f3f4f6;padding:30px 0;\">\n" +
+                        "<tr><td align=\"center\">\n" +
+                        "<table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);\">\n" +
+                        "  <tr><td style=\"background:#ffffff;padding:32px 40px;text-align:center;border-bottom:1px solid #f3f4f6;\">\n" +
+                        "    <img src=\"https://durgashakti-foils.vercel.app/logo-durga.png\" width=\"250\" style=\"display:block;margin:0 auto;\" alt=\"DurgaShakti Logo\">\n" +
+                        "  </td></tr>\n" +
+                        "  <tr><td style=\"padding:40px 40px 20px;color:#1e293b;\">\n" +
+                        "    <h2 style=\"margin:0 0 16px;color:#ea580c;font-size:22px;font-weight:700;\">Verify Your Identity</h2>\n" +
+                        "    <p style=\"margin:0 0 20px;font-size:15px;line-height:1.6;color:#475569;\">Hello " + otpUserName + ",</p>\n" +
+                        "    <p style=\"margin:0 0 24px;font-size:15px;line-height:1.6;color:#475569;\">We received a request to reset your password. Use the verification code below to proceed. This code is valid for 15 minutes.</p>\n" +
+                        "    <div style=\"background:#f1f5f9;border-radius:12px;padding:24px;text-align:center;margin:32px 0;\">\n" +
+                        "      <span style=\"font-family:'Courier New',Courier,monospace;font-size:32px;font-weight:800;letter-spacing:6px;color:#ea580c;\">" + otpCode + "</span>\n" +
+                        "    </div>\n" +
+                        "    <div style=\"text-align:center;margin:32px 0;\">\n" +
+                        "      <a href=\"https://durgashakti-foils.vercel.app/forgot-password?email=" + java.net.URLEncoder.encode(otpEmail, "UTF-8") + "\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:14px 32px;font-weight:700;border-radius:8px;display:inline-block;font-size:15px;box-shadow:0 4px 12px rgba(234,88,12,0.25);\">Enter Verification Code</a>\n" +
+                        "    </div>\n" +
+                        "    <p style=\"margin:0;font-size:14px;line-height:1.6;color:#64748b;\">Best regards,<br>The Durga Shakti Foils Team</p>\n" +
+                        "  </td></tr>\n" +
+                        "  <tr><td style=\"background:#f8fafc;padding:24px;text-align:center;border-top:1px solid #f1f5f9;\">\n" +
+                        "    <p style=\"margin:0;font-size:12px;color:#94a3b8;\">© " + java.time.Year.now().getValue() + " Durga Shakti Foils. All rights reserved.</p>\n" +
+                        "  </td></tr>\n" +
+                        "</table>\n" +
+                        "</td></tr>\n" +
+                        "</table>\n" +
+                        "</body>\n" +
+                        "</html>";
                 emailClient.sendEmail(
                     otpEmail,
                     "Forgot Password OTP - Durga Shakti Foils",
-                    "Hello " + otpUserName + ",\n\nWe received a request to reset the password for your Durga Shakti Foils account. " +
-                    "Your One-Time Password (OTP) is: " + otpCode + "\n\nThis OTP is valid for 15 minutes. " +
-                    "If you did not make this request, you can safely ignore this message.\n\nBest regards,\nDurga Shakti Foils Team"
+                    htmlBody
                 );
                 log.info("Forgot password OTP email dispatched successfully to {}", otpEmail);
             } catch (Exception e) {
@@ -305,6 +356,13 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
 
         user.setPassword(passwordEncoder.encode(req.getNewPassword()));
+        
+        if (user.getPermissions() != null && user.getPermissions().containsKey("is_first_login")) {
+            Map<String, Object> perms = new HashMap<>(user.getPermissions());
+            perms.put("is_first_login", false);
+            user.setPermissions(perms);
+        }
+        
         userRepository.save(user);
         passwordResetRepository.delete(pr);
     }
