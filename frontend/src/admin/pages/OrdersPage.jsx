@@ -1192,13 +1192,15 @@ const OrdersPage = () => {
                                   const paymentStatusValue = String(order.payment_status || '').toLowerCase();
                                   const isDeliverWithCOD = a === 'DELIVERED' && String(order.payment_method || '').toLowerCase() === 'cod' && !['paid', 'completed', 'cash on delivery'].includes(paymentStatusValue);
                                   const isThisActionPending = pendingActionIds.has(`${order.id}-${a}`);
+                                  const isDisableAction = isOrderPending || submitting;
 
                                   buttons.push(
                                     <button
                                       key={a}
-                                      disabled={isOrderPending}
+                                      disabled={isDisableAction}
                                       onClick={(e) => {
                                         e.stopPropagation();
+                                        if (isDisableAction) return;
                                         if (a === 'SHIPPED') {
                                           setTrackingModal({ orderId: order.id, status: a });
                                           setTrackingForm({
@@ -1216,7 +1218,7 @@ const OrdersPage = () => {
                                         }
                                       }}
                                       className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${
-                                        isOrderPending ? 'opacity-60 cursor-wait' : ''
+                                        isDisableAction ? 'opacity-60 cursor-wait' : ''
                                       } ${
                                         a === 'CANCELLED' || a === 'RETURN_REJECTED' || a === 'FAILED'
                                           ? 'border-rose-100 text-rose-600 hover:bg-rose-50'

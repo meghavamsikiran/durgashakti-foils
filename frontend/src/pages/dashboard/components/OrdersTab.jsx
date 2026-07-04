@@ -510,7 +510,6 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                         )}
                       </button>
                     </span>
-                    <span>•</span>
                     <span>{order.created_at ? new Date(order.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}</span>
                   </div>
                   

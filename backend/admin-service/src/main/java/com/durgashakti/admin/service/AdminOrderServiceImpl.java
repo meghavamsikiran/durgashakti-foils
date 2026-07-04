@@ -86,14 +86,40 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     @Override
     @Transactional(readOnly = true)
     public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+        List<Order> orders = orderRepository.findAll();
+        for (Order order : orders) {
+            enrichCustomerName(order);
+        }
+        return orders;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Order getOrderDetails(UUID orderId) {
-        return orderRepository.findById(orderId)
+        Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Order not found"));
+        enrichCustomerName(order);
+        return order;
+    }
+
+    private void enrichCustomerName(Order order) {
+        if (order.getCustomerName() == null || order.getCustomerName().trim().isEmpty() || "Guest User".equalsIgnoreCase(order.getCustomerName().trim())) {
+            if (order.getUserId() != null) {
+                Optional<User> uOpt = userRepository.findById(order.getUserId());
+                if (uOpt.isPresent()) {
+                    order.setCustomerName(uOpt.get().getFullName());
+                    return;
+                }
+            }
+            if (order.getShippingAddress() != null) {
+                Map<String, Object> addr = order.getShippingAddress();
+                if (addr.get("full_name") != null) {
+                    order.setCustomerName(String.valueOf(addr.get("full_name")).trim());
+                } else if (addr.get("fullName") != null) {
+                    order.setCustomerName(String.valueOf(addr.get("fullName")).trim());
+                }
+            }
+        }
     }
 
     @Override
