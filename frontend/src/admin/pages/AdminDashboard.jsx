@@ -136,11 +136,11 @@ const AdminDashboard = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
-            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Today's Orders</p>
-            <p className="text-3xl font-black text-slate-950 mt-2">{formatNumber(metrics.orders_today)}</p>
-            <div className="mt-2 text-[10px] font-bold text-slate-400">New orders placed today</div>
+            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Completed Orders</p>
+            <p className="text-3xl font-black text-slate-950 mt-2">{formatNumber(metrics.total_orders)}</p>
+            <div className="mt-2 text-[10px] font-bold text-slate-400">{formatNumber(metrics.orders_today)} new orders placed today</div>
           </div>
-           <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+          <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Pending Dispatch</p>
             <p className="text-3xl font-black text-amber-600 mt-2">{formatNumber(metrics.range_pending ?? 0)}</p>
             <div className="mt-2 text-[10px] font-bold text-slate-400">Total awaiting dispatch/packaging</div>
@@ -152,8 +152,8 @@ const AdminDashboard = () => {
           </div>
           <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Completed Deliveries</p>
-            <p className="text-3xl font-black text-emerald-600 mt-2">{formatNumber(metrics.today_delivered)}</p>
-            <div className="mt-2 text-[10px] font-bold text-slate-400">Successfully delivered today</div>
+            <p className="text-3xl font-black text-emerald-600 mt-2">{formatNumber(metrics.range_delivered ?? metrics.total_delivered)}</p>
+            <div className="mt-2 text-[10px] font-bold text-slate-400">{formatNumber(metrics.today_delivered)} successfully delivered today</div>
           </div>
         </div>
       </div>
