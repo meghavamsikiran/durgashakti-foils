@@ -144,6 +144,35 @@ durgashakti-foils/
 
 ---
 
+## 🏢 Microservices vs. Monolith Deployments (Free vs. Premium Hosting)
+
+To accommodate different host infrastructure tiers, the backend codebase supports **two deployment models natively** without requiring any Java code changes:
+
+### A. The Monolith Mode (Optimized for Free Tiers / Local Dev)
+* **Why it exists:** Running 8 separate Spring Boot microservices simultaneously (each starting its own JVM process) requires at least 4–6 GB of RAM. On free hosting tiers (like Render Free, which limits RAM to 512MB per instance) or low-spec development machines, hosting multiple separate microservices is not possible.
+* **How it works:** The `monolith-service` module serves as a unified runner. It aggregates all other service subprojects internally, allowing them to spin up together in a **single JVM process** listening on port `8080`.
+* **Execution Command:** `mvn spring-boot:run -pl monolith-service`
+
+### B. The Distributed Microservices Mode (For Premium Hosting / K8s / Docker Compose)
+If you have premium hosting infrastructure (such as AWS ECS, GCP GKE, Kubernetes, Docker Compose, or multiple premium VM nodes) and want to run them as a fully distributed microservice cluster:
+
+1. **No Java Code Changes Required:** The services are fully decoupled.
+2. **Start the API Gateway:** Start the `api-gateway` project first on port `8001`. It acts as the routing entry point for the frontend client.
+3. **Start Each Individual Service:** Run each microservice module in its own runtime container/process. By default, they are configured to listen on the following separate ports:
+   * `auth-service` (Port `8010`)
+   * `user-service` (Port `8011`)
+   * `catalog-service` (Port `8012`)
+   * `order-service` (Port `8013`)
+   * `admin-service` (Port `8014`)
+   * `email-service` (Port `8015`)
+4. **Configure Gateway Routing:** Verify that the route targets under `/api-gateway/src/main/resources/application.properties` match your distributed deployment URLs (e.g. mapping `Path=/api/auth/**` to your deployed `auth-service` balancer).
+5. **Update Frontend Environment Pointing:** Change your frontend `.env` configuration to point directly to the API Gateway port:
+   ```env
+   REACT_APP_BACKEND_URL=http://localhost:8001
+   ```
+
+---
+
 ## 🎨 Technology Integrations
 
 | Layer | Technology | Documentation Link |
