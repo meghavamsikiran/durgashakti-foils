@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 
 const getDisplayTicketId = (ticket) => {
   if (!ticket) return '';
-  return ticket.ticket_id || (ticket.id ? `DSF-TKT-${ticket.id.substring(0, 8).toUpperCase()}` : '');
+  return ticket.ticket_id || (ticket.id ? `OD-TKT-${ticket.id.substring(0, 8).toUpperCase()}` : '');
 };
 
 const TicketsTab = () => {

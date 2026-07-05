@@ -79,9 +79,10 @@ public class OrderServiceImpl implements OrderService {
     @PostConstruct
     public void migrateOrderPrefixes() {
         try {
-            log.info("Running database migration to replace 'DS-' prefix with 'DSF-' in order numbers...");
-            int rows = jdbcTemplate.update("UPDATE orders SET order_number = REPLACE(order_number, 'DS-', 'DSF-') WHERE order_number LIKE 'DS-%'");
-            log.info("Successfully updated {} order records to 'DSF-' prefix.", rows);
+            log.info("Running database migration to replace 'DSF-' and 'DS-' prefixes with 'OD-' in order numbers...");
+            int dsfRows = jdbcTemplate.update("UPDATE orders SET order_number = REPLACE(order_number, 'DSF-', 'OD-') WHERE order_number LIKE 'DSF-%'");
+            int dsRows = jdbcTemplate.update("UPDATE orders SET order_number = REPLACE(order_number, 'DS-', 'OD-') WHERE order_number LIKE 'DS-%'");
+            log.info("Successfully updated {} order records ({} DSF-, {} DS-) to 'OD-' prefix.", (dsfRows + dsRows), dsfRows, dsRows);
         } catch (Exception e) {
             log.error("Failed to run order number prefix migration: {}", e.getMessage());
         }
@@ -95,7 +96,7 @@ public class OrderServiceImpl implements OrderService {
 
         String dateStr = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String randomSuffix = String.format("%05d", new Random().nextInt(100000));
-        String orderNumber = "DSF-" + dateStr + "-" + randomSuffix;
+        String orderNumber = "OD-" + dateStr + "-" + randomSuffix;
 
         double subtotal = 0;
         List<Map<String, Object>> verifiedItems = new ArrayList<>();

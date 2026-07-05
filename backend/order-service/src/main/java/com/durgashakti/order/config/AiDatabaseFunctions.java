@@ -19,7 +19,7 @@ public class AiDatabaseFunctions {
 
     // Function 1: Retrieve Live Order Details & Shipment Info
     @Bean
-    @Description("Fetch live order status, payment status, tracking details, and product items by human-readable order number (e.g. DSF-20260705-88783)")
+    @Description("Fetch live order status, payment status, tracking details, and product items by human-readable order number (e.g. OD-20260705-88783)")
     public Function<OrderRequest, OrderResponse> getOrderInfo() {
         return request -> {
             try {
