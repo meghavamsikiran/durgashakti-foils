@@ -131,7 +131,9 @@ const AdminDashboard = () => {
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-emerald-600 animate-pulse" />
           <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">
-            Today's Realtime Activity ({new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})
+            {activePreset === 'Today' 
+              ? `Today's Realtime Activity (${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})` 
+              : `Realtime Activity (${activePreset})`}
           </h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
