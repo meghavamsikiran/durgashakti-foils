@@ -398,7 +398,14 @@ const SettingsPage = () => {
     };
   };
 
-  if (!loaded) return <PageLoader />;
+  if (!loaded) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] w-full">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mb-3"></div>
+        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Loading system settings...</p>
+      </div>
+    );
+  }
 
   const { p1, p2, hasEmoji1, hasEmoji2 } = getPreviewTexts();
   const showFaviconSpacer1 = bannerUseFavicon || (!hasEmoji1 && (!(bannerText2 || bannerTimerEnabled) || !hasEmoji2));
