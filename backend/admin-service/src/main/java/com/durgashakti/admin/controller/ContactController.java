@@ -34,8 +34,55 @@ public class ContactController {
 
     @GetMapping("/admin/contacts")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<List<Contact>> listInquiries() {
-        return ResponseEntity.ok(contactService.listInquiries());
+    public ResponseEntity<Map<String, Object>> listInquiries(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "limit", defaultValue = "10") int limit,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "start_date", required = false) String startDate,
+            @RequestParam(value = "end_date", required = false) String endDate) {
+        
+        List<Contact> all = contactService.listInquiries();
+        
+        java.util.stream.Stream<Contact> stream = all.stream();
+        if (status != null && !status.isBlank() && !"all".equalsIgnoreCase(status)) {
+            stream = stream.filter(c -> status.equalsIgnoreCase(c.getStatus()));
+        }
+        if (startDate != null && !startDate.isBlank()) {
+            try {
+                java.time.LocalDate ld = java.time.LocalDate.parse(startDate);
+                java.time.OffsetDateTime start = ld.atStartOfDay(java.time.ZoneOffset.UTC).toOffsetDateTime();
+                stream = stream.filter(c -> c.getCreatedAt() != null && !c.getCreatedAt().isBefore(start));
+            } catch (Exception ignored) {}
+        }
+        if (endDate != null && !endDate.isBlank()) {
+            try {
+                java.time.LocalDate ld = java.time.LocalDate.parse(endDate);
+                java.time.OffsetDateTime end = ld.plusDays(1).atStartOfDay(java.time.ZoneOffset.UTC).toOffsetDateTime();
+                stream = stream.filter(c -> c.getCreatedAt() != null && !c.getCreatedAt().isAfter(end));
+            } catch (Exception ignored) {}
+        }
+        
+        List<Contact> filtered = stream
+                .sorted((c1, c2) -> {
+                    if (c1.getCreatedAt() == null) return 1;
+                    if (c2.getCreatedAt() == null) return -1;
+                    return c2.getCreatedAt().compareTo(c1.getCreatedAt());
+                })
+                .collect(java.util.stream.Collectors.toList());
+        
+        int total = filtered.size();
+        int fromIndex = (page - 1) * limit;
+        List<Contact> paged = List.of();
+        if (fromIndex < total) {
+            int toIndex = Math.min(fromIndex + limit, total);
+            paged = filtered.subList(fromIndex, toIndex);
+        }
+        
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("items", paged);
+        response.put("total", total);
+        
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/admin/contacts/{id}/reply")

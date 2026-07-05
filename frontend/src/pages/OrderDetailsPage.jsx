@@ -1459,12 +1459,21 @@ const OrderDetailsPage = () => {
                 {/* Desktop Horizontal Return Timeline */}
                 <div className="hidden md:block overflow-x-auto">
                   <div className="relative py-4" style={{ minWidth: returnSteps.length === 2 ? '300px' : '560px' }}>
-                    <div className="absolute top-[32px] left-[12%] right-[12%] h-1 bg-slate-100 dark:bg-[#26322B] -translate-y-1/2 rounded-full" />
-                    <div
-                      className={`absolute top-[32px] left-[12%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out ${isRejected || isRefundFailed ? 'bg-rose-500' : 'bg-primary'}`}
-                      style={{ width: `calc(${progressWidth} * 0.76)` }}
+                    <div 
+                      className="absolute top-[32px] h-1 bg-slate-100 dark:bg-[#26322B] -translate-y-1/2 rounded-full" 
+                      style={{ 
+                        left: `${50 / returnSteps.length}%`, 
+                        right: `${50 / returnSteps.length}%` 
+                      }} 
                     />
-                    <div className="relative flex justify-between px-[8%]">
+                    <div
+                      className={`absolute top-[32px] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out ${isRejected || isRefundFailed ? 'bg-rose-500' : 'bg-primary'}`}
+                      style={{ 
+                        left: `${50 / returnSteps.length}%`, 
+                        width: `calc(${progressWidth} * ${100 - (100 / returnSteps.length)} / 100)` 
+                      }}
+                    />
+                    <div className="relative flex justify-between">
                       {returnSteps.map((step, idx) => (
                         <div key={step.label} className="flex flex-col items-center text-center" style={{ width: `${100 / returnSteps.length}%` }}>
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#131B17] shadow-sm dark:shadow-none z-10 transition-all duration-300 ${

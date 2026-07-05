@@ -1368,13 +1368,22 @@ const AdminOrderDetailsPage = () => {
                   <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest">{timelineTitle}</h3>
                 </div>
                 <div className="relative pt-6 pb-2 overflow-x-auto">
-                  <div className="relative" style={{ minWidth: returnSteps.length === 2 ? '300px' : '560px' }}>
-                    <div className="absolute top-[16px] left-[12%] right-[12%] h-1 bg-slate-250 -translate-y-1/2 rounded-full" />
-                    <div
-                      className={`absolute top-[16px] left-[12%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out bg-primary`}
-                      style={{ width: `calc(${progressWidth} * 0.76)` }}
+                  <div className="relative" style={{ minWidth: '560px' }}>
+                    <div 
+                      className="absolute top-[16px] h-1 bg-slate-250 -translate-y-1/2 rounded-full" 
+                      style={{ 
+                        left: `${50 / returnSteps.length}%`, 
+                        right: `${50 / returnSteps.length}%` 
+                      }} 
                     />
-                    <div className="relative flex justify-between px-[8%]">
+                    <div
+                      className={`absolute top-[16px] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out bg-primary`}
+                      style={{ 
+                        left: `${50 / returnSteps.length}%`, 
+                        width: `calc(${progressWidth} * ${100 - (100 / returnSteps.length)} / 100)` 
+                      }}
+                    />
+                    <div className="relative flex justify-between">
                       {returnSteps.map((step, idx) => (
                         <div key={step.label} className="flex flex-col items-center text-center" style={{ width: `${100 / returnSteps.length}%` }}>
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm z-10 transition-all duration-300 ${
