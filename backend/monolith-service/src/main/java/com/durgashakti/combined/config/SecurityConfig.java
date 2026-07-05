@@ -61,8 +61,8 @@ public class SecurityConfig {
                 // Contact
                 .requestMatchers(HttpMethod.POST, "/api/contacts", "/api/contact", "/api/contacts/upload").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/contacts").permitAll()
-                // Razorpay Webhooks
-                .requestMatchers("/api/payment/razorpay/webhook", "/api/orders/webhook").permitAll()
+                // Razorpay Webhooks and AI chat
+                .requestMatchers("/api/payment/razorpay/webhook", "/api/orders/webhook", "/api/orders/ai-chat").permitAll()
                 // Email Service
                 .requestMatchers("/api/email/send").permitAll()
                 // Actuator/Health

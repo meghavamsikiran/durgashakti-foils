@@ -59,6 +59,7 @@ import ReviewsPage from './admin/pages/ReviewsPage';
 import PageLoader from './components/ui/PageLoader';
 import './App.css';
 import Maintenance from './pages/Maintenance';
+import AiAssistant from './components/AiAssistant';
 
 import { Sun, Moon } from 'lucide-react';
 
@@ -261,6 +262,7 @@ function AppRoutes() {
           </Routes>
         </Suspense>
         {!isAdminPath && !(isProtectedRoute && authLoading) && <Footer />}
+        {!isAdminPath && <AiAssistant />}
         <Toaster position="top-center" closeButton visibleToasts={1} />
       </div>
       </ProgressProvider>
