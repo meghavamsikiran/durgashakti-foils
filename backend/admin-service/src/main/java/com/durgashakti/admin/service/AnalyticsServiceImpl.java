@@ -109,7 +109,10 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
         // Basic Counts
         long totalOrders = filteredOrders.size();
-        OffsetDateTime todayStart = now.truncatedTo(ChronoUnit.DAYS);
+        java.time.ZoneId istZone = java.time.ZoneId.of("Asia/Kolkata");
+        java.time.ZonedDateTime nowIst = java.time.ZonedDateTime.now(istZone);
+        java.time.ZonedDateTime todayStartIst = nowIst.truncatedTo(java.time.temporal.ChronoUnit.DAYS);
+        OffsetDateTime todayStart = todayStartIst.toOffsetDateTime();
         long ordersToday = filteredOrders.stream()
                 .filter(o -> o.getCreatedAt().isAfter(todayStart))
                 .count();
@@ -162,7 +165,11 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             if ("delivered".equals(oStatus)) {
                 totalDelivered++;
                 rangeDelivered++;
-                if (o.getCreatedAt().isAfter(todayStart)) {
+                if (o.getDeliveredAt() != null) {
+                    if (o.getDeliveredAt().isAfter(todayStart)) {
+                        todayDelivered++;
+                    }
+                } else if (o.getCreatedAt().isAfter(todayStart)) {
                     todayDelivered++;
                 }
             } else if (List.of("placed", "confirmed", "processing", "packaging").contains(oStatus)) {
@@ -172,7 +179,11 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 }
             } else if (List.of("shipped", "in_transit", "out_for_delivery").contains(oStatus)) {
                 rangeShipped++;
-                if (o.getCreatedAt().isAfter(todayStart)) {
+                if (o.getShippedAt() != null) {
+                    if (o.getShippedAt().isAfter(todayStart)) {
+                        todayShipped++;
+                    }
+                } else if (o.getCreatedAt().isAfter(todayStart)) {
                     todayShipped++;
                 }
             } else if (List.of("returned", "return_approved", "return_requested", "refunded").contains(oStatus)) {
