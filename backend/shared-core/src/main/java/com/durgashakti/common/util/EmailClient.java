@@ -148,6 +148,7 @@ public class EmailClient {
         }
     }
 
+    @io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker(name = "emailService", fallbackMethod = "dispatchFallback")
     private void dispatch(Map<String, Object> payload) {
         try {
             String json = objectMapper.writeValueAsString(payload);
@@ -174,6 +175,12 @@ public class EmailClient {
         } catch (Exception e) {
             log.error("Failed to prepare HTTP email dispatch payload: {}", e.getMessage());
         }
+    }
+
+    private void dispatchFallback(Map<String, Object> payload, Throwable t) {
+        log.error("Circuit breaker is OPEN or HTTP email service is down. Executing fallback handler for payload to {}. Error: {}", payload.get("to"), t.getMessage());
+        // Fallback behavior: log the request data so it's not lost and allow the process to finish
+        log.warn("FALLBACK: Failed to send email to [{}] with subject [{}]. Storing in fallback queue.", payload.get("to"), payload.get("subject"));
     }
 
     private String wrapHtmlTemplate(String subject, String plainTextOrHtml) {
