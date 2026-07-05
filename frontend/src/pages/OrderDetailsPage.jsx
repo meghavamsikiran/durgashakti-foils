@@ -71,14 +71,21 @@ const OrderDetailsPage = () => {
 
   React.useEffect(() => {
     if (isReturning && order?.items) {
-      const initial = {};
-      order.items.forEach(item => {
-        const isPreselected = isReturning === true ? false : (isReturning === item.product_id);
-        initial[item.product_id] = { selected: isPreselected, quantity: 1 };
+      setSelectedItemsForReturn(prev => {
+        // If already initialized for this return panel session, preserve user's selections
+        if (Object.keys(prev).length > 0) return prev;
+        
+        const initial = {};
+        order.items.forEach(item => {
+          const isPreselected = isReturning === true ? false : (isReturning === item.product_id);
+          initial[item.product_id] = { selected: isPreselected, quantity: 1 };
+        });
+        return initial;
       });
-      setSelectedItemsForReturn(initial);
+    } else {
+      setSelectedItemsForReturn({});
     }
-  }, [isReturning, order]);
+  }, [isReturning, order?.items]);
 
   const handleSubmitSelfShip = async (e) => {
     e.preventDefault();
@@ -1272,7 +1279,7 @@ const OrderDetailsPage = () => {
                 return (
                   <div className="flex items-center gap-3 bg-rose-50 border border-rose-100 rounded-xl p-4 text-rose-800 font-semibold text-xs">
                     <X className="w-5 h-5 text-rose-600 shrink-0" />
-                    <div>
+<div>
                       <p className="font-extrabold text-rose-900">Order Cancelled</p>
                       <p className="text-rose-600 mt-0.5">This order was cancelled on {new Date(order.updated_at || order.created_at).toLocaleString('en-IN')}</p>
                     </div>
@@ -1281,40 +1288,75 @@ const OrderDetailsPage = () => {
               }
 
               return (
-                <div className="relative pt-6 pb-2 overflow-x-auto">
-                  <div className="min-w-[700px] relative">
-                    {/* Progress Line Background */}
-                    <div className="absolute top-[16px] left-[5%] right-[5%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
-                    {/* Active Progress Line */}
-                    <div 
-                      className="absolute top-[16px] left-[5%] h-1 bg-primary -translate-y-1/2 rounded-full transition-all duration-700 ease-out" 
-                      style={{ 
-                        width: isDelivered ? '90%' : isOutForDelivery ? '77.14%' : isInTransit ? '64.28%' : isShipped ? '51.42%' : isPacked ? '38.56%' : isConfirmed ? '25.7%' : isPaid ? '12.85%' : '0%' 
-                      }} 
-                    />
+                <div className="relative pt-4 pb-2">
+                  {/* Desktop Horizontal Stepper (hidden on small screens) */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <div className="min-w-[700px] relative py-4">
+                      {/* Progress Line Background */}
+                      <div className="absolute top-[32px] left-[5%] right-[5%] h-1 bg-slate-100 dark:bg-[#26322B] -translate-y-1/2 rounded-full" />
+                      {/* Active Progress Line */}
+                      <div 
+                        className="absolute top-[32px] left-[5%] h-1 bg-primary -translate-y-1/2 rounded-full transition-all duration-700 ease-out" 
+                        style={{ 
+                          width: isDelivered ? '90%' : isOutForDelivery ? '77.14%' : isInTransit ? '64.28%' : isShipped ? '51.42%' : isPacked ? '38.56%' : isConfirmed ? '25.7%' : isPaid ? '12.85%' : '0%' 
+                        }} 
+                      />
 
-                    {/* Stepper Dots */}
-                    <div className="relative flex justify-between">
-                      {steps.map((step, idx) => (
-                        <div key={idx} className="flex flex-col items-center w-[12.5%] text-center">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm dark:shadow-none z-10 transition-all duration-300 ${
-                            step.active 
-                              ? 'bg-primary text-white ring-4 ring-primary/10' 
-                              : 'bg-slate-200 text-slate-400 dark:text-slate-500'
-                          }`}>
-                            {step.active ? <Check className="w-3.5 h-3.5 stroke-[3px]" /> : <span className="text-[10px] font-bold">{idx + 1}</span>}
+                      {/* Stepper Dots */}
+                      <div className="relative flex justify-between">
+                        {steps.map((step, idx) => (
+                          <div key={idx} className="flex flex-col items-center w-[12.5%] text-center">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#131B17] shadow-sm dark:shadow-none z-10 transition-all duration-300 ${
+                              step.active 
+                                ? 'bg-primary text-white ring-4 ring-primary/10' 
+                                : 'bg-slate-200 text-slate-400 dark:text-slate-500 dark:bg-[#26322B]'
+                            }`}>
+                              {step.active ? <Check className="w-3.5 h-3.5 stroke-[3px]" /> : <span className="text-[10px] font-bold">{idx + 1}</span>}
+                            </div>
+                            <p className={`text-[10px] mt-2.5 leading-tight font-black ${step.active ? 'text-primary' : 'text-slate-400 dark:text-slate-500'}`}>
+                              {step.label}
+                            </p>
+                            {step.date && (
+                              <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-1">
+                                {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                              </p>
+                            )}
                           </div>
-                          <p className={`text-[10px] mt-2.5 leading-tight font-black ${step.active ? 'text-primary' : 'text-slate-400 dark:text-slate-500'}`}>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mobile Vertical Stepper (hidden on desktop) */}
+                  <div className="block md:hidden space-y-4 pl-4 relative">
+                    {/* Vertical connecting line */}
+                    <div className="absolute top-2 bottom-2 left-[27px] w-0.5 bg-slate-100 dark:bg-[#26322B]" />
+                    
+                    {steps.map((step, idx) => (
+                      <div key={idx} className="flex items-start gap-4 relative">
+                        {/* Connecting line overlay for active steps */}
+                        {idx < steps.length - 1 && steps[idx + 1].active && (
+                          <div className="absolute top-6 left-[11px] w-0.5 h-10 bg-primary z-0" />
+                        )}
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 border-white dark:border-[#131B17] shadow-sm z-10 shrink-0 transition-all duration-300 ${
+                          step.active 
+                            ? 'bg-primary text-white' 
+                            : 'bg-slate-200 text-slate-400 dark:text-slate-500 dark:bg-[#26322B]'
+                        }`}>
+                          {step.active ? <Check className="w-2.5 h-2.5 stroke-[3px]" /> : <span className="text-[8px] font-bold">{idx + 1}</span>}
+                        </div>
+                        <div className="pt-0.5">
+                          <p className={`text-xs leading-none font-bold ${step.active ? 'text-primary' : 'text-slate-400 dark:text-slate-500'}`}>
                             {step.label}
                           </p>
                           {step.date && (
-                            <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-1">
-                              {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                            <p className="text-[10px] font-semibold text-slate-450 dark:text-slate-500 mt-1">
+                              {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
                             </p>
                           )}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
@@ -1415,34 +1457,67 @@ const OrderDetailsPage = () => {
                   {isRejected ? 'Return Rejected' : isRefundFailed ? 'Refund Failed' : paymentStatus === 'refunded' ? 'Refund Credited' : paymentStatus === 'refund_pending' ? 'Refund Initiated' : hasReceived ? 'Return Received' : hasSelfShipped ? 'Self Shipped' : hasApproved ? 'Approved' : 'Requested'}
                 </span>
               </div>
-              <div className="relative pt-6 pb-2 overflow-x-auto">
-                <div className="relative" style={{ minWidth: returnSteps.length === 2 ? '300px' : '560px' }}>
-                  <div className="absolute top-[16px] left-[12%] right-[12%] h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
-                  <div
-                    className={`absolute top-[16px] left-[12%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out ${isRejected || isRefundFailed ? 'bg-rose-500' : 'bg-primary'}`}
-                    style={{ width: `calc(${progressWidth} * 0.76)` }}
-                  />
-                  <div className="relative flex justify-between px-[8%]">
-                    {returnSteps.map((step, idx) => (
-                      <div key={step.label} className="flex flex-col items-center text-center" style={{ width: `${100 / returnSteps.length}%` }}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white shadow-sm dark:shadow-none z-10 transition-all duration-300 ${
-                          step.active
-                            ? step.rejected ? 'bg-rose-600 text-white ring-4 ring-rose-100' : 'bg-primary text-white ring-4 ring-primary/10'
-                            : 'bg-slate-200 text-slate-400 dark:text-slate-500'
-                        }`}>
-                          {step.active ? (step.rejected ? <X className="w-3.5 h-3.5 stroke-[3px]" /> : <Check className="w-3.5 h-3.5 stroke-[3px]" />) : <span className="text-[10px] font-bold">{idx + 1}</span>}
+              <div className="relative pt-4 pb-2">
+                {/* Desktop Horizontal Return Timeline */}
+                <div className="hidden md:block overflow-x-auto">
+                  <div className="relative py-4" style={{ minWidth: returnSteps.length === 2 ? '300px' : '560px' }}>
+                    <div className="absolute top-[32px] left-[12%] right-[12%] h-1 bg-slate-100 dark:bg-[#26322B] -translate-y-1/2 rounded-full" />
+                    <div
+                      className={`absolute top-[32px] left-[12%] h-1 -translate-y-1/2 rounded-full transition-all duration-700 ease-out ${isRejected || isRefundFailed ? 'bg-rose-500' : 'bg-primary'}`}
+                      style={{ width: `calc(${progressWidth} * 0.76)` }}
+                    />
+                    <div className="relative flex justify-between px-[8%]">
+                      {returnSteps.map((step, idx) => (
+                        <div key={step.label} className="flex flex-col items-center text-center" style={{ width: `${100 / returnSteps.length}%` }}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#131B17] shadow-sm dark:shadow-none z-10 transition-all duration-300 ${
+                            step.active
+                              ? step.rejected ? 'bg-rose-600 text-white ring-4 ring-rose-100' : 'bg-primary text-white ring-4 ring-primary/10'
+                              : 'bg-slate-200 text-slate-400 dark:text-slate-500 dark:bg-[#26322B]'
+                          }`}>
+                            {step.active ? (step.rejected ? <X className="w-3.5 h-3.5 stroke-[3px]" /> : <Check className="w-3.5 h-3.5 stroke-[3px]" />) : <span className="text-[10px] font-bold">{idx + 1}</span>}
+                          </div>
+                          <p className={`text-[10px] mt-2.5 leading-tight font-black ${step.active ? step.rejected ? 'text-rose-600' : 'text-primary' : 'text-slate-400 dark:text-slate-500'}`}>
+                            {step.label}
+                          </p>
+                          {step.date && (
+                            <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-1">
+                              {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                            </p>
+                          )}
                         </div>
-                        <p className={`text-[10px] mt-2.5 leading-tight font-black ${step.active ? step.rejected ? 'text-rose-600' : 'text-primary' : 'text-slate-400 dark:text-slate-500'}`}>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile Vertical Return Timeline */}
+                <div className="block md:hidden space-y-4 pl-4 relative">
+                  <div className="absolute top-2 bottom-2 left-[27px] w-0.5 bg-slate-100 dark:bg-[#26322B]" />
+                  
+                  {returnSteps.map((step, idx) => (
+                    <div key={step.label} className="flex items-start gap-4 relative">
+                      {idx < returnSteps.length - 1 && returnSteps[idx + 1].active && (
+                        <div className={`absolute top-6 left-[11px] w-0.5 h-10 z-0 ${step.rejected ? 'bg-rose-500' : 'bg-primary'}`} />
+                      )}
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 border-white dark:border-[#131B17] shadow-sm z-10 shrink-0 transition-all duration-300 ${
+                        step.active
+                          ? step.rejected ? 'bg-rose-600 text-white' : 'bg-primary text-white'
+                          : 'bg-slate-200 text-slate-400 dark:text-slate-500 dark:bg-[#26322B]'
+                      }`}>
+                        {step.active ? (step.rejected ? <X className="w-2.5 h-2.5 stroke-[3px]" /> : <Check className="w-2.5 h-2.5 stroke-[3px]" />) : <span className="text-[8px] font-bold">{idx + 1}</span>}
+                      </div>
+                      <div className="pt-0.5">
+                        <p className={`text-xs leading-none font-bold ${step.active ? step.rejected ? 'text-rose-600' : 'text-primary' : 'text-slate-400 dark:text-slate-500'}`}>
                           {step.label}
                         </p>
                         {step.date && (
-                          <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 mt-1">
-                            {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                          <p className="text-[10px] font-semibold text-slate-450 dark:text-slate-500 mt-1">
+                            {new Date(step.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
                           </p>
                         )}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
