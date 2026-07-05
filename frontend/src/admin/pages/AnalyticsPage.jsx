@@ -28,16 +28,8 @@ const COLORS = [
 ];
 
 const AnalyticsPage = () => {
-  const [summary, setSummary] = useState(() => {
-    const cached = adminService.getCached('/admin/analytics/summary', { timeframe: 'All Time' });
-    return cached?.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] };
-  });
-  
-  const [loading, setLoading] = useState(() => {
-    const cached = adminService.getCached('/admin/analytics/summary', { timeframe: 'All Time' });
-    return !cached;
-  });
-  
+  const [summary, setSummary] = useState({ metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [topLimit, setTopLimit] = useState(10);
@@ -46,20 +38,13 @@ const AnalyticsPage = () => {
   const [customEnd, setCustomEnd] = useState('');
   const { startProgress, updateProgress, finishProgress } = useProgress();
 
-  // eslint-disable-next-line no-unused-vars
-  const isFirstLoad = useRef(true);
-
   const load = useCallback(async () => {
+    setLoading(true);
     const isCustom = timeframe === 'Date Range';
     const params = {};
     if (isCustom) {
       if (customStart) params.start_date = customStart;
       if (customEnd) params.end_date = customEnd;
-    }
-
-    // Use background refreshing instead of unmounting page loader after first load
-    if (!isFirstLoad.current) {
-      setRefreshing(true);
     }
     
     try {
@@ -70,7 +55,6 @@ const AnalyticsPage = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
-      isFirstLoad.current = false;
     }
   }, [timeframe, customStart, customEnd]);
 
@@ -91,18 +75,17 @@ const AnalyticsPage = () => {
 
   useEffect(() => {
     load();
-    loadSilent();
-  }, [load, loadSilent]);
+  }, [load]);
 
-  // Periodic silent polling in the background (every 10 seconds)
+  // Periodic silent polling in the background (every 12 seconds)
   useEffect(() => {
     const timer = setInterval(() => {
       loadSilent();
-    }, 10000);
+    }, 12000);
     return () => clearInterval(timer);
   }, [loadSilent]);
 
-  if (loading && !summary.metrics?.revenue) {
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] w-full">
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mb-3"></div>
