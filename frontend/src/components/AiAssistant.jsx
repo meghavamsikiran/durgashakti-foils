@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, User, Loader2 } from 'lucide-react';
-import apiClient from '../services/apiClient';
+import apiClient from '../services/core/apiClient';
 
 export default function AiAssistant() {
   const [isOpen, setIsOpen] = useState(false);
