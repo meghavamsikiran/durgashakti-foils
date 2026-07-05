@@ -724,10 +724,35 @@ const AdminOrderDetailsPage = () => {
               {(() => {
                 const metadata = order.shipping_address?.shipping_metadata;
                 const subtotal = metadata?.subtotal ?? (order.items?.reduce((acc, item) => acc + (item.price * item.quantity), 0) || 0);
-                const shipping = metadata?.shipping_cost ?? (Number(order.total_amount) > subtotal ? 350.0 : 0.0);
-                const cgst = metadata?.cgst_amount ?? (Number(order.total_amount) > subtotal ? subtotal * 0.09 : 0.0);
-                const sgst = metadata?.sgst_amount ?? (Number(order.total_amount) > subtotal ? subtotal * 0.09 : 0.0);
-                const codCharge = metadata?.cod_charge ?? 0.0;
+                const discount = Number(order.discount_amount || 0);
+                const taxableAmount = Math.max(0, subtotal - discount);
+                
+                // Correctly derive taxes (fixed 9% each)
+                const cgst = metadata?.cgst_amount ?? Math.round(taxableAmount * 0.09 * 100.0) / 100.0;
+                const sgst = metadata?.sgst_amount ?? Math.round(taxableAmount * 0.09 * 100.0) / 100.0;
+                
+                // Mathematically derive remaining charges (shipping/COD)
+                const remaining = Math.max(0, Math.round((Number(order.total_amount || 0) - (taxableAmount + cgst + sgst)) * 100.0) / 100.0);
+                
+                let shipping = 0.0;
+                let codCharge = 0.0;
+                
+                if (metadata) {
+                  shipping = metadata.shipping_cost ?? 0.0;
+                  codCharge = metadata.cod_charge ?? 0.0;
+                } else if (remaining > 0) {
+                  if (order.payment_method?.toLowerCase() === 'cod') {
+                    if (remaining >= 20.0) {
+                      codCharge = 20.0;
+                      shipping = remaining - 20.0;
+                    } else {
+                      codCharge = remaining;
+                      shipping = 0.0;
+                    }
+                  } else {
+                    shipping = remaining;
+                  }
+                }
 
                 return (
                   <div className="space-y-1.5 text-xs text-slate-500 font-semibold">

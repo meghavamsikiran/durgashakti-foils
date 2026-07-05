@@ -291,25 +291,29 @@ public class InvoiceServiceImpl implements InvoiceService {
             double amountTotal = 0.0;
             int totalQty = 0;
 
+            Map<String, Object> metadata = null;
+            if (order.getShippingAddress() != null && order.getShippingAddress().get("shipping_metadata") instanceof Map) {
+                metadata = (Map<String, Object>) order.getShippingAddress().get("shipping_metadata");
+            }
+
             List<Map<String, Object>> rows = new ArrayList<>();
             if (itemsList != null) {
                 for (Map<String, Object> item : itemsList) {
                     double price = ((Number) item.getOrDefault("price", 0.0)).doubleValue();
                     int qty = ((Number) item.getOrDefault("quantity", 1)).intValue();
-                    double itemTotalInclTax = price * qty;
                     
-                    double itemTotalTaxable = itemTotalInclTax / 1.18;
+                    double itemTotalTaxable = price * qty;
                     double itemCgst = itemTotalTaxable * 0.09;
                     double itemSgst = itemTotalTaxable * 0.09;
                     
                     itemTotalTaxable = Math.round(itemTotalTaxable * 100.0) / 100.0;
                     itemCgst = Math.round(itemCgst * 100.0) / 100.0;
                     itemSgst = Math.round(itemSgst * 100.0) / 100.0;
-                    double unitPriceTaxable = Math.round((itemTotalTaxable / qty) * 100.0) / 100.0;
+                    double unitPriceTaxable = price;
 
                     itemsTaxableTotal += itemTotalTaxable;
                     itemsGstTotal += (itemCgst + itemSgst);
-                    amountTotal += itemTotalInclTax;
+                    amountTotal += (itemTotalTaxable + itemCgst + itemSgst);
                     totalQty += qty;
 
                     Map<String, Object> row = new HashMap<>();
@@ -320,7 +324,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                     row.put("unit", "Rol");
                     row.put("price", unitPriceTaxable);
                     row.put("gst", itemCgst + itemSgst);
-                    row.put("amount", itemTotalInclTax);
+                    row.put("amount", itemTotalTaxable + itemCgst + itemSgst);
                     rows.add(row);
                 }
             }
@@ -344,22 +348,27 @@ public class InvoiceServiceImpl implements InvoiceService {
 
             // Shipping & COD charges calculations
             double grandTotal = order.getTotalAmount().doubleValue();
-            double remaining = grandTotal - (itemsTaxableTotal + itemsGstTotal - discount);
-            remaining = Math.round(remaining * 100.0) / 100.0;
-
             double shippingCharge = 0.0;
             double codCharge = 0.0;
-            if (remaining > 0) {
-                if ("cod".equalsIgnoreCase(order.getPaymentMethod())) {
-                    if (remaining >= 20.0) {
-                        codCharge = 20.0;
-                        shippingCharge = remaining - 20.0;
+
+            if (metadata != null) {
+                shippingCharge = metadata.get("shipping_cost") != null ? Double.parseDouble(String.valueOf(metadata.get("shipping_cost"))) : 0.0;
+                codCharge = metadata.get("cod_charge") != null ? Double.parseDouble(String.valueOf(metadata.get("cod_charge"))) : 0.0;
+            } else {
+                double remaining = grandTotal - (itemsTaxableTotal + itemsGstTotal - discount);
+                remaining = Math.round(remaining * 100.0) / 100.0;
+                if (remaining > 0) {
+                    if ("cod".equalsIgnoreCase(order.getPaymentMethod())) {
+                        if (remaining >= 20.0) {
+                            codCharge = 20.0;
+                            shippingCharge = remaining - 20.0;
+                        } else {
+                            codCharge = remaining;
+                            shippingCharge = 0.0;
+                        }
                     } else {
-                        codCharge = remaining;
-                        shippingCharge = 0.0;
+                        shippingCharge = remaining;
                     }
-                } else {
-                    shippingCharge = remaining;
                 }
             }
 

@@ -936,50 +936,57 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     }
 
     private String getEmailBreakoutHtml(Order order) {
-        List<Map<String, Object>> items = order.getItems();
-        double subtotalBeforeTax = 0.0;
+        double subtotal = 0.0;
+        double discount = order.getDiscountAmount() != null ? order.getDiscountAmount().doubleValue() : 0.0;
         double cgstTotal = 0.0;
         double sgstTotal = 0.0;
-        if (items != null) {
-            for (Map<String, Object> item : items) {
-                double price = ((Number) item.getOrDefault("price", 0.0)).doubleValue();
-                int qty = ((Number) item.getOrDefault("quantity", 1)).intValue();
-                double itemTotalInclTax = price * qty;
-                double itemTotalTaxable = itemTotalInclTax / 1.18;
-                double itemCgst = itemTotalTaxable * 0.09;
-                double itemSgst = itemTotalTaxable * 0.09;
-                itemTotalTaxable = Math.round(itemTotalTaxable * 100.0) / 100.0;
-                itemCgst = Math.round(itemCgst * 100.0) / 100.0;
-                itemSgst = Math.round(itemSgst * 100.0) / 100.0;
-                subtotalBeforeTax += itemTotalTaxable;
-                cgstTotal += itemCgst;
-                sgstTotal += itemSgst;
-            }
-        }
-        double discount = order.getDiscountAmount() != null ? order.getDiscountAmount().doubleValue() : 0.0;
-        double grandTotal = order.getTotalAmount().doubleValue();
-        double remaining = grandTotal - (subtotalBeforeTax + cgstTotal + sgstTotal - discount);
-        remaining = Math.round(remaining * 100.0) / 100.0;
-
         double shippingCharge = 0.0;
         double codCharge = 0.0;
-        if (remaining > 0) {
-            if ("cod".equalsIgnoreCase(order.getPaymentMethod())) {
-                if (remaining >= 20.0) {
-                    codCharge = 20.0;
-                    shippingCharge = remaining - 20.0;
-                } else {
-                    codCharge = remaining;
-                    shippingCharge = 0.0;
+        double grandTotal = order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0;
+
+        Map<String, Object> metadata = null;
+        if (order.getShippingAddress() != null && order.getShippingAddress().get("shipping_metadata") instanceof Map) {
+            metadata = (Map<String, Object>) order.getShippingAddress().get("shipping_metadata");
+        }
+
+        if (metadata != null) {
+            subtotal = toDouble(metadata.get("subtotal"));
+            cgstTotal = toDouble(metadata.get("cgst_amount"));
+            sgstTotal = toDouble(metadata.get("sgst_amount"));
+            shippingCharge = toDouble(metadata.get("shipping_cost"));
+            codCharge = toDouble(metadata.get("cod_charge"));
+        } else {
+            List<Map<String, Object>> items = order.getItems();
+            if (items != null) {
+                for (Map<String, Object> item : items) {
+                    double price = ((Number) item.getOrDefault("price", 0.0)).doubleValue();
+                    int qty = ((Number) item.getOrDefault("quantity", 1)).intValue();
+                    subtotal += price * qty;
                 }
-            } else {
-                shippingCharge = remaining;
+            }
+            double taxableAmount = Math.max(0, subtotal - discount);
+            cgstTotal = Math.round(taxableAmount * 0.09 * 100.0) / 100.0;
+            sgstTotal = Math.round(taxableAmount * 0.09 * 100.0) / 100.0;
+            double remaining = Math.max(0, Math.round((grandTotal - (taxableAmount + cgstTotal + sgstTotal)) * 100.0) / 100.0);
+            
+            if (remaining > 0) {
+                if ("cod".equalsIgnoreCase(order.getPaymentMethod())) {
+                    if (remaining >= 20.0) {
+                        codCharge = 20.0;
+                        shippingCharge = remaining - 20.0;
+                    } else {
+                        codCharge = remaining;
+                        shippingCharge = 0.0;
+                    }
+                } else {
+                    shippingCharge = remaining;
+                }
             }
         }
 
         StringBuilder sb = new StringBuilder();
         sb.append("<table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\" style=\"font-size:13px;color:#475569;\">");
-        sb.append("<tr><td>Subtotal (Taxable)</td><td align=\"right\">Rs. ").append(String.format("%.2f", subtotalBeforeTax)).append("</td></tr>");
+        sb.append("<tr><td>Subtotal</td><td align=\"right\">Rs. ").append(String.format("%.2f", subtotal)).append("</td></tr>");
         if (cgstTotal > 0) {
             sb.append("<tr><td>CGST (9%)</td><td align=\"right\">Rs. ").append(String.format("%.2f", cgstTotal)).append("</td></tr>");
         }

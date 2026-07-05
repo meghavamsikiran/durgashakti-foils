@@ -238,13 +238,26 @@ public class OrderServiceImpl implements OrderService {
 
         double total = Math.round((taxableAmount + deliveryCharge + cgst + sgst + codCharge) * 100.0) / 100.0;
 
+        Map<String, Object> enrichedAddress = new HashMap<>();
+        if (req.getShippingAddress() != null) {
+            enrichedAddress.putAll(req.getShippingAddress());
+        }
+        Map<String, Object> shippingMetadata = new HashMap<>();
+        shippingMetadata.put("subtotal", subtotal);
+        shippingMetadata.put("discount_amount", discount);
+        shippingMetadata.put("shipping_cost", deliveryCharge);
+        shippingMetadata.put("cgst_amount", cgst);
+        shippingMetadata.put("sgst_amount", sgst);
+        shippingMetadata.put("cod_charge", codCharge);
+        enrichedAddress.put("shipping_metadata", shippingMetadata);
+
         Order order = new Order();
         order.setOrderNumber(orderNumber);
         order.setUserId(userId);
         order.setItems(verifiedItems);
         order.setTotalAmount(BigDecimal.valueOf(total));
         order.setDiscountAmount(BigDecimal.valueOf(discount));
-        order.setShippingAddress(req.getShippingAddress());
+        order.setShippingAddress(enrichedAddress);
         order.setPaymentMethod(req.getPaymentMethod());
         order.setCouponCodes(req.getCouponCodes());
         order.setTrackingEventsJson(new ArrayList<>());
@@ -518,27 +531,58 @@ public class OrderServiceImpl implements OrderService {
                     }
                     itemsHtml.append("</tbody></table>");
                     
-                    // Calculate CGST and SGST
-                    double itemsTaxableTotal = 0.0;
+                    // Calculate CGST and SGST and Shipping Costs
+                    double subtotal = 0.0;
                     double discountVal = order.getDiscountAmount() != null ? order.getDiscountAmount().doubleValue() : 0.0;
-                    if (order.getItems() != null) {
-                        for (Map<String, Object> item : order.getItems()) {
-                            double price = 0.0;
-                            try {
-                                price = Double.parseDouble(String.valueOf(item.getOrDefault("price", 0.0)));
-                            } catch (Exception ignored) {}
-                            int qty = 1;
-                            try {
-                                qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 1)));
-                            } catch (Exception ignored) {}
-                            double itemTotalInclTax = price * qty;
-                            double itemTotalTaxable = itemTotalInclTax / 1.18;
-                            itemsTaxableTotal += itemTotalTaxable;
+                    double cgst = 0.0;
+                    double sgst = 0.0;
+                    double shippingCost = 0.0;
+                    double codCharge = 0.0;
+                    double grandTotal = order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0;
+
+                    Map<String, Object> metadata = null;
+                    if (order.getShippingAddress() != null && order.getShippingAddress().get("shipping_metadata") instanceof Map) {
+                        metadata = (Map<String, Object>) order.getShippingAddress().get("shipping_metadata");
+                    }
+
+                    if (metadata != null) {
+                        subtotal = metadata.get("subtotal") != null ? Double.parseDouble(String.valueOf(metadata.get("subtotal"))) : 0.0;
+                        cgst = metadata.get("cgst_amount") != null ? Double.parseDouble(String.valueOf(metadata.get("cgst_amount"))) : 0.0;
+                        sgst = metadata.get("sgst_amount") != null ? Double.parseDouble(String.valueOf(metadata.get("sgst_amount"))) : 0.0;
+                        shippingCost = metadata.get("shipping_cost") != null ? Double.parseDouble(String.valueOf(metadata.get("shipping_cost"))) : 0.0;
+                        codCharge = metadata.get("cod_charge") != null ? Double.parseDouble(String.valueOf(metadata.get("cod_charge"))) : 0.0;
+                    } else {
+                        if (order.getItems() != null) {
+                            for (Map<String, Object> item : order.getItems()) {
+                                double price = 0.0;
+                                try {
+                                    price = Double.parseDouble(String.valueOf(item.getOrDefault("price", 0.0)));
+                                } catch (Exception ignored) {}
+                                int qty = 1;
+                                try {
+                                    qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 1)));
+                                } catch (Exception ignored) {}
+                                subtotal += price * qty;
+                            }
+                        }
+                        double taxableTotal = Math.max(0.0, subtotal - discountVal);
+                        cgst = Math.round(taxableTotal * 0.09 * 100.0) / 100.0;
+                        sgst = Math.round(taxableTotal * 0.09 * 100.0) / 100.0;
+                        double remaining = Math.max(0.0, Math.round((grandTotal - (taxableTotal + cgst + sgst)) * 100.0) / 100.0);
+                        if (remaining > 0) {
+                            if ("cod".equalsIgnoreCase(order.getPaymentMethod())) {
+                                if (remaining >= 20.0) {
+                                    codCharge = 20.0;
+                                    shippingCost = remaining - 20.0;
+                                } else {
+                                    codCharge = remaining;
+                                    shippingCost = 0.0;
+                                }
+                            } else {
+                                shippingCost = remaining;
+                            }
                         }
                     }
-                    double taxableTotal = Math.max(0.0, itemsTaxableTotal - discountVal);
-                    double cgst = Math.round(taxableTotal * 0.09 * 100.0) / 100.0;
-                    double sgst = Math.round(taxableTotal * 0.09 * 100.0) / 100.0;
 
                     // Shipping Address Formatter
                     String addressStr = "";
@@ -585,10 +629,12 @@ public class OrderServiceImpl implements OrderService {
                             "    \n" +
                             "    <div style=\"border-top:1px solid #e2e8f0;padding-top:16px;margin-bottom:20px;\">\n" +
                             "        <table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\">\n" +
-                            "            <tr><td style=\"color:#64748b;\">Subtotal (Taxable)</td><td align=\"right\" style=\"color:#0f172a;\">Rs. " + String.format("%.2f", taxableTotal) + "</td></tr>\n" +
+                            "            <tr><td style=\"color:#64748b;\">Subtotal</td><td align=\"right\" style=\"color:#0f172a;\">Rs. " + String.format("%.2f", subtotal) + "</td></tr>\n" +
                             "            <tr><td style=\"color:#64748b;\">CGST (9%)</td><td align=\"right\" style=\"color:#0f172a;\">Rs. " + String.format("%.2f", cgst) + "</td></tr>\n" +
                             "            <tr><td style=\"color:#64748b;\">SGST (9%)</td><td align=\"right\" style=\"color:#0f172a;\">Rs. " + String.format("%.2f", sgst) + "</td></tr>\n" +
-                            "            <tr><td style=\"color:#64748b;\">Discount Amount</td><td align=\"right\" style=\"color:#0f172a;\">Rs. " + order.getDiscountAmount() + "</td></tr>\n" +
+                            "            <tr><td style=\"color:#64748b;\">Shipping Cost</td><td align=\"right\" style=\"color:#0f172a;\">" + (shippingCost > 0 ? "Rs. " + String.format("%.2f", shippingCost) : "FREE") + "</td></tr>\n" +
+                            "            " + (codCharge > 0 ? "<tr><td style=\"color:#64748b;\">COD Handling Fee</td><td align=\"right\" style=\"color:#0f172a;\">Rs. " + String.format("%.2f", codCharge) + "</td></tr>\n" : "") +
+                            "            " + (discountVal > 0 ? "<tr><td style=\"color:#64748b;\">Coupon Discount</td><td align=\"right\" style=\"color:#16a34a;\">- Rs. " + String.format("%.2f", discountVal) + "</td></tr>\n" : "") +
                             "            <tr><td style=\"color:#64748b;font-weight:700;font-size:16px;\">Total Amount Paid</td><td align=\"right\" style=\"color:#ea580c;font-weight:700;font-size:18px;\">Rs. " + order.getTotalAmount() + "</td></tr>\n" +
                             "        </table>\n" +
                             "    </div>\n" +
