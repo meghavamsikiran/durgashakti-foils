@@ -6,11 +6,6 @@ import com.durgashakti.common.service.GeminiFailoverService;
 import com.durgashakti.order.repository.ChatMessageRepository;
 import com.durgashakti.order.repository.OrderServiceRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.SystemPromptTemplate;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +25,19 @@ public class AiChatController {
   private final GeminiFailoverService failoverService;
   private final ChatMessageRepository chatMessageRepository;
   private final OrderServiceRepository orderRepository;
+
+  private static final String SYSTEM_PROMPT = """
+      You are the official AI Assistant for DurgaShakti Foils.
+      Our brand specializes in premium food-grade aluminium foils:
+      - Standard Foil (11 microns): Perfect for wrapping sandwiches, rotis, and general food storage.
+      - Heavy Duty Foil (18 microns): Best for commercial kitchens, grilling, and roasting.
+      Be helpful, professional, and cross-promote appropriate product lengths (6m, 9m, 24m, 72m) based on customer requirements.
+      
+      CRITICAL RULE FOR ORDER TRACKING:
+      If the user asks about order status, tracking, or details of a specific order number (e.g. OD-YYYYMMDD-XXXXX), you must extract the order number and reply EXACTLY in this format:
+      [LOOKUP_ORDER: <order-number>]
+      Do not write any introductory or trailing text. Just return the bracketed lookup command.
+      """;
 
   public AiChatController(
       GeminiFailoverService failoverService, 
@@ -52,10 +60,10 @@ public class AiChatController {
               chatLogs = chatMessageRepository.findByUserIdOrderByCreatedAtAsc(userId);
               if (chatLogs.isEmpty() && sessionId != null && !sessionId.isBlank()) {
                   chatLogs = chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
-                  for (ChatMessage log : chatLogs) {
-                      if (log.getUserId() == null) {
-                          log.setUserId(userId);
-                          chatMessageRepository.save(log);
+                  for (ChatMessage chatLog : chatLogs) {
+                      if (chatLog.getUserId() == null) {
+                          chatLog.setUserId(userId);
+                          chatMessageRepository.save(chatLog);
                       }
                   }
               }
@@ -66,9 +74,9 @@ public class AiChatController {
           chatLogs = chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
       }
 
-      List<Map<String, String>> response = chatLogs.stream().map(log -> Map.of(
-          "sender", log.getSender(),
-          "text", log.getText()
+      List<Map<String, String>> response = chatLogs.stream().map(chatLog -> Map.of(
+          "sender", chatLog.getSender(),
+          "text", chatLog.getText()
       )).collect(Collectors.toList());
 
       return ResponseEntity.ok(response);
@@ -99,27 +107,8 @@ public class AiChatController {
     String aiResponse;
 
     try {
-      String systemText = """
-          You are the official AI Assistant for DurgaShakti Foils.
-          Our brand specializes in premium food-grade aluminium foils:
-          - Standard Foil (11 microns): Perfect for wrapping sandwiches, rotis, and general food storage.
-          - Heavy Duty Foil (18 microns): Best for commercial kitchens, grilling, and roasting.
-          Be helpful, professional, and cross-promote appropriate product lengths (6m, 9m, 24m, 72m) based on customer requirements.
-          
-          CRITICAL RULE FOR ORDER TRACKING:
-          If the user asks about order status, tracking, or details of a specific order number (e.g. OD-YYYYMMDD-XXXXX), you must extract the order number and reply EXACTLY in this format:
-          [LOOKUP_ORDER: <order-number>]
-          Do not write any introductory or trailing text. Just return the bracketed lookup command.
-          """;
-
-      SystemPromptTemplate systemPromptTemplate = new SystemPromptTemplate(systemText);
-      Message systemMessage = systemPromptTemplate.createMessage();
-      UserMessage userMessage = new UserMessage(userMessageStr);
-
-      OpenAiChatOptions chatOptions = OpenAiChatOptions.builder().build();
-      Prompt prompt = new Prompt(List.of(systemMessage, userMessage), chatOptions);
-      
-      aiResponse = failoverService.callWithFailover(prompt).getResult().getOutput().getContent();
+      // Call Gemini directly via native REST API
+      aiResponse = failoverService.chat(SYSTEM_PROMPT, userMessageStr);
 
       // Check if the AI requested an order lookup
       if (aiResponse != null && aiResponse.contains("[LOOKUP_ORDER:")) {
@@ -138,24 +127,23 @@ public class AiChatController {
                   }
               }
 
-              String liveInfoPrompt;
+              String orderContext;
               if (order != null) {
-                  liveInfoPrompt = String.format(
-                      "System: The order status is %s, payment status is %s, tracking number is %s, and it contains these items: %s. " +
+                  orderContext = String.format(
+                      "The user asked: %s\nSystem context: The order status is %s, payment status is %s, tracking number is %s, and it contains these items: %s. " +
                       "Please present this information nicely and professionally to the user.",
+                      userMessageStr,
                       order.getOrderStatus(),
                       order.getPaymentStatus(),
                       order.getTrackingNumber() != null ? order.getTrackingNumber() : "Not Shipped Yet",
                       order.getItems()
                   );
               } else {
-                  liveInfoPrompt = "System: Order " + orderNum + " was not found in the database. Please inform the user politely.";
+                  orderContext = "The user asked: " + userMessageStr + "\nSystem context: Order " + orderNum + " was not found in the database. Please inform the user politely.";
               }
 
-              UserMessage systemFeedbackMessage = new UserMessage(liveInfoPrompt);
-              Prompt finalPrompt = new Prompt(List.of(systemMessage, userMessage, systemFeedbackMessage), chatOptions);
               try {
-                  aiResponse = failoverService.callWithFailover(finalPrompt).getResult().getOutput().getContent();
+                  aiResponse = failoverService.chat(SYSTEM_PROMPT, orderContext);
               } catch (Exception orderLookupEx) {
                   log.warn("Gemini API failed during order lookup follow-up: {}", orderLookupEx.getMessage());
                   // Use the raw order data as fallback instead of crashing
