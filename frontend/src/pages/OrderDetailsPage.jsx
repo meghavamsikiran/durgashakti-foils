@@ -1717,13 +1717,35 @@ const OrderDetailsPage = () => {
                             {item.refund_calculations.refund_id && (
                               <p className="flex items-center gap-1.5">
                                 Refund Request ID: <span className="font-mono text-slate-800 dark:text-slate-200">{item.refund_calculations.refund_id}</span>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(item.refund_calculations.refund_id);
+                                    toast.success('Refund Request ID copied!');
+                                  }}
+                                  className="p-0.5 text-slate-450 dark:text-slate-500 hover:text-slate-650 transition-colors inline-flex items-center"
+                                  title="Copy Refund Request ID"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
                               </p>
                             )}
-                            <p className="flex items-center gap-1.5">
+                            <p className="flex items-center gap-1.5 flex-wrap">
                               Bank Reference (RRN/ARN):{' '}
                               <span className="font-mono text-slate-800 dark:text-slate-200">
                                 {item.refund_calculations.rrn || 'Awaiting Bank Processing (5-7 business days)'}
                               </span>
+                              {item.refund_calculations.rrn && (
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(item.refund_calculations.rrn);
+                                    toast.success('Reference number copied!');
+                                  }}
+                                  className="p-0.5 text-slate-450 dark:text-slate-500 hover:text-slate-650 transition-colors inline-flex items-center"
+                                  title="Copy Reference Number"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                              )}
                             </p>
                           </div>
                         )}

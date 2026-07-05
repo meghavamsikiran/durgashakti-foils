@@ -1194,34 +1194,38 @@ public class OrderServiceImpl implements OrderService {
         
         for (Map<String, Object> item : items) {
             String returnStatus = (String) item.get("return_status");
-            if ("REFUND_PENDING".equals(returnStatus)) {
-                Map<String, Object> calc = (Map<String, Object>) item.get("refund_calculations");
+            Map<String, Object> calc = (Map<String, Object>) item.get("refund_calculations");
+            boolean missingRrn = (calc != null && calc.get("refund_id") != null && calc.get("rrn") == null);
+            if ("REFUND_PENDING".equals(returnStatus) || ("REFUND_COMPLETED".equals(returnStatus) && missingRrn)) {
                 if (calc != null && calc.get("refund_id") != null) {
                     String refundId = String.valueOf(calc.get("refund_id"));
                     try {
                         Map<String, Object> rzpRefund = paymentService.fetchRefund(refundId);
                         if (rzpRefund != null) {
                             String rzpStatus = (String) rzpRefund.get("status");
-                            if ("processed".equalsIgnoreCase(rzpStatus)) {
-                                item.put("return_status", "REFUND_COMPLETED");
-                                
-                                String rrn = null;
-                                Object acquirerDataObj = rzpRefund.get("acquirer_data");
-                                if (acquirerDataObj instanceof Map) {
-                                    Map<?, ?> acquirerData = (Map<?, ?>) acquirerDataObj;
-                                    if (acquirerData.get("arn") != null) {
-                                        rrn = String.valueOf(acquirerData.get("arn"));
-                                    } else if (acquirerData.get("rrn") != null) {
-                                        rrn = String.valueOf(acquirerData.get("rrn"));
-                                    }
-                                } else if (acquirerDataObj != null) {
-                                    try {
-                                        JSONObject acqJson = new JSONObject(acquirerDataObj.toString());
-                                        if (acqJson.has("arn")) rrn = acqJson.optString("arn");
-                                        else if (acqJson.has("rrn")) rrn = acqJson.optString("rrn");
-                                    } catch (Exception ignored) {}
+                            
+                            String rrn = null;
+                            Object acquirerDataObj = rzpRefund.get("acquirer_data");
+                            if (acquirerDataObj instanceof Map) {
+                                Map<?, ?> acquirerData = (Map<?, ?>) acquirerDataObj;
+                                if (acquirerData.get("arn") != null) {
+                                    rrn = String.valueOf(acquirerData.get("arn"));
+                                } else if (acquirerData.get("rrn") != null) {
+                                    rrn = String.valueOf(acquirerData.get("rrn"));
                                 }
-                                
+                            } else if (acquirerDataObj != null) {
+                                try {
+                                    JSONObject acqJson = new JSONObject(acquirerDataObj.toString());
+                                    if (acqJson.has("arn")) rrn = acqJson.optString("arn");
+                                    else if (acqJson.has("rrn")) rrn = acqJson.optString("rrn");
+                                } catch (Exception ignored) {}
+                            }
+                            
+                            boolean wasPending = "REFUND_PENDING".equals(returnStatus);
+                            boolean isProcessed = "processed".equalsIgnoreCase(rzpStatus);
+                            
+                            if (wasPending && isProcessed) {
+                                item.put("return_status", "REFUND_COMPLETED");
                                 if (rrn != null) {
                                     calc.put("rrn", rrn);
                                 }
@@ -1245,6 +1249,10 @@ public class OrderServiceImpl implements OrderService {
                                     refundAmt = Double.parseDouble(String.valueOf(calc.get("refundable_amount")));
                                 }
                                 triggerRefundCompletedEmail(order, refundAmt, rrn);
+                            } else if ("REFUND_COMPLETED".equals(returnStatus) && rrn != null) {
+                                calc.put("rrn", rrn);
+                                item.put("refund_calculations", calc);
+                                updated = true;
                             }
                         }
                     } catch (Exception e) {
