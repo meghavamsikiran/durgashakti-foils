@@ -22,6 +22,7 @@ const AdminDashboard = () => {
   });
   const [error, setError] = useState('');
   const [activePreset, setActivePreset] = useState('All Time');
+  const [currentFilter, setCurrentFilter] = useState(null);
 
   const load = useCallback(async (timeframe = 'All Time', rangeParams = {}) => {
     const cached = adminService.getCached('/admin/analytics/summary', { timeframe, ...rangeParams });
@@ -105,24 +106,28 @@ const AdminDashboard = () => {
         
         {/* TIME RANGE FILTER */}
         <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
-          <DateFilterPopover onChange={(val) => {
-            if (!val || !val.label) {
-              setActivePreset('All Time');
-              load('All Time');
-              return;
-            }
-            const map = {
-              today: 'Today',
-              last7: 'Last 7 Days',
-              thisWeek: 'Last 7 Days',
-              thisMonth: 'This Month',
-              thisYear: 'Fiscal Year',
-              custom: 'Last 7 Days'
-            };
-            const tf = map[val.label] || 'Last 7 Days';
-            setActivePreset(tf);
-            load(tf, { start_date: val.start_date, end_date: val.end_date });
-          }} />
+          <DateFilterPopover 
+            initial={currentFilter}
+            onChange={(val) => {
+              setCurrentFilter(val);
+              if (!val || !val.label) {
+                setActivePreset('All Time');
+                load('All Time');
+                return;
+              }
+              const map = {
+                today: 'Today',
+                last7: 'Last 7 Days',
+                thisWeek: 'Last 7 Days',
+                thisMonth: 'This Month',
+                thisYear: 'Fiscal Year',
+                custom: 'Date Range'
+              };
+              const tf = map[val.label] || 'Last 7 Days';
+              setActivePreset(tf);
+              load(tf, { start_date: val.start_date, end_date: val.end_date });
+            }} 
+          />
         </div>
       </div>
 

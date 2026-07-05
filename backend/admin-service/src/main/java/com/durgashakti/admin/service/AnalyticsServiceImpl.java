@@ -29,7 +29,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     private static final List<String> REVENUE_ORDER_STATUSES = List.of(
             "processing", "placed", "confirmed", "packaging", "shipped", "in_transit",
-            "out_for_delivery", "delivered", "return_requested", "return_rejected"
+            "out_for_delivery", "delivered", "return_requested", "return_rejected", "return_expired"
     );
 
     private static final List<String> REVENUE_PAYMENT_STATUSES = List.of(
@@ -153,14 +153,14 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             }
 
             // Delivery time calculation
-            if ("delivered".equals(oStatus) && o.getShippedAt() != null && o.getDeliveredAt() != null) {
+            if (("delivered".equals(oStatus) || "return_expired".equals(oStatus)) && o.getShippedAt() != null && o.getDeliveredAt() != null) {
                 double hours = ChronoUnit.MINUTES.between(o.getShippedAt(), o.getDeliveredAt()) / 60.0;
                 totalDeliveryDurationHours += hours;
                 deliveryDurationCount++;
             }
 
             // Order Status Aggregates
-            if ("delivered".equals(oStatus)) {
+            if ("delivered".equals(oStatus) || "return_expired".equals(oStatus)) {
                 totalDelivered++;
                 rangeDelivered++;
                 if (o.getDeliveredAt() != null) {
@@ -170,7 +170,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 } else if (o.getCreatedAt().isAfter(todayStart)) {
                     todayDelivered++;
                 }
-            } else if (List.of("placed", "confirmed", "processing", "packaging").contains(oStatus)) {
+            } else if (List.of("placed", "confirmed", "processing", "packaging", "pending_payment").contains(oStatus)) {
                 rangePending++;
                 if (o.getCreatedAt().isAfter(todayStart)) {
                     todayPending++;
