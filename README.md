@@ -1,208 +1,173 @@
-# DurgaShaktifoils E-Commerce Website
+# DurgaShakti Foils E-Commerce Platform
 
-Premium aluminum foil e-commerce platform built with React, FastAPI, and MongoDB.
-
-![Website Preview](https://via.placeholder.com/800x400/006FEE/FFFFFF?text=DurgaShakti+Foils)
-
-## 🌟 Features
-
-### Customer Features
-- 🛍️ **Product Catalog** - Browse 6 premium aluminum foil products with filtering
-- 🔐 **User Authentication** - Secure registration and login
-- 🛒 **Shopping Cart** - Add, update, remove items with real-time total
-- 💳 **Multiple Payment Options** - Razorpay, Stripe, PayPal, Cash on Delivery
-- 📦 **Order Tracking** - View order history and status
-- 📱 **Responsive Design** - Works on desktop, tablet, and mobile
-
-### Admin Features (Backend Ready)
-- ➕ Create/Update/Delete Products
-- 📊 View All Orders
-- ✅ Update Order Status
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 16+ and Yarn
-- Python 3.11+
-- MongoDB running on localhost:27017
-
-### Development Setup
-
-1. **Clone and Setup**
-```bash
-git clone <your-repo>
-cd app
-```
-
-2. **Backend Setup**
-```bash
-cd backend
-pip install -r requirements.txt
-python server.py
-# Backend runs on http://localhost:8001
-```
-
-3. **Frontend Setup**
-```bash
-cd frontend
-yarn install
-yarn start
-# Frontend runs on http://localhost:3000
-```
-
-4. **Access the Application**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8001/api
-- Products auto-seed on first load
-
-## 📁 Project Structure
-
-```
-app/
-├── backend/
-│   ├── server.py           # FastAPI application
-│   ├── requirements.txt    # Python dependencies
-│   └── .env               # Backend config
-├── frontend/
-│   ├── src/
-│   │   ├── pages/         # React pages
-│   │   ├── components/    # Reusable components
-│   │   ├── contexts/      # Auth & Cart contexts
-│   │   └── utils/         # API helpers
-│   ├── public/            # Static assets
-│   └── package.json       # Node dependencies
-├── deployment-config/     # Server configurations
-├── DEPLOYMENT_QUICK_START.md
-├── deployment-guide.md
-└── VSCode_Extensions_Guide.md
-```
-
-## 🎨 Tech Stack
-
-### Frontend
-- **React 19** - UI library
-- **React Router** - Navigation
-- **Tailwind CSS** - Styling
-- **Framer Motion** - Animations
-- **Axios** - HTTP client
-- **Sonner** - Toast notifications
-- **Shadcn/UI** - Component library
-
-### Backend
-- **FastAPI** - Python web framework
-- **Motor** - Async MongoDB driver
-- **PyJWT** - Authentication
-- **Bcrypt** - Password hashing
-- **Stripe/Razorpay/PayPal** - Payment gateways
-
-### Database
-- **MongoDB** - NoSQL database
-
-## 🔑 Environment Variables
-
-### Backend (.env)
-```bash
-MONGO_URL=mongodb://localhost:27017
-DB_NAME=durgashaktifoils_db
-JWT_SECRET=your-secret-key
-FRONTEND_URL=http://localhost:3000
-
-# Payment Gateway Keys
-STRIPE_SECRET_KEY=sk_test_...
-RAZORPAY_KEY_ID=rzp_test_...
-PAYPAL_CLIENT_ID=...
-
-# Email delivery (production hosts block SMTP ports; use one HTTPS provider)
-EMAIL_PROVIDER=resend # resend, brevo, or sendgrid
-EMAIL_FROM=notifications@yourdomain.com
-EMAIL_FROM_NAME="Durga Shakti Foils"
-RESEND_API_KEY=re_...
-# or BREVO_API_KEY=...
-# or SENDGRID_API_KEY=...
-```
-
-### Frontend (.env)
-```bash
-REACT_APP_BACKEND_URL=http://localhost:8001
-```
-
-## 🚀 Production Deployment
-
-### Why Directory Listing Happens
-You're serving the **source code** instead of the **compiled build**. Always serve the `build` folder!
-
-### Quick Fix (3 Steps)
-
-1. **Build the React App:**
-```bash
-cd /app/frontend
-yarn build
-```
-
-2. **Point Server to Build Folder:**
-```bash
-# Apache DocumentRoot or Nginx root should point to:
-/app/frontend/build  ✅
-
-# NOT to:
-/app/frontend/src  ❌
-/app/frontend  ❌
-```
-
-3. **Configure SPA Routing:**
-```bash
-# For Apache: Copy .htaccess
-cp /app/frontend/public/.htaccess /app/frontend/build/
-
-# For Nginx: Use try_files directive
-location / {
-    try_files $uri $uri/ /index.html;
-}
-```
-
-### Detailed Guides
-- 📘 [Quick Deployment Guide](DEPLOYMENT_QUICK_START.md) - **READ THIS FIRST**
-- 📗 [Full Deployment Guide](deployment-guide.md)
-- 💻 [VS Code Setup](VSCode_Extensions_Guide.md)
-
-## 🧪 Testing
-
-### Test Backend
-```bash
-curl http://localhost:8001/api/products
-```
-
-### Test Frontend Build
-```bash
-cd /app/frontend/build
-python3 -m http.server 8080
-# Visit http://localhost:8080
-```
-
-## 📊 Database Schema
-
-- **users** - Customer accounts
-- **products** - Aluminum foil products
-- **carts** - Shopping carts
-- **orders** - Order history
-
-## 🔧 Common Issues
-
-| Issue | Solution |
-|-------|----------|
-| Directory listing | Build app and serve `build` folder |
-| 404 on refresh | Configure SPA routing (.htaccess) |
-| API fails | Check REACT_APP_BACKEND_URL |
-| White screen | Check browser console, rebuild |
-
-See [DEPLOYMENT_QUICK_START.md](DEPLOYMENT_QUICK_START.md) for detailed troubleshooting.
-
-## 📞 Support
-
-- **Company**: DurgaShakti Foils PVT. LTD.
-- **Phone**: +91 83675 42954
-- **Email**: DurgaShaktifoils@gmail.com
+Premium e-commerce web application for DurgaShakti Foils PVT. LTD., engineered with a modern architecture featuring a React SPA frontend and a robust Java Spring Boot microservice-based backend monolith runner.
 
 ---
 
-**Made with ❤️ for DurgaShakti Foils**
+## 🏗️ System Architecture
+
+The application is split into two primary components:
+1. **Frontend SPA:** Responsive, interactive user interface built with React 19, Tailwind CSS, Craco, and Recharts for live dashboards.
+2. **Backend Services:** Java 17 / Spring Boot microservices architecture featuring:
+   * `auth-service` (Authentication & Security)
+   * `catalog-service` (Product & Categories catalog)
+   * `order-service` (Order & Payments processing)
+   * `admin-service` (Analytics engines & GSTR reports)
+   * `monolith-service` (Unified runner that aggregates all microservices for simplified local deployment)
+
+---
+
+## 🚀 Local Quick Start Setup
+
+Follow these steps to configure, build, and run the development environment on your local system.
+
+### Prerequisites
+
+Ensure you have the following software installed:
+* **Java Development Kit (JDK):** Version 17 or 21 ([Adoptium Eclipse Temurin](https://adoptium.net/))
+* **Build Tool:** Apache Maven 3.8+ ([Maven Setup Guide](https://maven.apache.org/download.cgi))
+* **Runtime Node Environment:** Node.js 18+ ([Node.js Downloads](https://nodejs.org/)) with `yarn` or `npm`
+* **Database Engine:** PostgreSQL 14+ running locally ([PostgreSQL Downloads](https://www.postgresql.org/download/))
+
+---
+
+### Step 1: Database Setup
+
+1. Open your PostgreSQL console or client (e.g., pgAdmin) and create a database for the application:
+   ```sql
+   CREATE DATABASE durgashaktifoils_db;
+   ```
+2. The application database schema is managed automatically by Hibernate DDL auto-configuration during first boot, so you do not need to manually import any schema tables.
+
+---
+
+### Step 2: Environment Configuration
+
+Create a local environment configuration to override default properties without checking keys into source control.
+
+#### Backend Configuration
+Copy the configuration template or set the following environment variables in your local environment shell:
+
+```bash
+# Database Settings
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=durgashaktifoils_db
+DB_USER=postgres             # Your PostgreSQL username
+DB_PASS=your_db_password     # Your PostgreSQL password
+DB_SSL_MODE=disable
+
+# Authentication Secrets
+JWT_SECRET=your_jwt_secret_key_make_it_long_and_secure
+
+# Razorpay Payment Gateway Integration
+# Obtain test credentials at: https://dashboard.razorpay.com/
+RAZORPAY_KEY_ID=rzp_test_yourKeyId
+RAZORPAY_KEY_SECRET=yourKeySecret
+RAZORPAY_WEBHOOK_SECRET=yourWebhookSecret
+
+# Mail / SMTP Server Configuration
+# Provide your standard SMTP server info (e.g., Gmail, SendGrid, etc.)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
+```
+
+#### Frontend Configuration
+Create a `.env` file under the `/frontend` directory containing:
+
+```env
+REACT_APP_BACKEND_URL=http://localhost:8080
+```
+
+---
+
+### Step 3: Run the Backend Services
+
+1. Navigate to the backend root directory:
+   ```bash
+   cd backend
+   ```
+2. Compile and package the Java services:
+   ```bash
+   mvn clean package
+   ```
+3. Boot up the unified microservice monolith runner:
+   ```bash
+   mvn spring-boot:run -pl monolith-service
+   ```
+   * *Note: The backend application runs and listens on port `8080`.*
+
+---
+
+### Step 4: Run the Frontend Application
+
+1. Navigate to the frontend directory:
+   ```bash
+   cd ../frontend
+   ```
+2. Install Node dependencies:
+   ```bash
+   yarn install
+   # or: npm install
+   ```
+3. Launch the local React development server:
+   ```bash
+   yarn start
+   # or: npm start
+   ```
+   * *Note: The web app opens automatically at `http://localhost:3000`.*
+
+---
+
+## 📁 Project Directory Structure
+
+```
+durgashakti-foils/
+├── backend/
+│   ├── admin-service/         # Admin dashboards & analytics aggregates
+│   ├── auth-service/          # Authentication & access management
+│   ├── catalog-service/       # Products & inventory management
+│   ├── order-service/         # Order, return window checks, payment services
+│   ├── shared-core/           # Common entities, DTOs, security filters
+│   ├── monolith-service/      # Aggregated monolith local development runner
+│   └── pom.xml                # Parent Maven project dependencies configuration
+├── frontend/
+│   ├── src/
+│   │   ├── admin/             # Admin portal components & pages
+│   │   ├── pages/             # Customer-facing shopping interface pages
+│   │   ├── components/        # Shared UI components (spinners, popovers)
+│   │   └── services/          # API services
+│   └── package.json           # Frontend dependency declarations
+```
+
+---
+
+## 🎨 Technology Integrations
+
+| Layer | Technology | Documentation Link |
+|-------|------------|--------------------|
+| **Backend Framework** | Spring Boot 3.3.5 | [Spring Boot Docs](https://spring.io/projects/spring-boot) |
+| **Database ORM** | Spring Data JPA / Hibernate | [Spring Data Docs](https://spring.io/projects/spring-data-jpa) |
+| **Payment Gateway** | Razorpay SDK | [Razorpay Developer Hub](https://razorpay.com/docs/) |
+| **Authentication** | JSON Web Tokens (JJWT) | [JJWT Repository](https://github.com/jwtk/jjwt) |
+| **Web Styling** | Tailwind CSS v3 | [Tailwind Docs](https://tailwindcss.com/docs) |
+| **Chart Engines** | Recharts | [Recharts Library Docs](https://recharts.org/) |
+
+---
+
+## 🔧 Troubleshooting FAQ
+
+#### Q: How are return windows and time zones calculated?
+* **A:** All date, time, and order age calculations are locked globally to the **Asia/Kolkata** (IST) zone offset. Ensure your local system time is accurate to prevent regional validation discrepancies.
+
+#### Q: Why is my dashboard chart showing empty data?
+* **A:** Check your timeframe filter popover. Ensure that you have test orders in your database matching the selected dates, and confirm that their order statuses are valid (e.g. `placed`, `confirmed`, `delivered`, `return_expired`).
+
+#### Q: Where are files and receipts uploaded?
+* **A:** Products and media files are stored locally in the `/backend/uploads` directory during development. Ensure this folder has write permissions.
+
+---
+
+**Made with ❤️ for DurgaShakti Foils PVT. LTD.**
