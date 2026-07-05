@@ -840,8 +840,11 @@ public class OrderServiceImpl implements OrderService {
         // Return window checking (3 days)
         OffsetDateTime deliveredDate = order.getDeliveredAt() != null ? order.getDeliveredAt() : order.getUpdatedAt();
         if (deliveredDate != null) {
-            OffsetDateTime cutoff = deliveredDate.plusDays(3).truncatedTo(ChronoUnit.DAYS);
-            if (OffsetDateTime.now().isAfter(cutoff)) {
+            java.time.ZoneId istZone = java.time.ZoneId.of("Asia/Kolkata");
+            OffsetDateTime nowIst = OffsetDateTime.now(istZone);
+            OffsetDateTime deliveredIst = deliveredDate.atZoneSameInstant(istZone).toOffsetDateTime();
+            OffsetDateTime cutoff = deliveredIst.plusDays(3).truncatedTo(ChronoUnit.DAYS);
+            if (nowIst.isAfter(cutoff)) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Return window has closed.");
             }
         }

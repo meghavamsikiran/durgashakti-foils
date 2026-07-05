@@ -68,7 +68,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 firstOrder.getOrderStatus(), firstOrder.getPaymentStatus(), firstOrder.getTotalAmount());
         }
 
-        OffsetDateTime now = OffsetDateTime.now();
+        java.time.ZoneId istZone = java.time.ZoneId.of("Asia/Kolkata");
+        OffsetDateTime now = OffsetDateTime.now(istZone);
         OffsetDateTime startDate = parseDateTime(startDateStr);
         OffsetDateTime endDate = parseDateTime(endDateStr);
         OffsetDateTime dateFilter = null;
@@ -109,10 +110,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
         // Basic Counts
         long totalOrders = filteredOrders.size();
-        java.time.ZoneId istZone = java.time.ZoneId.of("Asia/Kolkata");
-        java.time.ZonedDateTime nowIst = java.time.ZonedDateTime.now(istZone);
-        java.time.ZonedDateTime todayStartIst = nowIst.truncatedTo(java.time.temporal.ChronoUnit.DAYS);
-        OffsetDateTime todayStart = todayStartIst.toOffsetDateTime();
+        OffsetDateTime todayStart = now.truncatedTo(ChronoUnit.DAYS);
         long ordersToday = filteredOrders.stream()
                 .filter(o -> o.getCreatedAt().isAfter(todayStart))
                 .count();

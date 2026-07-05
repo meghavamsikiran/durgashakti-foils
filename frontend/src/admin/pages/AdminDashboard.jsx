@@ -140,15 +140,15 @@ const AdminDashboard = () => {
             <p className="text-3xl font-black text-slate-950 mt-2">{formatNumber(metrics.orders_today)}</p>
             <div className="mt-2 text-[10px] font-bold text-slate-400">New orders placed today</div>
           </div>
-          <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
+           <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Pending Dispatch</p>
-            <p className="text-3xl font-black text-amber-600 mt-2">{formatNumber(metrics.today_pending)}</p>
-            <div className="mt-2 text-[10px] font-bold text-slate-400">Awaiting dispatch/packaging</div>
+            <p className="text-3xl font-black text-amber-600 mt-2">{formatNumber(metrics.range_pending ?? 0)}</p>
+            <div className="mt-2 text-[10px] font-bold text-slate-400">Total awaiting dispatch/packaging</div>
           </div>
           <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Shipped & Transit</p>
-            <p className="text-3xl font-black text-blue-600 mt-2">{formatNumber(metrics.today_shipped)}</p>
-            <div className="mt-2 text-[10px] font-bold text-slate-400">Out for delivery today</div>
+            <p className="text-3xl font-black text-blue-600 mt-2">{formatNumber(metrics.range_shipped ?? 0)}</p>
+            <div className="mt-2 text-[10px] font-bold text-slate-400">Total shipments in transit</div>
           </div>
           <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300">
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Completed Deliveries</p>
