@@ -84,7 +84,7 @@ public class PaymentTimeoutScheduler {
                     if (pIdObj != null) {
                         UUID productId = UUID.fromString(pIdObj.toString());
                         int qty = ((Number) item.getOrDefault("quantity", 1)).intValue();
-                        productRepository.findById(productId).ifPresent(p -> {
+                        productRepository.findByIdWithLock(productId).ifPresent(p -> {
                             p.setStockQuantity(p.getStockQuantity() + qty);
                             productRepository.save(p);
                             log.info("Restored stock of product {} by quantity {} due to timeout of order {}", productId, qty, order.getOrderNumber());

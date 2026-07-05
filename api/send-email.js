@@ -92,13 +92,27 @@ async function sendViaApiProvider({ to, subject, body, attachments, sender }) {
 }
 
 module.exports = async (req, res) => {
-  // CORS Headers
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+    'https://durgashakti-foils.vercel.app',
+    'https://durgashakti-foils-git-main-meghavamsikirans-projects.vercel.app'
+  ];
+
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', 'https://durgashakti-foils.vercel.app');
+  }
+
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
   );
 
   if (req.method === 'OPTIONS') {
@@ -109,7 +123,11 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Security hardening: reject requests with explicit SMTP credentials to prevent abuse
   const { to, subject, body, smtp_user, smtp_pass, attachments = [] } = req.body;
+  if (smtp_user || smtp_pass) {
+    return res.status(400).json({ error: 'Explicit SMTP credentials in request body are prohibited for security reasons' });
+  }
 
   if (!to || !subject || !body) {
     return res.status(400).json({ error: 'Missing required parameters' });

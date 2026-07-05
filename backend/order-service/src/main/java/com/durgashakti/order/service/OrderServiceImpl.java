@@ -142,7 +142,7 @@ public class OrderServiceImpl implements OrderService {
                         List<Map<String, Object>> applied = (List<Map<String, Object>>) valResult.get("applied_coupons");
                         for (Map<String, Object> cMap : applied) {
                             String codeStr = String.valueOf(cMap.get("code"));
-                            couponRepository.findByCodeIgnoreCase(codeStr).ifPresent(usedCoupons::add);
+                            couponRepository.findByCodeIgnoreCaseWithLock(codeStr).ifPresent(usedCoupons::add);
                         }
                     }
                 }
@@ -325,12 +325,12 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Order verifyPayment(UUID userId, PaymentVerifyRequest req) {
-        Order order = orderRepository.findByRazorpayOrderId(req.getRazorpayOrderId())
+        Order order = orderRepository.findByRazorpayOrderIdWithLock(req.getRazorpayOrderId())
                 .orElse(null);
 
         if (order == null) {
             try {
-                order = orderRepository.findById(UUID.fromString(req.getRazorpayOrderId())).orElse(null);
+                order = orderRepository.findByIdWithLock(UUID.fromString(req.getRazorpayOrderId())).orElse(null);
             } catch (IllegalArgumentException ignored) {}
         }
 
@@ -375,7 +375,7 @@ public class OrderServiceImpl implements OrderService {
             if (pIdObj != null) {
                 UUID productId = UUID.fromString(pIdObj.toString());
                 int qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 1)));
-                productRepository.findById(productId).ifPresent(p -> {
+                productRepository.findByIdWithLock(productId).ifPresent(p -> {
                     p.setStockQuantity(p.getStockQuantity() + qty);
                     productRepository.save(p);
                 });
@@ -424,7 +424,7 @@ public class OrderServiceImpl implements OrderService {
                         String status = entity.optString("status");
                         
                         if (rzpOrderId != null && !rzpOrderId.isEmpty()) {
-                            Order order = orderRepository.findByRazorpayOrderId(rzpOrderId)
+                            Order order = orderRepository.findByRazorpayOrderIdWithLock(rzpOrderId)
                                     .orElse(null);
                             
                             if (order != null) {
@@ -700,7 +700,8 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public Map<String, Object> createRazorpayOrderForExistingOrder(UUID userId, ExistingOrderPaymentRequest req) {
         UUID orderId = UUID.fromString(req.getOrderId());
-        Order order = orderRepository.findByIdAndUserId(orderId, userId)
+        Order order = orderRepository.findByIdWithLock(orderId)
+                .filter(o -> userId.equals(o.getUserId()))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Order not found"));
 
         String payStatus = order.getPaymentStatus() != null ? order.getPaymentStatus().toLowerCase() : "";

@@ -232,7 +232,7 @@ const OrderDetailsPage = () => {
       const totalAmount = Number(payableOrder.total_amount || order.total_amount);
 
       const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_live_SsPZ6WqWCSv7VP',
+        key: process.env.REACT_APP_RAZORPAY_KEY_ID || '',
         amount: Math.round(totalAmount * 100),
         currency: 'INR',
         name: 'DurgaShakti Foils',

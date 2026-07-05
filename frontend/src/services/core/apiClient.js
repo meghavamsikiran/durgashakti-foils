@@ -11,7 +11,7 @@ export const getBackendUrl = () => {
       return 'http://localhost:8080';
     }
   }
-  return 'https://durgashakti-foils-2.onrender.com';
+  return window.location.origin;
 };
 
 const API_URL = `${getBackendUrl()}/api`;

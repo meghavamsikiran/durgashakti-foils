@@ -221,7 +221,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                         try {
                             UUID productId = UUID.fromString(pIdObj.toString());
                             int qty = (int) Double.parseDouble(String.valueOf(item.getOrDefault("quantity", 1)));
-                            productRepository.findById(productId).ifPresent(p -> {
+                            productRepository.findByIdWithLock(productId).ifPresent(p -> {
                                 int currentStock = p.getStockQuantity() != null ? p.getStockQuantity() : 0;
                                 p.setStockQuantity(currentStock + qty);
                                 p.setInStock(true);
@@ -503,7 +503,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         if (restock && returnedQty > 0) {
             try {
                 UUID prodUuid = UUID.fromString(productId);
-                Optional<Product> productOpt = productRepository.findById(prodUuid);
+                Optional<Product> productOpt = productRepository.findByIdWithLock(prodUuid);
                 if (productOpt.isPresent()) {
                     Product product = productOpt.get();
                     int currentStock = product.getStockQuantity() != null ? product.getStockQuantity() : 0;

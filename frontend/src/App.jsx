@@ -170,171 +170,91 @@ function AppRoutes() {
               <ProtectedRoute><ProductReviewPage /></ProtectedRoute>
             } />
 
-            {/* Admin Routes */}
-            <Route
-              path="/admin/*"
-              element={
-                <ProtectedAdminRoute>
-                  <AdminLayout />
-                </ProtectedAdminRoute>
-              }
-            >
-              <Route index element={<AdminDashboard />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="products" element={<ProtectedAdminRoute permission="view_products"><ProductsPage /></ProtectedAdminRoute>} />
-              <Route path="shop" element={<ProtectedAdminRoute permission="view_products"><Shop /></ProtectedAdminRoute>} />
-              <Route path="categories" element={<ProtectedAdminRoute permission="edit_products"><CategoriesPage /></ProtectedAdminRoute>} />
-              <Route path="stock" element={<ProtectedAdminRoute permission="view_inventory"><InventoryPage /></ProtectedAdminRoute>} />
-              <Route path="orders" element={<ProtectedAdminRoute permission="view_orders"><OrdersPage /></ProtectedAdminRoute>} />
-              <Route path="orders/:id" element={<ProtectedAdminRoute permission="view_order_details"><AdminOrderDetailsPage /></ProtectedAdminRoute>} />
-              <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
-              <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
-              <Route path="cases" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
-              <Route path="cases/:caseId" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
-              <Route path="reviews" element={<ProtectedAdminRoute permission="view_reviews"><ReviewsPage /></ProtectedAdminRoute>} />
+            {/* Admin and Super Admin Shared Routes */}
+            {['/admin/*', '/superadmin/*'].map((rootPath) => (
               <Route
-                path="payments"
+                key={rootPath}
+                path={rootPath}
                 element={
-                  <ProtectedAdminRoute permission="view_transactions">
-                    <PaymentsPage />
+                  <ProtectedAdminRoute>
+                    <AdminLayout />
                   </ProtectedAdminRoute>
                 }
-              />
-              <Route path="analytics" element={<ProtectedAdminRoute permission="view_analytics"><AnalyticsPage /></ProtectedAdminRoute>} />
-              <Route path="gstr1" element={<ProtectedAdminRoute permission="view_gst_reports"><GstReportsPage /></ProtectedAdminRoute>} />
-              <Route
-                path="admins"
-                element={
-                  <ProtectedAdminRoute permission="manage_admins">
-                    <AdminUsersPage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route
-                path="audit-logs"
-                element={
-                  <ProtectedAdminRoute permission="view_audit_logs">
-                    <AuditLogsPage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route
-                path="settings"
-                element={
-                  <ProtectedAdminRoute permission="manage_settings">
-                    <SettingsPage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route
-                path="shipping-settings"
-                element={
-                  <ProtectedAdminRoute permission="manage_settings">
-                    <ShippingSettingsPage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route
-                path="coupons"
-                element={
-                  <ProtectedAdminRoute permission="manage_coupons">
-                    <CouponsPage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route
-                path="profile"
-                element={
-                  <ProtectedAdminRoute permission="manage_settings">
-                    <BusinessProfilePage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route path="my-account" element={<AdminProfilePage />} />
-            </Route>
-
-            {/* Super Admin Routes */}
-            <Route
-              path="/superadmin/*"
-              element={
-                <ProtectedAdminRoute>
-                  <AdminLayout />
-                </ProtectedAdminRoute>
-              }
-            >
-              <Route index element={<AdminDashboard />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="products" element={<ProtectedAdminRoute permission="view_products"><ProductsPage /></ProtectedAdminRoute>} />
-              <Route path="shop" element={<ProtectedAdminRoute permission="view_products"><Shop /></ProtectedAdminRoute>} />
-              <Route path="categories" element={<ProtectedAdminRoute permission="edit_products"><CategoriesPage /></ProtectedAdminRoute>} />
-              <Route path="stock" element={<ProtectedAdminRoute permission="view_inventory"><InventoryPage /></ProtectedAdminRoute>} />
-              <Route path="orders" element={<ProtectedAdminRoute permission="view_orders"><OrdersPage /></ProtectedAdminRoute>} />
-              <Route path="orders/:id" element={<ProtectedAdminRoute permission="view_order_details"><AdminOrderDetailsPage /></ProtectedAdminRoute>} />
-              <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
-              <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
-              <Route path="cases" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
-              <Route path="cases/:caseId" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
-              <Route path="reviews" element={<ProtectedAdminRoute permission="view_reviews"><ReviewsPage /></ProtectedAdminRoute>} />
-              <Route
-                path="payments"
-                element={
-                  <ProtectedAdminRoute permission="view_transactions">
-                    <PaymentsPage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route path="analytics" element={<ProtectedAdminRoute permission="view_analytics"><AnalyticsPage /></ProtectedAdminRoute>} />
-              <Route path="gstr1" element={<ProtectedAdminRoute permission="view_gst_reports"><GstReportsPage /></ProtectedAdminRoute>} />
-              <Route
-                path="admins"
-                element={
-                  <ProtectedAdminRoute permission="manage_admins">
-                    <AdminUsersPage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route
-                path="audit-logs"
-                element={
-                  <ProtectedAdminRoute permission="view_audit_logs">
-                    <AuditLogsPage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route
-                path="settings"
-                element={
-                  <ProtectedAdminRoute permission="manage_settings">
-                    <SettingsPage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route
-                path="shipping-settings"
-                element={
-                  <ProtectedAdminRoute permission="manage_settings">
-                    <ShippingSettingsPage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route
-                path="coupons"
-                element={
-                  <ProtectedAdminRoute permission="manage_coupons">
-                    <CouponsPage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route
-                path="profile"
-                element={
-                  <ProtectedAdminRoute permission="manage_settings">
-                    <BusinessProfilePage />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route path="my-account" element={<AdminProfilePage />} />
-            </Route>
+              >
+                <Route index element={<AdminDashboard />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="products" element={<ProtectedAdminRoute permission="view_products"><ProductsPage /></ProtectedAdminRoute>} />
+                <Route path="shop" element={<ProtectedAdminRoute permission="view_products"><Shop /></ProtectedAdminRoute>} />
+                <Route path="categories" element={<ProtectedAdminRoute permission="edit_products"><CategoriesPage /></ProtectedAdminRoute>} />
+                <Route path="stock" element={<ProtectedAdminRoute permission="view_inventory"><InventoryPage /></ProtectedAdminRoute>} />
+                <Route path="orders" element={<ProtectedAdminRoute permission="view_orders"><OrdersPage /></ProtectedAdminRoute>} />
+                <Route path="orders/:id" element={<ProtectedAdminRoute permission="view_order_details"><AdminOrderDetailsPage /></ProtectedAdminRoute>} />
+                <Route path="customers" element={<ProtectedAdminRoute permission="view_customers"><CustomersPage /></ProtectedAdminRoute>} />
+                <Route path="customers/:id" element={<ProtectedAdminRoute permission="view_customers"><CustomerDetailPage /></ProtectedAdminRoute>} />
+                <Route path="cases" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
+                <Route path="cases/:caseId" element={<ProtectedAdminRoute permission="view_inquiries"><InquiriesPage /></ProtectedAdminRoute>} />
+                <Route path="reviews" element={<ProtectedAdminRoute permission="view_reviews"><ReviewsPage /></ProtectedAdminRoute>} />
+                <Route
+                  path="payments"
+                  element={
+                    <ProtectedAdminRoute permission="view_transactions">
+                      <PaymentsPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route path="analytics" element={<ProtectedAdminRoute permission="view_analytics"><AnalyticsPage /></ProtectedAdminRoute>} />
+                <Route path="gstr1" element={<ProtectedAdminRoute permission="view_gst_reports"><GstReportsPage /></ProtectedAdminRoute>} />
+                <Route
+                  path="admins"
+                  element={
+                    <ProtectedAdminRoute permission="manage_admins">
+                      <AdminUsersPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route
+                  path="audit-logs"
+                  element={
+                    <ProtectedAdminRoute permission="view_audit_logs">
+                      <AuditLogsPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route
+                  path="settings"
+                  element={
+                    <ProtectedAdminRoute permission="manage_settings">
+                      <SettingsPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route
+                  path="shipping-settings"
+                  element={
+                    <ProtectedAdminRoute permission="manage_settings">
+                      <ShippingSettingsPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route
+                  path="coupons"
+                  element={
+                    <ProtectedAdminRoute permission="manage_coupons">
+                      <CouponsPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route
+                  path="profile"
+                  element={
+                    <ProtectedAdminRoute permission="manage_settings">
+                      <BusinessProfilePage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route path="my-account" element={<AdminProfilePage />} />
+              </Route>
+            ))}
 
             {/* Catch-all */}
             <Route path="*" element={<Navigate to="/" replace />} />

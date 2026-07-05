@@ -536,7 +536,7 @@ export const useCheckout = () => {
         document.body.classList.add('razorpay-premium-launching');
 
         const options = {
-          key: publicSettings?.payment_settings?.razorpay_key_id || process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_live_SsPZ6WqWCSv7VP',
+          key: publicSettings?.payment_settings?.razorpay_key_id || process.env.REACT_APP_RAZORPAY_KEY_ID || '',
           amount: Math.round(totalAmount * 100),
           currency: "INR",
           name: "DurgaShakti Foils",
