@@ -79,12 +79,24 @@ public class OrderServiceImpl implements OrderService {
     @PostConstruct
     public void migrateOrderPrefixes() {
         try {
+            log.info("Checking and creating 'chat_messages' table if not exists...");
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS chat_messages (" +
+                    "id UUID PRIMARY KEY, " +
+                    "user_id UUID, " +
+                    "session_id VARCHAR(255) NOT NULL, " +
+                    "sender VARCHAR(255) NOT NULL, " +
+                    "text TEXT NOT NULL, " +
+                    "created_at TIMESTAMP WITH TIME ZONE NOT NULL)");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id)");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id)");
+            log.info("'chat_messages' table is ready.");
+
             log.info("Running database migration to replace 'DSF-' and 'DS-' prefixes with 'OD-' in order numbers...");
             int dsfRows = jdbcTemplate.update("UPDATE orders SET order_number = REPLACE(order_number, 'DSF-', 'OD-') WHERE order_number LIKE 'DSF-%'");
             int dsRows = jdbcTemplate.update("UPDATE orders SET order_number = REPLACE(order_number, 'DS-', 'OD-') WHERE order_number LIKE 'DS-%'");
             log.info("Successfully updated {} order records ({} DSF-, {} DS-) to 'OD-' prefix.", (dsfRows + dsRows), dsfRows, dsRows);
         } catch (Exception e) {
-            log.error("Failed to run order number prefix migration: {}", e.getMessage());
+            log.error("Failed to run startup database migration or table creation: {}", e.getMessage());
         }
     }
 
