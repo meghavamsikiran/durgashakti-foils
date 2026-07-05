@@ -26,21 +26,14 @@ public class GeminiFailoverService {
             log.info("Executing chat query on primary Gemini Flash model...");
             return primaryModel.call(prompt);
         } catch (Exception e) {
-            if (isQuotaOrRateLimitExhausted(e)) {
-                log.warn("Gemini Flash quota/token limit exhausted! Initiating failover fallback...", e);
-                try {
-                    return fallbackModel.call(prompt);
-                } catch (Exception fallbackEx) {
-                    log.error("Fatal: Both primary and fallback Gemini APIs failed!", fallbackEx);
-                    throw fallbackEx;
-                }
+            log.warn("Primary Gemini Flash model failed (Error: {}). Initiating fallback to Gemini API model...", e.getMessage());
+            try {
+                return fallbackModel.call(prompt);
+            } catch (Exception fallbackEx) {
+                log.error("Fatal: Both primary and fallback Gemini APIs failed! Primary error: {}, Fallback error: {}", 
+                    e.getMessage(), fallbackEx.getMessage(), fallbackEx);
+                throw fallbackEx;
             }
-            throw e; // Pass other errors up the stack
         }
-    }
-
-    private boolean isQuotaOrRateLimitExhausted(Throwable t) {
-        String msg = t.getMessage() != null ? t.getMessage().toLowerCase() : "";
-        return msg.contains("429") || msg.contains("quota") || msg.contains("limit") || msg.contains("exhausted");
     }
 }
