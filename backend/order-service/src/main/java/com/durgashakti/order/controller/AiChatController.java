@@ -159,7 +159,7 @@ public class AiChatController {
       }
     } catch (Exception e) {
         log.error("AI Chat service failed. Error: {}", e.getMessage(), e);
-        aiResponse = "I'm sorry, our AI service is temporarily unavailable. Please try again shortly or contact our support team for immediate help.";
+        aiResponse = "[DEBUG] AI service error: " + e.getMessage();
     }
 
     // Save Bot message to history
