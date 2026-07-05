@@ -2448,26 +2448,26 @@ html.light-theme body,
 }
 
 /* Light Mode Color Mappings (Applies globally to customer/public pages and admin portal, excluding force-dark elements like aside) */
-.light-theme .bg-\[\#0a0f0d\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .bg-\[\#030504\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .bg-\[\#0C1310\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .bg-\[\#090d0b\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .bg-\[\#0d1511\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .bg-\[\#121b17\]:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .bg-slate-900:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .bg-slate-950:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .bg-black:not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *) {
+.light-theme .bg-\[\#0a0f0d\]:not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-\[\#030504\]:not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-\[\#0C1310\]:not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-\[\#090d0b\]:not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-\[\#0d1511\]:not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-\[\#121b17\]:not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-slate-900:not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-slate-950:not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
+.light-theme .bg-black:not(.hero-section-dark):not(.hero-section-dark *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *) {
   background-color: #f7faf8 !important;
 }
 
 /* In light theme, if we have white/light text inside a dark container that we converted to light, it should be dark */
-.light-theme .text-white:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .text-slate-100:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .text-slate-200:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .text-slate-300:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .text-slate-350:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .text-gray-100:not(button):not(button *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *),
-.light-theme .text-zinc-100:not(button):not(button *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *) {
+.light-theme .text-white:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
+.light-theme .text-slate-100:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
+.light-theme .text-slate-200:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
+.light-theme .text-slate-300:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
+.light-theme .text-slate-350:not(button):not(button *):not(a.btn *):not(.bg-primary *):not(.bg-emerald-600 *):not(.bg-green-600 *):not(.bg-orange-600 *):not(.bg-red-600 *):not(.bg-blue-600 *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
+.light-theme .text-gray-100:not(button):not(button *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *),
+.light-theme .text-zinc-100:not(button):not(button *):not(aside):not(aside *):not([data-force-dark]):not([data-force-dark] *):not(.hero-section-dark):not(.hero-section-dark *) {
   color: #181c1b !important;
 }
 
