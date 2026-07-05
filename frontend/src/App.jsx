@@ -118,27 +118,7 @@ function AppRoutes() {
         <RouteTransitionLoader />
         {!isAdminPath && <Navbar />}
         {!isAdminPath && <PopupBanner />}
-        {!isAdminPath && (
-          <button
-            onClick={() => {
-              const next = themeMode === 'dark' ? 'light' : 'dark';
-              localStorage.setItem('themeMode', next);
-              window.dispatchEvent(new CustomEvent('theme-toggle', { detail: next }));
-            }}
-            className={`fixed bottom-20 right-6 md:bottom-6 md:right-6 z-[9999] p-3 rounded-full backdrop-blur-md border transition-all duration-300 ease-out hover:-translate-y-0.5 active:scale-95 ${
-              themeMode === 'dark'
-                ? 'bg-[#19231F]/80 border-white/10 text-[#25D958] hover:border-[#25D958]/40 shadow-emerald-glow'
-                : 'bg-white/80 border-[#ebefed] text-slate-800 hover:border-slate-300 shadow-premium-shadow'
-            }`}
-            aria-label="Toggle Theme"
-          >
-            {themeMode === 'dark' ? (
-              <Sun className="w-6 h-6 animate-[spin_20s_linear_infinite]" />
-            ) : (
-              <Moon className="w-6 h-6" />
-            )}
-          </button>
-        )}
+
         <Suspense fallback={<SuspenseTrigger />}>
           <Routes>
             {/* Public Routes */}

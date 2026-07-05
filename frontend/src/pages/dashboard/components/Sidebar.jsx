@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   User, LogOut, Package, CreditCard, Heart, 
-  MapPin, X, LayoutDashboard, MessageSquare
+  MapPin, X, LayoutDashboard, MessageSquare, Sun, Moon
 } from 'lucide-react';
 
 const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSidebarOpen, navigate }) => {
@@ -69,15 +69,40 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
           </p>
         </div>
 
-        {/* User / Sign Out Footer */}
-        <div className={`p-4 pb-10 border-t transition-all ${isDark ? 'border-[#19231F] bg-[#0C1310]' : 'border-[#bbcbb5] bg-[#f7faf8]'}`}>
+        {/* User / Sign Out / Theme Toggle Footer */}
+        <div className={`p-4 pb-10 border-t space-y-1.5 transition-all ${isDark ? 'border-[#19231F] bg-[#0C1310]' : 'border-[#bbcbb5] bg-[#f7faf8]'}`}>
+          <button
+            type="button"
+            onClick={() => {
+              const next = isDark ? 'light' : 'dark';
+              localStorage.setItem('themeMode', next);
+              window.dispatchEvent(new CustomEvent('theme-toggle', { detail: next }));
+            }}
+            className={`flex items-center gap-3.5 w-full px-3.5 py-3 rounded-xl text-sm font-bold transition-all group ${
+              isDark
+                ? 'text-slate-400 hover:text-[#25D958] hover:bg-[#25D958]/5'
+                : 'text-slate-755 hover:text-[#006e1b] hover:bg-[#006e1b]/5'
+            }`}
+          >
+            {isDark ? (
+              <>
+                <Sun className="w-5 h-5 text-slate-500 group-hover:text-[#25D958]" />
+                Light Mode
+              </>
+            ) : (
+              <>
+                <Moon className="w-5 h-5 text-slate-650 group-hover:text-[#006e1b]" />
+                Dark Mode
+              </>
+            )}
+          </button>
           <button 
             type="button" 
             onClick={onLogout} 
             className={`flex items-center gap-3.5 w-full px-3.5 py-3 rounded-xl text-sm font-bold transition-all group ${
               isDark 
                 ? 'text-slate-400 hover:text-rose-450 hover:bg-rose-500/5' 
-                : 'text-slate-700 hover:text-rose-600 hover:bg-rose-50'
+                : 'text-slate-700 hover:text-rose-600 hover:bg-rose-55'
             }`}
           >
             <LogOut className={`w-5 h-5 transition-colors ${isDark ? 'text-slate-500 group-hover:text-rose-450' : 'text-slate-650 group-hover:text-rose-600'}`} />
@@ -137,14 +162,39 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
           </p>
         </div>
 
-        <div className={`p-4 pb-10 border-t ${isDark ? 'border-[#19231F] bg-[#0C1310]' : 'border-[#bbcbb5] bg-[#f7faf8]'}`}>
+        <div className={`p-4 pb-10 border-t space-y-1.5 ${isDark ? 'border-[#19231F] bg-[#0C1310]' : 'border-[#bbcbb5] bg-[#f7faf8]'}`}>
+          <button
+            type="button"
+            onClick={() => {
+              const next = isDark ? 'light' : 'dark';
+              localStorage.setItem('themeMode', next);
+              window.dispatchEvent(new CustomEvent('theme-toggle', { detail: next }));
+            }}
+            className={`flex items-center gap-3.5 w-full px-3.5 py-3 rounded-xl text-sm font-bold transition-all ${
+              isDark
+                ? 'text-slate-400 hover:text-[#25D958] hover:bg-[#25D958]/5'
+                : 'text-slate-755 hover:text-[#006e1b] hover:bg-[#006e1b]/5'
+            }`}
+          >
+            {isDark ? (
+              <>
+                <Sun className="w-5 h-5 text-slate-500" />
+                Light Mode
+              </>
+            ) : (
+              <>
+                <Moon className="w-5 h-5 text-slate-655" />
+                Dark Mode
+              </>
+            )}
+          </button>
           <button 
             type="button" 
             onClick={onLogout} 
             className={`flex items-center gap-3.5 w-full px-3.5 py-3 rounded-xl text-sm font-bold transition-all ${
               isDark 
                 ? 'text-slate-400 hover:text-rose-450 hover:bg-rose-500/5' 
-                : 'text-slate-700 hover:text-rose-600 hover:bg-rose-50'
+                : 'text-slate-700 hover:text-rose-600 hover:bg-rose-55'
             }`}
           >
             <LogOut className={`w-5 h-5 ${isDark ? 'text-slate-500' : 'text-slate-650'}`} />
