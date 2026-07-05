@@ -16,16 +16,24 @@ import java.util.Map;
 /**
  * Calls Google Gemini's native REST API directly (no Spring AI dependency).
  * Uses primary key (GEMINI_FLASH_API_KEY) first, falls back to GEMINI_API_KEY.
+ * Tries multiple model names to avoid per-model quota exhaustion.
  */
 @Slf4j
 @Service
 public class GeminiFailoverService {
 
-    private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+    private static final String GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
             .build();
+
+    // Model fallback chain — try each model in order until one works
+    private static final String[] MODEL_CHAIN = {
+        "gemini-2.0-flash-lite",   // Highest free tier limits (30 RPM)
+        "gemini-2.0-flash",        // Standard free tier (15 RPM)
+        "gemini-1.5-flash",        // Legacy model with separate quota
+    };
 
     private final String primaryApiKey;
     private final String fallbackApiKey;
@@ -33,7 +41,7 @@ public class GeminiFailoverService {
     public GeminiFailoverService() {
         this.primaryApiKey = System.getenv("GEMINI_FLASH_API_KEY");
         this.fallbackApiKey = System.getenv("GEMINI_API_KEY");
-        
+
         if (primaryApiKey == null || primaryApiKey.isBlank()) {
             log.warn("⚠️ GEMINI_FLASH_API_KEY is NOT SET! AI Chat primary model will not work.");
         } else {
@@ -47,41 +55,64 @@ public class GeminiFailoverService {
     }
 
     /**
-     * Sends a chat message to Gemini with failover.
-     * @param systemPrompt the system instruction text
-     * @param userMessage the user's message text
-     * @return Gemini's text response
+     * Sends a chat message to Gemini with multi-model + multi-key failover.
+     * Tries each model in the MODEL_CHAIN with the primary key first,
+     * then repeats with the fallback key if all primary attempts fail.
      */
     public String chat(String systemPrompt, String userMessage) {
-        // Try primary key first
+        String lastError = null;
+
+        // Try primary API key with all models
         if (primaryApiKey != null && !primaryApiKey.isBlank()) {
-            try {
-                log.info("Executing chat query on primary Gemini model (GEMINI_FLASH_API_KEY)...");
-                String result = callGeminiApi(primaryApiKey, systemPrompt, userMessage);
-                log.info("Primary Gemini model responded successfully.");
-                return result;
-            } catch (Exception e) {
-                log.warn("Primary Gemini model failed: {}. Attempting fallback...", e.getMessage());
+            for (String model : MODEL_CHAIN) {
+                try {
+                    log.info("Trying model '{}' with primary API key...", model);
+                    String result = callGeminiApi(primaryApiKey, model, systemPrompt, userMessage);
+                    log.info("✅ Model '{}' responded successfully with primary key.", model);
+                    return result;
+                } catch (Exception e) {
+                    lastError = e.getMessage();
+                    if (isQuotaExhausted(e)) {
+                        log.warn("Model '{}' quota exhausted with primary key. Trying next model...", model);
+                    } else {
+                        log.warn("Model '{}' failed with primary key: {}. Trying next...", model, e.getMessage());
+                    }
+                }
             }
         }
 
-        // Try fallback key
-        if (fallbackApiKey != null && !fallbackApiKey.isBlank()) {
-            try {
-                log.info("Executing chat query on fallback Gemini model (GEMINI_API_KEY)...");
-                String result = callGeminiApi(fallbackApiKey, systemPrompt, userMessage);
-                log.info("Fallback Gemini model responded successfully.");
-                return result;
-            } catch (Exception e) {
-                log.error("FATAL: Both Gemini API keys failed! Fallback error: {}", e.getMessage(), e);
-                throw new RuntimeException("Both Gemini API calls failed: " + e.getMessage(), e);
+        // Try fallback API key with all models
+        if (fallbackApiKey != null && !fallbackApiKey.isBlank() 
+                && !fallbackApiKey.equals(primaryApiKey)) {
+            for (String model : MODEL_CHAIN) {
+                try {
+                    log.info("Trying model '{}' with fallback API key...", model);
+                    String result = callGeminiApi(fallbackApiKey, model, systemPrompt, userMessage);
+                    log.info("✅ Model '{}' responded successfully with fallback key.", model);
+                    return result;
+                } catch (Exception e) {
+                    lastError = e.getMessage();
+                    if (isQuotaExhausted(e)) {
+                        log.warn("Model '{}' quota exhausted with fallback key. Trying next model...", model);
+                    } else {
+                        log.warn("Model '{}' failed with fallback key: {}. Trying next...", model, e.getMessage());
+                    }
+                }
             }
         }
 
-        throw new RuntimeException("No valid Gemini API keys configured. Set GEMINI_FLASH_API_KEY or GEMINI_API_KEY environment variables.");
+        // All attempts failed
+        String errorMsg = "All Gemini API attempts exhausted. Last error: " + lastError;
+        log.error("FATAL: {}", errorMsg);
+        throw new RuntimeException(errorMsg);
     }
 
-    private String callGeminiApi(String apiKey, String systemPrompt, String userMessage) throws Exception {
+    private boolean isQuotaExhausted(Exception e) {
+        String msg = e.getMessage();
+        return msg != null && (msg.contains("429") || msg.contains("RESOURCE_EXHAUSTED") || msg.contains("quota"));
+    }
+
+    private String callGeminiApi(String apiKey, String model, String systemPrompt, String userMessage) throws Exception {
         // Build native Gemini API request body
         Map<String, Object> requestBody = Map.of(
             "contents", List.of(
@@ -97,7 +128,7 @@ public class GeminiFailoverService {
         );
 
         String jsonBody = objectMapper.writeValueAsString(requestBody);
-        String url = GEMINI_API_URL + "?key=" + apiKey;
+        String url = GEMINI_API_BASE + model + ":generateContent?key=" + apiKey;
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -108,9 +139,14 @@ public class GeminiFailoverService {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
+        if (response.statusCode() == 429) {
+            // Quota exhausted — throw specific error so failover can try next model
+            throw new RuntimeException("Gemini API quota exhausted (HTTP 429) for model '" + model + "'");
+        }
+
         if (response.statusCode() != 200) {
-            log.error("Gemini API returned HTTP {}: {}", response.statusCode(), response.body());
-            throw new RuntimeException("Gemini API error (HTTP " + response.statusCode() + "): " + response.body());
+            log.error("Gemini API returned HTTP {} for model '{}': {}", response.statusCode(), model, response.body());
+            throw new RuntimeException("Gemini API error (HTTP " + response.statusCode() + ") for model '" + model + "': " + truncate(response.body(), 200));
         }
 
         // Parse the response
@@ -123,7 +159,12 @@ public class GeminiFailoverService {
             }
         }
 
-        log.warn("Gemini API returned unexpected response structure: {}", response.body());
-        throw new RuntimeException("Unexpected Gemini API response format");
+        log.warn("Gemini API returned unexpected response structure for model '{}': {}", model, truncate(response.body(), 300));
+        throw new RuntimeException("Unexpected Gemini API response format for model '" + model + "'");
+    }
+
+    private String truncate(String text, int maxLen) {
+        if (text == null) return "null";
+        return text.length() <= maxLen ? text : text.substring(0, maxLen) + "...(truncated)";
     }
 }
