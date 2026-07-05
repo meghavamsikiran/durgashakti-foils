@@ -958,12 +958,112 @@ public class OrderServiceImpl implements OrderService {
                 java.util.concurrent.CompletableFuture.runAsync(() -> {
                     try {
                         String subject = "Return Request Received - " + saved.getOrderNumber();
-                        String body = "Dear " + user.getFullName() + ",\n\n" +
-                                "We have received your return request for Order Number: " + saved.getOrderNumber() + ".\n" +
-                                "Reason: " + reason + "\n\n" +
-                                "Our support team is reviewing your request and proof media. We will update you shortly.\n\n" +
-                                "Best regards,\nDurga Shakti Foils Team";
-                        emailClient.sendEmail(user.getEmail(), subject, body);
+                        
+                        StringBuilder itemsHtml = new StringBuilder();
+                        itemsHtml.append("<table width=\"100%\" cellpadding=\"8\" cellspacing=\"0\" style=\"font-size:13px;border-collapse:collapse;border:1px solid #e2e8f0;color:#334155;\">");
+                        itemsHtml.append("<thead style=\"background-color:#f8fafc;\">");
+                        itemsHtml.append("<tr>");
+                        itemsHtml.append("<th align=\"left\" style=\"border-bottom:2px solid #e2e8f0;padding:8px;font-weight:700;\">Item</th>");
+                        itemsHtml.append("<th align=\"center\" style=\"border-bottom:2px solid #e2e8f0;padding:8px;font-weight:700;\">Qty</th>");
+                        itemsHtml.append("<th align=\"right\" style=\"border-bottom:2px solid #e2e8f0;padding:8px;font-weight:700;\">Price</th>");
+                        itemsHtml.append("<th align=\"right\" style=\"border-bottom:2px solid #e2e8f0;padding:8px;font-weight:700;\">Tax (GST 18%)</th>");
+                        itemsHtml.append("<th align=\"right\" style=\"border-bottom:2px solid #e2e8f0;padding:8px;font-weight:700;\">Total</th>");
+                        itemsHtml.append("</tr>");
+                        itemsHtml.append("</thead>");
+                        itemsHtml.append("<tbody>");
+
+                        double totalRefundable = 0.0;
+                        for (Map<String, Object> item : saved.getItems()) {
+                            String rStatus = String.valueOf(item.get("return_status"));
+                            if ("RETURN_REQUESTED".equalsIgnoreCase(rStatus) || "EXCHANGE_REQUESTED".equalsIgnoreCase(rStatus)) {
+                                String name = String.valueOf(item.getOrDefault("product_name", "Product"));
+                                String size = item.get("selectedSize") != null ? " (" + item.get("selectedSize") + ")" : "";
+                                int retQty = ((Number) item.getOrDefault("returned_quantity", 1)).intValue();
+                                double price = ((Number) item.getOrDefault("price", 0.0)).doubleValue();
+                                
+                                double itemTotal = price * retQty;
+                                double itemCgst = Math.round(itemTotal * 0.09 * 100.0) / 100.0;
+                                double itemSgst = Math.round(itemTotal * 0.09 * 100.0) / 100.0;
+                                double itemGst = itemCgst + itemSgst;
+                                double itemTotalWithTax = itemTotal + itemGst;
+                                totalRefundable += itemTotalWithTax;
+                                
+                                String rawImg = String.valueOf(item.get("image_url"));
+                                String imageUrl = "https://durgashakti-foils.vercel.app/logo-durga.png";
+                                if (rawImg != null && !rawImg.trim().isEmpty() && !"null".equalsIgnoreCase(rawImg)) {
+                                    if (rawImg.startsWith("http://") || rawImg.startsWith("https://")) {
+                                        imageUrl = rawImg;
+                                    } else {
+                                        String cleanImg = rawImg.startsWith("/") ? rawImg : "/" + rawImg;
+                                        imageUrl = "https://durgashakti-foils.vercel.app" + cleanImg;
+                                    }
+                                }
+                                
+                                itemsHtml.append("<tr>");
+                                itemsHtml.append("<td style=\"border-bottom:1px solid #e2e8f0;padding:8px;\">");
+                                itemsHtml.append("<table cellpadding=\"0\" cellspacing=\"0\"><tr>");
+                                itemsHtml.append("<td><img src=\"").append(imageUrl).append("\" width=\"36\" height=\"36\" style=\"border-radius:6px;object-fit:cover;margin-right:8px;display:block;\" /></td>");
+                                itemsHtml.append("<td style=\"font-size:13px;color:#0f172a;font-weight:600;\">").append(name).append(size).append("</td>");
+                                itemsHtml.append("</tr></table>");
+                                itemsHtml.append("</td>");
+                                itemsHtml.append("<td align=\"center\" style=\"border-bottom:1px solid #e2e8f0;padding:8px;\">").append(retQty).append("</td>");
+                                itemsHtml.append("<td align=\"right\" style=\"border-bottom:1px solid #e2e8f0;padding:8px;\">Rs. ").append(String.format("%.2f", price)).append("</td>");
+                                itemsHtml.append("<td align=\"right\" style=\"border-bottom:1px solid #e2e8f0;padding:8px;\">Rs. ").append(String.format("%.2f", itemGst)).append("</td>");
+                                itemsHtml.append("<td align=\"right\" style=\"border-bottom:1px solid #e2e8f0;padding:8px;font-weight:600;color:#0f172a;\">Rs. ").append(String.format("%.2f", itemTotalWithTax)).append("</td>");
+                                itemsHtml.append("</tr>");
+                            }
+                        }
+                        itemsHtml.append("</tbody></table>");
+
+                        String htmlBody = "<!DOCTYPE html>\n" +
+                                "<html>\n" +
+                                "<head>\n" +
+                                "    <meta charset=\"UTF-8\">\n" +
+                                "    <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n" +
+                                "    <title>" + subject + "</title>\n" +
+                                "</head>\n" +
+                                "<body style=\"margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;\">\n" +
+                                "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f3f4f6;padding:30px 0;\">\n" +
+                                "<tr><td align=\"center\">\n" +
+                                "<table width=\"620\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);\">\n" +
+                                "  <!-- Header -->\n" +
+                                "  <tr><td style=\"background:#ffffff;padding:32px 40px;text-align:center;border-bottom:1px solid #f3f4f6;\">\n" +
+                                "    <img src=\"https://durgashakti-foils.vercel.app/logo-durga.png\" width=\"280\" style=\"margin:0 auto;object-fit:contain;display:block;\" alt=\"DurgaShakti Foils Logo\">\n" +
+                                "  </td></tr>\n" +
+                                "  <!-- Body -->\n" +
+                                "  <tr><td style=\"padding:36px 40px;color:#374151;font-size:14px;line-height:1.6;\">\n" +
+                                "    <h2 style=\"margin:0 0 16px;color:#ea580c;font-size:20px;font-weight:700;\">Return Request Received</h2>\n" +
+                                "    <p style=\"margin:0 0 20px;color:#4b5563;\">Dear " + user.getFullName() + ", we have received your request to return/exchange items from order <strong>#" + saved.getOrderNumber() + "</strong>. Our support team is currently reviewing your request and details.</p>\n" +
+                                "    \n" +
+                                "    <div style=\"background:#f8fafc;border-radius:8px;padding:16px;margin-bottom:20px;\">\n" +
+                                "        <p style=\"margin:0;font-size:13px;color:#64748b;\">Reason for Return</p>\n" +
+                                "        <p style=\"margin:2px 0 0;font-size:14px;font-weight:700;color:#0f172a;\">" + reason + "</p>\n" +
+                                "    </div>\n" +
+                                "    \n" +
+                                "    <h3 style=\"margin:20px 0 10px;color:#0f172a;font-size:16px;font-weight:600;\">Items Requested for Return</h3>\n" +
+                                "    " + itemsHtml.toString() + "\n" +
+                                "    \n" +
+                                "    <div style=\"border-top:1px solid #e2e8f0;padding-top:16px;margin-top:20px;margin-bottom:20px;\">\n" +
+                                "        <table width=\"100%\" cellpadding=\"4\" cellspacing=\"0\">\n" +
+                                "            <tr><td style=\"color:#64748b;font-weight:700;font-size:15px;\">Est. Refundable Amount</td><td align=\"right\" style=\"color:#ea580c;font-weight:700;font-size:16px;\">Rs. " + String.format("%.2f", totalRefundable) + "</td></tr>\n" +
+                                "        </table>\n" +
+                                "    </div>\n" +
+                                "    \n" +
+                                "    <div style=\"text-align:center;margin:30px 0;\">\n" +
+                                "        <a href=\"https://durgashakti-foils.vercel.app/order/" + saved.getId() + "\" style=\"background:#ea580c;color:#ffffff;text-decoration:none;padding:12px 28px;font-weight:700;border-radius:8px;display:inline-block;font-size:14px;box-shadow:0 4px 12px rgba(234,88,12,0.25);\">View Order Details</a>\n" +
+                                "    </div>\n" +
+                                "  </td></tr>\n" +
+                                "  <!-- Footer -->\n" +
+                                "  <tr><td style=\"background:#f9fafb;border-top:1px solid #e5e7eb;padding:24px 40px;text-align:center;\">\n" +
+                                "    <p style=\"margin:0;color:#6b7280;font-size:12px;\">© " + java.time.Year.now().getValue() + " DurgaShakti Foils. All rights reserved.</p>\n" +
+                                "  </td></tr>\n" +
+                                "</table>\n" +
+                                "</td></tr>\n" +
+                                "</table>\n" +
+                                "</body>\n" +
+                                "</html>";
+                                
+                        emailClient.sendEmail(user.getEmail(), subject, htmlBody);
                     } catch (Exception e) {
                         log.error("Failed to send return request email", e);
                     }

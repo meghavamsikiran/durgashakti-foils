@@ -213,6 +213,25 @@ const OrdersPage = () => {
   const [refundAmountInput, setRefundAmountInput] = useState('');
   const [upiVpaInput, setUpiVpaInput] = useState('');
   const [isFetchingVpa, setIsFetchingVpa] = useState(false);
+  const [selectedItemsForAction, setSelectedItemsForAction] = useState({});
+
+  React.useEffect(() => {
+    if (messageModal && (messageModal.status === 'RETURN_APPROVED' || messageModal.status === 'RETURN_REJECTED')) {
+      const orderObj = messageModal.order;
+      if (orderObj?.items) {
+        const initial = {};
+        const requestedItems = orderObj.items.filter(item => 
+          item.return_status && ['RETURN_REQUESTED', 'EXCHANGE_REQUESTED'].includes(item.return_status.toUpperCase())
+        );
+        requestedItems.forEach(item => {
+          initial[item.product_id] = true;
+        });
+        setSelectedItemsForAction(initial);
+      }
+    } else {
+      setSelectedItemsForAction({});
+    }
+  }, [messageModal]);
 
   const load = useCallback(async (p = 1, nextFilter = filter) => {
     const params = { page: p, limit: PAGE_SIZE, search };
@@ -1217,7 +1236,7 @@ const OrdersPage = () => {
                                             custom_carrier: ''
                                           });
                                         } else if (['RETURN_APPROVED', 'RETURN_REJECTED', 'CANCELLED'].includes(a)) {
-                                          setMessageModal({ orderId: order.id, status: a });
+                                          setMessageModal({ orderId: order.id, status: a, order: order });
                                           setAdminMessage('');
                                         } else {
                                           updateStatus(order.id, a, '', isDeliverWithCOD ? { mark_paid: true } : {});
@@ -1284,64 +1303,129 @@ const OrdersPage = () => {
           totalItems={total}
           pageSize={PAGE_SIZE}
         />
-      </div>      {messageModal && (
-        <div className="fixed inset-[-20px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6">
-            <div>
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
-                {messageModal.status === 'RETURN_APPROVED' || messageModal.action === 'approve'
-                  ? 'Approve Return'
-                  : messageModal.status === 'RETURN_REJECTED' || messageModal.action === 'reject'
-                  ? 'Reject Return'
-                  : 'Cancel Order'}
-              </h3>
-              <p className="text-xs text-slate-500 mt-1">Provide a custom message or reason to deliver respectively to the customer.</p>
-            </div>
+      </div>      {messageModal && (() => {
+        const isReturnAction = messageModal.status === 'RETURN_APPROVED' || messageModal.status === 'RETURN_REJECTED';
+        const returnRequestedItems = (messageModal.order?.items || []).filter(item => 
+          item.return_status && ['RETURN_REQUESTED', 'EXCHANGE_REQUESTED'].includes(item.return_status.toUpperCase())
+        );
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Message to Customer</label>
-              <textarea
-                placeholder={
-                  messageModal.status === 'RETURN_APPROVED' || messageModal.action === 'approve'
-                    ? "E.g., Your return has been approved. Refund has been initiated."
+        return (
+          <div className="fixed inset-[-20px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
+            <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-5">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                  {messageModal.status === 'RETURN_APPROVED' || messageModal.action === 'approve'
+                    ? 'Approve Return'
                     : messageModal.status === 'RETURN_REJECTED' || messageModal.action === 'reject'
-                    ? "E.g., Rejection reason: The photo proof does not show any defective quality issues."
-                    : "E.g., Order cancelled due to stock unavailability."
-                }
-                value={adminMessage}
-                onChange={(e) => setAdminMessage(e.target.value)}
-                required
-                className="w-full p-4 min-h-[100px] rounded-2xl border border-[#26322B] text-xs font-semibold bg-[#131B17] text-white focus:bg-[#19231F] focus:ring-2 focus:ring-primary focus:outline-none resize-none"
-              />
-            </div>
+                    ? 'Reject Return'
+                    : 'Cancel Order'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">Provide a custom message or reason to deliver respectively to the customer.</p>
+              </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setMessageModal(null);
-                  setAdminMessage('');
-                }}
-                className="flex-1 h-12 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
-              >
-                Go Back
-              </button>
-              <button
-                onClick={() => {
-                  if (messageModal.action) {
-                    handleItemReturnAction(messageModal.orderId, messageModal.productId, messageModal.action, adminMessage);
-                  } else {
-                    updateStatus(messageModal.orderId, messageModal.status, adminMessage);
+              {isReturnAction && returnRequestedItems.length > 0 && (
+                <div className="space-y-2 pb-1 border-b border-slate-100 max-h-[180px] overflow-y-auto pr-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Select Items to Process</label>
+                  <div className="space-y-1.5">
+                    {returnRequestedItems.map((item) => (
+                      <div key={item.product_id} className="flex items-center gap-3 p-2.5 border border-slate-100 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={!!selectedItemsForAction[item.product_id]}
+                          onChange={(e) => {
+                            setSelectedItemsForAction(prev => ({
+                              ...prev,
+                              [item.product_id]: e.target.checked
+                            }));
+                          }}
+                          className="w-4 h-4 text-primary rounded border-slate-350 focus:ring-primary/20"
+                        />
+                        {item.image_url && (
+                          <img 
+                            src={item.image_url.startsWith('http') ? item.image_url : `https://durgashakti-foils.vercel.app${item.image_url}`} 
+                            onError={(e) => { e.target.src = '/logo-durga.webp'; }}
+                            alt="" 
+                            className="w-8 h-8 rounded-lg object-cover border border-slate-200" 
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-slate-800 truncate">{item.product_name}</p>
+                          <p className="text-[10px] text-slate-500 font-semibold">Qty: {item.returned_quantity || item.quantity}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Message to Customer</label>
+                <textarea
+                  placeholder={
+                    messageModal.status === 'RETURN_APPROVED' || messageModal.action === 'approve'
+                      ? "E.g., Your return has been approved. Refund has been initiated."
+                      : messageModal.status === 'RETURN_REJECTED' || messageModal.action === 'reject'
+                      ? "E.g., Rejection reason: The photo proof does not show any defective quality issues."
+                      : "E.g., Order cancelled due to stock unavailability."
                   }
-                }}
-                disabled={!adminMessage.trim() || (messageModal.action && pendingActionIds.has(`${messageModal.productId}-${messageModal.action}`))}
-                className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow disabled:opacity-50 transition-all"
-              >
-                {messageModal.action && pendingActionIds.has(`${messageModal.productId}-${messageModal.action}`) ? 'Processing...' : 'Confirm'}
-              </button>
+                  value={adminMessage}
+                  onChange={(e) => setAdminMessage(e.target.value)}
+                  required
+                  className="w-full p-4 min-h-[100px] rounded-2xl border border-slate-200 text-xs font-semibold bg-white text-slate-800 focus:ring-2 focus:ring-primary/20 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setMessageModal(null);
+                    setAdminMessage('');
+                  }}
+                  className="flex-1 h-12 rounded-xl border border-slate-200 text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={async () => {
+                    if (messageModal.action) {
+                      handleItemReturnAction(messageModal.orderId, messageModal.productId, messageModal.action, adminMessage);
+                    } else if (isReturnAction) {
+                      const selectedProductIds = Object.keys(selectedItemsForAction).filter(id => selectedItemsForAction[id]);
+                      if (selectedProductIds.length === 0) {
+                        toast.error('Please select at least one item to process');
+                        return;
+                      }
+                      const action = messageModal.status === 'RETURN_APPROVED' ? 'approve' : 'reject';
+                      const toastId = toast.loading(`Processing return requests...`);
+                      try {
+                        await Promise.all(selectedProductIds.map(productId => 
+                          apiClient.post(`/admin/orders/${messageModal.orderId}/items/${productId}/return-action`, { 
+                            action, 
+                            remarks: adminMessage 
+                          })
+                        ));
+                        apiClient.invalidateCache('/admin/orders');
+                        toast.success(`Items return processed successfully`, { id: toastId });
+                        setMessageModal(null);
+                        setAdminMessage('');
+                        setTimeout(() => loadSilent(page), 800);
+                      } catch (err) {
+                        toast.error(err?.response?.data?.detail || 'Failed to process return requests', { id: toastId });
+                      }
+                    } else {
+                      updateStatus(messageModal.orderId, messageModal.status, adminMessage);
+                    }
+                  }}
+                  disabled={!adminMessage.trim() || (isReturnAction && Object.keys(selectedItemsForAction).filter(id => selectedItemsForAction[id]).length === 0)}
+                  className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow disabled:opacity-50 transition-all"
+                >
+                  Confirm
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {false && (
         <div className="fixed inset-[-20px] z-[999999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur">
