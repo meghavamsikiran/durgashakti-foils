@@ -33,7 +33,7 @@ public class OrderSecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/payment/razorpay/webhook").permitAll()
-                .requestMatchers("/api/orders/ai-chat").permitAll()
+                .requestMatchers("/api/orders/ai-chat", "/api/orders/ai-chat/history").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

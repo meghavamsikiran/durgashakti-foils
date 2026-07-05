@@ -5,6 +5,15 @@ import apiClient from '../services/core/apiClient';
 export default function AiAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('themeMode') !== 'light');
+  const [sessionId] = useState(() => {
+    let id = localStorage.getItem('ai_session_id');
+    if (!id) {
+      id = 'session-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('ai_session_id', id);
+    }
+    return id;
+  });
+  
   const [messages, setMessages] = useState([
     { sender: 'bot', text: 'Hello! I am your DurgaShakti assistant. Ask me anything about our foils or track your orders!' }
   ]);
@@ -20,6 +29,23 @@ export default function AiAssistant() {
     return () => window.removeEventListener('theme-toggle', handleThemeToggle);
   }, []);
 
+  // Fetch chat history from database when chat window opens
+  useEffect(() => {
+    if (isOpen) {
+      const fetchHistory = async () => {
+        try {
+          const res = await apiClient.get(`/orders/ai-chat/history?sessionId=${sessionId}`);
+          if (res.data && res.data.length > 0) {
+            setMessages(res.data);
+          }
+        } catch (err) {
+          console.error("Failed to load chat history:", err);
+        }
+      };
+      fetchHistory();
+    }
+  }, [isOpen, sessionId]);
+
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
@@ -34,7 +60,10 @@ export default function AiAssistant() {
     setLoading(true);
 
     try {
-      const res = await apiClient.post('/orders/ai-chat', { message: userText });
+      const res = await apiClient.post('/orders/ai-chat', { 
+        message: userText,
+        sessionId: sessionId 
+      });
       setMessages((prev) => [...prev, { sender: 'bot', text: res.data.response }]);
     } catch (err) {
       setMessages((prev) => [
@@ -64,7 +93,7 @@ export default function AiAssistant() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className={`flex h-[450px] w-[320px] sm:w-[350px] flex-col rounded-2xl border shadow-2xl overflow-hidden transition-all animate-in fade-in slide-in-from-bottom-5 ${
+        <div className={`flex h-[470px] w-[320px] sm:w-[350px] flex-col rounded-2xl border shadow-2xl overflow-hidden transition-all animate-in fade-in slide-in-from-bottom-5 ${
           isDark 
             ? 'bg-[#0a0f0d] border-white/10 text-white' 
             : 'bg-white border-[#ebefed] text-slate-800'
@@ -87,7 +116,7 @@ export default function AiAssistant() {
             <button 
               onClick={() => setIsOpen(false)} 
               className={`rounded-full p-1 transition-colors ${
-                isDark ? 'text-slate-400 hover:bg-white/5 hover:text-white' : 'text-slate-500 hover:bg-black/5 hover:text-slate-850'
+                isDark ? 'text-slate-400 hover:bg-white/5 hover:text-white' : 'text-slate-500 hover:bg-black/5 hover:text-slate-855'
               }`}
             >
               <X className="h-4 w-4" />
@@ -136,6 +165,13 @@ export default function AiAssistant() {
               </div>
             )}
             <div ref={scrollRef} />
+          </div>
+
+          {/* Acknowledgement Expiry Warning Tag */}
+          <div className={`text-[8.5px] text-center py-1 font-semibold uppercase tracking-wider border-t ${
+            isDark ? 'bg-[#0c1816]/30 border-white/5 text-slate-500' : 'bg-[#f0f5f2]/40 border-[#ebefed] text-slate-400'
+          }`}>
+            🔒 Chat history is auto-deleted after 15 days
           </div>
 
           {/* Input Footer */}
