@@ -1192,12 +1192,41 @@ public class OrderServiceImpl implements OrderService {
         List<Map<String, Object>> items = order.getItems();
         if (items == null) return false;
         
+        String paymentId = order.getRazorpayPaymentId();
+        List<Map<String, Object>> paymentRefunds = null;
+        if (paymentId != null && !paymentId.isBlank()) {
+            paymentRefunds = paymentService.fetchPaymentRefunds(paymentId);
+        }
+        
         for (Map<String, Object> item : items) {
             String returnStatus = (String) item.get("return_status");
             Map<String, Object> calc = (Map<String, Object>) item.get("refund_calculations");
-            boolean missingRrn = (calc != null && calc.get("refund_id") != null && calc.get("rrn") == null);
+            if (calc == null) {
+                calc = new HashMap<>();
+            }
+            
+            // Match with Razorpay refund list if refund_id is missing
+            if (("REFUND_PENDING".equals(returnStatus) || "REFUND_COMPLETED".equals(returnStatus)) && calc.get("refund_id") == null && paymentRefunds != null) {
+                double refundAmt = 0.0;
+                if (calc.get("refundable_amount") != null) {
+                    refundAmt = Double.parseDouble(String.valueOf(calc.get("refundable_amount")));
+                }
+                long amtPaise = Math.round(refundAmt * 100.0);
+                for (Map<String, Object> rzpRefund : paymentRefunds) {
+                    long rzpAmt = ((Number) rzpRefund.get("amount")).longValue();
+                    if (rzpAmt == amtPaise) {
+                        calc.put("refund_id", rzpRefund.get("id"));
+                        calc.put("refund_method", "razorpay");
+                        item.put("refund_calculations", calc);
+                        updated = true;
+                        break;
+                    }
+                }
+            }
+            
+            boolean missingRrn = (calc.get("refund_id") != null && calc.get("rrn") == null);
             if ("REFUND_PENDING".equals(returnStatus) || ("REFUND_COMPLETED".equals(returnStatus) && missingRrn)) {
-                if (calc != null && calc.get("refund_id") != null) {
+                if (calc.get("refund_id") != null) {
                     String refundId = String.valueOf(calc.get("refund_id"));
                     try {
                         Map<String, Object> rzpRefund = paymentService.fetchRefund(refundId);

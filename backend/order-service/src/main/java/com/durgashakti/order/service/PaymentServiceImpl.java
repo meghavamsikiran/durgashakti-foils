@@ -168,6 +168,33 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
+    @Override
+    public List<Map<String, Object>> fetchPaymentRefunds(String paymentId) {
+        if (isFakeKey(keyId)) {
+            // Mock dynamic transition: return a mock refund that matches the payment ID if needed
+            return List.of();
+        }
+        try {
+            RazorpayClient client = new RazorpayClient(keyId, keySecret);
+            JSONObject query = new JSONObject();
+            query.put("payment_id", paymentId);
+            List<Refund> refunds = client.refunds.fetchAll(query);
+            List<Map<String, Object>> list = new java.util.ArrayList<>();
+            for (Refund r : refunds) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", r.get("id"));
+                map.put("status", r.get("status"));
+                map.put("amount", r.get("amount"));
+                map.put("acquirer_data", r.get("acquirer_data"));
+                list.add(map);
+            }
+            return list;
+        } catch (RazorpayException e) {
+            log.error("Failed to fetch Razorpay refunds for payment {}: {}", paymentId, e.getMessage());
+            return List.of();
+        }
+    }
+
     private boolean isFakeKey(String key) {
         return key == null || key.toLowerCase().contains("fake") || key.toLowerCase().contains("dummy") || key.trim().isEmpty();
     }

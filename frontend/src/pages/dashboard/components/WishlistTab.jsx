@@ -22,7 +22,14 @@ const WishlistTab = ({ wishlist, loading, onToggleWishlist, onClearWishlist }) =
   const [currentPage, setCurrentPage] = useState(1);
   const [clearing, setClearing] = useState(false);
 
-  if (loading) return <PageLoader message="Loading wishlist..." />;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[350px] bg-[#19231F] rounded-3xl border border-[#26322B] shadow-sm p-8 text-white">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#25D958] mb-3"></div>
+        <p className="text-xs text-slate-400 font-medium">Loading wishlist...</p>
+      </div>
+    );
+  }
 
   const handleClearWishlist = async () => {
     if (window.confirm('Are you sure you want to clear your entire wishlist?')) {

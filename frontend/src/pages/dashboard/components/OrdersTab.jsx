@@ -285,7 +285,14 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
       .reduce((sum, o) => sum + Number(o.total_amount || 0), 0)
   };
 
-  if (loading) return <PageLoader message="Loading orders..." />;
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[350px] bg-[#19231F] rounded-3xl border border-[#26322B] shadow-sm p-8 text-white">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#25D958] mb-3"></div>
+        <p className="text-xs text-slate-400 font-medium">Retrieving order history...</p>
+      </div>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">

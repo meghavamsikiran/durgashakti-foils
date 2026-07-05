@@ -161,7 +161,14 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (loading && !showAddressForm) return <PageLoader message="Loading addresses..." />;
+  if (loading && !showAddressForm) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[350px] bg-[#19231F] rounded-3xl border border-[#26322B] shadow-sm p-8 text-white">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#25D958] mb-3"></div>
+        <p className="text-xs text-slate-400 font-medium">Loading saved addresses...</p>
+      </div>
+    );
+  }
 
   const totalPages = Math.max(1, Math.ceil((addresses?.length || 0) / ITEMS_PER_PAGE));
   const pageItems = (addresses || []).slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
