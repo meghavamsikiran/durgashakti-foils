@@ -123,6 +123,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         long rangeDelivered = 0;
         long rangePending = 0;
         long rangeShipped = 0;
+        long totalCancelled = 0;
+        long rangeCancelled = 0;
 
         long paidPaymentsCount = 0;
         long pendingPaymentsCount = 0;
@@ -175,6 +177,9 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 }
             } else if (List.of("returned", "return_approved", "return_requested", "refunded").contains(oStatus)) {
                 totalReturned++;
+            } else if ("cancelled".equals(oStatus)) {
+                totalCancelled++;
+                rangeCancelled++;
             }
 
             // Payment aggregation
@@ -278,6 +283,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         metrics.put("range_delivered", rangeDelivered);
         metrics.put("range_pending", rangePending);
         metrics.put("range_shipped", rangeShipped);
+        metrics.put("total_cancelled", totalCancelled);
+        metrics.put("range_cancelled", rangeCancelled);
         metrics.put("total_revenue", Math.round(totalRevenue * 100.0) / 100.0);
         metrics.put("total_products", totalProducts);
         metrics.put("total_customers", totalCustomers);

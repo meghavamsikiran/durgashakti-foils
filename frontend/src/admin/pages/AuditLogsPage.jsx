@@ -141,7 +141,7 @@ const AuditLogsPage = () => {
 
   if (loading && rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] w-full">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] w-full">
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mb-3"></div>
         <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Loading system logs...</p>
       </div>
