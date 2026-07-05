@@ -178,6 +178,7 @@ If you have premium hosting infrastructure (such as AWS ECS, GCP GKE, Kubernetes
 | Layer | Technology | Documentation Link |
 |-------|------------|--------------------|
 | **Backend Framework** | Spring Boot 3.3.5 | [Spring Boot Docs](https://spring.io/projects/spring-boot) |
+| **Fault Tolerance** | Resilience4j Circuit Breaker | [Resilience4j Docs](https://resilience4j.readme.io/) |
 | **Database ORM** | Spring Data JPA / Hibernate | [Spring Data Docs](https://spring.io/projects/spring-data-jpa) |
 | **Payment Gateway** | Razorpay SDK | [Razorpay Developer Hub](https://razorpay.com/docs/) |
 | **Authentication** | JSON Web Tokens (JJWT) | [JJWT Repository](https://github.com/jwtk/jjwt) |
@@ -196,6 +197,9 @@ If you have premium hosting infrastructure (such as AWS ECS, GCP GKE, Kubernetes
 
 #### Q: Where are files and receipts uploaded?
 * **A:** Products and media files are stored locally in the `/backend/uploads` directory during development. Ensure this folder has write permissions.
+
+#### Q: How does the application handle email service downtime?
+* **A:** The system has an active **Resilience4j Circuit Breaker** configured on the email dispatcher. If the email API or service becomes slow or goes offline, the circuit breaker trips open and triggers a fallback handler. This logs the email request cleanly without blocking or crashing the caller (such as checkout operations).
 
 ---
 
