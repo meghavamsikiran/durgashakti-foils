@@ -1304,7 +1304,7 @@ const OrderDetailsPage = () => {
                       <div className="relative flex justify-between">
                         {steps.map((step, idx) => (
                           <div key={idx} className="flex flex-col items-center w-[12.5%] text-center">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-[#131B17] shadow-sm dark:shadow-none z-10 transition-all duration-300 ${
+                            <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center border-4 border-white dark:border-[#131B17] shadow-sm dark:shadow-none z-10 transition-all duration-300 ${
                               step.active 
                                 ? 'bg-primary text-white ring-4 ring-primary/10' 
                                 : 'bg-slate-200 text-slate-400 dark:text-slate-500 dark:bg-[#26322B]'

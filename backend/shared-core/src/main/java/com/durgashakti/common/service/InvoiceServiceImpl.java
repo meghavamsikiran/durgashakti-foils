@@ -438,8 +438,7 @@ public class InvoiceServiceImpl implements InvoiceService {
                 double itemCgst = r.get("cgst") != null ? ((Number) r.get("cgst")).doubleValue() : 0.0;
                 double itemSgst = r.get("sgst") != null ? ((Number) r.get("sgst")).doubleValue() : 0.0;
                 if (itemCgst > 0.0 || itemSgst > 0.0) {
-                    drawText(cb, fontRegular, sx(748), name_y, "CGST 9%: " + money(itemCgst), FS.get("fs8") * 0.95f, darkColor, "right");
-                    drawText(cb, fontRegular, sx(748), desc_y, "SGST 9%: " + money(itemSgst), FS.get("fs8") * 0.95f, darkColor, "right");
+                    drawText(cb, fontRegular, sx(748), base_y, money(itemCgst + itemSgst), FS.get("fs7"), darkColor, "right");
                 } else {
                     drawText(cb, fontRegular, sx(748), base_y, money(0), FS.get("fs7"), darkColor, "right");
                 }
