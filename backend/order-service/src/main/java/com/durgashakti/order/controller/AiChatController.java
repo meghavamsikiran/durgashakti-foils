@@ -4,7 +4,7 @@ import com.durgashakti.common.entity.ChatMessage;
 import com.durgashakti.common.entity.Order;
 import com.durgashakti.common.service.GeminiFailoverService;
 import com.durgashakti.order.repository.ChatMessageRepository;
-import com.durgashakti.order.repository.OrderRepository;
+import com.durgashakti.order.repository.OrderServiceRepository;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.chat.messages.UserMessage;
@@ -27,12 +27,12 @@ public class AiChatController {
 
   private final GeminiFailoverService failoverService;
   private final ChatMessageRepository chatMessageRepository;
-  private final OrderRepository orderRepository;
+  private final OrderServiceRepository orderRepository;
 
   public AiChatController(
       GeminiFailoverService failoverService, 
       ChatMessageRepository chatMessageRepository,
-      OrderRepository orderRepository) {
+      OrderServiceRepository orderRepository) {
     this.failoverService = failoverService;
     this.chatMessageRepository = chatMessageRepository;
     this.orderRepository = orderRepository;
