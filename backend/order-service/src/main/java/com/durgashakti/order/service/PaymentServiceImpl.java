@@ -1,6 +1,7 @@
 package com.durgashakti.order.service;
 
 import com.razorpay.Order;
+import com.razorpay.Refund;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import org.json.JSONObject;
@@ -145,6 +146,26 @@ public class PaymentServiceImpl implements PaymentService {
             log.error("Failed to fetch Razorpay payments for order {}: {}", razorpayOrderId, e.getMessage());
         }
         return null;
+    }
+
+    @Override
+    public Map<String, Object> fetchRefund(String refundId) {
+        if (isFakeKey(keyId)) {
+            // Mock dynamic transition: return processed with mock ARN/RRN
+            return Map.of("status", "processed", "id", refundId, "acquirer_data", Map.of("arn", "ARN_MOCK_" + System.currentTimeMillis()));
+        }
+        try {
+            RazorpayClient client = new RazorpayClient(keyId, keySecret);
+            Refund refund = client.refunds.fetch(refundId);
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", refund.get("id"));
+            map.put("status", refund.get("status"));
+            map.put("acquirer_data", refund.get("acquirer_data"));
+            return map;
+        } catch (RazorpayException e) {
+            log.error("Failed to fetch Razorpay refund {}: {}", refundId, e.getMessage());
+            return null;
+        }
     }
 
     private boolean isFakeKey(String key) {

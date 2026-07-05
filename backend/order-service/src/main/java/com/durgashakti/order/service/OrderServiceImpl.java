@@ -395,10 +395,15 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public Order getOrderById(UUID userId, UUID orderId) {
-        return orderRepository.findByIdAndUserId(orderId, userId)
+        Order order = orderRepository.findByIdAndUserId(orderId, userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Order not found"));
+        boolean changed = syncPendingRefunds(order);
+        if (changed) {
+            order = orderRepository.save(order);
+        }
+        return order;
     }
 
     @Override
@@ -1179,5 +1184,100 @@ public class OrderServiceImpl implements OrderService {
         order.setUpdatedAt(OffsetDateTime.now());
 
         return orderRepository.save(order);
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean syncPendingRefunds(Order order) {
+        boolean updated = false;
+        List<Map<String, Object>> items = order.getItems();
+        if (items == null) return false;
+        
+        for (Map<String, Object> item : items) {
+            String returnStatus = (String) item.get("return_status");
+            if ("REFUND_PENDING".equals(returnStatus)) {
+                Map<String, Object> calc = (Map<String, Object>) item.get("refund_calculations");
+                if (calc != null && calc.get("refund_id") != null) {
+                    String refundId = String.valueOf(calc.get("refund_id"));
+                    try {
+                        Map<String, Object> rzpRefund = paymentService.fetchRefund(refundId);
+                        if (rzpRefund != null) {
+                            String rzpStatus = (String) rzpRefund.get("status");
+                            if ("processed".equalsIgnoreCase(rzpStatus)) {
+                                item.put("return_status", "REFUND_COMPLETED");
+                                
+                                String rrn = null;
+                                Object acquirerDataObj = rzpRefund.get("acquirer_data");
+                                if (acquirerDataObj instanceof Map) {
+                                    Map<?, ?> acquirerData = (Map<?, ?>) acquirerDataObj;
+                                    if (acquirerData.get("arn") != null) {
+                                        rrn = String.valueOf(acquirerData.get("arn"));
+                                    } else if (acquirerData.get("rrn") != null) {
+                                        rrn = String.valueOf(acquirerData.get("rrn"));
+                                    }
+                                } else if (acquirerDataObj != null) {
+                                    try {
+                                        JSONObject acqJson = new JSONObject(acquirerDataObj.toString());
+                                        if (acqJson.has("arn")) rrn = acqJson.optString("arn");
+                                        else if (acqJson.has("rrn")) rrn = acqJson.optString("rrn");
+                                    } catch (Exception ignored) {}
+                                }
+                                
+                                if (rrn != null) {
+                                    calc.put("rrn", rrn);
+                                }
+                                item.put("refund_calculations", calc);
+                                
+                                List<Map<String, Object>> auditTimeline = (List<Map<String, Object>>) item.get("audit_timeline");
+                                if (auditTimeline == null) {
+                                    auditTimeline = new ArrayList<>();
+                                }
+                                Map<String, Object> audit = new HashMap<>();
+                                audit.put("status", "REFUND_COMPLETED");
+                                audit.put("timestamp", OffsetDateTime.now().toString());
+                                audit.put("remarks", "Refund processed successfully by bank. RRN/ARN: " + (rrn != null ? rrn : "Pending"));
+                                auditTimeline.add(audit);
+                                item.put("audit_timeline", auditTimeline);
+                                
+                                updated = true;
+                                
+                                double refundAmt = 0.0;
+                                if (calc.get("refundable_amount") != null) {
+                                    refundAmt = Double.parseDouble(String.valueOf(calc.get("refundable_amount")));
+                                }
+                                triggerRefundCompletedEmail(order, refundAmt, rrn);
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed to sync pending refund status for refund ID {}: {}", refundId, e.getMessage());
+                    }
+                }
+            }
+        }
+        
+        if (updated) {
+            boolean allRefunded = items.stream()
+                .filter(i -> i.get("return_status") != null)
+                .allMatch(i -> "REFUND_COMPLETED".equals(i.get("return_status")) || "RETURN_REJECTED".equals(i.get("return_status")));
+            if (allRefunded) {
+                order.setOrderStatus("refunded");
+                order.setPaymentStatus("refunded");
+            }
+        }
+        return updated;
+    }
+
+    private void triggerRefundCompletedEmail(Order order, double amount, String rrn) {
+        try {
+            userRepository.findById(order.getUserId()).ifPresent(user -> {
+                String subject = "Refund Completed - " + order.getOrderNumber();
+                String rrnPart = rrn != null ? "\n\nRefund Reference Number (RRN/ARN): " + rrn : "";
+                String body = "Dear " + user.getFullName() + ",\n\n" +
+                              "Great news! Your refund of Rs. " + String.format("%.2f", amount) + " for order " + order.getOrderNumber() + " has been successfully completed." + rrnPart + "\n\n" +
+                              "⚡ The amount has been credited back to your original payment source.";
+                emailClient.sendEmail(user.getEmail(), subject, body);
+            });
+        } catch (Exception e) {
+            log.error("Failed to send refund completion email: {}", e.getMessage());
+        }
     }
 }

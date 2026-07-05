@@ -63,29 +63,59 @@ public class AdminOrderServiceImpl implements AdminOrderService {
      * Attempts an instant Razorpay refund. Returns true if refund was created successfully.
      * Falls back gracefully if keys are missing or Razorpay call fails.
      */
-    private boolean attemptRazorpayRefund(String razorpayPaymentId, double amountInRupees, String orderNumber) {
+    private Map<String, Object> attemptRazorpayRefund(String razorpayPaymentId, double amountInRupees, String orderNumber) {
         if (razorpayPaymentId == null || razorpayPaymentId.isBlank()) {
             log.warn("Cannot process Razorpay refund: no razorpay_payment_id on order {}", orderNumber);
-            return false;
+            return Map.of("success", false, "remark", "No razorpay_payment_id on order");
         }
         if (razorpayKeyId == null || razorpayKeyId.contains("fake") || razorpayKeyId.isBlank()) {
             log.info("Razorpay keys not configured – skipping live refund for order {}", orderNumber);
-            return false;
+            String mockRefundId = "rfnd_mock_" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
+            return Map.of(
+                "success", true,
+                "refund_id", mockRefundId,
+                "status", "pending",
+                "remark", "Mock refund initiated (keys not configured)."
+            );
         }
         long amountInPaise = Math.round(amountInRupees * 100.0);
         try {
             RazorpayClient client = new RazorpayClient(razorpayKeyId, razorpayKeySecret);
             JSONObject refundRequest = new JSONObject();
             refundRequest.put("amount", amountInPaise);
-            refundRequest.put("speed", "optimum"); // instant if available, else normal
+            refundRequest.put("speed", "optimum");
             refundRequest.put("notes", new JSONObject().put("order_number", orderNumber));
             Refund refund = client.payments.refund(razorpayPaymentId, refundRequest);
             String refundId = refund.get("id");
-            log.info("Razorpay refund created successfully: {} for order {} amount ₹{}", refundId, orderNumber, amountInRupees);
-            return true;
+            String status = refund.get("status");
+            
+            String rrn = null;
+            Object acquirerDataObj = refund.get("acquirer_data");
+            if (acquirerDataObj instanceof Map) {
+                Map<?, ?> acquirerData = (Map<?, ?>) acquirerDataObj;
+                if (acquirerData.get("arn") != null) {
+                    rrn = String.valueOf(acquirerData.get("arn"));
+                } else if (acquirerData.get("rrn") != null) {
+                    rrn = String.valueOf(acquirerData.get("rrn"));
+                }
+            } else if (acquirerDataObj != null) {
+                try {
+                    JSONObject acqJson = new JSONObject(acquirerDataObj.toString());
+                    if (acqJson.has("arn")) rrn = acqJson.optString("arn");
+                    else if (acqJson.has("rrn")) rrn = acqJson.optString("rrn");
+                } catch (Exception ignored) {}
+            }
+            
+            log.info("Razorpay refund created successfully: {} (Status: {}, RRN: {}) for order {}", refundId, status, rrn, orderNumber);
+            Map<String, Object> res = new HashMap<>();
+            res.put("success", true);
+            res.put("refund_id", refundId);
+            res.put("status", status);
+            if (rrn != null) res.put("rrn", rrn);
+            return res;
         } catch (RazorpayException e) {
             log.error("Razorpay refund FAILED for payment {} order {}: {}", razorpayPaymentId, orderNumber, e.getMessage());
-            return false;
+            return Map.of("success", false, "remark", e.getMessage());
         }
     }
 
@@ -239,12 +269,18 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             String pStatus = order.getPaymentStatus();
             if ("paid".equalsIgnoreCase(pStatus) || "completed".equalsIgnoreCase(pStatus)) {
                 double refundAmt = order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0;
-                boolean refundedLive = false;
+                String finalPayStatus = "refund_pending";
                 if (order.getRazorpayPaymentId() != null && !order.getRazorpayPaymentId().isBlank()) {
-                    refundedLive = attemptRazorpayRefund(order.getRazorpayPaymentId(), refundAmt, order.getOrderNumber());
+                    Map<String, Object> rzpRes = attemptRazorpayRefund(order.getRazorpayPaymentId(), refundAmt, order.getOrderNumber());
+                    if (Boolean.TRUE.equals(rzpRes.get("success"))) {
+                        String rzpStatus = (String) rzpRes.get("status");
+                        if ("processed".equalsIgnoreCase(rzpStatus)) {
+                            finalPayStatus = "refunded";
+                        }
+                    }
                 }
-                order.setPaymentStatus(refundedLive ? "refunded" : "refund_pending");
-                log.info("Cancelled paid order {} -- live refund success: {}, final payment status: {}", order.getOrderNumber(), refundedLive, order.getPaymentStatus());
+                order.setPaymentStatus(finalPayStatus);
+                log.info("Cancelled paid order {} -- final payment status: {}", order.getOrderNumber(), order.getPaymentStatus());
             }
 
             sendOrderEmail(order, "Order Cancelled: " + order.getOrderNumber(), 
@@ -469,27 +505,36 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 String remark;
 
                 if (isManual) {
-                    // Admin manually marked as refunded (bank transfer / UPI etc)
                     refundStatus = "REFUND_COMPLETED";
                     remark = String.format("Refund of ₹%.2f completed manually by admin", refundAmount);
+                    calc.put("refund_method", "manual");
                 } else {
-                    // Attempt live Razorpay instant refund
-                    boolean rzpSuccess = attemptRazorpayRefund(
-                            order.getRazorpayPaymentId(), refundAmount, order.getOrderNumber());
-                    if (rzpSuccess) {
-                        refundStatus = "REFUND_COMPLETED";
-                        remark = String.format(
-                                "Razorpay refund of ₹%.2f initiated successfully (instant/optimum speed). " +
-                                "Amount will reflect in customer's account within seconds to 5–7 business days.",
-                                refundAmount);
+                    Map<String, Object> rzpRes = attemptRazorpayRefund(order.getRazorpayPaymentId(), refundAmount, order.getOrderNumber());
+                    if (Boolean.TRUE.equals(rzpRes.get("success"))) {
+                        String rzpStatus = (String) rzpRes.get("status");
+                        String refundId = (String) rzpRes.get("refund_id");
+                        String rrn = (String) rzpRes.get("rrn");
+                        
+                        calc.put("refund_id", refundId);
+                        calc.put("refund_method", "razorpay");
+                        if (rrn != null) {
+                            calc.put("rrn", rrn);
+                        }
+                        
+                        if ("processed".equalsIgnoreCase(rzpStatus)) {
+                            refundStatus = "REFUND_COMPLETED";
+                            remark = String.format("Razorpay refund of ₹%.2f processed successfully. RRN/ARN: %s", refundAmount, rrn != null ? rrn : "Pending");
+                        } else {
+                            refundStatus = "REFUND_PENDING";
+                            remark = String.format("Razorpay refund of ₹%.2f initiated (Pending bank processing). Reference ID: %s", refundAmount, refundId);
+                        }
                     } else {
                         refundStatus = "REFUND_FAILED";
-                        remark = String.format(
-                                "Razorpay refund of ₹%.2f FAILED. Manual intervention required.",
-                                refundAmount);
+                        remark = String.format("Razorpay refund of ₹%.2f FAILED: %s", refundAmount, rzpRes.getOrDefault("remark", "Unknown error"));
                     }
                 }
 
+                item.put("refund_calculations", calc);
                 item.put("return_status", refundStatus);
                 addAuditTimeline(item, refundStatus, remark);
             }
@@ -555,13 +600,41 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                      .filter(i -> productId.equals(String.valueOf(i.get("product_id"))))
                      .map(i -> (String) i.get("return_status"))
                      .findFirst().orElse(""));
+                     
+        boolean refundPending = "REFUND_PENDING".equals(
+                items.stream()
+                     .filter(i -> productId.equals(String.valueOf(i.get("product_id"))))
+                     .map(i -> (String) i.get("return_status"))
+                     .findFirst().orElse(""));
 
         if (refundSucceeded) {
+            String rrn = items.stream()
+                .filter(i -> productId.equals(String.valueOf(i.get("product_id"))))
+                .map(i -> {
+                    Map<?, ?> itemCalc = (Map<?, ?>) i.get("refund_calculations");
+                    return itemCalc != null ? (String) itemCalc.get("rrn") : null;
+                })
+                .findFirst().orElse(null);
+            
+            String rrnPart = rrn != null ? "\n\nRefund Reference Number (RRN/ARN): " + rrn : "";
             sendOrderEmail(order,
                 "Refund Completed – " + order.getOrderNumber(),
                 "Great news! We have successfully completed your refund of ₹" +
-                String.format("%.2f", refundAmount) + " for order " + order.getOrderNumber() + ".\n\n" +
+                String.format("%.2f", refundAmount) + " for order " + order.getOrderNumber() + "." + rrnPart + "\n\n" +
                 "⚡ The amount has been credited back to your original payment source.");
+        } else if (refundPending) {
+            String refundId = items.stream()
+                .filter(i -> productId.equals(String.valueOf(i.get("product_id"))))
+                .map(i -> {
+                    Map<?, ?> itemCalc = (Map<?, ?>) i.get("refund_calculations");
+                    return itemCalc != null ? (String) itemCalc.get("refund_id") : null;
+                })
+                .findFirst().orElse(null);
+            sendOrderEmail(order,
+                "Refund Initiated – " + order.getOrderNumber(),
+                "Your refund of ₹" + String.format("%.2f", refundAmount) + " for order " + order.getOrderNumber() + " has been initiated successfully.\n\n" +
+                "Reference ID: " + (refundId != null ? refundId : "Pending") + "\n\n" +
+                "The amount will reflect in your bank account within 5–7 business days depending on bank processing.");
         } else {
             sendOrderEmail(order,
                 "Refund Processing Issue – " + order.getOrderNumber(),
@@ -594,18 +667,33 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 Map<String, Object> retryCalc = (Map<String, Object>) item.getOrDefault("refund_calculations", new HashMap<>());
                 double retryAmount = toDouble(retryCalc.get("refundable_amount"));
 
-                // Attempt live Razorpay refund on retry
-                boolean rzpRetrySuccess = attemptRazorpayRefund(
+                Map<String, Object> rzpRes = attemptRazorpayRefund(
                         order.getRazorpayPaymentId(), retryAmount, order.getOrderNumber());
 
-                if (rzpRetrySuccess) {
-                    item.put("return_status", "REFUND_COMPLETED");
-                    addAuditTimeline(item, "REFUND_COMPLETED",
-                            String.format("Razorpay refund of ₹%.2f retried successfully", retryAmount));
+                if (Boolean.TRUE.equals(rzpRes.get("success"))) {
+                    String rzpStatus = (String) rzpRes.get("status");
+                    String refundId = (String) rzpRes.get("refund_id");
+                    String rrn = (String) rzpRes.get("rrn");
+                    
+                    retryCalc.put("refund_id", refundId);
+                    if (rrn != null) {
+                        retryCalc.put("rrn", rrn);
+                    }
+                    item.put("refund_calculations", retryCalc);
+                    
+                    if ("processed".equalsIgnoreCase(rzpStatus)) {
+                        item.put("return_status", "REFUND_COMPLETED");
+                        addAuditTimeline(item, "REFUND_COMPLETED",
+                                String.format("Razorpay refund of ₹%.2f retried successfully. RRN/ARN: %s", retryAmount, rrn != null ? rrn : "Pending"));
+                    } else {
+                        item.put("return_status", "REFUND_PENDING");
+                        addAuditTimeline(item, "REFUND_PENDING",
+                                String.format("Razorpay refund of ₹%.2f retried (Pending bank processing). Reference ID: %s", retryAmount, refundId));
+                    }
                 } else {
                     item.put("return_status", "REFUND_FAILED");
                     addAuditTimeline(item, "REFUND_FAILED",
-                            String.format("Razorpay refund retry of ₹%.2f FAILED again", retryAmount));
+                            String.format("Razorpay refund retry of ₹%.2f FAILED: %s", retryAmount, rzpRes.getOrDefault("remark", "Unknown error")));
                 }
             }
         }

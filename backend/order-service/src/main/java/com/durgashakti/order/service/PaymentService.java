@@ -8,4 +8,5 @@ public interface PaymentService {
     boolean verifyWebhookSignature(String requestBody, String receivedSignature);
     Map<String, Object> fetchPayment(String paymentId);
     Map<String, Object> fetchSuccessfulOrderPayment(String razorpayOrderId);
+    Map<String, Object> fetchRefund(String refundId);
 }

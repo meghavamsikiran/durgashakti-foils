@@ -1681,10 +1681,11 @@ const OrderDetailsPage = () => {
                             item.return_status === 'SELF_SHIPPED' ? 'bg-indigo-100 text-indigo-800' :
                             item.return_status === 'RETURN_RECEIVED' || item.return_status === 'EXCHANGE_RECEIVED' ? 'bg-purple-100 text-purple-800' :
                             item.return_status === 'EXCHANGE_SHIPPED' ? 'bg-blue-100 text-blue-800' :
+                            item.return_status === 'REFUND_PENDING' ? 'bg-sky-100 text-sky-850 border border-sky-200 animate-pulse' :
                             item.return_status === 'REFUND_COMPLETED' || item.return_status === 'EXCHANGE_COMPLETED' ? 'bg-emerald-100 text-emerald-800' :
                             'bg-rose-100 text-rose-800'
                           }`}>
-                            {item.return_status.replace('_', ' ')}
+                            {item.return_status === 'REFUND_PENDING' ? 'Refund Initiated' : item.return_status.replace('_', ' ')}
                           </span>
                           <span className="text-[10px] text-slate-500 dark:text-slate-300 font-extrabold">{item.return_type === 'exchange' ? 'Qty Exchanged' : 'Qty Returned'}: {item.returned_quantity}</span>
                         </div>
@@ -1711,6 +1712,21 @@ const OrderDetailsPage = () => {
                             </div>
                           );
                         })()}
+                        {item.refund_calculations && (item.refund_calculations.refund_id || item.refund_calculations.rrn) && (
+                          <div className="p-2.5 bg-sky-50/50 dark:bg-[#26322B]/20 border border-sky-100/50 rounded-xl space-y-1 text-[10px] font-bold text-slate-650 dark:text-slate-400">
+                            {item.refund_calculations.refund_id && (
+                              <p className="flex items-center gap-1.5">
+                                Refund Request ID: <span className="font-mono text-slate-800 dark:text-slate-200">{item.refund_calculations.refund_id}</span>
+                              </p>
+                            )}
+                            <p className="flex items-center gap-1.5">
+                              Bank Reference (RRN/ARN):{' '}
+                              <span className="font-mono text-slate-800 dark:text-slate-200">
+                                {item.refund_calculations.rrn || 'Awaiting Bank Processing (5-7 business days)'}
+                              </span>
+                            </p>
+                          </div>
+                        )}
                         {item.self_shipping_details && (
                           <div className="text-[10px] text-slate-500 dark:text-slate-300 space-y-1.5 font-semibold">
                             <div>
