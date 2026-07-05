@@ -1397,13 +1397,23 @@ const OrdersPage = () => {
                       }
                       const action = messageModal.status === 'RETURN_APPROVED' ? 'approve' : 'reject';
                       const toastId = toast.loading(`Processing return requests...`);
+                      
+                      // Enable loading disable states
+                      setPendingActionIds(prev => {
+                        const next = new Set(prev);
+                        selectedProductIds.forEach(id => next.add(`${id}-${action}`));
+                        return next;
+                      });
+
                       try {
-                        await Promise.all(selectedProductIds.map(productId => 
-                          apiClient.post(`/admin/orders/${messageModal.orderId}/items/${productId}/return-action`, { 
+                        // Execute sequentially to prevent database concurrent updates race condition
+                        for (const productId of selectedProductIds) {
+                          await apiClient.post(`/admin/orders/${messageModal.orderId}/items/${productId}/return-action`, { 
                             action, 
                             remarks: adminMessage 
-                          })
-                        ));
+                          });
+                        }
+                        
                         apiClient.invalidateCache('/admin/orders');
                         toast.success(`Items return processed successfully`, { id: toastId });
                         setMessageModal(null);
@@ -1411,12 +1421,18 @@ const OrdersPage = () => {
                         setTimeout(() => loadSilent(page), 800);
                       } catch (err) {
                         toast.error(err?.response?.data?.detail || 'Failed to process return requests', { id: toastId });
+                      } finally {
+                        setPendingActionIds(prev => {
+                          const next = new Set(prev);
+                          selectedProductIds.forEach(id => next.delete(`${id}-${action}`));
+                          return next;
+                        });
                       }
                     } else {
                       updateStatus(messageModal.orderId, messageModal.status, adminMessage);
                     }
                   }}
-                  disabled={!adminMessage.trim() || (isReturnAction && Object.keys(selectedItemsForAction).filter(id => selectedItemsForAction[id]).length === 0)}
+                  disabled={!adminMessage.trim() || (isReturnAction && Object.keys(selectedItemsForAction).filter(id => selectedItemsForAction[id]).length === 0) || (isReturnAction && Object.keys(selectedItemsForAction).filter(id => selectedItemsForAction[id]).some(id => pendingActionIds.has(`${id}-${messageModal.status === 'RETURN_APPROVED' ? 'approve' : 'reject'}`)))}
                   className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-primary hover:bg-emerald-hover text-white shadow-lg shadow-emerald-glow disabled:opacity-50 transition-all"
                 >
                   Confirm
@@ -2182,6 +2198,7 @@ const OrdersPage = () => {
                               {item.return_status === 'RETURN_REQUESTED' && !['return_approved', 'return_rejected', 'refunded'].includes((selectedOrderForModal.order_status || '').toLowerCase()) && (
                                 <>
                                   <button
+                                    disabled={pendingActionIds.has(`${item.product_id}-approve`) || pendingActionIds.has(`${item.product_id}-reject`)}
                                     onClick={() => {
                                       setMessageModal({
                                         orderId: selectedOrderForModal.id,
@@ -2190,11 +2207,12 @@ const OrdersPage = () => {
                                       });
                                       setAdminMessage('');
                                     }}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all disabled:opacity-50"
                                   >
                                     Approve Return
                                   </button>
                                   <button
+                                    disabled={pendingActionIds.has(`${item.product_id}-approve`) || pendingActionIds.has(`${item.product_id}-reject`)}
                                     onClick={() => {
                                       setMessageModal({
                                         orderId: selectedOrderForModal.id,
@@ -2203,7 +2221,7 @@ const OrdersPage = () => {
                                       });
                                       setAdminMessage('');
                                     }}
-                                    className="bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
+                                    className="bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all disabled:opacity-50"
                                   >
                                     Reject Return
                                   </button>

@@ -913,6 +913,9 @@ const AdminOrderDetailsPage = () => {
                         <div>
                           <p className="font-extrabold text-slate-900">{item.product_name}</p>
                           <p className="text-[9px] text-slate-400 uppercase tracking-wider font-bold">Sold by: DurgaShakti Foils</p>
+                          <p className="text-[9.5px] text-slate-500 font-extrabold mt-1">
+                            CGST (9%): ₹{(item.price * item.quantity * 0.09).toFixed(2)} | SGST (9%): ₹{(item.price * item.quantity * 0.09).toFixed(2)}
+                          </p>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-xs text-center font-black text-slate-500">{item.quantity}</td>
@@ -1184,6 +1187,7 @@ const AdminOrderDetailsPage = () => {
                           {(item.return_status === 'RETURN_REQUESTED' || item.return_status === 'EXCHANGE_REQUESTED') && !['return_approved', 'return_rejected', 'refunded'].includes((order.order_status || '').toLowerCase()) && (
                             <>
                               <button
+                                disabled={pendingActionIds.has(`${item.product_id}-approve`) || pendingActionIds.has(`${item.product_id}-reject`)}
                                 onClick={() => {
                                   setMessageModal({
                                     orderId: order.id,
@@ -1192,11 +1196,12 @@ const AdminOrderDetailsPage = () => {
                                   });
                                   setAdminMessage('');
                                 }}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all disabled:opacity-50"
                               >
                                 {item.return_status === 'EXCHANGE_REQUESTED' ? 'Approve Exchange' : 'Approve Return'}
                               </button>
                               <button
+                                disabled={pendingActionIds.has(`${item.product_id}-approve`) || pendingActionIds.has(`${item.product_id}-reject`)}
                                 onClick={() => {
                                   setMessageModal({
                                     orderId: order.id,
@@ -1205,7 +1210,7 @@ const AdminOrderDetailsPage = () => {
                                   });
                                   setAdminMessage('');
                                 }}
-                                className="bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all"
+                                className="bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all disabled:opacity-50"
                               >
                                 {item.return_status === 'EXCHANGE_REQUESTED' ? 'Reject Exchange' : 'Reject Return'}
                               </button>

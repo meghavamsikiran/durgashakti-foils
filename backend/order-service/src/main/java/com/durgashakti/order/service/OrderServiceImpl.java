@@ -520,12 +520,18 @@ public class OrderServiceImpl implements OrderService {
                                 }
                             }
 
+                            double itemCgst = total * 0.09;
+                            double itemSgst = total * 0.09;
+
                             itemsHtml.append("<tr style=\"border-bottom:1px solid #f1f5f9;\">");
                             itemsHtml.append("<td style=\"padding:10px;\"><img src=\"").append(imageUrl).append("\" width=\"40\" height=\"40\" style=\"border-radius:6px;object-fit:cover;display:block;\" alt=\"Product\" /></td>");
-                            itemsHtml.append("<td style=\"font-size:14px;color:#1e293b;\">").append(name).append(size).append("</td>");
+                            itemsHtml.append("<td style=\"font-size:14px;color:#1e293b;\">")
+                                     .append(name).append(size)
+                                     .append("<br/><span style=\"font-size:10px;color:#64748b;\">CGST (9%): Rs. ").append(String.format("%.2f", itemCgst))
+                                     .append(" | SGST (9%): Rs. ").append(String.format("%.2f", itemSgst)).append("</span></td>");
                             itemsHtml.append("<td align=\"center\" style=\"font-size:14px;color:#1e293b;\">").append(qty).append("</td>");
                             itemsHtml.append("<td align=\"right\" style=\"font-size:14px;color:#1e293b;\">Rs. ").append(String.format("%.2f", price)).append("</td>");
-                            itemsHtml.append("<td align=\"right\" style=\"font-size:14px;color:#1e293b;font-weight:600;\">Rs. ").append(String.format("%.2f", total)).append("</td>");
+                            itemsHtml.append("<td align=\"right\" style=\"font-size:14px;color:#1e293b;font-weight:600;\">Rs. ").append(String.format("%.2f", total + itemCgst + itemSgst)).append("</td>");
                             itemsHtml.append("</tr>");
                         }
                     }
@@ -1003,7 +1009,7 @@ public class OrderServiceImpl implements OrderService {
                                 itemsHtml.append("<td style=\"border-bottom:1px solid #e2e8f0;padding:8px;\">");
                                 itemsHtml.append("<table cellpadding=\"0\" cellspacing=\"0\"><tr>");
                                 itemsHtml.append("<td><img src=\"").append(imageUrl).append("\" width=\"36\" height=\"36\" style=\"border-radius:6px;object-fit:cover;margin-right:8px;display:block;\" /></td>");
-                                itemsHtml.append("<td style=\"font-size:13px;color:#0f172a;font-weight:600;\">").append(name).append(size).append("</td>");
+                                itemsHtml.append("<td style=\"font-size:13px;color:#0f172a;font-weight:600;\">").append(name).append(size).append("<br/><span style=\"font-size:10px;color:#64748b;font-weight:normal;\">CGST (9%): Rs. ").append(String.format("%.2f", itemCgst)).append(" | SGST (9%): Rs. ").append(String.format("%.2f", itemSgst)).append("</span></td>");
                                 itemsHtml.append("</tr></table>");
                                 itemsHtml.append("</td>");
                                 itemsHtml.append("<td align=\"center\" style=\"border-bottom:1px solid #e2e8f0;padding:8px;\">").append(retQty).append("</td>");

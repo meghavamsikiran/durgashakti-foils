@@ -99,7 +99,7 @@ const OrderDetailsPage = () => {
     }
     setSubmittingSelfShip(true);
     try {
-      const uploadPromises = selfShipSelectedProducts.map(productId => {
+      for (const productId of selfShipSelectedProducts) {
         const formData = new FormData();
         formData.append('courier_name', courierName);
         formData.append('tracking_number', trackingNumber);
@@ -112,12 +112,10 @@ const OrderDetailsPage = () => {
         if (invoiceFile) {
           formData.append('invoice', invoiceFile);
         }
-        return apiClient.post(`/orders/${id}/items/${productId}/self-ship`, formData, {
+        await apiClient.post(`/orders/${id}/items/${productId}/self-ship`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-      });
-      
-      await Promise.all(uploadPromises);
+      }
       apiClient.invalidateCache('/orders');
       apiClient.invalidateCache(`/orders/${id}`);
       toast.success('Self shipping details submitted successfully');
@@ -1659,6 +1657,11 @@ const OrderDetailsPage = () => {
                       ₹{(Number(item?.price) || 0).toLocaleString('en-IN')} 
                       <span className="text-slate-400 dark:text-slate-500 font-bold text-xs pl-2">Quantity: {item?.quantity || 1}</span>
                     </p>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-extrabold flex flex-wrap gap-x-4 bg-slate-50 dark:bg-slate-900/40 p-2 rounded-xl border border-slate-100 dark:border-slate-800/60 max-w-md">
+                      <span>Taxable Price: ₹{(Number(item?.price || 0) * (item?.quantity || 1)).toFixed(2)}</span>
+                      <span>CGST (9%): ₹{(Number(item?.price || 0) * (item?.quantity || 1) * 0.09).toFixed(2)}</span>
+                      <span>SGST (9%): ₹{(Number(item?.price || 0) * (item?.quantity || 1) * 0.09).toFixed(2)}</span>
+                    </div>
                     
                     <div className="pt-2 flex flex-wrap gap-2">
                       <button 
