@@ -15,15 +15,17 @@ import SuspenseTrigger from './components/ui/SuspenseTrigger';
 // Eagerly loaded (critical path)
 import Home from './pages/Home';
 import Shop from './pages/Shop';
-import ProductDetail from './pages/ProductDetail';
-import Login from './pages/Login';
-import ForgotPassword from './pages/ForgotPassword';
-import Cart from './pages/Cart';
-import About from './pages/About';
-import Contact from './pages/Contact';
-import OrderPolicies from './pages/OrderPolicies';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
+
+// Lazy loaded (split routes for bundle optimization)
+const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const Login = lazy(() => import('./pages/Login'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const Cart = lazy(() => import('./pages/Cart'));
+const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
+const OrderPolicies = lazy(() => import('./pages/OrderPolicies'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 
 // Lazy loaded (authenticated routes)
 const Checkout = lazy(() => import('./pages/Checkout'));
@@ -32,29 +34,29 @@ const OrderDetailsPage = lazy(() => import('./pages/OrderDetailsPage'));
 const OrderSuccess = lazy(() => import('./pages/OrderSuccess'));
 const ProductReviewPage = lazy(() => import('./pages/ProductReviewPage'));
 
-// Admin (eagerly loaded for instant tab switching)
-import AdminLayout from './admin/layouts/AdminLayout';
+// Admin (split dynamic sub-routing)
+const AdminLayout = lazy(() => import('./admin/layouts/AdminLayout'));
 import ProtectedAdminRoute from './admin/guards/ProtectedAdminRoute';
-import AdminDashboard from './admin/pages/AdminDashboard';
-import ProductsPage from './admin/pages/ProductsPage';
-import CategoriesPage from './admin/pages/CategoriesPage';
-import InventoryPage from './admin/pages/InventoryPage';
-import OrdersPage from './admin/pages/OrdersPage';
-import AdminOrderDetailsPage from './admin/pages/AdminOrderDetailsPage';
-import CustomersPage from './admin/pages/CustomersPage';
-import CustomerDetailPage from './admin/pages/CustomerDetailPage';
-import PaymentsPage from './admin/pages/PaymentsPage';
-import GstReportsPage from './admin/pages/GstReportsPage';
-import AuditLogsPage from './admin/pages/AuditLogsPage';
-import SettingsPage from './admin/pages/SettingsPage';
-import ShippingSettingsPage from './admin/pages/ShippingSettingsPage';
-import CouponsPage from './admin/pages/CouponsPage';
-import AnalyticsPage from './admin/pages/AnalyticsPage';
-import AdminUsersPage from './admin/pages/AdminUsersPage';
-import InquiriesPage from './admin/pages/InquiriesPage';
-import AdminProfilePage from './admin/pages/AdminProfilePage';
-import BusinessProfilePage from './admin/pages/BusinessProfilePage';
-import ReviewsPage from './admin/pages/ReviewsPage';
+const AdminDashboard = lazy(() => import('./admin/pages/AdminDashboard'));
+const ProductsPage = lazy(() => import('./admin/pages/ProductsPage'));
+const CategoriesPage = lazy(() => import('./admin/pages/CategoriesPage'));
+const InventoryPage = lazy(() => import('./admin/pages/InventoryPage'));
+const OrdersPage = lazy(() => import('./admin/pages/OrdersPage'));
+const AdminOrderDetailsPage = lazy(() => import('./admin/pages/AdminOrderDetailsPage'));
+const CustomersPage = lazy(() => import('./admin/pages/CustomersPage'));
+const CustomerDetailPage = lazy(() => import('./admin/pages/CustomerDetailPage'));
+const PaymentsPage = lazy(() => import('./admin/pages/PaymentsPage'));
+const GstReportsPage = lazy(() => import('./admin/pages/GstReportsPage'));
+const AuditLogsPage = lazy(() => import('./admin/pages/AuditLogsPage'));
+const SettingsPage = lazy(() => import('./admin/pages/SettingsPage'));
+const ShippingSettingsPage = lazy(() => import('./admin/pages/ShippingSettingsPage'));
+const CouponsPage = lazy(() => import('./admin/pages/CouponsPage'));
+const AnalyticsPage = lazy(() => import('./admin/pages/AnalyticsPage'));
+const AdminUsersPage = lazy(() => import('./admin/pages/AdminUsersPage'));
+const InquiriesPage = lazy(() => import('./admin/pages/InquiriesPage'));
+const AdminProfilePage = lazy(() => import('./admin/pages/AdminProfilePage'));
+const BusinessProfilePage = lazy(() => import('./admin/pages/BusinessProfilePage'));
+const ReviewsPage = lazy(() => import('./admin/pages/ReviewsPage'));
 
 import PageLoader from './components/ui/PageLoader';
 import './App.css';

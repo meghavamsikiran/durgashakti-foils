@@ -3,7 +3,10 @@ import { motion } from 'framer-motion';
 import { ShieldCheck, Eye, Lock, FileText, Globe, Key } from 'lucide-react';
 import { fadeInUp, staggerContainer } from '../animations/variants';
 
+import useDocumentTitle from '../hooks/useDocumentTitle';
+
 const PrivacyPolicy = () => {
+  useDocumentTitle('Privacy Policy - Data Security', 'Understand how Durga Shakti Foils handles customer data, cookies usage, billing details protection, and security policies.');
   const sections = [
     { id: 'collection', title: '1. Information We Collect', icon: Eye },
     { id: 'cookies', title: '2. Cookies & Tracking', icon: Globe },

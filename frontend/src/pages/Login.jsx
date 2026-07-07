@@ -22,7 +22,10 @@ const normalizeAuthError = (error) => {
   return 'Authentication failed';
 };
 
+import useDocumentTitle from '../hooks/useDocumentTitle';
+
 const Login = () => {
+  useDocumentTitle('Account Authentication - Sign In & Sign Up', 'Log in to your Durga Shakti Foils account or register a new customer profile to manage your orders, shipping addresses, and support tickets.');
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

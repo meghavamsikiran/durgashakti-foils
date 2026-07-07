@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 import TablePagination from '../components/ui/TablePagination';
 import api from '../utils/api';
 import apiClient from '../services/core/apiClient';
@@ -41,6 +42,7 @@ const productNameCompare = (a, b) => (
 const normalizeShopProducts = (items = []) => [...items].sort(productNameCompare);
 
 const Shop = () => {
+  useDocumentTitle('Shop Aluminum Foils - Commercial & Kitchen Rolls', 'Explore our premium selection of food-grade aluminum foil rolls. Heavy duty catering rolls, standard kitchen wrapping foils, and kitchen wraps available for bulk ordering.');
   const getInitialProducts = () => {
     const cachedResponse = apiClient.getCachedDataSync('/products');
     return normalizeShopProducts(cachedResponse?.data?.items || readSessionList(PRODUCTS_CACHE_KEY));

@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { ShieldCheck, Flame, Sparkles, Award, Users, Warehouse, HeartHandshake, Compass } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { reveal, revealSlow, fadeInUp, staggerContainer } from '../animations/variants';
+import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const About = () => {
   const navigate = useNavigate();
+  useDocumentTitle('About Us - Durga Shakti Foils Heritage & Quality', 'Learn about Durga Shakti Foils Pvt Ltd, our commitment to manufacturing premium, pure food-grade virgin aluminium foils with advanced wrapping technologies.');
   return (
     <div className="min-h-screen bg-[#0C1310] text-white overflow-x-hidden font-sans">
       
