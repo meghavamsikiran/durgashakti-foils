@@ -10,6 +10,10 @@ export const getBackendUrl = () => {
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return 'http://localhost:8080';
     }
+    // If running on Vercel production, point to the backend service deployed on Render
+    if (hostname.includes('vercel.app')) {
+      return 'https://durgashakti-backend-service.onrender.com';
+    }
   }
   return window.location.origin;
 };
