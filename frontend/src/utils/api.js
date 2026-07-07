@@ -98,9 +98,18 @@ export const api = {
 
 export const formatImageUrl = (url) => {
   if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
   
   const backendUrl = getBackendUrl();
+
+  // If the image points to Supabase but Supabase is locked (Quota Exceeded 402), 
+  // rewrite it to look in our local backend public uploads backup folder instead.
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    if (url.includes('supabase.co') && url.includes('/storage/v1/object/public/')) {
+      const filename = url.substring(url.lastIndexOf('/') + 1);
+      return `${backendUrl}/uploads/${filename}`;
+    }
+    return url;
+  }
   
   if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
