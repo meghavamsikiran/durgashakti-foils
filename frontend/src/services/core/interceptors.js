@@ -17,8 +17,13 @@ export const setupInterceptors = (apiClient) => {
       // We avoid custom non-safelisted headers (like Cache-Control, Pragma, Expires) to prevent triggering CORS preflight OPTIONS requests, which fail on slow/mobile connections.
       if (config.method?.toLowerCase() === 'get') {
         if (config.url) {
-          const separator = config.url.includes('?') ? '&' : '?';
-          config.url = `${config.url}${separator}_t=${Date.now()}`;
+          // Do not append timestamp query parameters to static assets like images, videos, or uploads folders
+          const isStaticAsset = config.url.includes('/uploads/') || 
+                                /\.(webp|jpg|jpeg|png|gif|mp4|webm|svg|ico)$/i.test(config.url);
+          if (!isStaticAsset) {
+            const separator = config.url.includes('?') ? '&' : '?';
+            config.url = `${config.url}${separator}_t=${Date.now()}`;
+          }
         }
       }
       return config;

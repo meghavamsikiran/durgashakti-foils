@@ -161,9 +161,11 @@ const ProtectedAdminRoute = ({ children, permission = null }) => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] w-full">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mb-3"></div>
-        <p className="text-xs text-slate-550 font-bold uppercase tracking-wider">Loading admin session...</p>
+      <div className="fixed inset-0 z-[99998] flex flex-col items-center justify-center bg-[#0C1310] w-screen h-screen">
+        <div className="flex flex-col items-center justify-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mb-3"></div>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Loading admin session...</p>
+        </div>
       </div>
     );
   }
