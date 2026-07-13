@@ -3,10 +3,7 @@ import { motion } from 'framer-motion';
 import { ShieldAlert, Truck, RefreshCw, Landmark, AlertCircle, Clock, Zap } from 'lucide-react';
 import { fadeInUp, staggerContainer } from '../animations/variants';
 
-import useDocumentTitle from '../hooks/useDocumentTitle';
-
 const OrderPolicies = () => {
-  useDocumentTitle('Shipping, Refund & Order Policies', 'Read about shipping times, tracking options, cancellation windows, returns, and refund policy rules.');
   return (
     <div className="min-h-screen bg-[#0C1310] text-white animate-in fade-in duration-500 font-sans pb-24">
       {/* Hero Section */}

@@ -600,7 +600,6 @@ const Navbar = () => {
       <div className="flex items-center justify-between">
         <Link 
           to="/" 
-          aria-label="Navigate to Home"
           className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
             location.pathname === '/' 
               ? 'text-[#006e1b]' 
@@ -612,7 +611,6 @@ const Navbar = () => {
         </Link>
         <Link 
           to="/shop" 
-          aria-label="Navigate to Shop"
           className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
             location.pathname === '/shop' 
               ? 'text-[#006e1b]' 
@@ -632,7 +630,6 @@ const Navbar = () => {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           }}
-          aria-label={isMobileSearchOpen ? "Close Search Overlay" : "Open Search Overlay"}
           className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
             isMobileSearchOpen 
               ? 'text-[#006e1b]' 
@@ -644,7 +641,6 @@ const Navbar = () => {
         </button>
         <Link 
           to="/cart" 
-          aria-label="Navigate to Shopping Cart"
           className={`relative flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
             location.pathname === '/cart' 
               ? 'text-[#006e1b]' 
@@ -661,7 +657,6 @@ const Navbar = () => {
         </Link>
         <Link 
           to={user ? (isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard") : "/login"} 
-          aria-label={user ? "Navigate to User Profile Account" : "Navigate to Account Login"}
           className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
             location.pathname.startsWith('/dashboard') || location.pathname === '/login' 
               ? 'text-[#006e1b]' 

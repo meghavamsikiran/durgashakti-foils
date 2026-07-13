@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import reviewService from '../services/review.service';
-import useDocumentTitle from '../hooks/useDocumentTitle';
 import {
   ArrowRight,
   Leaf,
@@ -118,7 +117,6 @@ const googleReviews = [
 
 const Home = () => {
   const navigate = useNavigate();
-  useDocumentTitle('Premium Aluminum Foil Products & Supply', 'Buy premium food-grade aluminum foil rolls manufactured with advanced heat lock technology. Ideal for commercial catering, kitchen wrapping, and packaging.');
   const [themeMode, setThemeMode] = React.useState(() => localStorage.getItem('themeMode') || 'dark');
   const [theme, setTheme] = React.useState(() => localStorage.getItem('themeMode') || 'dark');
 

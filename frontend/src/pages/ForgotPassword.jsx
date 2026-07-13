@@ -7,10 +7,7 @@ import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 import authService from '../services/auth.service';
 
-import useDocumentTitle from '../hooks/useDocumentTitle';
-
 const ForgotPassword = () => {
-  useDocumentTitle('Reset Account Password - Recovery', 'Recover your Durga Shakti Foils user account password. Receive a secure OTP code to set a new password.');
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(() => searchParams.get('email') ? 2 : 1); // Auto-navigate to OTP entry if email parameter is supplied
   const [email, setEmail] = useState(() => searchParams.get('email') || '');

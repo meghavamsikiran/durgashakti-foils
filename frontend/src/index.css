@@ -61,7 +61,7 @@ h1, h2, h3, h4, h5, h6,
         --secondary-foreground: 0 0% 100%;
         
         --muted: 145 18% 92%;
-        --muted-foreground: 150 16% 38%; /* Increased contrast (from 28% to 38%) */
+        --muted-foreground: 150 16% 28%;
         
         --accent: 150 10% 92.9%;
         --accent-foreground: 165 8% 10.2%;
@@ -69,8 +69,8 @@ h1, h2, h3, h4, h5, h6,
         --destructive: 0 75.4% 41.6%;
         --destructive-foreground: 0 0% 100%;
 
-        --border: 145 15% 70%; /* Darker border for higher contrast inputs */
-        --input: 145 15% 70%;  /* Darker border for higher contrast inputs */
+        --border: 145 15% 84%;
+        --input: 145 15% 84%;
         --ring: 135 100% 21.6%;
         
         --radius: 0.5rem;
@@ -88,8 +88,8 @@ h1, h2, h3, h4, h5, h6,
         --on-surface-variant: #3c4b39;
         --inverse-surface: #2d3130;
         --inverse-on-surface: #eef1ef;
-        --outline: #475569; /* Darker outline for borders (slate-600) */
-        --outline-variant: #94a3b8; /* Darker secondary outline */
+        --outline: #64748B;
+        --outline-variant: #DDE5DF;
         --surface-tint: #006e1b;
         --primary-container: #0BD13D;
         --on-primary-container: #005312;
@@ -115,9 +115,9 @@ h1, h2, h3, h4, h5, h6,
         --emerald-hover: #16E34A;
         --emerald-glow: rgba(11, 209, 61, 0.12);
         --sidebar-alt: #111827;
-        --border-subtle: #94a3b8;
+        --border-subtle: #DDE5DF;
         --ink-slate: #0F172A;
-        --text-muted: #475569; /* Darker text (slate-600 instead of slate-400) */
+        --text-muted: #64748B;
         --alert-red: #EF4444;
         --warning-orange: #F97316;
         --loader-track-color: rgba(0, 110, 27, 0.08);
@@ -131,11 +131,11 @@ h1, h2, h3, h4, h5, h6,
         --popover: 150 18% 7%;
         --popover-foreground: 0 0% 100%;
         --muted: 150 18% 12%;
-        --muted-foreground: 150 10% 80%; /* Increased contrast (from 70% to 80%) */
+        --muted-foreground: 150 10% 70%;
         --accent: 150 18% 12%;
         --accent-foreground: 0 0% 100%;
-        --border: 150 18% 18%; /* High contrast dark borders */
-        --input: 150 18% 18%;  /* High contrast dark inputs */
+        --border: 150 18% 12%;
+        --input: 150 18% 12%;
         --ring: 135 100% 21.6%;
         --primary: 137 71% 50%;
         

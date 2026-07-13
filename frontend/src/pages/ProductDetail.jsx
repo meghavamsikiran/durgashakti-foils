@@ -15,8 +15,6 @@ import ProductReviews from '../components/reviews/ProductReviews';
 import StarRating from '../components/reviews/StarRating';
 import reviewService from '../services/review.service';
 
-import useDocumentTitle from '../hooks/useDocumentTitle';
-
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -31,10 +29,6 @@ const ProductDetail = () => {
   }, [id]);
 
   const [product, setProduct] = useState(() => getInitialProduct());
-  useDocumentTitle(
-    product ? product.name : 'Product Details',
-    product ? `Buy ${product.name} online. ${product.description || 'Premium aluminum foil wraps for commercial or home kitchens.'}` : 'View details of our premium food-grade aluminum foil packing items.'
-  );
   const [loading, setLoading] = useState(() => !getInitialProduct());
   const [notFound, setNotFound] = useState(false);
   const [adding, setAdding] = useState(false);

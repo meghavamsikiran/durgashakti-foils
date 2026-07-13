@@ -10,10 +10,8 @@ import contactService from '../services/contact.service';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/core/apiClient';
-import useDocumentTitle from '../hooks/useDocumentTitle';
 
 const Contact = () => {
-  useDocumentTitle('Contact Us - Support & Inquiries', 'Get in touch with Durga Shakti Foils Pvt Ltd for commercial bulk supply, dealership queries, order feedback, and support inquiries.');
   const { user } = useAuth();
   const [formData, setFormData] = React.useState({ name: '', email: '', phone: '', message: '' });
   const [submitted, setSubmitted] = React.useState(false);
@@ -369,9 +367,8 @@ const Contact = () => {
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-4 text-left w-full">
                     <div className="flex flex-col gap-1.5 w-full">
-                      <Label htmlFor="contact-name" className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans text-left">NAME</Label>
+                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans text-left">NAME</Label>
                       <Input 
-                        id="contact-name"
                         required
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -382,9 +379,8 @@ const Contact = () => {
                     </div>
                     
                     <div className="flex flex-col gap-1.5 w-full">
-                      <Label htmlFor="contact-email" className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans text-left">EMAIL</Label>
+                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans text-left">EMAIL</Label>
                       <Input 
-                        id="contact-email"
                         required
                         type="email"
                         value={formData.email}
@@ -394,11 +390,10 @@ const Contact = () => {
                         className={`h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 transition-all px-4 text-sm font-medium w-full text-left ${user ? 'opacity-80 cursor-not-allowed bg-slate-900/40' : ''}`} 
                       />
                     </div>
-                    
+
                     <div className="flex flex-col gap-1.5 w-full">
-                      <Label htmlFor="contact-phone" className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans text-left">PHONE NUMBER</Label>
+                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans text-left">PHONE NUMBER</Label>
                       <Input 
-                        id="contact-phone"
                         required
                         type="text"
                         maxLength={10}
@@ -414,9 +409,8 @@ const Contact = () => {
                     </div>
                     
                     <div className="flex flex-col gap-1.5 w-full">
-                      <Label htmlFor="contact-message" className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans text-left">MESSAGE</Label>
+                      <Label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1 font-sans text-left">MESSAGE</Label>
                       <textarea 
-                        id="contact-message"
                         required
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}

@@ -183,8 +183,6 @@ const ProductCard = ({ product }) => {
           <img
             src={formatImageUrl(product.image_url)}
             alt={product.name}
-            width={300}
-            height={300}
             className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-103"
             data-testid="product-image"
           />
@@ -192,7 +190,6 @@ const ProductCard = ({ product }) => {
           {/* Wishlist Button */}
           <button
             onClick={handleToggleWishlist}
-            aria-label={isWishlisted ? `Remove ${product.name} from Wishlist` : `Add ${product.name} to Wishlist`}
             className="absolute top-3 right-3 p-2 rounded-full bg-white border border-slate-200 transition-all duration-200 shadow-sm z-10 hover:scale-110 flex items-center justify-center"
             data-testid="wishlist-toggle"
           >

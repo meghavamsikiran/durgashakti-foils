@@ -12,12 +12,9 @@ import apiClient from '../services/core/apiClient';
 import { calculateCheckoutPricing } from '../utils/checkoutPricing';
 import { getProductPricing } from '../utils/productPricing';
 
-import useDocumentTitle from '../hooks/useDocumentTitle';
-
 const Cart = () => {
   const navigate = useNavigate();
   const { cart, updateCartItem, removeFromCart, clearCart, loading, cartReady } = useCart();
-  useDocumentTitle('Shopping Cart - Review Items', 'Review the aluminum foil rolls added to your cart. Modify item quantities, choose shipping payment methods, and check out securely.');
 
   const getInitialProductsMap = () => {
     const cachedResponse = apiClient.getCachedDataSync('/products');

@@ -3,10 +3,7 @@ import { motion } from 'framer-motion';
 import { ShieldAlert, BookOpen, AlertOctagon, HelpCircle, Landmark, ShieldCheck, Mail } from 'lucide-react';
 import { fadeInUp, staggerContainer } from '../animations/variants';
 
-import useDocumentTitle from '../hooks/useDocumentTitle';
-
 const TermsOfService = () => {
-  useDocumentTitle('Terms of Service - Customer Agreement', 'Read the terms of service and agreement guidelines for purchasing aluminum foil products from Durga Shakti Foils Pvt Ltd.');
   const sections = [
     { id: 'acceptance', title: '1. Acceptance of Terms', icon: BookOpen },
     { id: 'modification', title: '2. Modification of Terms', icon: ShieldAlert },
