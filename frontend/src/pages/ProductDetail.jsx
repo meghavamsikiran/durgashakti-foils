@@ -67,9 +67,9 @@ const ProductDetail = () => {
     setTouchEnd(null);
   };
 
-  const pricing = getProductPricing(product);
+  const pricing = getProductPricing(product || {});
   
-  const activeTag = getProductBadge(product, pricing.discountPercent);
+  const activeTag = product ? getProductBadge(product, pricing.discountPercent) : null;
   const primaryCoupon = Array.isArray(product?.applicable_coupons) ? product.applicable_coupons[0] : null;
   const formatCouponValue = (coupon) => {
     if (coupon.discount_type === 'percentage') return `${Number(coupon.discount_value || 0)}% OFF`;
