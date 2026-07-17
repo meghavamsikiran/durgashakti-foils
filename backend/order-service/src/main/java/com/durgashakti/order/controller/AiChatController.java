@@ -159,11 +159,7 @@ public class AiChatController {
       }
     } catch (Exception e) {
         log.error("AI Chat service failed. Error: {}", e.getMessage(), e);
-        if (e.getMessage() != null && (e.getMessage().contains("429") || e.getMessage().contains("quota"))) {
-            aiResponse = "Our AI assistant is experiencing high demand right now. Please try again in a minute! 🙏";
-        } else {
-            aiResponse = "I'm sorry, our AI service is temporarily unavailable. Please try again shortly or contact our support team for help.";
-        }
+        aiResponse = "[DEBUG ERROR] AI service exception: " + e.getMessage();
     }
 
     // Save Bot message to history
