@@ -30,9 +30,9 @@ public class GeminiFailoverService {
 
     // Model fallback chain — try each model in order until one works
     private static final String[] MODEL_CHAIN = {
-        "gemini-2.0-flash-lite",   // Highest free tier limits (30 RPM)
-        "gemini-2.0-flash",        // Standard free tier (15 RPM)
-        "gemini-1.5-flash",        // Legacy model with separate quota
+        "gemini-2.0-flash",           // Standard model
+        "gemini-1.5-flash",           // Stable 1.5 flash
+        "gemini-1.5-flash-8b",        // High throughput lightweight 1.5 model
     };
 
     private final String primaryApiKey;
