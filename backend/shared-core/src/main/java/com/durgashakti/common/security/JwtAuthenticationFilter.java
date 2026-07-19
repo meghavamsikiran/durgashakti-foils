@@ -17,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * JWT authentication filter — extracts the Bearer token from the Authorization header,
@@ -56,9 +57,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String role = claims.get("role", String.class);
 
             if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                List<SimpleGrantedAuthority> authorities = List.of(
-                        new SimpleGrantedAuthority("ROLE_" + (role != null ? role.toUpperCase() : "CUSTOMER"))
-                );
+                List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + (role != null ? role.toUpperCase() : "CUSTOMER")));
+
+                Map<?, ?> permissionsMap = claims.get("permissions", Map.class);
+                if (permissionsMap != null) {
+                    for (Map.Entry<?, ?> entry : permissionsMap.entrySet()) {
+                        if (Boolean.TRUE.equals(entry.getValue())) {
+                            authorities.add(new SimpleGrantedAuthority(String.valueOf(entry.getKey())));
+                        }
+                    }
+                }
+
+                if ("SUPER_ADMIN".equalsIgnoreCase(role)) {
+                    List<String> allPerms = List.of(
+                        "view_products", "edit_products", "view_inventory", "view_orders", 
+                        "view_order_details", "view_customers", "view_inquiries", "view_reviews", 
+                        "view_transactions", "view_analytics", "view_gst_reports", "manage_admins", 
+                        "view_audit_logs", "manage_settings", "manage_coupons"
+                    );
+                    for (String perm : allPerms) {
+                        SimpleGrantedAuthority auth = new SimpleGrantedAuthority(perm);
+                        if (!authorities.contains(auth)) {
+                            authorities.add(auth);
+                        }
+                    }
+                }
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userId, token, authorities);

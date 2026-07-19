@@ -28,31 +28,39 @@ public class JwtUtil {
             @Value("${jwt.refresh-token-days:7}") long refreshDays) {
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         if (keyBytes.length < 32) {
-            byte[] padded = new byte[32];
-            System.arraycopy(keyBytes, 0, padded, 0, keyBytes.length);
-            keyBytes = padded;
+            throw new IllegalArgumentException("JWT Secret key must be at least 32 bytes (256 bits) long to comply with HS256 requirements. Current key is only " + keyBytes.length + " bytes.");
         }
         this.signingKey = Keys.hmacShaKeyFor(keyBytes);
         this.accessTokenMs = accessMinutes * 60 * 1000;
         this.refreshTokenMs = refreshDays * 24 * 3600 * 1000;
     }
 
-    /** Create an access token (short-lived). */
-    public String createAccessToken(String userId, String email, String role) {
-        return buildToken(userId, email, role, accessTokenMs);
-    }
-
-    /** Create a refresh token (long-lived). */
-    public String createRefreshToken(String userId, String email, String role) {
-        return buildToken(userId, email, role, refreshTokenMs);
-    }
-
-    private String buildToken(String userId, String email, String role, long ttlMs) {
+    /** Create an access token (short-lived) with permissions. */
+    public String createAccessToken(String userId, String email, String role, Map<String, Object> permissions) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("user_id", userId);
         claims.put("email", email);
         claims.put("role", role);
+        claims.put("permissions", permissions != null ? permissions : new HashMap<>());
+        return buildToken(claims, accessTokenMs);
+    }
 
+    /** Create an access token (short-lived) default. */
+    public String createAccessToken(String userId, String email, String role) {
+        return createAccessToken(userId, email, role, new HashMap<>());
+    }
+
+    /** Create a refresh token (long-lived). */
+    public String createRefreshToken(String userId, String email, String role) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("user_id", userId);
+        claims.put("email", email);
+        claims.put("role", role);
+        return buildToken(claims, refreshTokenMs);
+    }
+
+    private String buildToken(Map<String, Object> claims, long ttlMs) {
+        String userId = String.valueOf(claims.get("user_id"));
         return Jwts.builder()
                 .claims(claims)
                 .subject(userId)

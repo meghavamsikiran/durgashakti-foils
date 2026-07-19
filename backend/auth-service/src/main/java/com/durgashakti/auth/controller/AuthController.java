@@ -33,7 +33,8 @@ public class AuthController {
     @PostMapping("/auth/google")
     public ResponseEntity<Map<String, Object>> googleLogin(@RequestBody Map<String, String> payload) {
         String accessToken = payload.get("access_token");
-        return ResponseEntity.ok(authService.googleLogin(accessToken));
+        String action = payload.get("action");
+        return ResponseEntity.ok(authService.googleLogin(accessToken, action));
     }
 
     @GetMapping("/auth/me")
@@ -43,7 +44,7 @@ public class AuthController {
     }
 
     @PutMapping("/auth/me")
-    public ResponseEntity<Map<String, Object>> updateMe(@RequestBody RegisterRequest req, Authentication authentication) {
+    public ResponseEntity<Map<String, Object>> updateMe(@Valid @RequestBody UpdateProfileRequest req, Authentication authentication) {
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
         return ResponseEntity.ok(authService.updateMe(userId, req));
     }

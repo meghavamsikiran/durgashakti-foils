@@ -20,6 +20,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -106,8 +107,40 @@ public class OrderServiceImpl implements OrderService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot place order with empty cart");
         }
 
+        // --- C-05: Validate payment method BEFORE any stock/coupon operations ---
+        // Load shipping settings early to check COD availability
+        Optional<Setting> shippingSettingsOpt = settingRepository.findById("shipping_settings");
+        boolean codEnabled = true;
+        if (shippingSettingsOpt.isPresent()) {
+            Map<String, Object> config = shippingSettingsOpt.get().getValue();
+            if (config != null) {
+                codEnabled = !Boolean.FALSE.equals(config.get("codEnabled")) && !"Inactive".equalsIgnoreCase(String.valueOf(config.get("codStatus")));
+            }
+        }
+        if ("cod".equalsIgnoreCase(req.getPaymentMethod()) && !codEnabled) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Cash on Delivery (COD) is temporarily disabled.");
+        }
+
+        // --- H-18: Validate shipping address fields ---
+        Map<String, Object> address = req.getShippingAddress();
+        if (address == null || address.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Shipping address is required.");
+        }
+        List<String> requiredFields = List.of("full_name", "phone", "address_line1", "city", "state", "pincode");
+        for (String field : requiredFields) {
+            Object val = address.get(field);
+            if (val == null || String.valueOf(val).trim().isEmpty()) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Shipping address field '" + field + "' is required.");
+            }
+        }
+        String pinStr = String.valueOf(address.get("pincode")).trim();
+        if (pinStr.length() != 6 || !pinStr.matches("\\d+")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Pincode must be a valid 6-digit numeric code.");
+        }
+
+        // --- C-04: Use SecureRandom + 8-digit suffix to prevent collisions ---
         String dateStr = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String randomSuffix = String.format("%05d", new Random().nextInt(100000));
+        String randomSuffix = String.format("%08d", new SecureRandom().nextInt(100000000));
         String orderNumber = "OD-" + dateStr + "-" + randomSuffix;
 
         double subtotal = 0;
@@ -164,7 +197,7 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        Optional<Setting> shippingSettingsOpt = settingRepository.findById("shipping_settings");
+        // Shipping settings already loaded above (C-05 early validation)
         double deliveryCharge = 70.0;
         
         boolean enableShipping = true;
@@ -172,7 +205,6 @@ public class OrderServiceImpl implements OrderService {
         double freeShippingThreshold = 1099.0;
         double defaultShippingCharge = 70.0;
         boolean shippingZonesEnabled = false;
-        boolean codEnabled = true;
         List<Map<String, Object>> zones = new ArrayList<>();
 
         if (shippingSettingsOpt.isPresent()) {
@@ -180,7 +212,6 @@ public class OrderServiceImpl implements OrderService {
             if (config != null) {
                 enableShipping = !Boolean.FALSE.equals(config.get("enableShipping")) && !"Inactive".equalsIgnoreCase(String.valueOf(config.get("shippingRuleStatus")));
                 enableFreeShipping = !Boolean.FALSE.equals(config.get("enableFreeShipping"));
-                codEnabled = !Boolean.FALSE.equals(config.get("codEnabled")) && !"Inactive".equalsIgnoreCase(String.valueOf(config.get("codStatus")));
                 
                 if (config.get("freeShippingThreshold") != null) {
                     freeShippingThreshold = Double.parseDouble(String.valueOf(config.get("freeShippingThreshold")));
@@ -211,6 +242,12 @@ public class OrderServiceImpl implements OrderService {
                             zoneName = "Telangana";
                         } else if (pin.startsWith("5") || pin.startsWith("6")) {
                             zoneName = "South India";
+                        } else if (pin.startsWith("3") || pin.startsWith("4")) {
+                            zoneName = "West India";
+                        } else if (pin.startsWith("7") || pin.startsWith("8")) {
+                            zoneName = "East India";
+                        } else if (pin.startsWith("49")) {
+                            zoneName = "Central India";
                         }
                         
                         final String matchedZoneName = zoneName;
@@ -293,9 +330,7 @@ public class OrderServiceImpl implements OrderService {
         order.setUpdatedAt(now);
         order.setReceiptEmailSent(false);
 
-        if ("cod".equalsIgnoreCase(req.getPaymentMethod()) && !codEnabled) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Cash on Delivery (COD) is temporarily disabled.");
-        }
+        // COD validation already done at top of method (C-05)
 
         if ("online".equalsIgnoreCase(req.getPaymentMethod())) {
             order.setOrderStatus("pending_payment");
@@ -430,9 +465,27 @@ public class OrderServiceImpl implements OrderService {
             log.info("Received verified Razorpay Webhook event.");
             JSONObject json = new JSONObject(eventBody);
             String event = json.optString("event");
+
+            // --- C-09: Webhook idempotency check ---
+            String accountId = json.optString("account_id", "");
+            String eventId = event + ":" + accountId + ":" + json.optString("contains", "");
+            // Try to extract a more unique event key from the payment entity
+            JSONObject payload = json.optJSONObject("payload");
+            if (payload != null) {
+                JSONObject payment = payload.optJSONObject("payment");
+                JSONObject entity = payment != null ? payment.optJSONObject("entity") : null;
+                if (entity != null) {
+                    eventId = event + ":" + entity.optString("id", "") + ":" + entity.optString("order_id", "");
+                }
+            }
+
+            if (processedWebhookRepository.existsById(eventId)) {
+                log.info("Webhook event already processed (idempotency check): {}", eventId);
+                return;
+            }
+            // --- End idempotency check ---
             
             if ("payment.captured".equals(event) || "order.paid".equals(event)) {
-                JSONObject payload = json.optJSONObject("payload");
                 if (payload != null) {
                     JSONObject payment = payload.optJSONObject("payment");
                     JSONObject entity = payment != null ? payment.optJSONObject("entity") : null;
@@ -470,6 +523,13 @@ public class OrderServiceImpl implements OrderService {
                     }
                 }
             }
+
+            // --- C-09: Record processed event for idempotency ---
+            ProcessedWebhook pw = new ProcessedWebhook();
+            pw.setEventId(eventId);
+            pw.setProcessedAt(OffsetDateTime.now());
+            processedWebhookRepository.save(pw);
+
         } catch (Exception e) {
             log.error("Failed to parse or process Razorpay webhook body: {}", e.getMessage());
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Webhook processing failed: " + e.getMessage());

@@ -33,7 +33,7 @@ public class ContactController {
     }
 
     @GetMapping("/admin/contacts")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('view_inquiries')")
     public ResponseEntity<Map<String, Object>> listInquiries(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "limit", defaultValue = "10") int limit,
@@ -86,7 +86,7 @@ public class ContactController {
     }
 
     @PostMapping("/admin/contacts/{id}/reply")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('view_inquiries')")
     public ResponseEntity<Contact> replyToInquiry(
             @PathVariable("id") UUID id,
             @RequestBody Map<String, String> payload) {

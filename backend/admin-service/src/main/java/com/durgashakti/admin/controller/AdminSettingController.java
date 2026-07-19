@@ -28,6 +28,7 @@ public class AdminSettingController {
     }
 
     @GetMapping("/settings")
+    @PreAuthorize("hasAuthority('manage_settings')")
     public ResponseEntity<?> getSettings() {
         try {
             List<Setting> all = settingRepository.findAll();
@@ -44,6 +45,7 @@ public class AdminSettingController {
     }
 
     @PostMapping("/settings")
+    @PreAuthorize("hasAuthority('manage_settings')")
     @SuppressWarnings("unchecked")
     public ResponseEntity<?> saveSetting(@RequestBody Map<String, Object> req) {
         try {

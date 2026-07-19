@@ -21,21 +21,25 @@ public class AdminCategoryController {
     }
 
     @GetMapping("/categories")
+    @PreAuthorize("hasAuthority('view_products')")
     public ResponseEntity<List<Category>> listAll() {
         return ResponseEntity.ok(adminCategoryService.listAll());
     }
 
     @PostMapping("/categories")
+    @PreAuthorize("hasAuthority('edit_products')")
     public ResponseEntity<Category> create(@RequestBody Category category) {
         return ResponseEntity.ok(adminCategoryService.create(category));
     }
 
     @PutMapping("/categories/{id}")
+    @PreAuthorize("hasAuthority('edit_products')")
     public ResponseEntity<Category> update(@PathVariable("id") UUID id, @RequestBody Category category) {
         return ResponseEntity.ok(adminCategoryService.update(id, category));
     }
 
     @DeleteMapping("/categories/{id}")
+    @PreAuthorize("hasAuthority('edit_products')")
     public ResponseEntity<Void> delete(@PathVariable("id") UUID id) {
         adminCategoryService.delete(id);
         return ResponseEntity.noContent().build();

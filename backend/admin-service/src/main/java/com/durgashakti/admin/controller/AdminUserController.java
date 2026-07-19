@@ -22,6 +22,7 @@ public class AdminUserController {
     }
 
     @GetMapping({"/users", "/customers"})
+    @PreAuthorize("hasAuthority('view_customers')")
     public ResponseEntity<Map<String, Object>> listUsers() {
         List<User> users = adminUserService.listUsers();
         Map<String, Object> response = new java.util.HashMap<>();
@@ -31,16 +32,19 @@ public class AdminUserController {
     }
 
     @GetMapping({"/users/{id}", "/customers/{id}"})
+    @PreAuthorize("hasAuthority('view_customers')")
     public ResponseEntity<User> getUser(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(adminUserService.getUser(id));
     }
 
     @PutMapping("/users/{id}")
+    @PreAuthorize("hasAuthority('view_customers')")
     public ResponseEntity<User> updateUser(@PathVariable("id") UUID id, @RequestBody User user) {
         return ResponseEntity.ok(adminUserService.updateUser(id, user));
     }
 
     @DeleteMapping("/users/{id}")
+    @PreAuthorize("hasAuthority('view_customers')")
     public ResponseEntity<Void> deleteUser(@PathVariable("id") UUID id) {
         adminUserService.deleteUser(id);
         return ResponseEntity.noContent().build();

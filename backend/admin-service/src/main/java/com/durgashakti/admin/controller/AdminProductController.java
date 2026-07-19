@@ -21,6 +21,7 @@ public class AdminProductController {
     }
 
     @GetMapping("/products")
+    @PreAuthorize("hasAuthority('view_products')")
     public ResponseEntity<Map<String, Object>> listAll(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "limit", defaultValue = "20") int limit,
@@ -88,22 +89,26 @@ public class AdminProductController {
     }
 
     @PostMapping("/products")
+    @PreAuthorize("hasAuthority('edit_products')")
     public ResponseEntity<Product> createProduct(@RequestBody Product product) {
         return ResponseEntity.ok(adminProductService.createProduct(product));
     }
 
     @PutMapping("/products/{id}")
+    @PreAuthorize("hasAuthority('edit_products')")
     public ResponseEntity<Product> updateProduct(@PathVariable("id") UUID id, @RequestBody Product product) {
         return ResponseEntity.ok(adminProductService.updateProduct(id, product));
     }
 
     @PutMapping("/products/{id}/status")
+    @PreAuthorize("hasAuthority('edit_products')")
     public ResponseEntity<Product> updateProductStatus(@PathVariable("id") UUID id, @RequestBody Map<String, Object> payload) {
         Boolean isActive = (Boolean) payload.get("is_active");
         return ResponseEntity.ok(adminProductService.updateProductStatus(id, isActive));
     }
 
     @DeleteMapping("/products/{id}")
+    @PreAuthorize("hasAuthority('edit_products')")
     public ResponseEntity<Void> deleteProduct(@PathVariable("id") UUID id) {
         adminProductService.deleteProduct(id);
         return ResponseEntity.noContent().build();

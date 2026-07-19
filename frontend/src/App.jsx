@@ -32,36 +32,36 @@ const OrderDetailsPage = lazy(() => import('./pages/OrderDetailsPage'));
 const OrderSuccess = lazy(() => import('./pages/OrderSuccess'));
 const ProductReviewPage = lazy(() => import('./pages/ProductReviewPage'));
 
-// Admin (eagerly loaded for instant tab switching)
-import AdminLayout from './admin/layouts/AdminLayout';
-import ProtectedAdminRoute from './admin/guards/ProtectedAdminRoute';
-import AdminDashboard from './admin/pages/AdminDashboard';
-import ProductsPage from './admin/pages/ProductsPage';
-import CategoriesPage from './admin/pages/CategoriesPage';
-import InventoryPage from './admin/pages/InventoryPage';
-import OrdersPage from './admin/pages/OrdersPage';
-import AdminOrderDetailsPage from './admin/pages/AdminOrderDetailsPage';
-import CustomersPage from './admin/pages/CustomersPage';
-import CustomerDetailPage from './admin/pages/CustomerDetailPage';
-import PaymentsPage from './admin/pages/PaymentsPage';
-import GstReportsPage from './admin/pages/GstReportsPage';
-import AuditLogsPage from './admin/pages/AuditLogsPage';
-import SettingsPage from './admin/pages/SettingsPage';
-import ShippingSettingsPage from './admin/pages/ShippingSettingsPage';
-import CouponsPage from './admin/pages/CouponsPage';
-import AnalyticsPage from './admin/pages/AnalyticsPage';
-import AdminUsersPage from './admin/pages/AdminUsersPage';
-import InquiriesPage from './admin/pages/InquiriesPage';
-import AdminProfilePage from './admin/pages/AdminProfilePage';
-import BusinessProfilePage from './admin/pages/BusinessProfilePage';
-import ReviewsPage from './admin/pages/ReviewsPage';
+// Admin (lazy loaded)
+const AdminLayout = lazy(() => import('./admin/layouts/AdminLayout'));
+const ProtectedAdminRoute = lazy(() => import('./admin/guards/ProtectedAdminRoute'));
+const AdminDashboard = lazy(() => import('./admin/pages/AdminDashboard'));
+const ProductsPage = lazy(() => import('./admin/pages/ProductsPage'));
+const CategoriesPage = lazy(() => import('./admin/pages/CategoriesPage'));
+const InventoryPage = lazy(() => import('./admin/pages/InventoryPage'));
+const OrdersPage = lazy(() => import('./admin/pages/OrdersPage'));
+const AdminOrderDetailsPage = lazy(() => import('./admin/pages/AdminOrderDetailsPage'));
+const CustomersPage = lazy(() => import('./admin/pages/CustomersPage'));
+const CustomerDetailPage = lazy(() => import('./admin/pages/CustomerDetailPage'));
+const PaymentsPage = lazy(() => import('./admin/pages/PaymentsPage'));
+const GstReportsPage = lazy(() => import('./admin/pages/GstReportsPage'));
+const AuditLogsPage = lazy(() => import('./admin/pages/AuditLogsPage'));
+const SettingsPage = lazy(() => import('./admin/pages/SettingsPage'));
+const ShippingSettingsPage = lazy(() => import('./admin/pages/ShippingSettingsPage'));
+const CouponsPage = lazy(() => import('./admin/pages/CouponsPage'));
+const AnalyticsPage = lazy(() => import('./admin/pages/AnalyticsPage'));
+const AdminUsersPage = lazy(() => import('./admin/pages/AdminUsersPage'));
+const InquiriesPage = lazy(() => import('./admin/pages/InquiriesPage'));
+const AdminProfilePage = lazy(() => import('./admin/pages/AdminProfilePage'));
+const BusinessProfilePage = lazy(() => import('./admin/pages/BusinessProfilePage'));
+const ReviewsPage = lazy(() => import('./admin/pages/ReviewsPage'));
+
+import NotFound from './pages/NotFound';
 
 import PageLoader from './components/ui/PageLoader';
 import './App.css';
 import Maintenance from './pages/Maintenance';
 import AiAssistant from './components/AiAssistant';
-
-import { Sun, Moon } from 'lucide-react';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -101,7 +101,6 @@ function AppRoutes() {
   }, [themeMode]);
 
   const isAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin');
-  const isShopPath = location.pathname === '/shop';
   const isProtectedRoute = location.pathname.startsWith('/dashboard') || 
                            location.pathname.startsWith('/checkout') || 
                            location.pathname.startsWith('/order') || 
@@ -238,7 +237,7 @@ function AppRoutes() {
             ))}
 
             {/* Catch-all */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
         {!isAdminPath && !(isProtectedRoute && authLoading) && <Footer />}

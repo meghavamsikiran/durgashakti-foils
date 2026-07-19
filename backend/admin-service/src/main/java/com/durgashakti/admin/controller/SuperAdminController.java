@@ -165,7 +165,10 @@ public class SuperAdminController {
         if (uOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "User not found"));
         }
-        userRepository.delete(uOpt.get());
+        User u = uOpt.get();
+        u.setIsActive(false);
+        u.setStatus("deleted");
+        userRepository.save(u);
         return ResponseEntity.noContent().build();
     }
 

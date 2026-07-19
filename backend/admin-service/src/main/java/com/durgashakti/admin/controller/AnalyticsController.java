@@ -22,7 +22,7 @@ public class AnalyticsController {
     }
 
     @GetMapping({"/analytics", "/admin/analytics/summary"})
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('view_analytics')")
     public ResponseEntity<Map<String, Object>> getDashboardSummary(
             @RequestParam(value = "timeframe", required = false) String timeframe,
             @RequestParam(value = "start_date", required = false) String startDate,

@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -128,7 +129,7 @@ public class AuthServiceImpl implements AuthService {
             }
         });
 
-        String token = jwtUtil.createAccessToken(savedUser.getId().toString(), savedUser.getEmail(), savedUser.getRole());
+        String token = jwtUtil.createAccessToken(savedUser.getId().toString(), savedUser.getEmail(), savedUser.getRole(), savedUser.getPermissions());
         return Map.of("token", token, "user", serializeUser(savedUser));
     }
 
@@ -149,12 +150,12 @@ public class AuthServiceImpl implements AuthService {
             throw new ApiException(HttpStatus.FORBIDDEN, "Account is disabled. Please contact support.");
         }
 
-        String token = jwtUtil.createAccessToken(user.getId().toString(), user.getEmail(), user.getRole());
+        String token = jwtUtil.createAccessToken(user.getId().toString(), user.getEmail(), user.getRole(), user.getPermissions());
         return Map.of("token", token, "user", serializeUser(user));
     }
 
     @Override
-    public Map<String, Object> googleLogin(String googleAccessToken) {
+    public Map<String, Object> googleLogin(String googleAccessToken, String action) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://www.googleapis.com/oauth2/v3/userinfo"))
@@ -184,6 +185,11 @@ public class AuthServiceImpl implements AuthService {
             Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email);
             User user;
             if (userOpt.isEmpty()) {
+                // If they came from Login page ("Continue with Google"), reject direct creation
+                if ("login".equalsIgnoreCase(action) || action == null || action.trim().isEmpty()) {
+                    throw new ApiException(HttpStatus.UNAUTHORIZED, "Account does not exist. Please register first.");
+                }
+
                 user = new User();
                 user.setEmail(email.toLowerCase());
                 user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
@@ -212,7 +218,7 @@ public class AuthServiceImpl implements AuthService {
                 }
             }
 
-            String token = jwtUtil.createAccessToken(user.getId().toString(), user.getEmail(), user.getRole());
+            String token = jwtUtil.createAccessToken(user.getId().toString(), user.getEmail(), user.getRole(), user.getPermissions());
             return Map.of("token", token, "user", serializeUser(user));
 
         } catch (Exception e) {
@@ -231,7 +237,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public Map<String, Object> updateMe(UUID userId, RegisterRequest req) {
+    public Map<String, Object> updateMe(UUID userId, UpdateProfileRequest req) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
 
@@ -255,7 +261,9 @@ public class AuthServiceImpl implements AuthService {
     public void deleteMe(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
-        userRepository.delete(user);
+        user.setIsActive(false);
+        user.setStatus("deleted");
+        userRepository.save(user);
     }
 
     @Override
@@ -265,6 +273,10 @@ public class AuthServiceImpl implements AuthService {
 
         if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPassword())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Wrong current password");
+        }
+
+        if (req.getNewPassword() == null || req.getNewPassword().length() < 8) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "New password must be at least 8 characters long");
         }
 
         user.setPassword(passwordEncoder.encode(req.getNewPassword()));
@@ -280,7 +292,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmailIgnoreCase(req.getEmail())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
 
-        String otp = String.format("%06d", new Random().nextInt(1000000));
+        String otp = String.format("%06d", new SecureRandom().nextInt(1000000));
         OffsetDateTime expiry = OffsetDateTime.now().plusMinutes(15);
 
         PasswordReset pr = passwordResetRepository.findByEmail(user.getEmail())
@@ -346,6 +358,10 @@ public class AuthServiceImpl implements AuthService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Security code has expired");
         }
 
+        if (pr.getFailedAttempts() >= 5) {
+            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "Too many failed attempts. Please request a new security code.");
+        }
+
         if (!pr.getOtp().equals(req.getOtp())) {
             pr.setFailedAttempts(pr.getFailedAttempts() + 1);
             passwordResetRepository.save(pr);
@@ -354,6 +370,10 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userRepository.findByEmailIgnoreCase(req.getEmail())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (req.getNewPassword() == null || req.getNewPassword().length() < 8) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "New password must be at least 8 characters long");
+        }
 
         user.setPassword(passwordEncoder.encode(req.getNewPassword()));
         

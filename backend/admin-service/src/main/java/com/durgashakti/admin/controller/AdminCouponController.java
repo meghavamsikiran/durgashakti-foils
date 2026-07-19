@@ -41,27 +41,32 @@ public class AdminCouponController {
     }
 
     @GetMapping("/coupons")
+    @PreAuthorize("hasAuthority('manage_coupons')")
     public ResponseEntity<List<Coupon>> listAll() {
         return ResponseEntity.ok(adminCouponService.listAll());
     }
 
     @PostMapping("/coupons")
+    @PreAuthorize("hasAuthority('manage_coupons')")
     public ResponseEntity<Coupon> create(@RequestBody Coupon coupon) {
         return ResponseEntity.ok(adminCouponService.create(coupon));
     }
 
     @PutMapping("/coupons/{id}")
+    @PreAuthorize("hasAuthority('manage_coupons')")
     public ResponseEntity<Coupon> update(@PathVariable("id") UUID id, @RequestBody Coupon coupon) {
         return ResponseEntity.ok(adminCouponService.update(id, coupon));
     }
 
     @DeleteMapping("/coupons/{id}")
+    @PreAuthorize("hasAuthority('manage_coupons')")
     public ResponseEntity<Void> delete(@PathVariable("id") UUID id) {
         adminCouponService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/coupons/settings")
+    @PreAuthorize("hasAuthority('manage_coupons')")
     public ResponseEntity<Map<String, Object>> getSettings() {
         Optional<Setting> sOpt = settingRepository.findById("coupon_settings");
         Map<String, Object> defaultSettings = new HashMap<>();
@@ -76,6 +81,7 @@ public class AdminCouponController {
     }
 
     @PostMapping("/coupons/settings")
+    @PreAuthorize("hasAuthority('manage_coupons')")
     public ResponseEntity<Map<String, String>> saveSettings(@RequestBody Map<String, Object> req) {
         Optional<Setting> sOpt = settingRepository.findById("coupon_settings");
         Setting s = sOpt.orElseGet(() -> {
@@ -90,6 +96,7 @@ public class AdminCouponController {
     }
 
     @GetMapping("/coupons/loyal-customers")
+    @PreAuthorize("hasAuthority('manage_coupons')")
     public ResponseEntity<Map<String, Object>> listLoyalCustomers(
             @RequestParam(value = "search", defaultValue = "") String search) {
         

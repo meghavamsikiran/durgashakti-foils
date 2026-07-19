@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api")
@@ -34,7 +35,7 @@ public class OrderController {
     }
 
     @PostMapping("/orders")
-    public ResponseEntity<?> createOrder(@RequestBody OrderCreateRequest req, Authentication authentication) {
+    public ResponseEntity<?> createOrder(@Valid @RequestBody OrderCreateRequest req, Authentication authentication) {
         try {
             UUID userId = UUID.fromString((String) authentication.getPrincipal());
             Order order = orderService.createOrder(userId, req);

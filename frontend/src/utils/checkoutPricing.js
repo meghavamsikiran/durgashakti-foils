@@ -68,6 +68,12 @@ export const calculateCheckoutPricing = (subtotal, settings = {}, paymentMethod 
         zoneName = 'Telangana';
       } else if (pin.startsWith('5') || pin.startsWith('6')) {
         zoneName = 'South India';
+      } else if (pin.startsWith('3') || pin.startsWith('4')) {
+        zoneName = 'West India';
+      } else if (pin.startsWith('7') || pin.startsWith('8')) {
+        zoneName = 'East India';
+      } else if (pin.startsWith('49')) {
+        zoneName = 'Central India';
       }
       const matchedZone = config.zones.find(z => z.name.toLowerCase() === zoneName.toLowerCase() && z.status === 'Active');
       if (matchedZone) {

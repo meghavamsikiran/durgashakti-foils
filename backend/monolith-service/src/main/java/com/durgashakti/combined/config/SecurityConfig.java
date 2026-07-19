@@ -60,11 +60,10 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/reviews/google-summary").permitAll()
                 // Contact
                 .requestMatchers(HttpMethod.POST, "/api/contacts", "/api/contact", "/api/contacts/upload").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/contacts").permitAll()
+                // GET /api/contacts requires admin auth (C-08: prevents PII leakage)
                 // Razorpay Webhooks and AI chat
                 .requestMatchers("/api/payment/razorpay/webhook", "/api/orders/webhook", "/api/orders/ai-chat", "/api/orders/ai-chat/history").permitAll()
-                // Email Service
-                .requestMatchers("/api/email/send").permitAll()
+                // C-07: /api/email/send requires authentication (removed permitAll to prevent spam/phishing)
                 // Actuator/Health
                 .requestMatchers("/actuator/**", "/api/health").permitAll()
                 // Static Uploads

@@ -140,8 +140,8 @@ export const AuthProvider = ({ children }) => {
     return false;
   }, [user]);
 
-  const loginWithGoogle = useCallback(async (accessToken) => {
-    const response = await apiClient.post('/auth/google', { access_token: accessToken });
+  const loginWithGoogle = useCallback(async (accessToken, action = 'login') => {
+    const response = await apiClient.post('/auth/google', { access_token: accessToken, action });
     const tokenVal = response.data.token;
     setToken(tokenVal);
     localStorage.setItem('token', tokenVal);

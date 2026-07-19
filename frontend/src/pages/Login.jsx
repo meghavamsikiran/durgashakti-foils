@@ -147,7 +147,7 @@ const Login = () => {
           if (tokenResponse && tokenResponse.access_token) {
             setLoading(true);
             try {
-              const res = await loginWithGoogle(tokenResponse.access_token);
+              const res = await loginWithGoogle(tokenResponse.access_token, isLogin ? 'login' : 'signup');
               toast.success('Successfully authenticated with Google!');
               window.dispatchEvent(new CustomEvent('triggerLoginLoader', { detail: { duration: 3000 } }));
               const role = res.user?.role;

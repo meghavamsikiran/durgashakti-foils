@@ -21,6 +21,7 @@ public class AdminReviewController {
     }
 
     @GetMapping("/reviews")
+    @PreAuthorize("hasAuthority('view_reviews')")
     public ResponseEntity<Map<String, Object>> listReviews(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "limit", defaultValue = "20") int limit,
@@ -31,6 +32,7 @@ public class AdminReviewController {
     }
 
     @PutMapping("/reviews/{reviewId}/status")
+    @PreAuthorize("hasAuthority('view_reviews')")
     public ResponseEntity<ProductReview> updateStatus(
             @PathVariable("reviewId") UUID reviewId,
             @RequestBody Map<String, String> payload) {
@@ -39,6 +41,7 @@ public class AdminReviewController {
     }
 
     @PutMapping("/reviews/{reviewId}/reply")
+    @PreAuthorize("hasAuthority('view_reviews')")
     public ResponseEntity<ProductReview> updateReply(
             @PathVariable("reviewId") UUID reviewId,
             @RequestBody Map<String, String> payload) {
@@ -47,6 +50,7 @@ public class AdminReviewController {
     }
 
     @DeleteMapping("/reviews/{reviewId}")
+    @PreAuthorize("hasAuthority('view_reviews')")
     public ResponseEntity<Void> deleteReview(@PathVariable("reviewId") UUID reviewId) {
         adminReviewService.deleteReview(reviewId);
         return ResponseEntity.noContent().build();

@@ -64,7 +64,8 @@ public class CartServiceImpl implements CartService {
             for (Map<String, Object> curItem : currentItems) {
                 if (productId.toString().equals(curItem.get("product_id"))) {
                     int curQty = ((Number) curItem.getOrDefault("quantity", 0)).intValue();
-                    curItem.put("quantity", Math.min(curQty + quantity, maxStock));
+                    int finalQty = Math.min(99, maxStock);
+                    curItem.put("quantity", Math.min(curQty + quantity, finalQty));
                     found = true;
                     break;
                 }
@@ -73,7 +74,8 @@ public class CartServiceImpl implements CartService {
             if (!found) {
                 Map<String, Object> addedItem = new HashMap<>(newItem);
                 addedItem.put("id", UUID.randomUUID().toString());
-                addedItem.put("quantity", Math.min(quantity, maxStock));
+                int finalQty = Math.min(99, maxStock);
+                addedItem.put("quantity", Math.min(quantity, finalQty));
                 currentItems.add(addedItem);
             }
         }
@@ -117,7 +119,8 @@ public class CartServiceImpl implements CartService {
         for (Map<String, Object> item : items) {
             if (productId.toString().equals(item.get("product_id"))) {
                 int curQty = ((Number) item.getOrDefault("quantity", 0)).intValue();
-                item.put("quantity", Math.min(curQty + quantity, maxStock));
+                int finalQty = Math.min(99, maxStock);
+                item.put("quantity", Math.min(curQty + quantity, finalQty));
                 found = true;
                 break;
             }
@@ -127,7 +130,8 @@ public class CartServiceImpl implements CartService {
             Map<String, Object> newItem = new HashMap<>();
             newItem.put("id", UUID.randomUUID().toString());
             newItem.put("product_id", productId.toString());
-            newItem.put("quantity", Math.min(quantity, maxStock));
+            int finalQty = Math.min(99, maxStock);
+            newItem.put("quantity", Math.min(quantity, finalQty));
             items.add(newItem);
         }
 
@@ -154,7 +158,8 @@ public class CartServiceImpl implements CartService {
         for (Map<String, Object> item : items) {
             if (productId.toString().equals(item.get("product_id"))) {
                 if (quantity > 0 && maxStock > 0) {
-                    item.put("quantity", Math.min(quantity, maxStock));
+                    int finalQty = Math.min(99, maxStock);
+                    item.put("quantity", Math.min(quantity, finalQty));
                     updatedItems.add(item);
                 }
             } else {

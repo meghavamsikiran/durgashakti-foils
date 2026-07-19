@@ -1,7 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import PageLoader from './ui/PageLoader';
 
 /**
  * Route guard for authenticated customer routes.
@@ -12,7 +11,12 @@ const ProtectedRoute = ({ children }) => {
   const location = useLocation();
 
   if (loading) {
-    return <PageLoader />;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] w-full">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mb-3"></div>
+        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Loading...</p>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {

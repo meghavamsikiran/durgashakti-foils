@@ -39,6 +39,7 @@ public class AdminOrderController {
     }
 
     @GetMapping("/orders")
+    @PreAuthorize("hasAuthority('view_orders')")
     public ResponseEntity<Map<String, Object>> getAllOrders(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "limit", defaultValue = "20") int limit,
@@ -115,11 +116,13 @@ public class AdminOrderController {
     }
 
     @GetMapping("/orders/{orderId}")
+    @PreAuthorize("hasAuthority('view_order_details')")
     public ResponseEntity<Order> getOrderDetails(@PathVariable("orderId") UUID orderId) {
         return ResponseEntity.ok(adminOrderService.getOrderDetails(orderId));
     }
 
     @PutMapping("/orders/{orderId}/status")
+    @PreAuthorize("hasAuthority('view_orders')")
     public ResponseEntity<Order> updateOrderStatus(
             @PathVariable("orderId") UUID orderId,
             @RequestBody Map<String, String> payload) {
@@ -136,6 +139,7 @@ public class AdminOrderController {
     }
 
     @PutMapping("/orders/{orderId}/ship")
+    @PreAuthorize("hasAuthority('view_orders')")
     public ResponseEntity<Order> shipOrder(
             @PathVariable("orderId") UUID orderId,
             @RequestBody Map<String, String> payload) {
@@ -146,6 +150,7 @@ public class AdminOrderController {
 
     // ── Bulk Ship Orders ──
     @PostMapping("/orders/bulk-ship")
+    @PreAuthorize("hasAuthority('view_orders')")
     @SuppressWarnings("unchecked")
     public ResponseEntity<Map<String, Object>> bulkShipOrders(@RequestBody Map<String, Object> payload) {
         List<Map<String, String>> shipments = (List<Map<String, String>>) payload.get("orders");
@@ -158,6 +163,7 @@ public class AdminOrderController {
 
     // ── Item Return/Exchange Action (approve or reject) ──────────────────
     @PostMapping("/orders/{orderId}/items/{productId}/return-action")
+    @PreAuthorize("hasAuthority('view_orders')")
     public ResponseEntity<Map<String, Object>> itemReturnAction(
             @PathVariable("orderId") UUID orderId,
             @PathVariable("productId") String productId,
@@ -173,6 +179,7 @@ public class AdminOrderController {
 
     // ── Mark Returned Item as Received ────────────────────────────────────
     @PostMapping("/orders/{orderId}/items/{productId}/receive")
+    @PreAuthorize("hasAuthority('view_orders')")
     public ResponseEntity<Map<String, Object>> receiveReturnedItem(
             @PathVariable("orderId") UUID orderId,
             @PathVariable("productId") String productId) {
@@ -185,6 +192,7 @@ public class AdminOrderController {
 
     // ── Process Refund for a Returned Item ────────────────────────────────
     @PostMapping("/orders/{orderId}/items/{productId}/process-refund")
+    @PreAuthorize("hasAuthority('view_orders')")
     public ResponseEntity<Map<String, Object>> processItemRefund(
             @PathVariable("orderId") UUID orderId,
             @PathVariable("productId") String productId,
@@ -200,6 +208,7 @@ public class AdminOrderController {
 
     // ── Retry Refund for a Failed Refund ──
     @PostMapping("/orders/{orderId}/items/{productId}/retry-refund")
+    @PreAuthorize("hasAuthority('view_orders')")
     public ResponseEntity<Map<String, Object>> retryRefund(
             @PathVariable("orderId") UUID orderId,
             @PathVariable("productId") String productId) {
@@ -212,6 +221,7 @@ public class AdminOrderController {
 
     // ── Ship Exchange Replacement Item ────────────────────────────────────
     @PostMapping("/orders/{orderId}/items/{productId}/ship-exchange")
+    @PreAuthorize("hasAuthority('view_orders')")
     public ResponseEntity<Map<String, Object>> shipExchangeItem(
             @PathVariable("orderId") UUID orderId,
             @PathVariable("productId") String productId,
@@ -229,6 +239,7 @@ public class AdminOrderController {
 
     // ── Complete Exchange (delivery confirmed) ───────────────────────────
     @PostMapping("/orders/{orderId}/items/{productId}/complete-exchange")
+    @PreAuthorize("hasAuthority('view_orders')")
     public ResponseEntity<Map<String, Object>> completeExchangeItem(
             @PathVariable("orderId") UUID orderId,
             @PathVariable("productId") String productId) {
@@ -240,6 +251,7 @@ public class AdminOrderController {
     }
 
     @GetMapping("/gstr1/export")
+    @PreAuthorize("hasAuthority('view_gst_reports')")
     public ResponseEntity<byte[]> exportGstReport() throws IOException {
         byte[] excelBytes = gstService.exportGstReport();
         return ResponseEntity.ok()
@@ -249,6 +261,7 @@ public class AdminOrderController {
     }
 
     @GetMapping("/payments")
+    @PreAuthorize("hasAuthority('view_transactions')")
     public ResponseEntity<Map<String, Object>> getPayments(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "limit", defaultValue = "20") int limit,
@@ -358,6 +371,7 @@ public class AdminOrderController {
     }
 
     @GetMapping("/audit-logs")
+    @PreAuthorize("hasAuthority('view_audit_logs')")
     public ResponseEntity<Map<String, Object>> getAuditLogs(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "limit", defaultValue = "50") int limit,
