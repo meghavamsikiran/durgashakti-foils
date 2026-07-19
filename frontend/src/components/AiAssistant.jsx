@@ -54,11 +54,13 @@ export default function AiAssistant() {
         if (showLoadingState) setLoadingHistory(true);
         try {
           const res = await apiClient.get(`/orders/ai-chat/history?sessionId=${sessionId}`);
-          if (res.data && res.data.length > 0) {
-            setMessages(res.data);
-            const lastMsg = res.data[res.data.length - 1];
-            if (lastMsg && lastMsg.text.includes("live support agent")) {
-              setSessionStatus('escalated');
+          if (res.data) {
+            const historyMsgs = res.data.messages || [];
+            if (historyMsgs.length > 0) {
+              setMessages(historyMsgs);
+            }
+            if (res.data.status) {
+              setSessionStatus(res.data.status);
             }
           }
         } catch (err) {

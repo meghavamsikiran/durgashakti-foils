@@ -282,7 +282,7 @@ const InquiriesPage = () => {
     if (!silent) setLoadingChatHistory(true);
     try {
       const res = await apiClient.get(`/orders/ai-chat/history?sessionId=${id}`);
-      setChatMessages(res.data || []);
+      setChatMessages(res.data?.messages || []);
     } catch (err) {
       console.error("Failed to fetch chat history:", err);
     } finally {

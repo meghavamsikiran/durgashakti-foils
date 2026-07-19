@@ -75,7 +75,7 @@ public class AiChatController {
   }
 
   @GetMapping("/ai-chat/history")
-  public ResponseEntity<List<Map<String, String>>> getHistory(
+  public ResponseEntity<Map<String, Object>> getHistory(
       @RequestParam(name = "sessionId") String sessionId,
       Authentication authentication) {
       
@@ -94,12 +94,21 @@ public class AiChatController {
           } catch (Exception ignored) {}
       }
 
-      List<Map<String, String>> response = chatLogs.stream().map(chatLog -> Map.of(
+      String status = "active";
+      ChatSession session = chatSessionRepository.findById(activeSessionId).orElse(null);
+      if (session != null) {
+          status = session.getStatus();
+      }
+
+      List<Map<String, String>> messagesList = chatLogs.stream().map(chatLog -> Map.of(
           "sender", chatLog.getSender(),
           "text", chatLog.getText()
       )).collect(Collectors.toList());
 
-      return ResponseEntity.ok(response);
+      return ResponseEntity.ok(Map.of(
+          "status", status,
+          "messages", messagesList
+      ));
   }
 
   @PostMapping("/ai-chat")
