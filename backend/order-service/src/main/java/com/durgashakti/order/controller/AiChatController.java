@@ -364,6 +364,10 @@ public class AiChatController {
       ChatMessage adminLog = new ChatMessage(session.getUserId(), sessionId, "bot", "[LIVE AGENT]: " + adminText);
       chatMessageRepository.save(adminLog);
 
+      // Change session status back to active so that the customer input is re-enabled
+      session.setStatus("active");
+      chatSessionRepository.save(session);
+
       return ResponseEntity.ok(Map.of("status", "sent"));
   }
 }

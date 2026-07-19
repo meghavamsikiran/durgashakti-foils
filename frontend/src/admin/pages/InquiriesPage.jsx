@@ -737,12 +737,12 @@ const InquiriesPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 h-[calc(100vh-210px)] max-h-[700px]">
           
           {/* Left panel: Sessions list */}
-          <div className="lg:col-span-4 bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+          <div className="lg:col-span-4 bg-white dark:bg-[#0c1310] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-xl overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-slate-100 dark:border-[#26322B] bg-slate-50/50 dark:bg-[#1E2722]">
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">Escalated Sessions</h3>
             </div>
             
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100">
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-white/5 bg-white dark:bg-[#0c1310]">
               {chatSessions.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 text-xs font-semibold">
                   No active chat sessions found.
@@ -756,27 +756,27 @@ const InquiriesPage = () => {
                     <div
                       key={sId}
                       onClick={() => setSelectedSessionId(sId)}
-                      className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors flex items-center justify-between ${
-                        selectedSessionId === sId ? 'bg-primary/5 hover:bg-primary/5' : ''
+                      className={`p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center justify-between ${
+                        selectedSessionId === sId ? 'bg-primary/5 dark:bg-primary/10 hover:bg-primary/5' : ''
                       }`}
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-1.5">
-                          <User className="h-3.5 w-3.5 text-slate-450" />
-                          <span className="text-xs font-bold text-slate-900">
+                          <User className="h-3.5 w-3.5 text-slate-450 dark:text-slate-400" />
+                          <span className="text-xs font-bold text-slate-900 dark:text-white">
                             {uId ? `Customer (${uId.toString().substring(0, 8).toUpperCase()})` : "Guest Client"}
                           </span>
                         </div>
-                        <p className="text-[10px] text-slate-400 font-mono select-all">Session: {sId ? sId.substring(0, 12) : ""}...</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-450 font-mono select-all">Session: {sId ? sId.substring(0, 12) : ""}...</p>
                       </div>
                       
                       <div className="flex flex-col items-end gap-1.5">
                         <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
                           sStatus === 'escalated'
-                            ? 'bg-rose-50 border-rose-200 text-rose-600 animate-pulse'
+                            ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 animate-pulse'
                             : sStatus === 'resolved'
-                              ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
-                              : 'bg-blue-50 border-blue-200 text-blue-600'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-[#25D958]'
+                              : 'bg-blue-55 dark:bg-blue-950/20 border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400'
                         }`}>
                           {sStatus}
                         </span>
@@ -788,7 +788,7 @@ const InquiriesPage = () => {
                               closeChatSession(sId);
                             }}
                             title="Close Chat Session"
-                            className="p-1 rounded-lg border border-slate-200 text-slate-500 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition-all"
+                            className="p-1 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-200 dark:hover:border-red-500/30 transition-all"
                           >
                             <Power className="h-3.5 w-3.5" />
                           </button>
@@ -802,20 +802,20 @@ const InquiriesPage = () => {
           </div>
 
           {/* Right panel: Active Chat history */}
-          <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden flex flex-col">
+          <div className="lg:col-span-8 bg-white dark:bg-[#0c1310] rounded-3xl border border-slate-200 dark:border-[#26322B] shadow-xl overflow-hidden flex flex-col">
             {selectedSessionId ? (
               <>
                 {/* Active Session Header */}
-                <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <div className="p-4 border-b border-slate-100 dark:border-[#26322B] bg-slate-50/50 dark:bg-[#1E2722] flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-red-500 animate-ping" />
-                    <span className="text-xs font-bold text-slate-800">
+                    <span className="text-xs font-bold text-slate-800 dark:text-white">
                       Live Chat Monitor: {selectedSessionId.substring(0, 15)}...
                     </span>
                   </div>
                   <button
                     onClick={() => closeChatSession(selectedSessionId)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors text-[10px] font-bold uppercase tracking-wider"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-450 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/40 transition-colors text-[10px] font-bold uppercase tracking-wider"
                   >
                     <Power className="h-3.5 w-3.5" />
                     Close Session
@@ -823,7 +823,7 @@ const InquiriesPage = () => {
                 </div>
 
                 {/* History Message List */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/30">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-55/30 dark:bg-[#0c1310]">
                   {loadingChatHistory ? (
                     <div className="flex items-center justify-center h-full">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -836,8 +836,8 @@ const InquiriesPage = () => {
                       >
                         <div className={`max-w-[70%] p-3 rounded-2xl text-xs leading-relaxed ${
                           msg.sender === 'user'
-                            ? 'bg-slate-100 text-slate-800 rounded-tl-none border border-slate-200'
-                            : 'bg-primary text-white font-semibold rounded-tr-none shadow-md shadow-primary/10'
+                            ? 'bg-slate-100 dark:bg-[#1E2722] text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200 dark:border-white/5'
+                            : 'bg-primary dark:bg-primary/90 text-white font-semibold rounded-tr-none shadow-md shadow-primary/10'
                         }`}>
                           <div className="text-[9px] uppercase tracking-wider font-extrabold opacity-60 mb-1">
                             {msg.sender === 'user' ? 'Customer' : 'Bot / Live Agent'}
@@ -851,14 +851,14 @@ const InquiriesPage = () => {
                 </div>
 
                 {/* Reply Form */}
-                <form onSubmit={sendAdminChatMessage} className="p-4 border-t border-slate-100 flex gap-2">
+                <form onSubmit={sendAdminChatMessage} className="p-4 border-t border-slate-100 dark:border-[#26322B] bg-white dark:bg-[#0c1310] flex gap-2">
                   <input
                     type="text"
                     value={adminChatMessage}
                     onChange={(e) => setAdminChatMessage(e.target.value)}
                     disabled={sendingChatMessage}
                     placeholder="Type your reply to customer..."
-                    className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary disabled:opacity-50"
+                    className="flex-1 px-4 py-2 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1E2722] text-slate-850 dark:text-white rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary disabled:opacity-50 placeholder-slate-400 dark:placeholder-slate-500"
                   />
                   <button
                     type="submit"
@@ -870,7 +870,7 @@ const InquiriesPage = () => {
                 </form>
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-2 text-slate-400">
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-2 text-slate-450 dark:text-slate-500 bg-white dark:bg-[#0c1310]">
                 <AlertOctagon className="h-10 w-10 opacity-40 text-primary" />
                 <h4 className="text-xs font-bold uppercase tracking-wider">Select a Conversation</h4>
                 <p className="text-[10px] max-w-xs font-medium leading-relaxed">

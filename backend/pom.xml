@@ -28,6 +28,7 @@
         <module>admin-service</module>
         <module>email-service</module>
         <module>monolith-service</module>
+        <module>ai-chat-service</module>
     </modules>
 
     <properties>
