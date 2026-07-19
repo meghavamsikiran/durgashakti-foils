@@ -30,6 +30,7 @@ import java.util.Map;
 @Service
 public class GeminiFailoverService {
 
+    // Cache-buster to trigger fresh Render compilation without build cache: v2
     private static final String GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
     private static final String GROQ_API_BASE = "https://api.groq.com/openai/v1/chat/completions";
     private static final String XAI_API_BASE = "https://api.x.ai/v1/chat/completions";
