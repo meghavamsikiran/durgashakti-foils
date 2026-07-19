@@ -3,6 +3,7 @@ package com.durgashakti.common.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -10,110 +11,159 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Calls Google Gemini's native REST API directly (no Spring AI dependency).
- * Uses primary key (GEMINI_FLASH_API_KEY) first, falls back to GEMINI_API_KEY.
- * Tries multiple model names to avoid per-model quota exhaustion.
+ * Multi-provider AI Chat service with automatic failover.
+ * 
+ * Provider priority:
+ *   1. Google Gemini (GEMINI_FLASH_API_KEY → GEMINI_API_KEY)
+ *   2. Groq (GROQ_API_KEY)
+ *   3. xAI / Grok (XAI_API_KEY or GROK_API_KEY)
+ * 
+ * Each provider is tried with multiple models. If all providers fail,
+ * an exception is thrown and the controller returns a friendly message.
  */
 @Slf4j
 @Service
 public class GeminiFailoverService {
 
     private static final String GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
+    private static final String GROQ_API_BASE = "https://api.groq.com/openai/v1/chat/completions";
+    private static final String XAI_API_BASE = "https://api.x.ai/v1/chat/completions";
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
             .build();
 
-    // Model fallback chain — try each model in order until one works
-    private static final String[] MODEL_CHAIN = {
-        "gemini-2.0-flash",           // Standard model
-        "gemini-1.5-flash",           // Stable 1.5 flash
-        "gemini-1.5-flash-8b",        // High throughput lightweight 1.5 model
+    // Gemini model chain
+    private static final String[] GEMINI_MODELS = {
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-8b",
     };
 
-    private final String primaryApiKey;
-    private final String fallbackApiKey;
+    // Groq model chain
+    private static final String[] GROQ_MODELS = {
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "gemma2-9b-it",
+    };
 
-    public GeminiFailoverService() {
-        this.primaryApiKey = System.getenv("GEMINI_FLASH_API_KEY");
-        this.fallbackApiKey = System.getenv("GEMINI_API_KEY");
+    // xAI/Grok model chain
+    private static final String[] XAI_MODELS = {
+        "grok-3-mini-fast",
+        "grok-3-mini",
+        "grok-2-latest",
+    };
 
-        if (primaryApiKey == null || primaryApiKey.isBlank()) {
-            log.warn("⚠️ GEMINI_FLASH_API_KEY is NOT SET! AI Chat primary model will not work.");
-        } else {
-            log.info("✅ GEMINI_FLASH_API_KEY loaded (length={})", primaryApiKey.length());
+    private final String geminiPrimaryKey;
+    private final String geminiFallbackKey;
+    private final String groqApiKey;
+    private final String xaiApiKey;
+
+    public GeminiFailoverService(
+            @Value("${GEMINI_FLASH_API_KEY:}") String geminiFlashKey,
+            @Value("${GEMINI_API_KEY:}") String geminiKey,
+            @Value("${GROQ_API_KEY:}") String groqKey,
+            @Value("${XAI_API_KEY:}") String xaiKey) {
+
+        // Also check System.getenv as a secondary source
+        this.geminiPrimaryKey = resolveKey(geminiFlashKey, "GEMINI_FLASH_API_KEY");
+        this.geminiFallbackKey = resolveKey(geminiKey, "GEMINI_API_KEY");
+        this.groqApiKey = resolveKey(groqKey, "GROQ_API_KEY");
+
+        // xAI key can be under XAI_API_KEY or GROK_API_KEY
+        String resolvedXai = resolveKey(xaiKey, "XAI_API_KEY");
+        if (isBlank(resolvedXai)) {
+            resolvedXai = resolveKey("", "GROK_API_KEY");
         }
-        if (fallbackApiKey == null || fallbackApiKey.isBlank()) {
-            log.warn("⚠️ GEMINI_API_KEY is NOT SET! AI Chat fallback model will not work.");
+        this.xaiApiKey = resolvedXai;
+
+        // Startup diagnostics
+        logKeyStatus("GEMINI_FLASH_API_KEY", geminiPrimaryKey);
+        logKeyStatus("GEMINI_API_KEY", geminiFallbackKey);
+        logKeyStatus("GROQ_API_KEY", groqApiKey);
+        logKeyStatus("XAI_API_KEY / GROK_API_KEY", xaiApiKey);
+    }
+
+    private String resolveKey(String springValue, String envName) {
+        if (!isBlank(springValue)) return springValue.trim();
+        String env = System.getenv(envName);
+        return env != null ? env.trim() : "";
+    }
+
+    private void logKeyStatus(String name, String key) {
+        if (isBlank(key)) {
+            log.warn("⚠️ {} is NOT SET", name);
         } else {
-            log.info("✅ GEMINI_API_KEY loaded (length={})", fallbackApiKey.length());
+            log.info("✅ {} loaded (length={}, prefix={})", name, key.length(),
+                    key.length() > 4 ? key.substring(0, 4) + "..." : "****");
         }
     }
 
     /**
-     * Sends a chat message to Gemini with multi-model + multi-key failover.
-     * Tries each model in the MODEL_CHAIN with the primary key first,
-     * then repeats with the fallback key if all primary attempts fail.
+     * Sends a chat message with multi-provider failover.
+     * Tries Gemini → Groq → xAI/Grok in order.
      */
     public String chat(String systemPrompt, String userMessage) {
-        String lastError = null;
+        List<String> errors = new ArrayList<>();
 
-        // Try primary API key with all models
-        if (primaryApiKey != null && !primaryApiKey.isBlank()) {
-            for (String model : MODEL_CHAIN) {
-                try {
-                    log.info("Trying model '{}' with primary API key...", model);
-                    String result = callGeminiApi(primaryApiKey, model, systemPrompt, userMessage);
-                    log.info("✅ Model '{}' responded successfully with primary key.", model);
-                    return result;
-                } catch (Exception e) {
-                    lastError = e.getMessage();
-                    if (isQuotaExhausted(e)) {
-                        log.warn("Model '{}' quota exhausted with primary key. Trying next model...", model);
-                    } else {
-                        log.warn("Model '{}' failed with primary key: {}. Trying next...", model, e.getMessage());
-                    }
-                }
-            }
+        // === Provider 1: Google Gemini ===
+        String result = tryGemini(geminiPrimaryKey, "primary", systemPrompt, userMessage, errors);
+        if (result != null) return result;
+
+        if (!isBlank(geminiFallbackKey) && !geminiFallbackKey.equals(geminiPrimaryKey)) {
+            result = tryGemini(geminiFallbackKey, "fallback", systemPrompt, userMessage, errors);
+            if (result != null) return result;
         }
 
-        // Try fallback API key with all models
-        if (fallbackApiKey != null && !fallbackApiKey.isBlank() 
-                && !fallbackApiKey.equals(primaryApiKey)) {
-            for (String model : MODEL_CHAIN) {
-                try {
-                    log.info("Trying model '{}' with fallback API key...", model);
-                    String result = callGeminiApi(fallbackApiKey, model, systemPrompt, userMessage);
-                    log.info("✅ Model '{}' responded successfully with fallback key.", model);
-                    return result;
-                } catch (Exception e) {
-                    lastError = e.getMessage();
-                    if (isQuotaExhausted(e)) {
-                        log.warn("Model '{}' quota exhausted with fallback key. Trying next model...", model);
-                    } else {
-                        log.warn("Model '{}' failed with fallback key: {}. Trying next...", model, e.getMessage());
-                    }
-                }
-            }
+        // === Provider 2: Groq ===
+        if (!isBlank(groqApiKey)) {
+            result = tryOpenAiCompatible(GROQ_API_BASE, groqApiKey, GROQ_MODELS, "Groq",
+                    systemPrompt, userMessage, errors);
+            if (result != null) return result;
         }
 
-        // All attempts failed
-        String errorMsg = "All Gemini API attempts exhausted. Last error: " + lastError;
-        log.error("FATAL: {}", errorMsg);
-        throw new RuntimeException(errorMsg);
+        // === Provider 3: xAI / Grok ===
+        if (!isBlank(xaiApiKey)) {
+            result = tryOpenAiCompatible(XAI_API_BASE, xaiApiKey, XAI_MODELS, "xAI/Grok",
+                    systemPrompt, userMessage, errors);
+            if (result != null) return result;
+        }
+
+        // All providers exhausted
+        String errorSummary = String.join(" | ", errors);
+        log.error("FATAL: All AI providers exhausted. Errors: {}", errorSummary);
+        throw new RuntimeException("All AI providers exhausted. " + errorSummary);
     }
 
-    private boolean isQuotaExhausted(Exception e) {
-        String msg = e.getMessage();
-        return msg != null && (msg.contains("429") || msg.contains("RESOURCE_EXHAUSTED") || msg.contains("quota"));
+    // ─── Gemini (native REST API) ───────────────────────────────────────
+
+    private String tryGemini(String apiKey, String keyLabel, String systemPrompt,
+                             String userMessage, List<String> errors) {
+        if (isBlank(apiKey)) return null;
+
+        for (String model : GEMINI_MODELS) {
+            try {
+                log.info("[Gemini] Trying model '{}' with {} key...", model, keyLabel);
+                String res = callGeminiApi(apiKey, model, systemPrompt, userMessage);
+                log.info("[Gemini] ✅ Model '{}' responded successfully with {} key.", model, keyLabel);
+                return res;
+            } catch (Exception e) {
+                String err = "[Gemini/" + model + "/" + keyLabel + "] " + e.getMessage();
+                errors.add(err);
+                log.warn("{}", err);
+            }
+        }
+        return null;
     }
 
-    private String callGeminiApi(String apiKey, String model, String systemPrompt, String userMessage) throws Exception {
-        // Build native Gemini API request body
+    private String callGeminiApi(String apiKey, String model, String systemPrompt,
+                                  String userMessage) throws Exception {
         Map<String, Object> requestBody = Map.of(
             "contents", List.of(
                 Map.of("role", "user", "parts", List.of(Map.of("text", userMessage)))
@@ -130,37 +180,109 @@ public class GeminiFailoverService {
         String jsonBody = objectMapper.writeValueAsString(requestBody);
         String url = GEMINI_API_BASE + model + ":generateContent?key=" + apiKey;
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(30))
-                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = sendPost(url, jsonBody, null);
 
         if (response.statusCode() == 429) {
-            // Quota exhausted — throw specific error so failover can try next model
-            throw new RuntimeException("Gemini API quota exhausted (HTTP 429) for model '" + model + "'");
+            throw new RuntimeException("Quota exhausted (HTTP 429)");
         }
-
         if (response.statusCode() != 200) {
-            log.error("Gemini API returned HTTP {} for model '{}': {}", response.statusCode(), model, response.body());
-            throw new RuntimeException("Gemini API error (HTTP " + response.statusCode() + ") for model '" + model + "': " + truncate(response.body(), 200));
+            log.error("[Gemini] HTTP {} for '{}': {}", response.statusCode(), model,
+                    truncate(response.body(), 300));
+            throw new RuntimeException("HTTP " + response.statusCode() + ": " +
+                    truncate(response.body(), 200));
         }
 
-        // Parse the response
         JsonNode root = objectMapper.readTree(response.body());
         JsonNode candidates = root.path("candidates");
         if (candidates.isArray() && candidates.size() > 0) {
-            JsonNode content = candidates.get(0).path("content").path("parts");
-            if (content.isArray() && content.size() > 0) {
-                return content.get(0).path("text").asText();
+            JsonNode parts = candidates.get(0).path("content").path("parts");
+            if (parts.isArray() && parts.size() > 0) {
+                return parts.get(0).path("text").asText();
             }
         }
 
-        log.warn("Gemini API returned unexpected response structure for model '{}': {}", model, truncate(response.body(), 300));
-        throw new RuntimeException("Unexpected Gemini API response format for model '" + model + "'");
+        throw new RuntimeException("Unexpected response format: " + truncate(response.body(), 200));
+    }
+
+    // ─── OpenAI-compatible API (Groq, xAI/Grok) ────────────────────────
+
+    private String tryOpenAiCompatible(String baseUrl, String apiKey, String[] models,
+                                        String providerName, String systemPrompt,
+                                        String userMessage, List<String> errors) {
+        for (String model : models) {
+            try {
+                log.info("[{}] Trying model '{}'...", providerName, model);
+                String res = callOpenAiCompatible(baseUrl, apiKey, model, systemPrompt, userMessage);
+                log.info("[{}] ✅ Model '{}' responded successfully.", providerName, model);
+                return res;
+            } catch (Exception e) {
+                String err = "[" + providerName + "/" + model + "] " + e.getMessage();
+                errors.add(err);
+                log.warn("{}", err);
+            }
+        }
+        return null;
+    }
+
+    private String callOpenAiCompatible(String baseUrl, String apiKey, String model,
+                                         String systemPrompt, String userMessage) throws Exception {
+        Map<String, Object> requestBody = Map.of(
+            "model", model,
+            "messages", List.of(
+                Map.of("role", "system", "content", systemPrompt),
+                Map.of("role", "user", "content", userMessage)
+            ),
+            "temperature", 0.7,
+            "max_tokens", 1024
+        );
+
+        String jsonBody = objectMapper.writeValueAsString(requestBody);
+
+        HttpResponse<String> response = sendPost(baseUrl, jsonBody, "Bearer " + apiKey);
+
+        if (response.statusCode() == 429) {
+            throw new RuntimeException("Rate limited (HTTP 429)");
+        }
+        if (response.statusCode() != 200) {
+            log.error("[OpenAI-compat] HTTP {} for '{}': {}", response.statusCode(), model,
+                    truncate(response.body(), 300));
+            throw new RuntimeException("HTTP " + response.statusCode() + ": " +
+                    truncate(response.body(), 200));
+        }
+
+        JsonNode root = objectMapper.readTree(response.body());
+        JsonNode choices = root.path("choices");
+        if (choices.isArray() && choices.size() > 0) {
+            String content = choices.get(0).path("message").path("content").asText();
+            if (content != null && !content.isEmpty()) {
+                return content;
+            }
+        }
+
+        throw new RuntimeException("Unexpected response format: " + truncate(response.body(), 200));
+    }
+
+    // ─── HTTP helper ────────────────────────────────────────────────────
+
+    private HttpResponse<String> sendPost(String url, String jsonBody, String authHeader)
+            throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(30))
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody));
+
+        if (authHeader != null) {
+            builder.header("Authorization", authHeader);
+        }
+
+        return httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    // ─── Utilities ──────────────────────────────────────────────────────
+
+    private boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
     }
 
     private String truncate(String text, int maxLen) {
