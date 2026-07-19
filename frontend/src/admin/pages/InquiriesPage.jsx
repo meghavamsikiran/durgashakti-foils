@@ -756,27 +756,31 @@ const InquiriesPage = () => {
                     <div
                       key={sId}
                       onClick={() => setSelectedSessionId(sId)}
-                      className={`p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center justify-between ${
-                        selectedSessionId === sId ? 'bg-primary/5 dark:bg-primary/10 hover:bg-primary/5' : ''
+                      className={`p-4 cursor-pointer transition-colors flex items-center justify-between border-b border-slate-100 dark:border-white/5 ${
+                        selectedSessionId === sId 
+                          ? 'bg-[#006e1b] text-white shadow-inner' 
+                          : 'bg-white dark:bg-[#0c1310] text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5'
                       }`}
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-1.5">
-                          <User className="h-3.5 w-3.5 text-slate-450 dark:text-slate-400" />
-                          <span className="text-xs font-bold text-slate-900 dark:text-white">
+                          <User className={`h-3.5 w-3.5 ${selectedSessionId === sId ? 'text-white' : 'text-slate-450 dark:text-slate-400'}`} />
+                          <span className={`text-xs font-bold ${selectedSessionId === sId ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
                             {uId ? `Customer (${uId.toString().substring(0, 8).toUpperCase()})` : "Guest Client"}
                           </span>
                         </div>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-450 font-mono select-all">Session: {sId ? sId.substring(0, 12) : ""}...</p>
+                        <p className={`text-[10px] font-mono select-all ${selectedSessionId === sId ? 'text-white/80' : 'text-slate-400 dark:text-slate-500'}`}>Session: {sId ? sId.substring(0, 12) : ""}...</p>
                       </div>
                       
                       <div className="flex flex-col items-end gap-1.5">
                         <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
-                          sStatus === 'escalated'
-                            ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 animate-pulse'
-                            : sStatus === 'resolved'
-                              ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-[#25D958]'
-                              : 'bg-blue-55 dark:bg-blue-950/20 border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400'
+                          selectedSessionId === sId
+                            ? 'bg-white/20 border-white/30 text-white'
+                            : sStatus === 'escalated'
+                              ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 animate-pulse'
+                              : sStatus === 'resolved'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-[#25D958]'
+                                : 'bg-blue-55 dark:bg-blue-950/20 border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400'
                         }`}>
                           {sStatus}
                         </span>
@@ -788,7 +792,11 @@ const InquiriesPage = () => {
                               closeChatSession(sId);
                             }}
                             title="Close Chat Session"
-                            className="p-1 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-200 dark:hover:border-red-500/30 transition-all"
+                            className={`p-1 rounded-lg border transition-all ${
+                              selectedSessionId === sId
+                                ? 'border-white/20 text-white hover:bg-white/10'
+                                : 'border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-200 dark:hover:border-red-500/30'
+                            }`}
                           >
                             <Power className="h-3.5 w-3.5" />
                           </button>
