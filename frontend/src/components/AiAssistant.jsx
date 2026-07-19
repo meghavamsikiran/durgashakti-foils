@@ -19,6 +19,7 @@ export default function AiAssistant() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function AiAssistant() {
   useEffect(() => {
     if (isOpen) {
       const fetchHistory = async () => {
+        setLoadingHistory(true);
         try {
           const res = await apiClient.get(`/orders/ai-chat/history?sessionId=${sessionId}`);
           if (res.data && res.data.length > 0) {
@@ -40,6 +42,8 @@ export default function AiAssistant() {
           }
         } catch (err) {
           console.error("Failed to load chat history:", err);
+        } finally {
+          setLoadingHistory(false);
         }
       };
       fetchHistory();
@@ -52,7 +56,7 @@ export default function AiAssistant() {
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || loadingHistory) return;
 
     const userText = input;
     setInput('');
@@ -125,44 +129,53 @@ export default function AiAssistant() {
 
           {/* Messages List */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((m, idx) => (
-              <div key={idx} className={`flex gap-2.5 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                {m.sender === 'bot' && (
-                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
-                    isDark 
-                      ? 'bg-white/5 text-[#25D958] border-white/10' 
-                      : 'bg-slate-50 text-[#006e1b] border-[#ebefed]'
-                  }`}>
-                    <Bot className="h-3.5 w-3.5" />
+            {loadingHistory ? (
+              <div className="flex flex-col items-center justify-center min-h-[300px] w-full">
+                <div className={`animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 mb-3 ${isDark ? 'border-[#25D958]' : 'border-[#006e1b]'}`}></div>
+                <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading chat history...</p>
+              </div>
+            ) : (
+              <>
+                {messages.map((m, idx) => (
+                  <div key={idx} className={`flex gap-2.5 ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {m.sender === 'bot' && (
+                      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
+                        isDark 
+                          ? 'bg-white/5 text-[#25D958] border-white/10' 
+                          : 'bg-slate-50 text-[#006e1b] border-[#ebefed]'
+                      }`}>
+                        <Bot className="h-3.5 w-3.5" />
+                      </div>
+                    )}
+                    <div
+                      className={`rounded-2xl px-3.5 py-2 text-[11px] leading-relaxed max-w-[220px] whitespace-pre-wrap ${
+                        m.sender === 'user'
+                          ? (isDark ? 'bg-[#25D958] text-black font-semibold rounded-tr-none' : 'bg-[#006e1b] text-white font-semibold rounded-tr-none')
+                          : (isDark ? 'bg-white/5 text-slate-200 border border-white/10 rounded-tl-none' : 'bg-slate-50 text-slate-700 border-[#ebefed] rounded-tl-none')
+                      }`}
+                    >
+                      {m.text}
+                    </div>
+                  </div>
+                ))}
+                {loading && (
+                  <div className="flex gap-2.5 justify-start items-center">
+                    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
+                      isDark 
+                        ? 'bg-white/5 text-[#25D958] border-white/10' 
+                        : 'bg-slate-50 text-[#006e1b] border-[#ebefed]'
+                    }`}>
+                      <Bot className="h-3.5 w-3.5" />
+                    </div>
+                    <div className={`flex items-center gap-1.5 rounded-2xl border px-3.5 py-2 ${
+                      isDark ? 'bg-white/5 border-white/10 text-slate-400' : 'bg-slate-50 border-[#ebefed] text-slate-500'
+                    }`}>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span className="text-[10px] font-semibold">Thinking...</span>
+                    </div>
                   </div>
                 )}
-                <div
-                  className={`rounded-2xl px-3.5 py-2 text-[11px] leading-relaxed max-w-[220px] ${
-                    m.sender === 'user'
-                      ? (isDark ? 'bg-[#25D958] text-black font-semibold rounded-tr-none' : 'bg-[#006e1b] text-white font-semibold rounded-tr-none')
-                      : (isDark ? 'bg-white/5 text-slate-200 border border-white/10 rounded-tl-none' : 'bg-slate-50 text-slate-700 border-[#ebefed] rounded-tl-none')
-                  }`}
-                >
-                  {m.text}
-                </div>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex gap-2.5 justify-start items-center">
-                <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
-                  isDark 
-                    ? 'bg-white/5 text-[#25D958] border-white/10' 
-                    : 'bg-slate-50 text-[#006e1b] border-[#ebefed]'
-                }`}>
-                  <Bot className="h-3.5 w-3.5" />
-                </div>
-                <div className={`flex items-center gap-1.5 rounded-2xl border px-3.5 py-2 ${
-                  isDark ? 'bg-white/5 border-white/10 text-slate-400' : 'bg-slate-50 border-[#ebefed] text-slate-500'
-                }`}>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span className="text-[10px] font-semibold">Thinking...</span>
-                </div>
-              </div>
+              </>
             )}
             <div ref={scrollRef} />
           </div>
@@ -182,16 +195,17 @@ export default function AiAssistant() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask foils, microns, track order..."
+              disabled={loadingHistory || loading}
+              placeholder={loadingHistory ? "Loading history..." : "Ask foils, microns, track order..."}
               className={`flex-1 rounded-full border px-4 py-2 text-[11px] focus:outline-none transition-all ${
                 isDark 
-                  ? 'bg-white/5 border-white/10 text-white placeholder-slate-500 focus:border-[#25D958]/30' 
-                  : 'bg-white border-slate-200 text-slate-850 placeholder-slate-400 focus:border-[#006e1b]/30'
+                  ? 'bg-white/5 border-white/10 text-white placeholder-slate-500 focus:border-[#25D958]/30 disabled:opacity-50' 
+                  : 'bg-white border-slate-200 text-slate-850 placeholder-slate-400 focus:border-[#006e1b]/30 disabled:opacity-50'
               }`}
             />
             <button
               type="submit"
-              disabled={!input.trim() || loading}
+              disabled={!input.trim() || loading || loadingHistory}
               className={`flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-50 transition-opacity ${
                 isDark ? 'bg-[#25D958] text-black' : 'bg-[#006e1b] text-white'
               }`}

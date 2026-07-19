@@ -1,9 +1,11 @@
 package com.durgashakti.order.controller;
 
 import com.durgashakti.common.entity.ChatMessage;
+import com.durgashakti.common.entity.Contact;
 import com.durgashakti.common.entity.Order;
 import com.durgashakti.common.service.GeminiFailoverService;
 import com.durgashakti.order.repository.ChatMessageRepository;
+import com.durgashakti.order.repository.ContactOrderRepository;
 import com.durgashakti.order.repository.OrderServiceRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -25,27 +27,39 @@ public class AiChatController {
   private final GeminiFailoverService failoverService;
   private final ChatMessageRepository chatMessageRepository;
   private final OrderServiceRepository orderRepository;
+  private final ContactOrderRepository contactRepository;
 
   private static final String SYSTEM_PROMPT = """
       You are the official AI Assistant for DurgaShakti Foils.
       Our brand specializes in premium food-grade aluminium foils:
-      - Standard Foil (11 microns): Perfect for wrapping sandwiches, rotis, and general food storage.
-      - Heavy Duty Foil (18 microns): Best for commercial kitchens, grilling, and roasting.
-      Be helpful, professional, and cross-promote appropriate product lengths (6m, 9m, 24m, 72m) based on customer requirements.
-      
-      CRITICAL RULE FOR ORDER TRACKING:
-      If the user asks about order status, tracking, or details of a specific order number (e.g. OD-YYYYMMDD-XXXXX), you must extract the order number and reply EXACTLY in this format:
-      [LOOKUP_ORDER: <order-number>]
-      Do not write any introductory or trailing text. Just return the bracketed lookup command.
+      - Standard Foil (11 microns): Perfect for wrapping food.
+      - Heavy Duty Foil (18 microns): Best for grilling/roasting.
+      Be extremely polite, humble, and friendly.
+      CRITICAL RULES:
+      1. Always keep responses short and concise. Do NOT write more than 2-3 sentences.
+      2. If the user asks about order status, tracking, or details of a specific order number (e.g. OD-YYYYMMDD-XXXXX), reply EXACTLY in this format:
+         [LOOKUP_ORDER: <order-number>]
+         Do not write any other text.
+      3. If the user asks about a support ticket status or details (e.g. OD-TKT-XXXXXX), reply EXACTLY in this format:
+         [LOOKUP_TICKET: <ticket-id>]
+         Do not write any other text.
+      """;
+
+  private static final String RESOLVER_PROMPT = """
+      You are the official AI Assistant for DurgaShakti Foils.
+      Please present the status details of the requested order or support ticket to the customer politely, humbly, and supportively.
+      Keep your answer extremely concise, polite, and helpful. Do not write more than 2-3 sentences.
       """;
 
   public AiChatController(
       GeminiFailoverService failoverService, 
       ChatMessageRepository chatMessageRepository,
-      OrderServiceRepository orderRepository) {
+      OrderServiceRepository orderRepository,
+      ContactOrderRepository contactRepository) {
     this.failoverService = failoverService;
     this.chatMessageRepository = chatMessageRepository;
     this.orderRepository = orderRepository;
+    this.contactRepository = contactRepository;
   }
 
   @GetMapping("/ai-chat/history")
@@ -130,29 +144,67 @@ public class AiChatController {
               String orderContext;
               if (order != null) {
                   orderContext = String.format(
-                      "The user asked: %s\nSystem context: The order status is %s, payment status is %s, tracking number is %s, and it contains these items: %s. " +
-                      "Please present this information nicely and professionally to the user.",
+                      "The user asked: %s\nSystem context: The order %s status is currently %s, payment status is %s, and the tracking number is %s. " +
+                      "Please present this status nicely and politely to the user.",
                       userMessageStr,
+                      orderNum,
                       order.getOrderStatus(),
                       order.getPaymentStatus(),
-                      order.getTrackingNumber() != null ? order.getTrackingNumber() : "Not Shipped Yet",
-                      order.getItems()
+                      order.getTrackingNumber() != null ? order.getTrackingNumber() : "Not Shipped Yet"
                   );
               } else {
                   orderContext = "The user asked: " + userMessageStr + "\nSystem context: Order " + orderNum + " was not found in the database. Please inform the user politely.";
               }
 
               try {
-                  aiResponse = failoverService.chat(SYSTEM_PROMPT, orderContext);
+                  aiResponse = failoverService.chat(RESOLVER_PROMPT, orderContext);
               } catch (Exception orderLookupEx) {
-                  log.warn("Gemini API failed during order lookup follow-up: {}", orderLookupEx.getMessage());
-                  // Use the raw order data as fallback instead of crashing
+                  log.warn("AI API failed during order lookup follow-up: {}", orderLookupEx.getMessage());
                   if (order != null) {
-                      aiResponse = String.format("Here's the status of your order %s:\n• Order Status: %s\n• Payment Status: %s\n• Tracking: %s",
+                      aiResponse = String.format("Humbly informing you that order %s is currently %s (Payment: %s). Tracking: %s.",
                           orderNum, order.getOrderStatus(), order.getPaymentStatus(),
                           order.getTrackingNumber() != null ? order.getTrackingNumber() : "Not shipped yet");
                   } else {
-                      aiResponse = "I found your order number " + orderNum + " but couldn't locate it in our system. Please contact support for assistance.";
+                      aiResponse = "We could not find order number " + orderNum + " in our records. Please contact support.";
+                  }
+              }
+          }
+      }
+      // Check if the AI requested a support ticket lookup
+      else if (aiResponse != null && aiResponse.contains("[LOOKUP_TICKET:")) {
+          Pattern pattern = Pattern.compile("\\[LOOKUP_TICKET:\\s*([^\\]]+)\\]");
+          Matcher matcher = pattern.matcher(aiResponse);
+          if (matcher.find()) {
+              String ticketId = matcher.group(1).trim();
+              // Extract the UUID prefix (e.g. from OD-TKT-8CC9D879, get 8CC9D879)
+              String uuidPrefix = ticketId.replace("OD-TKT-", "").trim().toLowerCase();
+              Contact ticket = contactRepository.findByUuidPrefix(uuidPrefix).orElse(null);
+
+              String ticketContext;
+              if (ticket != null) {
+                  ticketContext = String.format(
+                      "The user asked: %s\nSystem context: Support ticket %s status is currently %s. The customer's inquiry message was: \"%s\". The admin reply is: \"%s\". " +
+                      "Please present this status politely and concisely to the customer.",
+                      userMessageStr,
+                      ticketId,
+                      ticket.getStatus(),
+                      ticket.getMessage(),
+                      ticket.getReplyMessage() != null ? ticket.getReplyMessage() : "No reply yet. Our team will update you shortly."
+                  );
+              } else {
+                  ticketContext = "The user asked: " + userMessageStr + "\nSystem context: Support ticket " + ticketId + " was not found. Please inform the user politely.";
+              }
+
+              try {
+                  aiResponse = failoverService.chat(RESOLVER_PROMPT, ticketContext);
+              } catch (Exception ticketLookupEx) {
+                  log.warn("AI API failed during ticket lookup follow-up: {}", ticketLookupEx.getMessage());
+                  if (ticket != null) {
+                      aiResponse = String.format("Your support ticket %s is currently %s. Reply: %s.",
+                          ticketId, ticket.getStatus(),
+                          ticket.getReplyMessage() != null ? ticket.getReplyMessage() : "Under review.");
+                  } else {
+                      aiResponse = "We could not locate support ticket " + ticketId + ". Please contact support.";
                   }
               }
           }
