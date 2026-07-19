@@ -1,10 +1,12 @@
 package com.durgashakti.order.controller;
 
 import com.durgashakti.common.entity.ChatMessage;
+import com.durgashakti.common.entity.ChatSession;
 import com.durgashakti.common.entity.Contact;
 import com.durgashakti.common.entity.Order;
 import com.durgashakti.common.service.GeminiFailoverService;
 import com.durgashakti.order.repository.ChatMessageRepository;
+import com.durgashakti.order.repository.ChatSessionRepository;
 import com.durgashakti.order.repository.ContactOrderRepository;
 import com.durgashakti.order.repository.OrderServiceRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,7 @@ public class AiChatController {
   private final ChatMessageRepository chatMessageRepository;
   private final OrderServiceRepository orderRepository;
   private final ContactOrderRepository contactRepository;
+  private final ChatSessionRepository chatSessionRepository;
 
   private static final String SYSTEM_PROMPT = """
       You are the official AI Assistant for DurgaShakti Foils.
@@ -55,11 +58,13 @@ public class AiChatController {
       GeminiFailoverService failoverService, 
       ChatMessageRepository chatMessageRepository,
       OrderServiceRepository orderRepository,
-      ContactOrderRepository contactRepository) {
+      ContactOrderRepository contactRepository,
+      ChatSessionRepository chatSessionRepository) {
     this.failoverService = failoverService;
     this.chatMessageRepository = chatMessageRepository;
     this.orderRepository = orderRepository;
     this.contactRepository = contactRepository;
+    this.chatSessionRepository = chatSessionRepository;
   }
 
   @GetMapping("/ai-chat/history")
@@ -112,6 +117,12 @@ public class AiChatController {
         try {
             authenticatedUserId = UUID.fromString((String) authentication.getPrincipal());
         } catch (Exception ignored) {}
+    }
+
+    // Ensure session tracking exists
+    if (!chatSessionRepository.existsById(sessionId)) {
+        ChatSession chatSession = new ChatSession(sessionId, authenticatedUserId);
+        chatSessionRepository.save(chatSession);
     }
 
     // Save User message to history first
@@ -240,5 +251,48 @@ public class AiChatController {
     chatMessageRepository.save(botLog);
 
     return ResponseEntity.ok(Map.of("response", aiResponse));
+  }
+
+  @PostMapping("/ai-chat/session/close")
+  public ResponseEntity<Map<String, String>> closeSession(@RequestBody Map<String, String> request) {
+      String sessionId = request.get("sessionId");
+      if (sessionId == null || sessionId.isBlank()) {
+          return ResponseEntity.badRequest().body(Map.of("error", "sessionId is required"));
+      }
+
+      ChatSession session = chatSessionRepository.findById(sessionId).orElse(null);
+      if (session != null) {
+          session.setStatus("resolved");
+          chatSessionRepository.save(session);
+      }
+      return ResponseEntity.ok(Map.of("status", "resolved"));
+  }
+
+  @PostMapping("/ai-chat/session/feedback")
+  public ResponseEntity<Map<String, String>> submitFeedback(@RequestBody Map<String, Object> request) {
+      String sessionId = String.valueOf(request.get("sessionId"));
+      Boolean satisfied = (Boolean) request.get("satisfied");
+
+      ChatSession session = chatSessionRepository.findById(sessionId).orElse(null);
+      String systemMsg;
+      if (session != null) {
+          session.setSatisfied(satisfied);
+          if (Boolean.FALSE.equals(satisfied)) {
+              session.setStatus("escalated");
+              systemMsg = "I understand your frustration. Connecting you to a live support agent... Please wait while we fetch help. You can also call us directly at +91 98765 43210 for immediate live support.";
+          } else {
+              session.setStatus("resolved");
+              systemMsg = "Thank you so much for your feedback! We are always here to help you. Have a great day ahead!";
+          }
+          chatSessionRepository.save(session);
+
+          // Save bot clarification message to database log so it persists in history
+          ChatMessage systemLog = new ChatMessage(session.getUserId(), sessionId, "bot", systemMsg);
+          chatMessageRepository.save(systemLog);
+      } else {
+          systemMsg = "Feedback recorded. Thank you!";
+      }
+
+      return ResponseEntity.ok(Map.of("response", systemMsg));
   }
 }

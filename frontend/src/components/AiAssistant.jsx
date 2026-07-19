@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, User, Loader2 } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, User, Loader2, Power, ThumbsUp, ThumbsDown, PhoneCall } from 'lucide-react';
 import apiClient from '../services/core/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -22,6 +22,8 @@ export default function AiAssistant() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showSurvey, setShowSurvey] = useState(false);
+  const [sessionStatus, setSessionStatus] = useState('active'); // 'active', 'resolved', 'escalated'
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -52,6 +54,11 @@ export default function AiAssistant() {
           const res = await apiClient.get(`/orders/ai-chat/history?sessionId=${sessionId}`);
           if (res.data && res.data.length > 0) {
             setMessages(res.data);
+            // Check if there was already an escalation or resolution in the history
+            const lastMsg = res.data[res.data.length - 1];
+            if (lastMsg && lastMsg.text.includes("live support agent")) {
+              setSessionStatus('escalated');
+            }
           }
         } catch (err) {
           console.error("Failed to load chat history:", err);
@@ -65,11 +72,11 @@ export default function AiAssistant() {
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  }, [messages, loading, showSurvey, sessionStatus]);
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim() || loading || loadingHistory) return;
+    if (!input.trim() || loading || loadingHistory || sessionStatus === 'escalated') return;
 
     const userText = input;
     setInput('');
@@ -90,6 +97,46 @@ export default function AiAssistant() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEndChat = async () => {
+    try {
+      await apiClient.post('/orders/ai-chat/session/close', { sessionId });
+      setShowSurvey(true);
+    } catch (err) {
+      console.error("Failed to close session:", err);
+      setShowSurvey(true);
+    }
+  };
+
+  const handleFeedback = async (satisfied) => {
+    setShowSurvey(false);
+    setLoading(true);
+    try {
+      const res = await apiClient.post('/orders/ai-chat/session/feedback', { 
+        sessionId, 
+        satisfied 
+      });
+      
+      setMessages((prev) => [...prev, { sender: 'bot', text: res.data.response }]);
+      
+      if (!satisfied) {
+        setSessionStatus('escalated');
+      } else {
+        setSessionStatus('resolved');
+      }
+    } catch (err) {
+      console.error("Failed to submit feedback:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNewChat = () => {
+    // Generate new session ID to start completely fresh
+    const newId = 'session-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('ai_session_id', newId);
+    window.location.reload();
   };
 
   return (
@@ -130,14 +177,30 @@ export default function AiAssistant() {
                 <span className={`text-[9px] font-bold ${isDark ? 'text-[#25D958]' : 'text-[#006e1b]'}`}>Online</span>
               </div>
             </div>
-            <button 
-              onClick={() => setIsOpen(false)} 
-              className={`rounded-full p-1 transition-colors ${
-                isDark ? 'text-slate-400 hover:bg-white/5 hover:text-white' : 'text-slate-500 hover:bg-black/5 hover:text-slate-855'
-              }`}
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              {sessionStatus === 'active' && !showSurvey && (
+                <button
+                  onClick={handleEndChat}
+                  title="End Chat Session"
+                  className={`flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border transition-all ${
+                    isDark 
+                      ? 'border-red-500/30 text-red-400 hover:bg-red-500/10' 
+                      : 'border-red-600/30 text-red-600 hover:bg-red-500/10'
+                  }`}
+                >
+                  <Power className="h-3 w-3" />
+                  <span>End</span>
+                </button>
+              )}
+              <button 
+                onClick={() => setIsOpen(false)} 
+                className={`rounded-full p-1 transition-colors ${
+                  isDark ? 'text-slate-400 hover:bg-white/5 hover:text-white' : 'text-slate-500 hover:bg-black/5 hover:text-slate-855'
+                }`}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {/* Messages List */}
@@ -171,6 +234,79 @@ export default function AiAssistant() {
                     </div>
                   </div>
                 ))}
+                
+                {/* Swiggy Thumbs Up/Down Survey Card */}
+                {showSurvey && (
+                  <div className={`flex flex-col items-center p-4 rounded-2xl border text-center animate-in fade-in duration-300 ${
+                    isDark ? 'bg-[#0c1816] border-[#25D958]/20' : 'bg-[#f0f5f2] border-[#006e1b]/20'
+                  }`}>
+                    <h5 className="text-[11px] font-bold mb-2.5">Are you satisfied with our assistance?</h5>
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => handleFeedback(true)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                          isDark 
+                            ? 'bg-[#25D958]/10 border-[#25D958]/30 text-[#25D958] hover:bg-[#25D958]/20' 
+                            : 'bg-[#006e1b]/10 border-[#006e1b]/30 text-[#006e1b] hover:bg-[#006e1b]/20'
+                        }`}
+                      >
+                        <ThumbsUp className="h-3.5 w-3.5" />
+                        Yes
+                      </button>
+                      <button
+                        onClick={() => handleFeedback(false)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border border-red-500/30 text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-all"
+                      >
+                        <ThumbsDown className="h-3.5 w-3.5" />
+                        No
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Swiggy Live Agent Escalation / Call Helpline Card */}
+                {sessionStatus === 'escalated' && (
+                  <div className={`p-4 rounded-2xl border text-center space-y-3 animate-in slide-in-from-bottom-2 ${
+                    isDark ? 'bg-red-500/5 border-red-500/20' : 'bg-red-50/50 border-red-500/20'
+                  }`}>
+                    <div className="flex justify-center gap-2 items-center text-red-500">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-[11px] font-bold uppercase tracking-wider">Connecting Live Agent...</span>
+                    </div>
+                    <p className={`text-[10px] leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      All live chat agents are currently in queue. For immediate assistance, please call our toll-free customer helpline.
+                    </p>
+                    <a
+                      href="tel:+919876543210"
+                      className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-[11px] font-bold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-md shadow-red-600/10"
+                    >
+                      <PhoneCall className="h-3.5 w-3.5" />
+                      Call Helpline: +91 98765 43210
+                    </a>
+                    <button
+                      onClick={handleNewChat}
+                      className={`text-[9px] font-bold uppercase tracking-wider border-b ${
+                        isDark ? 'text-slate-400 border-slate-600 hover:text-white' : 'text-slate-500 border-slate-300 hover:text-slate-700'
+                      }`}
+                    >
+                      Start a New AI Conversation
+                    </button>
+                  </div>
+                )}
+
+                {sessionStatus === 'resolved' && (
+                  <div className="text-center py-2">
+                    <button
+                      onClick={handleNewChat}
+                      className={`text-[9px] font-bold uppercase tracking-wider border-b ${
+                        isDark ? 'text-[#25D958] border-[#25D958]/30 hover:brightness-110' : 'text-[#006e1b] border-[#006e1b]/30 hover:brightness-110'
+                      }`}
+                    >
+                      Start a New Chat
+                    </button>
+                  </div>
+                )}
+
                 {loading && (
                   <div className="flex gap-2.5 justify-start items-center">
                     <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
@@ -208,8 +344,18 @@ export default function AiAssistant() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              disabled={loadingHistory || loading}
-              placeholder={loadingHistory ? "Loading history..." : "Ask foils, microns, track order..."}
+              disabled={loadingHistory || loading || showSurvey || sessionStatus !== 'active'}
+              placeholder={
+                sessionStatus === 'escalated' 
+                  ? "Chat redirected to Live Agent..." 
+                  : sessionStatus === 'resolved'
+                    ? "This chat session has ended."
+                    : showSurvey
+                      ? "Please rate our service..."
+                      : loadingHistory 
+                        ? "Loading history..." 
+                        : "Ask foils, microns, track order..."
+              }
               className={`flex-1 rounded-full border px-4 py-2 text-[11px] focus:outline-none transition-all ${
                 isDark 
                   ? 'bg-white/5 border-white/10 text-white placeholder-slate-500 focus:border-[#25D958]/30 disabled:opacity-50' 
@@ -218,7 +364,7 @@ export default function AiAssistant() {
             />
             <button
               type="submit"
-              disabled={!input.trim() || loading || loadingHistory}
+              disabled={!input.trim() || loading || loadingHistory || showSurvey || sessionStatus !== 'active'}
               className={`flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-50 transition-opacity ${
                 isDark ? 'bg-[#25D958] text-black' : 'bg-[#006e1b] text-white'
               }`}

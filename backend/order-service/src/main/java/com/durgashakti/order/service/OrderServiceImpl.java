@@ -92,6 +92,16 @@ public class OrderServiceImpl implements OrderService {
             jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id)");
             log.info("'chat_messages' table is ready.");
 
+            log.info("Checking and creating 'chat_sessions' table if not exists...");
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS chat_sessions (" +
+                    "session_id VARCHAR(255) PRIMARY KEY, " +
+                    "user_id UUID, " +
+                    "status VARCHAR(50) NOT NULL, " +
+                    "satisfied BOOLEAN, " +
+                    "created_at TIMESTAMP WITH TIME ZONE NOT NULL, " +
+                    "updated_at TIMESTAMP WITH TIME ZONE)");
+            log.info("'chat_sessions' table is ready.");
+
             log.info("Running database migration to replace 'DSF-' and 'DS-' prefixes with 'OD-' in order numbers...");
             int dsfRows = jdbcTemplate.update("UPDATE orders SET order_number = REPLACE(order_number, 'DSF-', 'OD-') WHERE order_number LIKE 'DSF-%'");
             int dsRows = jdbcTemplate.update("UPDATE orders SET order_number = REPLACE(order_number, 'DS-', 'OD-') WHERE order_number LIKE 'DS-%'");
