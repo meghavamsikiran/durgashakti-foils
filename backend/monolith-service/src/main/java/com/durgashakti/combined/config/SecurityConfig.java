@@ -62,7 +62,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/contacts", "/api/contact", "/api/contacts/upload").permitAll()
                 // GET /api/contacts requires admin auth (C-08: prevents PII leakage)
                 // Razorpay Webhooks and AI chat
-                .requestMatchers("/api/payment/razorpay/webhook", "/api/orders/webhook", "/api/orders/ai-chat", "/api/orders/ai-chat/history").permitAll()
+                .requestMatchers("/api/payment/razorpay/webhook", "/api/orders/webhook", "/api/orders/ai-chat/**", "/api/chat/**").permitAll()
                 // C-07: /api/email/send requires authentication (removed permitAll to prevent spam/phishing)
                 // Actuator/Health
                 .requestMatchers("/actuator/**", "/api/health").permitAll()

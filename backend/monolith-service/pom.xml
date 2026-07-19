@@ -51,6 +51,11 @@
             <artifactId>email-service</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.durgashakti</groupId>
+            <artifactId>ai-chat-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Spring Boot Starters -->
         <dependency>
