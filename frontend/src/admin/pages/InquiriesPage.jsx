@@ -450,27 +450,27 @@ const InquiriesPage = () => {
         </div>
 
         {/* Tab Selector */}
-        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+        <div className="flex border-b border-slate-200">
           <button
             onClick={() => setActiveSubTab('tickets')}
-            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+            className={`py-2.5 px-5 text-xs font-bold border-b-2 transition-all ${
               activeSubTab === 'tickets' 
-                ? 'bg-white text-slate-900 shadow-sm' 
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'border-primary text-primary' 
+                : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
             Support Tickets
           </button>
           <button
             onClick={() => setActiveSubTab('live_chat')}
-            className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+            className={`py-2.5 px-5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
               activeSubTab === 'live_chat' 
-                ? 'bg-white text-slate-900 shadow-sm' 
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'border-primary text-primary' 
+                : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
             Live AI Chats
-            {chatSessions.filter(s => s.status === 'escalated').length > 0 && (
+            {chatSessions.filter(s => (s.status || s.status_field) === 'escalated').length > 0 && (
               <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
             )}
           </button>
@@ -748,50 +748,55 @@ const InquiriesPage = () => {
                   No active chat sessions found.
                 </div>
               ) : (
-                chatSessions.map((session) => (
-                  <div
-                    key={session.sessionId}
-                    onClick={() => setSelectedSessionId(session.sessionId)}
-                    className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors flex items-center justify-between ${
-                      selectedSessionId === session.sessionId ? 'bg-primary/5 hover:bg-primary/5' : ''
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5">
-                        <User className="h-3.5 w-3.5 text-slate-450" />
-                        <span className="text-xs font-bold text-slate-900">
-                          {session.userId ? `Customer (${session.userId.toString().substring(0, 8).toUpperCase()})` : "Guest Client"}
-                        </span>
+                chatSessions.map((session) => {
+                  const sId = session.session_id || session.sessionId;
+                  const uId = session.user_id || session.userId;
+                  const sStatus = session.status || "active";
+                  return (
+                    <div
+                      key={sId}
+                      onClick={() => setSelectedSessionId(sId)}
+                      className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors flex items-center justify-between ${
+                        selectedSessionId === sId ? 'bg-primary/5 hover:bg-primary/5' : ''
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5">
+                          <User className="h-3.5 w-3.5 text-slate-450" />
+                          <span className="text-xs font-bold text-slate-900">
+                            {uId ? `Customer (${uId.toString().substring(0, 8).toUpperCase()})` : "Guest Client"}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-mono select-all">Session: {sId ? sId.substring(0, 12) : ""}...</p>
                       </div>
-                      <p className="text-[10px] text-slate-400 font-mono select-all">Session: {session.sessionId.substring(0, 12)}...</p>
-                    </div>
-                    
-                    <div className="flex flex-col items-end gap-1.5">
-                      <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
-                        session.status === 'escalated'
-                          ? 'bg-rose-50 border-rose-200 text-rose-600 animate-pulse'
-                          : session.status === 'resolved'
-                            ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
-                            : 'bg-blue-50 border-blue-200 text-blue-600'
-                      }`}>
-                        {session.status}
-                      </span>
                       
-                      {session.status === 'escalated' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            closeChatSession(session.sessionId);
-                          }}
-                          title="Close Chat Session"
-                          className="p-1 rounded-lg border border-slate-200 text-slate-500 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition-all"
-                        >
-                          <Power className="h-3.5 w-3.5" />
-                        </button>
-                      )}
+                      <div className="flex flex-col items-end gap-1.5">
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                          sStatus === 'escalated'
+                            ? 'bg-rose-50 border-rose-200 text-rose-600 animate-pulse'
+                            : sStatus === 'resolved'
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                              : 'bg-blue-50 border-blue-200 text-blue-600'
+                        }`}>
+                          {sStatus}
+                        </span>
+                        
+                        {sStatus === 'escalated' && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              closeChatSession(sId);
+                            }}
+                            title="Close Chat Session"
+                            className="p-1 rounded-lg border border-slate-200 text-slate-500 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition-all"
+                          >
+                            <Power className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
