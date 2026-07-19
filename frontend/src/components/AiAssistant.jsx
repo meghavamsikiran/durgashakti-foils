@@ -66,7 +66,7 @@ export default function AiAssistant() {
       const fetchHistory = async (showLoadingState = true) => {
         if (showLoadingState) setLoadingHistory(true);
         try {
-          const res = await apiClient.get(`/orders/ai-chat/history?sessionId=${sessionId}`);
+          const res = await apiClient.get(`/chat/history?sessionId=${sessionId}`);
           if (res.data) {
             const historyMsgs = res.data.messages || [];
             if (historyMsgs.length > 0) {
@@ -110,7 +110,7 @@ export default function AiAssistant() {
     setLoading(true);
 
     try {
-      const res = await apiClient.post('/orders/ai-chat', { 
+      const res = await apiClient.post('/chat', { 
         message: userText,
         sessionId: sessionId 
       });
@@ -127,7 +127,7 @@ export default function AiAssistant() {
 
   const handleEndChat = async () => {
     try {
-      await apiClient.post('/orders/ai-chat/session/close', { sessionId });
+      await apiClient.post('/chat/session/close', { sessionId });
       setShowSurvey(true);
     } catch (err) {
       console.error("Failed to close session:", err);
@@ -139,7 +139,7 @@ export default function AiAssistant() {
     setShowSurvey(false);
     setLoading(true);
     try {
-      const res = await apiClient.post('/orders/ai-chat/session/feedback', { 
+      const res = await apiClient.post('/chat/session/feedback', { 
         sessionId, 
         satisfied 
       });
@@ -162,7 +162,7 @@ export default function AiAssistant() {
     setShowEscalationConfirm(false);
     setLoading(true);
     try {
-      const res = await apiClient.post('/orders/ai-chat/session/escalate', { sessionId });
+      const res = await apiClient.post('/chat/session/escalate', { sessionId });
       setMessages((prev) => [...prev, { sender: 'bot', text: res.data.response }]);
       setSessionStatus('escalated');
     } catch (err) {

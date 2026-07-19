@@ -260,7 +260,7 @@ const InquiriesPage = () => {
   // Load Swiggy Chat sessions
   const loadChatSessions = useCallback(async () => {
     try {
-      const res = await apiClient.get('/orders/ai-chat/sessions');
+      const res = await apiClient.get('/chat/sessions');
       setChatSessions(res.data || []);
     } catch (err) {
       console.error("Failed to load chat sessions:", err);
@@ -281,7 +281,7 @@ const InquiriesPage = () => {
   const loadActiveChatHistory = useCallback(async (id, silent = false) => {
     if (!silent) setLoadingChatHistory(true);
     try {
-      const res = await apiClient.get(`/orders/ai-chat/history?sessionId=${id}`);
+      const res = await apiClient.get(`/chat/history?sessionId=${id}`);
       setChatMessages(res.data?.messages || []);
     } catch (err) {
       console.error("Failed to fetch chat history:", err);
@@ -310,7 +310,7 @@ const InquiriesPage = () => {
 
     setSendingChatMessage(true);
     try {
-      await apiClient.post('/orders/ai-chat/admin-message', {
+      await apiClient.post('/chat/admin-message', {
         sessionId: selectedSessionId,
         message: adminChatMessage
       });
@@ -325,7 +325,7 @@ const InquiriesPage = () => {
 
   const closeChatSession = async (id) => {
     try {
-      await apiClient.post('/orders/ai-chat/session/close', { sessionId: id });
+      await apiClient.post('/chat/session/close', { sessionId: id });
       toast.success("Chat session closed successfully");
       loadChatSessions();
       if (selectedSessionId === id) {
