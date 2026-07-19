@@ -7,7 +7,7 @@ export default function AiAssistant() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('themeMode') !== 'light');
-  const [sessionId] = useState(() => {
+  const [sessionId, setSessionId] = useState(() => {
     let id = localStorage.getItem('ai_session_id');
     if (!id) {
       id = 'session-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -17,12 +17,13 @@ export default function AiAssistant() {
   });
   
   const [messages, setMessages] = useState([
-    { sender: 'bot', text: 'Hello Customer! I am your DurgaShakti assistant. Ask me anything about our foils or track your orders!' }
+    { sender: 'bot', text: 'Hello Customer, how can I assist you with DurgaShakti Foils today?' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showSurvey, setShowSurvey] = useState(false);
+  const [showEscalationConfirm, setShowEscalationConfirm] = useState(false);
   const [sessionStatus, setSessionStatus] = useState('active'); // 'active', 'resolved', 'escalated'
   const scrollRef = useRef(null);
 
@@ -39,7 +40,7 @@ export default function AiAssistant() {
     if (messages.length === 1 && messages[0].sender === 'bot') {
       const name = user?.full_name ? user.full_name : 'Customer';
       setMessages([
-        { sender: 'bot', text: `Hello ${name}! I am your DurgaShakti assistant. Ask me anything about our foils or track your orders!` }
+        { sender: 'bot', text: `Hello ${name}, how can I assist you with DurgaShakti Foils today?` }
       ]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -82,7 +83,7 @@ export default function AiAssistant() {
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading, showSurvey, sessionStatus]);
+  }, [messages, loading, showSurvey, showEscalationConfirm, sessionStatus]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -131,7 +132,7 @@ export default function AiAssistant() {
       setMessages((prev) => [...prev, { sender: 'bot', text: res.data.response }]);
       
       if (!satisfied) {
-        setSessionStatus('escalated');
+        setShowEscalationConfirm(true);
       } else {
         setSessionStatus('resolved');
       }
@@ -142,11 +143,31 @@ export default function AiAssistant() {
     }
   };
 
-  const handleNewChat = () => {
-    // Generate new session ID to start completely fresh
+  const triggerEscalation = async () => {
+    setShowEscalationConfirm(false);
+    setLoading(true);
+    try {
+      const res = await apiClient.post('/orders/ai-chat/session/escalate', { sessionId });
+      setMessages((prev) => [...prev, { sender: 'bot', text: res.data.response }]);
+      setSessionStatus('escalated');
+    } catch (err) {
+      console.error("Failed to escalate session:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRestartChat = () => {
     const newId = 'session-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     localStorage.setItem('ai_session_id', newId);
-    window.location.reload();
+    setSessionId(newId);
+    setSessionStatus('active');
+    setShowSurvey(false);
+    setShowEscalationConfirm(false);
+    const name = user?.full_name ? user.full_name : 'Customer';
+    setMessages([
+      { sender: 'bot', text: `Hello ${name}, how can I assist you with DurgaShakti Foils today?` }
+    ]);
   };
 
   return (
@@ -188,7 +209,7 @@ export default function AiAssistant() {
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              {sessionStatus === 'active' && !showSurvey && (
+              {sessionStatus === 'active' && !showSurvey && !showEscalationConfirm && (
                 <button
                   onClick={handleEndChat}
                   title="End Chat Session"
@@ -274,6 +295,34 @@ export default function AiAssistant() {
                   </div>
                 )}
 
+                {/* Confirm escalation layout before connecting live agent */}
+                {showEscalationConfirm && (
+                  <div className={`flex flex-col items-center p-4 rounded-2xl border text-center animate-in fade-in duration-300 ${
+                    isDark ? 'bg-[#0c1816] border-red-500/20' : 'bg-[#fdf3f2] border-red-500/20'
+                  }`}>
+                    <h5 className="text-[11px] font-bold mb-2.5">Would you like us to connect you with a live support agent?</h5>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={triggerEscalation}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-600 text-white hover:bg-red-700 transition-all border border-transparent"
+                      >
+                        Yes, Connect Me
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowEscalationConfirm(false);
+                          setSessionStatus('resolved');
+                        }}
+                        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all ${
+                          isDark ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-55'
+                        }`}
+                      >
+                        No, Thanks
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Swiggy Live Agent Escalation / Call Helpline Card */}
                 {sessionStatus === 'escalated' && (
                   <div className={`p-4 rounded-2xl border text-center space-y-3 animate-in slide-in-from-bottom-2 ${
@@ -294,12 +343,12 @@ export default function AiAssistant() {
                       Call Helpline: +91 98765 43210
                     </a>
                     <button
-                      onClick={handleNewChat}
+                      onClick={handleRestartChat}
                       className={`text-[9px] font-bold uppercase tracking-wider border-b ${
                         isDark ? 'text-slate-400 border-slate-600 hover:text-white' : 'text-slate-500 border-slate-300 hover:text-slate-700'
                       }`}
                     >
-                      Start a New AI Conversation
+                      Restart Chat
                     </button>
                   </div>
                 )}
@@ -307,12 +356,12 @@ export default function AiAssistant() {
                 {sessionStatus === 'resolved' && (
                   <div className="text-center py-2">
                     <button
-                      onClick={handleNewChat}
+                      onClick={handleRestartChat}
                       className={`text-[9px] font-bold uppercase tracking-wider border-b ${
                         isDark ? 'text-[#25D958] border-[#25D958]/30 hover:brightness-110' : 'text-[#006e1b] border-[#006e1b]/30 hover:brightness-110'
                       }`}
                     >
-                      Start a New Chat
+                      Restart Chat
                     </button>
                   </div>
                 )}
@@ -354,13 +403,13 @@ export default function AiAssistant() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              disabled={loadingHistory || loading || showSurvey || sessionStatus !== 'active'}
+              disabled={loadingHistory || loading || showSurvey || showEscalationConfirm || sessionStatus !== 'active'}
               placeholder={
                 sessionStatus === 'escalated' 
                   ? "Chat redirected to Live Agent..." 
                   : sessionStatus === 'resolved'
                     ? "This chat session has ended."
-                    : showSurvey
+                    : (showSurvey || showEscalationConfirm)
                       ? "Please rate our service..."
                       : loadingHistory 
                         ? "Loading history..." 
@@ -374,7 +423,7 @@ export default function AiAssistant() {
             />
             <button
               type="submit"
-              disabled={!input.trim() || loading || loadingHistory || showSurvey || sessionStatus !== 'active'}
+              disabled={!input.trim() || loading || loadingHistory || showSurvey || showEscalationConfirm || sessionStatus !== 'active'}
               className={`flex h-8 w-8 items-center justify-center rounded-full disabled:opacity-50 transition-opacity ${
                 isDark ? 'bg-[#25D958] text-black' : 'bg-[#006e1b] text-white'
               }`}

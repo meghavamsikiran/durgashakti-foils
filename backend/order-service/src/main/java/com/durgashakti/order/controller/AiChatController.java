@@ -4,11 +4,13 @@ import com.durgashakti.common.entity.ChatMessage;
 import com.durgashakti.common.entity.ChatSession;
 import com.durgashakti.common.entity.Contact;
 import com.durgashakti.common.entity.Order;
+import com.durgashakti.common.entity.User;
 import com.durgashakti.common.service.GeminiFailoverService;
 import com.durgashakti.order.repository.ChatMessageRepository;
 import com.durgashakti.order.repository.ChatSessionRepository;
 import com.durgashakti.order.repository.ContactOrderRepository;
 import com.durgashakti.order.repository.OrderServiceRepository;
+import com.durgashakti.order.repository.OrderUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,6 +34,7 @@ public class AiChatController {
   private final OrderServiceRepository orderRepository;
   private final ContactOrderRepository contactRepository;
   private final ChatSessionRepository chatSessionRepository;
+  private final OrderUserRepository orderUserRepository;
 
   private static final String SYSTEM_PROMPT = """
       You are the official AI Assistant for DurgaShakti Foils.
@@ -40,11 +43,12 @@ public class AiChatController {
       - Heavy Duty Foil (18 microns): Best for grilling/roasting.
       Be extremely polite, humble, and friendly.
       CRITICAL RULES:
-      1. Always keep responses short and concise. Do NOT write more than 2-3 sentences.
-      2. If the user asks about order status, tracking, or details of a specific order number (e.g. OD-YYYYMMDD-XXXXX), reply EXACTLY in this format:
+      1. Greet the user by name if their name is provided in the prompt context.
+      2. Always keep responses short and concise. Do NOT write more than 2-3 sentences.
+      3. If the user asks about order status, tracking, or details of a specific order number (e.g. OD-YYYYMMDD-XXXXX), reply EXACTLY in this format:
          [LOOKUP_ORDER: <order-number>]
          Do not write any other text.
-      3. If the user asks about a support ticket status or details (e.g. OD-TKT-XXXXXX), reply EXACTLY in this format:
+      4. If the user asks about a support ticket status or details (e.g. OD-TKT-XXXXXX), reply EXACTLY in this format:
          [LOOKUP_TICKET: <ticket-id>]
          Do not write any other text.
       """;
@@ -60,12 +64,14 @@ public class AiChatController {
       ChatMessageRepository chatMessageRepository,
       OrderServiceRepository orderRepository,
       ContactOrderRepository contactRepository,
-      ChatSessionRepository chatSessionRepository) {
+      ChatSessionRepository chatSessionRepository,
+      OrderUserRepository orderUserRepository) {
     this.failoverService = failoverService;
     this.chatMessageRepository = chatMessageRepository;
     this.orderRepository = orderRepository;
     this.contactRepository = contactRepository;
     this.chatSessionRepository = chatSessionRepository;
+    this.orderUserRepository = orderUserRepository;
   }
 
   @GetMapping("/ai-chat/history")
@@ -73,25 +79,19 @@ public class AiChatController {
       @RequestParam(name = "sessionId") String sessionId,
       Authentication authentication) {
       
-      List<ChatMessage> chatLogs;
+      String activeSessionId = (sessionId == null || sessionId.isBlank()) ? "anonymous_session" : sessionId;
+      List<ChatMessage> chatLogs = chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(activeSessionId);
+      
       if (authentication != null && authentication.getPrincipal() != null) {
           try {
               UUID userId = UUID.fromString((String) authentication.getPrincipal());
-              chatLogs = chatMessageRepository.findByUserIdOrderByCreatedAtAsc(userId);
-              if (chatLogs.isEmpty() && sessionId != null && !sessionId.isBlank()) {
-                  chatLogs = chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
-                  for (ChatMessage chatLog : chatLogs) {
-                      if (chatLog.getUserId() == null) {
-                          chatLog.setUserId(userId);
-                          chatMessageRepository.save(chatLog);
-                      }
+              for (ChatMessage chatLog : chatLogs) {
+                  if (chatLog.getUserId() == null) {
+                      chatLog.setUserId(userId);
+                      chatMessageRepository.save(chatLog);
                   }
               }
-          } catch (Exception e) {
-              chatLogs = chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
-          }
-      } else {
-          chatLogs = chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
+          } catch (Exception ignored) {}
       }
 
       List<Map<String, String>> response = chatLogs.stream().map(chatLog -> Map.of(
@@ -137,6 +137,15 @@ public class AiChatController {
     ChatMessage userLog = new ChatMessage(authenticatedUserId, sessionId, "user", userMessageStr);
     chatMessageRepository.save(userLog);
 
+    // Resolve user's name
+    String userName = "Customer";
+    if (authenticatedUserId != null) {
+        User orderUser = orderUserRepository.findById(authenticatedUserId).orElse(null);
+        if (orderUser != null && orderUser.getFullName() != null) {
+            userName = orderUser.getFullName();
+        }
+    }
+
     // Fetch conversation history (last 15 messages) to build contextual awareness
     List<ChatMessage> history;
     if (authenticatedUserId != null) {
@@ -146,8 +155,8 @@ public class AiChatController {
     }
 
     StringBuilder historyBuilder = new StringBuilder();
+    historyBuilder.append("User Name: ").append(userName).append("\n");
     historyBuilder.append("Conversation History:\n");
-    // Append previous messages (excluding the one we just saved at the end)
     int historyLimit = Math.max(0, history.size() - 15);
     for (int i = historyLimit; i < history.size() - 1; i++) {
         ChatMessage msg = history.get(i);
@@ -286,21 +295,40 @@ public class AiChatController {
       if (session != null) {
           session.setSatisfied(satisfied);
           if (Boolean.FALSE.equals(satisfied)) {
-              session.setStatus("escalated");
-              systemMsg = "I understand your frustration. Connecting you to a live support agent... Please wait while we fetch help. You can also call us directly at +91 98765 43210 for immediate live support.";
+              // We do not immediately escalate now!
+              // Instead, the frontend will ask the user first.
+              session.setStatus("resolved");
+              systemMsg = "We are deeply sorry to hear that we couldn't resolve your issue to your satisfaction.";
           } else {
               session.setStatus("resolved");
               systemMsg = "Thank you so much for your feedback! We are always here to help you. Have a great day ahead!";
           }
           chatSessionRepository.save(session);
 
-          // Save bot clarification message to database log so it persists in history
+          // Save bot message to database log
           ChatMessage systemLog = new ChatMessage(session.getUserId(), sessionId, "bot", systemMsg);
           chatMessageRepository.save(systemLog);
       } else {
           systemMsg = "Feedback recorded. Thank you!";
       }
 
+      return ResponseEntity.ok(Map.of("response", systemMsg));
+  }
+
+  @PostMapping("/ai-chat/session/escalate")
+  public ResponseEntity<Map<String, String>> escalateSession(@RequestBody Map<String, String> request) {
+      String sessionId = request.get("sessionId");
+      ChatSession session = chatSessionRepository.findById(sessionId).orElse(null);
+      String systemMsg = "I understand your frustration. Connecting you to a live support agent... Please wait while we fetch help. You can also call us directly at +91 98765 43210 for immediate live support.";
+      
+      if (session != null) {
+          session.setStatus("escalated");
+          chatSessionRepository.save(session);
+
+          ChatMessage systemLog = new ChatMessage(session.getUserId(), sessionId, "bot", systemMsg);
+          chatMessageRepository.save(systemLog);
+      }
+      
       return ResponseEntity.ok(Map.of("response", systemMsg));
   }
 
@@ -323,7 +351,7 @@ public class AiChatController {
           return ResponseEntity.notFound().build();
       }
 
-      // Add message from admin (sender: bot, to show in user's chat)
+      // Add message from admin
       ChatMessage adminLog = new ChatMessage(session.getUserId(), sessionId, "bot", "[LIVE AGENT]: " + adminText);
       chatMessageRepository.save(adminLog);
 
