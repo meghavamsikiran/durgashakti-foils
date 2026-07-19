@@ -159,7 +159,7 @@ public class AiChatController {
       }
     } catch (Exception e) {
         log.error("AI Chat service failed. Error: {}", e.getMessage(), e);
-        aiResponse = "[DEBUG ERROR] AI service exception: " + e.getMessage();
+        aiResponse = "I'm sorry, our AI assistant is currently experiencing an issue. Please try again in a moment or contact our support team for help.";
     }
 
     // Save Bot message to history
