@@ -21,6 +21,12 @@
             <groupId>com.durgashakti</groupId>
             <artifactId>shared-core</artifactId>
         </dependency>
+        <!-- Order service (for shared repository interfaces used by AI chat lookups) -->
+        <dependency>
+            <groupId>com.durgashakti</groupId>
+            <artifactId>order-service</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Spring Boot Starters -->
         <dependency>
