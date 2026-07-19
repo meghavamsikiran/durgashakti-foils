@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/orders/ai-chat")
+@RequestMapping("/api/chat")
 public class AiChatController {
 
   private final GeminiFailoverService failoverService;
