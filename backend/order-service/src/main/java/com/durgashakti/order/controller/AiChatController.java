@@ -114,15 +114,36 @@ public class AiChatController {
         } catch (Exception ignored) {}
     }
 
-    // Save User message to history
+    // Save User message to history first
     ChatMessage userLog = new ChatMessage(authenticatedUserId, sessionId, "user", userMessageStr);
     chatMessageRepository.save(userLog);
+
+    // Fetch conversation history (last 15 messages) to build contextual awareness
+    List<ChatMessage> history;
+    if (authenticatedUserId != null) {
+        history = chatMessageRepository.findByUserIdOrderByCreatedAtAsc(authenticatedUserId);
+    } else {
+        history = chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
+    }
+
+    StringBuilder historyBuilder = new StringBuilder();
+    historyBuilder.append("Conversation History:\n");
+    // Append previous messages (excluding the one we just saved at the end)
+    int historyLimit = Math.max(0, history.size() - 15);
+    for (int i = historyLimit; i < history.size() - 1; i++) {
+        ChatMessage msg = history.get(i);
+        historyBuilder.append(msg.getSender().equalsIgnoreCase("user") ? "User: " : "Bot: ")
+                      .append(msg.getText())
+                      .append("\n");
+    }
+    historyBuilder.append("User's latest follow-up question: ").append(userMessageStr);
+    String inputWithContext = historyBuilder.toString();
 
     String aiResponse;
 
     try {
-      // Call Gemini directly via native REST API
-      aiResponse = failoverService.chat(SYSTEM_PROMPT, userMessageStr);
+      // Call Gemini directly via native REST API with history context
+      aiResponse = failoverService.chat(SYSTEM_PROMPT, inputWithContext);
 
       // Check if the AI requested an order lookup
       if (aiResponse != null && aiResponse.contains("[LOOKUP_ORDER:")) {

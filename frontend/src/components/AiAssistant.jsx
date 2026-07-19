@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import apiClient from '../services/core/apiClient';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AiAssistant() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('themeMode') !== 'light');
   const [sessionId] = useState(() => {
@@ -15,7 +17,7 @@ export default function AiAssistant() {
   });
   
   const [messages, setMessages] = useState([
-    { sender: 'bot', text: 'Hello! I am your DurgaShakti assistant. Ask me anything about our foils or track your orders!' }
+    { sender: 'bot', text: 'Hello Customer! I am your DurgaShakti assistant. Ask me anything about our foils or track your orders!' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,6 +31,17 @@ export default function AiAssistant() {
     window.addEventListener('theme-toggle', handleThemeToggle);
     return () => window.removeEventListener('theme-toggle', handleThemeToggle);
   }, []);
+
+  // Update welcome message dynamically when user profile loads
+  useEffect(() => {
+    if (messages.length === 1 && messages[0].sender === 'bot') {
+      const name = user?.full_name ? user.full_name : 'Customer';
+      setMessages([
+        { sender: 'bot', text: `Hello ${name}! I am your DurgaShakti assistant. Ask me anything about our foils or track your orders!` }
+      ]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Fetch chat history from database when chat window opens
   useEffect(() => {
