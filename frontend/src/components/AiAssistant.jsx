@@ -25,7 +25,20 @@ export default function AiAssistant() {
   const [showSurvey, setShowSurvey] = useState(false);
   const [showEscalationConfirm, setShowEscalationConfirm] = useState(false);
   const [sessionStatus, setSessionStatus] = useState('active'); // 'active', 'resolved', 'escalated'
+  const [helplineNumber, setHelplineNumber] = useState('+91 98765 43210');
   const scrollRef = useRef(null);
+
+  useEffect(() => {
+    const fetchHelpline = async () => {
+      try {
+        const res = await apiClient.cachedGet('/settings/public');
+        if (res.data?.company_profile?.companyPhone) {
+          setHelplineNumber(res.data.company_profile.companyPhone);
+        }
+      } catch (ignored) {}
+    };
+    fetchHelpline();
+  }, []);
 
   useEffect(() => {
     const handleThemeToggle = (e) => {
@@ -338,11 +351,11 @@ export default function AiAssistant() {
                       All live chat agents are currently in queue. For immediate assistance, please call our toll-free customer helpline.
                     </p>
                     <a
-                      href="tel:+919876543210"
+                      href={`tel:${helplineNumber.replace(/\s+/g, '')}`}
                       className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-[11px] font-bold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-md shadow-red-600/10"
                     >
                       <PhoneCall className="h-3.5 w-3.5" />
-                      Call Helpline: +91 98765 43210
+                      Call Helpline: {helplineNumber}
                     </a>
                     <button
                       onClick={handleRestartChat}
