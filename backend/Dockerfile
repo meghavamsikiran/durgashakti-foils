@@ -13,6 +13,7 @@ COPY order-service/ order-service/
 COPY admin-service/ admin-service/
 COPY email-service/ email-service/
 COPY monolith-service/ monolith-service/
+COPY ai-chat-service/ ai-chat-service/
 
 # Package the application
 RUN mvn clean package -DskipTests
