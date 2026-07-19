@@ -11,6 +11,7 @@ import com.durgashakti.order.repository.ContactOrderRepository;
 import com.durgashakti.order.repository.OrderServiceRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -123,6 +124,13 @@ public class AiChatController {
     if (!chatSessionRepository.existsById(sessionId)) {
         ChatSession chatSession = new ChatSession(sessionId, authenticatedUserId);
         chatSessionRepository.save(chatSession);
+    }
+
+    // Check if session has been escalated. If it is escalated, AI should remain silent
+    // so that the customer interacts only with the live human agent.
+    ChatSession currentSession = chatSessionRepository.findById(sessionId).orElse(null);
+    if (currentSession != null && "escalated".equalsIgnoreCase(currentSession.getStatus())) {
+        return ResponseEntity.ok(Map.of("response", "Live agent connecting... For immediate helpline, call +91 98765 43210."));
     }
 
     // Save User message to history first
@@ -294,5 +302,31 @@ public class AiChatController {
       }
 
       return ResponseEntity.ok(Map.of("response", systemMsg));
+  }
+
+  // ── Admin Live Chat Endpoints ─────────────────────────────────────
+
+  @GetMapping("/ai-chat/sessions")
+  @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+  public ResponseEntity<List<ChatSession>> getChatSessions() {
+      return ResponseEntity.ok(chatSessionRepository.findAll());
+  }
+
+  @PostMapping("/ai-chat/admin-message")
+  @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+  public ResponseEntity<Map<String, String>> sendAdminMessage(@RequestBody Map<String, String> request) {
+      String sessionId = request.get("sessionId");
+      String adminText = request.get("message");
+
+      ChatSession session = chatSessionRepository.findById(sessionId).orElse(null);
+      if (session == null) {
+          return ResponseEntity.notFound().build();
+      }
+
+      // Add message from admin (sender: bot, to show in user's chat)
+      ChatMessage adminLog = new ChatMessage(session.getUserId(), sessionId, "bot", "[LIVE AGENT]: " + adminText);
+      chatMessageRepository.save(adminLog);
+
+      return ResponseEntity.ok(Map.of("status", "sent"));
   }
 }

@@ -45,16 +45,16 @@ export default function AiAssistant() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Fetch chat history from database when chat window opens
+  // Fetch chat history from database when chat window opens (and poll for human agent updates)
   useEffect(() => {
+    let intervalId;
     if (isOpen) {
-      const fetchHistory = async () => {
-        setLoadingHistory(true);
+      const fetchHistory = async (showLoadingState = true) => {
+        if (showLoadingState) setLoadingHistory(true);
         try {
           const res = await apiClient.get(`/orders/ai-chat/history?sessionId=${sessionId}`);
           if (res.data && res.data.length > 0) {
             setMessages(res.data);
-            // Check if there was already an escalation or resolution in the history
             const lastMsg = res.data[res.data.length - 1];
             if (lastMsg && lastMsg.text.includes("live support agent")) {
               setSessionStatus('escalated');
@@ -63,11 +63,21 @@ export default function AiAssistant() {
         } catch (err) {
           console.error("Failed to load chat history:", err);
         } finally {
-          setLoadingHistory(false);
+          if (showLoadingState) setLoadingHistory(false);
         }
       };
-      fetchHistory();
+      
+      fetchHistory(true);
+      
+      // Poll every 4 seconds to pick up live-chat responses from human agents
+      intervalId = setInterval(() => {
+        fetchHistory(false);
+      }, 4000);
     }
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [isOpen, sessionId]);
 
   useEffect(() => {
