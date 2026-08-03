@@ -69,8 +69,8 @@ const AdminLayout = () => {
   const isLight = themeMode === 'light';
 
   const shellClass = isLight 
-    ? "admin-shell min-h-screen flex flex-col md:flex-row bg-[hsl(45,30%,98%)] text-slate-900" 
-    : "admin-shell min-h-screen flex flex-col md:flex-row bg-[#0C1310] text-white";
+    ? "admin-shell light-theme min-h-screen flex flex-col md:flex-row bg-[hsl(45,30%,98%)] text-slate-900" 
+    : "admin-shell dark-theme min-h-screen flex flex-col md:flex-row bg-[#0C1310] text-white";
 
   const headerClass = isLight
     ? "flex md:hidden items-center justify-between px-6 py-4 sticky top-0 z-30 shadow-sm border-b bg-white border-slate-200 text-slate-900"

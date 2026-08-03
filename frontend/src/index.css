@@ -930,7 +930,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 /* ── ADMIN DARK THEME OVERRIDES ──────────────────────────────────── */
-.admin-shell {
+.admin-shell:not(.light-theme) {
   --background: 150 18% 5%;
   --foreground: 0 0% 100%;
   --card: 150 18% 7%;
@@ -957,61 +957,61 @@ h1, h2, h3, h4, h5, h6,
   --text-muted: #94a3b8 !important;
 }
 
-.admin-shell main, 
-.admin-shell div.bg-\[\#f7faf8\], 
-.admin-shell div.bg-surface, 
-.admin-shell div.text-on-surface {
+.admin-shell:not(.light-theme) main, 
+.admin-shell:not(.light-theme) div.bg-\[\#f7faf8\], 
+.admin-shell:not(.light-theme) div.bg-surface, 
+.admin-shell:not(.light-theme) div.text-on-surface {
   background-color: #0C1310 !important;
   color: #ffffff !important;
 }
 
-.admin-shell .bg-white {
+.admin-shell:not(.light-theme) .bg-white {
   background-color: #131B17 !important;
   color: #ffffff !important;
 }
 
-.admin-shell .text-slate-800,
-.admin-shell .text-slate-900,
-.admin-shell .text-slate-950 {
+.admin-shell:not(.light-theme) .text-slate-800,
+.admin-shell:not(.light-theme) .text-slate-900,
+.admin-shell:not(.light-theme) .text-slate-950 {
   color: #ffffff !important;
 }
 
-.admin-shell .text-slate-700,
-.admin-shell .text-slate-650 {
+.admin-shell:not(.light-theme) .text-slate-700,
+.admin-shell:not(.light-theme) .text-slate-650 {
   color: #e2e8f0 !important;
 }
 
-.admin-shell .text-slate-600 {
+.admin-shell:not(.light-theme) .text-slate-600 {
   color: #cbd5e1 !important;
 }
 
-.admin-shell .text-slate-500,
-.admin-shell .text-slate-400 {
+.admin-shell:not(.light-theme) .text-slate-500,
+.admin-shell:not(.light-theme) .text-slate-400 {
   color: #94a3b8 !important;
 }
 
-.admin-shell .border-slate-200,
-.admin-shell .border-slate-100,
-.admin-shell .border-slate-250,
-.admin-shell .border-slate-200\/60,
-.admin-shell .border-slate-200\/80 {
+.admin-shell:not(.light-theme) .border-slate-200,
+.admin-shell:not(.light-theme) .border-slate-100,
+.admin-shell:not(.light-theme) .border-slate-250,
+.admin-shell:not(.light-theme) .border-slate-200\/60,
+.admin-shell:not(.light-theme) .border-slate-200\/80 {
   border-color: #26322B !important;
 }
 
-.admin-shell .bg-slate-50,
-.admin-shell .bg-slate-100,
-.admin-shell .bg-slate-200\/50,
-.admin-shell .bg-slate-200,
-.admin-shell .bg-slate-50\/50,
-.admin-shell .bg-slate-100\/50,
-.admin-shell .bg-slate-50\/40,
-.admin-shell .bg-slate-50\/80 {
+.admin-shell:not(.light-theme) .bg-slate-50,
+.admin-shell:not(.light-theme) .bg-slate-100,
+.admin-shell:not(.light-theme) .bg-slate-200\/50,
+.admin-shell:not(.light-theme) .bg-slate-200,
+.admin-shell:not(.light-theme) .bg-slate-50\/50,
+.admin-shell:not(.light-theme) .bg-slate-100\/50,
+.admin-shell:not(.light-theme) .bg-slate-50\/40,
+.admin-shell:not(.light-theme) .bg-slate-50\/80 {
   background-color: #131B17 !important;
 }
 
-.admin-shell .hover\:bg-slate-50:hover,
-.admin-shell .hover\:bg-slate-100:hover,
-.admin-shell .hover\:bg-slate-50\/50:hover,
+.admin-shell:not(.light-theme) .hover\:bg-slate-50:hover,
+.admin-shell:not(.light-theme) .hover\:bg-slate-100:hover,
+.admin-shell:not(.light-theme) .hover\:bg-slate-50\/50:hover,
 .admin-shell [class*="hover:bg-slate-"]:hover,
 .admin-shell [class*="hover:bg-white"]:hover,
 .admin-shell [class*="hover:bg-slate-50\/40"]:hover,
