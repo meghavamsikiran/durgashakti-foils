@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, LogOut, Menu, X, Search, Home as HomeIcon, ShoppingBag } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ShoppingCart, User, LogOut, Menu, X, Search, Home as HomeIcon, ShoppingBag, Info, MessageSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { Button } from './ui/button';
@@ -408,27 +409,44 @@ const Navbar = () => {
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center gap-6 font-inter">
-            <Link
-              to="/shop"
-              className="text-sm font-semibold text-white hover:text-[#25d958] transition-colors"
-              data-testid="navbar-shop-link"
-            >
-              Shop
-            </Link>
-            <Link
-              to="/about"
-              className="text-sm font-semibold text-white hover:text-[#25d958] transition-colors"
-            >
-              About Us
-            </Link>
-            <Link
-              to="/contact"
-              className="text-sm font-semibold text-white hover:text-[#25d958] transition-colors"
-            >
-              Contact Us
-            </Link>
+          {/* 21st.dev Animated Underline Navigation (Icon + Sliding Line) */}
+          <div className="hidden md:flex items-center gap-2 font-sans relative">
+            {[
+              { name: 'Home', path: '/', icon: HomeIcon },
+              { name: 'Shop', path: '/shop', icon: ShoppingBag, testId: 'navbar-shop-link' },
+              { name: 'About Us', path: '/about', icon: Info },
+              { name: 'Contact Us', path: '/contact', icon: MessageSquare }
+            ].map((link) => {
+              const Icon = link.icon;
+              const isActive = location.pathname === link.path || (link.path !== '/' && location.pathname.startsWith(link.path));
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  data-testid={link.testId}
+                  className={`relative px-3.5 py-2 text-sm font-bold flex items-center gap-2 transition-colors duration-200 group ${
+                    isActive 
+                      ? 'text-primary' 
+                      : (themeMode === 'light' ? 'text-slate-700 hover:text-slate-900' : 'text-slate-200 hover:text-white')
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 transition-colors ${
+                    isActive ? 'text-primary' : (themeMode === 'light' ? 'text-slate-500 group-hover:text-slate-900' : 'text-slate-400 group-hover:text-white')
+                  }`} />
+                  <span className="relative z-10">{link.name}</span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="desktopActiveUnderline"
+                      className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]"
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
+          </div>
 
+          <div className="hidden md:flex items-center gap-6 font-inter">
             {/* Search Input / Toggle */}
             <div className="relative" ref={searchRef}>
               {isSearchOpen ? (
@@ -593,79 +611,87 @@ const Navbar = () => {
       </div>
     </nav>
 
-    {/* Sticky Mobile Bottom Navigation Bar */}
-    <div className={`fixed bottom-0 inset-x-0 z-50 md:hidden border-t backdrop-blur-md px-6 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.5)] transition-all duration-300 ${
-      themeMode === 'light' ? 'bg-[#f7faf8]/95 border-[#bbcbb5]' : 'bg-[#030504]/90 border-white/10'
-    }`}>
-      <div className="flex items-center justify-between">
-        <Link 
-          to="/" 
-          className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
-            location.pathname === '/' 
-              ? 'text-[#006e1b]' 
-              : (themeMode === 'light' ? 'text-slate-650 hover:text-slate-900' : 'text-white/60 hover:text-white')
-          }`}
-        >
-          <HomeIcon className="w-5 h-5" />
-          <span>Home</span>
-        </Link>
-        <Link 
-          to="/shop" 
-          className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
-            location.pathname === '/shop' 
-              ? 'text-[#006e1b]' 
-              : (themeMode === 'light' ? 'text-slate-650 hover:text-slate-900' : 'text-white/60 hover:text-white')
-          }`}
-        >
-          <ShoppingBag className="w-5 h-5" />
-          <span>Shop</span>
-        </Link>
-        <button 
-          onClick={() => {
-            if (isMobileSearchOpen) {
-              closeSearch();
-            } else {
-              setIsMobileSearchOpen(true);
-              setIsMenuOpen(false);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-          }}
-          className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
-            isMobileSearchOpen 
-              ? 'text-[#006e1b]' 
-              : (themeMode === 'light' ? 'text-slate-650 hover:text-slate-900' : 'text-white/60 hover:text-white')
-          }`}
-        >
-          {isMobileSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
-          <span>{isMobileSearchOpen ? 'Close' : 'Search'}</span>
-        </button>
-        <Link 
-          to="/cart" 
-          className={`relative flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
-            location.pathname === '/cart' 
-              ? 'text-[#006e1b]' 
-              : (themeMode === 'light' ? 'text-slate-650 hover:text-slate-900' : 'text-white/60 hover:text-white')
-          }`}
-        >
-          <ShoppingCart className="w-5 h-5" />
-          <span>Cart</span>
-          {cartItemCount > 0 && (
-            <span className="absolute -top-1 -right-2 bg-[#25d958] text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">
-              {cartItemCount}
-            </span>
-          )}
-        </Link>
-        <Link 
-          to={user ? (isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard") : "/login"} 
-          className={`flex flex-col items-center gap-1 text-[10px] font-bold transition-all ${
-            location.pathname.startsWith('/dashboard') || location.pathname === '/login' 
-              ? 'text-[#006e1b]' 
-              : (themeMode === 'light' ? 'text-slate-650 hover:text-slate-900' : 'text-white/60 hover:text-white')
-          }`}
-        >
-          <User className="w-5 h-5" />
-          <span>{user ? 'Account' : 'Login'}</span>
-        </Link>
+    {/* 21st.dev Floating Mobile Nav Dock Pill (Glassmorphic Dock with Sliding Pill Indicator) */}
+    <div className="fixed bottom-4 inset-x-4 z-50 md:hidden max-w-md mx-auto">
+      <div className={`rounded-full border backdrop-blur-xl p-1.5 flex items-center justify-around shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ${
+        themeMode === 'light'
+          ? 'bg-white/95 border-slate-200 text-slate-800'
+          : 'bg-[#07130e]/90 border-white/15 text-white'
+      }`}>
+        {[
+          { name: 'Home', path: '/', icon: HomeIcon, type: 'link' },
+          { name: 'Shop', path: '/shop', icon: ShoppingBag, type: 'link' },
+          { name: 'Search', icon: Search, type: 'search' },
+          { name: 'Cart', path: '/cart', icon: ShoppingCart, type: 'cart' },
+          {
+            name: user ? 'Account' : 'Login',
+            path: user ? (isAdmin ? (isSuperAdmin ? "/superadmin/dashboard" : "/admin/dashboard") : "/dashboard") : "/login",
+            icon: User,
+            type: 'link'
+          }
+        ].map((item, idx) => {
+          const Icon = item.icon;
+          const isActive = item.type === 'search'
+            ? isMobileSearchOpen
+            : location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+
+          if (item.type === 'search') {
+            return (
+              <button
+                key="mobile-search-dock"
+                onClick={() => {
+                  if (isMobileSearchOpen) {
+                    closeSearch();
+                  } else {
+                    setIsMobileSearchOpen(true);
+                    setIsMenuOpen(false);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                }}
+                className={`relative flex-1 flex flex-col items-center justify-center py-2 px-2 rounded-full text-[10px] font-bold transition-all duration-200 ${
+                  isActive ? 'text-primary' : (themeMode === 'light' ? 'text-slate-600 hover:text-slate-900' : 'text-slate-300 hover:text-white')
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="mobileActiveDockPill"
+                    className="absolute inset-0 rounded-full bg-primary/20 border border-primary/40"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <Icon className="w-5 h-5 relative z-10" />
+                <span className="relative z-10 mt-0.5">{isMobileSearchOpen ? 'Close' : 'Search'}</span>
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={item.path || idx}
+              to={item.path}
+              className={`relative flex-1 flex flex-col items-center justify-center py-2 px-2 rounded-full text-[10px] font-bold transition-all duration-200 ${
+                isActive ? 'text-primary' : (themeMode === 'light' ? 'text-slate-600 hover:text-slate-900' : 'text-slate-300 hover:text-white')
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="mobileActiveDockPill"
+                  className="absolute inset-0 rounded-full bg-primary/20 border border-primary/40"
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                />
+              )}
+              <div className="relative z-10">
+                <Icon className="w-5 h-5" />
+                {item.type === 'cart' && cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-2 bg-primary text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-md">
+                    {cartItemCount}
+                  </span>
+                )}
+              </div>
+              <span className="relative z-10 mt-0.5">{item.name}</span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   </>
