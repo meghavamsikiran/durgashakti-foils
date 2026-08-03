@@ -28,6 +28,7 @@ const ICON_MAP = {
   'Audit Logs': ShieldAlert,
   'Settings': Settings,
   'Shipping Settings': Package2,
+  'WhatsApp Bot': MessageSquare,
   'Coupons': Ticket,
   'Wallet': Wallet,
   'Profile': Building2,

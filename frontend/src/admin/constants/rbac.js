@@ -222,6 +222,7 @@ export const superAdminSidebar = [
   { label: 'Business Profile', path: 'profile', permissions: ['manage_settings'] },
   { label: 'Settings', permissions: ['manage_settings', 'manage_banner'] },
   { label: 'Shipping Settings', permissions: ['manage_settings'] },
+  { label: 'WhatsApp Bot', path: 'whatsapp', permissions: ['manage_settings'] },
   { label: 'Coupons', permissions: ['manage_coupons', 'manage_settings'] },
   { label: 'Wallet', path: 'wallet', permissions: ['manage_wallet', 'view_wallet_audit'] },
   { label: 'My Account' },

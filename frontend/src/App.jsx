@@ -218,6 +218,14 @@ function AppRoutes() {
                   }
                 />
                 <Route
+                  path="whatsapp"
+                  element={
+                    <ProtectedAdminRoute permission="manage_settings">
+                      <SettingsPage />
+                    </ProtectedAdminRoute>
+                  }
+                />
+                <Route
                   path="coupons"
                   element={
                     <ProtectedAdminRoute permission="manage_coupons">
