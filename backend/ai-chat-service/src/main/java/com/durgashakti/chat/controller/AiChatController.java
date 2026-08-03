@@ -42,7 +42,7 @@ public class AiChatController {
   private static final Pattern DOMAIN_KEYWORDS = Pattern.compile(
       "(?i)\\b(foil|foils|micron|microns|wrap|container|durgashakti|durga|shakti|order|delivery|shipping|price|buy|cost|bulk|discount|coupon|track|tracking|status|ticket|refund|payment|contact|support|phone|help|address|store|roll)\\b"
   );
-  private static final String GUARDRAIL_REFUSAL = "I am DurgaShakti AI, specialized exclusively in DurgaShakti Foils products, orders, shipping, and customer support. I cannot assist with coding or general knowledge topics unrelated to DurgaShakti Foils. How can I help you with our foils, microns, or orders today?";
+  private static final String GUARDRAIL_REFUSAL = "I can only assist with DurgaShakti Foils products, orders, and customer support. How may I help you with our foils today?";
 
   private static final String SYSTEM_PROMPT = """
       You are DurgaShakti AI, the official AI Customer Support Assistant for DurgaShakti Foils.
@@ -52,7 +52,7 @@ public class AiChatController {
       - You MUST ONLY answer questions directly related to DurgaShakti Foils: products, roll sizes, microns, pricing, custom sizing/bulk inquiries, orders & tracking, shipping/delivery, returns/refunds, and customer support.
       - If the user asks ANY question unrelated to DurgaShakti Foils (such as writing code, programming, math, history, general knowledge, sports, advice, jokes, or general chat), YOU MUST STRICTLY REFUSE TO ANSWER.
       - Return EXACTLY this refusal message for out-of-scope questions:
-        "I am DurgaShakti AI, specialized exclusively in DurgaShakti Foils products, orders, shipping, and customer support. I cannot assist with coding or general knowledge topics unrelated to DurgaShakti Foils. How can I help you with our foils, microns, or orders today?"
+        "I can only assist with DurgaShakti Foils products, orders, and customer support. How may I help you with our foils today?"
 
       CRITICAL BRAND RULES:
       1. Greet the user by name if provided in the prompt context.
