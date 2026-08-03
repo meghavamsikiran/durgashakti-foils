@@ -256,6 +256,10 @@ const Cart = () => {
                               src={formatImageUrl(product.image_url)}
                               alt={product.name}
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = '/placeholder.png';
+                              }}
                             />
                           </Link>
 
