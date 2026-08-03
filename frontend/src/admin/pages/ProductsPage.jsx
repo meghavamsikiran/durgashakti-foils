@@ -756,14 +756,14 @@ const ProductsPage = () => {
                 </div>
 
                 <div className={`border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-6 transition-all relative ${
-                  mediaUploading ? 'border-primary/20 bg-primary/5' :
-                  (form.media_urls || []).length >= 10 ? 'border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed' :
-                  'border-slate-200 hover:border-primary bg-slate-50/30'
+                  mediaUploading ? 'border-primary/40 bg-primary/10' :
+                  (form.media_urls || []).length >= 10 ? 'border-[#26322B] bg-[#0c1410] opacity-60 cursor-not-allowed' :
+                  'border-[#26322B] hover:border-primary/60 bg-[#050807]'
                 }`}>
                   <label htmlFor="media-up" className={`flex flex-col items-center gap-2 w-full h-full justify-center ${
                     (form.media_urls || []).length >= 10 || mediaUploading ? 'cursor-not-allowed' : 'cursor-pointer'
                   }`}>
-                    <Upload className={`w-8 h-8 ${mediaUploading ? 'text-primary animate-bounce' : 'text-slate-300'}`} />
+                    <Upload className={`w-8 h-8 ${mediaUploading ? 'text-primary animate-bounce' : 'text-slate-400'}`} />
                     <input
                       type="file"
                       className="hidden"
@@ -773,7 +773,7 @@ const ProductsPage = () => {
                       disabled={mediaUploading || (form.media_urls || []).length >= 10}
                       onChange={e => handleMediaUpload(e.target.files)}
                     />
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
                       {mediaUploading ? 'Uploading assets...' :
                        (form.media_urls || []).length >= 10 ? 'Gallery Full (10 max)' : 'Upload Images / Videos'}
                     </span>

@@ -502,9 +502,13 @@ const OrdersPage = () => {
         localStorage.removeItem(`admin_order_detail_${orderId}`);
       } catch (e) {}
       const response = await adminService.updateOrderStatus(orderId, { status: newStatus, admin_message: message, ...extraData });
-      const serverOrder = response?.data?.order;
+      const serverOrder = response?.data?.order || (response?.data?.id ? response.data : null);
       if (serverOrder) {
-        const normalizedOrder = { ...serverOrder, status: (serverOrder.order_status || '').toUpperCase() };
+        const normalizedOrder = {
+          ...serverOrder,
+          status: (serverOrder.order_status || serverOrder.status || '').toUpperCase(),
+          order_status: (serverOrder.order_status || serverOrder.status || '').toLowerCase()
+        };
         setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
         setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
       }

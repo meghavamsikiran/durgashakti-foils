@@ -72,7 +72,8 @@ const InventoryPage = () => {
   }), [search, categoryFilter, activeFilter, stockFilter]);
 
   const load = useCallback(async (pageNum = 1) => {
-    const params = { ...requestFilters(), page: pageNum, limit: ITEMS_PER_PAGE };
+    const actualPage = typeof pageNum === 'number' ? pageNum : 1;
+    const params = { ...requestFilters(), page: actualPage, limit: ITEMS_PER_PAGE };
     const cached = adminService.getCached(ADMIN_PRODUCTS_CACHE_PATH, params);
     if (!cached) {
       setLoading(true);
@@ -299,7 +300,7 @@ const InventoryPage = () => {
             )}
           </div>
 
-          <Button onClick={load} variant="outline" className="rounded-xl h-[40px] px-3 bg-white hover:bg-slate-50 border-slate-200 shadow-sm">
+          <Button onClick={() => load(1)} variant="outline" className="rounded-xl h-[40px] px-3 bg-[#050807] hover:bg-[#121f19] text-slate-300 border-[#26322B] shadow-sm">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
