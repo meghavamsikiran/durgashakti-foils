@@ -221,7 +221,7 @@ const WalletTab = () => {
               )}
             </div>
             <p className={`text-xs mt-1 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Use your wallet balance for faster 1-click checkout & split payments.
+              Use your wallet balance for faster 1-click checkout & partial payments.
             </p>
           </div>
 

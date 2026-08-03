@@ -35,9 +35,9 @@ const AdminWalletPage = () => {
         apiClient.get('/admin/wallet/transactions').catch(() => ({ data: [] }))
       ]);
 
-      // /admin/customers returns { customers: [...], total: N } or { rows: [...] }
+      // /admin/customers returns { items: [...] } or { customers: [...] } or { rows: [...] }
       const custData = customersRes.data;
-      setCustomers(custData?.customers || custData?.rows || custData || []);
+      setCustomers(custData?.items || custData?.customers || custData?.rows || (Array.isArray(custData) ? custData : []));
       setVouchers(vouchersRes.data || []);
       setTransactions(txsRes.data || []);
     } catch (err) {
@@ -154,7 +154,7 @@ const AdminWalletPage = () => {
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-bold focus:outline-none"
               >
                 <option value="">-- Choose Customer --</option>
-                {customers.map((c) => (
+                {(Array.isArray(customers) ? customers : []).map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.fullName || c.full_name || 'Customer'} ({c.email})
                   </option>
@@ -245,7 +245,7 @@ const AdminWalletPage = () => {
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-bold focus:outline-none"
               >
                 <option value="">-- All Customers (Public Voucher) --</option>
-                {customers.map((c) => (
+                {(Array.isArray(customers) ? customers : []).map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.fullName || c.full_name || 'Customer'} ({c.email})
                   </option>

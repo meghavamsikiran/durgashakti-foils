@@ -658,10 +658,10 @@ export const useCheckout = () => {
           amount: Math.round((response.total_amount || grandTotal) * 100),
           currency: "INR",
           name: "DurgaShakti Foils",
-          description: `Order #${orderNumber} (Split Payment)`,
+          description: `Order #${orderNumber} (Wallet + Online)`,
           order_id: rzpOrderId,
           handler: async function (paymentResponse) {
-            toast.success('Split payment completed successfully!');
+            toast.success('Payment completed successfully!');
             clearCart().catch(() => {});
             navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber}&payment_method=wallet`);
             setLoading(false);
