@@ -31,6 +31,59 @@ export const setupInterceptors = (apiClient) => {
       const { response } = error;
 
       if (response) {
+        // When responseType is 'blob', response.data is a Blob — parse it to get the actual error JSON
+        const isBlobResponse = error.config?.responseType === 'blob' && response.data instanceof Blob;
+
+        const parseAndHandle = async () => {
+          let parsedData = response.data;
+          if (isBlobResponse) {
+            try {
+              const text = await response.data.text();
+              parsedData = JSON.parse(text);
+            } catch {
+              parsedData = {};
+            }
+          }
+
+          // Handle unauthorized (expired token) — skip for blob endpoints to avoid false logouts
+          if (response.status === 401 && !isBlobResponse) {
+            const isAuthPage = window.location.pathname === '/login';
+            if (!isAuthPage) {
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              window.location.href = '/login';
+            }
+          }
+
+          // Handle error messages
+          const detail = parsedData?.detail;
+          let errorMessage = 'An unexpected error occurred';
+
+          if (Array.isArray(detail)) {
+            errorMessage = detail.map((err) => err.msg).join(', ');
+          } else if (typeof detail === 'string') {
+            errorMessage = detail;
+          } else if (parsedData?.message) {
+            errorMessage = parsedData.message;
+          }
+
+          if (response.status !== 401 && !response.config?.silent) {
+            toast.error(errorMessage);
+          }
+
+          if (!response.config?.silent) setLoading(false);
+        };
+
+        if (isBlobResponse) {
+          parseAndHandle();
+          if (!response.config?.silent) setLoading(false);
+          return Promise.reject({
+            message: 'Download failed. Please try again.',
+            status: response.status,
+          });
+        }
+
+        // Non-blob error path (synchronous)
         // Handle unauthorized (expired token)
         if (response.status === 401) {
           const isAuthPage = window.location.pathname === '/login';

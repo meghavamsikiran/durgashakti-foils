@@ -9,6 +9,10 @@ import com.durgashakti.admin.repository.AdminSettingRepository;
 import com.durgashakti.admin.repository.AdminUserRepository;
 import com.durgashakti.admin.repository.AdminOrderRepository;
 import com.durgashakti.admin.repository.AdminCouponRepository;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -270,6 +274,103 @@ public class AdminCouponController {
         response.put("loyalty_coupon_count", loyaltyCouponCount);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/coupons/{id}/export")
+    @PreAuthorize("hasAuthority('manage_coupons')")
+    public ResponseEntity<byte[]> exportCoupon(@PathVariable("id") UUID id) throws java.io.IOException {
+        Coupon coupon = couponRepository.findById(id)
+                .orElseThrow(() -> new com.durgashakti.common.exception.ApiException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Coupon not found"));
+
+        // Find all orders that used this coupon
+        List<Order> allOrders = orderRepository.findAll();
+        List<Order> couponOrders = allOrders.stream()
+                .filter(o -> {
+                    if (coupon.getCode() == null || o.getCouponCodes() == null) return false;
+                    return o.getCouponCodes().stream()
+                            .anyMatch(code -> coupon.getCode().equalsIgnoreCase(code));
+                })
+                .sorted((a, b) -> {
+                    if (a.getCreatedAt() == null) return 1;
+                    if (b.getCreatedAt() == null) return -1;
+                    return b.getCreatedAt().compareTo(a.getCreatedAt());
+                })
+                .collect(Collectors.toList());
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook()) {
+            // ── Sheet 1: Coupon Summary ─────────────────────────────
+            Sheet summarySheet = workbook.createSheet("Coupon Summary");
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+
+            String[] summaryFields = {
+                "Coupon Code", "Discount Type", "Discount Value", "Min Cart Value",
+                "Max Discount Limit", "Max Usage Count", "Per Customer Limit",
+                "Coupon Type", "Reusable", "Active", "Total Uses",
+                "Revenue Generated", "Total Discount Given", "Expiry Date"
+            };
+            Row summaryHeader = summarySheet.createRow(0);
+            for (int i = 0; i < summaryFields.length; i++) {
+                Cell cell = summaryHeader.createCell(i);
+                cell.setCellValue(summaryFields[i]);
+                cell.setCellStyle(headerStyle);
+            }
+            Row summaryRow = summarySheet.createRow(1);
+            summaryRow.createCell(0).setCellValue(coupon.getCode() != null ? coupon.getCode() : "");
+            summaryRow.createCell(1).setCellValue(coupon.getDiscountType() != null ? coupon.getDiscountType() : "");
+            summaryRow.createCell(2).setCellValue(coupon.getDiscountValue() != null ? coupon.getDiscountValue().doubleValue() : 0);
+            summaryRow.createCell(3).setCellValue(coupon.getMinCartValue() != null ? coupon.getMinCartValue().doubleValue() : 0);
+            summaryRow.createCell(4).setCellValue(coupon.getMaxDiscountLimit() != null ? coupon.getMaxDiscountLimit().doubleValue() : 0);
+            summaryRow.createCell(5).setCellValue(coupon.getMaxUsageCount() != null ? coupon.getMaxUsageCount() : 0);
+            summaryRow.createCell(6).setCellValue(coupon.getPerCustomerUsageLimit() != null ? coupon.getPerCustomerUsageLimit() : 0);
+            summaryRow.createCell(7).setCellValue(coupon.getCouponType() != null ? coupon.getCouponType() : "standard");
+            summaryRow.createCell(8).setCellValue(Boolean.TRUE.equals(coupon.getIsReusable()) ? "Yes" : "No");
+            summaryRow.createCell(9).setCellValue(Boolean.TRUE.equals(coupon.getIsActive()) ? "Yes" : "No");
+            summaryRow.createCell(10).setCellValue(coupon.getTotalUses() != null ? coupon.getTotalUses() : 0);
+            summaryRow.createCell(11).setCellValue(coupon.getRevenueGenerated() != null ? coupon.getRevenueGenerated().doubleValue() : 0);
+            summaryRow.createCell(12).setCellValue(coupon.getTotalDiscountGiven() != null ? coupon.getTotalDiscountGiven().doubleValue() : 0);
+            summaryRow.createCell(13).setCellValue(coupon.getExpiryDate() != null ? coupon.getExpiryDate().toString() : "Never");
+            for (int i = 0; i < summaryFields.length; i++) summarySheet.autoSizeColumn(i);
+
+            // ── Sheet 2: Order Usage ────────────────────────────────
+            Sheet usageSheet = workbook.createSheet("Order Usage");
+            String[] usageFields = {
+                "Order Number", "Customer Name", "Order Date", "Order Total (₹)",
+                "Discount Applied (₹)", "Order Status", "Payment Status"
+            };
+            Row usageHeader = usageSheet.createRow(0);
+            for (int i = 0; i < usageFields.length; i++) {
+                Cell cell = usageHeader.createCell(i);
+                cell.setCellValue(usageFields[i]);
+                cell.setCellStyle(headerStyle);
+            }
+            int rowNum = 1;
+            for (Order o : couponOrders) {
+                Row row = usageSheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(o.getOrderNumber() != null ? o.getOrderNumber() : "");
+                row.createCell(1).setCellValue(o.getCustomerName() != null ? o.getCustomerName() : "");
+                row.createCell(2).setCellValue(o.getCreatedAt() != null ? o.getCreatedAt().toString() : "");
+                row.createCell(3).setCellValue(o.getTotalAmount() != null ? o.getTotalAmount().doubleValue() : 0);
+                row.createCell(4).setCellValue(o.getDiscountAmount() != null ? o.getDiscountAmount().doubleValue() : 0);
+                row.createCell(5).setCellValue(o.getOrderStatus() != null ? o.getOrderStatus() : "");
+                row.createCell(6).setCellValue(o.getPaymentStatus() != null ? o.getPaymentStatus() : "");
+            }
+            for (int i = 0; i < usageFields.length; i++) usageSheet.autoSizeColumn(i);
+
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            workbook.write(out);
+            byte[] bytes = out.toByteArray();
+
+            String filename = "coupon_" + coupon.getCode() + "_report.xlsx";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDispositionFormData("attachment", filename);
+            headers.setContentLength(bytes.length);
+            return ResponseEntity.ok().headers(headers).body(bytes);
+        }
     }
 
     private Map<String, Object> getLoyaltySettings() {

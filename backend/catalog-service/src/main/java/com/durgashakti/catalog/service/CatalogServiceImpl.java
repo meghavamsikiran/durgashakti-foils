@@ -122,6 +122,9 @@ public class CatalogServiceImpl implements CatalogService {
         Optional<Setting> companyProfile = settingRepository.findById("company_profile");
         Optional<Setting> paymentSettings = settingRepository.findById("payment_settings");
         Optional<Setting> shippingSettings = settingRepository.findById("shipping_settings");
+        Optional<Setting> popupBanner = settingRepository.findById("popup_banner");
+        Optional<Setting> scrollingBanner = settingRepository.findById("scrolling_banner");
+        Optional<Setting> loyaltySettings = settingRepository.findById("loyalty_settings");
         
         if (companyProfile.isPresent()) {
             response.put("company_profile", companyProfile.get().getValue());
@@ -139,6 +142,24 @@ public class CatalogServiceImpl implements CatalogService {
             response.put("shipping_settings", shippingSettings.get().getValue());
         } else {
             response.put("shipping_settings", Map.of());
+        }
+
+        if (popupBanner.isPresent() && popupBanner.get().getValue() != null) {
+            response.put("popup_banner", popupBanner.get().getValue());
+        } else {
+            response.put("popup_banner", Map.of("promoted_coupons", List.of(), "custom_banners", List.of()));
+        }
+
+        if (scrollingBanner.isPresent() && scrollingBanner.get().getValue() != null) {
+            response.put("scrolling_banner", scrollingBanner.get().getValue());
+        } else {
+            response.put("scrolling_banner", Map.of());
+        }
+
+        if (loyaltySettings.isPresent() && loyaltySettings.get().getValue() != null) {
+            response.put("loyalty_settings", loyaltySettings.get().getValue());
+        } else {
+            response.put("loyalty_settings", Map.of("enabled", true, "minimum_orders", 10, "minimum_spend", 15000, "criteria_mode", "either"));
         }
         
         return response;
