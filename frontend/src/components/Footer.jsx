@@ -125,61 +125,40 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="font-manrope text-xs font-bold uppercase tracking-[0.18em] text-[#20dc5b]">
+            <h3 className="font-manrope text-xs font-bold uppercase tracking-[0.18em] text-[#25D958]">
               Company
             </h3>
             <ul className="mt-5 space-y-3">
-              <li>
-                <Link to="/" className="text-sm font-semibold text-white/64 transition">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link to="/shop" className="text-sm font-semibold text-white/64 transition">
-                  Shop
-                </Link>
-              </li>
-              <li>
-                <Link to="/about" className="text-sm font-semibold text-white/64 transition">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link to="/dashboard?tab=orders" className="text-sm font-semibold text-white/64 transition">
-                  Your Orders
-                </Link>
-              </li>
-              <li>
-                <Link to="/cart" className="text-sm font-semibold text-white/64 transition">
-                  Cart
-                </Link>
-              </li>
-              <li>
-                <Link to="/policies" className="text-sm font-semibold text-white/64 transition">
-                  Order Policies
-                </Link>
-              </li>
-              <li>
-                <Link to="/privacy" className="text-sm font-semibold text-white/64 transition">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/terms" className="text-sm font-semibold text-white/64 transition">
-                  Terms of Service
-                </Link>
-              </li>
+              {[
+                { name: 'Home', path: '/' },
+                { name: 'Shop', path: '/shop' },
+                { name: 'About Us', path: '/about' },
+                { name: 'Your Orders', path: '/dashboard?tab=orders' },
+                { name: 'Cart', path: '/cart' },
+                { name: 'Order Policies', path: '/policies' },
+                { name: 'Privacy Policy', path: '/privacy' },
+                { name: 'Terms of Service', path: '/terms' }
+              ].map((link) => (
+                <li key={link.name}>
+                  <Link 
+                    to={link.path} 
+                    className="text-sm font-semibold text-white/64 hover:text-[#25D958] hover:translate-x-1.5 transition-all duration-200 inline-block"
+                  >
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div>
-            <h3 className="font-manrope text-xs font-bold uppercase tracking-[0.18em] text-[#20dc5b]">
+            <h3 className="font-manrope text-xs font-bold uppercase tracking-[0.18em] text-[#25D958]">
               Quality
             </h3>
             <ul className="mt-5 space-y-3">
               {qualityItems.map((item) => (
-                <li key={item} className="flex items-center gap-2 text-sm font-semibold text-white/64">
-                  <ShieldCheck className="h-4 w-4 text-[#20dc5b]" />
+                <li key={item} className="flex items-center gap-2 text-sm font-semibold text-white/64 hover:text-white transition-colors">
+                  <ShieldCheck className="h-4 w-4 text-[#25D958]" />
                   {item}
                 </li>
               ))}
@@ -192,35 +171,35 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="font-manrope text-xs font-bold uppercase tracking-[0.18em] text-[#20dc5b]">
+            <h3 className="font-manrope text-xs font-bold uppercase tracking-[0.18em] text-[#25D958]">
               Business Contact
             </h3>
             <ul className="mt-5 space-y-4">
               {profile.companyAddress && (
-                <li className="flex items-start gap-3">
-                  <MapPin className="mt-1 h-4 w-4 flex-shrink-0 text-[#20dc5b]" />
-                  <span className="text-sm font-medium leading-6 text-white/62">
+                <li className="flex items-start gap-3 group">
+                  <MapPin className="mt-1 h-4 w-4 flex-shrink-0 text-[#25D958] group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-medium leading-6 text-white/62 group-hover:text-white transition-colors">
                     {profile.companyAddress}
                   </span>
                 </li>
               )}
               {profile.companyPhone && (
-                <li className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 flex-shrink-0 text-[#20dc5b]" />
+                <li className="flex items-center gap-3 group">
+                  <Phone className="h-4 w-4 flex-shrink-0 text-[#25D958] group-hover:scale-110 transition-transform" />
                   <a
                     href={`tel:${profile.companyPhone}`}
-                    className="text-sm font-semibold text-white/68 transition"
+                    className="text-sm font-semibold text-white/68 hover:text-[#25D958] hover:translate-x-1 transition-all duration-200"
                   >
                     {profile.companyPhone}
                   </a>
                 </li>
               )}
               {profile.companyEmail && (
-                <li className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 flex-shrink-0 text-[#20dc5b]" />
+                <li className="flex items-center gap-3 group">
+                  <Mail className="h-4 w-4 flex-shrink-0 text-[#25D958] group-hover:scale-110 transition-transform" />
                   <a
                     href={`mailto:${profile.companyEmail}`}
-                    className="text-sm font-semibold text-white/68 transition"
+                    className="text-sm font-semibold text-white/68 hover:text-[#25D958] hover:translate-x-1 transition-all duration-200"
                   >
                     {profile.companyEmail}
                   </a>
@@ -232,7 +211,7 @@ const Footer = () => {
                     href={profile.googleMapsLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-sm font-bold text-[#20dc5b] transition"
+                    className="inline-flex items-center gap-2 text-sm font-bold text-[#25D958] hover:underline hover:translate-x-1 transition-all duration-200"
                   >
                     View on map
                     <ExternalLink className="h-3.5 w-3.5" />
