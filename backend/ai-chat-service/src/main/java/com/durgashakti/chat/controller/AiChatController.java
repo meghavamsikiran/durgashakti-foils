@@ -36,14 +36,26 @@ public class AiChatController {
   private final ChatSessionRepository chatSessionRepository;
   private final OrderUserRepository orderUserRepository;
 
+  private static final Pattern CODE_TRIVIA_PATTERN = Pattern.compile(
+      "(?i)\\b(write\\s+a?\\s*code|write\\s+a?\\s*script|write\\s+a?\\s*program|python|javascript|react|html|css|java|c\\+\\+|sql|algorithm|function|code\\s+for|solve|recipe|who\\s+is|what\\s+is\\s+the\\s+capital|tell\\s+me\\s+a\\s+joke|essay|poem)\\b"
+  );
+  private static final Pattern DOMAIN_KEYWORDS = Pattern.compile(
+      "(?i)\\b(foil|foils|micron|microns|wrap|container|durgashakti|durga|shakti|order|delivery|shipping|price|buy|cost|bulk|discount|coupon|track|tracking|status|ticket|refund|payment|contact|support|phone|help|address|store|roll)\\b"
+  );
+  private static final String GUARDRAIL_REFUSAL = "I am DurgaShakti AI, specialized exclusively in DurgaShakti Foils products, orders, shipping, and customer support. I cannot assist with coding or general knowledge topics unrelated to DurgaShakti Foils. How can I help you with our foils, microns, or orders today?";
+
   private static final String SYSTEM_PROMPT = """
-      You are the official AI Assistant for DurgaShakti Foils.
-      Our brand specializes in premium food-grade aluminium foils:
-      - Standard Foil (11 microns): Perfect for wrapping food.
-      - Heavy Duty Foil (18 microns): Best for grilling/roasting.
-      Be extremely polite, humble, and friendly.
-      CRITICAL RULES:
-      1. Greet the user by name if their name is provided in the prompt context.
+      You are DurgaShakti AI, the official AI Customer Support Assistant for DurgaShakti Foils.
+      Our brand specializes in premium food-grade aluminium foils (Standard 11 microns, Heavy Duty 18 microns, Super Heavy 25 microns, food containers, cling wraps, custom roll sizes 9m/18m/72m).
+
+      STRICT DOMAIN GUARDRAILS:
+      - You MUST ONLY answer questions directly related to DurgaShakti Foils: products, roll sizes, microns, pricing, custom sizing/bulk inquiries, orders & tracking, shipping/delivery, returns/refunds, and customer support.
+      - If the user asks ANY question unrelated to DurgaShakti Foils (such as writing code, programming, math, history, general knowledge, sports, advice, jokes, or general chat), YOU MUST STRICTLY REFUSE TO ANSWER.
+      - Return EXACTLY this refusal message for out-of-scope questions:
+        "I am DurgaShakti AI, specialized exclusively in DurgaShakti Foils products, orders, shipping, and customer support. I cannot assist with coding or general knowledge topics unrelated to DurgaShakti Foils. How can I help you with our foils, microns, or orders today?"
+
+      CRITICAL BRAND RULES:
+      1. Greet the user by name if provided in the prompt context.
       2. Always keep responses short and concise. Do NOT write more than 2-3 sentences.
       3. If the user asks about order status, tracking, or details of a specific order number (e.g. OD-YYYYMMDD-XXXXX), reply EXACTLY in this format:
          [LOOKUP_ORDER: <order-number>]
@@ -144,6 +156,13 @@ public class AiChatController {
     // Save User message to history first
     ChatMessage userLog = new ChatMessage(authenticatedUserId, sessionId, "user", userMessageStr);
     chatMessageRepository.save(userLog);
+
+    // Guardrail Check: Intercept out-of-scope non-DurgaShakti questions (e.g. coding requests, general trivia)
+    if (userMessageStr != null && CODE_TRIVIA_PATTERN.matcher(userMessageStr).find() && !DOMAIN_KEYWORDS.matcher(userMessageStr).find()) {
+        ChatMessage botLog = new ChatMessage(authenticatedUserId, sessionId, "bot", GUARDRAIL_REFUSAL);
+        chatMessageRepository.save(botLog);
+        return ResponseEntity.ok(Map.of("response", GUARDRAIL_REFUSAL));
+    }
 
     // Resolve user's name
     String userName = "Customer";
@@ -247,6 +266,34 @@ public class AiChatController {
     chatMessageRepository.save(botLog);
 
     return ResponseEntity.ok(Map.of("response", aiResponse));
+  }
+
+  @GetMapping("/user/sessions")
+  public ResponseEntity<List<Map<String, Object>>> getUserSessions(Authentication authentication) {
+      if (authentication == null || authentication.getPrincipal() == null) {
+          return ResponseEntity.ok(List.of());
+      }
+      try {
+          UUID userId = UUID.fromString((String) authentication.getPrincipal());
+          List<ChatSession> sessions = chatSessionRepository.findByUserIdOrderByUpdatedAtDesc(userId);
+          
+          List<Map<String, Object>> result = sessions.stream().map(s -> {
+              List<ChatMessage> msgs = chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(s.getSessionId());
+              String lastText = msgs.isEmpty() ? "New Conversation" : msgs.get(msgs.size() - 1).getText();
+              return Map.<String, Object>of(
+                  "sessionId", s.getSessionId(),
+                  "status", s.getStatus(),
+                  "createdAt", s.getCreatedAt() != null ? s.getCreatedAt().toString() : "",
+                  "updatedAt", s.getUpdatedAt() != null ? s.getUpdatedAt().toString() : "",
+                  "lastMessage", lastText,
+                  "messageCount", msgs.size()
+              );
+          }).collect(Collectors.toList());
+
+          return ResponseEntity.ok(result);
+      } catch (Exception e) {
+          return ResponseEntity.ok(List.of());
+      }
   }
 
   @PostMapping("/session/close")
