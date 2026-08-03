@@ -16,6 +16,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [hoveredPath, setHoveredPath] = React.useState(null);
   const [themeMode, setThemeMode] = React.useState(() => localStorage.getItem('themeMode') || 'dark');
 
   React.useEffect(() => {
@@ -409,36 +410,38 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* 21st.dev Animated Underline Navigation (Icon + Sliding Line) */}
-          <div className="hidden md:flex items-center gap-2 font-sans relative">
+          {/* 21st.dev Text-Only Animated Hover-Sliding Underline Navigation */}
+          <div 
+            className="hidden md:flex items-center gap-1 font-sans relative"
+            onMouseLeave={() => setHoveredPath(null)}
+          >
             {[
-              { name: 'Home', path: '/', icon: HomeIcon },
-              { name: 'Shop', path: '/shop', icon: ShoppingBag, testId: 'navbar-shop-link' },
-              { name: 'About Us', path: '/about', icon: Info },
-              { name: 'Contact Us', path: '/contact', icon: MessageSquare }
+              { name: 'Shop', path: '/shop', testId: 'navbar-shop-link' },
+              { name: 'About Us', path: '/about' },
+              { name: 'Contact Us', path: '/contact' }
             ].map((link) => {
-              const Icon = link.icon;
               const isActive = location.pathname === link.path || (link.path !== '/' && location.pathname.startsWith(link.path));
+              const isHovered = hoveredPath === link.path;
+              const isTargeted = hoveredPath ? isHovered : isActive;
+
               return (
                 <Link
                   key={link.path}
                   to={link.path}
+                  onMouseEnter={() => setHoveredPath(link.path)}
                   data-testid={link.testId}
-                  className={`relative px-3.5 py-2 text-sm font-bold flex items-center gap-2 transition-colors duration-200 group ${
-                    isActive 
-                      ? 'text-primary' 
+                  className={`relative px-4 py-2 text-sm font-semibold transition-colors duration-200 ${
+                    isTargeted 
+                      ? (themeMode === 'light' ? 'text-[#006e1b] font-bold' : 'text-[#25d958] font-bold') 
                       : (themeMode === 'light' ? 'text-slate-700 hover:text-slate-900' : 'text-slate-200 hover:text-white')
                   }`}
                 >
-                  <Icon className={`w-4 h-4 transition-colors ${
-                    isActive ? 'text-primary' : (themeMode === 'light' ? 'text-slate-500 group-hover:text-slate-900' : 'text-slate-400 group-hover:text-white')
-                  }`} />
                   <span className="relative z-10">{link.name}</span>
-                  {isActive && (
+                  {isTargeted && (
                     <motion.div
-                      layoutId="desktopActiveUnderline"
-                      className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]"
-                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      layoutId="desktopNavHoverUnderline"
+                      className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[#25d958] shadow-[0_0_12px_rgba(37,217,88,0.6)]"
+                      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                     />
                   )}
                 </Link>
