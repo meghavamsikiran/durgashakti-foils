@@ -211,7 +211,7 @@ const AdminLayout = () => {
           <button 
             type="button" 
             onClick={logout} 
-            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all rounded-lg ${
+            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${
               isLight ? 'text-slate-700 hover:text-rose-600 hover:bg-rose-50' : 'text-slate-400 hover:text-white'
             }`}
           >
