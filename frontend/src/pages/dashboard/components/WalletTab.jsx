@@ -211,9 +211,15 @@ const WalletTab = () => {
               </div>
               <span className={`text-xs font-black uppercase tracking-widest ${isDark ? 'text-[#25D958]' : 'text-[#006e1b]'}`}>DSF Digital Wallet</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black font-serif tracking-tight">
-              {loading ? '₹...' : formatCurrency(balance)}
-            </h2>
+            <div className="h-10 flex items-center">
+              {loading ? (
+                <div className={`h-8 w-32 rounded-xl animate-pulse ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
+              ) : (
+                <h2 className="text-3xl sm:text-4xl font-black font-serif tracking-tight">
+                  {formatCurrency(balance)}
+                </h2>
+              )}
+            </div>
             <p className={`text-xs mt-1 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               Use your wallet balance for faster 1-click checkout & split payments.
             </p>
@@ -303,7 +309,16 @@ const WalletTab = () => {
           <span className="text-[10px] font-bold text-slate-400 uppercase">{transactions.length} Records</span>
         </div>
 
-        {transactions.length === 0 ? (
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2].map((n) => (
+              <div key={n} className={`p-4 rounded-2xl border animate-pulse flex justify-between ${isDark ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
+                <div className="h-4 w-40 rounded bg-slate-300/30" />
+                <div className="h-4 w-16 rounded bg-slate-300/30" />
+              </div>
+            ))}
+          </div>
+        ) : transactions.length === 0 ? (
           <div className={`py-12 text-center text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             No wallet transactions found. Add money or redeem a voucher to get started!
           </div>
