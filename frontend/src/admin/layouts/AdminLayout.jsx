@@ -161,14 +161,14 @@ const AdminLayout = () => {
                       ? 'bg-emerald-50 text-[#006e1b] border-l-4 border-[#006e1b] pl-2.5 font-bold shadow-sm'
                       : 'bg-[rgba(11,209,61,0.12)] hover:bg-[rgba(11,209,61,0.16)] text-[#16E34A] border-l-4 border-primary pl-2.5 font-bold' 
                     : isLight
-                      ? 'text-slate-600 pl-3 font-medium hover:text-[#006e1b] hover:bg-slate-100'
+                      ? 'text-slate-800 pl-3 font-semibold hover:text-[#006e1b] hover:bg-emerald-50/60'
                       : 'text-slate-300 pl-3 font-medium hover:text-[#16E34A] hover:bg-[#19231F]/55'
                 }`}
               >
                 <Icon className={`w-4 h-4 transition-colors ${
                   isActive 
                     ? isLight ? 'text-[#006e1b]' : 'text-[#16E34A]' 
-                    : isLight ? 'text-slate-400 group-hover:text-[#006e1b]' : 'text-slate-500 group-hover:text-[#16E34A]'
+                    : isLight ? 'text-slate-600 group-hover:text-[#006e1b]' : 'text-slate-500 group-hover:text-[#16E34A]'
                 }`} />
                 {item.label}
               </Link>
@@ -193,26 +193,26 @@ const AdminLayout = () => {
             )}
             <div className="flex-1 min-w-0">
               <p className={`text-xs font-bold truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>{user?.full_name || 'Administrator'}</p>
-              <p className="text-[10px] text-slate-500 truncate uppercase tracking-widest font-mono">{user?.role || 'Admin'}</p>
+              <p className={`text-[10px] truncate uppercase tracking-widest font-mono ${isLight ? 'text-slate-500 font-semibold' : 'text-slate-500'}`}>{user?.role || 'Admin'}</p>
             </div>
           </div>
           <button 
             type="button" 
             onClick={toggleTheme} 
-            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 mb-2 border ${
+            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 mb-1 ${
               isLight
-                ? 'text-slate-700 border-slate-200 hover:text-[#006e1b] hover:bg-slate-100'
-                : 'text-slate-300 border-transparent hover:text-[#25D958] hover:bg-[#19231F]/50 hover:border-[#25D958]/20'
+                ? 'text-slate-800 hover:text-[#006e1b] hover:bg-emerald-50/60'
+                : 'text-slate-300 hover:text-[#25D958] hover:bg-[#19231F]/50'
             }`}
           >
-            {themeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {themeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4 />}
             {themeMode === 'dark' ? 'Light Theme' : 'Dark Theme'}
           </button>
           <button 
             type="button" 
             onClick={logout} 
-            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-bold transition-all rounded-lg ${
-              isLight ? 'text-slate-600 hover:text-rose-600 hover:bg-rose-50' : 'text-slate-400 hover:text-white'
+            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all rounded-lg ${
+              isLight ? 'text-slate-700 hover:text-rose-600 hover:bg-rose-50' : 'text-slate-400 hover:text-white'
             }`}
           >
             <LogOut className="w-4 h-4" />

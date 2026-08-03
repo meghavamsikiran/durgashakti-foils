@@ -311,6 +311,21 @@ public class AiChatController {
       return ResponseEntity.ok(Map.of("status", "resolved"));
   }
 
+  @PostMapping("/session/reopen")
+  public ResponseEntity<Map<String, String>> reopenSession(@RequestBody Map<String, String> request) {
+      String sessionId = request.get("sessionId");
+      if (sessionId == null || sessionId.isBlank()) {
+          return ResponseEntity.badRequest().body(Map.of("error", "sessionId is required"));
+      }
+
+      ChatSession session = chatSessionRepository.findById(sessionId).orElse(null);
+      if (session != null) {
+          session.setStatus("active");
+          chatSessionRepository.save(session);
+      }
+      return ResponseEntity.ok(Map.of("status", "active"));
+  }
+
   @PostMapping("/session/feedback")
   public ResponseEntity<Map<String, String>> submitFeedback(@RequestBody Map<String, Object> request) {
       String sessionId = String.valueOf(request.get("sessionId"));

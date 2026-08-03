@@ -1,7 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, User, Loader2, Power, ThumbsUp, ThumbsDown, PhoneCall, History, PlusCircle, Clock } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Loader2, Power, ThumbsUp, ThumbsDown, PhoneCall, History, PlusCircle, Clock, Copy, Check, RotateCcw } from 'lucide-react';
 import apiClient from '../services/core/apiClient';
 import { useAuth } from '../contexts/AuthContext';
+
+function formatCaseId(rawSessionId) {
+  if (!rawSessionId) return 'AI-CASE-000000';
+  const clean = rawSessionId.replace(/^session-/, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  return `AI-CASE-${clean.substring(0, 6)}`;
+}
 
 export default function AiAssistant() {
   const { user } = useAuth();
@@ -26,6 +32,7 @@ export default function AiAssistant() {
   const [showEscalationConfirm, setShowEscalationConfirm] = useState(false);
   const [sessionStatus, setSessionStatus] = useState('active'); // 'active', 'ended', 'resolved', 'escalated'
   const [helplineNumber, setHelplineNumber] = useState('+91 98765 43210');
+  const [copiedCaseId, setCopiedCaseId] = useState(null);
   
   // Chat History / Sessions Sidebar State
   const [showHistory, setShowHistory] = useState(false);
@@ -62,6 +69,13 @@ export default function AiAssistant() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  const handleCopyCaseId = (e, caseIdStr) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(caseIdStr);
+    setCopiedCaseId(caseIdStr);
+    setTimeout(() => setCopiedCaseId(null), 2000);
+  };
 
   const fetchUserSessions = async () => {
     try {
@@ -178,6 +192,22 @@ export default function AiAssistant() {
     }
   };
 
+  const handleReopenChatSession = async (targetSessionId = sessionId) => {
+    try {
+      await apiClient.post('/chat/session/reopen', { sessionId: targetSessionId });
+    } catch (err) {
+      console.error("Failed to reopen session:", err);
+    } finally {
+      setSessionId(targetSessionId);
+      localStorage.setItem('ai_session_id', targetSessionId);
+      setSessionStatus('active');
+      setShowSurvey(false);
+      setShowEscalationConfirm(false);
+      setShowHistory(false);
+      await fetchUserSessions();
+    }
+  };
+
   const handleFeedback = async (satisfied) => {
     setShowSurvey(false);
     setLoading(true);
@@ -245,6 +275,8 @@ export default function AiAssistant() {
     setShowHistory(!showHistory);
   };
 
+  const currentCaseId = formatCaseId(sessionId);
+
   return (
     <div className="fixed bottom-20 md:bottom-6 right-6 z-[9999] font-sans">
       {/* Trigger Button */}
@@ -279,9 +311,27 @@ export default function AiAssistant() {
                 <Bot className="h-4 w-4" />
               </div>
               <div>
-                <h4 className={`text-xs font-bold leading-none ${isDark ? 'text-white' : 'text-slate-850'}`}>DurgaShakti AI</h4>
+                <div className="flex items-center gap-1.5">
+                  <h4 className={`text-xs font-bold leading-none ${isDark ? 'text-white' : 'text-slate-850'}`}>DurgaShakti AI</h4>
+                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 ${
+                    isDark ? 'bg-white/5 border-white/10 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  }`}>
+                    {currentCaseId}
+                    <button
+                      onClick={(e) => handleCopyCaseId(e, currentCaseId)}
+                      title="Copy Case ID"
+                      className="hover:opacity-100 opacity-70 transition-opacity"
+                    >
+                      {copiedCaseId === currentCaseId ? (
+                        <Check className="h-2.5 w-2.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="h-2.5 w-2.5" />
+                      )}
+                    </button>
+                  </span>
+                </div>
                 <span className={`text-[9px] font-bold ${sessionStatus === 'ended' || sessionStatus === 'resolved' ? 'text-slate-400' : (isDark ? 'text-[#25D958]' : 'text-[#006e1b]')}`}>
-                  {sessionStatus === 'ended' || sessionStatus === 'resolved' ? 'Ended' : 'Online'}
+                  {sessionStatus === 'ended' || sessionStatus === 'resolved' ? 'Case Closed' : 'Online'}
                 </span>
               </div>
             </div>
@@ -290,7 +340,7 @@ export default function AiAssistant() {
               {/* History Toggle Icon Button */}
               <button
                 onClick={toggleHistoryView}
-                title="View Chat Sessions History"
+                title="View AI Cases History"
                 className={`p-1.5 rounded-full transition-colors ${
                   showHistory 
                     ? (isDark ? 'bg-[#25D958]/20 text-[#25D958]' : 'bg-[#006e1b]/20 text-[#006e1b]') 
@@ -328,13 +378,13 @@ export default function AiAssistant() {
             </div>
           </div>
 
-          {/* CHAT SESSIONS HISTORY VIEW */}
+          {/* AI CASES HISTORY VIEW */}
           {showHistory ? (
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-white/10">
                 <h5 className="text-xs font-bold flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-primary" />
-                  <span>Chat Sessions History</span>
+                  <span>AI Cases History</span>
                 </h5>
                 <button
                   onClick={handleStartNewChat}
@@ -349,13 +399,15 @@ export default function AiAssistant() {
 
               {userSessions.length === 0 ? (
                 <div className="text-center py-8 text-slate-400 text-xs">
-                  No previous chat sessions found.
+                  No previous AI Cases found.
                 </div>
               ) : (
                 <div className="space-y-2">
                   {userSessions.map((s, idx) => {
                     const isCurrent = s.sessionId === sessionId;
                     const isEnded = s.status === 'ended' || s.status === 'resolved';
+                    const caseCode = formatCaseId(s.sessionId);
+
                     return (
                       <div
                         key={s.sessionId || idx}
@@ -366,9 +418,22 @@ export default function AiAssistant() {
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[11px] font-bold truncate max-w-[170px]">
-                            Session #{userSessions.length - idx}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-mono font-bold text-primary">
+                              {caseCode}
+                            </span>
+                            <button
+                              onClick={(e) => handleCopyCaseId(e, caseCode)}
+                              className="text-slate-400 hover:text-primary transition-colors p-0.5"
+                              title="Copy Case ID"
+                            >
+                              {copiedCaseId === caseCode ? (
+                                <Check className="h-3 w-3 text-emerald-400" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </button>
+                          </div>
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase ${
                             isEnded 
                               ? (isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600')
@@ -378,9 +443,18 @@ export default function AiAssistant() {
                           </span>
                         </div>
                         <p className={`text-[10px] line-clamp-2 mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                          {s.lastMessage || 'Click to view conversation'}
+                          {s.lastMessage || 'Click to view case history'}
                         </p>
-                        <div className="flex justify-end">
+                        <div className="flex items-center justify-end gap-2">
+                          {isEnded && (
+                            <button
+                              onClick={() => handleReopenChatSession(s.sessionId)}
+                              className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              Re-open & Chat
+                            </button>
+                          )}
                           <button
                             onClick={() => handleSelectSession(s.sessionId, s.status)}
                             className={`text-[10px] font-bold px-3 py-1 rounded-lg transition-all ${
@@ -389,7 +463,7 @@ export default function AiAssistant() {
                                 : (isDark ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-800')
                             }`}
                           >
-                            {isCurrent ? 'Viewing' : (isEnded ? 'View History' : 'Continue Chat')}
+                            {isCurrent ? 'Viewing' : 'View History'}
                           </button>
                         </div>
                       </div>
@@ -519,16 +593,25 @@ export default function AiAssistant() {
                   )}
 
                   {(sessionStatus === 'ended' || sessionStatus === 'resolved') && (
-                    <div className="text-center py-3 bg-[#25D958]/10 rounded-xl border border-[#25D958]/20 my-2">
-                      <p className="text-[10px] font-bold text-slate-300 mb-1">This session has ended.</p>
-                      <button
-                        onClick={handleStartNewChat}
-                        className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${
-                          isDark ? 'bg-[#25D958] text-black hover:bg-[#25D958]/90' : 'bg-[#006e1b] text-white hover:bg-[#006e1b]/90'
-                        }`}
-                      >
-                        Start New Chat
-                      </button>
+                    <div className="text-center py-3 px-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20 my-2 space-y-2">
+                      <p className="text-[11px] font-bold text-slate-300">This AI Case has been closed.</p>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleReopenChatSession(sessionId)}
+                          className="flex items-center gap-1 text-[10px] font-bold px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30 transition-all"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                          Re-open Case
+                        </button>
+                        <button
+                          onClick={handleStartNewChat}
+                          className={`text-[10px] font-bold px-3 py-1.5 rounded-full transition-all ${
+                            isDark ? 'bg-[#25D958] text-black hover:bg-[#25D958]/90' : 'bg-[#006e1b] text-white hover:bg-[#006e1b]/90'
+                          }`}
+                        >
+                          Start New Chat
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -576,7 +659,7 @@ export default function AiAssistant() {
                   sessionStatus === 'escalated' 
                     ? "Chat redirected to Live Agent..." 
                     : (sessionStatus === 'ended' || sessionStatus === 'resolved')
-                      ? "This session has ended."
+                      ? "This case is closed. Click Re-open to continue."
                       : (showSurvey || showEscalationConfirm)
                         ? "Please rate our service..."
                         : loadingHistory 
