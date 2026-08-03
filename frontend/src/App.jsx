@@ -48,6 +48,7 @@ const GstReportsPage = lazy(() => import('./admin/pages/GstReportsPage'));
 const AuditLogsPage = lazy(() => import('./admin/pages/AuditLogsPage'));
 const SettingsPage = lazy(() => import('./admin/pages/SettingsPage'));
 const ShippingSettingsPage = lazy(() => import('./admin/pages/ShippingSettingsPage'));
+const WhatsAppBotPage = lazy(() => import('./admin/pages/WhatsAppBotPage'));
 const CouponsPage = lazy(() => import('./admin/pages/CouponsPage'));
 const AdminWalletPage = lazy(() => import('./admin/pages/AdminWalletPage'));
 const AnalyticsPage = lazy(() => import('./admin/pages/AnalyticsPage'));
@@ -221,7 +222,7 @@ function AppRoutes() {
                   path="whatsapp"
                   element={
                     <ProtectedAdminRoute permission="manage_settings">
-                      <SettingsPage />
+                      <WhatsAppBotPage />
                     </ProtectedAdminRoute>
                   }
                 />
