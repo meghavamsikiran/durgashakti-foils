@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Loader2, LockKeyhole } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { useCart } from '../../../contexts/CartContext';
 import { calculateCheckoutPricing } from '../../../utils/checkoutPricing';
 import { getProductPricing } from '../../../utils/productPricing';
+import apiClient from '../../../services/core/apiClient';
 
 const OrderSummary = ({ 
   products, 
@@ -23,16 +24,20 @@ const OrderSummary = ({
   shippingAddress
 }) => {
   const { cart } = useCart();
-  const [walletBalance, setWalletBalance] = React.useState(0);
+  const [walletBalance, setWalletBalance] = useState(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    let isMounted = true;
     const fetchWallet = async () => {
       try {
-        const res = await (await import('../../../services/core/apiClient')).default.get('/user/wallet');
-        if (res.data) setWalletBalance(res.data.balance || 0);
+        const res = await apiClient.get('/user/wallet');
+        if (isMounted && res.data) {
+          setWalletBalance(res.data.balance || 0);
+        }
       } catch (err) {}
     };
     fetchWallet();
+    return () => { isMounted = false; };
   }, []);
 
   const { 
