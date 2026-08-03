@@ -67,32 +67,40 @@ const AdminLayout = () => {
     return item.permissions.some(p => hasPermission(p));
   });
 
+  const isLight = themeMode === 'light';
+
   return (
-    <div className="admin-shell min-h-screen bg-[#0C1310] flex flex-col md:flex-row text-white">
-      {/* Mobile Header - Dark background to match the sidebar theme and ensure the logo is visible */}
-      <header data-force-dark className="flex md:hidden items-center justify-between px-6 py-4 bg-[#050807] border-b border-[#26322B] sticky top-0 z-30 shadow-sm">
+    <div className={`admin-shell min-h-screen flex flex-col md:flex-row ${isLight ? 'bg-[hsl(45,30%,98%)] text-slate-900' : 'bg-[#0C1310] text-white'}`}>
+      {/* Mobile Header */}
+      <header className={`flex md:hidden items-center justify-between px-6 py-4 sticky top-0 z-30 shadow-sm border-b ${
+        isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-[#050807] border-[#26322B] text-white'
+      }`}>
         <button 
           onClick={() => setSidebarOpen(true)}
-          className="p-2 -ml-2 text-slate-300 hover:text-[#25d958] active:text-[#25d958] hover:bg-[#25d958]/10 active:bg-[#25d958]/20 rounded-xl transition-colors focus:outline-none"
+          className={`p-2 -ml-2 rounded-xl transition-colors focus:outline-none ${
+            isLight ? 'text-slate-600 hover:text-[#006e1b] hover:bg-slate-100' : 'text-slate-300 hover:text-[#25d958] hover:bg-[#25d958]/10'
+          }`}
         >
           <Menu className="w-6 h-6" />
         </button>
         <Link to="/" className="flex items-center gap-2 py-1 no-underline">
           <img src="/favicon.webp" alt="Durga Maa" className="h-8 w-8 object-contain shrink-0" />
           <span className="flex flex-col leading-none gap-[2px]">
-            <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '14px' }}>Durga Shakti Foils</span>
-            <span className="text-[#25D958]/80 italic font-inter" style={{ fontSize: '9px', letterSpacing: '0.02em' }}>Wrap Purity, Seal Freshness</span>
+            <span className={`font-serif font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`} style={{ fontSize: '14px' }}>Durga Shakti Foils</span>
+            <span className={`italic font-inter ${isLight ? 'text-[#006e1b]' : 'text-[#25D958]/80'}`} style={{ fontSize: '9px', letterSpacing: '0.02em' }}>Wrap Purity, Seal Freshness</span>
           </span>
         </Link>
         <div className="flex items-center gap-2">
           <button
             onClick={toggleTheme}
-            className="p-2 text-slate-300 hover:text-[#25d958] transition-colors focus:outline-none"
+            className={`p-2 transition-colors focus:outline-none ${
+              isLight ? 'text-slate-600 hover:text-[#006e1b]' : 'text-slate-300 hover:text-[#25d958]'
+            }`}
             aria-label="Toggle Theme"
           >
             {themeMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
-          <div className="w-8 h-8 rounded-lg bg-[#25d958]/20 flex items-center justify-center text-[#25d958] font-black text-xs">
+          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-black text-xs">
             {user?.full_name?.charAt(0) || 'A'}
           </div>
         </div>
@@ -101,32 +109,40 @@ const AdminLayout = () => {
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 z-[1000] bg-[#0C1310]/80 backdrop-blur-sm md:hidden transition-opacity"
+          className={`fixed inset-0 z-[1000] backdrop-blur-sm md:hidden transition-opacity ${
+            isLight ? 'bg-slate-900/40' : 'bg-[#0C1310]/80'
+          }`}
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <aside data-force-dark className={`w-64 bg-[#050807] text-slate-350 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-[1001] border-r border-[#26322B] font-inter transition-transform duration-300 md:translate-x-0 ${
+      <aside className={`w-64 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-[1001] border-r font-inter transition-transform duration-300 md:translate-x-0 ${
+        isLight ? 'bg-white text-slate-700 border-slate-200' : 'bg-[#050807] text-slate-350 border-[#26322B]'
+      } ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="p-5 flex items-center justify-between border-b border-[#26322B] bg-[#050807]">
+        <div className={`p-5 flex items-center justify-between border-b ${
+          isLight ? 'bg-white border-slate-200' : 'bg-[#050807] border-[#26322B]'
+        }`}>
           <Link to="/" className="flex items-center gap-2 py-1 no-underline">
             <img src="/favicon.webp" alt="Durga Maa" className="h-9 w-9 object-contain shrink-0" />
             <span className="flex flex-col leading-none gap-[2px]">
-              <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '14px' }}>Durga Shakti Foils</span>
-              <span className="text-[#25D958]/80 italic font-inter" style={{ fontSize: '9px', letterSpacing: '0.02em' }}>Wrap Purity, Seal Freshness</span>
+              <span className={`font-serif font-bold tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`} style={{ fontSize: '14px' }}>Durga Shakti Foils</span>
+              <span className={`italic font-inter ${isLight ? 'text-[#006e1b]' : 'text-[#25D958]/80'}`} style={{ fontSize: '9px', letterSpacing: '0.02em' }}>Wrap Purity, Seal Freshness</span>
             </span>
           </Link>
           <button 
             onClick={() => setSidebarOpen(false)}
-            className="md:hidden p-1 text-slate-400"
+            className={`md:hidden p-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-6 pl-3 pr-2 space-y-1 sidebar-scrollbar bg-[#050807]">
+        <nav className={`flex-1 overflow-y-auto py-6 pl-3 pr-2 space-y-1 sidebar-scrollbar ${
+          isLight ? 'bg-white' : 'bg-[#050807]'
+        }`}>
           {menu.map((item) => {
             const Icon = ICON_MAP[item.label] || LayoutDashboard;
             const isSuper = user?.role === 'SUPER_ADMIN' || location.pathname.startsWith('/superadmin');
@@ -141,18 +157,28 @@ const AdminLayout = () => {
                 to={path}
                 className={`flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group ${
                   isActive 
-                    ? 'bg-[rgba(11,209,61,0.12)] hover:bg-[rgba(11,209,61,0.16)] text-[#16E34A] border-l-4 border-primary pl-2.5 font-bold' 
-                    : 'text-slate-300 pl-3 font-medium hover:text-[#16E34A] hover:bg-[#19231F]/55'
+                    ? isLight
+                      ? 'bg-emerald-50 text-[#006e1b] border-l-4 border-[#006e1b] pl-2.5 font-bold shadow-sm'
+                      : 'bg-[rgba(11,209,61,0.12)] hover:bg-[rgba(11,209,61,0.16)] text-[#16E34A] border-l-4 border-primary pl-2.5 font-bold' 
+                    : isLight
+                      ? 'text-slate-600 pl-3 font-medium hover:text-[#006e1b] hover:bg-slate-100'
+                      : 'text-slate-300 pl-3 font-medium hover:text-[#16E34A] hover:bg-[#19231F]/55'
                 }`}
               >
-                <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-[#16E34A]' : 'text-slate-500 group-hover:text-[#16E34A]'}`} />
+                <Icon className={`w-4 h-4 transition-colors ${
+                  isActive 
+                    ? isLight ? 'text-[#006e1b]' : 'text-[#16E34A]' 
+                    : isLight ? 'text-slate-400 group-hover:text-[#006e1b]' : 'text-slate-500 group-hover:text-[#16E34A]'
+                }`} />
                 {item.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-[#26322B] bg-[#050807]">
+        <div className={`p-4 border-t ${
+          isLight ? 'bg-white border-slate-200' : 'bg-[#050807] border-[#26322B]'
+        }`}>
           <div className="flex items-center gap-3 px-2 mb-4">
             {user?.role === 'SUPER_ADMIN' && user?.permissions?.profile_pic ? (
               <img 
@@ -166,7 +192,7 @@ const AdminLayout = () => {
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">{user?.full_name || 'Administrator'}</p>
+              <p className={`text-xs font-bold truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>{user?.full_name || 'Administrator'}</p>
               <p className="text-[10px] text-slate-500 truncate uppercase tracking-widest font-mono">{user?.role || 'Admin'}</p>
             </div>
           </div>
@@ -174,9 +200,9 @@ const AdminLayout = () => {
             type="button" 
             onClick={toggleTheme} 
             className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 mb-2 border ${
-              themeMode === 'dark'
-                ? 'text-slate-300 border-transparent hover:text-[#25D958] hover:bg-[#19231F]/50 hover:border-[#25D958]/20'
-                : 'text-slate-300 border-transparent hover:text-white hover:bg-white/10 hover:border-white/25'
+              isLight
+                ? 'text-slate-700 border-slate-200 hover:text-[#006e1b] hover:bg-slate-100'
+                : 'text-slate-300 border-transparent hover:text-[#25D958] hover:bg-[#19231F]/50 hover:border-[#25D958]/20'
             }`}
           >
             {themeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -185,7 +211,9 @@ const AdminLayout = () => {
           <button 
             type="button" 
             onClick={logout} 
-            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-bold text-slate-400 transition-all hover:text-white"
+            className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-bold transition-all rounded-lg ${
+              isLight ? 'text-slate-600 hover:text-rose-600 hover:bg-rose-50' : 'text-slate-400 hover:text-white'
+            }`}
           >
             <LogOut className="w-4 h-4" />
             Sign Out
@@ -194,12 +222,11 @@ const AdminLayout = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 md:ml-64 min-h-screen bg-[#0C1310]">
+      <main className={`flex-1 md:ml-64 min-h-screen ${isLight ? 'bg-[hsl(45,30%,98%)] text-slate-900' : 'bg-[#0C1310] text-white'}`}>
         <div className={location.pathname.endsWith('/shop') ? 'w-full' : 'mx-auto max-w-[1280px] p-3 md:py-3.5 md:px-6'}>
           <Outlet />
         </div>
       </main>
-    </div>
   );
 };
 
