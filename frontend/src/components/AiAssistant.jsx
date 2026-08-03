@@ -308,25 +308,25 @@ export default function AiAssistant() {
             : 'bg-white border-[#ebefed] text-slate-800'
         }`}>
           {/* Header */}
-          <div className={`flex items-center justify-between border-b px-4 py-3 ${
+          <div className={`flex items-center justify-between border-b px-3 py-2.5 ${
             isDark ? 'bg-[#0c1816] border-white/5' : 'bg-[#f0f5f2] border-[#ebefed]'
           }`}>
-            <div className="flex items-center gap-2.5">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full ${
+            <div className="flex items-center gap-2 min-w-0 shrink">
+              <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
                 isDark ? 'bg-[#25D958]/10 text-[#25D958]' : 'bg-[#006e1b]/10 text-[#006e1b]'
               }`}>
-                <Bot className="h-4 w-4" />
+                <Bot className="h-3.5 w-3.5" />
               </div>
-              <div>
-                  <h4 className={`text-sm font-bold leading-none mb-1 whitespace-nowrap ${isDark ? 'text-white' : 'text-slate-850'}`}>DurgaShakti AI</h4>
-                <span className={`text-[9px] font-bold ${sessionStatus === 'ended' || sessionStatus === 'resolved' ? 'text-slate-400' : (isDark ? 'text-[#25D958]' : 'text-[#006e1b]')}`}>
+              <div className="min-w-0">
+                <h4 className={`text-xs font-bold leading-none mb-0.5 whitespace-nowrap truncate ${isDark ? 'text-white' : 'text-slate-850'}`}>DurgaShakti AI</h4>
+                <span className={`text-[8.5px] font-bold block ${sessionStatus === 'ended' || sessionStatus === 'resolved' ? 'text-slate-400' : (isDark ? 'text-[#25D958]' : 'text-[#006e1b]')}`}>
                   {sessionStatus === 'ended' || sessionStatus === 'resolved' ? 'Case Closed' : 'Online'}
                 </span>
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
-              <span className={`text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 whitespace-nowrap mr-1 ${
+            <div className="flex items-center gap-1 shrink-0">
+              <span className={`text-[8.5px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 whitespace-nowrap ${
                 isDark ? 'bg-white/5 border-white/10 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
               }`}>
                 {currentCaseId}
@@ -347,13 +347,13 @@ export default function AiAssistant() {
               <button
                 onClick={toggleHistoryView}
                 title="View AI Cases History"
-                className={`p-1.5 rounded-full transition-colors ${
+                className={`p-1.5 rounded-full transition-colors shrink-0 ${
                   showHistory 
                     ? (isDark ? 'bg-[#25D958]/20 text-[#25D958]' : 'bg-[#006e1b]/20 text-[#006e1b]') 
                     : (isDark ? 'text-slate-300 hover:bg-white/10' : 'text-slate-600 hover:bg-black/5')
                 }`}
               >
-                <History className="h-4 w-4" />
+                <History className="h-3.5 w-3.5" />
               </button>
 
               {/* End Chat Session Button */}
@@ -361,21 +361,22 @@ export default function AiAssistant() {
                 <button
                   onClick={handleEndChat}
                   title="End Active Chat Session"
-                  className={`flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border transition-all ${
+                  className={`flex items-center justify-center p-1.5 sm:px-2 py-1 rounded-full border transition-all shrink-0 ${
                     isDark 
                       ? 'border-red-500/30 text-red-400 hover:bg-red-500/10' 
                       : 'border-red-600/30 text-red-600 hover:bg-red-500/10'
                   }`}
                 >
-                  <Power className="h-3 w-3" />
-                  <span>End</span>
+                  <Power className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-wider ml-1">End</span>
                 </button>
               )}
 
               {/* Close Button */}
               <button 
                 onClick={() => setIsOpen(false)} 
-                className={`rounded-full p-1 transition-colors ${
+                title="Close Chat"
+                className={`rounded-full p-1.5 shrink-0 transition-colors ${
                   isDark ? 'text-slate-400 hover:bg-white/5 hover:text-white' : 'text-slate-500 hover:bg-black/5 hover:text-slate-855'
                 }`}
               >
