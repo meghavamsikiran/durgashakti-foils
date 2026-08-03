@@ -63,6 +63,8 @@ export const setupInterceptors = (apiClient) => {
             errorMessage = detail.map((err) => err.msg).join(', ');
           } else if (typeof detail === 'string') {
             errorMessage = detail;
+          } else if (parsedData?.error) {
+            errorMessage = parsedData.error;
           } else if (parsedData?.message) {
             errorMessage = parsedData.message;
           }
@@ -102,6 +104,8 @@ export const setupInterceptors = (apiClient) => {
           errorMessage = detail.map((err) => err.msg).join(', ');
         } else if (typeof detail === 'string') {
           errorMessage = detail;
+        } else if (response.data?.error) {
+          errorMessage = response.data.error;
         } else if (response.data?.message) {
           errorMessage = response.data.message;
         }

@@ -45,21 +45,21 @@ const MultiSelectDropdown = ({ options, selectedValues, onChange, placeholder, a
       {isOpen && (
         <div className="absolute z-50 mt-1 w-full bg-white dark:bg-[#0c1310] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-60 overflow-y-auto overflow-x-hidden">
           <div className="sticky top-0 bg-white dark:bg-[#0c1310] p-2 border-b border-slate-100 dark:border-white/10 z-10">
-            <div className="relative">
-              <Search className="w-3 h-3 absolute left-2.5 top-2.5 text-slate-400" />
+            <div className="relative flex items-center">
+              <Search className="w-3.5 h-3.5 absolute left-3 text-slate-400" />
               <input 
                 type="text"
                 placeholder="Search..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 focus:ring-1 focus:ring-[#25D958] outline-none"
+                className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 focus:ring-1 focus:ring-[#25D958] outline-none"
               />
             </div>
           </div>
           
           <div className="p-1">
             {allowAll && !search && (
-              <label className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg cursor-pointer">
+              <label className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg cursor-pointer">
                 <input 
                   type="checkbox" 
                   checked={isAllSelected}
@@ -71,16 +71,18 @@ const MultiSelectDropdown = ({ options, selectedValues, onChange, placeholder, a
             )}
             
             {filtered.map(o => (
-              <label key={o.value} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={selectedValues.includes(o.value)}
-                  onChange={() => toggleOne(o.value)}
-                  className="rounded text-[#25D958] focus:ring-[#25D958] bg-slate-100 dark:bg-white/5 border-transparent cursor-pointer"
-                />
+              <label key={o.value} className="flex items-start gap-3 p-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg cursor-pointer">
+                <div className="pt-0.5">
+                  <input 
+                    type="checkbox" 
+                    checked={selectedValues.includes(o.value)}
+                    onChange={() => toggleOne(o.value)}
+                    className="rounded text-[#25D958] focus:ring-[#25D958] bg-slate-100 dark:bg-white/5 border-transparent cursor-pointer"
+                  />
+                </div>
                 <div className="flex flex-col">
-                  <span className="text-xs font-bold">{o.label}</span>
-                  {o.sublabel && <span className="text-[9px] text-slate-400">{o.sublabel}</span>}
+                  <span className="text-xs font-bold leading-tight mb-0.5">{o.label}</span>
+                  {o.sublabel && <span className="text-[10px] text-slate-400 leading-tight">{o.sublabel}</span>}
                 </div>
               </label>
             ))}
@@ -142,9 +144,18 @@ const AdminWalletPage = () => {
 
   const handleDirectCredit = async (e) => {
     e.preventDefault();
-    if (selectedUsers.length === 0 || !creditAmount || Number(creditAmount) <= 0) return;
-    setCreditLoading(true);
     setCreditMsg({ type: '', text: '' });
+    
+    if (selectedUsers.length === 0) {
+      setCreditMsg({ type: 'error', text: 'Please select at least one customer' });
+      return;
+    }
+    if (!creditAmount || Number(creditAmount) <= 0) {
+      setCreditMsg({ type: 'error', text: 'Please enter a valid credit amount' });
+      return;
+    }
+    
+    setCreditLoading(true);
 
     try {
       const res = await apiClient.post('/admin/wallet/credit', {
@@ -168,9 +179,18 @@ const AdminWalletPage = () => {
 
   const handleCreateVoucher = async (e) => {
     e.preventDefault();
-    if (!voucherCode.trim() || !voucherAmount || Number(voucherAmount) <= 0) return;
-    setVoucherLoading(true);
     setVoucherMsg({ type: '', text: '' });
+    
+    if (!voucherCode.trim()) {
+      setVoucherMsg({ type: 'error', text: 'Please enter a voucher code' });
+      return;
+    }
+    if (!voucherAmount || Number(voucherAmount) <= 0) {
+      setVoucherMsg({ type: 'error', text: 'Please enter a valid voucher amount' });
+      return;
+    }
+    
+    setVoucherLoading(true);
 
     try {
       const res = await apiClient.post('/admin/wallet/vouchers', {
@@ -271,7 +291,7 @@ const AdminWalletPage = () => {
 
             <button
               type="submit"
-              disabled={creditLoading || selectedUsers.length === 0 || !creditAmount}
+              disabled={creditLoading}
               className="w-full py-3 rounded-xl bg-[#25D958] text-black font-extrabold text-xs uppercase tracking-wider hover:bg-[#25D958]/90 disabled:opacity-50 transition-all"
             >
               {creditLoading ? 'Processing Credit...' : 'Credit Wallet Amount'}
@@ -333,7 +353,7 @@ const AdminWalletPage = () => {
 
             <button
               type="submit"
-              disabled={voucherLoading || !voucherCode || !voucherAmount}
+              disabled={voucherLoading}
               className="w-full py-3 rounded-xl bg-amber-500 text-black font-extrabold text-xs uppercase tracking-wider hover:bg-amber-400 disabled:opacity-50 transition-all"
             >
               {voucherLoading ? 'Generating...' : 'Issue Wallet Voucher'}
