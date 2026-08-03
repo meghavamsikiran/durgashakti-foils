@@ -217,6 +217,17 @@ const AdminWalletPage = () => {
 
   const formatCurrency = (val) => `₹${Number(val || 0).toLocaleString('en-IN')}`;
 
+  const getAssignedLabel = (v) => {
+    if (v.assignedUserEmail && v.assignedUserEmail.trim()) return v.assignedUserEmail;
+    if (v.assignedUserId || v.assigned_user_id) {
+      const uId = v.assignedUserId || v.assigned_user_id;
+      const match = (Array.isArray(customers) ? customers : []).find(c => c.id === uId);
+      if (match) return match.email || match.fullName || match.full_name || 'Assigned Customer';
+      return 'Assigned Customer';
+    }
+    return 'All Customers';
+  };
+
   const customerOptions = (Array.isArray(customers) ? customers : []).map(c => ({
     label: c.fullName || c.full_name || 'Customer',
     sublabel: c.email,
@@ -403,7 +414,7 @@ const AdminWalletPage = () => {
                   </span>
                 </div>
                 <p className="text-lg font-black text-slate-900 dark:text-white">{formatCurrency(v.amount)}</p>
-                <p className="text-[10px] text-slate-400">Assigned: {v.assignedUserEmail || 'All Customers'}</p>
+                <p className="text-[10px] text-slate-400">Assigned: {getAssignedLabel(v)}</p>
               </div>
             ))}
           </div>

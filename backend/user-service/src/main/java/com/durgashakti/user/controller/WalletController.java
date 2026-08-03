@@ -391,7 +391,13 @@ public class WalletController {
 
     @GetMapping("/admin/wallet/vouchers")
     public ResponseEntity<List<WalletVoucher>> getAllVouchers() {
-        return ResponseEntity.ok(walletVoucherRepository.findAllByOrderByCreatedAtDesc());
+        List<WalletVoucher> list = walletVoucherRepository.findAllByOrderByCreatedAtDesc();
+        list.forEach(v -> {
+            if (v.getAssignedUserId() != null && (v.getAssignedUserEmail() == null || v.getAssignedUserEmail().isBlank())) {
+                userRepository.findById(v.getAssignedUserId()).ifPresent(u -> v.setAssignedUserEmail(u.getEmail()));
+            }
+        });
+        return ResponseEntity.ok(list);
     }
 
     @GetMapping("/admin/wallet/transactions")
