@@ -321,14 +321,14 @@ const AdminDashboard = () => {
             Top Performer Insights
           </h4>
           <div className="space-y-5">
-            <div className="flex items-center justify-between hover:bg-slate-50/50 p-2 rounded-xl transition-colors">
+            <div className="flex items-center justify-between hover:bg-emerald-500/5 p-2 rounded-xl transition-colors">
               <div>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Top Revenue Product</p>
                 <p className="text-sm font-bold text-slate-800 mt-1">{metrics.top_performer?.name || 'Heavy Duty Catering Foil - 2KG'}</p>
               </div>
               <span className="text-xs font-extrabold text-slate-900 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl">{formatCurrency(metrics.top_performer?.revenue || 35900)}</span>
             </div>
-            <div className="flex items-center justify-between hover:bg-slate-50/50 p-2 rounded-xl transition-colors">
+            <div className="flex items-center justify-between hover:bg-emerald-500/5 p-2 rounded-xl transition-colors">
               <div>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Fastest Mover Product</p>
                 <p className="text-sm font-bold text-slate-800 mt-1">{metrics.fastest_mover?.name || 'Heavy Duty Catering Foil - 2KG'}</p>
@@ -345,14 +345,14 @@ const AdminDashboard = () => {
             Customers & Activity
           </h4>
           <div className="space-y-5">
-            <div className="flex items-center justify-between hover:bg-slate-50/50 p-2 rounded-xl transition-colors">
+            <div className="flex items-center justify-between hover:bg-emerald-500/5 p-2 rounded-xl transition-colors">
               <div>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Active Customers</p>
                 <p className="text-xs font-semibold text-slate-400 mt-0.5">Total customer database size</p>
               </div>
               <span className="text-base font-black text-slate-900">{formatNumber(metrics.total_customers)}</span>
             </div>
-            <div className="flex items-center justify-between hover:bg-slate-50/50 p-2 rounded-xl transition-colors">
+            <div className="flex items-center justify-between hover:bg-emerald-500/5 p-2 rounded-xl transition-colors">
               <div>
                 <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Administrative Access</p>
                 <p className="text-xs font-semibold text-slate-400 mt-0.5">Security event logs</p>

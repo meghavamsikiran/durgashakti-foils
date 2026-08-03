@@ -436,14 +436,18 @@ const Navbar = () => {
                       className={`relative px-4 py-2 text-sm font-semibold transition-colors duration-200 ${
                         isTargeted 
                           ? (themeMode === 'light' ? 'text-[#006e1b] font-bold' : 'text-[#25d958] font-bold') 
-                          : (themeMode === 'light' ? 'text-slate-700 hover:text-slate-900' : 'text-slate-200 hover:text-white')
+                          : (themeMode === 'light' ? 'text-slate-700 hover:text-[#006e1b]' : 'text-slate-200 hover:text-[#25d958]')
                       }`}
                     >
                       <span className="relative z-10">{link.name}</span>
                       {isTargeted && (
                         <motion.div
                           layoutId="desktopNavHoverUnderline"
-                          className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[#25d958] shadow-[0_0_12px_rgba(37,217,88,0.6)]"
+                          className={`absolute bottom-0 left-3 right-3 h-0.5 rounded-full ${
+                            themeMode === 'light' 
+                              ? 'bg-[#006e1b] shadow-[0_0_8px_rgba(0,110,27,0.4)]' 
+                              : 'bg-[#25d958] shadow-[0_0_12px_rgba(37,217,88,0.6)]'
+                          }`}
                           transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                         />
                       )}
