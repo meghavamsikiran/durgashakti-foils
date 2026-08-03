@@ -614,12 +614,12 @@ const Navbar = () => {
       </div>
     </nav>
 
-    {/* 21st.dev Floating Mobile Nav Dock Pill (Glassmorphic Dock with Sliding Pill Indicator) */}
-    <div className="fixed bottom-4 inset-x-4 z-50 md:hidden max-w-md mx-auto">
-      <div className={`rounded-full border backdrop-blur-xl p-1.5 flex items-center justify-around shadow-[0_12px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ${
+    {/* 21st.dev Mobile Nav Dock Pill (Pinned at Bottom Base with Sliding Indicator) */}
+    <div className="fixed bottom-0 inset-x-0 z-50 md:hidden">
+      <div className={`border-t backdrop-blur-xl px-3 py-2 flex items-center justify-around shadow-[0_-8px_30px_rgba(0,0,0,0.5)] transition-all duration-300 ${
         themeMode === 'light'
           ? 'bg-white/95 border-slate-200 text-slate-800'
-          : 'bg-[#07130e]/90 border-white/15 text-white'
+          : 'bg-[#07130e]/95 border-white/15 text-white'
       }`}>
         {[
           { name: 'Home', path: '/', icon: HomeIcon, type: 'link' },
