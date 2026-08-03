@@ -311,7 +311,6 @@ export default function AiAssistant() {
                 <Bot className="h-4 w-4" />
               </div>
               <div>
-                <div className="flex flex-col">
                   <h4 className={`text-sm font-bold leading-none mb-1 ${isDark ? 'text-white' : 'text-slate-850'}`}>DurgaShakti AI</h4>
                 <span className={`text-[9px] font-bold ${sessionStatus === 'ended' || sessionStatus === 'resolved' ? 'text-slate-400' : (isDark ? 'text-[#25D958]' : 'text-[#006e1b]')}`}>
                   {sessionStatus === 'ended' || sessionStatus === 'resolved' ? 'Case Closed' : 'Online'}
