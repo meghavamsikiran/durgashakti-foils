@@ -105,6 +105,13 @@ export const PERMISSION_GROUPS = [
     ]
   },
   {
+    title: 'Wallet & Vouchers',
+    permissions: [
+      { id: 'manage_wallet', label: 'Manage Wallet', desc: 'Credit customer wallets and issue wallet vouchers' },
+      { id: 'view_wallet_audit', label: 'View Wallet Audit', desc: 'Audit wallet transaction logs and voucher history' }
+    ]
+  },
+  {
     title: 'Settings & Configuration',
     permissions: [
       { id: 'manage_settings', label: 'Manage Settings', desc: 'Access and modify payment settings (COD toggle, etc.)' },
@@ -131,7 +138,9 @@ export const ROLE_TEMPLATES = {
       view_dashboard: true,
       manage_settings: true,
       manage_banner: true,
-      manage_coupons: true
+      manage_coupons: true,
+      manage_wallet: true,
+      view_wallet_audit: true
     }
   },
   ORDER_MANAGER: {
@@ -214,7 +223,7 @@ export const superAdminSidebar = [
   { label: 'Settings', permissions: ['manage_settings', 'manage_banner'] },
   { label: 'Shipping Settings', permissions: ['manage_settings'] },
   { label: 'Coupons', permissions: ['manage_coupons', 'manage_settings'] },
-  { label: 'Wallet', path: 'wallet' },
+  { label: 'Wallet', path: 'wallet', permissions: ['manage_wallet', 'view_wallet_audit'] },
   { label: 'My Account' },
 ];
 

@@ -11,4 +11,7 @@ public interface WalletVoucherRepository extends JpaRepository<WalletVoucher, UU
     Optional<WalletVoucher> findByCodeIgnoreCase(String code);
     List<WalletVoucher> findByAssignedUserIdOrderByCreatedAtDesc(UUID assignedUserId);
     List<WalletVoucher> findAllByOrderByCreatedAtDesc();
+
+    @org.springframework.data.jpa.repository.Query("SELECT v FROM WalletVoucher v WHERE (v.assignedUserId = :assignedUserId OR (v.assignedUserId IS NULL AND v.isRedeemed = false)) ORDER BY v.createdAt DESC")
+    List<WalletVoucher> findAvailableAndAssignedVouchers(UUID assignedUserId);
 }

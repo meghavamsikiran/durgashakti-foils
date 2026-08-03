@@ -55,9 +55,10 @@ public class UserSecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Health check
                 .requestMatchers("/actuator/**").permitAll()
-                // All user and address endpoints require authentication
+                // All user, address, and admin endpoints require authentication
                 .requestMatchers("/api/user/**").authenticated()
                 .requestMatchers("/api/addresses/**").authenticated()
+                .requestMatchers("/api/admin/**").authenticated()
                 .anyRequest().permitAll()
             )
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

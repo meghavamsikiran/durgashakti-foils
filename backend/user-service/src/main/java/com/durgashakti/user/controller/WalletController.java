@@ -9,6 +9,7 @@ import com.durgashakti.user.repository.WalletVoucherRepository;
 import com.durgashakti.user.repository.UserProfileRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -145,6 +146,7 @@ public class WalletController {
         ));
     }
 
+    @Transactional
     @PostMapping("/user/wallet/topup")
     public ResponseEntity<Map<String, Object>> topUpWallet(@RequestBody Map<String, Object> body, Authentication authentication) {
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
@@ -200,6 +202,7 @@ public class WalletController {
         ));
     }
 
+    @Transactional
     @PostMapping("/user/wallet/redeem-voucher")
     public ResponseEntity<Map<String, Object>> redeemVoucher(@RequestBody Map<String, String> body, Authentication authentication) {
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
@@ -263,6 +266,7 @@ public class WalletController {
 
     // ── SUPERADMIN WALLET & VOUCHER ENDPOINTS ──
 
+    @Transactional
     @PostMapping("/admin/wallet/credit")
     public ResponseEntity<Map<String, Object>> adminDirectCredit(@RequestBody Map<String, Object> body, Authentication authentication) {
         List<String> targetUserIds = new ArrayList<>();
@@ -309,6 +313,7 @@ public class WalletController {
         ));
     }
 
+    @Transactional
     @PostMapping("/admin/wallet/vouchers")
     public ResponseEntity<Map<String, Object>> createVoucher(@RequestBody Map<String, Object> body, Authentication authentication) {
         String baseCode = (String) body.get("code");
@@ -341,6 +346,10 @@ public class WalletController {
         List<WalletVoucher> createdVouchers = new ArrayList<>();
 
         if (assignedUserIds.isEmpty()) {
+            if (walletVoucherRepository.findByCodeIgnoreCase(baseCode).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Voucher code '" + baseCode + "' already exists. Please use a unique code."));
+            }
+
             // Global voucher
             WalletVoucher voucher = new WalletVoucher();
             voucher.setCode(baseCode);
@@ -356,7 +365,13 @@ public class WalletController {
                 String userIdStr = assignedUserIds.get(i);
                 WalletVoucher voucher = new WalletVoucher();
                 // If more than 1 user, append a suffix to keep codes unique
-                voucher.setCode(assignedUserIds.size() > 1 ? baseCode + "-" + (i + 1) : baseCode);
+                String targetCode = assignedUserIds.size() > 1 ? baseCode + "-" + (i + 1) : baseCode;
+                
+                if (walletVoucherRepository.findByCodeIgnoreCase(targetCode).isPresent()) {
+                    return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Voucher code '" + targetCode + "' already exists. Please use a unique code."));
+                }
+
+                voucher.setCode(targetCode);
                 voucher.setTitle(title != null ? title : "Wallet Bonus Voucher");
                 voucher.setAmount(BigDecimal.valueOf(amountVal));
                 voucher.setCreatedAt(OffsetDateTime.now());
@@ -387,6 +402,6 @@ public class WalletController {
     @GetMapping("/user/wallet/vouchers")
     public ResponseEntity<List<WalletVoucher>> getMyVouchers(Authentication authentication) {
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
-        return ResponseEntity.ok(walletVoucherRepository.findByAssignedUserIdOrderByCreatedAtDesc(userId));
+        return ResponseEntity.ok(walletVoucherRepository.findAvailableAndAssignedVouchers(userId));
     }
 }
