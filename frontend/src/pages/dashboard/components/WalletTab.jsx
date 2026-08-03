@@ -220,17 +220,6 @@ const WalletTab = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {balance > 0 && (
-              <button
-                onClick={handleResetWallet}
-                title="Clear test balance"
-                className={`px-3.5 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
-                  isDark ? 'border-rose-500/30 text-rose-400 hover:bg-rose-500/10' : 'border-rose-200 text-rose-600 hover:bg-rose-50'
-                }`}
-              >
-                Reset Balance
-              </button>
-            )}
             <button
               onClick={() => { setShowTopUpModal(true); setTopUpMsg({ type: '', text: '' }); }}
               className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-md active:scale-95 ${
