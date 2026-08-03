@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../../services/core/apiClient';
 import { 
   Wallet, PlusCircle, Ticket, User, Search, 
-  CheckCircle2, AlertCircle, Clock, ShieldAlert, ArrowDownLeft, ArrowUpRight
+  CheckCircle2, AlertCircle, Clock, ShieldAlert, ArrowDownLeft, ArrowUpRight, Copy
 } from 'lucide-react';
 
 const AdminWalletPage = () => {
@@ -14,7 +14,7 @@ const AdminWalletPage = () => {
   // Direct Credit State
   const [selectedUser, setSelectedUser] = useState('');
   const [creditAmount, setCreditAmount] = useState('');
-  const [creditRemark, setCreditRemark] = useState('Superadmin Wallet Credit');
+  const [creditRemark, setCreditRemark] = useState('Credit from DurgaShakti Foils Pvt Ltd');
   const [creditLoading, setCreditLoading] = useState(false);
   const [creditMsg, setCreditMsg] = useState({ type: '', text: '' });
 
@@ -288,7 +288,16 @@ const AdminWalletPage = () => {
             {(Array.isArray(vouchers) ? vouchers : []).map((v) => (
               <div key={v.id} className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-black text-[#25D958]">{v.code}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-mono font-black text-[#25D958]">{v.code}</span>
+                    <button 
+                      onClick={() => navigator.clipboard.writeText(v.code)}
+                      className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                      title="Copy Voucher Code"
+                    >
+                      <Copy className="w-3 h-3 text-slate-400" />
+                    </button>
+                  </div>
                   <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase ${
                     v.isRedeemed ? 'bg-slate-800 text-slate-400' : 'bg-emerald-500/20 text-emerald-400'
                   }`}>

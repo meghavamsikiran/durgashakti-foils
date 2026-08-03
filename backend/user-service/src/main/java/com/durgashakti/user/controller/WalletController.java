@@ -341,4 +341,10 @@ public class WalletController {
     public ResponseEntity<List<WalletTransaction>> getAllWalletTransactions() {
         return ResponseEntity.ok(walletTransactionRepository.findAllByOrderByCreatedAtDesc());
     }
+
+    @GetMapping("/user/wallet/vouchers")
+    public ResponseEntity<List<WalletVoucher>> getMyVouchers(Authentication authentication) {
+        UUID userId = UUID.fromString((String) authentication.getPrincipal());
+        return ResponseEntity.ok(walletVoucherRepository.findByAssignedUserIdOrderByCreatedAtDesc(userId));
+    }
 }

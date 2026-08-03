@@ -9,6 +9,7 @@ const WalletTab = () => {
   const [isDark, setIsDark] = useState(() => localStorage.getItem('themeMode') !== 'light');
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
+  const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
@@ -34,10 +35,16 @@ const WalletTab = () => {
     try {
       setLoading(true);
       setError('');
-      const res = await apiClient.get('/user/wallet');
-      if (res.data) {
-        setBalance(res.data.balance || 0);
-        setTransactions(res.data.transactions || []);
+      const [walletRes, vouchersRes] = await Promise.all([
+        apiClient.get('/user/wallet'),
+        apiClient.get('/user/wallet/vouchers').catch(() => ({ data: [] }))
+      ]);
+      if (walletRes.data) {
+        setBalance(walletRes.data.balance || 0);
+        setTransactions(walletRes.data.transactions || []);
+      }
+      if (vouchersRes.data) {
+        setVouchers(vouchersRes.data || []);
       }
     } catch (err) {
       console.error('Failed to load wallet data:', err);
@@ -296,6 +303,47 @@ const WalletTab = () => {
           </div>
         )}
       </div>
+
+      {/* ASSIGNED VOUCHERS */}
+      {vouchers.length > 0 && (
+        <div className={`p-6 rounded-3xl border shadow-sm ${
+          isDark ? 'bg-[#070b09] border-[#19231F]' : 'bg-white border-slate-200'
+        }`}>
+          <div className="flex items-center gap-2 mb-3">
+            <Ticket className="w-4 h-4 text-amber-500" />
+            <h3 className={`text-xs font-black uppercase tracking-wider ${isDark ? '' : 'text-slate-800'}`}>Your Available Vouchers</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {vouchers.filter(v => !v.isRedeemed).map((v) => (
+              <div key={v.id} className={`p-4 rounded-2xl border ${
+                isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'
+              } space-y-2 relative overflow-hidden`}>
+                <div className="absolute top-0 right-0 p-2 opacity-10">
+                  <Ticket className="w-12 h-12" />
+                </div>
+                <div className="flex justify-between items-center relative z-10">
+                  <span className={`text-xs font-mono font-black ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>{v.code}</span>
+                  <button 
+                    onClick={() => {
+                      setVoucherCode(v.code);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className={`text-[9px] font-bold px-2 py-1 rounded uppercase transition-colors ${
+                      isDark ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                    }`}
+                  >
+                    Use
+                  </button>
+                </div>
+                <p className={`text-lg font-black relative z-10 ${isDark ? 'text-white' : 'text-slate-900'}`}>₹{v.amount}</p>
+              </div>
+            ))}
+            {vouchers.filter(v => !v.isRedeemed).length === 0 && (
+              <p className="text-xs text-slate-500 col-span-full">No active vouchers available.</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* TRANSACTIONS HISTORY TABLE */}
       <div className={`p-6 rounded-3xl border shadow-sm ${
