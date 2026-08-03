@@ -386,68 +386,73 @@ const Navbar = () => {
         
         <div className="w-full px-4 md:px-8 lg:px-12">
           <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            {isDashboard && (
-              <button 
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('toggle-customer-sidebar'))}
-                className="xl:hidden p-2 -ml-2 text-white hover:text-[#25d958] active:text-[#25d958] hover:bg-[#25d958]/10 active:bg-[#25d958]/20 rounded-xl transition-colors focus:outline-none"
-                aria-label="Toggle Dashboard Menu"
-              >
-                <Menu className="w-6 h-6" />
-              </button>
-            )}
-            <Link to="/" className="flex items-center gap-2 py-2 h-14 no-underline" data-testid="navbar-logo">
-              <img
-                src="/favicon.webp"
-                alt="Durga Maa"
-                className="h-9 w-9 object-contain shrink-0"
-              />
-              <span className="flex flex-col leading-none gap-[2px]">
-                <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '15px', letterSpacing: '-0.01em' }}>Durga Shakti Foils</span>
-                <span className="italic font-inter" style={{ fontSize: '9.5px', letterSpacing: '0.02em', color: themeMode === 'light' ? '#006e1b' : 'rgba(37, 217, 88, 0.8)' }}>Wrap Purity, Seal Freshness</span>
-              </span>
-            </Link>
-          </div>
-
-          {/* 21st.dev Text-Only Animated Hover-Sliding Underline Navigation */}
-          <div 
-            className="hidden md:flex items-center gap-1 font-sans relative"
-            onMouseLeave={() => setHoveredPath(null)}
-          >
-            {[
-              { name: 'Shop', path: '/shop', testId: 'navbar-shop-link' },
-              { name: 'About Us', path: '/about' },
-              { name: 'Contact Us', path: '/contact' }
-            ].map((link) => {
-              const isActive = location.pathname === link.path || (link.path !== '/' && location.pathname.startsWith(link.path));
-              const isHovered = hoveredPath === link.path;
-              const isTargeted = hoveredPath ? isHovered : isActive;
-
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onMouseEnter={() => setHoveredPath(link.path)}
-                  data-testid={link.testId}
-                  className={`relative px-4 py-2 text-sm font-semibold transition-colors duration-200 ${
-                    isTargeted 
-                      ? (themeMode === 'light' ? 'text-[#006e1b] font-bold' : 'text-[#25d958] font-bold') 
-                      : (themeMode === 'light' ? 'text-slate-700 hover:text-slate-900' : 'text-slate-200 hover:text-white')
-                  }`}
-                >
-                  <span className="relative z-10">{link.name}</span>
-                  {isTargeted && (
-                    <motion.div
-                      layoutId="desktopNavHoverUnderline"
-                      className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[#25d958] shadow-[0_0_12px_rgba(37,217,88,0.6)]"
-                      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                    />
-                  )}
+            {/* Left Group: Logo + Left-Aligned Navigation Links */}
+            <div className="flex items-center gap-6 lg:gap-10">
+              <div className="flex items-center gap-2">
+                {isDashboard && (
+                  <button 
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent('toggle-customer-sidebar'))}
+                    className="xl:hidden p-2 -ml-2 text-white hover:text-[#25d958] active:text-[#25d958] hover:bg-[#25d958]/10 active:bg-[#25d958]/20 rounded-xl transition-colors focus:outline-none"
+                    aria-label="Toggle Dashboard Menu"
+                  >
+                    <Menu className="w-6 h-6" />
+                  </button>
+                )}
+                <Link to="/" className="flex items-center gap-2 py-2 h-14 no-underline" data-testid="navbar-logo">
+                  <img
+                    src="/favicon.webp"
+                    alt="Durga Maa"
+                    className="h-9 w-9 object-contain shrink-0"
+                  />
+                  <span className="flex flex-col leading-none gap-[2px]">
+                    <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '15px', letterSpacing: '-0.01em' }}>Durga Shakti Foils</span>
+                    <span className="italic font-inter" style={{ fontSize: '9.5px', letterSpacing: '0.02em', color: themeMode === 'light' ? '#006e1b' : 'rgba(37, 217, 88, 0.8)' }}>Wrap Purity, Seal Freshness</span>
+                  </span>
                 </Link>
-              );
-            })}
-          </div>
+              </div>
+
+              {/* 21st.dev Left-Aligned Animated Hover-Sliding Underline Navigation */}
+              <div 
+                className="hidden md:flex items-center gap-1 font-sans relative"
+                onMouseLeave={() => setHoveredPath(null)}
+              >
+                {[
+                  { name: 'Shop', path: '/shop', testId: 'navbar-shop-link' },
+                  { name: 'About Us', path: '/about' },
+                  { name: 'Contact Us', path: '/contact' }
+                ].map((link) => {
+                  const isActive = location.pathname === link.path || (link.path !== '/' && location.pathname.startsWith(link.path));
+                  const isHovered = hoveredPath === link.path;
+                  const isTargeted = hoveredPath ? isHovered : isActive;
+
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      onMouseEnter={() => setHoveredPath(link.path)}
+                      data-testid={link.testId}
+                      className={`relative px-4 py-2 text-sm font-semibold transition-colors duration-200 ${
+                        isTargeted 
+                          ? (themeMode === 'light' ? 'text-[#006e1b] font-bold' : 'text-[#25d958] font-bold') 
+                          : (themeMode === 'light' ? 'text-slate-700 hover:text-slate-900' : 'text-slate-200 hover:text-white')
+                      }`}
+                    >
+                      <span className="relative z-10">{link.name}</span>
+                      {isTargeted && (
+                        <motion.div
+                          layoutId="desktopNavHoverUnderline"
+                          className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[#25d958] shadow-[0_0_12px_rgba(37,217,88,0.6)]"
+                          transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                        />
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right Group: Search, Cart, Account */}
 
           <div className="hidden md:flex items-center gap-6 font-inter">
             {/* Search Input / Toggle */}
