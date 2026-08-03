@@ -214,6 +214,7 @@ export const superAdminSidebar = [
   { label: 'Settings', permissions: ['manage_settings', 'manage_banner'] },
   { label: 'Shipping Settings', permissions: ['manage_settings'] },
   { label: 'Coupons', permissions: ['manage_coupons', 'manage_settings'] },
+  { label: 'Wallet', path: 'wallet' },
   { label: 'My Account' },
 ];
 

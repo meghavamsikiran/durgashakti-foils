@@ -49,6 +49,7 @@ const AuditLogsPage = lazy(() => import('./admin/pages/AuditLogsPage'));
 const SettingsPage = lazy(() => import('./admin/pages/SettingsPage'));
 const ShippingSettingsPage = lazy(() => import('./admin/pages/ShippingSettingsPage'));
 const CouponsPage = lazy(() => import('./admin/pages/CouponsPage'));
+const AdminWalletPage = lazy(() => import('./admin/pages/AdminWalletPage'));
 const AnalyticsPage = lazy(() => import('./admin/pages/AnalyticsPage'));
 const AdminUsersPage = lazy(() => import('./admin/pages/AdminUsersPage'));
 const InquiriesPage = lazy(() => import('./admin/pages/InquiriesPage'));
@@ -224,6 +225,7 @@ function AppRoutes() {
                     </ProtectedAdminRoute>
                   }
                 />
+                <Route path="wallet" element={<AdminWalletPage />} />
                 <Route
                   path="profile"
                   element={

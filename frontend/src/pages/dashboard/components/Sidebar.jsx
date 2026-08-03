@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   User, LogOut, Package, CreditCard, Heart, 
-  MapPin, X, LayoutDashboard, MessageSquare, Sun, Moon
+  MapPin, X, LayoutDashboard, MessageSquare, Sun, Moon, Wallet
 } from 'lucide-react';
 
 const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSidebarOpen, navigate }) => {
@@ -18,6 +18,7 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
 
   const menuItems = [
     { id: 'orders', label: 'My Orders', icon: Package },
+    { id: 'wallet', label: 'Wallet & Vouchers', icon: Wallet },
     { id: 'transactions', label: 'Payments', icon: CreditCard },
     { id: 'wishlist', label: 'Wishlist', icon: Heart, badge: wishlistCount },
     { id: 'addresses', label: 'Addresses', icon: MapPin },

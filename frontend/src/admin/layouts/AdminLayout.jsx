@@ -7,7 +7,7 @@ import {
   Users, CreditCard, BarChart3, FileText,
   UserCog, ShieldAlert, Settings, LogOut, Package2, Layers,
   MessageSquare, Menu, X, Ticket, Star, User, Building2,
-  Sun, Moon, ShoppingBag
+  Sun, Moon, ShoppingBag, Wallet
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -29,6 +29,7 @@ const ICON_MAP = {
   'Settings': Settings,
   'Shipping Settings': Package2,
   'Coupons': Ticket,
+  'Wallet': Wallet,
   'Profile': Building2,
   'Business Profile': Building2,
   'My Account': User,

@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Truck, Shield, CreditCard, BadgeCheck, LockKeyhole, ScanQrCode, Sparkles, AlertCircle } from 'lucide-react';
+import { Truck, Shield, CreditCard, BadgeCheck, LockKeyhole, ScanQrCode, Sparkles, AlertCircle, Wallet } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { normalizeShippingSettings } from '../../../utils/checkoutPricing';
+import apiClient from '../../../services/core/apiClient';
 
 const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codEnabled = true, shippingSettings, subtotal = 0, onBack }) => {
   const selectPaymentMethod = onSetPaymentMethod || setPaymentMethod;
@@ -11,18 +12,41 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
   const maxCod = config.maximumCodAmount;
   const codCharge = config.codCharge;
 
+  const [walletBalance, setWalletBalance] = React.useState(0);
+
+  useEffect(() => {
+    const fetchWallet = async () => {
+      try {
+        const res = await apiClient.get('/user/wallet');
+        if (res.data) setWalletBalance(res.data.balance || 0);
+      } catch (err) {}
+    };
+    fetchWallet();
+  }, []);
+
   useEffect(() => {
     if (!codEnabled && paymentMethod === 'cod') {
       selectPaymentMethod('online');
     }
   }, [codEnabled, paymentMethod, selectPaymentMethod]);
 
-  const paymentMethods = [{
+  const paymentMethods = [];
+
+  if (walletBalance > 0) {
+    paymentMethods.push({
+      id: 'wallet',
+      name: `DSF Digital Wallet (Balance: ₹${walletBalance})`,
+      icon: Wallet,
+      description: 'Use your wallet balance for instant 1-click order payment or split payment.'
+    });
+  }
+
+  paymentMethods.push({
     id: 'online',
     name: 'Online Payment (Prepaid)',
     icon: CreditCard,
     description: 'Pay securely online using cards, UPI, netbanking, wallets, or scan a QR code.'
-  }];
+  });
 
   if (codEnabled) {
     paymentMethods.push({

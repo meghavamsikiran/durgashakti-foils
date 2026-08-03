@@ -1,0 +1,324 @@
+import React, { useState, useEffect } from 'react';
+import apiClient from '../../../services/core/apiClient';
+import { 
+  Wallet, PlusCircle, Ticket, ArrowUpRight, ArrowDownLeft, 
+  CreditCard, Sparkles, CheckCircle2, Clock, AlertCircle, ShieldCheck
+} from 'lucide-react';
+
+const WalletTab = ({ isDark }) => {
+  const [balance, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Topup modal state
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState(500);
+  const [topUpLoading, setTopUpLoading] = useState(false);
+  
+  // Voucher Redeem state
+  const [voucherCode, setVoucherCode] = useState('');
+  const [voucherLoading, setVoucherLoading] = useState(false);
+  const [voucherMsg, setVoucherMsg] = useState({ type: '', text: '' });
+
+  const fetchWalletData = async () => {
+    try {
+      setLoading(true);
+      const res = await apiClient.get('/user/wallet');
+      if (res.data) {
+        setBalance(res.data.balance || 0);
+        setTransactions(res.data.transactions || []);
+      }
+    } catch (err) {
+      console.error('Failed to load wallet data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWalletData();
+  }, []);
+
+  const handleRedeemVoucher = async (e) => {
+    e.preventDefault();
+    if (!voucherCode.trim()) return;
+    setVoucherLoading(true);
+    setVoucherMsg({ type: '', text: '' });
+
+    try {
+      const res = await apiClient.post('/user/wallet/redeem-voucher', { code: voucherCode.trim() });
+      if (res.data?.success) {
+        setVoucherMsg({ type: 'success', text: res.data.message || 'Voucher redeemed successfully!' });
+        setVoucherCode('');
+        fetchWalletData();
+      } else {
+        setVoucherMsg({ type: 'error', text: res.data?.error || 'Failed to redeem voucher' });
+      }
+    } catch (err) {
+      setVoucherMsg({ 
+        type: 'error', 
+        text: err.response?.data?.error || 'Invalid or expired voucher code' 
+      });
+    } finally {
+      setVoucherLoading(false);
+    }
+  };
+
+  const handleTopUp = async () => {
+    if (!topUpAmount || topUpAmount <= 0) return;
+    setTopUpLoading(true);
+
+    try {
+      // Simulate/trigger topup via Razorpay or direct API endpoint
+      const res = await apiClient.post('/user/wallet/topup', {
+        amount: topUpAmount,
+        razorpay_payment_id: 'PAY-RZP-' + Math.random().toString(36).substring(2, 10).toUpperCase()
+      });
+
+      if (res.data?.success) {
+        setShowTopUpModal(false);
+        fetchWalletData();
+      }
+    } catch (err) {
+      console.error('Top-up failed:', err);
+    } finally {
+      setTopUpLoading(false);
+    }
+  };
+
+  const formatCurrency = (val) => {
+    return `₹${Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const formatDate = (isoStr) => {
+    if (!isoStr) return 'N/A';
+    return new Date(isoStr).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      
+      {/* HEADER BANNER CARD */}
+      <div className={`p-6 sm:p-8 rounded-3xl border shadow-sm relative overflow-hidden transition-all ${
+        isDark 
+          ? 'bg-gradient-to-br from-[#0c1816] via-[#070e0c] to-[#030504] border-[#19231F] text-white' 
+          : 'bg-gradient-to-br from-[#f0f9f3] via-white to-[#e8f5ec] border-[#d2e8d8] text-slate-900'
+      }`}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+          <div>
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className={`p-2 rounded-xl ${isDark ? 'bg-[#25D958]/10 text-[#25D958]' : 'bg-[#006e1b]/10 text-[#006e1b]'}`}>
+                <Wallet className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-black uppercase tracking-widest text-[#25D958]">DSF Digital Wallet</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black font-serif tracking-tight">
+              {loading ? '₹...' : formatCurrency(balance)}
+            </h2>
+            <p className="text-xs text-slate-400 mt-1 font-medium">
+              Use your wallet balance for faster 1-click checkout & split payments.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowTopUpModal(true)}
+              className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-md active:scale-95 ${
+                isDark 
+                  ? 'bg-[#25D958] text-black hover:bg-[#25D958]/90' 
+                  : 'bg-[#006e1b] text-white hover:bg-[#006e1b]/90'
+              }`}
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Add Money</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* VOUCHER / COUPON REDEMPTION CARD */}
+      <div className={`p-6 rounded-3xl border shadow-sm ${
+        isDark ? 'bg-[#070b09] border-[#19231F]' : 'bg-white border-slate-100'
+      }`}>
+        <div className="flex items-center gap-2 mb-3">
+          <Ticket className="w-4.5 h-4.5 text-[#25D958]" />
+          <h3 className="text-xs font-black uppercase tracking-wider">Redeem Wallet Coupon / Voucher</h3>
+        </div>
+        <form onSubmit={handleRedeemVoucher} className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            placeholder="Enter Voucher Code (e.g. DSF-WAL-500)"
+            value={voucherCode}
+            onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+            className={`flex-1 px-4 py-2.5 rounded-xl border text-xs font-mono font-bold uppercase focus:outline-none transition-all ${
+              isDark 
+                ? 'bg-white/5 border-white/10 text-white placeholder-slate-500 focus:border-[#25D958]/40' 
+                : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-[#006e1b]/40'
+            }`}
+          />
+          <button
+            type="submit"
+            disabled={voucherLoading || !voucherCode.trim()}
+            className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider disabled:opacity-50 transition-all ${
+              isDark 
+                ? 'bg-white/10 hover:bg-white/20 text-white border border-white/10' 
+                : 'bg-slate-900 hover:bg-slate-800 text-white'
+            }`}
+          >
+            {voucherLoading ? 'Redeeming...' : 'Redeem Now'}
+          </button>
+        </form>
+
+        {voucherMsg.text && (
+          <div className={`mt-3 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+            voucherMsg.type === 'success' 
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+          }`}>
+            {voucherMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+            <span>{voucherMsg.text}</span>
+          </div>
+        )}
+      </div>
+
+      {/* TRANSACTIONS HISTORY TABLE */}
+      <div className={`p-6 rounded-3xl border shadow-sm ${
+        isDark ? 'bg-[#070b09] border-[#19231F]' : 'bg-white border-slate-100'
+      }`}>
+        <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
+          <h3 className="text-xs font-black uppercase tracking-wider flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#25D958]" />
+            <span>Wallet Transaction History</span>
+          </h3>
+          <span className="text-[10px] font-bold text-slate-400 uppercase">{transactions.length} Records</span>
+        </div>
+
+        {transactions.length === 0 ? (
+          <div className="py-12 text-center text-xs font-semibold text-slate-400">
+            No wallet transactions found. Add money or redeem a voucher to get started!
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {transactions.map((tx) => {
+              const isCredit = tx.type === 'CREDIT';
+              return (
+                <div 
+                  key={tx.id} 
+                  className={`p-3.5 rounded-2xl border flex items-center justify-between transition-all ${
+                    isDark ? 'bg-white/5 border-white/5 hover:border-white/10' : 'bg-slate-50 border-slate-100 hover:bg-slate-100/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl ${
+                      isCredit 
+                        ? (isDark ? 'bg-[#25D958]/10 text-[#25D958]' : 'bg-[#006e1b]/10 text-[#006e1b]') 
+                        : 'bg-rose-500/10 text-rose-500'
+                    }`}>
+                      {isCredit ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold">{tx.description || tx.source}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{formatDate(tx.createdAt)} • Ref: {tx.referenceId || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className={`text-sm font-extrabold font-mono ${
+                      isCredit 
+                        ? (isDark ? 'text-[#25D958]' : 'text-[#006e1b]') 
+                        : 'text-rose-500'
+                    }`}>
+                      {isCredit ? '+' : '-'}{formatCurrency(tx.amount)}
+                    </span>
+                    <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mt-0.5">
+                      {tx.status || 'SUCCESS'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* TOP-UP MODAL */}
+      {showTopUpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className={`w-full max-w-md p-6 rounded-3xl border shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 ${
+            isDark ? 'bg-[#0c1816] border-[#19231F] text-white' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
+                <PlusCircle className="w-4.5 h-4.5 text-[#25D958]" />
+                <span>Add Money to Wallet</span>
+              </h3>
+              <button 
+                onClick={() => setShowTopUpModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-full"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Select or Enter Amount (₹)</label>
+              <div className="grid grid-cols-4 gap-2 mb-3">
+                {[200, 500, 1000, 2000].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setTopUpAmount(amt)}
+                    className={`py-2 rounded-xl text-xs font-bold border transition-all ${
+                      topUpAmount === amt 
+                        ? (isDark ? 'bg-[#25D958] text-black border-[#25D958]' : 'bg-[#006e1b] text-white border-[#006e1b]') 
+                        : (isDark ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700')
+                    }`}
+                  >
+                    ₹{amt}
+                  </button>
+                ))}
+              </div>
+
+              <input
+                type="number"
+                value={topUpAmount}
+                onChange={(e) => setTopUpAmount(Number(e.target.value))}
+                className={`w-full px-4 py-3 rounded-xl border text-base font-extrabold focus:outline-none ${
+                  isDark ? 'bg-white/5 border-white/10 text-white focus:border-[#25D958]' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-[#006e1b]'
+                }`}
+                placeholder="Enter custom amount..."
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowTopUpModal(false)}
+                className="flex-1 py-3 rounded-xl border border-slate-400/20 text-xs font-bold uppercase"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleTopUp}
+                disabled={topUpLoading || !topUpAmount}
+                className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                  isDark ? 'bg-[#25D958] text-black hover:bg-[#25D958]/90' : 'bg-[#006e1b] text-white hover:bg-[#006e1b]/90'
+                }`}
+              >
+                {topUpLoading ? 'Processing...' : `Pay ₹${topUpAmount}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+export default WalletTab;

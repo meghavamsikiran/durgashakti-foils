@@ -16,6 +16,7 @@ import AddressesTab from './dashboard/components/AddressesTab';
 import SettingsTab from './dashboard/components/SettingsTab';
 import TransactionsTab from './dashboard/components/TransactionsTab';
 import TicketsTab from './dashboard/components/TicketsTab';
+import WalletTab from './dashboard/components/WalletTab';
 
 const Dashboard = () => {
   const { user, loading: authLoading, logout } = useAuth();
@@ -27,7 +28,7 @@ const Dashboard = () => {
     const parts = pathname.split('/').filter(Boolean);
     if (parts.length > 1) {
       const sub = parts[1];
-      if (['orders', 'transactions', 'wishlist', 'addresses', 'settings', 'tickets'].includes(sub)) {
+      if (['orders', 'wallet', 'transactions', 'wishlist', 'addresses', 'settings', 'tickets'].includes(sub)) {
         return sub;
       }
     }
@@ -105,10 +106,11 @@ const Dashboard = () => {
             activeTab={activeTab} 
             onMenuClick={() => setSidebarOpen(true)}
           />
-          <Routes>
-            <Route path="/" element={<Navigate to="orders" replace />} />
-            <Route path="orders" element={<OrdersTabWrapper />} />
-            <Route path="transactions" element={<TransactionsTabWrapper />} />
+            <Routes>
+              <Route path="/" element={<Navigate to="orders" replace />} />
+              <Route path="orders" element={<OrdersTabWrapper />} />
+              <Route path="wallet" element={<WalletTab />} />
+              <Route path="transactions" element={<TransactionsTabWrapper />} />
             <Route path="wishlist" element={<WishlistTab wishlist={wishlist} onToggleWishlist={toggleWishlist} onClearWishlist={clearWishlist} />} />
             <Route path="addresses" element={<AddressesTabWrapper />} />
             <Route path="tickets" element={<TicketsTab />} />
