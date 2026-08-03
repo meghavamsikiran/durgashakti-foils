@@ -345,7 +345,7 @@ public class OrderServiceImpl implements OrderService {
                 // Insert wallet debit transaction
                 jdbcTemplate.update(
                     "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
-                    "VALUES (GENERATE_RANDOM_UUID(), ?, ?, 'DEBIT', 'ORDER_PAYMENT', ?, ?, 'SUCCESS', NOW())",
+                    "VALUES (gen_random_uuid(), ?, ?, 'DEBIT', 'ORDER_PAYMENT', ?, ?, 'SUCCESS', NOW())",
                     userId, walletDeducted, orderNumber, "Order payment for #" + orderNumber
                 );
             }

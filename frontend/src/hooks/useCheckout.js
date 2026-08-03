@@ -626,10 +626,63 @@ export const useCheckout = () => {
         return;
       }
 
-      // COD path
+      // Wallet or COD path
       const response = await orderService.createOrder(orderData);
       const orderId = response.id;
+      const orderNumber = response.order_number;
 
+      if (paymentMethod === 'wallet') {
+        const rzpOrderId = response.razorpay_order_id;
+        // If wallet covers 100%, order status is already placed
+        if (!rzpOrderId) {
+          toast.success('Order placed successfully using wallet balance!');
+          clearCart().catch(() => {});
+          navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber}&payment_method=wallet`);
+          setLoading(false);
+          orderInProgress.current = false;
+          return;
+        }
+
+        // Split-payment: wallet covered partial, open Razorpay for remaining due
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded) {
+          toast.error("Failed to load payment window for remaining due. Complete payment from order page.");
+          navigate(`/order/${orderId}`);
+          setLoading(false);
+          orderInProgress.current = false;
+          return;
+        }
+
+        const options = {
+          key: publicSettings?.payment_settings?.razorpay_key_id || process.env.REACT_APP_RAZORPAY_KEY_ID || '',
+          amount: Math.round((response.total_amount || grandTotal) * 100),
+          currency: "INR",
+          name: "DurgaShakti Foils",
+          description: `Order #${orderNumber} (Split Payment)`,
+          order_id: rzpOrderId,
+          handler: async function (paymentResponse) {
+            toast.success('Split payment completed successfully!');
+            clearCart().catch(() => {});
+            navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber}&payment_method=wallet`);
+            setLoading(false);
+            orderInProgress.current = false;
+          },
+          modal: {
+            ondismiss: function () {
+              toast.info('Payment window closed. Complete remaining balance on order page.');
+              navigate(`/order/${orderId}`);
+              orderInProgress.current = false;
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+        setLoading(false);
+        return;
+      }
+
+      // COD path
       toast.success('Order placed successfully!');
       clearCart().catch(() => {});
       paymentService.confirmCOD(orderId).catch(() => {});
