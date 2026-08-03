@@ -311,32 +311,32 @@ export default function AiAssistant() {
                 <Bot className="h-4 w-4" />
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h4 className={`text-sm font-bold leading-none ${isDark ? 'text-white' : 'text-slate-850'}`}>DurgaShakti AI</h4>
-                  <span className={`text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 whitespace-nowrap ${
-                    isDark ? 'bg-white/5 border-white/10 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                  }`}>
-                    {currentCaseId}
-                    <button
-                      onClick={(e) => handleCopyCaseId(e, currentCaseId)}
-                      title="Copy Case ID"
-                      className="hover:opacity-100 opacity-70 transition-opacity"
-                    >
-                      {copiedCaseId === currentCaseId ? (
-                        <Check className="h-2.5 w-2.5 text-emerald-400" />
-                      ) : (
-                        <Copy className="h-2.5 w-2.5" />
-                      )}
-                    </button>
-                  </span>
-                </div>
+                <div className="flex flex-col">
+                  <h4 className={`text-sm font-bold leading-none mb-1 ${isDark ? 'text-white' : 'text-slate-850'}`}>DurgaShakti AI</h4>
                 <span className={`text-[9px] font-bold ${sessionStatus === 'ended' || sessionStatus === 'resolved' ? 'text-slate-400' : (isDark ? 'text-[#25D958]' : 'text-[#006e1b]')}`}>
                   {sessionStatus === 'ended' || sessionStatus === 'resolved' ? 'Case Closed' : 'Online'}
                 </span>
               </div>
             </div>
             
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
+              <span className={`text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 whitespace-nowrap mr-1 ${
+                isDark ? 'bg-white/5 border-white/10 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              }`}>
+                {currentCaseId}
+                <button
+                  onClick={(e) => handleCopyCaseId(e, currentCaseId)}
+                  title="Copy Case ID"
+                  className="hover:opacity-100 opacity-70 transition-opacity flex items-center"
+                >
+                  {copiedCaseId === currentCaseId ? (
+                    <Check className="h-2.5 w-2.5 text-emerald-400" />
+                  ) : (
+                    <Copy className="h-2.5 w-2.5" />
+                  )}
+                </button>
+              </span>
+              
               {/* History Toggle Icon Button */}
               <button
                 onClick={toggleHistoryView}
