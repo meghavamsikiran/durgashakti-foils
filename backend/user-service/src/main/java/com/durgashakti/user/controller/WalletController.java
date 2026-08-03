@@ -265,71 +265,113 @@ public class WalletController {
 
     @PostMapping("/admin/wallet/credit")
     public ResponseEntity<Map<String, Object>> adminDirectCredit(@RequestBody Map<String, Object> body, Authentication authentication) {
-        String targetUserIdStr = (String) body.get("userId");
+        List<String> targetUserIds = new ArrayList<>();
+        if (body.containsKey("userIds") && body.get("userIds") instanceof List) {
+            targetUserIds = (List<String>) body.get("userIds");
+        } else if (body.containsKey("userId") && body.get("userId") != null) {
+            targetUserIds.add((String) body.get("userId"));
+        }
+
         double amountVal = Double.parseDouble(body.getOrDefault("amount", 0).toString());
         String remark = (String) body.getOrDefault("remark", "Admin Credit");
 
-        if (targetUserIdStr == null || amountVal <= 0) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Invalid user ID or amount"));
+        if (targetUserIds.isEmpty() || amountVal <= 0) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Invalid user ID(s) or amount"));
         }
 
-        UUID targetUserId = UUID.fromString(targetUserIdStr);
         BigDecimal amount = BigDecimal.valueOf(amountVal);
+        String refPrefix = "ADMIN-" + System.currentTimeMillis();
 
-        Wallet wallet = walletRepository.findByUserId(targetUserId)
-                .orElseGet(() -> new Wallet(targetUserId, BigDecimal.ZERO));
+        for (int i = 0; i < targetUserIds.size(); i++) {
+            UUID targetUserId = UUID.fromString(targetUserIds.get(i));
+            Wallet wallet = walletRepository.findByUserId(targetUserId)
+                    .orElseGet(() -> new Wallet(targetUserId, BigDecimal.ZERO));
 
-        wallet.setBalance(wallet.getBalance().add(amount));
-        wallet.setUpdatedAt(OffsetDateTime.now());
-        walletRepository.save(wallet);
+            wallet.setBalance(wallet.getBalance().add(amount));
+            wallet.setUpdatedAt(OffsetDateTime.now());
+            walletRepository.save(wallet);
 
-        WalletTransaction tx = new WalletTransaction(
-                targetUserId,
-                amount,
-                "CREDIT",
-                "ADMIN_CREDIT",
-                "ADMIN-" + System.currentTimeMillis(),
-                remark,
-                "SUCCESS"
-        );
-        walletTransactionRepository.save(tx);
+            WalletTransaction tx = new WalletTransaction(
+                    targetUserId,
+                    amount,
+                    "CREDIT",
+                    "ADMIN_CREDIT",
+                    refPrefix + "-" + i,
+                    remark,
+                    "SUCCESS"
+            );
+            walletTransactionRepository.save(tx);
+        }
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "newBalance", wallet.getBalance(),
-                "message", "Credited ₹" + amountVal + " to customer wallet successfully!"
+                "message", "Credited ₹" + amountVal + " to " + targetUserIds.size() + " customer(s) successfully!"
         ));
     }
 
     @PostMapping("/admin/wallet/vouchers")
     public ResponseEntity<Map<String, Object>> createVoucher(@RequestBody Map<String, Object> body, Authentication authentication) {
-        String code = (String) body.get("code");
+        String baseCode = (String) body.get("code");
         String title = (String) body.get("title");
         double amountVal = Double.parseDouble(body.getOrDefault("amount", 0).toString());
-        String assignedUserIdStr = (String) body.get("assignedUserId");
+        
+        List<String> assignedUserIds = new ArrayList<>();
+        if (body.containsKey("assignedUserIds") && body.get("assignedUserIds") instanceof List) {
+            assignedUserIds = (List<String>) body.get("assignedUserIds");
+        } else if (body.containsKey("assignedUserId") && body.get("assignedUserId") != null) {
+            String auId = (String) body.get("assignedUserId");
+            if (!auId.isBlank()) {
+                assignedUserIds.add(auId);
+            }
+        }
 
-        if (code == null || code.isBlank() || amountVal <= 0) {
+        if (baseCode == null || baseCode.isBlank() || amountVal <= 0) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Code and positive amount are required"));
         }
+        
+        baseCode = baseCode.trim().toUpperCase();
 
-        WalletVoucher voucher = new WalletVoucher();
-        voucher.setCode(code.trim().toUpperCase());
-        voucher.setTitle(title != null ? title : "Wallet Bonus Voucher");
-        voucher.setAmount(BigDecimal.valueOf(amountVal));
-        if (assignedUserIdStr != null && !assignedUserIdStr.isBlank()) {
-            voucher.setAssignedUserId(UUID.fromString(assignedUserIdStr));
-            userRepository.findById(UUID.fromString(assignedUserIdStr)).ifPresent(u -> voucher.setAssignedUserEmail(u.getEmail()));
-        }
-        voucher.setCreatedAt(OffsetDateTime.now());
+        UUID createdBy = null;
         if (authentication != null && authentication.getPrincipal() != null) {
             try {
-                voucher.setCreatedBy(UUID.fromString((String) authentication.getPrincipal()));
+                createdBy = UUID.fromString((String) authentication.getPrincipal());
             } catch (Exception ignored) {}
         }
+        
+        List<WalletVoucher> createdVouchers = new ArrayList<>();
 
-        walletVoucherRepository.save(voucher);
+        if (assignedUserIds.isEmpty()) {
+            // Global voucher
+            WalletVoucher voucher = new WalletVoucher();
+            voucher.setCode(baseCode);
+            voucher.setTitle(title != null ? title : "Wallet Bonus Voucher");
+            voucher.setAmount(BigDecimal.valueOf(amountVal));
+            voucher.setCreatedAt(OffsetDateTime.now());
+            voucher.setCreatedBy(createdBy);
+            walletVoucherRepository.save(voucher);
+            createdVouchers.add(voucher);
+        } else {
+            // Multiple user-specific vouchers
+            for (int i = 0; i < assignedUserIds.size(); i++) {
+                String userIdStr = assignedUserIds.get(i);
+                WalletVoucher voucher = new WalletVoucher();
+                // If more than 1 user, append a suffix to keep codes unique
+                voucher.setCode(assignedUserIds.size() > 1 ? baseCode + "-" + (i + 1) : baseCode);
+                voucher.setTitle(title != null ? title : "Wallet Bonus Voucher");
+                voucher.setAmount(BigDecimal.valueOf(amountVal));
+                voucher.setCreatedAt(OffsetDateTime.now());
+                voucher.setCreatedBy(createdBy);
+                
+                UUID uid = UUID.fromString(userIdStr);
+                voucher.setAssignedUserId(uid);
+                userRepository.findById(uid).ifPresent(u -> voucher.setAssignedUserEmail(u.getEmail()));
+                
+                walletVoucherRepository.save(voucher);
+                createdVouchers.add(voucher);
+            }
+        }
 
-        return ResponseEntity.ok(Map.of("success", true, "voucher", voucher));
+        return ResponseEntity.ok(Map.of("success", true, "vouchers", createdVouchers, "message", "Generated " + createdVouchers.size() + " voucher(s)"));
     }
 
     @GetMapping("/admin/wallet/vouchers")

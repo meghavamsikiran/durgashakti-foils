@@ -5,6 +5,96 @@ import {
   CheckCircle2, AlertCircle, Clock, ShieldAlert, ArrowDownLeft, ArrowUpRight, Copy
 } from 'lucide-react';
 
+const MultiSelectDropdown = ({ options, selectedValues, onChange, placeholder, allowAll = false, allLabel = "All Customers" }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filtered = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()) || (o.sublabel && o.sublabel.toLowerCase().includes(search.toLowerCase())));
+  const isAllSelected = selectedValues.length === options.length && options.length > 0;
+
+  const toggleAll = () => {
+    if (isAllSelected) onChange([]);
+    else onChange(options.map(o => o.value));
+  };
+
+  const toggleOne = (val) => {
+    if (selectedValues.includes(val)) onChange(selectedValues.filter(v => v !== val));
+    else onChange([...selectedValues, val]);
+  };
+
+  useEffect(() => {
+    const clickHandler = (e) => {
+      if (!e.target.closest('.multi-select-container')) setIsOpen(false);
+    };
+    document.addEventListener('click', clickHandler);
+    return () => document.removeEventListener('click', clickHandler);
+  }, []);
+
+  return (
+    <div className="relative multi-select-container">
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-bold cursor-pointer flex justify-between items-center"
+      >
+        <span className="truncate">
+          {selectedValues.length === 0 ? placeholder : selectedValues.length === options.length ? allLabel : `${selectedValues.length} selected`}
+        </span>
+        <ArrowDownLeft className="w-4 h-4 opacity-50" />
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-[#0c1310] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-60 overflow-y-auto overflow-x-hidden">
+          <div className="sticky top-0 bg-white dark:bg-[#0c1310] p-2 border-b border-slate-100 dark:border-white/10 z-10">
+            <div className="relative">
+              <Search className="w-3 h-3 absolute left-2.5 top-2.5 text-slate-400" />
+              <input 
+                type="text"
+                placeholder="Search..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 focus:ring-1 focus:ring-[#25D958] outline-none"
+              />
+            </div>
+          </div>
+          
+          <div className="p-1">
+            {allowAll && !search && (
+              <label className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={isAllSelected}
+                  onChange={toggleAll}
+                  className="rounded text-[#25D958] focus:ring-[#25D958] bg-slate-100 dark:bg-white/5 border-transparent cursor-pointer"
+                />
+                <span className="text-xs font-bold">{allLabel}</span>
+              </label>
+            )}
+            
+            {filtered.map(o => (
+              <label key={o.value} className="flex items-center gap-2 p-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={selectedValues.includes(o.value)}
+                  onChange={() => toggleOne(o.value)}
+                  className="rounded text-[#25D958] focus:ring-[#25D958] bg-slate-100 dark:bg-white/5 border-transparent cursor-pointer"
+                />
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold">{o.label}</span>
+                  {o.sublabel && <span className="text-[9px] text-slate-400">{o.sublabel}</span>}
+                </div>
+              </label>
+            ))}
+            
+            {filtered.length === 0 && (
+              <div className="p-4 text-center text-xs text-slate-400">No results found</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AdminWalletPage = () => {
   const [customers, setCustomers] = useState([]);
   const [vouchers, setVouchers] = useState([]);
@@ -12,7 +102,7 @@ const AdminWalletPage = () => {
   const [loading, setLoading] = useState(true);
   
   // Direct Credit State
-  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const [creditAmount, setCreditAmount] = useState('');
   const [creditRemark, setCreditRemark] = useState('Credit from DurgaShakti Foils Pvt Ltd');
   const [creditLoading, setCreditLoading] = useState(false);
@@ -22,7 +112,7 @@ const AdminWalletPage = () => {
   const [voucherCode, setVoucherCode] = useState('');
   const [voucherTitle, setVoucherTitle] = useState('');
   const [voucherAmount, setVoucherAmount] = useState('');
-  const [voucherTargetUser, setVoucherTargetUser] = useState('');
+  const [voucherTargetUsers, setVoucherTargetUsers] = useState([]);
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherMsg, setVoucherMsg] = useState({ type: '', text: '' });
 
@@ -35,7 +125,6 @@ const AdminWalletPage = () => {
         apiClient.get('/admin/wallet/transactions').catch(() => ({ data: [] }))
       ]);
 
-      // /admin/customers returns { items: [...] } or { customers: [...] } or { rows: [...] }
       const custData = customersRes.data;
       setCustomers(custData?.items || custData?.customers || custData?.rows || (Array.isArray(custData) ? custData : []));
       setVouchers(vouchersRes.data || []);
@@ -53,13 +142,13 @@ const AdminWalletPage = () => {
 
   const handleDirectCredit = async (e) => {
     e.preventDefault();
-    if (!selectedUser || !creditAmount || Number(creditAmount) <= 0) return;
+    if (selectedUsers.length === 0 || !creditAmount || Number(creditAmount) <= 0) return;
     setCreditLoading(true);
     setCreditMsg({ type: '', text: '' });
 
     try {
       const res = await apiClient.post('/admin/wallet/credit', {
-        userId: selectedUser,
+        userIds: selectedUsers,
         amount: Number(creditAmount),
         remark: creditRemark.trim()
       });
@@ -67,6 +156,7 @@ const AdminWalletPage = () => {
       if (res.data?.success) {
         setCreditMsg({ type: 'success', text: res.data.message || 'Amount credited successfully!' });
         setCreditAmount('');
+        setSelectedUsers([]);
         loadData();
       }
     } catch (err) {
@@ -87,15 +177,15 @@ const AdminWalletPage = () => {
         code: voucherCode.trim().toUpperCase(),
         title: voucherTitle.trim() || 'Wallet Bonus Voucher',
         amount: Number(voucherAmount),
-        assignedUserId: voucherTargetUser || null
+        assignedUserIds: voucherTargetUsers
       });
 
       if (res.data?.success) {
-        setVoucherMsg({ type: 'success', text: `Voucher ${voucherCode.trim().toUpperCase()} generated!` });
+        setVoucherMsg({ type: 'success', text: res.data.message || `Voucher ${voucherCode.trim().toUpperCase()} generated!` });
         setVoucherCode('');
         setVoucherTitle('');
         setVoucherAmount('');
-        setVoucherTargetUser('');
+        setVoucherTargetUsers([]);
         loadData();
       }
     } catch (err) {
@@ -107,14 +197,11 @@ const AdminWalletPage = () => {
 
   const formatCurrency = (val) => `₹${Number(val || 0).toLocaleString('en-IN')}`;
 
-  const formatDate = (isoStr) => {
-    if (!isoStr) return 'N/A';
-    return new Date(isoStr).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  };
+  const customerOptions = (Array.isArray(customers) ? customers : []).map(c => ({
+    label: c.fullName || c.full_name || 'Customer',
+    sublabel: c.email,
+    value: c.id
+  }));
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto pb-12">
@@ -147,19 +234,15 @@ const AdminWalletPage = () => {
 
           <form onSubmit={handleDirectCredit} className="space-y-4">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Select Customer</label>
-              <select
-                value={selectedUser}
-                onChange={(e) => setSelectedUser(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-bold focus:outline-none"
-              >
-                <option value="">-- Choose Customer --</option>
-                {(Array.isArray(customers) ? customers : []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.fullName || c.full_name || 'Customer'} ({c.email})
-                  </option>
-                ))}
-              </select>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Select Customers</label>
+              <MultiSelectDropdown 
+                options={customerOptions}
+                selectedValues={selectedUsers}
+                onChange={setSelectedUsers}
+                placeholder="-- Choose Customers --"
+                allowAll={true}
+                allLabel="All Customers"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -188,7 +271,7 @@ const AdminWalletPage = () => {
 
             <button
               type="submit"
-              disabled={creditLoading || !selectedUser || !creditAmount}
+              disabled={creditLoading || selectedUsers.length === 0 || !creditAmount}
               className="w-full py-3 rounded-xl bg-[#25D958] text-black font-extrabold text-xs uppercase tracking-wider hover:bg-[#25D958]/90 disabled:opacity-50 transition-all"
             >
               {creditLoading ? 'Processing Credit...' : 'Credit Wallet Amount'}
@@ -239,18 +322,13 @@ const AdminWalletPage = () => {
 
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Assign to Customer (Optional)</label>
-              <select
-                value={voucherTargetUser}
-                onChange={(e) => setVoucherTargetUser(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-bold focus:outline-none"
-              >
-                <option value="">-- All Customers (Public Voucher) --</option>
-                {(Array.isArray(customers) ? customers : []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.fullName || c.full_name || 'Customer'} ({c.email})
-                  </option>
-                ))}
-              </select>
+              <MultiSelectDropdown 
+                options={customerOptions}
+                selectedValues={voucherTargetUsers}
+                onChange={setVoucherTargetUsers}
+                placeholder="-- All Customers (Public Voucher) --"
+                allowAll={false}
+              />
             </div>
 
             <button
