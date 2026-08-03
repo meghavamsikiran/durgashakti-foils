@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../../../services/core/apiClient';
 import { 
   Wallet, PlusCircle, Ticket, ArrowUpRight, ArrowDownLeft, 
-  CheckCircle2, Clock, AlertCircle
+  CheckCircle2, Clock, AlertCircle, Copy
 } from 'lucide-react';
 
 const WalletTab = () => {
@@ -322,7 +322,18 @@ const WalletTab = () => {
                   <Ticket className="w-12 h-12" />
                 </div>
                 <div className="flex justify-between items-center relative z-10">
-                  <span className={`text-xs font-mono font-black ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>{v.code}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-xs font-mono font-black ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>{v.code}</span>
+                    <button 
+                      onClick={() => navigator.clipboard.writeText(v.code)}
+                      className={`p-1 rounded transition-colors ${
+                        isDark ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-200 text-slate-500 hover:text-slate-900'
+                      }`}
+                      title="Copy Voucher Code"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </button>
+                  </div>
                   <button 
                     onClick={() => {
                       setVoucherCode(v.code);
