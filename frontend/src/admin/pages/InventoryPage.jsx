@@ -300,9 +300,14 @@ const InventoryPage = () => {
             )}
           </div>
 
-          <Button onClick={() => load(1)} variant="outline" className="rounded-xl h-[40px] px-3 bg-[#050807] hover:bg-[#121f19] text-slate-300 border-[#26322B] shadow-sm">
+          <button 
+            type="button"
+            onClick={() => load(1)} 
+            title="Sync & Refresh Inventory"
+            className="inline-flex items-center justify-center h-[40px] w-[40px] rounded-xl border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#050807] hover:bg-slate-50 dark:hover:bg-[#121f19] text-slate-700 dark:text-slate-300 shadow-sm transition-all focus:outline-none focus:ring-0"
+          >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
+          </button>
         </div>
       </div>
 
