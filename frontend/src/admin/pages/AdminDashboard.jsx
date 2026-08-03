@@ -231,25 +231,25 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-5 gap-2">
-                <div className="border border-slate-100 rounded-xl p-2.5 bg-slate-50/50 text-center">
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 block truncate">Pending</span>
+              <div className="grid grid-cols-5 gap-1.5">
+                <div className="border border-slate-100 rounded-xl px-1 py-2.5 bg-slate-50/50 text-center">
+                  <span className="text-[9px] font-bold uppercase text-slate-400 block whitespace-nowrap overflow-hidden">Pending</span>
                   <span className="text-sm font-black text-amber-600 block mt-0.5">{formatNumber(metrics.range_pending ?? 0)}</span>
                 </div>
-                <div className="border border-slate-100 rounded-xl p-2.5 bg-slate-50/50 text-center">
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 block truncate">Transit</span>
+                <div className="border border-slate-100 rounded-xl px-1 py-2.5 bg-slate-50/50 text-center">
+                  <span className="text-[9px] font-bold uppercase text-slate-400 block whitespace-nowrap overflow-hidden">Transit</span>
                   <span className="text-sm font-black text-blue-600 block mt-0.5">{formatNumber(metrics.range_shipped ?? 0)}</span>
                 </div>
-                <div className="border border-slate-100 rounded-xl p-2.5 bg-slate-50/50 text-center">
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 block truncate">Delivered</span>
+                <div className="border border-slate-100 rounded-xl px-1 py-2.5 bg-slate-50/50 text-center">
+                  <span className="text-[9px] font-bold uppercase text-slate-400 block whitespace-nowrap overflow-hidden">Delivered</span>
                   <span className="text-sm font-black text-emerald-600 block mt-0.5">{formatNumber(metrics.range_delivered ?? metrics.total_delivered)}</span>
                 </div>
-                <div className="border border-slate-100 rounded-xl p-2.5 bg-slate-50/50 text-center">
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 block truncate">Returned</span>
+                <div className="border border-slate-100 rounded-xl px-1 py-2.5 bg-slate-50/50 text-center">
+                  <span className="text-[9px] font-bold uppercase text-slate-400 block whitespace-nowrap overflow-hidden">Returned</span>
                   <span className="text-sm font-black text-purple-600 block mt-0.5">{formatNumber(metrics.total_returned ?? 0)}</span>
                 </div>
-                <div className="border border-slate-100 rounded-xl p-2.5 bg-slate-50/50 text-center">
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 block truncate">Cancelled</span>
+                <div className="border border-slate-100 rounded-xl px-1 py-2.5 bg-slate-50/50 text-center">
+                  <span className="text-[9px] font-bold uppercase text-slate-400 block whitespace-nowrap overflow-hidden">Cancelled</span>
                   <span className="text-sm font-black text-rose-600 block mt-0.5">{formatNumber(metrics.range_cancelled ?? metrics.total_cancelled)}</span>
                 </div>
               </div>
