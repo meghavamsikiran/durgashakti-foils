@@ -918,13 +918,14 @@ h1, h2, h3, h4, h5, h6,
 }
 
 /* ── DARK THEME TABLE HOVER FIX ──────────────────────────────────────── */
-/* Prevent white flash on table row hover in dark theme */
-/* admin-shell applies the dark themed CSS variables, so target tr hover within it */
-.admin-shell tbody tr:hover {
-  background-color: rgba(30, 41, 59, 0.4) !important;
+/* Prevent white or blue flash on table row hover in dark theme */
+.admin-shell.admin-shell tbody tr:hover,
+.admin-shell .admin-shell tbody tr:hover {
+  background-color: #19231F !important;
 }
-/* Override: light-theme admin should use light hover instead */
-.light-theme .admin-shell tbody tr:hover {
+/* Override: light-theme admin should use the correct light hover */
+.light-theme .admin-shell.admin-shell tbody tr:hover,
+.light-theme .admin-shell .admin-shell tbody tr:hover {
   background-color: rgba(248, 250, 252, 0.5) !important;
 }
 

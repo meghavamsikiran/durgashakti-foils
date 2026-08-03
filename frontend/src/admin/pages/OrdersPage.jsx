@@ -1152,6 +1152,16 @@ const OrdersPage = () => {
                        <td className="px-8 py-6">
                           <div className="flex items-center justify-center gap-2">
                             {(() => {
+                              if (isOrderPending) {
+                                return (
+                                  <div className="flex items-center justify-center">
+                                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary animate-pulse">
+                                      <RefreshCcw className="w-3.5 h-3.5 animate-spin" />
+                                      <span className="text-[10px] font-black uppercase tracking-widest">Updating Status...</span>
+                                    </div>
+                                  </div>
+                                );
+                              }
                               const refundPaymentStatus = String(order.payment_status || '').toLowerCase();
                               const isCod = String(order.payment_method || '').toLowerCase() === 'cod';
                               const showRefundPendingButton = (

@@ -64,18 +64,36 @@ public class AdminUserController {
         long totalLoyalCount = 0;
         double totalRevenue = 0.0;
 
-        for (User u : allCustomers) {
-            List<Order> uOrders = ordersByUser.getOrDefault(u.getId(), List.of());
-            long ordersCount = 0;
-            double totalSpent = 0.0;
-            for (Order o : uOrders) {
-                String status = o.getOrderStatus() != null ? o.getOrderStatus().toLowerCase() : "";
-                String payStatus = o.getPaymentStatus() != null ? o.getPaymentStatus().toLowerCase() : "";
-                if ("delivered".equals(status) && !List.of("refunded", "refund", "failed").contains(payStatus)) {
-                    ordersCount++;
+        // Build helper map for email matching
+        String userEmailLower = u.getEmail() != null ? u.getEmail().trim().toLowerCase() : "";
+        List<Order> uOrders = new ArrayList<>(ordersByUser.getOrDefault(u.getId(), List.of()));
+        if (!userEmailLower.isEmpty()) {
+            for (Order o : allOrders) {
+                if (o.getUserId() == null && !uOrders.contains(o)) {
+                    Map<String, Object> ship = o.getShippingAddress();
+                    String shipEmail = ship != null ? String.valueOf(ship.getOrDefault("email", ship.getOrDefault("user_email", ""))).trim().toLowerCase() : "";
+                    if (userEmailLower.equalsIgnoreCase(shipEmail)) {
+                        uOrders.add(o);
+                    }
+                }
+            }
+        }
+
+        long ordersCount = 0;
+        double totalSpent = 0.0;
+        for (Order o : uOrders) {
+            String status = o.getOrderStatus() != null ? o.getOrderStatus().toLowerCase() : "";
+            String payStatus = o.getPaymentStatus() != null ? o.getPaymentStatus().toLowerCase() : "";
+            boolean isCancelled = List.of("cancelled", "failed", "rejected").contains(status);
+            boolean isRefunded = List.of("refunded", "refund", "failed").contains(payStatus);
+            
+            if (!isCancelled) {
+                ordersCount++;
+                if (!isRefunded) {
                     totalSpent += o.getTotalAmount() != null ? o.getTotalAmount().doubleValue() : 0.0;
                 }
             }
+        }
 
             boolean isLoyal = false;
             if (loyaltyEnabled) {

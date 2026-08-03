@@ -1789,7 +1789,7 @@ const CouponsPage = () => {
                         : 'Unlimited';
 
                       return (
-                        <tr key={coupon.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                        <tr key={coupon.id} className="hover:bg-[#19231F] dark:hover:bg-[#19231F] transition-colors">
                           <td className="px-6 py-4">
                             <div className="font-mono font-bold text-primary tracking-wider">{coupon.code}</div>
                             {(coupon.coupon_type || 'standard') === 'loyalty' && (
