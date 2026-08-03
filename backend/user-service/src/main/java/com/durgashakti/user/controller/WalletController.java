@@ -40,14 +40,41 @@ public class WalletController {
     public ResponseEntity<Map<String, Object>> getWallet(Authentication authentication) {
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
         
-        Wallet wallet = walletRepository.findByUserId(userId)
-                .orElseGet(() -> walletRepository.save(new Wallet(userId, BigDecimal.ZERO)));
+        // Auto-cleanup any old mock PAY-RZP- test transactions created during initial testing
+        List<WalletTransaction> allTxs = walletTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<WalletTransaction> mockTxs = allTxs.stream()
+                .filter(tx -> tx.getReferenceId() != null && tx.getReferenceId().startsWith("PAY-RZP-"))
+                .toList();
 
-        List<WalletTransaction> transactions = walletTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        if (!mockTxs.isEmpty()) {
+            walletTransactionRepository.deleteAll(mockTxs);
+            allTxs = walletTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        }
+
+        // Recalculate true balance from remaining valid transactions
+        BigDecimal calculatedBalance = BigDecimal.ZERO;
+        for (WalletTransaction tx : allTxs) {
+            if ("SUCCESS".equalsIgnoreCase(tx.getStatus())) {
+                if ("CREDIT".equalsIgnoreCase(tx.getType())) {
+                    calculatedBalance = calculatedBalance.add(tx.getAmount());
+                } else if ("DEBIT".equalsIgnoreCase(tx.getType())) {
+                    calculatedBalance = calculatedBalance.subtract(tx.getAmount());
+                }
+            }
+        }
+
+        Wallet wallet = walletRepository.findByUserId(userId)
+                .orElseGet(() -> new Wallet(userId, BigDecimal.ZERO));
+
+        if (wallet.getBalance().compareTo(calculatedBalance) != 0) {
+            wallet.setBalance(calculatedBalance);
+            wallet.setUpdatedAt(OffsetDateTime.now());
+            walletRepository.save(wallet);
+        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("balance", wallet.getBalance());
-        response.put("transactions", transactions);
+        response.put("transactions", allTxs);
         return ResponseEntity.ok(response);
     }
 
