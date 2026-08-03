@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Clock, Search, Filter, RefreshCw, ChevronDown, Copy, Check, MessageSquare } from 'lucide-react';
+import apiClient from '../../../services/core/apiClient';
 import { Button } from '../../../components/ui/button';
 import TablePagination from '../../../components/ui/TablePagination';
 import { useNavigate } from 'react-router-dom';
@@ -58,6 +59,27 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
   const navigate = useNavigate();
   const [ordersPage, setOrdersPage] = useState(1);
   const [copiedOrderId, setCopiedOrderId] = useState(null);
+  const [waNumber, setWaNumber] = useState('9901452954');
+
+  React.useEffect(() => {
+    const fetchWaNumber = async () => {
+      try {
+        const res = await apiClient.cachedGet('/settings/public', { silent: true });
+        const settings = res?.data || {};
+        const num = settings.whatsapp_ai_feedback?.businessNumber || 
+                    settings.company_profile?.companyPhone || 
+                    settings.company_profile?.whatsappLink || 
+                    '9901452954';
+        if (num) {
+          setWaNumber(String(num).replaceAll(/[^0-9]/g, ''));
+        }
+      } catch {
+        // Fallback to saved default
+      }
+    };
+    fetchWaNumber();
+  }, []);
+
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text);
     setCopiedOrderId(text);
@@ -568,7 +590,9 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                       <button
                         onClick={() => {
                           const text = encodeURIComponent(`Hi DurgaShakti Foils, I have feedback/concern regarding my delivered order #${order.order_number}`);
-                          window.open(`https://wa.me/919999999999?text=${text}`, '_blank');
+                          const raw = waNumber.replaceAll(/[^0-9]/g, '') || '9901452954';
+                          const cleanNum = raw.length === 10 ? '91' + raw : raw;
+                          window.open(`https://wa.me/${cleanNum}?text=${text}`, '_blank');
                         }}
                         className="px-3 py-2 text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
                         title="Submit Feedback or Report Damage via WhatsApp"
