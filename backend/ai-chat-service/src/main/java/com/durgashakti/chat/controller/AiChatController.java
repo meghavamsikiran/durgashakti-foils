@@ -23,11 +23,13 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/chat")
 public class AiChatController {
+  private static final Logger log = LoggerFactory.getLogger(AiChatController.class);
 
   private final GeminiFailoverService failoverService;
   private final ChatMessageRepository chatMessageRepository;

@@ -29,13 +29,15 @@ const AdminWalletPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [usersRes, vouchersRes, txsRes] = await Promise.all([
-        apiClient.get('/admin/users'),
+      const [customersRes, vouchersRes, txsRes] = await Promise.all([
+        apiClient.get('/admin/customers', { params: { limit: 500 } }),
         apiClient.get('/admin/wallet/vouchers').catch(() => ({ data: [] })),
         apiClient.get('/admin/wallet/transactions').catch(() => ({ data: [] }))
       ]);
 
-      setCustomers(usersRes.data?.users || usersRes.data || []);
+      // /admin/customers returns { customers: [...], total: N } or { rows: [...] }
+      const custData = customersRes.data;
+      setCustomers(custData?.customers || custData?.rows || custData || []);
       setVouchers(vouchersRes.data || []);
       setTransactions(txsRes.data || []);
     } catch (err) {

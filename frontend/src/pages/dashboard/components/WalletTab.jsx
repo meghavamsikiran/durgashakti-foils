@@ -2,27 +2,38 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../../../services/core/apiClient';
 import { 
   Wallet, PlusCircle, Ticket, ArrowUpRight, ArrowDownLeft, 
-  CreditCard, Sparkles, CheckCircle2, Clock, AlertCircle, ShieldCheck
+  CheckCircle2, Clock, AlertCircle
 } from 'lucide-react';
 
-const WalletTab = ({ isDark }) => {
+const WalletTab = () => {
+  const [isDark, setIsDark] = useState(() => localStorage.getItem('themeMode') !== 'light');
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   
   // Topup modal state
   const [showTopUpModal, setShowTopUpModal] = useState(false);
-  const [topUpAmount, setTopUpAmount] = useState(500);
+  const [topUpAmount, setTopUpAmount] = useState('500');
   const [topUpLoading, setTopUpLoading] = useState(false);
+  const [topUpMsg, setTopUpMsg] = useState({ type: '', text: '' });
   
   // Voucher Redeem state
   const [voucherCode, setVoucherCode] = useState('');
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherMsg, setVoucherMsg] = useState({ type: '', text: '' });
 
+  // Listen for theme toggles
+  useEffect(() => {
+    const handler = (e) => setIsDark(e.detail === 'dark');
+    window.addEventListener('theme-toggle', handler);
+    return () => window.removeEventListener('theme-toggle', handler);
+  }, []);
+
   const fetchWalletData = async () => {
     try {
       setLoading(true);
+      setError('');
       const res = await apiClient.get('/user/wallet');
       if (res.data) {
         setBalance(res.data.balance || 0);
@@ -30,6 +41,7 @@ const WalletTab = ({ isDark }) => {
       }
     } catch (err) {
       console.error('Failed to load wallet data:', err);
+      setError('Could not load wallet data. The wallet service may be starting up — please try again in a moment.');
     } finally {
       setLoading(false);
     }
@@ -65,22 +77,27 @@ const WalletTab = ({ isDark }) => {
   };
 
   const handleTopUp = async () => {
-    if (!topUpAmount || topUpAmount <= 0) return;
+    const amt = Number(topUpAmount);
+    if (!amt || amt <= 0) return;
     setTopUpLoading(true);
+    setTopUpMsg({ type: '', text: '' });
 
     try {
-      // Simulate/trigger topup via Razorpay or direct API endpoint
       const res = await apiClient.post('/user/wallet/topup', {
-        amount: topUpAmount,
+        amount: amt,
         razorpay_payment_id: 'PAY-RZP-' + Math.random().toString(36).substring(2, 10).toUpperCase()
       });
 
       if (res.data?.success) {
+        setTopUpMsg({ type: 'success', text: res.data.message || 'Top-up successful!' });
         setShowTopUpModal(false);
+        setTopUpAmount('500');
         fetchWalletData();
+      } else {
+        setTopUpMsg({ type: 'error', text: res.data?.error || 'Top-up failed' });
       }
     } catch (err) {
-      console.error('Top-up failed:', err);
+      setTopUpMsg({ type: 'error', text: err.response?.data?.error || 'Failed to process top-up. Please try again.' });
     } finally {
       setTopUpLoading(false);
     }
@@ -116,19 +133,19 @@ const WalletTab = ({ isDark }) => {
               <div className={`p-2 rounded-xl ${isDark ? 'bg-[#25D958]/10 text-[#25D958]' : 'bg-[#006e1b]/10 text-[#006e1b]'}`}>
                 <Wallet className="w-5 h-5" />
               </div>
-              <span className="text-xs font-black uppercase tracking-widest text-[#25D958]">DSF Digital Wallet</span>
+              <span className={`text-xs font-black uppercase tracking-widest ${isDark ? 'text-[#25D958]' : 'text-[#006e1b]'}`}>DSF Digital Wallet</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-black font-serif tracking-tight">
               {loading ? '₹...' : formatCurrency(balance)}
             </h2>
-            <p className="text-xs text-slate-400 mt-1 font-medium">
+            <p className={`text-xs mt-1 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               Use your wallet balance for faster 1-click checkout & split payments.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setShowTopUpModal(true)}
+              onClick={() => { setShowTopUpModal(true); setTopUpMsg({ type: '', text: '' }); }}
               className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-md active:scale-95 ${
                 isDark 
                   ? 'bg-[#25D958] text-black hover:bg-[#25D958]/90' 
@@ -142,13 +159,24 @@ const WalletTab = ({ isDark }) => {
         </div>
       </div>
 
+      {/* ERROR STATE */}
+      {error && (
+        <div className={`p-4 rounded-2xl border text-xs font-semibold flex items-center gap-3 ${
+          isDark ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-rose-50 text-rose-600 border-rose-200'
+        }`}>
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+          <button onClick={fetchWalletData} className="ml-auto underline text-[10px] uppercase font-bold tracking-wider">Retry</button>
+        </div>
+      )}
+
       {/* VOUCHER / COUPON REDEMPTION CARD */}
       <div className={`p-6 rounded-3xl border shadow-sm ${
-        isDark ? 'bg-[#070b09] border-[#19231F]' : 'bg-white border-slate-100'
+        isDark ? 'bg-[#070b09] border-[#19231F]' : 'bg-white border-slate-200'
       }`}>
         <div className="flex items-center gap-2 mb-3">
-          <Ticket className="w-4.5 h-4.5 text-[#25D958]" />
-          <h3 className="text-xs font-black uppercase tracking-wider">Redeem Wallet Coupon / Voucher</h3>
+          <Ticket className="w-4 h-4 text-[#25D958]" />
+          <h3 className={`text-xs font-black uppercase tracking-wider ${isDark ? '' : 'text-slate-800'}`}>Redeem Wallet Coupon / Voucher</h3>
         </div>
         <form onSubmit={handleRedeemVoucher} className="flex flex-col sm:flex-row gap-3">
           <input
@@ -178,8 +206,8 @@ const WalletTab = ({ isDark }) => {
         {voucherMsg.text && (
           <div className={`mt-3 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
             voucherMsg.type === 'success' 
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-              : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+              ? (isDark ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border border-emerald-200')
+              : (isDark ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-rose-50 text-rose-600 border border-rose-200')
           }`}>
             {voucherMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
             <span>{voucherMsg.text}</span>
@@ -189,10 +217,10 @@ const WalletTab = ({ isDark }) => {
 
       {/* TRANSACTIONS HISTORY TABLE */}
       <div className={`p-6 rounded-3xl border shadow-sm ${
-        isDark ? 'bg-[#070b09] border-[#19231F]' : 'bg-white border-slate-100'
+        isDark ? 'bg-[#070b09] border-[#19231F]' : 'bg-white border-slate-200'
       }`}>
-        <div className="flex items-center justify-between pb-4 mb-4 border-b border-white/10">
-          <h3 className="text-xs font-black uppercase tracking-wider flex items-center gap-2">
+        <div className={`flex items-center justify-between pb-4 mb-4 border-b ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+          <h3 className={`text-xs font-black uppercase tracking-wider flex items-center gap-2 ${isDark ? '' : 'text-slate-800'}`}>
             <Clock className="w-4 h-4 text-[#25D958]" />
             <span>Wallet Transaction History</span>
           </h3>
@@ -200,7 +228,7 @@ const WalletTab = ({ isDark }) => {
         </div>
 
         {transactions.length === 0 ? (
-          <div className="py-12 text-center text-xs font-semibold text-slate-400">
+          <div className={`py-12 text-center text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             No wallet transactions found. Add money or redeem a voucher to get started!
           </div>
         ) : (
@@ -223,8 +251,8 @@ const WalletTab = ({ isDark }) => {
                       {isCredit ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                     </div>
                     <div>
-                      <p className="text-xs font-bold">{tx.description || tx.source}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">{formatDate(tx.createdAt)} • Ref: {tx.referenceId || 'N/A'}</p>
+                      <p className={`text-xs font-bold ${isDark ? '' : 'text-slate-800'}`}>{tx.description || tx.source}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{formatDate(tx.created_at || tx.createdAt)} • Ref: {tx.reference_id || tx.referenceId || 'N/A'}</p>
                     </div>
                   </div>
 
@@ -249,18 +277,21 @@ const WalletTab = ({ isDark }) => {
 
       {/* TOP-UP MODAL */}
       {showTopUpModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className={`w-full max-w-md p-6 rounded-3xl border shadow-2xl space-y-5 animate-in zoom-in-95 duration-200 ${
-            isDark ? 'bg-[#0c1816] border-[#19231F] text-white' : 'bg-white border-slate-200 text-slate-900'
-          }`}>
-            <div className="flex items-center justify-between border-b pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowTopUpModal(false)}>
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className={`w-full max-w-md p-6 rounded-3xl border shadow-2xl space-y-5 ${
+              isDark ? 'bg-[#0c1816] border-[#19231F] text-white' : 'bg-white border-slate-200 text-slate-900'
+            }`}
+          >
+            <div className={`flex items-center justify-between border-b pb-3 ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
               <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
-                <PlusCircle className="w-4.5 h-4.5 text-[#25D958]" />
+                <PlusCircle className="w-4 h-4 text-[#25D958]" />
                 <span>Add Money to Wallet</span>
               </h3>
               <button 
                 onClick={() => setShowTopUpModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-full"
+                className={`p-1.5 rounded-full transition-colors ${isDark ? 'text-slate-400 hover:text-white hover:bg-white/10' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
               >
                 ✕
               </button>
@@ -273,11 +304,11 @@ const WalletTab = ({ isDark }) => {
                   <button
                     key={amt}
                     type="button"
-                    onClick={() => setTopUpAmount(amt)}
+                    onClick={() => setTopUpAmount(String(amt))}
                     className={`py-2 rounded-xl text-xs font-bold border transition-all ${
-                      topUpAmount === amt 
+                      Number(topUpAmount) === amt 
                         ? (isDark ? 'bg-[#25D958] text-black border-[#25D958]' : 'bg-[#006e1b] text-white border-[#006e1b]') 
-                        : (isDark ? 'bg-white/5 border-white/10 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700')
+                        : (isDark ? 'bg-white/5 border-white/10 text-slate-300 hover:border-white/20' : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300')
                     }`}
                   >
                     ₹{amt}
@@ -287,8 +318,10 @@ const WalletTab = ({ isDark }) => {
 
               <input
                 type="number"
+                min="1"
                 value={topUpAmount}
-                onChange={(e) => setTopUpAmount(Number(e.target.value))}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setTopUpAmount(e.target.value)}
                 className={`w-full px-4 py-3 rounded-xl border text-base font-extrabold focus:outline-none ${
                   isDark ? 'bg-white/5 border-white/10 text-white focus:border-[#25D958]' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-[#006e1b]'
                 }`}
@@ -296,21 +329,34 @@ const WalletTab = ({ isDark }) => {
               />
             </div>
 
+            {topUpMsg.text && (
+              <div className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                topUpMsg.type === 'success' 
+                  ? 'bg-emerald-500/10 text-emerald-400' 
+                  : 'bg-rose-500/10 text-rose-400'
+              }`}>
+                {topUpMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                <span>{topUpMsg.text}</span>
+              </div>
+            )}
+
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setShowTopUpModal(false)}
-                className="flex-1 py-3 rounded-xl border border-slate-400/20 text-xs font-bold uppercase"
+                className={`flex-1 py-3 rounded-xl border text-xs font-bold uppercase ${
+                  isDark ? 'border-white/10 text-slate-300 hover:bg-white/5' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
               >
                 Cancel
               </button>
               <button
                 onClick={handleTopUp}
-                disabled={topUpLoading || !topUpAmount}
-                className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                disabled={topUpLoading || !topUpAmount || Number(topUpAmount) <= 0}
+                className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 ${
                   isDark ? 'bg-[#25D958] text-black hover:bg-[#25D958]/90' : 'bg-[#006e1b] text-white hover:bg-[#006e1b]/90'
                 }`}
               >
-                {topUpLoading ? 'Processing...' : `Pay ₹${topUpAmount}`}
+                {topUpLoading ? 'Processing...' : `Pay ₹${topUpAmount || 0}`}
               </button>
             </div>
           </div>

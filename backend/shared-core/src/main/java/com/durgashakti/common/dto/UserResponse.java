@@ -36,4 +36,76 @@ public class UserResponse {
 
     @JsonProperty("created_at")
     private OffsetDateTime createdAt;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Map<String, Object> getPermissions() {
+        return permissions;
+    }
+
+    public void setPermissions(Map<String, Object> permissions) {
+        this.permissions = permissions;
+    }
+
+    public List<Object> getWishlist() {
+        return wishlist;
+    }
+
+    public void setWishlist(List<Object> wishlist) {
+        this.wishlist = wishlist;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

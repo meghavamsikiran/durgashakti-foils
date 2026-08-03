@@ -1,16 +1,18 @@
 package com.durgashakti.order.config;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import jakarta.annotation.PostConstruct;
 
-@Slf4j
 @Configuration
 @Lazy(false) // Force eager loading so this runs immediately on startup, bypassing lazy-init rules
 public class DbInitializer {
+
+    private static final Logger log = LoggerFactory.getLogger(DbInitializer.class);
 
     private final JdbcTemplate jdbcTemplate;
 

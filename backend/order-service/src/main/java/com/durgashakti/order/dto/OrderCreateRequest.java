@@ -32,4 +32,52 @@ public class OrderCreateRequest {
     @JsonProperty("coupon_codes")
     @Size(max = 5, message = "Maximum 5 coupon codes allowed")
     private List<String> couponCodes;
+
+    public List<Map<String, Object>> getItems() {
+        return items;
+    }
+
+    public void setItems(List<Map<String, Object>> items) {
+        this.items = items;
+    }
+
+    public double getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(double totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public Map<String, Object> getShippingAddress() {
+        return shippingAddress;
+    }
+
+    public void setShippingAddress(Map<String, Object> shippingAddress) {
+        this.shippingAddress = shippingAddress;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
+    }
+
+    public List<String> getCouponCodes() {
+        return couponCodes;
+    }
+
+    public void setCouponCodes(List<String> couponCodes) {
+        this.couponCodes = couponCodes;
+    }
 }

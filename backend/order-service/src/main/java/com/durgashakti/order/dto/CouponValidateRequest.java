@@ -11,4 +11,20 @@ public class CouponValidateRequest {
 
     @JsonProperty("cart_subtotal")
     private double cartSubtotal;
+
+    public List<String> getCodes() {
+        return codes;
+    }
+
+    public void setCodes(List<String> codes) {
+        this.codes = codes;
+    }
+
+    public double getCartSubtotal() {
+        return cartSubtotal;
+    }
+
+    public void setCartSubtotal(double cartSubtotal) {
+        this.cartSubtotal = cartSubtotal;
+    }
 }
