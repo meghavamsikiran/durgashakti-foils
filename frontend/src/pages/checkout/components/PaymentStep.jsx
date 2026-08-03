@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Truck, Shield, CreditCard, BadgeCheck, LockKeyhole, ScanQrCode, Sparkles, AlertCircle, Wallet } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
-import { normalizeShippingSettings } from '../../../utils/checkoutPricing';
+import { calculateCheckoutPricing, normalizeShippingSettings } from '../../../utils/checkoutPricing';
 import apiClient from '../../../services/core/apiClient';
 
 const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codEnabled = true, shippingSettings, subtotal = 0, onBack }) => {
