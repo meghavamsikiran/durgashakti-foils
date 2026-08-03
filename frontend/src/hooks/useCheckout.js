@@ -219,6 +219,8 @@ export const useCheckout = () => {
     }
   }, [userId, fetchAddresses]);
 
+  const cartItemsCount = cart.items?.length || 0;
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -239,7 +241,7 @@ export const useCheckout = () => {
     if (!cartReady) {
       return;
     }
-    if (!cart.items || cart.items.length === 0) {
+    if (cartItemsCount === 0) {
       if (orderInProgress.current || localStorage.getItem(PENDING_RAZORPAY_ORDER_KEY)) {
         return;
       }
@@ -248,7 +250,7 @@ export const useCheckout = () => {
     }
     fetchProducts();
     fetchSettings();
-  }, [user, cartReady, cart.items, navigate, fetchProducts, fetchSettings]);
+  }, [user, cartReady, cartItemsCount, navigate, fetchProducts, fetchSettings]);
 
   const calculateTotal = useCallback(() => {
     return cart.items?.reduce((total, item) => {
