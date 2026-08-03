@@ -243,7 +243,7 @@ const AdminLayout = () => {
             onClick={toggleTheme} 
             className={themeToggleBtnClass}
           >
-            {themeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4 />}
+            {themeMode === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             {themeMode === 'dark' ? 'Light Theme' : 'Dark Theme'}
           </button>
           <button 
