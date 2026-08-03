@@ -30,14 +30,25 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
     }
   }, [codEnabled, paymentMethod, selectPaymentMethod]);
 
+  const { grandTotal } = calculateCheckoutPricing(subtotal, shippingSettings, paymentMethod, [], null);
+
+  // Wallet deduction calculation
+  const walletDeducted = Math.min(walletBalance, grandTotal);
+  const remainingPayable = Math.max(0, grandTotal - walletDeducted);
+  const isFullWalletPayment = walletBalance >= grandTotal && grandTotal > 0;
+
   const paymentMethods = [];
 
   if (walletBalance > 0) {
     paymentMethods.push({
       id: 'wallet',
-      name: `DSF Digital Wallet (Balance: ₹${walletBalance})`,
+      name: isFullWalletPayment 
+        ? `DSF Digital Wallet (Full Payment)` 
+        : `DSF Digital Wallet + Split Pay`,
       icon: Wallet,
-      description: 'Use your wallet balance for instant 1-click order payment or split payment.'
+      description: isFullWalletPayment
+        ? `Pay 100% using wallet balance (₹${walletDeducted.toFixed(2)} deducted, ₹0.00 pending).`
+        : `Deducts ₹${walletDeducted.toFixed(2)} from wallet. Pay remaining ₹${remainingPayable.toFixed(2)} online/COD.`
     });
   }
 
@@ -87,6 +98,36 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
           Edit Address
         </Button>
       </div>
+
+      {/* WALLET SPLIT-PAYMENT BREAKDOWN BANNER */}
+      {paymentMethod === 'wallet' && walletBalance > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 rounded-xl border border-[#25D958]/30 bg-[#25D958]/10 text-white space-y-2"
+        >
+          <div className="flex items-center justify-between font-bold text-xs">
+            <span className="flex items-center gap-2 text-[#25D958]">
+              <Wallet className="w-4 h-4" />
+              <span>Wallet Balance Available:</span>
+            </span>
+            <span className="font-mono">₹{walletBalance.toFixed(2)}</span>
+          </div>
+          
+          <div className="pt-2 border-t border-[#25D958]/20 grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span className="text-slate-400 block text-[10px] uppercase tracking-wider font-bold">Wallet Amount Applied</span>
+              <span className="font-extrabold text-[#25D958] font-mono text-sm">-₹{walletDeducted.toFixed(2)}</span>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[10px] uppercase tracking-wider font-bold">Remaining Due</span>
+              <span className={`font-extrabold font-mono text-sm ${remainingPayable > 0 ? 'text-amber-400' : 'text-[#25D958]'}`}>
+                {remainingPayable > 0 ? `₹${remainingPayable.toFixed(2)} (Pay Online/COD)` : '₹0.00 (Fully Covered!)'}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <div className="relative grid gap-4">
         {paymentMethods.map((method) => {

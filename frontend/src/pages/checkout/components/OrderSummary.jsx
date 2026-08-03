@@ -23,6 +23,18 @@ const OrderSummary = ({
   shippingAddress
 }) => {
   const { cart } = useCart();
+  const [walletBalance, setWalletBalance] = React.useState(0);
+
+  React.useEffect(() => {
+    const fetchWallet = async () => {
+      try {
+        const res = await (await import('../../../services/core/apiClient')).default.get('/user/wallet');
+        if (res.data) setWalletBalance(res.data.balance || 0);
+      } catch (err) {}
+    };
+    fetchWallet();
+  }, []);
+
   const { 
     shipping, 
     codCharge, 
@@ -155,10 +167,30 @@ const OrderSummary = ({
           <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] font-mono">CGST (9%)</span>
           <span className="font-extrabold text-white">₹{cgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
+
+        {paymentMethod === 'wallet' && walletBalance > 0 && (
+          <div className="flex justify-between text-sm text-[#25D958] bg-[#25D958]/10 border border-[#25D958]/30 p-3 rounded-2xl font-bold">
+            <span className="uppercase tracking-wider text-[10px] font-mono flex items-center gap-1.5">
+              <span>Wallet Applied</span>
+            </span>
+            <span className="font-extrabold font-mono">-₹{Math.min(walletBalance, grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        )}
+
         <div className="pt-4 border-t border-[#26322B] flex justify-between items-end">
-          <span className="text-white font-bold uppercase tracking-wide">Total Amount</span>
-          <div className="text-3xl font-extrabold text-[#25D958] tracking-tight">
-            ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div>
+            <span className="text-white font-bold uppercase tracking-wide block">
+              {paymentMethod === 'wallet' && walletBalance < grandTotal ? 'Net Payable Due' : 'Total Amount'}
+            </span>
+            {paymentMethod === 'wallet' && walletBalance > 0 && (
+              <span className="text-[10px] text-slate-400 font-medium">Order Total: ₹{grandTotal.toFixed(2)}</span>
+            )}
+          </div>
+          <div className="text-3xl font-extrabold text-[#25D958] tracking-tight font-mono">
+            ₹{paymentMethod === 'wallet' 
+              ? Math.max(0, grandTotal - walletBalance).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              : grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            }
           </div>
         </div>
       </div>
