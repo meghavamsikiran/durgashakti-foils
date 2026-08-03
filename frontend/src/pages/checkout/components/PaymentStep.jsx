@@ -46,8 +46,8 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
     paymentMethods.push({
       id: 'wallet',
       name: isFullWalletPayment 
-        ? `DSF Digital Wallet (Full Payment)` 
-        : `DSF Digital Wallet + Split Pay`,
+        ? `DSF Digital Wallet` 
+        : `DSF Digital Wallet (Split Pay)`,
       icon: Wallet,
       description: isFullWalletPayment
         ? `Pay 100% using wallet balance (₹${walletDeducted.toFixed(2)} deducted, ₹0.00 pending).`

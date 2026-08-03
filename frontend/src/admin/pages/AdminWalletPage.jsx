@@ -126,7 +126,7 @@ const AdminWalletPage = () => {
             <div className="p-2.5 bg-[#25D958]/10 text-[#25D958] rounded-2xl">
               <Wallet className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-black tracking-tight uppercase">
+            <h1 className="text-2xl font-black tracking-tight uppercase text-slate-900 dark:text-white">
               Wallet & Voucher Control
             </h1>
           </div>
@@ -142,7 +142,7 @@ const AdminWalletPage = () => {
         <div className="bg-white dark:bg-[#070b09] border border-slate-100 dark:border-[#19231F] rounded-3xl p-6 shadow-sm space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-white/10">
             <PlusCircle className="w-5 h-5 text-[#25D958]" />
-            <h3 className="text-sm font-black uppercase tracking-wider">Direct Customer Wallet Credit</h3>
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">Direct Customer Wallet Credit</h3>
           </div>
 
           <form onSubmit={handleDirectCredit} className="space-y-4">
@@ -209,7 +209,7 @@ const AdminWalletPage = () => {
         <div className="bg-white dark:bg-[#070b09] border border-slate-100 dark:border-[#19231F] rounded-3xl p-6 shadow-sm space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-white/10">
             <Ticket className="w-5 h-5 text-amber-500" />
-            <h3 className="text-sm font-black uppercase tracking-wider">Generate Wallet Voucher Code</h3>
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">Generate Wallet Voucher Code</h3>
           </div>
 
           <form onSubmit={handleCreateVoucher} className="space-y-4">
@@ -276,16 +276,16 @@ const AdminWalletPage = () => {
 
       {/* RECENT GENERATED VOUCHERS LIST */}
       <div className="bg-white dark:bg-[#070b09] border border-slate-100 dark:border-[#19231F] rounded-3xl p-6 shadow-sm space-y-4">
-        <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
+        <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
           <Ticket className="w-4.5 h-4.5 text-[#25D958]" />
-          Issued Wallet Vouchers ({vouchers.length})
+          Issued Wallet Vouchers ({(Array.isArray(vouchers) ? vouchers : []).length})
         </h3>
 
-        {vouchers.length === 0 ? (
+        {(!Array.isArray(vouchers) || vouchers.length === 0) ? (
           <p className="text-xs text-slate-400 py-6 text-center">No vouchers generated yet.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {vouchers.map((v) => (
+            {(Array.isArray(vouchers) ? vouchers : []).map((v) => (
               <div key={v.id} className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-mono font-black text-[#25D958]">{v.code}</span>
@@ -295,7 +295,7 @@ const AdminWalletPage = () => {
                     {v.isRedeemed ? 'Redeemed' : 'Active'}
                   </span>
                 </div>
-                <p className="text-lg font-black">{formatCurrency(v.amount)}</p>
+                <p className="text-lg font-black text-slate-900 dark:text-white">{formatCurrency(v.amount)}</p>
                 <p className="text-[10px] text-slate-400">Assigned: {v.assignedUserEmail || 'All Customers'}</p>
               </div>
             ))}
