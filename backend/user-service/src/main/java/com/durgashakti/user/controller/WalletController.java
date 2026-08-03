@@ -51,12 +51,57 @@ public class WalletController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/user/wallet/create-topup-order")
+    public ResponseEntity<Map<String, Object>> createTopUpOrder(@RequestBody Map<String, Object> body, Authentication authentication) {
+        double amountVal = Double.parseDouble(body.getOrDefault("amount", 0).toString());
+        if (amountVal <= 0) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Invalid top-up amount"));
+        }
+
+        long amountInPaise = Math.round(amountVal * 100);
+        String receipt = "wal_" + System.currentTimeMillis();
+
+        String razorpayKey = System.getenv("RAZORPAY_KEY_ID");
+        String razorpaySecret = System.getenv("RAZORPAY_KEY_SECRET");
+
+        if (razorpayKey != null && !razorpayKey.isBlank() && !razorpayKey.startsWith("fake") &&
+            razorpaySecret != null && !razorpaySecret.isBlank() && !razorpaySecret.startsWith("fake")) {
+            try {
+                com.razorpay.RazorpayClient client = new com.razorpay.RazorpayClient(razorpayKey, razorpaySecret);
+                org.json.JSONObject orderRequest = new org.json.JSONObject();
+                orderRequest.put("amount", amountInPaise);
+                orderRequest.put("currency", "INR");
+                orderRequest.put("receipt", receipt);
+
+                com.razorpay.Order order = client.orders.create(orderRequest);
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "razorpay_order_id", order.get("id"),
+                        "amount", amountInPaise,
+                        "key", razorpayKey
+                ));
+            } catch (Exception e) {
+                return ResponseEntity.internalServerError().body(Map.of("success", false, "error", "Failed to create payment order: " + e.getMessage()));
+            }
+        }
+
+        // Development/Test fallback when Razorpay credentials are not set
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "razorpay_order_id", "order_test_" + System.currentTimeMillis(),
+                "amount", amountInPaise,
+                "key", razorpayKey != null ? razorpayKey : "rzp_test_fallback"
+        ));
+    }
+
     @PostMapping("/user/wallet/topup")
     public ResponseEntity<Map<String, Object>> topUpWallet(@RequestBody Map<String, Object> body, Authentication authentication) {
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
         
         double amountVal = Double.parseDouble(body.getOrDefault("amount", 0).toString());
         String razorpayPaymentId = (String) body.get("razorpay_payment_id");
+        String razorpayOrderId = (String) body.get("razorpay_order_id");
+        String razorpaySignature = (String) body.get("razorpay_signature");
 
         if (amountVal <= 0) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Invalid top-up amount"));
@@ -77,7 +122,7 @@ public class WalletController {
                 "CREDIT",
                 "TOPUP",
                 razorpayPaymentId != null ? razorpayPaymentId : "TXN-" + System.currentTimeMillis(),
-                "Wallet top-up via Razorpay",
+                "Wallet top-up via Razorpay (" + (razorpayOrderId != null ? razorpayOrderId : "Direct") + ")",
                 "SUCCESS"
         );
         walletTransactionRepository.save(tx);

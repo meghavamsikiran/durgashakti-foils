@@ -46,6 +46,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Razorpay SDK -->
+        <dependency>
+            <groupId>com.razorpay</groupId>
+            <artifactId>razorpay-java</artifactId>
+        </dependency>
+
         <!-- Hibernate JSONB -->
         <dependency>
             <groupId>io.hypersistence</groupId>

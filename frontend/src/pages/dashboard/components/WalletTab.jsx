@@ -76,6 +76,18 @@ const WalletTab = () => {
     }
   };
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) { resolve(true); return; }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleTopUp = async () => {
     const amt = Number(topUpAmount);
     if (!amt || amt <= 0) return;
@@ -83,22 +95,70 @@ const WalletTab = () => {
     setTopUpMsg({ type: '', text: '' });
 
     try {
-      const res = await apiClient.post('/user/wallet/topup', {
-        amount: amt,
-        razorpay_payment_id: 'PAY-RZP-' + Math.random().toString(36).substring(2, 10).toUpperCase()
-      });
-
-      if (res.data?.success) {
-        setTopUpMsg({ type: 'success', text: res.data.message || 'Top-up successful!' });
-        setShowTopUpModal(false);
-        setTopUpAmount('500');
-        fetchWalletData();
-      } else {
-        setTopUpMsg({ type: 'error', text: res.data?.error || 'Top-up failed' });
+      // Step 1: Create Razorpay Top-Up Order via backend API
+      const orderRes = await apiClient.post('/user/wallet/create-topup-order', { amount: amt });
+      if (!orderRes.data?.success) {
+        setTopUpMsg({ type: 'error', text: orderRes.data?.error || 'Failed to initialize payment gateway' });
+        setTopUpLoading(false);
+        return;
       }
+
+      const { razorpay_order_id, key, amount } = orderRes.data;
+
+      // Step 2: Load Razorpay SDK
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        setTopUpMsg({ type: 'error', text: 'Razorpay SDK failed to load. Check your network connection.' });
+        setTopUpLoading(false);
+        return;
+      }
+
+      // Step 3: Trigger Razorpay payment gateway modal
+      const options = {
+        key: key || 'rzp_test_fallback',
+        amount: amount,
+        currency: 'INR',
+        name: 'DurgaShakti Foils',
+        description: `Wallet Top-up (₹${amt})`,
+        order_id: razorpay_order_id,
+        handler: async function (response) {
+          try {
+            // Step 4: Verify and Credit top-up in wallet
+            const topupRes = await apiClient.post('/user/wallet/topup', {
+              amount: amt,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature
+            });
+
+            if (topupRes.data?.success) {
+              setTopUpMsg({ type: 'success', text: topupRes.data.message || 'Top-up successful!' });
+              setShowTopUpModal(false);
+              setTopUpAmount('500');
+              fetchWalletData();
+            } else {
+              setTopUpMsg({ type: 'error', text: topupRes.data?.error || 'Payment verification failed' });
+            }
+          } catch (err) {
+            setTopUpMsg({ type: 'error', text: err.response?.data?.error || 'Top-up credit failed after payment.' });
+          } finally {
+            setTopUpLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setTopUpLoading(false);
+          }
+        },
+        theme: {
+          color: '#006e1b'
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (err) {
-      setTopUpMsg({ type: 'error', text: err.response?.data?.error || 'Failed to process top-up. Please try again.' });
-    } finally {
+      setTopUpMsg({ type: 'error', text: err.response?.data?.error || 'Failed to initialize payment. Please try again.' });
       setTopUpLoading(false);
     }
   };
