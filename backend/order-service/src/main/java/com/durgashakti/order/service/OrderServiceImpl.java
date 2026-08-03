@@ -322,7 +322,44 @@ public class OrderServiceImpl implements OrderService {
 
         // COD validation already done at top of method (C-05)
 
-        if ("online".equalsIgnoreCase(req.getPaymentMethod())) {
+        if ("wallet".equalsIgnoreCase(req.getPaymentMethod())) {
+            // Deduct wallet balance
+            BigDecimal totalAmountBD = BigDecimal.valueOf(total);
+            List<Map<String, Object>> walletRows = jdbcTemplate.queryForList("SELECT id, balance FROM wallets WHERE user_id = ?", userId);
+
+            BigDecimal currentBalance = BigDecimal.ZERO;
+            if (!walletRows.isEmpty()) {
+                Object balObj = walletRows.get(0).get("balance");
+                if (balObj != null) {
+                    currentBalance = new BigDecimal(balObj.toString());
+                }
+            }
+
+            BigDecimal walletDeducted = currentBalance.min(totalAmountBD);
+            BigDecimal remainingDue = totalAmountBD.subtract(walletDeducted);
+
+            if (walletDeducted.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal newBalance = currentBalance.subtract(walletDeducted);
+                jdbcTemplate.update("UPDATE wallets SET balance = ?, updated_at = NOW() WHERE user_id = ?", newBalance, userId);
+
+                // Insert wallet debit transaction
+                jdbcTemplate.update(
+                    "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
+                    "VALUES (GENERATE_RANDOM_UUID(), ?, ?, 'DEBIT', 'ORDER_PAYMENT', ?, ?, 'SUCCESS', NOW())",
+                    userId, walletDeducted, orderNumber, "Order payment for #" + orderNumber
+                );
+            }
+
+            if (remainingDue.compareTo(BigDecimal.ZERO) <= 0) {
+                order.setOrderStatus("placed");
+                order.setPaymentStatus("paid via wallet");
+            } else {
+                order.setOrderStatus("pending_payment");
+                order.setPaymentStatus("wallet partial (pending ₹" + remainingDue + ")");
+                Map<String, Object> rOrder = paymentService.createRazorpayOrder(orderNumber, remainingDue.doubleValue());
+                order.setRazorpayOrderId(String.valueOf(rOrder.get("id")));
+            }
+        } else if ("online".equalsIgnoreCase(req.getPaymentMethod())) {
             order.setOrderStatus("pending_payment");
             order.setPaymentStatus("pending");
 

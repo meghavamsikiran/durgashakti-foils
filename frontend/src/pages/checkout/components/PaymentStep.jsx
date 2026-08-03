@@ -12,7 +12,10 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
   const maxCod = config.maximumCodAmount;
   const codCharge = config.codCharge;
 
-  const [walletBalance, setWalletBalance] = React.useState(0);
+  const [walletBalance, setWalletBalance] = React.useState(() => {
+    const cached = apiClient.getCachedDataSync('/user/wallet');
+    return cached?.data?.balance || 0;
+  });
 
   useEffect(() => {
     const fetchWallet = async () => {

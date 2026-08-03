@@ -19,7 +19,7 @@ public class OrderCreateRequest {
 
     @JsonProperty("payment_method")
     @NotBlank(message = "Payment method is required")
-    @Pattern(regexp = "^(online|cod)$", flags = Pattern.Flag.CASE_INSENSITIVE, message = "Payment method must be 'online' or 'cod'")
+    @Pattern(regexp = "^(online|cod|wallet)$", flags = Pattern.Flag.CASE_INSENSITIVE, message = "Payment method must be 'online', 'cod', or 'wallet'")
     private String paymentMethod;
 
     @JsonProperty("shipping_address")
