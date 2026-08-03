@@ -178,6 +178,22 @@ const WalletTab = () => {
     });
   };
 
+  const handleResetWallet = async () => {
+    if (!window.confirm('Are you sure you want to clear your test/mock wallet balance back to ₹0.00?')) return;
+    try {
+      setLoading(true);
+      const res = await apiClient.post('/user/wallet/reset');
+      if (res.data?.success) {
+        setBalance(0);
+        setTransactions([]);
+      }
+    } catch (err) {
+      console.error('Failed to reset wallet:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       
@@ -204,6 +220,17 @@ const WalletTab = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            {balance > 0 && (
+              <button
+                onClick={handleResetWallet}
+                title="Clear test balance"
+                className={`px-3.5 py-3 rounded-2xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                  isDark ? 'border-rose-500/30 text-rose-400 hover:bg-rose-500/10' : 'border-rose-200 text-rose-600 hover:bg-rose-50'
+                }`}
+              >
+                Reset Balance
+              </button>
+            )}
             <button
               onClick={() => { setShowTopUpModal(true); setTopUpMsg({ type: '', text: '' }); }}
               className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-md active:scale-95 ${

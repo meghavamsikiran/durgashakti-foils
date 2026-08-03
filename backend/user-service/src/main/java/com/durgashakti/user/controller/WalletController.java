@@ -51,6 +51,30 @@ public class WalletController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/user/wallet/reset")
+    public ResponseEntity<Map<String, Object>> resetWallet(Authentication authentication) {
+        UUID userId = UUID.fromString((String) authentication.getPrincipal());
+        
+        Optional<Wallet> walletOpt = walletRepository.findByUserId(userId);
+        if (walletOpt.isPresent()) {
+            Wallet wallet = walletOpt.get();
+            wallet.setBalance(BigDecimal.ZERO);
+            wallet.setUpdatedAt(OffsetDateTime.now());
+            walletRepository.save(wallet);
+        }
+
+        List<WalletTransaction> userTxs = walletTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        if (!userTxs.isEmpty()) {
+            walletTransactionRepository.deleteAll(userTxs);
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "newBalance", BigDecimal.ZERO,
+                "message", "Wallet balance reset to ₹0.00 successfully"
+        ));
+    }
+
     @PostMapping("/user/wallet/create-topup-order")
     public ResponseEntity<Map<String, Object>> createTopUpOrder(@RequestBody Map<String, Object> body, Authentication authentication) {
         double amountVal = Double.parseDouble(body.getOrDefault("amount", 0).toString());
