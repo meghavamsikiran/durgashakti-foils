@@ -311,9 +311,9 @@ export default function AiAssistant() {
                 <Bot className="h-4 w-4" />
               </div>
               <div>
-                <div className="flex items-center gap-1.5">
-                  <h4 className={`text-xs font-bold leading-none ${isDark ? 'text-white' : 'text-slate-850'}`}>DurgaShakti AI</h4>
-                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 ${
+                <div className="flex items-center gap-2 mb-0.5">
+                  <h4 className={`text-sm font-bold leading-none ${isDark ? 'text-white' : 'text-slate-850'}`}>DurgaShakti AI</h4>
+                  <span className={`text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 whitespace-nowrap ${
                     isDark ? 'bg-white/5 border-white/10 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                   }`}>
                     {currentCaseId}
