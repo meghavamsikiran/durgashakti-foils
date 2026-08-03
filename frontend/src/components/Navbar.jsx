@@ -386,35 +386,36 @@ const Navbar = () => {
         
         <div className="w-full px-4 md:px-8 lg:px-12">
           <div className="flex items-center justify-between h-16">
-            {/* Left Group: Logo + Left-Aligned Navigation Links */}
-            <div className="flex items-center gap-6 lg:gap-10">
-              <div className="flex items-center gap-2">
-                {isDashboard && (
-                  <button 
-                    type="button"
-                    onClick={() => window.dispatchEvent(new CustomEvent('toggle-customer-sidebar'))}
-                    className="xl:hidden p-2 -ml-2 text-white hover:text-[#25d958] active:text-[#25d958] hover:bg-[#25d958]/10 active:bg-[#25d958]/20 rounded-xl transition-colors focus:outline-none"
-                    aria-label="Toggle Dashboard Menu"
-                  >
-                    <Menu className="w-6 h-6" />
-                  </button>
-                )}
-                <Link to="/" className="flex items-center gap-2 py-2 h-14 no-underline" data-testid="navbar-logo">
-                  <img
-                    src="/favicon.webp"
-                    alt="Durga Maa"
-                    className="h-9 w-9 object-contain shrink-0"
-                  />
-                  <span className="flex flex-col leading-none gap-[2px]">
-                    <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '15px', letterSpacing: '-0.01em' }}>Durga Shakti Foils</span>
-                    <span className="italic font-inter" style={{ fontSize: '9.5px', letterSpacing: '0.02em', color: themeMode === 'light' ? '#006e1b' : 'rgba(37, 217, 88, 0.8)' }}>Wrap Purity, Seal Freshness</span>
-                  </span>
-                </Link>
-              </div>
+            {/* Left Group: Logo */}
+            <div className="flex items-center gap-2">
+              {isDashboard && (
+                <button 
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('toggle-customer-sidebar'))}
+                  className="xl:hidden p-2 -ml-2 text-white hover:text-[#25d958] active:text-[#25d958] hover:bg-[#25d958]/10 active:bg-[#25d958]/20 rounded-xl transition-colors focus:outline-none"
+                  aria-label="Toggle Dashboard Menu"
+                >
+                  <Menu className="w-6 h-6" />
+                </button>
+              )}
+              <Link to="/" className="flex items-center gap-2 py-2 h-14 no-underline" data-testid="navbar-logo">
+                <img
+                  src="/favicon.webp"
+                  alt="Durga Maa"
+                  className="h-9 w-9 object-contain shrink-0"
+                />
+                <span className="flex flex-col leading-none gap-[2px]">
+                  <span className="font-serif font-bold text-white tracking-tight" style={{ fontSize: '15px', letterSpacing: '-0.01em' }}>Durga Shakti Foils</span>
+                  <span className="italic font-inter" style={{ fontSize: '9.5px', letterSpacing: '0.02em', color: themeMode === 'light' ? '#006e1b' : 'rgba(37, 217, 88, 0.8)' }}>Wrap Purity, Seal Freshness</span>
+                </span>
+              </Link>
+            </div>
 
-              {/* 21st.dev Left-Aligned Animated Hover-Sliding Underline Navigation */}
+            {/* Right Group: Nav Links (Towards Left of Search) + Search, Cart, Account */}
+            <div className="hidden md:flex items-center gap-5 lg:gap-7 font-inter">
+              {/* 21st.dev Text-Only Animated Hover-Sliding Underline Navigation */}
               <div 
-                className="hidden md:flex items-center gap-1 font-sans relative"
+                className="flex items-center gap-1 font-sans relative mr-2"
                 onMouseLeave={() => setHoveredPath(null)}
               >
                 {[
@@ -450,11 +451,6 @@ const Navbar = () => {
                   );
                 })}
               </div>
-            </div>
-
-            {/* Right Group: Search, Cart, Account */}
-
-          <div className="hidden md:flex items-center gap-6 font-inter">
             {/* Search Input / Toggle */}
             <div className="relative" ref={searchRef}>
               {isSearchOpen ? (

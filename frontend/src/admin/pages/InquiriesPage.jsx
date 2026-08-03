@@ -57,7 +57,7 @@ function rangeForPreset(key) {
 }
 
 const InquiriesPage = () => {
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 5;
   
   // Tab states
   const [activeSubTab, setActiveSubTab] = useState('tickets'); // 'tickets' or 'live_chat'
@@ -720,13 +720,14 @@ const InquiriesPage = () => {
                 })()}
               />
             </div>
-            {total > PAGE_SIZE && (
-              <div className="px-8 py-4 border-t border-slate-200/60 bg-slate-55/30">
+            {total > 0 && (
+              <div className="px-8 py-4 border-t border-slate-200/60 bg-slate-50/50">
                 <TablePagination
-                  total={total}
+                  currentPage={page}
+                  totalPages={Math.ceil(total / PAGE_SIZE) || 1}
+                  onPageChange={(p) => loadInquiries(p)}
+                  totalItems={total}
                   pageSize={PAGE_SIZE}
-                  page={page}
-                  onChange={(p) => loadInquiries(p)}
                 />
               </div>
             )}
