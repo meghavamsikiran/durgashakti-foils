@@ -197,15 +197,15 @@ const AdminLayout = () => {
             
             const linkClass = isActive 
               ? (isLight
-                ? 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group bg-emerald-50 text-[#006e1b] border-l-4 border-[#006e1b] pl-2.5 font-bold shadow-sm'
-                : 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group bg-[rgba(11,209,61,0.12)] hover:bg-[rgba(11,209,61,0.16)] text-[#16E34A] border-l-4 border-primary pl-2.5 font-bold')
+                ? 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group bg-emerald-50 text-[#006e1b] border-l-4 border-[#006e1b] pl-2.5 font-bold shadow-sm focus:outline-none focus:ring-0'
+                : 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group bg-[rgba(11,209,61,0.12)] text-[#25D958] border-l-4 border-[#25D958] pl-2.5 font-bold focus:outline-none focus:ring-0')
               : (isLight
-                ? 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group text-slate-800 pl-3 font-semibold hover:text-[#006e1b] hover:bg-emerald-50/60'
-                : 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group text-slate-300 pl-3 font-medium hover:text-[#16E34A] hover:bg-[#19231F]/55');
+                ? 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group text-slate-800 pl-3 font-semibold hover:text-[#006e1b] hover:bg-emerald-50/60 focus:outline-none focus:ring-0'
+                : 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group text-slate-300 pl-3 font-medium hover:text-[#25D958] hover:bg-[#25D958]/10 focus:outline-none focus:ring-0');
 
             const iconClass = isActive
-              ? (isLight ? 'w-4 h-4 transition-colors text-[#006e1b]' : 'w-4 h-4 transition-colors text-[#16E34A]')
-              : (isLight ? 'w-4 h-4 transition-colors text-slate-600 group-hover:text-[#006e1b]' : 'w-4 h-4 transition-colors text-slate-500 group-hover:text-[#16E34A]');
+              ? (isLight ? 'w-4 h-4 transition-colors text-[#006e1b]' : 'w-4 h-4 transition-colors text-[#25D958]')
+              : (isLight ? 'w-4 h-4 transition-colors text-slate-600 group-hover:text-[#006e1b]' : 'w-4 h-4 transition-colors text-slate-500 group-hover:text-[#25D958]');
 
             return (
               <Link

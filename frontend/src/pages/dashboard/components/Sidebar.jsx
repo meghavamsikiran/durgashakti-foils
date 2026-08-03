@@ -37,21 +37,21 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
               onClick={() => {
                 if (navigate) navigate(`/dashboard/${item.id}`);
               }}
-              className={`w-full flex items-center justify-between py-3 px-3.5 rounded-xl text-sm transition-all duration-200 group focus:outline-none focus:ring-0 ${
+              className={`w-full flex items-center justify-between py-2.5 rounded-lg text-sm transition-all duration-200 group focus:outline-none focus:ring-0 ${
                 activeTab === item.id 
                   ? (isDark 
-                      ? 'bg-[#25D958]/10 text-[#25D958] font-bold border-l-4 border-[#25D958] pl-2.5' 
-                      : 'bg-[#006e1b]/10 text-[#006e1b] font-bold border-l-4 border-[#006e1b] pl-2.5') 
+                      ? 'bg-[rgba(11,209,61,0.12)] text-[#25D958] border-l-4 border-[#25D958] pl-2.5 font-bold' 
+                      : 'bg-emerald-50 text-[#006e1b] border-l-4 border-[#006e1b] pl-2.5 font-bold shadow-sm') 
                   : (isDark 
-                      ? 'text-slate-400 font-medium hover:bg-[#25D958]/10 hover:text-[#25D958]' 
-                      : 'text-slate-700 font-bold hover:bg-[#006e1b]/10 hover:text-[#006e1b]')
+                      ? 'text-slate-300 pl-3 font-medium hover:text-[#25D958] hover:bg-[#25D958]/10' 
+                      : 'text-slate-800 pl-3 font-semibold hover:text-[#006e1b] hover:bg-emerald-50/60')
               }`}
             >
-              <div className="flex items-center gap-3.5">
-                <item.icon className={`w-5 h-5 transition-colors ${
+              <div className="flex items-center gap-3">
+                <item.icon className={`w-4.5 h-4.5 transition-colors ${
                   activeTab === item.id 
                     ? (isDark ? 'text-[#25D958]' : 'text-[#006e1b]') 
-                    : (isDark ? 'text-slate-500 group-hover:text-slate-300' : 'text-slate-650 group-hover:text-slate-800')
+                    : (isDark ? 'text-slate-500 group-hover:text-[#25D958]' : 'text-slate-600 group-hover:text-[#006e1b]')
                 }`} />
                 <span>{item.label}</span>
               </div>
@@ -130,21 +130,21 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
                 setSidebarOpen(false);
                 if (navigate) navigate(`/dashboard/${item.id}`);
               }}
-              className={`w-full flex items-center justify-between py-3 px-3.5 rounded-xl text-sm transition-all duration-200 focus:outline-none focus:ring-0 ${
+              className={`w-full flex items-center justify-between py-2.5 rounded-lg text-sm transition-all duration-200 group focus:outline-none focus:ring-0 ${
                 activeTab === item.id 
                   ? (isDark 
-                      ? 'bg-[#25D958]/10 text-[#25D958] font-bold border-l-4 border-[#25D958] pl-2.5' 
-                      : 'bg-[#006e1b]/10 text-[#006e1b] font-bold border-l-4 border-[#006e1b] pl-2.5') 
+                      ? 'bg-[rgba(11,209,61,0.12)] text-[#25D958] border-l-4 border-[#25D958] pl-2.5 font-bold' 
+                      : 'bg-emerald-50 text-[#006e1b] border-l-4 border-[#006e1b] pl-2.5 font-bold shadow-sm') 
                   : (isDark 
-                      ? 'text-slate-400 font-medium hover:bg-[#25D958]/10 hover:text-[#25D958]' 
-                      : 'text-slate-700 font-bold hover:bg-[#006e1b]/10 hover:text-[#006e1b]')
+                      ? 'text-slate-300 pl-3 font-medium hover:text-[#25D958] hover:bg-[#25D958]/10' 
+                      : 'text-slate-800 pl-3 font-semibold hover:text-[#006e1b] hover:bg-emerald-50/60')
               }`}
             >
-              <div className="flex items-center gap-3.5">
-                <item.icon className={`w-5 h-5 ${
+              <div className="flex items-center gap-3">
+                <item.icon className={`w-4.5 h-4.5 transition-colors ${
                   activeTab === item.id 
                     ? (isDark ? 'text-[#25D958]' : 'text-[#006e1b]') 
-                    : (isDark ? 'text-slate-500' : 'text-slate-650')
+                    : (isDark ? 'text-slate-500 group-hover:text-[#25D958]' : 'text-slate-600 group-hover:text-[#006e1b]')
                 }`} />
                 <span>{item.label}</span>
               </div>
