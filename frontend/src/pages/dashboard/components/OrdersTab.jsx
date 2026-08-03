@@ -598,7 +598,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                         title="Submit Feedback or Report Damage via WhatsApp"
                       >
                         <MessageSquare className="w-3.5 h-3.5" />
-                        WhatsApp AI Feedback
+                        WhatsApp Feedback & Support
                       </button>
                     )}
                     <button 

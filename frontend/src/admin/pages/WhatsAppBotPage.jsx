@@ -91,13 +91,13 @@ const WhatsAppBotPage = () => {
           </div>
           <div>
             <h1 className="text-2xl font-black tracking-tight uppercase text-slate-900 dark:text-white flex items-center gap-2">
-              WhatsApp AI Control Center
+              WhatsApp Feedback & Support Center
               <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                Post-Delivery AI
+                Post-Delivery Support
               </span>
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-0.5 text-xs font-medium">
-              Manage automated post-delivery AI feedback triggers, customer WhatsApp messaging, and API keys.
+              Manage automated post-delivery customer feedback triggers, WhatsApp business number, and messaging integration.
             </p>
           </div>
         </div>
