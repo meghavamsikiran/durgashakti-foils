@@ -38,6 +38,11 @@ export default function AiAssistant() {
   const [showHistory, setShowHistory] = useState(false);
   const [userSessions, setUserSessions] = useState([]);
   const scrollRef = useRef(null);
+  const loadingRef = useRef(loading);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
 
   useEffect(() => {
     const fetchHelpline = async () => {
@@ -140,7 +145,9 @@ export default function AiAssistant() {
       fetchHistory(true);
       
       intervalId = setInterval(() => {
-        fetchHistory(false);
+        if (!loadingRef.current) {
+          fetchHistory(false);
+        }
       }, 4000);
     }
     
