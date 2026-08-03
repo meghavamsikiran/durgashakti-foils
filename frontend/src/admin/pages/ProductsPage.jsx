@@ -700,11 +700,13 @@ const ProductsPage = () => {
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Primary Product Image</label>
                 <div className="flex gap-4">
-                  <div className={`flex-1 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-4 transition-all ${form.image_url ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 hover:border-primary'}`}>
+                  <div className={`flex-1 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-4 transition-all ${
+                    form.image_url ? 'border-emerald-500/50 bg-emerald-950/20' : 'border-[#26322B] hover:border-primary/60 bg-transparent'
+                  }`}>
                     {imageUploading ? (
                       <div className="flex flex-col items-center gap-2">
                         <Upload className="w-8 h-8 text-primary animate-bounce" />
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Uploading...</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Uploading...</span>
                       </div>
                     ) : form.image_url ? (
                       <div className="flex flex-col items-center gap-2">
@@ -712,8 +714,8 @@ const ProductsPage = () => {
                         <button onClick={() => setForm({...form, image_url: ''})} className="text-[9px] font-black text-rose-500 uppercase tracking-widest hover:underline">Change Image</button>
                       </div>
                     ) : (
-                      <label htmlFor="img-up" className="flex flex-col items-center gap-2 cursor-pointer w-full h-full justify-center">
-                        <Upload className="w-8 h-8 text-slate-300" />
+                      <label htmlFor="img-up" className="flex flex-col items-center gap-2 cursor-pointer w-full h-full justify-center py-2">
+                        <Upload className="w-8 h-8 text-slate-400" />
                         <input 
                           type="file" 
                           className="hidden" 
@@ -736,8 +738,8 @@ const ProductsPage = () => {
                             }
                           }} 
                         />
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-primary transition-colors">
-                          Choose File
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-primary transition-colors">
+                          CHOOSE FILE
                         </span>
                       </label>
                     )}
@@ -755,12 +757,12 @@ const ProductsPage = () => {
                   </span>
                 </div>
 
-                <div className={`border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-6 transition-all relative ${
+                <div className={`border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-4 transition-all relative ${
                   mediaUploading ? 'border-primary/40 bg-primary/10' :
                   (form.media_urls || []).length >= 10 ? 'border-[#26322B] bg-[#0c1410] opacity-60 cursor-not-allowed' :
-                  'border-[#26322B] hover:border-primary/60 bg-[#050807]'
+                  'border-[#26322B] hover:border-primary/60 bg-transparent'
                 }`}>
-                  <label htmlFor="media-up" className={`flex flex-col items-center gap-2 w-full h-full justify-center ${
+                  <label htmlFor="media-up" className={`flex flex-col items-center gap-2 w-full h-full justify-center py-2 ${
                     (form.media_urls || []).length >= 10 || mediaUploading ? 'cursor-not-allowed' : 'cursor-pointer'
                   }`}>
                     <Upload className={`w-8 h-8 ${mediaUploading ? 'text-primary animate-bounce' : 'text-slate-400'}`} />
@@ -773,12 +775,12 @@ const ProductsPage = () => {
                       disabled={mediaUploading || (form.media_urls || []).length >= 10}
                       onChange={e => handleMediaUpload(e.target.files)}
                     />
-                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
-                      {mediaUploading ? 'Uploading assets...' :
-                       (form.media_urls || []).length >= 10 ? 'Gallery Full (10 max)' : 'Upload Images / Videos'}
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-primary transition-colors">
+                      {mediaUploading ? 'UPLOADING ASSETS...' :
+                       (form.media_urls || []).length >= 10 ? 'GALLERY FULL (10 MAX)' : 'UPLOAD IMAGES / VIDEOS'}
                     </span>
                     <span className="text-[8px] text-slate-400 uppercase tracking-wider">
-                      Supports PNG, JPG, WEBP, GIF (Max 5MB) & MP4, WEBM, MOV (Max 50MB)
+                      SUPPORTS PNG, JPG, WEBP, GIF (MAX 5MB) & MP4, WEBM, MOV (MAX 50MB)
                     </span>
                   </label>
                 </div>
@@ -786,7 +788,7 @@ const ProductsPage = () => {
                 {(form.media_urls || []).length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-4">
                     {(form.media_urls || []).map((item, idx) => (
-                      <div key={idx} className="aspect-square relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group hover:border-primary transition-colors shadow-sm">
+                      <div key={idx} className="aspect-square relative rounded-xl overflow-hidden border border-slate-200 dark:border-[#26322B] bg-slate-50 dark:bg-[#050807] group hover:border-primary transition-colors shadow-sm">
                         {item.type === 'video' ? (
                           <div className="w-full h-full flex flex-col items-center justify-center p-1 bg-slate-900 text-white relative">
                             <video src={`${formatImageUrl(item.url)}#t=0.001`} className="w-full h-full object-cover opacity-60" muted playsInline preload="metadata" />
@@ -824,9 +826,10 @@ const ProductsPage = () => {
                   )}
                 </div>
 
-                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-                  <table className="min-w-[800px] w-full text-left">
-                    <thead className="bg-slate-50 border-b border-slate-200">
+                <div className="rounded-2xl border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#050807] overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-[800px] w-full text-left">
+                      <thead className="bg-slate-50 dark:bg-[#121f19] border-b border-slate-200 dark:border-[#26322B]">
                       <tr>
                         <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 min-w-[110px] w-[15%]">Size</th>
                         <th className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 min-w-[150px] w-[20%]">SKU</th>
@@ -927,6 +930,7 @@ const ProductsPage = () => {
                     </tbody>
                   </table>
                 </div>
+              </div>
 
                 {!isEdit && (
                   <button type="button" onClick={addVariantRow} className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-primary hover:text-emerald-700">
