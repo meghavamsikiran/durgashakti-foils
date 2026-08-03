@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Clock, Search, Filter, RefreshCw, ChevronDown, Copy, Check } from 'lucide-react';
+import { ShoppingBag, Clock, Search, Filter, RefreshCw, ChevronDown, Copy, Check, MessageSquare } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import TablePagination from '../../../components/ui/TablePagination';
 import { useNavigate } from 'react-router-dom';
@@ -563,6 +563,19 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                   <div className="flex gap-2">
                     {['pending', 'pending_payment', 'processing'].includes(order.order_status) && (
                       <Button variant="ghost" onClick={() => onCancelOrder(order.id)} className="text-rose-400 hover:bg-rose-500/10 rounded-lg text-xs font-bold px-3">Cancel</Button>
+                    )}
+                    {(order.order_status || '').toLowerCase() === 'delivered' && (
+                      <button
+                        onClick={() => {
+                          const text = encodeURIComponent(`Hi DurgaShakti Foils, I have feedback/concern regarding my delivered order #${order.order_number}`);
+                          window.open(`https://wa.me/919999999999?text=${text}`, '_blank');
+                        }}
+                        className="px-3 py-2 text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                        title="Submit Feedback or Report Damage via WhatsApp"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        WhatsApp AI Feedback
+                      </button>
                     )}
                     <button 
                       onClick={() => window.open(`/order/${order.id}`, '_blank')}

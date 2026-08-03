@@ -44,19 +44,22 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     private String razorpayKeySecret;
 
     private final com.durgashakti.common.service.InvoiceService invoiceService;
+    private final WhatsAppNotificationService whatsAppNotificationService;
 
     public AdminOrderServiceImpl(AdminOrderRepository orderRepository,
                                  AdminProductRepository productRepository,
                                  AuditLogRepository auditLogRepository,
                                  AdminUserRepository userRepository,
                                  EmailClient emailClient,
-                                 com.durgashakti.common.service.InvoiceService invoiceService) {
+                                 com.durgashakti.common.service.InvoiceService invoiceService,
+                                 WhatsAppNotificationService whatsAppNotificationService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.auditLogRepository = auditLogRepository;
         this.userRepository = userRepository;
         this.emailClient = emailClient;
         this.invoiceService = invoiceService;
+        this.whatsAppNotificationService = whatsAppNotificationService;
     }
 
     /**
@@ -240,6 +243,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         } else if ("delivered".equals(statusLower)) {
             sendOrderEmail(order, "Order Delivered: " + order.getOrderNumber(), 
                 "Great news! Your order " + order.getOrderNumber() + " has been marked as delivered. We hope you enjoy your purchase!");
+            whatsAppNotificationService.sendPostDeliveryFeedback(order);
         } else if ("cancelled".equals(statusLower)) {
             // Restore product stock when admin cancels the order
             final String finalOrderNum = order.getOrderNumber();
