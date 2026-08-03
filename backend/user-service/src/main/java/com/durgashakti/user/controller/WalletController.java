@@ -133,6 +133,21 @@ public class WalletController {
 
         BigDecimal amount = BigDecimal.valueOf(amountVal);
 
+        // Idempotency Check: Prevent duplicate crediting for the same Razorpay payment ID
+        if (razorpayPaymentId != null && !razorpayPaymentId.isBlank()) {
+            boolean alreadyProcessed = walletTransactionRepository.findAll().stream()
+                    .anyMatch(tx -> razorpayPaymentId.equals(tx.getReferenceId()));
+            if (alreadyProcessed) {
+                Wallet wallet = walletRepository.findByUserId(userId)
+                        .orElseGet(() -> new Wallet(userId, BigDecimal.ZERO));
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "newBalance", wallet.getBalance(),
+                        "message", "Payment already processed."
+                ));
+            }
+        }
+
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseGet(() -> new Wallet(userId, BigDecimal.ZERO));
 
