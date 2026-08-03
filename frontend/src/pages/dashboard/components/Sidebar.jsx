@@ -37,14 +37,14 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
               onClick={() => {
                 if (navigate) navigate(`/dashboard/${item.id}`);
               }}
-              className={`w-full flex items-center justify-between py-3 px-3.5 rounded-xl text-sm transition-all duration-200 group ${
+              className={`w-full flex items-center justify-between py-3 px-3.5 rounded-xl text-sm transition-all duration-200 group focus:outline-none focus:ring-0 ${
                 activeTab === item.id 
                   ? (isDark 
-                      ? 'bg-[#25D958]/10 text-[#25D958] font-bold border-l-4 border-[#25D958] pl-2.5 rounded-l-none' 
-                      : 'bg-[#006e1b]/10 text-[#006e1b] font-bold border-l-4 border-[#006e1b] pl-2.5 rounded-l-none') 
+                      ? 'bg-[#25D958]/10 text-[#25D958] font-bold border-l-4 border-[#25D958] pl-2.5' 
+                      : 'bg-[#006e1b]/10 text-[#006e1b] font-bold border-l-4 border-[#006e1b] pl-2.5') 
                   : (isDark 
-                      ? 'text-slate-400 font-medium hover:bg-[#19231F]/60 hover:text-white' 
-                      : 'text-slate-700 font-bold hover:bg-[#bbcbb5]/30 hover:text-slate-900')
+                      ? 'text-slate-400 font-medium hover:bg-[#25D958]/10 hover:text-[#25D958]' 
+                      : 'text-slate-700 font-bold hover:bg-[#006e1b]/10 hover:text-[#006e1b]')
               }`}
             >
               <div className="flex items-center gap-3.5">
@@ -130,14 +130,14 @@ const Sidebar = ({ user, activeTab, wishlistCount, onLogout, sidebarOpen, setSid
                 setSidebarOpen(false);
                 if (navigate) navigate(`/dashboard/${item.id}`);
               }}
-              className={`w-full flex items-center justify-between py-3 px-3.5 rounded-xl text-sm transition-all duration-200 ${
+              className={`w-full flex items-center justify-between py-3 px-3.5 rounded-xl text-sm transition-all duration-200 focus:outline-none focus:ring-0 ${
                 activeTab === item.id 
                   ? (isDark 
-                      ? 'bg-[#25D958]/10 text-[#25D958] font-bold border-l-4 border-[#25D958] pl-2.5 rounded-l-none' 
-                      : 'bg-[#006e1b]/10 text-[#006e1b] font-bold border-l-4 border-[#006e1b] pl-2.5 rounded-l-none') 
+                      ? 'bg-[#25D958]/10 text-[#25D958] font-bold border-l-4 border-[#25D958] pl-2.5' 
+                      : 'bg-[#006e1b]/10 text-[#006e1b] font-bold border-l-4 border-[#006e1b] pl-2.5') 
                   : (isDark 
-                      ? 'text-slate-400 font-medium hover:bg-[#19231F]/60 hover:text-white' 
-                      : 'text-slate-700 font-bold hover:bg-[#bbcbb5]/30 hover:text-slate-900')
+                      ? 'text-slate-400 font-medium hover:bg-[#25D958]/10 hover:text-[#25D958]' 
+                      : 'text-slate-700 font-bold hover:bg-[#006e1b]/10 hover:text-[#006e1b]')
               }`}
             >
               <div className="flex items-center gap-3.5">
