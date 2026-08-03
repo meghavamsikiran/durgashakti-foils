@@ -6,7 +6,7 @@ import com.durgashakti.common.entity.WalletVoucher;
 import com.durgashakti.user.repository.WalletRepository;
 import com.durgashakti.user.repository.WalletTransactionRepository;
 import com.durgashakti.user.repository.WalletVoucherRepository;
-import com.durgashakti.user.repository.UserRepository;
+import com.durgashakti.user.repository.UserProfileRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -22,12 +22,12 @@ public class WalletController {
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
     private final WalletVoucherRepository walletVoucherRepository;
-    private final UserRepository userRepository;
+    private final UserProfileRepository userRepository;
 
     public WalletController(WalletRepository walletRepository,
                             WalletTransactionRepository walletTransactionRepository,
                             WalletVoucherRepository walletVoucherRepository,
-                            UserRepository userRepository) {
+                            UserProfileRepository userRepository) {
         this.walletRepository = walletRepository;
         this.walletTransactionRepository = walletTransactionRepository;
         this.walletVoucherRepository = walletVoucherRepository;

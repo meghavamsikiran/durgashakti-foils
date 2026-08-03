@@ -26,9 +26,13 @@ import java.util.Map;
  * Each provider is tried with multiple models. If all providers fail,
  * an exception is thrown and the controller returns a friendly message.
  */
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Slf4j
 @Service
 public class GeminiFailoverService {
+    private static final Logger log = LoggerFactory.getLogger(GeminiFailoverService.class);
 
     // Cache-buster to trigger fresh Render compilation without build cache: v2
     private static final String GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
