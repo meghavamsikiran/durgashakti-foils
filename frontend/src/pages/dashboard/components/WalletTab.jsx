@@ -59,6 +59,19 @@ const WalletTab = () => {
     fetchWalletData();
   }, []);
 
+  const isVoucherRedeemed = (v) => {
+    return Boolean(
+      v.isRedeemed || 
+      v.is_redeemed || 
+      v.redeemed || 
+      v.redeemedAt || 
+      v.redeemed_at || 
+      v.redeemedByUserId || 
+      v.redeemed_by_user_id ||
+      String(v.status || '').toUpperCase() === 'REDEEMED'
+    );
+  };
+
   const handleRedeemVoucher = async (e) => {
     e.preventDefault();
     if (!voucherCode.trim()) return;
@@ -72,13 +85,16 @@ const WalletTab = () => {
         setVoucherCode('');
         fetchWalletData();
       } else {
-        setVoucherMsg({ type: 'error', text: res.data?.error || 'Failed to redeem voucher' });
+        const errText = res.data?.message || res.data?.error || res.data?.detail || 'Failed to redeem voucher';
+        setVoucherMsg({ type: 'error', text: errText });
       }
     } catch (err) {
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.response?.data?.detail || err.message || 'Invalid or expired voucher code';
       setVoucherMsg({ 
         type: 'error', 
-        text: err.response?.data?.error || 'Invalid or expired voucher code' 
+        text: errMsg 
       });
+      fetchWalletData();
     } finally {
       setVoucherLoading(false);
     }
@@ -315,7 +331,7 @@ const WalletTab = () => {
             <h3 className={`text-xs font-black uppercase tracking-wider ${isDark ? '' : 'text-slate-800'}`}>Your Available Vouchers</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {vouchers.filter(v => !v.isRedeemed).map((v) => (
+            {vouchers.filter(v => !isVoucherRedeemed(v)).map((v) => (
               <div 
                 key={v.id} 
                 className={`p-5 rounded-2xl border ${
@@ -351,7 +367,9 @@ const WalletTab = () => {
                       <span className={`text-sm font-mono font-black ${isDark ? 'text-amber-300' : 'text-amber-900'}`}>{v.code}</span>
                       <button 
                         onClick={() => {
-                          navigator.clipboard.writeText(v.code);
+                          if (navigator?.clipboard?.writeText) {
+                            navigator.clipboard.writeText(v.code);
+                          }
                           toast.success(`Copied voucher code: ${v.code}`);
                         }}
                         className={`p-1.5 rounded-lg transition-all ${
@@ -371,8 +389,48 @@ const WalletTab = () => {
                 </div>
               </div>
             ))}
-            {vouchers.filter(v => !v.isRedeemed).length === 0 && (
-              <p className="text-xs text-slate-500 col-span-full">No active vouchers available.</p>
+
+            {/* REDEEMED VOUCHERS (Greyed out) */}
+            {vouchers.filter(v => isVoucherRedeemed(v)).map((v) => (
+              <div 
+                key={v.id} 
+                className={`p-5 rounded-2xl border ${
+                  isDark 
+                    ? 'bg-white/5 border-white/10 opacity-50 grayscale' 
+                    : 'bg-slate-100 border-slate-200 opacity-60 grayscale'
+                } relative overflow-hidden flex flex-col justify-between min-h-[110px] select-none`}
+              >
+                {/* Left Ticket Side Notch */}
+                <div className={`absolute -left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full border ${
+                  isDark ? 'bg-[#070b09] border-white/10' : 'bg-white border-slate-200'
+                } z-20`} />
+
+                {/* Right Ticket Side Notch */}
+                <div className={`absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full border ${
+                  isDark ? 'bg-[#070b09] border-white/10' : 'bg-white border-slate-200'
+                } z-20`} />
+
+                <div className="flex justify-between items-start relative z-10 pr-12">
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Voucher Code</span>
+                      <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-300 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+                        Redeemed
+                      </span>
+                    </div>
+                    <span className="text-sm font-mono font-black text-slate-400 line-through block">{v.code}</span>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200 dark:border-white/10 flex items-baseline justify-between relative z-10">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Value</span>
+                  <span className="text-xl font-black text-slate-400">₹{v.amount}</span>
+                </div>
+              </div>
+            ))}
+
+            {vouchers.length === 0 && (
+              <p className="text-xs text-slate-500 col-span-full">No vouchers assigned yet.</p>
             )}
           </div>
         </div>
