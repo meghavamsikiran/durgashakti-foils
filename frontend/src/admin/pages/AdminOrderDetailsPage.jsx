@@ -283,7 +283,7 @@ const AdminOrderDetailsPage = () => {
       }
       setTimeout(() => fetchOrderDetails(true), 800);
     } catch (err) {
-      toast.error(err?.response?.data?.detail || 'Failed to process refund', { id: toastId });
+      toast.error(err?.response?.data?.message || 'Failed to process refund', { id: toastId });
     } finally {
       setPendingActionIds(prev => {
         const next = new Set(prev);
