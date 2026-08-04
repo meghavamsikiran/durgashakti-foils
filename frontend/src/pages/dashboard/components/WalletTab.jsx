@@ -315,27 +315,59 @@ const WalletTab = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {vouchers.filter(v => !v.isRedeemed).map((v) => (
-              <div key={v.id} className={`p-4 rounded-2xl border ${
-                isDark ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'
-              } space-y-2 relative overflow-hidden`}>
-                <div className="absolute top-0 right-0 p-2 opacity-10">
-                  <Ticket className="w-12 h-12" />
+              <div 
+                key={v.id} 
+                className={`p-5 rounded-2xl border ${
+                  isDark 
+                    ? 'bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-transparent border-amber-500/30' 
+                    : 'bg-gradient-to-br from-amber-500/10 via-amber-50/60 to-white border-amber-300/80 shadow-xs'
+                } relative overflow-hidden flex flex-col justify-between min-h-[110px] transition-all hover:scale-[1.01] group`}
+              >
+                {/* Left Ticket Side Notch */}
+                <div className={`absolute -left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full border ${
+                  isDark ? 'bg-[#070b09] border-amber-500/30' : 'bg-white border-amber-300'
+                } z-20 shadow-inner`} />
+
+                {/* Right Ticket Side Notch */}
+                <div className={`absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full border ${
+                  isDark ? 'bg-[#070b09] border-amber-500/30' : 'bg-white border-amber-300'
+                } z-20 shadow-inner`} />
+
+                {/* Vertical Perforated Ticket Line */}
+                <div className={`absolute left-[68%] top-2 bottom-2 w-0 border-l-2 border-dashed ${
+                  isDark ? 'border-amber-500/20' : 'border-amber-300/70'
+                } z-10`} />
+
+                {/* Background Watermark Icon */}
+                <div className="absolute top-1/2 -translate-y-1/2 right-2 opacity-[0.08] dark:opacity-[0.15] pointer-events-none z-0">
+                  <Ticket className="w-16 h-16 text-amber-500" />
                 </div>
-                <div className="flex justify-between items-center relative z-10">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-xs font-mono font-black ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>{v.code}</span>
-                    <button 
-                      onClick={() => navigator.clipboard.writeText(v.code)}
-                      className={`p-1 rounded transition-colors ${
-                        isDark ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-200 text-slate-500 hover:text-slate-900'
-                      }`}
-                      title="Copy Voucher Code"
-                    >
-                      <Copy className="w-3 h-3" />
-                    </button>
+
+                <div className="flex justify-between items-start relative z-10 pr-12">
+                  <div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 block mb-0.5">Voucher Code</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-sm font-mono font-black ${isDark ? 'text-amber-300' : 'text-amber-900'}`}>{v.code}</span>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(v.code);
+                          toast.success(`Copied voucher code: ${v.code}`);
+                        }}
+                        className={`p-1.5 rounded-lg transition-all ${
+                          isDark ? 'hover:bg-white/10 text-amber-400' : 'hover:bg-amber-100 text-amber-700'
+                        }`}
+                        title="Copy Voucher Code"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <p className={`text-lg font-black relative z-10 ${isDark ? 'text-white' : 'text-slate-900'}`}>₹{v.amount}</p>
+
+                <div className="pt-3 border-t border-amber-500/15 flex items-baseline justify-between relative z-10">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400">Discount Value</span>
+                  <span className={`text-xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>₹{v.amount}</span>
+                </div>
               </div>
             ))}
             {vouchers.filter(v => !v.isRedeemed).length === 0 && (
