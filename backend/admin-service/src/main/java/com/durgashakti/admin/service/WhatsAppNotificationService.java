@@ -1,6 +1,8 @@
 package com.durgashakti.admin.service;
 
 import com.durgashakti.common.entity.Order;
+import com.durgashakti.common.entity.Setting;
+import com.durgashakti.admin.repository.AdminSettingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class WhatsAppNotificationService {
@@ -20,21 +23,60 @@ public class WhatsAppNotificationService {
     private static final Logger log = LoggerFactory.getLogger(WhatsAppNotificationService.class);
 
     @Value("${whatsapp.api.token:}")
-    private String whatsAppApiToken;
+    private String envWhatsAppApiToken;
 
     @Value("${whatsapp.phone.number.id:}")
-    private String whatsAppPhoneNumberId;
+    private String envWhatsAppPhoneNumberId;
 
-    @Value("${whatsapp.business.number:919999999999}")
-    private String whatsAppBusinessNumber;
+    @Value("${whatsapp.business.number:919901452954}")
+    private String envWhatsAppBusinessNumber;
 
+    private final AdminSettingRepository settingRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
+    public WhatsAppNotificationService(AdminSettingRepository settingRepository) {
+        this.settingRepository = settingRepository;
+    }
+
     /**
-     * Triggers post-delivery feedback notification via WhatsApp Cloud API or logs webhook payload.
+     * Triggers post-delivery feedback notification via Meta WhatsApp Cloud API dynamically configured from database or env.
      */
     public void sendPostDeliveryFeedback(Order order) {
         if (order == null) return;
+
+        // Fetch dynamic settings saved by Superadmin in Admin Panel
+        String apiToken = envWhatsAppApiToken;
+        String phoneNumberId = envWhatsAppPhoneNumberId;
+        String businessNumber = envWhatsAppBusinessNumber;
+        boolean isEnabled = true;
+
+        try {
+            Optional<Setting> settingOpt = settingRepository.findById("whatsapp_ai_feedback");
+            if (settingOpt.isPresent()) {
+                Map<String, Object> val = settingOpt.get().getValue();
+                if (val != null) {
+                    if (val.containsKey("enabled") && val.get("enabled") instanceof Boolean) {
+                        isEnabled = (Boolean) val.get("enabled");
+                    }
+                    if (val.containsKey("apiToken") && val.get("apiToken") != null && !val.get("apiToken").toString().isBlank()) {
+                        apiToken = val.get("apiToken").toString().trim();
+                    }
+                    if (val.containsKey("phoneNumberId") && val.get("phoneNumberId") != null && !val.get("phoneNumberId").toString().isBlank()) {
+                        phoneNumberId = val.get("phoneNumberId").toString().trim();
+                    }
+                    if (val.containsKey("businessNumber") && val.get("businessNumber") != null && !val.get("businessNumber").toString().isBlank()) {
+                        businessNumber = val.get("businessNumber").toString().replaceAll("[^0-9]", "");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[WhatsApp Notification] Failed to read dynamic database settings, falling back to default values: {}", e.getMessage());
+        }
+
+        if (!isEnabled) {
+            log.info("[WhatsApp Notification] Post-delivery triggers are currently disabled in Settings.");
+            return;
+        }
 
         Map<String, Object> shippingAddress = order.getShippingAddress();
         String customerName = "Valued Customer";
@@ -61,15 +103,14 @@ public class WhatsAppNotificationService {
         log.info("[WhatsApp Notification Trigger] Post-delivery feedback sequence initiated for Order #{}, Customer: {}, Phone: {}",
                 order.getOrderNumber(), customerName, cleanedPhone);
 
-        // If WhatsApp Cloud API credentials are setup in application properties/env, dispatch directly
-        if (whatsAppApiToken != null && !whatsAppApiToken.isBlank() && 
-            whatsAppPhoneNumberId != null && !whatsAppPhoneNumberId.isBlank()) {
+        // If WhatsApp Cloud API credentials are set, dispatch directly via Meta API
+        if (apiToken != null && !apiToken.isBlank() && phoneNumberId != null && !phoneNumberId.isBlank()) {
             try {
-                String url = "https://graph.facebook.com/v18.0/" + whatsAppPhoneNumberId + "/messages";
+                String url = "https://graph.facebook.com/v18.0/" + phoneNumberId + "/messages";
 
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
-                headers.setBearerAuth(whatsAppApiToken);
+                headers.setBearerAuth(apiToken);
 
                 Map<String, Object> body = new HashMap<>();
                 body.put("messaging_product", "whatsapp");
@@ -77,13 +118,9 @@ public class WhatsAppNotificationService {
                 body.put("type", "template");
 
                 Map<String, Object> template = new HashMap<>();
-                template.put("name", "order_delivery_feedback");
+                // Meta default starter template 'hello_world' is pre-approved for all developer test apps
+                template.put("name", "hello_world");
                 template.put("language", Map.of("code", "en_US"));
-                
-                Map<String, Object> param1 = Map.of("type", "text", "text", customerName);
-                Map<String, Object> param2 = Map.of("type", "text", "text", order.getOrderNumber());
-                template.put("components", List.of(Map.of("type", "body", "parameters", List.of(param1, param2))));
-
                 body.put("template", template);
 
                 HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
@@ -93,8 +130,8 @@ public class WhatsAppNotificationService {
                 log.error("[WhatsApp Cloud API Error] Failed to send WhatsApp message to {}: {}", cleanedPhone, e.getMessage());
             }
         } else {
-            log.info("[WhatsApp Notification] Credentials not set. Generated fallback WhatsApp feedback URL for Order #{}: https://wa.me/{}?text=Hi%20DurgaShakti%20Foils,%20I%20have%20feedback%20regarding%20my%20delivered%20order%20%23{}",
-                    order.getOrderNumber(), whatsAppBusinessNumber, order.getOrderNumber());
+            log.info("[WhatsApp Notification] Meta API credentials not configured. Business Line: {}, Order #{}: https://wa.me/{}?text=Hi%20DurgaShakti%20Foils,%20I%20have%20feedback%20regarding%20my%20delivered%20order%20%23{}",
+                    businessNumber, order.getOrderNumber(), businessNumber, order.getOrderNumber());
         }
     }
 }
