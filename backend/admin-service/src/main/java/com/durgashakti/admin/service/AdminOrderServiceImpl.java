@@ -518,7 +518,8 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 }
 
                 @SuppressWarnings("unchecked")
-                Map<String, Object> calc = (Map<String, Object>) item.getOrDefault("refund_calculations", new HashMap<>());
+                Map<String, Object> calcRaw = (Map<String, Object>) item.get("refund_calculations");
+                Map<String, Object> calc = calcRaw != null ? new HashMap<>(calcRaw) : new HashMap<>();
 
                 if (manualAmount != null) {
                     refundAmount = Math.round(manualAmount * 100.0) / 100.0;
@@ -534,8 +535,8 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                         itemRefund = Math.round(((itemPrice * qty) + cgst + sgst) * 100.0) / 100.0;
                     }
                     @SuppressWarnings("unchecked")
-                    Map<String, Object> selfShip = (Map<String, Object>) item.getOrDefault("self_shipping_details", new HashMap<>());
-                    double courierCost = toDouble(selfShip.get("courier_cost"));
+                    Map<String, Object> selfShip = (Map<String, Object>) item.get("self_shipping_details");
+                    double courierCost = selfShip != null ? toDouble(selfShip.get("courier_cost")) : 0.0;
                     refundAmount = Math.round((itemRefund + courierCost) * 100.0) / 100.0;
                     calc.put("refundable_amount", refundAmount);
                 }
@@ -679,19 +680,19 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
         boolean refundSucceeded = "REFUND_COMPLETED".equals(
                 items.stream()
-                     .filter(i -> productId.equals(String.valueOf(i.get("product_id"))))
+                     .filter(i -> productId.equalsIgnoreCase(String.valueOf(i.get("product_id"))))
                      .map(i -> (String) i.get("return_status"))
                      .findFirst().orElse(""));
                      
         boolean refundPending = "REFUND_PENDING".equals(
                 items.stream()
-                     .filter(i -> productId.equals(String.valueOf(i.get("product_id"))))
+                     .filter(i -> productId.equalsIgnoreCase(String.valueOf(i.get("product_id"))))
                      .map(i -> (String) i.get("return_status"))
                      .findFirst().orElse(""));
 
         if (refundSucceeded) {
             String rrn = items.stream()
-                .filter(i -> productId.equals(String.valueOf(i.get("product_id"))))
+                .filter(i -> productId.equalsIgnoreCase(String.valueOf(i.get("product_id"))))
                 .map(i -> {
                     Map<?, ?> itemCalc = (Map<?, ?>) i.get("refund_calculations");
                     return itemCalc != null ? (String) itemCalc.get("rrn") : null;
