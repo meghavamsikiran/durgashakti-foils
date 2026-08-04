@@ -10,6 +10,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -105,7 +106,7 @@ public class WhatsAppNotificationService {
         }
 
         if (customerPhone == null || customerPhone.isBlank() || "null".equalsIgnoreCase(customerPhone)) {
-            log.warn("[WhatsApp Notification] No phone number available for Order #{}", order.getOrderNumber());
+            log.warn("[WhatsApp Notification] No phone number available in address for Order #{}", order.getOrderNumber());
             return;
         }
 
@@ -131,29 +132,34 @@ public class WhatsAppNotificationService {
 
             for (String templateName : candidateTemplates) {
                 if (dispatched) break;
-                try {
-                    String url = "https://graph.facebook.com/v18.0/" + phoneNumberId + "/messages";
+                for (String apiVer : List.of("v20.0", "v25.0", "v18.0")) {
+                    if (dispatched) break;
+                    try {
+                        String url = "https://graph.facebook.com/" + apiVer + "/" + phoneNumberId + "/messages";
 
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.APPLICATION_JSON);
-                    headers.setBearerAuth(apiToken);
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.setContentType(MediaType.APPLICATION_JSON);
+                        headers.setBearerAuth(apiToken);
 
-                    Map<String, Object> body = new HashMap<>();
-                    body.put("messaging_product", "whatsapp");
-                    body.put("to", cleanedPhone);
-                    body.put("type", "template");
+                        Map<String, Object> body = new HashMap<>();
+                        body.put("messaging_product", "whatsapp");
+                        body.put("to", cleanedPhone);
+                        body.put("type", "template");
 
-                    Map<String, Object> template = new HashMap<>();
-                    template.put("name", templateName);
-                    template.put("language", Map.of("code", "en_US"));
-                    body.put("template", template);
+                        Map<String, Object> template = new HashMap<>();
+                        template.put("name", templateName);
+                        template.put("language", Map.of("code", "en_US"));
+                        body.put("template", template);
 
-                    HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-                    restTemplate.postForEntity(url, request, String.class);
-                    log.info("[WhatsApp Cloud API] Successfully dispatched template '{}' to {}", templateName, cleanedPhone);
-                    dispatched = true;
-                } catch (Exception e) {
-                    log.warn("[WhatsApp Cloud API] Template '{}' failed for {}: {}", templateName, cleanedPhone, e.getMessage());
+                        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+                        restTemplate.postForEntity(url, request, String.class);
+                        log.info("[WhatsApp Cloud API] Successfully dispatched template '{}' via {} to {}", templateName, apiVer, cleanedPhone);
+                        dispatched = true;
+                    } catch (HttpStatusCodeException httpEx) {
+                        log.warn("[WhatsApp Cloud API] Template '{}' via {} failed: {}", templateName, apiVer, httpEx.getResponseBodyAsString());
+                    } catch (Exception e) {
+                        log.warn("[WhatsApp Cloud API] Template '{}' via {} failed for {}: {}", templateName, apiVer, cleanedPhone, e.getMessage());
+                    }
                 }
             }
         } else {
