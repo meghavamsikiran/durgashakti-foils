@@ -7,7 +7,10 @@ import com.durgashakti.admin.service.AdminOrderService;
 import com.durgashakti.admin.service.GstService;
 import com.durgashakti.admin.repository.AuditLogRepository;
 import com.durgashakti.admin.repository.AdminUserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +25,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/admin")
 @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 public class AdminOrderController {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminOrderController.class);
 
     private final AdminOrderService adminOrderService;
     private final GstService gstService;
@@ -193,17 +198,27 @@ public class AdminOrderController {
     // ── Process Refund for a Returned Item ────────────────────────────────
     @PostMapping("/orders/{orderId}/items/{productId}/process-refund")
     @PreAuthorize("hasAuthority('view_orders')")
-    public ResponseEntity<Map<String, Object>> processItemRefund(
+    public ResponseEntity<?> processItemRefund(
             @PathVariable("orderId") UUID orderId,
             @PathVariable("productId") String productId,
             @RequestParam(value = "restock", defaultValue = "true") boolean restock,
             @RequestParam(value = "manual_amount", required = false) Double manualAmount,
             @RequestParam(value = "is_manual", defaultValue = "false") boolean isManual) {
-        Order order = adminOrderService.processItemRefund(orderId, productId, restock, manualAmount, isManual);
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Refund processed successfully");
-        response.put("order", order);
-        return ResponseEntity.ok(response);
+        try {
+            Order order = adminOrderService.processItemRefund(orderId, productId, restock, manualAmount, isManual);
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Refund processed successfully");
+            response.put("order", order);
+            return ResponseEntity.ok(response);
+        } catch (com.durgashakti.common.exception.ApiException e) {
+            log.warn("[Process Item Refund ApiException] Order ID: {}, Product ID: {}: {}", orderId, productId, e.getMessage());
+            return ResponseEntity.status(e.getStatus()).body(Map.of("message", e.getMessage(), "detail", e.getMessage()));
+        } catch (Exception e) {
+            log.error("[Process Item Refund Error] Order ID: {}, Product ID: {}", orderId, productId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Failed to process refund: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()),
+                            "detail", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+        }
     }
 
     // ── Retry Refund for a Failed Refund ──

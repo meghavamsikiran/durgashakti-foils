@@ -506,14 +506,15 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         int returnedQty = 0;
 
         for (Map<String, Object> item : items) {
-            if (productId.equals(String.valueOf(item.get("product_id")))) {
+            String itemProdId = String.valueOf(item.get("product_id"));
+            if (productId.equalsIgnoreCase(itemProdId)) {
                 foundItem = true;
                 String currentStatus = (String) item.get("return_status");
                 if (currentStatus == null ||
-                        (!"RETURN_RECEIVED".equals(currentStatus) && !"RETURN_APPROVED".equals(currentStatus)
-                                && !"SELF_SHIPPED".equals(currentStatus))) {
+                        (!"RETURN_RECEIVED".equalsIgnoreCase(currentStatus) && !"RETURN_APPROVED".equalsIgnoreCase(currentStatus)
+                                && !"SELF_SHIPPED".equalsIgnoreCase(currentStatus))) {
                     throw new ApiException(HttpStatus.BAD_REQUEST,
-                            "Item is not in an appropriate status for refund");
+                            "Item is not in an appropriate status for refund (current: " + currentStatus + ")");
                 }
 
                 @SuppressWarnings("unchecked")
@@ -524,6 +525,14 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                     calc.put("refundable_amount", refundAmount);
                 } else {
                     double itemRefund = toDouble(calc.get("refundable_amount"));
+                    if (itemRefund <= 0.0) {
+                        double itemPrice = toDouble(item.get("price"));
+                        int qty = toInt(item.getOrDefault("returned_quantity", item.getOrDefault("quantity", 1)));
+                        if (qty <= 0) qty = 1;
+                        double cgst = toDouble(item.get("cgst"));
+                        double sgst = toDouble(item.get("sgst"));
+                        itemRefund = Math.round(((itemPrice * qty) + cgst + sgst) * 100.0) / 100.0;
+                    }
                     @SuppressWarnings("unchecked")
                     Map<String, Object> selfShip = (Map<String, Object>) item.getOrDefault("self_shipping_details", new HashMap<>());
                     double courierCost = toDouble(selfShip.get("courier_cost"));
