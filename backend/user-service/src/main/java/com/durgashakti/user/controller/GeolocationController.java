@@ -31,19 +31,17 @@ public class GeolocationController {
             @RequestParam("lat") double lat,
             @RequestParam("lon") double lon) {
         
-        log.info("Reverse geocoding request received for lat={}, lon={}", lat, lon);
+        log.info("Reverse geocoding request for lat={}, lon={}", lat, lon);
         Map<String, Object> result = new HashMap<>();
-        result.put("source", "Nominatim");
 
+        // Primary Provider: Nominatim OpenStreetMap
         try {
-            // Call OpenStreetMap Nominatim reverse geocoding API
             String url = String.format("https://nominatim.openstreetmap.org/reverse?lat=%f&lon=%f&format=json&accept-language=en", lat, lon);
             
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
-                    // Nominatim requires a valid User-Agent to prevent getting blocked
                     .header("User-Agent", "DurgaShaktiFoils/1.0 (meghavamsikiran@gmail.com)")
-                    .timeout(Duration.ofSeconds(10))
+                    .timeout(Duration.ofSeconds(6))
                     .GET()
                     .build();
 
@@ -56,47 +54,71 @@ public class GeolocationController {
                 String pincode = address.path("postcode").asText("").trim();
                 String state = address.path("state").asText("").trim();
                 
-                // City fallback chain
                 String city = address.path("city").asText("");
-                if (city.isEmpty()) {
-                    city = address.path("town").asText("");
-                }
-                if (city.isEmpty()) {
-                    city = address.path("village").asText("");
-                }
-                if (city.isEmpty()) {
-                    city = address.path("county").asText("");
-                }
+                if (city.isEmpty()) city = address.path("town").asText("");
+                if (city.isEmpty()) city = address.path("municipality").asText("");
+                if (city.isEmpty()) city = address.path("city_district").asText("");
+                if (city.isEmpty()) city = address.path("state_district").asText("");
+                if (city.isEmpty()) city = address.path("county").asText("");
+                if (city.isEmpty()) city = address.path("village").asText("");
                 city = city.trim();
 
-                // Locality fallback chain
                 String locality = address.path("suburb").asText("");
-                if (locality.isEmpty()) {
-                    locality = address.path("neighbourhood").asText("");
-                }
-                if (locality.isEmpty()) {
-                    locality = address.path("city_district").asText("");
-                }
+                if (locality.isEmpty()) locality = address.path("neighbourhood").asText("");
+                if (locality.isEmpty()) locality = address.path("residential").asText("");
+                if (locality.isEmpty()) locality = address.path("quarter").asText("");
                 locality = locality.trim();
 
                 String road = address.path("road").asText("").trim();
 
+                if (!pincode.isEmpty() || !city.isEmpty()) {
+                    result.put("source", "Nominatim");
+                    result.put("pincode", pincode);
+                    result.put("state", state);
+                    result.put("city", city);
+                    result.put("locality", locality);
+                    result.put("address_line1", road.isEmpty() ? locality : (locality.isEmpty() ? road : road + ", " + locality));
+                    result.put("address_line2", locality);
+                    log.info("Nominatim geocode success: pincode={}, city={}, state={}, locality={}", pincode, city, state, locality);
+                    return ResponseEntity.ok(result);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Nominatim geocoding error: {}", e.getMessage());
+        }
+
+        // Secondary Provider: BigDataCloud (High precision fallback for India)
+        try {
+            String bdcUrl = String.format("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=%f&longitude=%f&localityLanguage=en", lat, lon);
+            HttpRequest bdcReq = HttpRequest.newBuilder()
+                    .uri(URI.create(bdcUrl))
+                    .timeout(Duration.ofSeconds(6))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> bdcResp = httpClient.send(bdcReq, HttpResponse.BodyHandlers.ofString());
+
+            if (bdcResp.statusCode() == 200) {
+                JsonNode root = objectMapper.readTree(bdcResp.body());
+                String city = root.path("city").asText(root.path("locality").asText("")).trim();
+                String state = root.path("principalSubdivision").asText("").trim();
+                String locality = root.path("locality").asText("").trim();
+                String pincode = root.path("postcode").asText("").trim();
+
+                result.put("source", "BigDataCloud");
                 result.put("pincode", pincode);
                 result.put("state", state);
                 result.put("city", city);
                 result.put("locality", locality);
-                result.put("address_line1", road.isEmpty() ? locality : road);
-                result.put("address_line2", locality);
-                
-                log.info("Geocoding success: pincode={}, city={}, state={}", pincode, city, state);
-            } else {
-                log.error("Nominatim API returned non-200 status: {}", response.statusCode());
+                result.put("address_line1", locality);
+                result.put("address_line2", city);
+                log.info("BigDataCloud geocode success: city={}, state={}, locality={}", city, state, locality);
+                return ResponseEntity.ok(result);
             }
         } catch (Exception e) {
-            log.error("Failed to perform reverse geocoding: {}", e.getMessage(), e);
+            log.warn("BigDataCloud geocoding error: {}", e.getMessage());
         }
 
-        // Always return a valid map, even if empty, to prevent frontend from crashing
         return ResponseEntity.ok(result);
     }
 }
