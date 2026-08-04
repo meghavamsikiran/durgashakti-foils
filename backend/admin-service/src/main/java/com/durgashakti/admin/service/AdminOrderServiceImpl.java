@@ -678,27 +678,31 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
         order = orderRepository.save(order);
 
-        boolean refundSucceeded = "REFUND_COMPLETED".equals(
-                items.stream()
-                     .filter(i -> productId.equalsIgnoreCase(String.valueOf(i.get("product_id"))))
-                     .map(i -> (String) i.get("return_status"))
-                     .findFirst().orElse(""));
-                     
-        boolean refundPending = "REFUND_PENDING".equals(
-                items.stream()
-                     .filter(i -> productId.equalsIgnoreCase(String.valueOf(i.get("product_id"))))
-                     .map(i -> (String) i.get("return_status"))
-                     .findFirst().orElse(""));
+        String returnStatusOfItem = "";
+        String rrn = null;
+        String refundId = null;
+
+        for (Map<String, Object> i : items) {
+            if (i != null && productId.equalsIgnoreCase(String.valueOf(i.get("product_id")))) {
+                Object rs = i.get("return_status");
+                if (rs != null) {
+                    returnStatusOfItem = String.valueOf(rs);
+                }
+                Map<?, ?> itemCalc = (Map<?, ?>) i.get("refund_calculations");
+                if (itemCalc != null) {
+                    Object rrnObj = itemCalc.get("rrn");
+                    if (rrnObj != null) rrn = String.valueOf(rrnObj);
+                    Object rIdObj = itemCalc.get("refund_id");
+                    if (rIdObj != null) refundId = String.valueOf(rIdObj);
+                }
+                break;
+            }
+        }
+
+        boolean refundSucceeded = "REFUND_COMPLETED".equals(returnStatusOfItem);
+        boolean refundPending = "REFUND_PENDING".equals(returnStatusOfItem);
 
         if (refundSucceeded) {
-            String rrn = items.stream()
-                .filter(i -> productId.equalsIgnoreCase(String.valueOf(i.get("product_id"))))
-                .map(i -> {
-                    Map<?, ?> itemCalc = (Map<?, ?>) i.get("refund_calculations");
-                    return itemCalc != null ? (String) itemCalc.get("rrn") : null;
-                })
-                .findFirst().orElse(null);
-            
             String rrnPart = rrn != null ? "\n\nRefund Reference Number (RRN/ARN): " + rrn : "";
             sendOrderEmail(order,
                 "Refund Completed – " + order.getOrderNumber(),
@@ -706,13 +710,6 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 String.format("%.2f", refundAmount) + " for order " + order.getOrderNumber() + "." + rrnPart + "\n\n" +
                 "⚡ The amount has been credited back to your original payment source.");
         } else if (refundPending) {
-            String refundId = items.stream()
-                .filter(i -> productId.equals(String.valueOf(i.get("product_id"))))
-                .map(i -> {
-                    Map<?, ?> itemCalc = (Map<?, ?>) i.get("refund_calculations");
-                    return itemCalc != null ? (String) itemCalc.get("refund_id") : null;
-                })
-                .findFirst().orElse(null);
             sendOrderEmail(order,
                 "Refund Initiated – " + order.getOrderNumber(),
                 "Your refund of ₹" + String.format("%.2f", refundAmount) + " for order " + order.getOrderNumber() + " has been initiated successfully.\n\n" +
