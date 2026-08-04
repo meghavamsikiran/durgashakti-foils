@@ -66,7 +66,10 @@ const statusConfigs = {
 
 const PAGE_SIZE = 15;
 const uiStatus = (status) => (status || '').toUpperCase();
-const isPaidStatus = (status) => ['paid', 'completed', 'refunded', 'refund_pending', 'refund_failed'].includes(String(status || '').toLowerCase());
+const isPaidStatus = (status) => {
+  const s = String(status || '').toLowerCase();
+  return ['paid', 'completed', 'refunded', 'refund_pending', 'refund_failed', 'paid via wallet'].includes(s) || s.includes('wallet') || s.includes('paid');
+};
 const STATUS_LABELS = {
   PENDING_PAYMENT: 'Payment Pending',
   PENDING: 'Placed',
@@ -1768,11 +1771,13 @@ const OrdersPage = () => {
                   <div className="text-xs text-slate-500 space-y-2 font-semibold">
                     {(() => {
                       const isCod = String(selectedOrderForModal.payment_method || '').toLowerCase() === 'cod';
+                      const isWallet = String(selectedOrderForModal.payment_method || '').toLowerCase().includes('wallet') || String(selectedOrderForModal.payment_status || '').toLowerCase().includes('wallet');
                       const paymentStatus = String(selectedOrderForModal.payment_status || '').toLowerCase();
-                      const paidLike = ['paid', 'completed', 'cash on delivery', 'refund_pending', 'refund_failed', 'refunded'].includes(paymentStatus) || isCod;
+                      const paidLike = ['paid', 'completed', 'cash on delivery', 'refund_pending', 'refund_failed', 'refunded', 'paid via wallet'].includes(paymentStatus) || isCod || isWallet;
                       const statusLabel =
                         paymentStatus === 'cash on delivery' ? 'To Collect' :
                         paymentStatus === 'paid' || paymentStatus === 'completed' ? 'Paid' :
+                        isWallet || paymentStatus.includes('wallet') ? 'Paid via DSF Wallet' :
                         paymentStatus === 'refund_pending' ? 'Refund Initiated' :
                         paymentStatus === 'refund_failed' ? 'Refund Failed' :
                         paymentStatus === 'refunded' ? 'Refund Credited' :
@@ -1791,7 +1796,7 @@ const OrdersPage = () => {
                       return (
                         <>
                           <p className="font-extrabold text-slate-900 uppercase tracking-wider">
-                            {isCod ? 'COD' : 'Prepaid Online'}
+                            {isWallet ? 'DSF Wallet' : isCod ? 'COD' : 'Prepaid Online'}
                           </p>
                           <div className={`${tone} text-[10px] rounded-xl p-3 border space-y-1.5`}>
                             <p className={`font-extrabold flex items-center gap-1.5 capitalize ${labelTone}`}>

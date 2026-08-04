@@ -598,11 +598,13 @@ const AdminOrderDetailsPage = () => {
               <div className="text-xs text-slate-500 space-y-2 font-semibold">
                 {(() => {
                   const isCod = String(order.payment_method || '').toLowerCase() === 'cod';
+                  const isWallet = String(order.payment_method || '').toLowerCase().includes('wallet') || String(order.payment_status || '').toLowerCase().includes('wallet');
                   const paymentStatus = String(order.payment_status || '').toLowerCase();
-                  const paidLike = ['paid', 'completed', 'cash on delivery', 'refund_pending', 'refund_failed', 'refunded'].includes(paymentStatus) || isCod;
+                  const paidLike = ['paid', 'completed', 'cash on delivery', 'refund_pending', 'refund_failed', 'refunded', 'paid via wallet'].includes(paymentStatus) || isCod || isWallet;
                   const statusLabel =
                     paymentStatus === 'cash on delivery' ? 'To Collect' :
                     paymentStatus === 'paid' || paymentStatus === 'completed' ? 'Paid' :
+                    isWallet || paymentStatus.includes('wallet') ? 'Paid via DSF Wallet' :
                     paymentStatus === 'refund_pending' ? 'Refund Initiated' :
                     paymentStatus === 'refund_failed' ? 'Refund Failed' :
                     paymentStatus === 'refunded' ? 'Refund Credited' :
