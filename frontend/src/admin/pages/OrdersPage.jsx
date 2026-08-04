@@ -2382,7 +2382,7 @@ const OrdersPage = () => {
                   returnSteps = [
                     { label: 'Return Requested', active: true, date: selectedOrderForModal.created_at },
                     { label: 'Approved for Return', active: hasApproved, date: hasApproved ? selectedOrderForModal.updated_at : null },
-                    { label: 'Self Shipped by User', active: hasSelfShipped, date: null },
+                    { label: 'Return Item Shipped', active: hasSelfShipped, date: null },
                     { label: 'Physically Received', active: hasReceived, date: null }
                   ];
                   progressWidth = hasReceived ? '100%' : hasSelfShipped ? '66.6%' : hasApproved ? '33.3%' : '0%';

@@ -1258,8 +1258,8 @@ const OrderDetailsPage = () => {
                     
                     const items = order.items || [];
                     if (items.some(i => i.return_status === 'RETURN_RECEIVED')) return 'Return Received';
-                    if (items.some(i => i.return_status === 'SELF_SHIPPED')) return 'Self-Shipped (Verification Pending)';
-                    return 'Return Approved (Self-Ship Pending)';
+                    if (items.some(i => i.return_status === 'SELF_SHIPPED')) return 'Return Shipped (Verification Pending)';
+                    return 'Return Approved (Shipment Pending)';
                   }
                   return order.order_status?.replace('_', ' ');
                 })()}
@@ -1453,11 +1453,11 @@ const OrderDetailsPage = () => {
             returnSteps = [
               { label: 'Return Requested', active: true, date: order.created_at },
               { label: 'Approved for Return', active: hasApproved, date: hasApproved ? order.updated_at : null },
-              { label: 'Self Shipped by User', active: hasSelfShipped, date: null },
+              { label: 'Return Item Shipped', active: hasSelfShipped, date: null },
               { label: 'Physically Received', active: hasReceived, date: null }
             ];
             progressWidth = hasReceived ? '100%' : hasSelfShipped ? '66.6%' : hasApproved ? '33.3%' : '0%';
-            timelineTitle = 'Self-Shipment Tracking Timeline';
+            timelineTitle = 'Return Shipment Tracking';
           }
 
           return (
@@ -1625,8 +1625,8 @@ const OrderDetailsPage = () => {
                       
                       const items = order.items || [];
                       if (items.some(i => i.return_status === 'RETURN_RECEIVED')) return 'Return Received';
-                      if (items.some(i => i.return_status === 'SELF_SHIPPED')) return 'Self-Shipped (Receipt Verification Pending)';
-                      return 'Return Approved (Self-Ship Pending)';
+                      if (items.some(i => i.return_status === 'SELF_SHIPPED')) return 'Return Shipped (Verification Pending)';
+                      return 'Return Approved (Shipment Pending)';
                     })()
                   : String(order.order_status || '').toLowerCase() === 'return_rejected'
                   ? 'Return Request Declined'

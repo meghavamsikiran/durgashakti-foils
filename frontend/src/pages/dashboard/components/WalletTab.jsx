@@ -334,17 +334,6 @@ const WalletTab = () => {
                       <Copy className="w-3 h-3" />
                     </button>
                   </div>
-                  <button 
-                    onClick={() => {
-                      setVoucherCode(v.code);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className={`text-[9px] font-bold px-2 py-1 rounded uppercase transition-colors ${
-                      isDark ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                    }`}
-                  >
-                    Use
-                  </button>
                 </div>
                 <p className={`text-lg font-black relative z-10 ${isDark ? 'text-white' : 'text-slate-900'}`}>₹{v.amount}</p>
               </div>
