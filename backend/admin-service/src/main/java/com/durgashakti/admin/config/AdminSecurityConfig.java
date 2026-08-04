@@ -37,7 +37,7 @@ public class AdminSecurityConfig {
             .cors(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/contacts", "/api/contacts/upload").permitAll() // Public contact form submission and file uploads
+                .requestMatchers("/api/contacts", "/api/contacts/upload", "/api/public/**").permitAll() // Public contact form submission and Webhooks
                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN") // Admin gates
                 .anyRequest().authenticated()
             )
