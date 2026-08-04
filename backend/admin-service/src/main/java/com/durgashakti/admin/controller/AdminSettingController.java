@@ -187,13 +187,27 @@ public class AdminSettingController {
                 debugInfo.put("metaResponse", metaResp.getBody());
                 debugInfo.put("success", true);
                 debugInfo.put("phone", cleanPhone);
+                debugInfo.put("languageUsed", "en_US");
                 return ResponseEntity.ok(debugInfo);
             } catch (HttpStatusCodeException httpEx) {
-                debugInfo.put("metaStatus", httpEx.getStatusCode().value());
-                debugInfo.put("metaError", httpEx.getResponseBodyAsString());
-                debugInfo.put("success", false);
-                debugInfo.put("phone", cleanPhone);
-                return ResponseEntity.status(200).body(debugInfo);
+                // Try fallback to "en" if "en_US" failed
+                try {
+                    body.put("template", Map.of("name", "3p_direct_integration_test_template", "language", Map.of("code", "en")));
+                    HttpEntity<Map<String, Object>> fallbackEntity = new HttpEntity<>(body, headers);
+                    ResponseEntity<String> fallbackResp = restTemplate.postForEntity(url, fallbackEntity, String.class);
+                    debugInfo.put("metaStatus", fallbackResp.getStatusCode().value());
+                    debugInfo.put("metaResponse", fallbackResp.getBody());
+                    debugInfo.put("success", true);
+                    debugInfo.put("phone", cleanPhone);
+                    debugInfo.put("languageUsed", "en");
+                    return ResponseEntity.ok(debugInfo);
+                } catch (HttpStatusCodeException fallbackEx) {
+                    debugInfo.put("metaStatus", fallbackEx.getStatusCode().value());
+                    debugInfo.put("metaError", fallbackEx.getResponseBodyAsString());
+                    debugInfo.put("success", false);
+                    debugInfo.put("phone", cleanPhone);
+                    return ResponseEntity.status(200).body(debugInfo);
+                }
             }
         } catch (Exception e) {
             log.error("WhatsApp test failed", e);

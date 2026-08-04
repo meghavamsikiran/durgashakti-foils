@@ -130,33 +130,36 @@ public class WhatsAppNotificationService {
 
             for (String templateName : candidateTemplates) {
                 if (dispatched) break;
-                for (String apiVer : List.of("v20.0", "v25.0", "v18.0")) {
+                for (String langCode : List.of("en_US", "en")) {
                     if (dispatched) break;
-                    try {
-                        String url = "https://graph.facebook.com/" + apiVer + "/" + phoneNumberId + "/messages";
+                    for (String apiVer : List.of("v20.0", "v25.0", "v18.0")) {
+                        if (dispatched) break;
+                        try {
+                            String url = "https://graph.facebook.com/" + apiVer + "/" + phoneNumberId + "/messages";
 
-                        HttpHeaders headers = new HttpHeaders();
-                        headers.setContentType(MediaType.APPLICATION_JSON);
-                        headers.setBearerAuth(apiToken);
+                            HttpHeaders headers = new HttpHeaders();
+                            headers.setContentType(MediaType.APPLICATION_JSON);
+                            headers.setBearerAuth(apiToken);
 
-                        Map<String, Object> body = new HashMap<>();
-                        body.put("messaging_product", "whatsapp");
-                        body.put("to", cleanedPhone);
-                        body.put("type", "template");
+                            Map<String, Object> body = new HashMap<>();
+                            body.put("messaging_product", "whatsapp");
+                            body.put("to", cleanedPhone);
+                            body.put("type", "template");
 
-                        Map<String, Object> template = new HashMap<>();
-                        template.put("name", templateName);
-                        template.put("language", Map.of("code", "en_US"));
-                        body.put("template", template);
+                            Map<String, Object> template = new HashMap<>();
+                            template.put("name", templateName);
+                            template.put("language", Map.of("code", langCode));
+                            body.put("template", template);
 
-                        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-                        restTemplate.postForEntity(url, request, String.class);
-                        log.info("[WhatsApp Cloud API] Successfully dispatched template '{}' via {} to {}", templateName, apiVer, cleanedPhone);
-                        dispatched = true;
-                    } catch (HttpStatusCodeException httpEx) {
-                        log.warn("[WhatsApp Cloud API] Template '{}' via {} failed: {}", templateName, apiVer, httpEx.getResponseBodyAsString());
-                    } catch (Exception e) {
-                        log.warn("[WhatsApp Cloud API] Template '{}' via {} failed for {}: {}", templateName, apiVer, cleanedPhone, e.getMessage());
+                            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+                            restTemplate.postForEntity(url, request, String.class);
+                            log.info("[WhatsApp Cloud API] Successfully dispatched template '{}' ({}) via {} to {}", templateName, langCode, apiVer, cleanedPhone);
+                            dispatched = true;
+                        } catch (HttpStatusCodeException httpEx) {
+                            log.warn("[WhatsApp Cloud API] Template '{}' ({}) via {} failed: {}", templateName, langCode, apiVer, httpEx.getResponseBodyAsString());
+                        } catch (Exception e) {
+                            log.warn("[WhatsApp Cloud API] Template '{}' ({}) via {} failed for {}: {}", templateName, langCode, apiVer, cleanedPhone, e.getMessage());
+                        }
                     }
                 }
             }
