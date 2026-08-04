@@ -586,21 +586,7 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
                     {['pending', 'pending_payment', 'processing'].includes(order.order_status) && (
                       <Button variant="ghost" onClick={() => onCancelOrder(order.id)} className="text-rose-400 hover:bg-rose-500/10 rounded-lg text-xs font-bold px-3">Cancel</Button>
                     )}
-                    {(order.order_status || '').toLowerCase() === 'delivered' && (
-                      <button
-                        onClick={() => {
-                          const text = encodeURIComponent(`Hi DurgaShakti Foils, I have feedback/concern regarding my delivered order #${order.order_number}`);
-                          const raw = waNumber.replaceAll(/[^0-9]/g, '') || '9901452954';
-                          const cleanNum = raw.length === 10 ? '91' + raw : raw;
-                          window.open(`https://wa.me/${cleanNum}?text=${text}`, '_blank');
-                        }}
-                        className="px-3 py-2 text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
-                        title="Submit Feedback or Report Damage via WhatsApp"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        WhatsApp Feedback & Support
-                      </button>
-                    )}
+
                     <button 
                       onClick={() => window.open(`/order/${order.id}`, '_blank')}
                       className="px-5 py-2 text-sm font-semibold text-[#0C1310] bg-[#25D958] hover:bg-[#1bb847] rounded-lg transition-colors whitespace-nowrap font-bold"
