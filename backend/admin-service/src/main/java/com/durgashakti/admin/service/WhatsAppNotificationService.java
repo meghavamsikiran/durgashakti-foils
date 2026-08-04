@@ -84,7 +84,7 @@ public class WhatsAppNotificationService {
         String customerPhone = null;
 
         if (shippingAddress != null) {
-            for (String nameKey : List.of("fullName", "full_name", "name", "recipient_name")) {
+            for (String nameKey : List.of("full_name", "fullName", "name", "recipient_name")) {
                 if (shippingAddress.containsKey(nameKey) && shippingAddress.get(nameKey) != null) {
                     String n = String.valueOf(shippingAddress.get(nameKey)).trim();
                     if (!n.isBlank() && !"null".equalsIgnoreCase(n)) {
@@ -94,7 +94,7 @@ public class WhatsAppNotificationService {
                 }
             }
 
-            for (String phoneKey : List.of("phone", "mobile", "mobileNumber", "mobile_number", "phone_number", "contact", "contact_number")) {
+            for (String phoneKey : List.of("phone", "mobile", "mobileNumber", "mobile_number", "phone_number", "contact", "contact_number", "alternate_phone")) {
                 if (shippingAddress.containsKey(phoneKey) && shippingAddress.get(phoneKey) != null) {
                     String p = String.valueOf(shippingAddress.get(phoneKey)).trim();
                     if (!p.isBlank() && !"null".equalsIgnoreCase(p)) {
