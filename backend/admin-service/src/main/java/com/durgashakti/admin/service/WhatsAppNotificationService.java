@@ -83,10 +83,25 @@ public class WhatsAppNotificationService {
         String customerPhone = null;
 
         if (shippingAddress != null) {
-            customerName = String.valueOf(shippingAddress.getOrDefault("fullName", 
-                           shippingAddress.getOrDefault("name", "Valued Customer")));
-            customerPhone = String.valueOf(shippingAddress.getOrDefault("mobileNumber", 
-                            shippingAddress.getOrDefault("phone", "")));
+            for (String nameKey : List.of("fullName", "full_name", "name", "recipient_name")) {
+                if (shippingAddress.containsKey(nameKey) && shippingAddress.get(nameKey) != null) {
+                    String n = String.valueOf(shippingAddress.get(nameKey)).trim();
+                    if (!n.isBlank() && !"null".equalsIgnoreCase(n)) {
+                        customerName = n;
+                        break;
+                    }
+                }
+            }
+
+            for (String phoneKey : List.of("phone", "mobile", "mobileNumber", "mobile_number", "phone_number", "contact", "contact_number")) {
+                if (shippingAddress.containsKey(phoneKey) && shippingAddress.get(phoneKey) != null) {
+                    String p = String.valueOf(shippingAddress.get(phoneKey)).trim();
+                    if (!p.isBlank() && !"null".equalsIgnoreCase(p)) {
+                        customerPhone = p;
+                        break;
+                    }
+                }
+            }
         }
 
         if (customerPhone == null || customerPhone.isBlank() || "null".equalsIgnoreCase(customerPhone)) {
