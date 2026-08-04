@@ -39,6 +39,18 @@ public class WhatsAppNotificationService {
         this.settingRepository = settingRepository;
     }
 
+    public static String cleanPhoneNumber(String phone) {
+        if (phone == null || phone.isBlank() || "null".equalsIgnoreCase(phone)) return null;
+        String digits = phone.replaceAll("[^0-9]", "");
+        if (digits.startsWith("0")) {
+            digits = digits.replaceFirst("^0+", "");
+        }
+        if (digits.length() == 10) {
+            digits = "91" + digits;
+        }
+        return digits;
+    }
+
     /**
      * Triggers post-delivery feedback notification via Meta WhatsApp Cloud API dynamically configured from database or env.
      */
@@ -110,10 +122,10 @@ public class WhatsAppNotificationService {
             return;
         }
 
-        // Clean phone number (ensure country code e.g. +91 or 91 prefix)
-        String cleanedPhone = customerPhone.replaceAll("[^0-9]", "");
-        if (cleanedPhone.length() == 10) {
-            cleanedPhone = "91" + cleanedPhone;
+        String cleanedPhone = cleanPhoneNumber(customerPhone);
+        if (cleanedPhone == null || cleanedPhone.isBlank()) {
+            log.warn("[WhatsApp Notification] Could not format valid 10-12 digit phone for Order #{}", order.getOrderNumber());
+            return;
         }
 
         log.info("[WhatsApp Notification Trigger] Post-delivery feedback sequence initiated for Order #{}, Customer: {}, Phone: {}",
@@ -153,7 +165,7 @@ public class WhatsAppNotificationService {
                             template.put("name", templateName);
                             template.put("language", Map.of("code", lang));
 
-                            // Pass dynamic parameters
+                            // Pass dynamic parameters based on template requirements
                             if ("order_delivered_v1".equals(templateName)) {
                                 template.put("components", List.of(
                                     Map.of(
@@ -174,6 +186,7 @@ public class WhatsAppNotificationService {
                                     )
                                 ));
                             }
+                            // Note: hello_world requires NO components parameter
 
                             body.put("template", template);
 
@@ -257,8 +270,8 @@ public class WhatsAppNotificationService {
 
         if (customerPhone == null || customerPhone.isBlank()) return;
 
-        String cleanedPhone = customerPhone.replaceAll("[^0-9]", "");
-        if (cleanedPhone.length() == 10) cleanedPhone = "91" + cleanedPhone;
+        String cleanedPhone = cleanPhoneNumber(customerPhone);
+        if (cleanedPhone == null || cleanedPhone.isBlank()) return;
 
         String trackingNum = order.getTrackingNumber() != null ? order.getTrackingNumber().trim() : order.getOrderNumber();
 

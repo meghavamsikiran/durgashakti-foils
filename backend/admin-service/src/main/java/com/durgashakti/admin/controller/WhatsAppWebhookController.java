@@ -192,9 +192,12 @@ public class WhatsAppWebhookController {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(apiToken);
 
+            String cleanedTarget = WhatsAppNotificationService.cleanPhoneNumber(recipientPhone);
+            if (cleanedTarget == null) return;
+
             Map<String, Object> payload = new HashMap<>();
             payload.put("messaging_product", "whatsapp");
-            payload.put("to", recipientPhone);
+            payload.put("to", cleanedTarget);
             payload.put("type", "text");
             payload.put("text", Map.of("body", replyText));
 
