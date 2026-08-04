@@ -28,7 +28,7 @@ public class WhatsAppNotificationService {
     @Value("${whatsapp.phone.number.id:}")
     private String envWhatsAppPhoneNumberId;
 
-    @Value("${whatsapp.business.number:919901452954}")
+    @Value("${whatsapp.business.number:918618881969}")
     private String envWhatsAppBusinessNumber;
 
     private final AdminSettingRepository settingRepository;
@@ -120,44 +120,40 @@ public class WhatsAppNotificationService {
 
         // If WhatsApp Cloud API credentials are set, dispatch directly via Meta API
         if (apiToken != null && !apiToken.isBlank() && phoneNumberId != null && !phoneNumberId.isBlank()) {
-            try {
-                String url = "https://graph.facebook.com/v18.0/" + phoneNumberId + "/messages";
+            boolean dispatched = false;
 
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-                headers.setBearerAuth(apiToken);
+            // List of standard Meta pre-approved templates in priority order
+            List<String> candidateTemplates = List.of(
+                "3p_direct_integration_test_template",
+                "jaspers_market_order_confirmation",
+                "hello_world"
+            );
 
-                Map<String, Object> body = new HashMap<>();
-                body.put("messaging_product", "whatsapp");
-                body.put("to", cleanedPhone);
-                body.put("type", "template");
-
-                Map<String, Object> template = new HashMap<>();
-                // Use Meta's pre-approved developer test template 'jaspers_market_order_confirmation'
-                template.put("name", "jaspers_market_order_confirmation");
-                template.put("language", Map.of("code", "en_US"));
-                body.put("template", template);
-
-                HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-                restTemplate.postForEntity(url, request, String.class);
-                log.info("[WhatsApp Cloud API] Successfully dispatched WhatsApp message to {}", cleanedPhone);
-            } catch (Exception e) {
-                log.error("[WhatsApp Cloud API Error] Failed to send WhatsApp message to {}: {}", cleanedPhone, e.getMessage());
-                // Fallback attempt with 'hello_world' if jaspers_market_order_confirmation fails
+            for (String templateName : candidateTemplates) {
+                if (dispatched) break;
                 try {
                     String url = "https://graph.facebook.com/v18.0/" + phoneNumberId + "/messages";
+
                     HttpHeaders headers = new HttpHeaders();
                     headers.setContentType(MediaType.APPLICATION_JSON);
                     headers.setBearerAuth(apiToken);
+
                     Map<String, Object> body = new HashMap<>();
                     body.put("messaging_product", "whatsapp");
                     body.put("to", cleanedPhone);
                     body.put("type", "template");
-                    body.put("template", Map.of("name", "hello_world", "language", Map.of("code", "en_US")));
-                    restTemplate.postForEntity(url, new HttpEntity<>(body, headers), String.class);
-                    log.info("[WhatsApp Cloud API Fallback] Dispatched hello_world template to {}", cleanedPhone);
-                } catch (Exception ex) {
-                    log.error("[WhatsApp Cloud API Fallback Error] {}", ex.getMessage());
+
+                    Map<String, Object> template = new HashMap<>();
+                    template.put("name", templateName);
+                    template.put("language", Map.of("code", "en_US"));
+                    body.put("template", template);
+
+                    HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+                    restTemplate.postForEntity(url, request, String.class);
+                    log.info("[WhatsApp Cloud API] Successfully dispatched template '{}' to {}", templateName, cleanedPhone);
+                    dispatched = true;
+                } catch (Exception e) {
+                    log.warn("[WhatsApp Cloud API] Template '{}' failed for {}: {}", templateName, cleanedPhone, e.getMessage());
                 }
             }
         } else {
