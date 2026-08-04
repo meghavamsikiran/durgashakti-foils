@@ -61,6 +61,20 @@ public class AdminSettingController {
 
             Map<String, Object> val = (Map<String, Object>) req.get("value");
 
+            if ("whatsapp_ai_feedback".equals(key)) {
+                if (val == null) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "WhatsApp settings payload is required"));
+                }
+                String apiToken = val.get("apiToken") != null ? val.get("apiToken").toString().trim() : "";
+                String phoneNumberId = val.get("phoneNumberId") != null ? val.get("phoneNumberId").toString().trim() : "";
+                if (phoneNumberId.isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "Meta Cloud API Phone Number ID is mandatory!"));
+                }
+                if (apiToken.isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "Meta Access Token is mandatory!"));
+                }
+            }
+
             // 1. Update the target setting
             Optional<Setting> settingOpt = settingRepository.findById(key);
             Setting targetSetting;
