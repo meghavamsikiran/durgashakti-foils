@@ -61,15 +61,18 @@ const AddressStep = ({
   const handleDetectLocation = async () => {
     try {
       const data = await detect();
+      if (!data) return;
       setShippingInfo(prev => ({
         ...prev,
-        pincode: data.pincode,
+        pincode: data.pincode || prev.pincode,
         state: data.state || prev.state,
         city: data.city || prev.city,
         address_line1: data.address_line1 || prev.address_line1,
         address_line2: data.address_line2 || prev.address_line2
       }));
-    } catch (err) {}
+    } catch (err) {
+      console.error("Location detection error in AddressStep:", err);
+    }
   };
 
   if (addressesLoading) {
