@@ -531,10 +531,38 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 String refundStatus;
                 String remark;
 
+                String pMethod = (order.getPaymentMethod() != null ? order.getPaymentMethod() : "").toLowerCase();
+                String pStatus = (order.getPaymentStatus() != null ? order.getPaymentStatus() : "").toLowerCase();
+                boolean isWalletOrder = "wallet".equals(pMethod) || "dsf_wallet".equals(pMethod) || pStatus.contains("wallet");
+
                 if (isManual) {
                     refundStatus = "REFUND_COMPLETED";
                     remark = String.format("Refund of ₹%.2f completed manually by admin", refundAmount);
                     calc.put("refund_method", "manual");
+                } else if (isWalletOrder) {
+                    if (order.getUserId() != null && refundAmount > 0) {
+                        try {
+                            jdbcTemplate.update("UPDATE wallets SET balance = balance + ?, updated_at = NOW() WHERE user_id = ?", refundAmount, order.getUserId());
+                            jdbcTemplate.update(
+                                "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
+                                "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'RETURN_REFUND', ?, ?, 'SUCCESS', NOW())",
+                                order.getUserId(), java.math.BigDecimal.valueOf(refundAmount), order.getOrderNumber(), "Return refund for order #" + order.getOrderNumber()
+                            );
+                            refundStatus = "REFUND_COMPLETED";
+                            remark = String.format("DSF Wallet refund of ₹%.2f credited to customer wallet successfully", refundAmount);
+                            calc.put("refund_method", "wallet");
+                            order.setPaymentStatus("refunded");
+                            log.info("[Return Wallet Refund] Credited ₹{} to wallet for user {} on order {}", refundAmount, order.getUserId(), order.getOrderNumber());
+                        } catch (Exception ex) {
+                            refundStatus = "REFUND_FAILED";
+                            remark = "Wallet refund failed: " + ex.getMessage();
+                            log.error("[Return Wallet Refund Failed] Order {}: {}", order.getOrderNumber(), ex.getMessage());
+                        }
+                    } else {
+                        refundStatus = "REFUND_COMPLETED";
+                        remark = "Wallet refund completed (₹0.00)";
+                        calc.put("refund_method", "wallet");
+                    }
                 } else {
                     Map<String, Object> rzpRes = attemptRazorpayRefund(order.getRazorpayPaymentId(), refundAmount, order.getOrderNumber());
                     if (Boolean.TRUE.equals(rzpRes.get("success"))) {
