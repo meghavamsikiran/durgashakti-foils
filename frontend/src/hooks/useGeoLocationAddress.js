@@ -27,32 +27,27 @@ export const useGeoLocationAddress = () => {
     try {
       let position = null;
 
-      // 1. Try standard Wi-Fi positioning first (enableHighAccuracy: false - instant on desktop Chrome without macOS GPS blocks)
+      // 1. Try HTML5 Geolocation (6 second timeout)
       try {
-        position = await tryGetPosition(false, 6000);
-      } catch (err1) {
-        console.warn("Standard Wi-Fi location failed/timed out, trying high accuracy...", err1);
-        // 2. Try high accuracy
-        try {
-          position = await tryGetPosition(true, 6000);
-        } catch (err2) {
-          console.warn("High accuracy location also failed/timed out:", err2);
-        }
+        position = await getPosition({
+          enableHighAccuracy: true,
+          timeout: 6000,
+          maximumAge: 0
+        });
+      } catch (geoErr) {
+        console.warn("HTML5 Geolocation unavailable/denied:", geoErr);
       }
 
+      // 2. If GPS coordinates obtained, reverse geocode via backend Nominatim / BigDataCloud
       if (position?.coords) {
         const { latitude, longitude } = position.coords;
-        console.info(`Coordinates received: lat=${latitude}, lon=${longitude}`);
-
         try {
           const res = await apiClient.get(`/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`);
           const data = res.data || {};
-
           if (data.pincode || data.city || data.state) {
             const { pincode, city, state, locality, address_line1, address_line2 } = data;
             const locationName = locality || city || 'Current Location';
             toast.success(`Location detected: ${locationName}`);
-
             return {
               pincode: pincode || '',
               state: state || '',
@@ -62,33 +57,31 @@ export const useGeoLocationAddress = () => {
             };
           }
         } catch (apiErr) {
-          console.warn("Reverse geocoding API error:", apiErr);
+          console.warn("Backend reverse-geocode API error:", apiErr);
         }
       }
 
-      // 3. Fallback: If browser location permission is blocked or timed out, detect City via freeipapi
+      // 3. Fallback: Query backend /api/geolocation/ip-lookup (No CORS issues, 100% reliable)
+      console.info("Using backend IP-lookup fallback...");
       try {
-        const ipRes = await fetch('https://freeipapi.com/api/json');
-        if (ipRes.ok) {
-          const ipData = await ipRes.json();
-          if (ipData && (ipData.cityName || ipData.regionName)) {
-            toast.success(`Location detected: ${ipData.cityName}, ${ipData.regionName}`);
-            return {
-              pincode: ipData.zipCode || '',
-              state: ipData.regionName || '',
-              city: ipData.cityName || '',
-              address_line1: ipData.cityName ? `${ipData.cityName}, ${ipData.regionName}` : '',
-              address_line2: '',
-            };
-          }
+        const ipRes = await apiClient.get('/geolocation/ip-lookup');
+        const ipData = ipRes.data || {};
+        if (ipData.pincode || ipData.city || ipData.state) {
+          toast.success(`Location auto-detected: ${ipData.city || ipData.state}`);
+          return {
+            pincode: ipData.pincode || '',
+            state: ipData.state || '',
+            city: ipData.city || '',
+            address_line1: ipData.address_line1 || '',
+            address_line2: ipData.address_line2 || '',
+          };
         }
-      } catch (e) {
-        console.warn("City IP fallback error:", e);
+      } catch (ipErr) {
+        console.warn("Backend IP-lookup error:", ipErr);
       }
 
       toast.error('Could not auto-detect location. Please enter your address details manually.');
       return null;
-
     } catch (err) {
       console.error('Location detection overall error:', err);
       toast.error('Location detection failed. Please enter your address details manually.');

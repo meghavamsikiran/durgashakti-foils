@@ -121,4 +121,66 @@ public class GeolocationController {
 
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/ip-lookup")
+    public ResponseEntity<Map<String, Object>> ipLookup() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://ipapi.co/json/"))
+                    .header("User-Agent", "DurgaShaktiFoils/1.0 (meghavamsikiran@gmail.com)")
+                    .timeout(Duration.ofSeconds(5))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                JsonNode root = objectMapper.readTree(response.body());
+                String city = root.path("city").asText("").trim();
+                String state = root.path("region").asText("").trim();
+                String pincode = root.path("postal").asText("").trim();
+
+                result.put("source", "IP-API");
+                result.put("pincode", pincode);
+                result.put("state", state);
+                result.put("city", city);
+                result.put("address_line1", city.isEmpty() ? state : city + ", " + state);
+                log.info("IP-Lookup success: city={}, state={}, pincode={}", city, state, pincode);
+                return ResponseEntity.ok(result);
+            }
+        } catch (Exception e) {
+            log.warn("IP Geocoding primary provider error: {}", e.getMessage());
+        }
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://ip-api.com/json"))
+                    .timeout(Duration.ofSeconds(5))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                JsonNode root = objectMapper.readTree(response.body());
+                String city = root.path("city").asText("").trim();
+                String state = root.path("regionName").asText("").trim();
+                String pincode = root.path("zip").asText("").trim();
+
+                result.put("source", "IP-API-Alt");
+                result.put("pincode", pincode);
+                result.put("state", state);
+                result.put("city", city);
+                result.put("address_line1", city.isEmpty() ? state : city + ", " + state);
+                log.info("IP-Lookup alt success: city={}, state={}", city, state);
+                return ResponseEntity.ok(result);
+            }
+        } catch (Exception e) {
+            log.warn("IP Geocoding alt provider error: {}", e.getMessage());
+        }
+
+        return ResponseEntity.ok(result);
+    }
 }
