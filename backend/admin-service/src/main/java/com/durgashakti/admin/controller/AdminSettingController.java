@@ -127,6 +127,8 @@ public class AdminSettingController {
     public ResponseEntity<?> testWhatsApp(@RequestBody Map<String, Object> req) {
         try {
             String toPhone = req.containsKey("to") ? String.valueOf(req.get("to")) : null;
+            String reqTemplate = req.containsKey("templateName") ? String.valueOf(req.get("templateName")).trim() : "3p_direct_integration_test_template";
+            if (reqTemplate.isBlank()) reqTemplate = "3p_direct_integration_test_template";
             if (toPhone == null || toPhone.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "'to' phone number is required"));
             }
@@ -174,19 +176,17 @@ public class AdminSettingController {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(apiToken);
 
-            List<String> langCodes = List.of("en", "en_US", "en_GB", "hi", "hi_IN");
-            boolean sent = false;
-            HttpEntity<Map<String, Object>> entity = null;
+            List<String> langCodes = List.of("en_US", "en", "en_GB", "hi", "hi_IN");
+            List<Map<String, Object>> failedAttempts = new java.util.ArrayList<>();
 
             for (String lang : langCodes) {
-                if (sent) break;
                 Map<String, Object> body = new HashMap<>();
                 body.put("messaging_product", "whatsapp");
                 body.put("to", cleanPhone);
                 body.put("type", "template");
-                body.put("template", Map.of("name", "3p_direct_integration_test_template", "language", Map.of("code", lang)));
+                body.put("template", Map.of("name", reqTemplate, "language", Map.of("code", lang)));
 
-                entity = new HttpEntity<>(body, headers);
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
                 try {
                     ResponseEntity<String> metaResp = restTemplate.postForEntity(url, entity, String.class);
                     debugInfo.put("metaStatus", metaResp.getStatusCode().value());
@@ -194,15 +194,22 @@ public class AdminSettingController {
                     debugInfo.put("success", true);
                     debugInfo.put("acceptedLanguage", lang);
                     debugInfo.put("phone", cleanPhone);
-                    sent = true;
                     return ResponseEntity.ok(debugInfo);
                 } catch (HttpStatusCodeException httpEx) {
-                    debugInfo.put("lastLangTried", lang);
-                    debugInfo.put("metaStatus", httpEx.getStatusCode().value());
-                    debugInfo.put("metaError", httpEx.getResponseBodyAsString());
-                    debugInfo.put("success", false);
+                    Map<String, Object> attempt = new HashMap<>();
+                    attempt.put("lang", lang);
+                    attempt.put("status", httpEx.getStatusCode().value());
+                    attempt.put("error", httpEx.getResponseBodyAsString());
+                    failedAttempts.add(attempt);
+                } catch (Exception e) {
+                    Map<String, Object> attempt = new HashMap<>();
+                    attempt.put("lang", lang);
+                    attempt.put("error", e.getMessage());
+                    failedAttempts.add(attempt);
                 }
             }
+            debugInfo.put("success", false);
+            debugInfo.put("failedAttempts", failedAttempts);
             return ResponseEntity.status(200).body(debugInfo);
         } catch (Exception e) {
             log.error("WhatsApp test failed", e);

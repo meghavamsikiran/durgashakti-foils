@@ -14,6 +14,7 @@ const WhatsAppBotPage = () => {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testPhone, setTestPhone] = useState('');
+  const [testTemplate, setTestTemplate] = useState('3p_direct_integration_test_template');
   const [testResult, setTestResult] = useState(null);
 
   const [whatsappBotEnabled, setWhatsappBotEnabled] = useState(true);
@@ -71,7 +72,10 @@ const WhatsAppBotPage = () => {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await apiClient.post('/admin/whatsapp/test', { to: testPhone.trim() });
+      const res = await apiClient.post('/admin/whatsapp/test', { 
+        to: testPhone.trim(), 
+        templateName: testTemplate.trim() || '3p_direct_integration_test_template' 
+      });
       setTestResult({ success: true, data: res.data });
       if (res.data?.success) {
         toast.success('✅ WhatsApp test message sent successfully!');
@@ -250,10 +254,18 @@ const WhatsAppBotPage = () => {
             <div className="space-y-3">
               <input
                 type="text"
+                placeholder="Template Name (e.g. 3p_direct_integration_test_template)"
+                value={testTemplate}
+                onChange={e => setTestTemplate(e.target.value)}
+                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none"
+              />
+
+              <input
+                type="text"
                 placeholder="Customer phone (e.g. 918341465933)"
                 value={testPhone}
                 onChange={e => setTestPhone(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none"
+                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none"
               />
 
               <button
