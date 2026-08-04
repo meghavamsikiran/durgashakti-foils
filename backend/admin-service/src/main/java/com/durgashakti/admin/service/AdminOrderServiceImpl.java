@@ -240,6 +240,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         } else if ("shipped".equals(statusLower)) {
             sendOrderEmail(order, "Order Shipped: " + order.getOrderNumber(), 
                 "Your order " + order.getOrderNumber() + " has been shipped! You can track shipping progress on the order details page.");
+            whatsAppNotificationService.sendOrderShippedNotification(order);
         } else if ("out_for_delivery".equals(statusLower) || "out for delivery".equals(statusLower)) {
             sendOrderEmail(order, "Order Out for Delivery: " + order.getOrderNumber(), 
                 "Your order " + order.getOrderNumber() + " is out for delivery! Our delivery partner will contact you shortly.");

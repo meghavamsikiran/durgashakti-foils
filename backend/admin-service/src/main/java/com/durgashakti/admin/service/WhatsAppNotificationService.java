@@ -123,8 +123,9 @@ public class WhatsAppNotificationService {
         if (apiToken != null && !apiToken.isBlank() && phoneNumberId != null && !phoneNumberId.isBlank()) {
             boolean dispatched = false;
 
-            // Priority candidate templates in production WABA
+            // Priority templates
             List<String> candidateTemplates = List.of(
+                "order_delivered_v1",
                 "order_delivered",
                 "hello_world"
             );
@@ -152,8 +153,18 @@ public class WhatsAppNotificationService {
                             template.put("name", templateName);
                             template.put("language", Map.of("code", lang));
 
-                            // Pass dynamic order number parameter if using order_delivered
-                            if ("order_delivered".equals(templateName)) {
+                            // Pass dynamic parameters
+                            if ("order_delivered_v1".equals(templateName)) {
+                                template.put("components", List.of(
+                                    Map.of(
+                                        "type", "body",
+                                        "parameters", List.of(
+                                            Map.of("type", "text", "text", customerName),
+                                            Map.of("type", "text", "text", order.getOrderNumber())
+                                        )
+                                    )
+                                ));
+                            } else if ("order_delivered".equals(templateName)) {
                                 template.put("components", List.of(
                                     Map.of(
                                         "type", "body",
@@ -181,6 +192,131 @@ public class WhatsAppNotificationService {
         } else {
             log.info("[WhatsApp Notification] Meta API credentials not configured. Business Line: {}, Order #{}: https://wa.me/{}?text=Hi%20DurgaShakti%20Foils,%20I%20have%20feedback%20regarding%20my%20delivered%20order%20%23{}",
                     businessNumber, order.getOrderNumber(), businessNumber, order.getOrderNumber());
+        }
+    }
+
+    /**
+     * Triggers order shipped notification via Meta WhatsApp Cloud API using order_shipped_v1 template.
+     */
+    public void sendOrderShippedNotification(Order order) {
+        if (order == null) return;
+
+        String apiToken = envWhatsAppApiToken;
+        String phoneNumberId = envWhatsAppPhoneNumberId;
+        boolean isEnabled = true;
+
+        try {
+            Optional<Setting> settingOpt = settingRepository.findById("whatsapp_ai_feedback");
+            if (settingOpt.isPresent()) {
+                Map<String, Object> val = settingOpt.get().getValue();
+                if (val != null) {
+                    if (val.containsKey("enabled") && val.get("enabled") instanceof Boolean) {
+                        isEnabled = (Boolean) val.get("enabled");
+                    }
+                    if (val.containsKey("apiToken") && val.get("apiToken") != null && !val.get("apiToken").toString().isBlank()) {
+                        apiToken = val.get("apiToken").toString().trim();
+                    }
+                    if (val.containsKey("phoneNumberId") && val.get("phoneNumberId") != null && !val.get("phoneNumberId").toString().isBlank()) {
+                        phoneNumberId = val.get("phoneNumberId").toString().trim();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[WhatsApp Notification] Failed to read dynamic database settings: {}", e.getMessage());
+        }
+
+        if (!isEnabled || apiToken == null || apiToken.isBlank() || phoneNumberId == null || phoneNumberId.isBlank()) {
+            return;
+        }
+
+        Map<String, Object> shippingAddress = order.getShippingAddress();
+        String customerName = "Valued Customer";
+        String customerPhone = null;
+
+        if (shippingAddress != null) {
+            for (String nameKey : List.of("full_name", "fullName", "name", "recipient_name")) {
+                if (shippingAddress.containsKey(nameKey) && shippingAddress.get(nameKey) != null) {
+                    String n = String.valueOf(shippingAddress.get(nameKey)).trim();
+                    if (!n.isBlank() && !"null".equalsIgnoreCase(n)) {
+                        customerName = n;
+                        break;
+                    }
+                }
+            }
+
+            for (String phoneKey : List.of("phone", "mobile", "mobileNumber", "mobile_number", "phone_number", "contact", "contact_number")) {
+                if (shippingAddress.containsKey(phoneKey) && shippingAddress.get(phoneKey) != null) {
+                    String p = String.valueOf(shippingAddress.get(phoneKey)).trim();
+                    if (!p.isBlank() && !"null".equalsIgnoreCase(p)) {
+                        customerPhone = p;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (customerPhone == null || customerPhone.isBlank()) return;
+
+        String cleanedPhone = customerPhone.replaceAll("[^0-9]", "");
+        if (cleanedPhone.length() == 10) cleanedPhone = "91" + cleanedPhone;
+
+        String trackingNum = order.getTrackingNumber() != null ? order.getTrackingNumber().trim() : order.getOrderNumber();
+
+        log.info("[WhatsApp Shipped Notification] Dispatching order_shipped_v1 for Order #{}, Customer: {}, Phone: {}, Tracking: {}",
+                order.getOrderNumber(), customerName, cleanedPhone, trackingNum);
+
+        boolean dispatched = false;
+        List<String> langCodes = List.of("en_US", "en", "en_GB", "hi", "hi_IN");
+
+        for (String lang : langCodes) {
+            if (dispatched) break;
+            for (String apiVer : List.of("v20.0", "v25.0", "v18.0")) {
+                if (dispatched) break;
+                try {
+                    String url = "https://graph.facebook.com/" + apiVer + "/" + phoneNumberId + "/messages";
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.APPLICATION_JSON);
+                    headers.setBearerAuth(apiToken);
+
+                    Map<String, Object> body = new HashMap<>();
+                    body.put("messaging_product", "whatsapp");
+                    body.put("to", cleanedPhone);
+                    body.put("type", "template");
+
+                    Map<String, Object> template = new HashMap<>();
+                    template.put("name", "order_shipped_v1");
+                    template.put("language", Map.of("code", lang));
+                    template.put("components", List.of(
+                        Map.of(
+                            "type", "body",
+                            "parameters", List.of(
+                                Map.of("type", "text", "text", customerName),
+                                Map.of("type", "text", "text", order.getOrderNumber())
+                            )
+                        ),
+                        Map.of(
+                            "type", "button",
+                            "sub_type", "url",
+                            "index", "0",
+                            "parameters", List.of(
+                                Map.of("type", "text", "text", "https://t.17track.net/en#nums=" + trackingNum)
+                            )
+                        )
+                    ));
+
+                    body.put("template", template);
+
+                    HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+                    restTemplate.postForEntity(url, request, String.class);
+                    log.info("[WhatsApp Shipped API] Successfully dispatched order_shipped_v1 ({}) to {}", lang, cleanedPhone);
+                    dispatched = true;
+                } catch (HttpStatusCodeException httpEx) {
+                    log.warn("[WhatsApp Shipped API] order_shipped_v1 ({}) failed: {}", lang, httpEx.getResponseBodyAsString());
+                } catch (Exception e) {
+                    log.warn("[WhatsApp Shipped API] order_shipped_v1 ({}) failed for {}: {}", lang, cleanedPhone, e.getMessage());
+                }
+            }
         }
     }
 }
