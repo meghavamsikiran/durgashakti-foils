@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { X, Copy, Check, Sparkles } from 'lucide-react';
+import { X, Copy, Check, Sparkles, Ticket } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import settingsService from '../services/settings.service';
 
@@ -425,21 +425,34 @@ const PopupBanner = () => {
               return (
                 <div 
                   key={coupon.id || coupon.code}
-                  className="rounded-2xl p-5 border border-white/15 hover:border-white/30 transition-all flex flex-col items-center justify-center text-center gap-4 w-full min-h-[140px]"
-                  style={{ background: 'rgba(0, 0, 0, 0.25)' }}
+                  className="rounded-2xl p-5 border border-amber-400/40 hover:border-amber-400/60 transition-all flex flex-col items-center justify-center text-center gap-3 w-full min-h-[145px] relative overflow-hidden group shadow-lg"
+                  style={{ background: 'rgba(0, 0, 0, 0.40)', backdropFilter: 'blur(8px)' }}
                 >
-                  <div className="space-y-1.5 w-full relative">
-                    <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest">
+                  {/* Left Ticket Side Notch Cutout */}
+                  <div className="absolute -left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-[#200427] border border-amber-400/50 z-20 shadow-inner" />
+
+                  {/* Right Ticket Side Notch Cutout */}
+                  <div className="absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-[#200427] border border-amber-400/50 z-20 shadow-inner" />
+
+                  {/* Background Watermark Ticket Icon */}
+                  <div className="absolute -bottom-2 -right-2 opacity-[0.12] pointer-events-none z-0">
+                    <Ticket className="w-20 h-20 text-amber-300" />
+                  </div>
+
+                  <div className="space-y-1.5 w-full relative z-10">
+                    <p className="text-xs font-black text-amber-300 uppercase tracking-widest flex items-center justify-center gap-1.5">
+                      <Ticket className="w-3.5 h-3.5 text-amber-400" />
                       {discVal}
                     </p>
-                    <div className="relative flex items-center justify-center w-full px-12">
-                      <span className="font-mono text-xl font-black text-white bg-black/20 px-3.5 py-1.5 rounded-xl border border-white/20 select-all tracking-wider">
+                    
+                    <div className="relative flex items-center justify-center w-full px-10">
+                      <span className="font-mono text-xl font-black text-amber-300 bg-black/40 px-4 py-1.5 rounded-xl border border-amber-400/40 select-all tracking-wider shadow-inner">
                         {coupon.code}
                       </span>
                       <button
                         onClick={() => handleCopy(coupon.code)}
-                        className="absolute right-0 p-2 rounded-lg text-white/80 hover:text-white transition-all border border-white/10"
-                        style={{ background: 'rgba(0, 0, 0, 0.15)' }}
+                        className="absolute right-0 p-2 rounded-lg text-amber-300 hover:text-white bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 transition-all active:scale-95"
+                        style={{ background: 'rgba(0, 0, 0, 0.25)' }}
                         title="Copy Code"
                       >
                         {copiedCode === coupon.code ? (
@@ -451,10 +464,10 @@ const PopupBanner = () => {
                     </div>
                   </div>
 
-                  <div className="w-full flex flex-col justify-center items-center">
+                  <div className="w-full flex flex-col justify-center items-center relative z-10 pt-1 border-t border-dashed border-white/15">
                     {hasExpiry ? (
                       <>
-                        <p className="text-[9px] uppercase font-bold tracking-wider text-white/50">Offer Expires</p>
+                        <p className="text-[9px] uppercase font-bold tracking-wider text-amber-200/70">Offer Expires</p>
                         <p className="text-xs font-bold text-yellow-200 font-mono mt-0.5">
                           {new Date(coupon.expiry_date).toLocaleDateString('en-IN', {
                             day: '2-digit',
@@ -466,7 +479,7 @@ const PopupBanner = () => {
                         </p>
                       </>
                     ) : (
-                      <span className="inline-flex px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded text-[9px] font-bold uppercase tracking-wider">
+                      <span className="inline-flex px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-[9px] font-bold uppercase tracking-wider">
                         Infinite Validity
                       </span>
                     )}
