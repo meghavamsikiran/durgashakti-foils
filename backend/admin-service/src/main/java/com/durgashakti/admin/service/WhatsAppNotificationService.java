@@ -70,7 +70,7 @@ public class WhatsAppNotificationService {
                 }
             }
         } catch (Exception e) {
-            log.warn("[WhatsApp Notification] Failed to read dynamic database settings, falling back to default values: {}", e.getMessage());
+            log.warn("[WhatsApp Notification] Failed to read dynamic database settings: {}", e.getMessage());
         }
 
         if (!isEnabled) {
@@ -133,16 +133,32 @@ public class WhatsAppNotificationService {
                 body.put("type", "template");
 
                 Map<String, Object> template = new HashMap<>();
-                // Meta default starter template 'hello_world' is pre-approved for all developer test apps
-                template.put("name", "hello_world");
+                // Use Meta's pre-approved developer test template 'jaspers_market_order_confirmation'
+                template.put("name", "jaspers_market_order_confirmation");
                 template.put("language", Map.of("code", "en_US"));
                 body.put("template", template);
 
                 HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
                 restTemplate.postForEntity(url, request, String.class);
-                log.info("[WhatsApp Cloud API] Successfully dispatched WhatsApp feedback template to {}", cleanedPhone);
+                log.info("[WhatsApp Cloud API] Successfully dispatched WhatsApp message to {}", cleanedPhone);
             } catch (Exception e) {
                 log.error("[WhatsApp Cloud API Error] Failed to send WhatsApp message to {}: {}", cleanedPhone, e.getMessage());
+                // Fallback attempt with 'hello_world' if jaspers_market_order_confirmation fails
+                try {
+                    String url = "https://graph.facebook.com/v18.0/" + phoneNumberId + "/messages";
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.APPLICATION_JSON);
+                    headers.setBearerAuth(apiToken);
+                    Map<String, Object> body = new HashMap<>();
+                    body.put("messaging_product", "whatsapp");
+                    body.put("to", cleanedPhone);
+                    body.put("type", "template");
+                    body.put("template", Map.of("name", "hello_world", "language", Map.of("code", "en_US")));
+                    restTemplate.postForEntity(url, new HttpEntity<>(body, headers), String.class);
+                    log.info("[WhatsApp Cloud API Fallback] Dispatched hello_world template to {}", cleanedPhone);
+                } catch (Exception ex) {
+                    log.error("[WhatsApp Cloud API Fallback Error] {}", ex.getMessage());
+                }
             }
         } else {
             log.info("[WhatsApp Notification] Meta API credentials not configured. Business Line: {}, Order #{}: https://wa.me/{}?text=Hi%20DurgaShakti%20Foils,%20I%20have%20feedback%20regarding%20my%20delivered%20order%20%23{}",
