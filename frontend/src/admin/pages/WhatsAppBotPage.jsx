@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
+import apiClient from '../../services/core/apiClient';
 import { 
   MessageSquare, Phone, Save, Bot, CheckCircle2, 
   Send, ShieldCheck, Sparkles, Key, Smartphone
@@ -12,7 +13,8 @@ const WhatsAppBotPage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [testOrderNumber, setTestOrderNumber] = useState('');
+  const [testPhone, setTestPhone] = useState('');
+  const [testResult, setTestResult] = useState(null);
 
   const [whatsappBotEnabled, setWhatsappBotEnabled] = useState(true);
   const [whatsappBusinessNumber, setWhatsappBusinessNumber] = useState('919999999999');
@@ -61,19 +63,28 @@ const WhatsAppBotPage = () => {
     }
   };
 
-  const handleSendTestMessage = () => {
-    if (!whatsappBusinessNumber) {
-      toast.error('Please enter a valid WhatsApp business phone number');
+  const handleSendTestMessage = async () => {
+    if (!testPhone.trim()) {
+      toast.error('Please enter the phone number to send test to (e.g. 918341465933)');
       return;
     }
     setTesting(true);
-    setTimeout(() => {
+    setTestResult(null);
+    try {
+      const res = await apiClient.post('/admin/whatsapp/test', { to: testPhone.trim() });
+      setTestResult({ success: true, data: res.data });
+      if (res.data?.success) {
+        toast.success('✅ WhatsApp test message sent successfully!');
+      } else {
+        toast.error('⚠️ Meta API returned an error. Check the result below.');
+      }
+    } catch (err) {
+      const errData = err.response?.data || { error: err.message };
+      setTestResult({ success: false, data: errData });
+      toast.error('Test API call failed: ' + (err.message || 'Unknown error'));
+    } finally {
       setTesting(false);
-      const orderNum = testOrderNumber.trim() || 'ORD-DEMO-1001';
-      const text = encodeURIComponent(`Hi DurgaShakti Foils, I have feedback regarding my delivered order #${orderNum}`);
-      window.open(`https://wa.me/${whatsappBusinessNumber.replaceAll(/[^0-9]/g, '')}?text=${text}`, '_blank');
-      toast.success(`Test WhatsApp chat opened for order ${orderNum}!`);
-    }, 400);
+    }
   };
 
   if (loading) {
@@ -230,18 +241,18 @@ const WhatsAppBotPage = () => {
           <div className="bg-white dark:bg-[#070b09] border border-slate-200 dark:border-[#19231F] rounded-3xl p-6 shadow-sm space-y-4">
             <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
               <Send className="w-4 h-4 text-emerald-500" />
-              Quick Test Trigger
+              Live API Test
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Test the post-delivery WhatsApp chat flow for an order number.
+              Directly calls Meta WhatsApp Cloud API with your saved credentials. Shows exact error or success response.
             </p>
 
             <div className="space-y-3">
               <input
                 type="text"
-                placeholder="Enter Order # (e.g. ORD-10024)"
-                value={testOrderNumber}
-                onChange={e => setTestOrderNumber(e.target.value)}
+                placeholder="Customer phone (e.g. 918341465933)"
+                value={testPhone}
+                onChange={e => setTestPhone(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none"
               />
 
@@ -249,13 +260,23 @@ const WhatsAppBotPage = () => {
                 type="button"
                 onClick={handleSendTestMessage}
                 disabled={testing}
-                className="w-full py-3 rounded-xl bg-slate-900 dark:bg-white/10 hover:bg-slate-800 text-white font-extrabold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 disabled:opacity-60"
               >
-                <Send className="w-3.5 h-3.5 text-emerald-400" />
-                {testing ? 'Opening WhatsApp...' : 'Test WhatsApp Flow'}
+                <Send className="w-3.5 h-3.5" />
+                {testing ? 'Calling Meta API...' : 'Test WhatsApp API Now'}
               </button>
+
+              {testResult && (
+                <div className={`rounded-xl p-3 text-xs font-mono border ${testResult.data?.success ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border-red-500/30 text-red-300'}`}>
+                  <p className="font-black mb-1">{testResult.data?.success ? '✅ SUCCESS' : '❌ FAILED'}</p>
+                  <pre className="whitespace-pre-wrap break-all text-[10px] leading-relaxed">
+                    {JSON.stringify(testResult.data, null, 2)}
+                  </pre>
+                </div>
+              )}
             </div>
           </div>
+
 
           <div className="bg-white dark:bg-[#070b09] border border-slate-200 dark:border-[#19231F] rounded-3xl p-6 shadow-sm space-y-4">
             <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">

@@ -4,10 +4,15 @@ import com.durgashakti.admin.repository.AdminSettingRepository;
 import com.durgashakti.common.entity.Setting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.OffsetDateTime;
 import java.util.HashMap;
@@ -111,6 +116,89 @@ public class AdminSettingController {
             log.error("Failed to save setting", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Failed to save settings: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Test WhatsApp Cloud API with saved credentials — returns raw Meta API response for debugging.
+     */
+    @PostMapping("/whatsapp/test")
+    @PreAuthorize("hasAuthority('manage_settings')")
+    public ResponseEntity<?> testWhatsApp(@RequestBody Map<String, Object> req) {
+        try {
+            String toPhone = req.containsKey("to") ? String.valueOf(req.get("to")) : null;
+            if (toPhone == null || toPhone.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "'to' phone number is required"));
+            }
+
+            // Load credentials from DB
+            String apiToken = null;
+            String phoneNumberId = null;
+
+            Optional<Setting> settingOpt = settingRepository.findById("whatsapp_ai_feedback");
+            Map<String, Object> debugInfo = new HashMap<>();
+            if (settingOpt.isPresent()) {
+                Map<String, Object> val = settingOpt.get().getValue();
+                debugInfo.put("settingFound", true);
+                debugInfo.put("settingKeys", val != null ? val.keySet() : List.of());
+                if (val != null) {
+                    Object tok = val.get("apiToken");
+                    Object pid = val.get("phoneNumberId");
+                    apiToken = tok != null ? tok.toString().trim() : null;
+                    phoneNumberId = pid != null ? pid.toString().trim() : null;
+                    debugInfo.put("tokenLength", apiToken != null ? apiToken.length() : 0);
+                    debugInfo.put("tokenPrefix", apiToken != null && apiToken.length() > 10 ? apiToken.substring(0, 10) + "..." : "MISSING");
+                    debugInfo.put("phoneNumberId", phoneNumberId);
+                    debugInfo.put("enabled", val.get("enabled"));
+                }
+            } else {
+                debugInfo.put("settingFound", false);
+            }
+
+            if (apiToken == null || apiToken.isBlank()) {
+                debugInfo.put("error", "apiToken is missing or blank in DB");
+                return ResponseEntity.status(400).body(debugInfo);
+            }
+            if (phoneNumberId == null || phoneNumberId.isBlank()) {
+                debugInfo.put("error", "phoneNumberId is missing or blank in DB");
+                return ResponseEntity.status(400).body(debugInfo);
+            }
+
+            String cleanPhone = toPhone.replaceAll("[^0-9]", "");
+            if (cleanPhone.length() == 10) cleanPhone = "91" + cleanPhone;
+
+            RestTemplate restTemplate = new RestTemplate();
+            String url = "https://graph.facebook.com/v20.0/" + phoneNumberId + "/messages";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(apiToken);
+
+            Map<String, Object> body = new HashMap<>();
+            body.put("messaging_product", "whatsapp");
+            body.put("to", cleanPhone);
+            body.put("type", "template");
+            body.put("template", Map.of("name", "hello_world", "language", Map.of("code", "en_US")));
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+            try {
+                ResponseEntity<String> metaResp = restTemplate.postForEntity(url, entity, String.class);
+                debugInfo.put("metaStatus", metaResp.getStatusCode().value());
+                debugInfo.put("metaResponse", metaResp.getBody());
+                debugInfo.put("success", true);
+                debugInfo.put("phone", cleanPhone);
+                return ResponseEntity.ok(debugInfo);
+            } catch (HttpStatusCodeException httpEx) {
+                debugInfo.put("metaStatus", httpEx.getStatusCode().value());
+                debugInfo.put("metaError", httpEx.getResponseBodyAsString());
+                debugInfo.put("success", false);
+                debugInfo.put("phone", cleanPhone);
+                return ResponseEntity.status(200).body(debugInfo);
+            }
+        } catch (Exception e) {
+            log.error("WhatsApp test failed", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 }
