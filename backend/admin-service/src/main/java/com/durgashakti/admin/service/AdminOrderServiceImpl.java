@@ -45,6 +45,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
     private final com.durgashakti.common.service.InvoiceService invoiceService;
     private final WhatsAppNotificationService whatsAppNotificationService;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public AdminOrderServiceImpl(AdminOrderRepository orderRepository,
                                  AdminProductRepository productRepository,
@@ -52,7 +53,8 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                                  AdminUserRepository userRepository,
                                  EmailClient emailClient,
                                  com.durgashakti.common.service.InvoiceService invoiceService,
-                                 WhatsAppNotificationService whatsAppNotificationService) {
+                                 WhatsAppNotificationService whatsAppNotificationService,
+                                 org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.auditLogRepository = auditLogRepository;
@@ -60,6 +62,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         this.emailClient = emailClient;
         this.invoiceService = invoiceService;
         this.whatsAppNotificationService = whatsAppNotificationService;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     /**
@@ -269,21 +272,41 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 }
             }
 
-            // Refund payment if paid/completed
-            String pStatus = order.getPaymentStatus();
-            if ("paid".equalsIgnoreCase(pStatus) || "completed".equalsIgnoreCase(pStatus)) {
+            // Refund payment if paid/completed or wallet
+            String pStatus = (order.getPaymentStatus() != null ? order.getPaymentStatus() : "").toLowerCase();
+            String pMethod = (order.getPaymentMethod() != null ? order.getPaymentMethod() : "").toLowerCase();
+
+            if (pStatus.contains("paid") || pStatus.contains("completed") || "wallet".equalsIgnoreCase(pMethod) || "dsf_wallet".equalsIgnoreCase(pMethod)) {
                 double refundAmt = order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0;
-                String finalPayStatus = "refund_pending";
-                if (order.getRazorpayPaymentId() != null && !order.getRazorpayPaymentId().isBlank()) {
+                
+                if ("wallet".equalsIgnoreCase(pMethod) || "dsf_wallet".equalsIgnoreCase(pMethod) || pStatus.contains("wallet")) {
+                    // Credit back to customer's wallet balance
+                    if (order.getUserId() != null && refundAmt > 0) {
+                        try {
+                            jdbcTemplate.update("UPDATE wallets SET balance = balance + ?, updated_at = NOW() WHERE user_id = ?", refundAmt, order.getUserId());
+                            jdbcTemplate.update(
+                                "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
+                                "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'ORDER_REFUND', ?, ?, 'SUCCESS', NOW())",
+                                order.getUserId(), java.math.BigDecimal.valueOf(refundAmt), order.getOrderNumber(), "Refund for cancelled order #" + order.getOrderNumber()
+                            );
+                            order.setPaymentStatus("refunded");
+                            log.info("[Wallet Refund] Successfully refunded ₹{} to wallet for user {} on cancelled order {}", refundAmt, order.getUserId(), order.getOrderNumber());
+                        } catch (Exception ex) {
+                            log.error("[Wallet Refund Failed] Error refunding wallet for order {}: {}", order.getOrderNumber(), ex.getMessage());
+                        }
+                    }
+                } else if (order.getRazorpayPaymentId() != null && !order.getRazorpayPaymentId().isBlank()) {
+                    // Razorpay refund
                     Map<String, Object> rzpRes = attemptRazorpayRefund(order.getRazorpayPaymentId(), refundAmt, order.getOrderNumber());
                     if (Boolean.TRUE.equals(rzpRes.get("success"))) {
                         String rzpStatus = (String) rzpRes.get("status");
                         if ("processed".equalsIgnoreCase(rzpStatus)) {
-                            finalPayStatus = "refunded";
+                            order.setPaymentStatus("refunded");
+                        } else {
+                            order.setPaymentStatus("refund_pending");
                         }
                     }
                 }
-                order.setPaymentStatus(finalPayStatus);
                 log.info("Cancelled paid order {} -- final payment status: {}", order.getOrderNumber(), order.getPaymentStatus());
             }
 

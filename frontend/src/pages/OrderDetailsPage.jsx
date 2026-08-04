@@ -12,17 +12,32 @@ import { useCart } from './../contexts/CartContext';
 
 const PENDING_RAZORPAY_ORDER_KEY = 'pending_razorpay_order';
 const COURIER_OPTIONS = ["BlueDart", "DTDC", "Delhivery", "India Post", "Ecom Express", "XpressBees", "Shadowfax", "Ekart Logistics", "DHL", "Professional Couriers", "Other"];
-const isPaidPaymentStatus = (status) => ['paid', 'completed'].includes((status || '').toLowerCase());
+const isPaidPaymentStatus = (status) => {
+  const s = (status || '').toLowerCase();
+  return s === 'paid' || s === 'completed' || s.includes('paid via wallet') || s.includes('paid');
+};
 const isRefundPaymentStatus = (status) => ['refund_pending', 'refund_failed', 'refunded'].includes((status || '').toLowerCase());
 const isOnlinePaymentPendingOrder = (orderData) => {
   const paymentStatus = (orderData?.payment_status || '').toLowerCase();
   const orderStatus = (orderData?.order_status || '').toLowerCase();
+  const paymentMethod = (orderData?.payment_method || '').toLowerCase();
+
+  if (paymentMethod === 'cod' || paymentMethod === 'wallet' || paymentMethod === 'dsf_wallet') {
+    return false;
+  }
+
+  const fulfilledOrActiveStatuses = [
+    'confirmed', 'processing', 'packed', 'packaging', 'shipped', 
+    'out_for_delivery', 'out for delivery', 'in_transit', 'in transit', 
+    'delivered', 'completed', 'cancelled', 'failed', 'refunded', 
+    'return_approved', 'return_rejected', 'overdue'
+  ];
+
   return (
     !isPaidPaymentStatus(paymentStatus) &&
     !isRefundPaymentStatus(paymentStatus) &&
     !['failed', 'cancelled'].includes(paymentStatus) &&
-    (orderData?.payment_method || '').toLowerCase() !== 'cod' &&
-    !['cancelled', 'failed', 'refunded', 'return_approved', 'return_rejected', 'overdue'].includes(orderStatus)
+    !fulfilledOrActiveStatuses.includes(orderStatus)
   );
 };
 
