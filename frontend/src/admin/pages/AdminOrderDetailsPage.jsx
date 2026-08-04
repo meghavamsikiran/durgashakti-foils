@@ -1437,13 +1437,37 @@ const AdminOrderDetailsPage = () => {
             return (
               <>
                 {showRefundInfo ? (
-                  <div className="text-[10px] text-slate-500 font-extrabold text-left w-full sm:w-auto flex flex-wrap items-center gap-2">
-                    <span>Refund: <span className="font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 select-all">₹{totalRefundAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></span>
-                    <span>{' → '}</span>
-                    <span className="font-mono text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 select-all">{order.shipping_address?.phone || 'customer'}</span>
-                    {order.payment_status === 'refund_pending' && !isCod && (
-                      <span className="px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-100 rounded text-[9px] font-black uppercase tracking-wider animate-pulse">Refund Processing Automatically</span>
-                    )}
+                  <div className="text-[11px] font-bold text-left w-full sm:w-auto flex flex-wrap items-center gap-2">
+                    {(() => {
+                      const pMethod = (order.payment_method || '').toLowerCase();
+                      const pStatus = (order.payment_status || '').toLowerCase();
+                      const isWallet = pMethod === 'wallet' || pMethod === 'dsf_wallet' || pStatus.includes('wallet');
+                      const formattedAmount = `₹${totalRefundAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                      const customerPhone = order.shipping_address?.phone || order.user_phone;
+                      
+                      if (pStatus === 'refunded') {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 font-semibold shadow-xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            {isWallet ? `Credited ${formattedAmount} to DSF Wallet` : `Refunded ${formattedAmount} to Customer`}
+                            {customerPhone && <span className="font-mono opacity-80 text-[10px]">({customerPhone})</span>}
+                          </span>
+                        );
+                      } else if (pStatus === 'refund_pending') {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200/80 dark:border-sky-800/60 font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-ping"></span>
+                            Refund of {formattedAmount} Initiated {customerPhone ? `(${customerPhone})` : ''}
+                          </span>
+                        );
+                      } else {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 font-semibold">
+                            Refund Amount: {formattedAmount}
+                          </span>
+                        );
+                      }
+                    })()}
                   </div>
                 ) : (
                   <div></div>

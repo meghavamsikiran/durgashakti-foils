@@ -4,7 +4,8 @@ import adminService from '../services/admin.service';
 import apiClient from '../../services/core/apiClient';
 import { 
   MessageSquare, Phone, Save, Bot, CheckCircle2, 
-  Send, ShieldCheck, Sparkles, Key, Smartphone
+  Send, ShieldCheck, Sparkles, Key, Smartphone,
+  Eye, EyeOff, Copy, Check
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import PageLoader from '../../components/ui/PageLoader';
@@ -21,6 +22,9 @@ const WhatsAppBotPage = () => {
   const [whatsappBusinessNumber, setWhatsappBusinessNumber] = useState('919999999999');
   const [whatsappApiToken, setWhatsappApiToken] = useState('');
   const [whatsappPhoneNumberId, setWhatsappPhoneNumberId] = useState('');
+  
+  const [showToken, setShowToken] = useState(false);
+  const [copiedToken, setCopiedToken] = useState(false);
 
   const loadSettings = async () => {
     try {
@@ -44,7 +48,23 @@ const WhatsAppBotPage = () => {
     loadSettings();
   }, []);
 
+  const handleCopyToken = () => {
+    if (!whatsappApiToken) return;
+    navigator.clipboard.writeText(whatsappApiToken);
+    setCopiedToken(true);
+    toast.success('Access Token copied to clipboard!');
+    setTimeout(() => setCopiedToken(false), 2500);
+  };
+
   const saveSettings = async () => {
+    if (!whatsappPhoneNumberId.trim()) {
+      toast.error('Meta Cloud API Phone Number ID is required!');
+      return;
+    }
+    if (!whatsappApiToken.trim()) {
+      toast.error('Meta Access Token is required!');
+      return;
+    }
     try {
       setSaving(true);
       await adminService.updateSetting({
@@ -151,7 +171,7 @@ const WhatsAppBotPage = () => {
 
             <div className="space-y-4 pt-2">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5 text-emerald-500" />
                   WhatsApp Business Phone Number
                 </label>
@@ -160,38 +180,72 @@ const WhatsAppBotPage = () => {
                   placeholder="e.g. 919999999999"
                   value={whatsappBusinessNumber}
                   onChange={e => setWhatsappBusinessNumber(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none focus:border-emerald-500"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none focus:border-emerald-500 text-slate-900 dark:text-white"
                 />
                 <p className="text-[10px] text-slate-400 mt-1">Include country code (e.g. 91 for India). Customers will be connected to this WhatsApp line.</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 flex items-center gap-1.5">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5 flex items-center gap-1.5">
                     <Smartphone className="w-3.5 h-3.5 text-emerald-500" />
-                    Meta Cloud API Phone Number ID (Optional)
+                    Meta Cloud API Phone Number ID <span className="text-red-500 font-bold">*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. 10485729384"
+                    placeholder="e.g. 1185061241365620"
+                    required
                     value={whatsappPhoneNumberId}
                     onChange={e => setWhatsappPhoneNumberId(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none focus:border-emerald-500"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none focus:border-emerald-500 text-slate-900 dark:text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1.5 flex items-center gap-1.5">
-                    <Key className="w-3.5 h-3.5 text-emerald-500" />
-                    Meta Access Token (Optional)
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="EAAG..."
-                    value={whatsappApiToken}
-                    onChange={e => setWhatsappApiToken(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none focus:border-emerald-500"
-                  />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                      <Key className="w-3.5 h-3.5 text-emerald-500" />
+                      Meta Access Token <span className="text-red-500 font-bold">*</span>
+                    </label>
+                    {copiedToken && (
+                      <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 animate-bounce flex items-center gap-1">
+                        <Check className="w-3 h-3 text-emerald-500" /> Access Token Copied!
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative flex items-center">
+                    <input
+                      type={showToken ? "text" : "password"}
+                      placeholder="EAAG..."
+                      required
+                      value={whatsappApiToken}
+                      onClick={() => {
+                        if (whatsappApiToken) handleCopyToken();
+                      }}
+                      onChange={e => setWhatsappApiToken(e.target.value)}
+                      className="w-full pl-4 pr-20 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none focus:border-emerald-500 text-slate-900 dark:text-white cursor-pointer"
+                      title="Click to auto-copy Token"
+                    />
+                    <div className="absolute right-2 flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowToken(!showToken)}
+                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors"
+                        title={showToken ? "Hide Token" : "Show Token"}
+                      >
+                        {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCopyToken}
+                        disabled={!whatsappApiToken}
+                        className="p-1.5 text-slate-400 hover:text-emerald-500 rounded-lg transition-colors disabled:opacity-30"
+                        title="Copy Access Token"
+                      >
+                        {copiedToken ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -216,21 +270,21 @@ const WhatsAppBotPage = () => {
               Live Customer WhatsApp Experience Preview
             </h3>
             
-            <div className="p-4 rounded-2xl bg-[#0b1410] border border-emerald-500/20 text-white max-w-md font-sans text-xs space-y-2">
-              <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                <span className="font-bold text-emerald-400 flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5" /> DurgaShakti Foils Official
+            <div className="p-5 rounded-2xl bg-emerald-50/60 dark:bg-[#0b1410] border border-emerald-200/80 dark:border-emerald-500/20 text-slate-900 dark:text-white max-w-md font-sans text-xs space-y-3 shadow-inner">
+              <div className="flex items-center justify-between border-b border-emerald-200/60 dark:border-white/10 pb-2">
+                <span className="font-extrabold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                  <MessageSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> DurgaShakti Foils Official
                 </span>
-                <span className="text-[9px] text-slate-400">Just Now</span>
+                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Just Now</span>
               </div>
-              <p className="leading-relaxed text-slate-200">
-                📦 Great news! Your order <span className="font-mono text-emerald-300 font-bold">#ORD-10024</span> has been marked as delivered.
+              <p className="leading-relaxed text-slate-800 dark:text-slate-200 font-medium">
+                📦 Great news! Your order <span className="font-mono text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-100/70 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200/80 dark:border-emerald-800/60">#ORD-10024</span> has been marked as delivered.
               </p>
-              <p className="text-slate-300">
+              <p className="text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
                 Was everything perfect, or did you notice any damage? Reply directly to this chat or click below to let our team know!
               </p>
-              <div className="pt-2">
-                <div className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold py-1.5 px-3 rounded-lg text-center">
+              <div className="pt-1">
+                <div className="bg-emerald-600 dark:bg-emerald-500/20 border border-emerald-700/20 dark:border-emerald-500/30 text-white dark:text-emerald-300 text-[11px] font-black py-2.5 px-4 rounded-xl text-center shadow-sm tracking-wide">
                   1-Click WhatsApp Support Active
                 </div>
               </div>
