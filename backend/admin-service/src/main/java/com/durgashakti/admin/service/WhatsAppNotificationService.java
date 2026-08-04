@@ -123,12 +123,13 @@ public class WhatsAppNotificationService {
         if (apiToken != null && !apiToken.isBlank() && phoneNumberId != null && !phoneNumberId.isBlank()) {
             boolean dispatched = false;
 
-            // List of standard Meta pre-approved templates for production business numbers
+            // Priority candidate templates in production WABA
             List<String> candidateTemplates = List.of(
-                "3p_direct_integration_test_template"
+                "order_delivered",
+                "hello_world"
             );
 
-            List<String> langCodes = List.of("en", "en_US", "en_GB", "hi", "hi_IN");
+            List<String> langCodes = List.of("en_US", "en", "en_GB", "hi", "hi_IN");
             for (String templateName : candidateTemplates) {
                 if (dispatched) break;
                 for (String lang : langCodes) {
@@ -150,6 +151,19 @@ public class WhatsAppNotificationService {
                             Map<String, Object> template = new HashMap<>();
                             template.put("name", templateName);
                             template.put("language", Map.of("code", lang));
+
+                            // Pass dynamic order number parameter if using order_delivered
+                            if ("order_delivered".equals(templateName)) {
+                                template.put("components", List.of(
+                                    Map.of(
+                                        "type", "body",
+                                        "parameters", List.of(
+                                            Map.of("type", "text", "text", order.getOrderNumber())
+                                        )
+                                    )
+                                ));
+                            }
+
                             body.put("template", template);
 
                             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
