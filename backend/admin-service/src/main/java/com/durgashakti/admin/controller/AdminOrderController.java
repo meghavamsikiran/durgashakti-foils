@@ -213,11 +213,15 @@ public class AdminOrderController {
         } catch (com.durgashakti.common.exception.ApiException e) {
             log.warn("[Process Item Refund ApiException] Order ID: {}, Product ID: {}: {}", orderId, productId, e.getMessage());
             return ResponseEntity.status(e.getStatus()).body(Map.of("message", e.getMessage(), "detail", e.getMessage()));
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("[Process Item Refund Error] Order ID: {}, Product ID: {}", orderId, productId, e);
+            java.io.StringWriter sw = new java.io.StringWriter();
+            e.printStackTrace(new java.io.PrintWriter(sw));
+            String fullTrace = sw.toString();
+            String rootMessage = e.getClass().getName() + ": " + e.getMessage();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Failed to process refund: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()),
-                            "detail", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+                    .body(Map.of("message", rootMessage,
+                            "detail", fullTrace.length() > 800 ? fullTrace.substring(0, 800) : fullTrace));
         }
     }
 

@@ -912,16 +912,19 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     // ── Helper: Add audit timeline entry to an item ───────────────────────
     @SuppressWarnings("unchecked")
     private void addAuditTimeline(Map<String, Object> item, String status, String remarks) {
-        List<Map<String, Object>> timeline = (List<Map<String, Object>>) item.get("audit_timeline");
-        if (timeline == null) {
-            timeline = new ArrayList<>();
+        if (item == null) return;
+        try {
+            List<Map<String, Object>> timelineRaw = (List<Map<String, Object>>) item.get("audit_timeline");
+            List<Map<String, Object>> timeline = timelineRaw != null ? new ArrayList<>(timelineRaw) : new ArrayList<>();
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("status", status != null ? status : "");
+            entry.put("timestamp", OffsetDateTime.now().toString());
+            entry.put("remarks", remarks != null ? remarks : "");
+            timeline.add(entry);
+            item.put("audit_timeline", timeline);
+        } catch (Exception ex) {
+            log.warn("[Audit Timeline Warning] Could not add timeline entry: {}", ex.getMessage());
         }
-        Map<String, Object> entry = new HashMap<>();
-        entry.put("status", status);
-        entry.put("timestamp", OffsetDateTime.now().toString());
-        entry.put("remarks", remarks);
-        timeline.add(entry);
-        item.put("audit_timeline", timeline);
     }
 
     // ── Helper: Write audit log ───────────────────────────────────────────
