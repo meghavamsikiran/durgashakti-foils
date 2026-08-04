@@ -123,11 +123,9 @@ public class WhatsAppNotificationService {
         if (apiToken != null && !apiToken.isBlank() && phoneNumberId != null && !phoneNumberId.isBlank()) {
             boolean dispatched = false;
 
-            // List of standard Meta pre-approved templates in priority order
+            // List of standard Meta pre-approved templates for production business numbers
             List<String> candidateTemplates = List.of(
-                "3p_direct_integration_test_template",
-                "jaspers_market_order_confirmation",
-                "hello_world"
+                "3p_direct_integration_test_template"
             );
 
             for (String templateName : candidateTemplates) {

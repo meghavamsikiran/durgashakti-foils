@@ -178,7 +178,7 @@ public class AdminSettingController {
             body.put("messaging_product", "whatsapp");
             body.put("to", cleanPhone);
             body.put("type", "template");
-            body.put("template", Map.of("name", "hello_world", "language", Map.of("code", "en_US")));
+            body.put("template", Map.of("name", "3p_direct_integration_test_template", "language", Map.of("code", "en_US")));
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
             try {
