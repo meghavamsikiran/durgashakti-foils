@@ -284,7 +284,12 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                     // Credit back to customer's wallet balance
                     if (order.getUserId() != null && refundAmt > 0) {
                         try {
-                            jdbcTemplate.update("UPDATE wallets SET balance = balance + ?, updated_at = NOW() WHERE user_id = ?", refundAmt, order.getUserId());
+                            jdbcTemplate.update(
+                                "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +
+                                "VALUES (gen_random_uuid(), ?, ?, NOW(), NOW()) " +
+                                "ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance, updated_at = NOW()",
+                                order.getUserId(), refundAmt
+                            );
                             jdbcTemplate.update(
                                 "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
                                 "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'ORDER_REFUND', ?, ?, 'SUCCESS', NOW())",
@@ -543,7 +548,12 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 } else if (isWalletOrder) {
                     if (order.getUserId() != null && refundAmount > 0) {
                         try {
-                            jdbcTemplate.update("UPDATE wallets SET balance = balance + ?, updated_at = NOW() WHERE user_id = ?", refundAmount, order.getUserId());
+                            jdbcTemplate.update(
+                                "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +
+                                "VALUES (gen_random_uuid(), ?, ?, NOW(), NOW()) " +
+                                "ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance, updated_at = NOW()",
+                                order.getUserId(), refundAmount
+                            );
                             jdbcTemplate.update(
                                 "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
                                 "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'RETURN_REFUND', ?, ?, 'SUCCESS', NOW())",
@@ -646,8 +656,15 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             order.setPaymentStatus("refund_pending");
         }
 
-        writeAuditLog("ITEM_REFUND_PROCESSED", "order", orderId.toString(),
-                Map.of("product_id", productId, "amount", refundAmount, "restock", restock));
+        try {
+            Map<String, Object> auditMeta = new HashMap<>();
+            auditMeta.put("product_id", productId != null ? productId : "");
+            auditMeta.put("amount", refundAmount);
+            auditMeta.put("restock", restock);
+            writeAuditLog("ITEM_REFUND_PROCESSED", "order", orderId.toString(), auditMeta);
+        } catch (Exception auditEx) {
+            log.warn("[Audit Log Warning] Failed to write item refund audit log: {}", auditEx.getMessage());
+        }
 
         order = orderRepository.save(order);
 
