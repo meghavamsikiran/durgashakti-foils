@@ -174,41 +174,36 @@ public class AdminSettingController {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(apiToken);
 
-            Map<String, Object> body = new HashMap<>();
-            body.put("messaging_product", "whatsapp");
-            body.put("to", cleanPhone);
-            body.put("type", "template");
-            body.put("template", Map.of("name", "3p_direct_integration_test_template", "language", Map.of("code", "en_US")));
+            List<String> langCodes = List.of("en", "en_US", "en_GB", "hi", "hi_IN");
+            boolean sent = false;
+            HttpEntity<Map<String, Object>> entity = null;
 
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-            try {
-                ResponseEntity<String> metaResp = restTemplate.postForEntity(url, entity, String.class);
-                debugInfo.put("metaStatus", metaResp.getStatusCode().value());
-                debugInfo.put("metaResponse", metaResp.getBody());
-                debugInfo.put("success", true);
-                debugInfo.put("phone", cleanPhone);
-                debugInfo.put("languageUsed", "en_US");
-                return ResponseEntity.ok(debugInfo);
-            } catch (HttpStatusCodeException httpEx) {
-                // Try fallback to "en" if "en_US" failed
+            for (String lang : langCodes) {
+                if (sent) break;
+                Map<String, Object> body = new HashMap<>();
+                body.put("messaging_product", "whatsapp");
+                body.put("to", cleanPhone);
+                body.put("type", "template");
+                body.put("template", Map.of("name", "3p_direct_integration_test_template", "language", Map.of("code", lang)));
+
+                entity = new HttpEntity<>(body, headers);
                 try {
-                    body.put("template", Map.of("name", "3p_direct_integration_test_template", "language", Map.of("code", "en")));
-                    HttpEntity<Map<String, Object>> fallbackEntity = new HttpEntity<>(body, headers);
-                    ResponseEntity<String> fallbackResp = restTemplate.postForEntity(url, fallbackEntity, String.class);
-                    debugInfo.put("metaStatus", fallbackResp.getStatusCode().value());
-                    debugInfo.put("metaResponse", fallbackResp.getBody());
+                    ResponseEntity<String> metaResp = restTemplate.postForEntity(url, entity, String.class);
+                    debugInfo.put("metaStatus", metaResp.getStatusCode().value());
+                    debugInfo.put("metaResponse", metaResp.getBody());
                     debugInfo.put("success", true);
+                    debugInfo.put("acceptedLanguage", lang);
                     debugInfo.put("phone", cleanPhone);
-                    debugInfo.put("languageUsed", "en");
+                    sent = true;
                     return ResponseEntity.ok(debugInfo);
-                } catch (HttpStatusCodeException fallbackEx) {
-                    debugInfo.put("metaStatus", fallbackEx.getStatusCode().value());
-                    debugInfo.put("metaError", fallbackEx.getResponseBodyAsString());
+                } catch (HttpStatusCodeException httpEx) {
+                    debugInfo.put("lastLangTried", lang);
+                    debugInfo.put("metaStatus", httpEx.getStatusCode().value());
+                    debugInfo.put("metaError", httpEx.getResponseBodyAsString());
                     debugInfo.put("success", false);
-                    debugInfo.put("phone", cleanPhone);
-                    return ResponseEntity.status(200).body(debugInfo);
                 }
             }
+            return ResponseEntity.status(200).body(debugInfo);
         } catch (Exception e) {
             log.error("WhatsApp test failed", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

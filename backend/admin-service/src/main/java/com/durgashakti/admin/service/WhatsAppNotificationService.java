@@ -128,9 +128,10 @@ public class WhatsAppNotificationService {
                 "3p_direct_integration_test_template"
             );
 
+            List<String> langCodes = List.of("en", "en_US", "en_GB", "hi", "hi_IN");
             for (String templateName : candidateTemplates) {
                 if (dispatched) break;
-                for (String langCode : List.of("en_US", "en")) {
+                for (String lang : langCodes) {
                     if (dispatched) break;
                     for (String apiVer : List.of("v20.0", "v25.0", "v18.0")) {
                         if (dispatched) break;
@@ -148,17 +149,17 @@ public class WhatsAppNotificationService {
 
                             Map<String, Object> template = new HashMap<>();
                             template.put("name", templateName);
-                            template.put("language", Map.of("code", langCode));
+                            template.put("language", Map.of("code", lang));
                             body.put("template", template);
 
                             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
                             restTemplate.postForEntity(url, request, String.class);
-                            log.info("[WhatsApp Cloud API] Successfully dispatched template '{}' ({}) via {} to {}", templateName, langCode, apiVer, cleanedPhone);
+                            log.info("[WhatsApp Cloud API] Successfully dispatched template '{}' ({}) via {} to {}", templateName, lang, apiVer, cleanedPhone);
                             dispatched = true;
                         } catch (HttpStatusCodeException httpEx) {
-                            log.warn("[WhatsApp Cloud API] Template '{}' ({}) via {} failed: {}", templateName, langCode, apiVer, httpEx.getResponseBodyAsString());
+                            log.warn("[WhatsApp Cloud API] Template '{}' ({}) via {} failed: {}", templateName, lang, apiVer, httpEx.getResponseBodyAsString());
                         } catch (Exception e) {
-                            log.warn("[WhatsApp Cloud API] Template '{}' ({}) via {} failed for {}: {}", templateName, langCode, apiVer, cleanedPhone, e.getMessage());
+                            log.warn("[WhatsApp Cloud API] Template '{}' ({}) via {} failed for {}: {}", templateName, lang, apiVer, cleanedPhone, e.getMessage());
                         }
                     }
                 }
