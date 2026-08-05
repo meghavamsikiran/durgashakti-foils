@@ -404,7 +404,7 @@ const PopupBanner = () => {
             {theme.title}
           </h2>
           
-          <p className="text-sm text-white/85 max-w-lg mx-auto font-medium leading-relaxed">
+          <p className="text-sm text-white max-w-lg mx-auto font-bold leading-relaxed">
             {theme.subtitle}
           </p>
 
@@ -471,8 +471,8 @@ const PopupBanner = () => {
                   <div className="w-full flex flex-col justify-center items-center relative z-10 pt-1 border-t border-dashed border-white/15">
                     {hasExpiry ? (
                       <>
-                        <p className="text-[9px] uppercase font-bold tracking-wider text-amber-200/80">Offer Expires</p>
-                        <p className="text-xs font-bold text-yellow-200 font-mono mt-0.5">
+                        <p className="text-[9px] uppercase font-bold tracking-wider text-amber-200">Offer Expires</p>
+                        <p className="text-xs font-black text-yellow-300 font-mono mt-0.5">
                           {new Date(coupon.expiry_date).toLocaleDateString('en-IN', {
                             day: '2-digit',
                             month: 'short',
