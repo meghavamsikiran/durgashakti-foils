@@ -8,13 +8,13 @@ import { reveal, revealSlow, fadeInUp, staggerContainer } from '../animations/va
 const About = () => {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-[#0C1310] text-white overflow-x-hidden font-sans">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden font-sans">
       
       {/* ── HERO SECTION WITH LUXURIOUS METALLIC GRADIENT ────────────────── */}
-      <section className="relative pt-24 pb-20 md:pt-36 md:pb-28 bg-[#0C1310] text-white overflow-hidden">
+      <section className="relative pt-24 pb-20 md:pt-36 md:pb-28 bg-background text-foreground overflow-hidden">
         {/* Glowing abstract background ornaments */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#25D958]/5 rounded-full blur-[120px] pointer-events-none -mr-48 -mt-48" />
-        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-[#25D958]/3 rounded-full blur-[100px] pointer-events-none -ml-24 -mb-24" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -mr-48 -mt-48" />
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-primary/3 rounded-full blur-[100px] pointer-events-none -ml-24 -mb-24" />
         
         {/* Technical mesh background texture */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
@@ -28,17 +28,17 @@ const About = () => {
           >
             <motion.span 
               variants={fadeInUp} 
-              className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-[#25D958] bg-[#25D958]/10 px-3.5 py-1.5 rounded-full inline-block mb-6 border border-[#25D958]/20"
+              className="text-[10px] font-mono font-bold uppercase tracking-[0.25em] text-primary bg-primary/10 px-3.5 py-1.5 rounded-full inline-block mb-6 border border-primary/20"
             >
               Our Heritage & Quality
             </motion.span>
             
             <motion.h1 
               variants={fadeInUp} 
-              className="text-4xl md:text-6xl font-bold tracking-tighter leading-none mb-8 text-white font-sans"
+              className="text-4xl md:text-6xl font-bold tracking-tighter leading-none mb-8 text-foreground font-sans"
             >
               Preserving Freshness.<br />
-              <span className="bg-gradient-to-r from-[#25D958] to-[#1bb847] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary to-emerald-500 bg-clip-text text-transparent">
                 Redefining Protection.
               </span>
             </motion.h1>

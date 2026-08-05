@@ -244,6 +244,50 @@ h1, h2, h3, h4, h5, h6,
     }
 }
 
+/* ── UNIVERSAL GLOBAL THEME ALIASING FOR LEGACY HEX CLASSES ───────────── */
+.bg-\[\#0C1310\],
+.bg-\[\#0c1310\],
+.bg-\[\#050807\],
+.bg-\[\#050807\]\/80,
+.bg-\[\#050807\]\/90 {
+  background-color: var(--background) !important;
+}
+
+.bg-\[\#131B17\],
+.bg-\[\#131b17\],
+.bg-\[\#0a0f0d\] {
+  background-color: var(--card) !important;
+}
+
+.bg-\[\#19231F\],
+.bg-\[\#19231f\],
+.bg-\[\#18231e\ text-white\] {
+  background-color: var(--muted) !important;
+}
+
+.border-\[\#26322B\],
+.border-\[\#26322b\],
+.border-slate-800 {
+  border-color: var(--border) !important;
+}
+
+.text-\[\#25D958\],
+.text-\[\#25d958\],
+.text-\[\#006e1b\] {
+  color: var(--primary) !important;
+}
+
+.bg-\[\#25D958\],
+.bg-\[\#25d958\] {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+.text-\[\#0C1310\],
+.text-\[\#0c1310\] {
+  color: var(--primary-foreground) !important;
+}
+
 @layer base {
     [data-debug-wrapper="true"] {
         display: contents !important;

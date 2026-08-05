@@ -875,39 +875,39 @@ const ProductReviews = ({ productId, summary }) => {
 
       {/* Edit Review Modal */}
       {editingReview && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] bg-[#131B17] border border-[#26322B] shadow-2xl p-6 md:p-8 text-white space-y-6 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in font-sans">
+          <div className="relative w-full max-w-xl rounded-2xl border border-border bg-card p-6 md:p-8 text-card-foreground shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
             <button
               type="button"
               onClick={() => setEditingReview(null)}
-              className="absolute right-6 top-6 rounded-full bg-[#0C1310]/90 p-2 text-white border border-[#26322B] shadow-sm hover:bg-[#19231F] transition-all hover:scale-105"
+              className="absolute right-6 top-6 rounded-full bg-muted p-2 text-muted-foreground border border-border shadow-sm hover:text-foreground transition-all hover:scale-105"
             >
               <X className="h-4 w-4" />
             </button>
 
-            <h3 className="text-xl font-bold uppercase tracking-wider text-white">Edit Your Review</h3>
+            <h3 className="text-xl font-bold uppercase tracking-wider text-foreground">Edit Your Review</h3>
 
             <form onSubmit={handleEditSubmit} className="space-y-5">
               <div>
-                <label className="block text-sm font-black text-slate-350 mb-2">Overall rating</label>
+                <label className="block text-sm font-black text-foreground mb-2">Overall rating</label>
                 <StarRating value={editRating} interactive onChange={setEditRating} size="lg" />
               </div>
 
               <div>
-                <label className="block text-sm font-black text-slate-350 mb-2">Write a review</label>
+                <label className="block text-sm font-black text-foreground mb-2">Write a review</label>
                 <textarea
                   value={editComment}
                   onChange={(e) => setEditComment(e.target.value)}
                   rows={4}
                   maxLength={2000}
                   placeholder="What should other customers know?"
-                  className="w-full rounded-xl border border-[#26322B] bg-[#0C1310] text-white px-4 py-3 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 resize-y placeholder:text-slate-500"
+                  className="w-full rounded-xl border border-border bg-input text-foreground px-4 py-3 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 resize-y placeholder:text-muted-foreground"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-black text-slate-350 mb-2">Share a video or photo</label>
-                <label className="h-20 border border-dashed border-[#26322B] rounded-xl bg-[#0C1310] hover:bg-[#18231e] transition-colors flex flex-col items-center justify-center cursor-pointer text-slate-450">
+                <label className="block text-sm font-black text-foreground mb-2">Share a video or photo</label>
+                <label className="h-20 border border-dashed border-border rounded-xl bg-input hover:bg-muted transition-colors flex flex-col items-center justify-center cursor-pointer text-muted-foreground">
                   <Camera className="w-5 h-5 mb-1" />
                   <span className="text-[10px] font-bold uppercase tracking-wider">Upload media</span>
                   <input
@@ -925,10 +925,10 @@ const ProductReviews = ({ productId, summary }) => {
                 {/* Edit New files preview grid */}
                 {editFilePreviews.length > 0 && (
                   <div className="mt-4">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Selected new files to upload</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1.5">Selected new files to upload</p>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {editFilePreviews.map((preview, index) => (
-                        <div key={`${preview.name}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-[#26322B] bg-[#0C1310] group">
+                        <div key={`${preview.name}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-border bg-card group">
                           {preview.type === 'video' ? (
                             <video src={`${preview.url}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
                           ) : (
@@ -937,7 +937,7 @@ const ProductReviews = ({ productId, summary }) => {
                           <button
                             type="button"
                             onClick={() => setEditFiles(prev => prev.filter((_, i) => i !== index))}
-                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-slate-900 transition-colors z-10"
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/80 text-white flex items-center justify-center hover:bg-black transition-colors z-10"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -950,7 +950,7 @@ const ProductReviews = ({ productId, summary }) => {
                 {/* Edit Existing files preview grid */}
                 {editExistingMedia.length > 0 && (
                   <div className="mt-4">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Uploaded media</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1.5">Uploaded media</p>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {editExistingMedia.map((media, index) => {
                         const mediaUrl = typeof media === 'string' ? media : media.url;
@@ -959,7 +959,7 @@ const ProductReviews = ({ productId, summary }) => {
                         const fullUrl = formatImageUrl(mediaUrl);
 
                         return (
-                          <div key={`${mediaUrl}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-[#26322B] bg-[#0C1310] group">
+                          <div key={`${mediaUrl}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-border bg-card group">
                             {isVideo ? (
                               <video src={`${fullUrl}#t=0.001`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
                             ) : (
@@ -968,7 +968,7 @@ const ProductReviews = ({ productId, summary }) => {
                             <button
                               type="button"
                               onClick={() => setEditExistingMedia(prev => prev.filter((_, i) => i !== index))}
-                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center hover:bg-slate-900 transition-colors z-10"
+                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/80 text-white flex items-center justify-center hover:bg-black transition-colors z-10"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -981,31 +981,31 @@ const ProductReviews = ({ productId, summary }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-black text-slate-350 mb-2">Title your review <span className="font-semibold text-slate-500">(required)</span></label>
+                <label className="block text-sm font-black text-foreground mb-2">Title your review <span className="font-semibold text-muted-foreground">(required)</span></label>
                 <input
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   maxLength={140}
                   placeholder="What's most important to know?"
-                  className="w-full h-11 rounded-xl border border-[#26322B] bg-[#0C1310] text-white px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-slate-500"
+                  className="w-full h-11 rounded-xl border border-border bg-input text-foreground px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-muted-foreground"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-black text-slate-350 mb-2">What is your public name? <span className="font-semibold text-slate-500">(required)</span></label>
+                <label className="block text-sm font-black text-foreground mb-2">What is your public name? <span className="font-semibold text-muted-foreground">(required)</span></label>
                 <input
                   value={editPublicName}
                   onChange={(e) => setEditPublicName(e.target.value)}
                   maxLength={120}
-                  className="w-full h-11 rounded-xl border border-[#26322B] bg-[#0C1310] text-white px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                  className="w-full h-11 rounded-xl border border-border bg-input text-foreground px-4 text-sm font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                 />
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setEditingReview(null)} className="rounded-full font-bold uppercase tracking-wider text-[10px] h-9 px-5 border border-[#26322B] bg-[#0C1310] text-slate-350 hover:border-[#25D958] hover:text-[#25D958] transition-all">
+                <button type="button" onClick={() => setEditingReview(null)} className="rounded-full font-bold uppercase tracking-wider text-[10px] h-9 px-5 border border-border bg-secondary text-secondary-foreground hover:opacity-90 transition-all">
                   Cancel
                 </button>
-                <button type="submit" disabled={submittingEdit} className="rounded-full bg-[#25D958] hover:bg-[#20bd4c] text-[#0C1310] font-black px-8 h-9 text-xs uppercase tracking-wider shadow-sm hover:shadow-emerald-glow transition-all">
+                <button type="submit" disabled={submittingEdit} className="rounded-full bg-primary text-primary-foreground font-black px-8 h-9 text-xs uppercase tracking-wider shadow-sm hover:opacity-90 transition-all">
                   {submittingEdit ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>

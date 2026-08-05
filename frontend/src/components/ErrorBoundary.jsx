@@ -55,15 +55,15 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-[#f7faf8] dark:bg-[#0C1310] px-6 py-12">
-          <div className="max-w-lg w-full text-center space-y-7 rounded-xl border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#131B17] px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.10)]">
-            <div className="w-16 h-16 mx-auto rounded-full bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 flex items-center justify-center">
-              <AlertTriangle className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+        <div className="min-h-screen flex items-center justify-center bg-background text-foreground px-6 py-12 font-sans">
+          <div className="max-w-lg w-full text-center space-y-7 rounded-2xl border border-border bg-card text-card-foreground px-6 py-8 shadow-2xl">
+            <div className="w-16 h-16 mx-auto rounded-full bg-secondary/20 border border-secondary/40 flex items-center justify-center">
+              <AlertTriangle className="w-8 h-8 text-secondary" />
             </div>
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-400 font-black mb-2">DurgaShakti Foils</p>
-              <h2 className="text-2xl font-black text-slate-950 dark:text-white mb-2">We hit an unexpected issue</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-450 font-medium leading-6">
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-primary font-black mb-2">DurgaShakti Foils</p>
+              <h2 className="text-2xl font-black text-foreground mb-2">We hit an unexpected issue</h2>
+              <p className="text-sm text-muted-foreground font-medium leading-6">
                 The page could not continue safely. Please retry, or return home and continue from a fresh screen.
               </p>
             </div>

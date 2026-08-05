@@ -290,11 +290,7 @@ export default function AiAssistant() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className={`flex h-14 w-14 items-center justify-center rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all ${
-            isDark 
-              ? 'bg-[#25D958] text-[#0C1310] shadow-[#25D958]/20' 
-              : 'bg-[#006e1b] text-white shadow-[#006e1b]/20'
-          }`}
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 active:scale-95 transition-all"
         >
           <MessageSquare className="h-6 w-6" />
         </button>
@@ -302,11 +298,7 @@ export default function AiAssistant() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className={`flex h-[490px] w-[320px] sm:w-[360px] flex-col rounded-2xl border shadow-2xl overflow-hidden transition-all animate-in fade-in slide-in-from-bottom-5 ${
-          isDark 
-            ? 'bg-[#0a0f0d] border-white/10 text-white' 
-            : 'bg-white border-[#ebefed] text-slate-800'
-        }`}>
+        <div className="flex h-[490px] w-[320px] sm:w-[360px] flex-col rounded-2xl border border-border bg-card text-card-foreground shadow-2xl overflow-hidden transition-all animate-in fade-in slide-in-from-bottom-5 font-sans">
           {/* Header */}
           <div className={`flex items-center justify-between border-b px-3 py-2.5 ${
             isDark ? 'bg-[#0c1816] border-white/5' : 'bg-[#f0f5f2] border-[#ebefed]'
