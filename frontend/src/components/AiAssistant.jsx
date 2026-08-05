@@ -416,23 +416,7 @@ export default function AiAssistant() {
                             : (isDark ? 'bg-white/5 border-white/10 hover:border-white/20' : 'bg-slate-50 border-slate-200 hover:bg-slate-100')
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] font-mono font-bold text-primary">
-                              {caseCode}
-                            </span>
-                            <button
-                              onClick={(e) => handleCopyCaseId(e, caseCode)}
-                              className="text-slate-400 hover:text-primary transition-colors p-0.5"
-                              title="Copy Case ID"
-                            >
-                              {copiedCaseId === caseCode ? (
-                                <Check className="h-3 w-3 text-emerald-400" />
-                              ) : (
-                                <Copy className="h-3 w-3" />
-                              )}
-                            </button>
-                          </div>
+                        <div className="flex items-center justify-end mb-1.5">
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase ${
                             isEnded 
                               ? (isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600')
