@@ -72,8 +72,8 @@ export const useGeoLocationAddress = () => {
                 pincode: pincode || '500081',
                 state: state.includes("Telangana") ? "Telangana" : state,
                 city: city || 'Hyderabad',
-                address_line1: locality || 'Madhapur',
-                address_line2: '',
+                address_line1: '',
+                address_line2: locality || 'Madhapur',
               };
             }
           }
@@ -105,8 +105,8 @@ export const useGeoLocationAddress = () => {
                 pincode: pincode || '500081',
                 state: state || 'Telangana',
                 city: city || 'Hyderabad',
-                address_line1: locality ? (road ? `${road}, ${locality}` : locality) : (road || city || 'Madhapur'),
-                address_line2: road || '',
+                address_line1: road || '',
+                address_line2: locality || 'Madhapur',
               };
             }
           }
@@ -126,8 +126,8 @@ export const useGeoLocationAddress = () => {
               pincode: pincode || '500081',
               state: state || 'Telangana',
               city: city || 'Hyderabad',
-              address_line1: address_line1 || locality || 'Madhapur',
-              address_line2: address_line2 && address_line2 !== city ? address_line2 : '',
+              address_line1: address_line1 && address_line1 !== locality ? address_line1 : '',
+              address_line2: locality || address_line2 || 'Madhapur',
             };
           }
         } catch (apiErr) {
@@ -141,8 +141,8 @@ export const useGeoLocationAddress = () => {
         pincode: '500081',
         state: 'Telangana',
         city: 'Hyderabad',
-        address_line1: 'Madhapur',
-        address_line2: '',
+        address_line1: '',
+        address_line2: 'Madhapur',
       };
     } catch (err) {
       console.error('Location detection overall error:', err);
@@ -152,8 +152,8 @@ export const useGeoLocationAddress = () => {
         pincode: '500081',
         state: 'Telangana',
         city: 'Hyderabad',
-        address_line1: 'Madhapur',
-        address_line2: '',
+        address_line1: '',
+        address_line2: 'Madhapur',
       };
     } finally {
       setLoading(false);
