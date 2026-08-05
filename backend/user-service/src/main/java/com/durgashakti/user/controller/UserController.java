@@ -32,14 +32,14 @@ public class UserController {
     }
 
     @PostMapping("/addresses")
-    public ResponseEntity<Address> addAddress(@RequestBody UserAddressRequest req, Authentication authentication) {
+    public ResponseEntity<Address> addAddress(@jakarta.validation.Valid @RequestBody UserAddressRequest req, Authentication authentication) {
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
         return ResponseEntity.ok(userService.addAddress(userId, req));
     }
 
     @PutMapping("/addresses/{addressId}")
     public ResponseEntity<Address> updateAddress(@PathVariable("addressId") UUID addressId,
-                                                 @RequestBody UserAddressRequest req,
+                                                 @jakarta.validation.Valid @RequestBody UserAddressRequest req,
                                                  Authentication authentication) {
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
         return ResponseEntity.ok(userService.updateAddress(userId, addressId, req));

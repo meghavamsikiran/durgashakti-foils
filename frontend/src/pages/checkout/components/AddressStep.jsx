@@ -179,11 +179,11 @@ const AddressStep = ({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Full Name</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Full Name <span className="text-red-500">*</span></Label>
                 <Input name="full_name" value={shippingInfo.full_name} onChange={onInputChange} placeholder="Rahul Sharma" className="rounded-xl h-12 bg-[#0C1310] border-[#26322B] text-white placeholder:text-slate-500 focus-visible:ring-1 focus-visible:ring-[#25D958] focus-visible:border-[#25D958]" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Mobile</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Mobile Number <span className="text-red-500">*</span></Label>
                 <Input
                   type="text"
                   maxLength={10}
@@ -214,14 +214,14 @@ const AddressStep = ({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Pincode</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">Pincode <span className="text-red-500">*</span></Label>
                 <div className="relative">
                   <Input name="pincode" value={shippingInfo.pincode} onChange={handlePincodeChange} placeholder="6 digits" className="rounded-xl h-12 bg-[#0C1310] border-[#26322B] text-white placeholder:text-slate-500 focus-visible:ring-1 focus-visible:ring-[#25D958] focus-visible:border-[#25D958]" maxLength={6} />
                   {checkingPincode && <Loader2 className="absolute right-4 top-3.5 w-5 h-5 animate-spin text-[#25D958]" />}
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">State</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">State <span className="text-red-500">*</span></Label>
                 <div className="relative">
                   <select 
                     name="state"
@@ -240,13 +240,13 @@ const AddressStep = ({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">City</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">City <span className="text-red-500">*</span></Label>
                 <Input name="city" value={shippingInfo.city} onChange={onInputChange} placeholder="City" className="rounded-xl h-12 bg-[#0C1310] border-[#26322B] text-white placeholder:text-slate-500 focus-visible:ring-1 focus-visible:ring-[#25D958] focus-visible:border-[#25D958]" />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">House/Flat No., Building</Label>
+              <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono ml-1">House/Flat No., Building <span className="text-red-500">*</span></Label>
               <Input name="address_line1" value={shippingInfo.address_line1} onChange={onInputChange} className="rounded-xl h-12 bg-[#0C1310] border-[#26322B] text-white focus-visible:ring-1 focus-visible:ring-[#25D958] focus-visible:border-[#25D958]" />
             </div>
 

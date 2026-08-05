@@ -103,18 +103,22 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!addressForm.full_name?.trim()) {
+      toast.error("Full Name is required");
+      return;
+    }
     const cleanPhone = addressForm.phone ? addressForm.phone.replace(/\D/g, '') : '';
     if (!cleanPhone) {
-      toast.error("Phone number is required");
+      toast.error("Mobile Number is required");
       return;
     }
     const last10 = cleanPhone.slice(-10);
     if (last10.length !== 10) {
-      toast.error("Phone number must be exactly 10 digits");
+      toast.error("Mobile number must be exactly 10 digits");
       return;
     }
     if (!/^[6-9]\d{9}$/.test(last10)) {
-      toast.error("Please enter a valid 10-digit phone number (starts with 6-9)");
+      toast.error("Please enter a valid 10-digit mobile number (starts with 6-9)");
       return;
     }
     if (addressForm.alternate_phone?.trim()) {
@@ -124,6 +128,22 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
         toast.error("Please enter a valid 10-digit alternative phone number (starts with 6-9)");
         return;
       }
+    }
+    if (!addressForm.pincode?.trim() || addressForm.pincode.trim().length !== 6) {
+      toast.error("Valid 6-digit Pincode is required");
+      return;
+    }
+    if (!addressForm.state?.trim()) {
+      toast.error("State selection is required");
+      return;
+    }
+    if (!addressForm.city?.trim()) {
+      toast.error("City / District is required");
+      return;
+    }
+    if (!addressForm.address_line1?.trim()) {
+      toast.error("Flat, House no., Building detail is required");
+      return;
     }
     let success;
     if (editingAddressId) {
@@ -211,11 +231,11 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Full Name <span className="text-red-500">*</span></Label>
               <Input placeholder="e.g. Rahul Sharma" value={addressForm.full_name} onChange={e => setAddressForm({...addressForm, full_name: e.target.value})} required className="rounded-lg h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 transition-all px-4 text-sm font-medium" />
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Address Type</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Address Type <span className="text-red-500">*</span></Label>
               <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#131B17] border border-[#26322B] p-1">
                 {['Home', 'Work'].map(label => (
                   <button
@@ -231,7 +251,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
               </div>
             </div>
              <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Mobile Number</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Mobile Number <span className="text-red-500">*</span></Label>
               <Input
                 type="text"
                 maxLength={10}
@@ -262,14 +282,14 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Pincode</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Pincode <span className="text-red-500">*</span></Label>
               <div className="relative">
                 <Input placeholder="6 digits" value={addressForm.pincode} onChange={handlePincodeChange} required maxLength={6} className="rounded-lg h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 transition-all px-4 text-sm font-medium" />
                 {checkingPincode && <Loader2 className="absolute right-4 top-3.5 w-5 h-5 animate-spin text-[#25D958]" />}
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">State</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">State <span className="text-red-500">*</span></Label>
               <select 
                 value={addressForm.state} 
                 onChange={e => setAddressForm({...addressForm, state: e.target.value})}
@@ -282,7 +302,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
               </select>
             </div>
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">City / District</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">City / District <span className="text-red-500">*</span></Label>
               <Input 
                 value={addressForm.city} 
                 onChange={e => setAddressForm({...addressForm, city: e.target.value})}
@@ -293,7 +313,7 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Flat, House no., Building, Apartment</Label>
+            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Flat, House no., Building, Apartment <span className="text-red-500">*</span></Label>
             <Input value={addressForm.address_line1} onChange={e => setAddressForm({...addressForm, address_line1: e.target.value})} required className="rounded-lg h-12 bg-[#131B17] border border-[#26322B] focus:border-[#25D958] text-white focus:ring-0 transition-all px-4 text-sm font-medium" />
           </div>
 

@@ -11,7 +11,7 @@ export const useGeoLocationAddress = () => {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
         enableHighAccuracy: highAccuracy,
         timeout: timeoutMs,
-        maximumAge: 600000, // 10 min cache for instant response
+        maximumAge: 60000,
       });
     });
   };
@@ -27,18 +27,19 @@ export const useGeoLocationAddress = () => {
     try {
       let position = null;
 
-      // 1. Try HTML5 Geolocation (6 second timeout)
+      // 1. Try HTML5 Geolocation with high accuracy
       try {
-        position = await getPosition({
-          enableHighAccuracy: true,
-          timeout: 6000,
-          maximumAge: 0
-        });
+        position = await tryGetPosition(true, 8000);
       } catch (geoErr) {
-        console.warn("HTML5 Geolocation unavailable/denied:", geoErr);
+        console.warn("High accuracy HTML5 Geolocation failed, trying standard accuracy:", geoErr);
+        try {
+          position = await tryGetPosition(false, 8000);
+        } catch (err2) {
+          console.warn("Standard accuracy Geolocation failed:", err2);
+        }
       }
 
-      // 2. If GPS coordinates obtained, reverse geocode via backend Nominatim / BigDataCloud
+      // 2. Reverse geocode via backend if GPS coords obtained
       if (position?.coords) {
         const { latitude, longitude } = position.coords;
         try {
@@ -53,7 +54,7 @@ export const useGeoLocationAddress = () => {
               state: state || '',
               city: city || '',
               address_line1: address_line1 || locality || '',
-              address_line2: address_line2 || '',
+              address_line2: address_line2 || locality || '',
             };
           }
         } catch (apiErr) {
@@ -61,7 +62,7 @@ export const useGeoLocationAddress = () => {
         }
       }
 
-      // 3. Fallback: Query backend /api/geolocation/ip-lookup (No CORS issues, 100% reliable)
+      // 3. Fallback: Backend IP lookup
       console.info("Using backend IP-lookup fallback...");
       try {
         const ipRes = await apiClient.get('/geolocation/ip-lookup');

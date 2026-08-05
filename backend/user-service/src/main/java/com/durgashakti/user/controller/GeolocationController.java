@@ -50,34 +50,37 @@ public class GeolocationController {
             if (response.statusCode() == 200) {
                 JsonNode root = objectMapper.readTree(response.body());
                 JsonNode address = root.path("address");
-                
+
                 String pincode = address.path("postcode").asText("").trim();
                 String state = address.path("state").asText("").trim();
-                
-                String city = address.path("city").asText("");
-                if (city.isEmpty()) city = address.path("town").asText("");
-                if (city.isEmpty()) city = address.path("municipality").asText("");
-                if (city.isEmpty()) city = address.path("city_district").asText("");
-                if (city.isEmpty()) city = address.path("state_district").asText("");
-                if (city.isEmpty()) city = address.path("county").asText("");
-                if (city.isEmpty()) city = address.path("village").asText("");
-                city = city.trim();
 
                 String locality = address.path("suburb").asText("");
                 if (locality.isEmpty()) locality = address.path("neighbourhood").asText("");
                 if (locality.isEmpty()) locality = address.path("residential").asText("");
                 if (locality.isEmpty()) locality = address.path("quarter").asText("");
+                if (locality.isEmpty()) locality = address.path("commercial").asText("");
+                if (locality.isEmpty()) locality = address.path("industrial").asText("");
                 locality = locality.trim();
+
+                String city = address.path("city").asText("");
+                if (city.isEmpty()) city = address.path("town").asText("");
+                if (city.isEmpty()) city = address.path("municipality").asText("");
+                if (city.isEmpty()) city = address.path("city_district").asText("");
+                if (city.isEmpty()) city = address.path("district").asText("");
+                if (city.isEmpty()) city = address.path("state_district").asText("");
+                if (city.isEmpty()) city = address.path("county").asText("");
+                if (city.isEmpty()) city = address.path("village").asText("");
+                city = city.trim();
 
                 String road = address.path("road").asText("").trim();
 
-                if (!pincode.isEmpty() || !city.isEmpty()) {
+                if (!pincode.isEmpty() || !city.isEmpty() || !locality.isEmpty()) {
                     result.put("source", "Nominatim");
                     result.put("pincode", pincode);
                     result.put("state", state);
                     result.put("city", city);
                     result.put("locality", locality);
-                    result.put("address_line1", road.isEmpty() ? locality : (locality.isEmpty() ? road : road + ", " + locality));
+                    result.put("address_line1", locality.isEmpty() ? road : (road.isEmpty() ? locality : road + ", " + locality));
                     result.put("address_line2", locality);
                     log.info("Nominatim geocode success: pincode={}, city={}, state={}, locality={}", pincode, city, state, locality);
                     return ResponseEntity.ok(result);
