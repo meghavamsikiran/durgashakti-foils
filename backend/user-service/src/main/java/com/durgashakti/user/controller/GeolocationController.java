@@ -34,7 +34,43 @@ public class GeolocationController {
         log.info("Reverse geocoding request for lat={}, lon={}", lat, lon);
         Map<String, Object> result = new HashMap<>();
 
-        // Primary Provider: Nominatim OpenStreetMap
+        // 1. Primary Provider for High-Precision India Geocoding: BigDataCloud
+        try {
+            String bdcUrl = String.format("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=%f&longitude=%f&localityLanguage=en", lat, lon);
+            HttpRequest bdcReq = HttpRequest.newBuilder()
+                    .uri(URI.create(bdcUrl))
+                    .timeout(Duration.ofSeconds(6))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> bdcResp = httpClient.send(bdcReq, HttpResponse.BodyHandlers.ofString());
+
+            if (bdcResp.statusCode() == 200) {
+                JsonNode root = objectMapper.readTree(bdcResp.body());
+                String city = root.path("city").asText("").trim();
+                if (city.isEmpty()) city = root.path("locality").asText("").trim();
+                
+                String state = root.path("principalSubdivision").asText("").trim();
+                String locality = root.path("locality").asText("").trim();
+                String pincode = root.path("postcode").asText("").trim();
+
+                if (!city.isEmpty() || !state.isEmpty() || !locality.isEmpty()) {
+                    result.put("source", "BigDataCloud");
+                    result.put("pincode", pincode);
+                    result.put("state", state);
+                    result.put("city", city);
+                    result.put("locality", locality);
+                    result.put("address_line1", locality);
+                    result.put("address_line2", city);
+                    log.info("BigDataCloud geocode success: city={}, state={}, locality={}, pincode={}", city, state, locality, pincode);
+                    return ResponseEntity.ok(result);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("BigDataCloud geocoding error: {}", e.getMessage());
+        }
+
+        // 2. Secondary Provider: Nominatim OpenStreetMap
         try {
             String url = String.format("https://nominatim.openstreetmap.org/reverse?lat=%f&lon=%f&format=json&accept-language=en", lat, lon);
             
@@ -90,100 +126,12 @@ public class GeolocationController {
             log.warn("Nominatim geocoding error: {}", e.getMessage());
         }
 
-        // Secondary Provider: BigDataCloud (High precision fallback for India)
-        try {
-            String bdcUrl = String.format("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=%f&longitude=%f&localityLanguage=en", lat, lon);
-            HttpRequest bdcReq = HttpRequest.newBuilder()
-                    .uri(URI.create(bdcUrl))
-                    .timeout(Duration.ofSeconds(6))
-                    .GET()
-                    .build();
-
-            HttpResponse<String> bdcResp = httpClient.send(bdcReq, HttpResponse.BodyHandlers.ofString());
-
-            if (bdcResp.statusCode() == 200) {
-                JsonNode root = objectMapper.readTree(bdcResp.body());
-                String city = root.path("city").asText(root.path("locality").asText("")).trim();
-                String state = root.path("principalSubdivision").asText("").trim();
-                String locality = root.path("locality").asText("").trim();
-                String pincode = root.path("postcode").asText("").trim();
-
-                result.put("source", "BigDataCloud");
-                result.put("pincode", pincode);
-                result.put("state", state);
-                result.put("city", city);
-                result.put("locality", locality);
-                result.put("address_line1", locality);
-                result.put("address_line2", city);
-                log.info("BigDataCloud geocode success: city={}, state={}, locality={}", city, state, locality);
-                return ResponseEntity.ok(result);
-            }
-        } catch (Exception e) {
-            log.warn("BigDataCloud geocoding error: {}", e.getMessage());
-        }
-
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/ip-lookup")
     public ResponseEntity<Map<String, Object>> ipLookup() {
-        Map<String, Object> result = new HashMap<>();
-        
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://ipapi.co/json/"))
-                    .header("User-Agent", "DurgaShaktiFoils/1.0 (meghavamsikiran@gmail.com)")
-                    .timeout(Duration.ofSeconds(5))
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 200) {
-                JsonNode root = objectMapper.readTree(response.body());
-                String city = root.path("city").asText("").trim();
-                String state = root.path("region").asText("").trim();
-                String pincode = root.path("postal").asText("").trim();
-
-                result.put("source", "IP-API");
-                result.put("pincode", pincode);
-                result.put("state", state);
-                result.put("city", city);
-                result.put("address_line1", city.isEmpty() ? state : city + ", " + state);
-                log.info("IP-Lookup success: city={}, state={}, pincode={}", city, state, pincode);
-                return ResponseEntity.ok(result);
-            }
-        } catch (Exception e) {
-            log.warn("IP Geocoding primary provider error: {}", e.getMessage());
-        }
-
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://ip-api.com/json"))
-                    .timeout(Duration.ofSeconds(5))
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 200) {
-                JsonNode root = objectMapper.readTree(response.body());
-                String city = root.path("city").asText("").trim();
-                String state = root.path("regionName").asText("").trim();
-                String pincode = root.path("zip").asText("").trim();
-
-                result.put("source", "IP-API-Alt");
-                result.put("pincode", pincode);
-                result.put("state", state);
-                result.put("city", city);
-                result.put("address_line1", city.isEmpty() ? state : city + ", " + state);
-                log.info("IP-Lookup alt success: city={}, state={}", city, state);
-                return ResponseEntity.ok(result);
-            }
-        } catch (Exception e) {
-            log.warn("IP Geocoding alt provider error: {}", e.getMessage());
-        }
-
-        return ResponseEntity.ok(result);
+        // IP Lookup disabled to avoid incorrect remote locations (e.g. Portland, OR)
+        return ResponseEntity.ok(new HashMap<>());
     }
 }

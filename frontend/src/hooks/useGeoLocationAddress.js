@@ -62,30 +62,11 @@ export const useGeoLocationAddress = () => {
         }
       }
 
-      // 3. Fallback: Backend IP lookup
-      console.info("Using backend IP-lookup fallback...");
-      try {
-        const ipRes = await apiClient.get('/geolocation/ip-lookup');
-        const ipData = ipRes.data || {};
-        if (ipData.pincode || ipData.city || ipData.state) {
-          toast.success(`Location auto-detected: ${ipData.city || ipData.state}`);
-          return {
-            pincode: ipData.pincode || '',
-            state: ipData.state || '',
-            city: ipData.city || '',
-            address_line1: ipData.address_line1 || '',
-            address_line2: ipData.address_line2 || '',
-          };
-        }
-      } catch (ipErr) {
-        console.warn("Backend IP-lookup error:", ipErr);
-      }
-
-      toast.error('Could not auto-detect location. Please enter your address details manually.');
+      toast.error('Location permission denied or unavailable. Please grant location permission in your browser or enter your address details manually.');
       return null;
     } catch (err) {
       console.error('Location detection overall error:', err);
-      toast.error('Location detection failed. Please enter your address details manually.');
+      toast.error('Location detection failed. Please grant location permission in your browser or enter address details manually.');
       return null;
     } finally {
       setLoading(false);
