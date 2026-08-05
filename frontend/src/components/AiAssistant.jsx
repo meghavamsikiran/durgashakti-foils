@@ -318,22 +318,24 @@ export default function AiAssistant() {
             </div>
             
             <div className="flex items-center gap-1 shrink-0">
-              <span className={`text-[8.5px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 whitespace-nowrap ${
-                isDark ? 'bg-white/5 border-white/10 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-              }`}>
-                {currentCaseId}
-                <button
-                  onClick={(e) => handleCopyCaseId(e, currentCaseId)}
-                  title="Copy Case ID"
-                  className="hover:opacity-100 opacity-70 transition-opacity flex items-center"
-                >
-                  {copiedCaseId === currentCaseId ? (
-                    <Check className="h-2.5 w-2.5 text-emerald-400" />
-                  ) : (
-                    <Copy className="h-2.5 w-2.5" />
-                  )}
-                </button>
-              </span>
+              {!showHistory && currentCaseId && (
+                <span className={`text-[8.5px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 whitespace-nowrap ${
+                  isDark ? 'bg-white/5 border-white/10 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                }`}>
+                  {currentCaseId}
+                  <button
+                    onClick={(e) => handleCopyCaseId(e, currentCaseId)}
+                    title="Copy Case ID"
+                    className="hover:opacity-100 opacity-70 transition-opacity flex items-center"
+                  >
+                    {copiedCaseId === currentCaseId ? (
+                      <Check className="h-2.5 w-2.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="h-2.5 w-2.5" />
+                    )}
+                  </button>
+                </span>
+              )}
               
               {/* History Toggle Icon Button */}
               <button
