@@ -73,7 +73,7 @@ export const useGeoLocationAddress = () => {
                 state: state.includes("Telangana") ? "Telangana" : state,
                 city: city || 'Hyderabad',
                 address_line1: locality || 'Madhapur',
-                address_line2: locality ? city : '',
+                address_line2: '',
               };
             }
           }
@@ -106,7 +106,7 @@ export const useGeoLocationAddress = () => {
                 state: state || 'Telangana',
                 city: city || 'Hyderabad',
                 address_line1: locality ? (road ? `${road}, ${locality}` : locality) : (road || city || 'Madhapur'),
-                address_line2: locality || '',
+                address_line2: road || '',
               };
             }
           }
@@ -127,7 +127,7 @@ export const useGeoLocationAddress = () => {
               state: state || 'Telangana',
               city: city || 'Hyderabad',
               address_line1: address_line1 || locality || 'Madhapur',
-              address_line2: address_line2 || locality || '',
+              address_line2: address_line2 && address_line2 !== city ? address_line2 : '',
             };
           }
         } catch (apiErr) {
@@ -142,7 +142,7 @@ export const useGeoLocationAddress = () => {
         state: 'Telangana',
         city: 'Hyderabad',
         address_line1: 'Madhapur',
-        address_line2: 'Hyderabad',
+        address_line2: '',
       };
     } catch (err) {
       console.error('Location detection overall error:', err);
@@ -153,7 +153,7 @@ export const useGeoLocationAddress = () => {
         state: 'Telangana',
         city: 'Hyderabad',
         address_line1: 'Madhapur',
-        address_line2: 'Hyderabad',
+        address_line2: '',
       };
     } finally {
       setLoading(false);
