@@ -59,7 +59,7 @@ h1, h2, h3, h4, h5, h6,
     --chart-5: hsl(25, 95%, 60%);
     --popover: hsl(0, 0%, 100%);
     --primary: hsl(142, 76%, 36%);
-    --sidebar: hsl(150, 30%, 12%);
+    --sidebar: hsl(0, 0%, 100%);
     --spacing: 0.25rem;
     --font-mono: JetBrains Mono, monospace;
     --font-sans: Outfit, system-ui, sans-serif;
@@ -74,8 +74,8 @@ h1, h2, h3, h4, h5, h6,
     --shadow-spread: 0px;
     --letter-spacing: -0.03em;
     --shadow-opacity: 0.1;
-    --sidebar-accent: hsl(150, 30%, 18%);
-    --sidebar-border: hsl(150, 30%, 20%);
+    --sidebar-accent: hsl(142, 70%, 92%);
+    --sidebar-border: hsl(150, 20%, 90%);
     --card-foreground: hsl(150, 60%, 5%);
     --shadow-offset-x: 0px;
     --shadow-offset-y: 10px;
@@ -84,10 +84,10 @@ h1, h2, h3, h4, h5, h6,
     --accent-foreground: hsl(142, 76%, 30%);
     --popover-foreground: hsl(150, 60%, 5%);
     --primary-foreground: hsl(45, 30%, 98%);
-    --sidebar-foreground: hsl(45, 30%, 98%);
+    --sidebar-foreground: hsl(150, 60%, 5%);
     --secondary-foreground: hsl(150, 60%, 5%);
     --destructive-foreground: hsl(210, 40%, 98%);
-    --sidebar-accent-foreground: hsl(48, 96%, 53%);
+    --sidebar-accent-foreground: hsl(142, 76%, 30%);
     --sidebar-primary-foreground: hsl(45, 30%, 98%);
 
     /* Legacy surface mapping */
