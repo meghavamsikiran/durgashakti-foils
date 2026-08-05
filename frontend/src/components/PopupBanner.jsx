@@ -325,12 +325,17 @@ const PopupBanner = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur animate-fade-in font-sans">
       <style>{`
-        .popup-banner-text-white { color: #ffffff !important; }
-        .popup-banner-text-gold { color: #fcd34d !important; }
-        .popup-banner-text-gold-light { color: #fbe5a2 !important; }
-        .popup-banner-text-emerald { color: #6ee7b7 !important; }
+        #durgashakti-popup-banner,
+        #durgashakti-popup-banner * {
+          -webkit-text-fill-color: initial;
+        }
+        #durgashakti-popup-banner .popup-banner-text-white { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
+        #durgashakti-popup-banner .popup-banner-text-gold { color: #fcd34d !important; -webkit-text-fill-color: #fcd34d !important; }
+        #durgashakti-popup-banner .popup-banner-text-gold-light { color: #fbe5a2 !important; -webkit-text-fill-color: #fbe5a2 !important; }
+        #durgashakti-popup-banner .popup-banner-text-emerald { color: #6ee7b7 !important; -webkit-text-fill-color: #6ee7b7 !important; }
+        #durgashakti-popup-banner h2 { -webkit-text-fill-color: transparent !important; }
       `}</style>
-      <div className={`relative w-full max-w-2xl bg-gradient-to-br ${background_gradient} rounded-3xl border-4 ${border_color} p-6 sm:p-8 md:p-10 text-white shadow-2xl overflow-hidden shadow-black/40 dark`}>
+      <div id="durgashakti-popup-banner" className={`relative w-full max-w-2xl bg-gradient-to-br ${background_gradient} rounded-3xl border-4 ${border_color} p-6 sm:p-8 md:p-10 text-white shadow-2xl overflow-hidden shadow-black/40`}>
         
         {/* Animated Background Overlay elements depending on theme context */}
         {animation_style === 'snow' && (
