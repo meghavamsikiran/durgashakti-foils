@@ -78,6 +78,7 @@ export const useGeoLocationAddress = () => {
         try {
           const osmRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`, {
             headers: {
+              'User-Agent': 'DurgaShaktiFoils/1.0 (meghavamsikiran@gmail.com)',
               'Accept-Language': 'en'
             }
           });
