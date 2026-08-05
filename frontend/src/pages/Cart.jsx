@@ -423,40 +423,39 @@ const Cart = () => {
       {/* Remove Item Confirmation Modal */}
       <AnimatePresence>
         {removingProductId && (
-          <div className="fixed inset-0 bg-[#0C1310]/80 backdrop-blur z-50 flex items-center justify-center p-4" onClick={() => setRemovingProductId(null)}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in font-sans" onClick={() => setRemovingProductId(null)}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#131B17] border border-[#26322B] max-w-sm w-full p-6 rounded-xl shadow-2xl relative text-white"
-              data-force-dark
+              className="bg-card text-card-foreground border border-border max-w-sm w-full p-6 rounded-2xl shadow-2xl relative"
               onClick={(e) => e.stopPropagation()}
             >
               <button 
                 onClick={() => setRemovingProductId(null)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
               
-              <h3 className="text-white font-bold text-xl tracking-wide mb-2 font-sans">
+              <h3 className="text-foreground font-bold text-xl tracking-wide mb-2 font-sans">
                 REMOVE ITEM?
               </h3>
               
-              <p className="text-slate-400 text-sm mb-6 font-medium">
+              <p className="text-muted-foreground text-sm mb-6 font-medium">
                 Are you sure you want to remove this item from your cart?
               </p>
               
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => setRemovingProductId(null)}
-                  className="w-full bg-[#26322B] hover:bg-slate-700 text-white font-bold py-3 rounded-lg text-center transition-colors tracking-wide text-sm cursor-pointer"
+                  className="w-full bg-secondary text-secondary-foreground hover:opacity-90 font-bold py-3 rounded-xl text-center transition-all tracking-wide text-sm cursor-pointer"
                 >
                   GO BACK
                 </button>
                 <button
                   onClick={handleConfirmRemove}
-                  className="w-full border border-[#26322B] bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 font-bold py-3 rounded-lg text-center transition-colors tracking-wide text-sm cursor-pointer"
+                  className="w-full bg-destructive text-destructive-foreground hover:opacity-90 font-bold py-3 rounded-xl text-center transition-all tracking-wide text-sm cursor-pointer"
                 >
                   REMOVE ITEM
                 </button>

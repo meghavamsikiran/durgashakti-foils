@@ -954,120 +954,36 @@ h1, h2, h3, h4, h5, h6,
   background-color: rgba(248, 250, 252, 0.5) !important;
 }
 
-/* ── ADMIN DARK THEME OVERRIDES ──────────────────────────────────── */
-.admin-shell:not(.light-theme) {
-  --background: 150 18% 5%;
-  --foreground: 0 0% 100%;
-  --card: 150 18% 7%;
-  --card-foreground: 0 0% 100%;
-  --popover: 150 18% 7%;
-  --popover-foreground: 0 0% 100%;
-  --muted: 150 18% 12%;
-  --muted-foreground: 150 10% 70%;
-  --accent: 150 18% 12%;
-  --accent-foreground: 0 0% 100%;
-  --border: 150 18% 12%;
-  --input: 150 18% 12%;
-  --surface: #0C1310 !important;
-  --surface-bright: #0C1310 !important;
-  --surface-container-lowest: #131B17 !important;
-  --surface-container-low: #131B17 !important;
-  --surface-container: #19231F !important;
-  --surface-container-high: #19231F !important;
-  --surface-container-highest: #26322B !important;
-  --on-surface: #ffffff !important;
-  --on-surface-variant: #cbd5e1 !important;
-  --border-subtle: #26322B !important;
-  --ink-slate: #ffffff !important;
-  --text-muted: #94a3b8 !important;
+/* ── ADMIN THEME OVERRIDES ──────────────────────────────────── */
+.admin-shell {
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
-.admin-shell:not(.light-theme) main, 
-.admin-shell:not(.light-theme) div.bg-\[\#f7faf8\], 
-.admin-shell:not(.light-theme) div.bg-surface, 
-.admin-shell:not(.light-theme) div.text-on-surface {
-  background-color: #0C1310 !important;
-  color: #ffffff !important;
+.admin-shell main {
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
-.admin-shell:not(.light-theme) .bg-white {
-  background-color: #131B17 !important;
-  color: #ffffff !important;
+.admin-shell .bg-white,
+.admin-shell .bg-\[\#131B17\],
+.admin-shell .bg-\[\#0C1310\] {
+  background-color: var(--card);
+  color: var(--card-foreground);
 }
 
-.admin-shell:not(.light-theme) .text-slate-800,
-.admin-shell:not(.light-theme) .text-slate-900,
-.admin-shell:not(.light-theme) .text-slate-950 {
-  color: #ffffff !important;
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea {
+  background-color: var(--input);
+  border-color: var(--border);
+  color: var(--foreground);
 }
-
-.admin-shell:not(.light-theme) .text-slate-700,
-.admin-shell:not(.light-theme) .text-slate-650 {
-  color: #e2e8f0 !important;
-}
-
-.admin-shell:not(.light-theme) .text-slate-600 {
-  color: #cbd5e1 !important;
-}
-
-.admin-shell:not(.light-theme) .text-slate-500,
-.admin-shell:not(.light-theme) .text-slate-400 {
-  color: #94a3b8 !important;
-}
-
-.admin-shell:not(.light-theme) .border-slate-200,
-.admin-shell:not(.light-theme) .border-slate-100,
-.admin-shell:not(.light-theme) .border-slate-250,
-.admin-shell:not(.light-theme) .border-slate-200\/60,
-.admin-shell:not(.light-theme) .border-slate-200\/80 {
-  border-color: #26322B !important;
-}
-
-.admin-shell:not(.light-theme) .bg-slate-50,
-.admin-shell:not(.light-theme) .bg-slate-100,
-.admin-shell:not(.light-theme) .bg-slate-200\/50,
-.admin-shell:not(.light-theme) .bg-slate-200,
-.admin-shell:not(.light-theme) .bg-slate-50\/50,
-.admin-shell:not(.light-theme) .bg-slate-100\/50,
-.admin-shell:not(.light-theme) .bg-slate-50\/40,
-.admin-shell:not(.light-theme) .bg-slate-50\/80 {
-  background-color: #131B17 !important;
-}
-
-.admin-shell:not(.light-theme) .hover\:bg-slate-50:hover,
-.admin-shell:not(.light-theme) .hover\:bg-slate-100:hover,
-.admin-shell:not(.light-theme) .hover\:bg-slate-50\/50:hover,
-.admin-shell [class*="hover:bg-slate-"]:hover,
-.admin-shell [class*="hover:bg-white"]:hover,
-.admin-shell [class*="hover:bg-slate-50\/40"]:hover,
-.admin-shell tr:hover,
-.admin-shell tbody tr:hover,
-.admin-shell tr:hover td,
-.admin-shell tbody tr:hover td,
-.admin-theme tr:hover,
-.admin-theme tbody tr:hover,
-.admin-shell .group:not(aside a):hover,
-.admin-shell [class*="group-hover:bg-"] {
-  background-color: #19231F !important;
-}
-
-  .admin-shell input,
-  .admin-shell select,
-  .admin-shell textarea,
-  .admin-shell input[type="number"],
-  .admin-shell input[type="text"] {
-    background-color: #131B17 !important;
-    border-color: #26322B !important;
-    color: #ffffff !important;
-  }
-
 
 .admin-shell input:focus, 
 .admin-shell select:focus, 
 .admin-shell textarea:focus {
-  background-color: #19231F !important;
-  color: #ffffff !important;
-  border-color: #25D958 !important;
+  border-color: var(--primary);
 }
 
 .admin-shell input::placeholder, 

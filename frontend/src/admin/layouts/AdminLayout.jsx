@@ -70,63 +70,37 @@ const AdminLayout = () => {
 
   const isLight = themeMode === 'light';
 
-  const shellClass = isLight 
-    ? "admin-shell light-theme min-h-screen flex flex-col md:flex-row bg-[hsl(45,30%,98%)] text-slate-900" 
-    : "admin-shell dark-theme min-h-screen flex flex-col md:flex-row bg-[#0C1310] text-white";
+  const shellClass = "admin-shell min-h-screen flex flex-col md:flex-row bg-background text-foreground font-sans";
 
-  const headerClass = isLight
-    ? "flex md:hidden items-center justify-between px-6 py-4 sticky top-0 z-30 shadow-sm border-b bg-white border-slate-200 text-slate-900"
-    : "flex md:hidden items-center justify-between px-6 py-4 sticky top-0 z-30 shadow-sm border-b bg-[#050807] border-[#26322B] text-white";
+  const headerClass = "flex md:hidden items-center justify-between px-6 py-4 sticky top-0 z-30 shadow-sm border-b bg-card border-border text-card-foreground";
 
-  const menuButtonClass = isLight
-    ? "p-2 -ml-2 rounded-xl transition-colors focus:outline-none text-slate-600 hover:text-[#006e1b] hover:bg-slate-100"
-    : "p-2 -ml-2 rounded-xl transition-colors focus:outline-none text-slate-300 hover:text-[#25d958] hover:bg-[#25d958]/10";
+  const menuButtonClass = "p-2 -ml-2 rounded-xl transition-colors focus:outline-none text-muted-foreground hover:text-primary hover:bg-accent";
 
-  const logoTitleClass = isLight
-    ? "font-serif font-bold tracking-tight text-slate-900"
-    : "font-serif font-bold tracking-tight text-white";
+  const logoTitleClass = "font-sans font-bold tracking-tight text-foreground";
 
-  const logoSubtitleClass = isLight
-    ? "italic font-inter text-[#006e1b]"
-    : "italic font-inter text-[#25D958]/80";
+  const logoSubtitleClass = "italic font-sans text-primary";
 
-  const themeHeaderBtnClass = isLight
-    ? "p-2 transition-colors focus:outline-none text-slate-600 hover:text-[#006e1b]"
-    : "p-2 transition-colors focus:outline-none text-slate-300 hover:text-[#25d958]";
+  const themeHeaderBtnClass = "p-2 transition-colors focus:outline-none text-muted-foreground hover:text-primary";
 
-  const overlayClass = isLight
-    ? "fixed inset-0 z-[1000] backdrop-blur-sm md:hidden transition-opacity bg-slate-900/40"
-    : "fixed inset-0 z-[1000] backdrop-blur-sm md:hidden transition-opacity bg-[#0C1310]/80";
+  const overlayClass = "fixed inset-0 z-[1000] backdrop-blur-sm md:hidden transition-opacity bg-black/60";
 
-  const asideClass = (isLight ? "bg-white text-slate-700 border-slate-200" : "bg-[#050807] text-slate-350 border-[#26322B]")
-    + (sidebarOpen ? " w-64 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-[1001] border-r font-inter transition-transform duration-300 md:translate-x-0 translate-x-0" : " w-64 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-[1001] border-r font-inter transition-transform duration-300 md:translate-x-0 -translate-x-full");
+  const asideClass = "bg-sidebar text-sidebar-foreground border-sidebar-border"
+    + (sidebarOpen ? " w-64 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-[1001] border-r font-sans transition-transform duration-300 md:translate-x-0 translate-x-0" : " w-64 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-[1001] border-r font-sans transition-transform duration-300 md:translate-x-0 -translate-x-full");
 
-  const asideHeaderClass = isLight
-    ? "p-5 flex items-center justify-between border-b bg-white border-slate-200"
-    : "p-5 flex items-center justify-between border-b bg-[#050807] border-[#26322B]";
+  const asideHeaderClass = "p-5 flex items-center justify-between border-b bg-sidebar border-sidebar-border";
 
-  const asideNavClass = isLight
-    ? "flex-1 overflow-y-auto py-6 pl-3 pr-2 space-y-1 sidebar-scrollbar bg-white"
-    : "flex-1 overflow-y-auto py-6 pl-3 pr-2 space-y-1 sidebar-scrollbar bg-[#050807]";
+  const asideNavClass = "flex-1 overflow-y-auto py-6 pl-3 pr-2 space-y-1 sidebar-scrollbar bg-sidebar";
 
-  const asideFooterClass = isLight
-    ? "p-4 border-t bg-white border-slate-200"
-    : "p-4 border-t bg-[#050807] border-[#26322B]";
+  const asideFooterClass = "p-4 border-t bg-sidebar border-sidebar-border";
 
-  const userNameClass = isLight ? "text-xs font-bold truncate text-slate-900" : "text-xs font-bold truncate text-white";
-  const userRoleClass = isLight ? "text-[10px] truncate uppercase tracking-widest font-mono text-slate-500 font-semibold" : "text-[10px] truncate uppercase tracking-widest font-mono text-slate-500";
+  const userNameClass = "text-xs font-bold truncate text-sidebar-foreground";
+  const userRoleClass = "text-[10px] truncate uppercase tracking-widest font-mono text-sidebar-foreground/70 font-semibold";
 
-  const themeToggleBtnClass = isLight
-    ? "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 mb-1 text-slate-800 hover:text-[#006e1b] hover:bg-emerald-50/60"
-    : "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 mb-1 text-slate-300 hover:text-[#25D958] hover:bg-[#19231F]/50";
+  const themeToggleBtnClass = "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 mb-1 text-sidebar-foreground hover:text-sidebar-primary hover:bg-sidebar-accent";
 
-  const logoutBtnClass = isLight
-    ? "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all rounded-lg text-slate-700 hover:text-rose-600 hover:bg-rose-50"
-    : "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all rounded-lg text-slate-400 hover:text-white";
+  const logoutBtnClass = "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all rounded-lg text-sidebar-foreground/80 hover:text-destructive hover:bg-destructive/10";
 
-  const mainClass = isLight
-    ? "flex-1 md:ml-64 min-h-screen bg-[hsl(45,30%,98%)] text-slate-900"
-    : "flex-1 md:ml-64 min-h-screen bg-[#0C1310] text-white";
+  const mainClass = "flex-1 md:ml-64 min-h-screen bg-background text-foreground";
 
   return (
     <div className={shellClass}>
@@ -198,16 +172,12 @@ const AdminLayout = () => {
             const isActive = location.pathname === path || (item.label === 'Dashboard' && (location.pathname === '/admin' || location.pathname === '/superadmin'));
             
             const linkClass = isActive 
-              ? (isLight
-                ? 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group bg-emerald-50 text-[#006e1b] border-l-4 border-[#006e1b] pl-2.5 font-bold shadow-sm focus:outline-none focus:ring-0'
-                : 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group bg-[rgba(11,209,61,0.12)] text-[#25D958] border-l-4 border-[#25D958] pl-2.5 font-bold focus:outline-none focus:ring-0')
-              : (isLight
-                ? 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group text-slate-800 pl-3 font-semibold hover:text-[#006e1b] hover:bg-emerald-50/60 focus:outline-none focus:ring-0'
-                : 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group text-slate-300 pl-3 font-medium hover:text-[#25D958] hover:bg-[#25D958]/10 focus:outline-none focus:ring-0');
+              ? 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group bg-sidebar-accent text-sidebar-accent-foreground border-l-4 border-sidebar-primary pl-2.5 font-bold shadow-sm focus:outline-none focus:ring-0'
+              : 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group text-sidebar-foreground/80 pl-3 font-semibold hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50 focus:outline-none focus:ring-0';
 
             const iconClass = isActive
-              ? (isLight ? 'w-4 h-4 transition-colors text-[#006e1b]' : 'w-4 h-4 transition-colors text-[#25D958]')
-              : (isLight ? 'w-4 h-4 transition-colors text-slate-600 group-hover:text-[#006e1b]' : 'w-4 h-4 transition-colors text-slate-500 group-hover:text-[#25D958]');
+              ? 'w-4 h-4 transition-colors text-sidebar-primary'
+              : 'w-4 h-4 transition-colors text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground';
 
             return (
               <Link

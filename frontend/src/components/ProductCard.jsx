@@ -336,38 +336,39 @@ const ProductCard = ({ product }) => {
       {/* Remove Item Confirmation Modal */}
       <AnimatePresence>
         {showRemoveModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in font-sans" onClick={() => setShowRemoveModal(false)}>
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white border border-slate-200 max-w-sm w-full p-6 rounded-sm shadow-2xl relative"
+              className="bg-card text-card-foreground border border-border max-w-sm w-full p-6 rounded-2xl shadow-2xl relative"
+              onClick={(e) => e.stopPropagation()}
             >
               <button 
                 onClick={() => setShowRemoveModal(false)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
               
-              <h3 className="text-slate-900 font-bold text-xl tracking-wide mb-2" style={{ fontFamily: 'Manrope' }}>
+              <h3 className="text-foreground font-bold text-xl tracking-wide mb-2 font-sans">
                 REMOVE ITEM?
               </h3>
               
-              <p className="text-slate-600 text-sm mb-6">
+              <p className="text-muted-foreground text-sm mb-6 font-medium">
                 Are you sure you want to remove this item from your cart?
               </p>
               
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => setShowRemoveModal(false)}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-sm text-center transition-colors tracking-wide text-sm cursor-pointer"
+                  className="w-full bg-secondary text-secondary-foreground hover:opacity-90 font-bold py-3 rounded-xl text-center transition-all tracking-wide text-sm cursor-pointer"
                 >
                   GO BACK
                 </button>
                 <button
                   onClick={handleConfirmRemove}
-                  className="w-full border border-slate-300 bg-rose-50/40 hover:bg-rose-50 text-rose-700 font-bold py-3 rounded-sm text-center transition-colors tracking-wide text-sm cursor-pointer"
+                  className="w-full bg-destructive text-destructive-foreground hover:opacity-90 font-bold py-3 rounded-xl text-center transition-all tracking-wide text-sm cursor-pointer"
                 >
                   REMOVE ITEM
                 </button>
