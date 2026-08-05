@@ -427,7 +427,7 @@ const PopupBanner = () => {
                   key={coupon.id || coupon.code}
                   className="rounded-2xl p-5 border border-amber-400/40 hover:border-amber-400/60 transition-all flex flex-col items-center justify-center text-center gap-3 w-full min-h-[145px] relative overflow-hidden group shadow-lg"
                   style={{ 
-                    background: 'rgba(0, 0, 0, 0.55)', 
+                    background: 'rgba(0, 0, 0, 0.75)', 
                     backdropFilter: 'blur(8px)',
                     WebkitMaskImage: 'radial-gradient(circle at 0% 50%, transparent 12px, black 12.5px), radial-gradient(circle at 100% 50%, transparent 12px, black 12.5px)',
                     maskImage: 'radial-gradient(circle at 0% 50%, transparent 12px, black 12.5px), radial-gradient(circle at 100% 50%, transparent 12px, black 12.5px)',
@@ -441,8 +441,8 @@ const PopupBanner = () => {
                   </div>
 
                   <div className="space-y-1.5 w-full relative z-10">
-                    <p className="text-xs font-black text-amber-300 uppercase tracking-widest flex items-center justify-center gap-1.5">
-                      <Ticket className="w-3.5 h-3.5 text-amber-400" />
+                    <p className="text-xs font-black uppercase tracking-widest flex items-center justify-center gap-1.5" style={{ color: '#fcd34d' }}>
+                      <Ticket className="w-3.5 h-3.5" style={{ color: '#fbbf24' }} />
                       {discVal}
                     </p>
                     
@@ -455,8 +455,8 @@ const PopupBanner = () => {
                       </span>
                       <button
                         onClick={() => handleCopy(coupon.code)}
-                        className="absolute right-0 p-2 rounded-lg text-amber-300 hover:text-white border border-amber-400/30 transition-all active:scale-95"
-                        style={{ backgroundColor: '#1a1a1a' }}
+                        className="absolute right-0 p-2 rounded-lg border border-amber-400/30 transition-all active:scale-95"
+                        style={{ backgroundColor: '#1a1a1a', color: '#fcd34d' }}
                         title="Copy Code"
                       >
                         {copiedCode === coupon.code ? (
@@ -471,8 +471,8 @@ const PopupBanner = () => {
                   <div className="w-full flex flex-col justify-center items-center relative z-10 pt-1 border-t border-dashed border-white/15">
                     {hasExpiry ? (
                       <>
-                        <p className="text-[9px] uppercase font-bold tracking-wider text-amber-200">Offer Expires</p>
-                        <p className="text-xs font-black text-yellow-300 font-mono mt-0.5">
+                        <p className="text-[9px] uppercase font-bold tracking-wider" style={{ color: '#fbe5a2' }}>Offer Expires</p>
+                        <p className="text-xs font-black font-mono mt-0.5" style={{ color: '#fcd34d' }}>
                           {new Date(coupon.expiry_date).toLocaleDateString('en-IN', {
                             day: '2-digit',
                             month: 'short',
