@@ -324,6 +324,12 @@ const PopupBanner = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur animate-fade-in font-sans">
+      <style>{`
+        .popup-banner-text-white { color: #ffffff !important; }
+        .popup-banner-text-gold { color: #fcd34d !important; }
+        .popup-banner-text-gold-light { color: #fbe5a2 !important; }
+        .popup-banner-text-emerald { color: #6ee7b7 !important; }
+      `}</style>
       <div className={`relative w-full max-w-2xl bg-gradient-to-br ${background_gradient} rounded-3xl border-4 ${border_color} p-6 sm:p-8 md:p-10 text-white shadow-2xl overflow-hidden shadow-black/40 dark`}>
         
         {/* Animated Background Overlay elements depending on theme context */}
@@ -404,7 +410,7 @@ const PopupBanner = () => {
             {theme.title}
           </h2>
           
-          <p className="text-sm text-white max-w-lg mx-auto font-bold leading-relaxed">
+          <p className="text-sm popup-banner-text-white max-w-lg mx-auto font-bold leading-relaxed">
             {theme.subtitle}
           </p>
 
@@ -441,22 +447,22 @@ const PopupBanner = () => {
                   </div>
 
                   <div className="space-y-1.5 w-full relative z-10">
-                    <p className="text-xs font-black uppercase tracking-widest flex items-center justify-center gap-1.5" style={{ color: '#fcd34d' }}>
-                      <Ticket className="w-3.5 h-3.5" style={{ color: '#fbbf24' }} />
+                    <p className="text-xs font-black uppercase tracking-widest flex items-center justify-center gap-1.5 popup-banner-text-gold">
+                      <Ticket className="w-3.5 h-3.5 popup-banner-text-gold" />
                       {discVal}
                     </p>
                     
                     <div className="relative flex items-center justify-center w-full px-10">
                       <span 
-                        className="font-mono text-xl font-black tracking-wider px-5 py-1.5 rounded-xl border border-amber-400/50 shadow-inner select-all"
-                        style={{ backgroundColor: '#0a0a0a', color: '#fcd34d' }}
+                        className="font-mono text-xl font-black tracking-wider px-5 py-1.5 rounded-xl border border-amber-400/50 shadow-inner select-all popup-banner-text-gold"
+                        style={{ backgroundColor: '#0a0a0a' }}
                       >
                         {coupon.code}
                       </span>
                       <button
                         onClick={() => handleCopy(coupon.code)}
-                        className="absolute right-0 p-2 rounded-lg border border-amber-400/30 transition-all active:scale-95"
-                        style={{ backgroundColor: '#1a1a1a', color: '#fcd34d' }}
+                        className="absolute right-0 p-2 rounded-lg border border-amber-400/30 transition-all active:scale-95 popup-banner-text-gold"
+                        style={{ backgroundColor: '#1a1a1a' }}
                         title="Copy Code"
                       >
                         {copiedCode === coupon.code ? (
@@ -471,8 +477,8 @@ const PopupBanner = () => {
                   <div className="w-full flex flex-col justify-center items-center relative z-10 pt-1 border-t border-dashed border-white/15">
                     {hasExpiry ? (
                       <>
-                        <p className="text-[9px] uppercase font-bold tracking-wider" style={{ color: '#fbe5a2' }}>Offer Expires</p>
-                        <p className="text-xs font-black font-mono mt-0.5" style={{ color: '#fcd34d' }}>
+                        <p className="text-[9px] uppercase font-bold tracking-wider popup-banner-text-gold-light">Offer Expires</p>
+                        <p className="text-xs font-black font-mono mt-0.5 popup-banner-text-gold">
                           {new Date(coupon.expiry_date).toLocaleDateString('en-IN', {
                             day: '2-digit',
                             month: 'short',
@@ -483,7 +489,7 @@ const PopupBanner = () => {
                         </p>
                       </>
                     ) : (
-                      <span className="inline-flex px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-[9px] font-bold uppercase tracking-wider">
+                      <span className="inline-flex px-2.5 py-0.5 bg-emerald-500/20 border border-emerald-500/30 rounded text-[9px] font-bold uppercase tracking-wider popup-banner-text-emerald">
                         Infinite Validity
                       </span>
                     )}
