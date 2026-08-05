@@ -324,7 +324,7 @@ const PopupBanner = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur animate-fade-in font-sans">
-      <div className={`relative w-full max-w-2xl bg-gradient-to-br ${background_gradient} rounded-3xl border-4 ${border_color} p-6 sm:p-8 md:p-10 text-white shadow-2xl overflow-hidden shadow-black/40`}>
+      <div className={`relative w-full max-w-2xl bg-gradient-to-br ${background_gradient} rounded-3xl border-4 ${border_color} p-6 sm:p-8 md:p-10 text-white shadow-2xl overflow-hidden shadow-black/40 dark`}>
         
         {/* Animated Background Overlay elements depending on theme context */}
         {animation_style === 'snow' && (
