@@ -84,21 +84,31 @@ const AdminLayout = () => {
 
   const overlayClass = "fixed inset-0 z-[1000] backdrop-blur-sm md:hidden transition-opacity bg-black/60";
 
-  const asideClass = "bg-sidebar text-sidebar-foreground border-sidebar-border"
+  const asideClass = (isLight ? "bg-card text-card-foreground border-border" : "bg-sidebar text-sidebar-foreground border-sidebar-border")
     + (sidebarOpen ? " w-64 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-[1001] border-r font-sans transition-transform duration-300 md:translate-x-0 translate-x-0" : " w-64 flex flex-col fixed inset-y-0 left-0 shadow-2xl z-[1001] border-r font-sans transition-transform duration-300 md:translate-x-0 -translate-x-full");
 
-  const asideHeaderClass = "p-5 flex items-center justify-between border-b bg-sidebar border-sidebar-border";
+  const asideHeaderClass = isLight 
+    ? "p-5 flex items-center justify-between border-b bg-card border-border"
+    : "p-5 flex items-center justify-between border-b bg-sidebar border-sidebar-border";
 
-  const asideNavClass = "flex-1 overflow-y-auto py-6 pl-3 pr-2 space-y-1 sidebar-scrollbar bg-sidebar";
+  const asideNavClass = isLight 
+    ? "flex-1 overflow-y-auto py-6 pl-3 pr-2 space-y-1 sidebar-scrollbar bg-card"
+    : "flex-1 overflow-y-auto py-6 pl-3 pr-2 space-y-1 sidebar-scrollbar bg-sidebar";
 
-  const asideFooterClass = "p-4 border-t bg-sidebar border-sidebar-border";
+  const asideFooterClass = isLight 
+    ? "p-4 border-t bg-card border-border"
+    : "p-4 border-t bg-sidebar border-sidebar-border";
 
-  const userNameClass = "text-xs font-bold truncate text-sidebar-foreground";
-  const userRoleClass = "text-[10px] truncate uppercase tracking-widest font-mono text-sidebar-foreground/70 font-semibold";
+  const userNameClass = isLight ? "text-xs font-bold truncate text-card-foreground" : "text-xs font-bold truncate text-sidebar-foreground";
+  const userRoleClass = isLight ? "text-[10px] truncate uppercase tracking-widest font-mono text-muted-foreground font-semibold" : "text-[10px] truncate uppercase tracking-widest font-mono text-sidebar-foreground/70 font-semibold";
 
-  const themeToggleBtnClass = "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 mb-1 text-sidebar-foreground hover:text-sidebar-primary hover:bg-sidebar-accent";
+  const themeToggleBtnClass = isLight
+    ? "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 mb-1 text-card-foreground hover:text-primary hover:bg-muted"
+    : "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 mb-1 text-sidebar-foreground hover:text-sidebar-primary hover:bg-sidebar-accent";
 
-  const logoutBtnClass = "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all rounded-lg text-sidebar-foreground/80 hover:text-destructive hover:bg-destructive/10";
+  const logoutBtnClass = isLight
+    ? "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all rounded-lg text-card-foreground hover:text-destructive hover:bg-destructive/10"
+    : "flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-semibold transition-all rounded-lg text-sidebar-foreground/80 hover:text-destructive hover:bg-destructive/10";
 
   const mainClass = "flex-1 md:ml-64 min-h-screen bg-background text-foreground";
 
@@ -172,12 +182,16 @@ const AdminLayout = () => {
             const isActive = location.pathname === path || (item.label === 'Dashboard' && (location.pathname === '/admin' || location.pathname === '/superadmin'));
             
             const linkClass = isActive 
-              ? 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group bg-sidebar-accent text-sidebar-accent-foreground border-l-4 border-sidebar-primary pl-2.5 font-bold shadow-sm focus:outline-none focus:ring-0'
-              : 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group text-sidebar-foreground/80 pl-3 font-semibold hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50 focus:outline-none focus:ring-0';
+              ? (isLight
+                ? 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group bg-primary/10 text-primary border-l-4 border-primary pl-2.5 font-bold shadow-sm focus:outline-none focus:ring-0'
+                : 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group bg-sidebar-accent text-sidebar-accent-foreground border-l-4 border-sidebar-primary pl-2.5 font-bold shadow-sm focus:outline-none focus:ring-0')
+              : (isLight
+                ? 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group text-muted-foreground pl-3 font-semibold hover:text-primary hover:bg-muted focus:outline-none focus:ring-0'
+                : 'flex items-center gap-3 py-2.5 rounded-lg text-sm transition-all duration-200 group text-sidebar-foreground/80 pl-3 font-semibold hover:text-sidebar-accent-foreground hover:bg-sidebar-accent/50 focus:outline-none focus:ring-0');
 
             const iconClass = isActive
-              ? 'w-4 h-4 transition-colors text-sidebar-primary'
-              : 'w-4 h-4 transition-colors text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground';
+              ? (isLight ? 'w-4 h-4 transition-colors text-primary' : 'w-4 h-4 transition-colors text-sidebar-primary')
+              : (isLight ? 'w-4 h-4 transition-colors text-muted-foreground group-hover:text-primary' : 'w-4 h-4 transition-colors text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground');
 
             return (
               <Link
