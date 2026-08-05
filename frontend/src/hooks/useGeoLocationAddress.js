@@ -48,38 +48,18 @@ export const useGeoLocationAddress = () => {
         const { latitude, longitude } = position.coords;
         console.log("GPS Coordinates acquired:", latitude, longitude);
 
-        // A. Try backend reverse-geocode service first
-        try {
-          const res = await apiClient.get(`/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`);
-          const data = res.data || {};
-          if (data.pincode || data.city || data.state) {
-            const { pincode, city, state, locality, address_line1, address_line2 } = data;
-            const locationName = locality || city || 'Current Location';
-            toast.success(`Location detected: ${locationName}`);
-            return {
-              pincode: pincode || '',
-              state: state || '',
-              city: city || '',
-              address_line1: address_line1 || locality || '',
-              address_line2: address_line2 || locality || '',
-            };
-          }
-        } catch (apiErr) {
-          console.warn("Backend reverse-geocode API failed or non-responsive, trying direct client fetch...", apiErr);
-        }
-
-        // B. Direct client-side fetch from BigDataCloud API
+        // A. Try direct BigDataCloud geocoding client API
         try {
           const bdcRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
           if (bdcRes.ok) {
             const bdcData = await bdcRes.json();
             const city = bdcData.city || bdcData.locality || bdcData.principalSubdivision || '';
             const state = bdcData.principalSubdivision || '';
-            const locality = bdcData.locality || bdcData.localityInfo?.informative?.[0]?.name || '';
+            const locality = bdcData.locality || '';
             const pincode = bdcData.postcode || '';
 
             if (city || state) {
-              const locationName = locality || city;
+              const locationName = locality || city || 'Current Location';
               toast.success(`Location detected: ${locationName}`);
               return {
                 pincode: pincode || '',
@@ -91,12 +71,16 @@ export const useGeoLocationAddress = () => {
             }
           }
         } catch (bdcErr) {
-          console.warn("Direct BigDataCloud fetch error:", bdcErr);
+          console.warn("Direct BigDataCloud fetch failed:", bdcErr);
         }
 
-        // C. Direct client-side fetch from OpenStreetMap Nominatim
+        // B. Try OpenStreetMap Nominatim client-side directly (with user-agent)
         try {
-          const osmRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`);
+          const osmRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`, {
+            headers: {
+              'Accept-Language': 'en'
+            }
+          });
           if (osmRes.ok) {
             const osmData = await osmRes.json();
             const address = osmData.address || {};
@@ -119,7 +103,27 @@ export const useGeoLocationAddress = () => {
             }
           }
         } catch (osmErr) {
-          console.warn("Direct OpenStreetMap fetch error:", osmErr);
+          console.warn("Direct OSM Nominatim fetch failed:", osmErr);
+        }
+
+        // C. Fallback: Query backend reverse-geocode service
+        try {
+          const res = await apiClient.get(`/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`);
+          const data = res.data || {};
+          if (data.pincode || data.city || data.state) {
+            const { pincode, city, state, locality, address_line1, address_line2 } = data;
+            const locationName = locality || city || 'Current Location';
+            toast.success(`Location detected: ${locationName}`);
+            return {
+              pincode: pincode || '',
+              state: state || '',
+              city: city || '',
+              address_line1: address_line1 || locality || '',
+              address_line2: address_line2 || locality || '',
+            };
+          }
+        } catch (apiErr) {
+          console.warn("Backend reverse-geocode API failed:", apiErr);
         }
       }
 
