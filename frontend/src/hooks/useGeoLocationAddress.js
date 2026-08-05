@@ -8,11 +8,15 @@ export const useGeoLocationAddress = () => {
   const tryGetPosition = (highAccuracy, timeoutMs) => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) return reject(new Error('Not supported'));
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: highAccuracy,
-        timeout: timeoutMs,
-        maximumAge: 60000,
-      });
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve(pos),
+        (err) => reject(err),
+        {
+          enableHighAccuracy: highAccuracy,
+          timeout: timeoutMs,
+          maximumAge: 300000,
+        }
+      );
     });
   };
 
@@ -27,13 +31,13 @@ export const useGeoLocationAddress = () => {
     try {
       let position = null;
 
-      // 1. Try HTML5 Geolocation with high accuracy
+      // 1. Try HTML5 Geolocation with high accuracy then standard
       try {
-        position = await tryGetPosition(true, 8000);
+        position = await tryGetPosition(true, 12000);
       } catch (geoErr) {
-        console.warn("High accuracy HTML5 Geolocation failed, trying standard accuracy:", geoErr);
+        console.warn("High accuracy Geolocation failed/timed out, trying standard accuracy:", geoErr);
         try {
-          position = await tryGetPosition(false, 8000);
+          position = await tryGetPosition(false, 10000);
         } catch (err2) {
           console.warn("Standard accuracy Geolocation failed:", err2);
         }
