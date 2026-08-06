@@ -285,22 +285,9 @@ public class WhatsAppNotificationService {
             if (dispatched) break;
             for (String apiVer : List.of("v20.0", "v25.0", "v18.0")) {
                 if (dispatched) break;
-                try {
-                    String url = "https://graph.facebook.com/" + apiVer + "/" + phoneNumberId + "/messages";
-
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.APPLICATION_JSON);
-                    headers.setBearerAuth(apiToken);
-
-                    Map<String, Object> body = new HashMap<>();
-                    body.put("messaging_product", "whatsapp");
-                    body.put("to", cleanedPhone);
-                    body.put("type", "template");
-
-                    Map<String, Object> template = new HashMap<>();
-                    template.put("name", "order_shipped_v1");
-                    template.put("language", Map.of("code", lang));
-                    template.put("components", List.of(
+                // Try first with body + button components, then fallback to body only
+                List<List<Map<String, Object>>> componentsOptions = List.of(
+                    List.of(
                         Map.of(
                             "type", "body",
                             "parameters", List.of(
@@ -316,18 +303,48 @@ public class WhatsAppNotificationService {
                                 Map.of("type", "text", "text", "https://t.17track.net/en#nums=" + trackingNum)
                             )
                         )
-                    ));
+                    ),
+                    List.of(
+                        Map.of(
+                            "type", "body",
+                            "parameters", List.of(
+                                Map.of("type", "text", "text", customerName),
+                                Map.of("type", "text", "text", order.getOrderNumber())
+                            )
+                        )
+                    )
+                );
 
-                    body.put("template", template);
+                for (List<Map<String, Object>> components : componentsOptions) {
+                    if (dispatched) break;
+                    try {
+                        String url = "https://graph.facebook.com/" + apiVer + "/" + phoneNumberId + "/messages";
 
-                    HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-                    restTemplate.postForEntity(url, request, String.class);
-                    log.info("[WhatsApp Shipped API] Successfully dispatched order_shipped_v1 ({}) to {}", lang, cleanedPhone);
-                    dispatched = true;
-                } catch (HttpStatusCodeException httpEx) {
-                    log.warn("[WhatsApp Shipped API] order_shipped_v1 ({}) failed: {}", lang, httpEx.getResponseBodyAsString());
-                } catch (Exception e) {
-                    log.warn("[WhatsApp Shipped API] order_shipped_v1 ({}) failed for {}: {}", lang, cleanedPhone, e.getMessage());
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.setContentType(MediaType.APPLICATION_JSON);
+                        headers.setBearerAuth(apiToken);
+
+                        Map<String, Object> body = new HashMap<>();
+                        body.put("messaging_product", "whatsapp");
+                        body.put("to", cleanedPhone);
+                        body.put("type", "template");
+
+                        Map<String, Object> template = new HashMap<>();
+                        template.put("name", "order_shipped_v1");
+                        template.put("language", Map.of("code", lang));
+                        template.put("components", components);
+
+                        body.put("template", template);
+
+                        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+                        restTemplate.postForEntity(url, request, String.class);
+                        log.info("[WhatsApp Shipped API] Successfully dispatched order_shipped_v1 ({}) to {}", lang, cleanedPhone);
+                        dispatched = true;
+                    } catch (HttpStatusCodeException httpEx) {
+                        log.warn("[WhatsApp Shipped API] order_shipped_v1 ({}) failed: {}", lang, httpEx.getResponseBodyAsString());
+                    } catch (Exception e) {
+                        log.warn("[WhatsApp Shipped API] order_shipped_v1 ({}) failed for {}: {}", lang, cleanedPhone, e.getMessage());
+                    }
                 }
             }
         }

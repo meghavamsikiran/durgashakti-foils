@@ -194,32 +194,71 @@ public class AdminSettingController {
             List<Map<String, Object>> failedAttempts = new java.util.ArrayList<>();
 
             for (String lang : langCodes) {
-                Map<String, Object> body = new HashMap<>();
-                body.put("messaging_product", "whatsapp");
-                body.put("to", cleanPhone);
-                body.put("type", "template");
-                body.put("template", Map.of("name", reqTemplate, "language", Map.of("code", lang)));
+                int[] paramCountsToTry = ("hello_world".equalsIgnoreCase(reqTemplate)) ? new int[]{0} : new int[]{2, 1, 0};
 
-                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-                try {
-                    ResponseEntity<String> metaResp = restTemplate.postForEntity(url, entity, String.class);
-                    debugInfo.put("metaStatus", metaResp.getStatusCode().value());
-                    debugInfo.put("metaResponse", metaResp.getBody());
-                    debugInfo.put("success", true);
-                    debugInfo.put("acceptedLanguage", lang);
-                    debugInfo.put("phone", cleanPhone);
-                    return ResponseEntity.ok(debugInfo);
-                } catch (HttpStatusCodeException httpEx) {
-                    Map<String, Object> attempt = new HashMap<>();
-                    attempt.put("lang", lang);
-                    attempt.put("status", httpEx.getStatusCode().value());
-                    attempt.put("error", httpEx.getResponseBodyAsString());
-                    failedAttempts.add(attempt);
-                } catch (Exception e) {
-                    Map<String, Object> attempt = new HashMap<>();
-                    attempt.put("lang", lang);
-                    attempt.put("error", e.getMessage());
-                    failedAttempts.add(attempt);
+                for (int paramCount : paramCountsToTry) {
+                    Map<String, Object> body = new HashMap<>();
+                    body.put("messaging_product", "whatsapp");
+                    body.put("to", cleanPhone);
+                    body.put("type", "template");
+
+                    Map<String, Object> templateObj = new HashMap<>();
+                    templateObj.put("name", reqTemplate);
+                    templateObj.put("language", Map.of("code", lang));
+
+                    if (paramCount == 2) {
+                        templateObj.put("components", List.of(
+                            Map.of(
+                                "type", "body",
+                                "parameters", List.of(
+                                    Map.of("type", "text", "text", "Valued Customer"),
+                                    Map.of("type", "text", "text", "DSF-1001")
+                                )
+                            )
+                        ));
+                    } else if (paramCount == 1) {
+                        templateObj.put("components", List.of(
+                            Map.of(
+                                "type", "body",
+                                "parameters", List.of(
+                                    Map.of("type", "text", "text", "Valued Customer")
+                                )
+                            )
+                        ));
+                    }
+
+                    body.put("template", templateObj);
+
+                    HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+                    try {
+                        ResponseEntity<String> metaResp = restTemplate.postForEntity(url, entity, String.class);
+                        debugInfo.put("metaStatus", metaResp.getStatusCode().value());
+                        debugInfo.put("metaResponse", metaResp.getBody());
+                        debugInfo.put("success", true);
+                        debugInfo.put("acceptedLanguage", lang);
+                        debugInfo.put("paramCountUsed", paramCount);
+                        debugInfo.put("phone", cleanPhone);
+                        return ResponseEntity.ok(debugInfo);
+                    } catch (HttpStatusCodeException httpEx) {
+                        String respBody = httpEx.getResponseBodyAsString();
+                        Map<String, Object> attempt = new HashMap<>();
+                        attempt.put("lang", lang);
+                        attempt.put("paramsCount", paramCount);
+                        attempt.put("status", httpEx.getStatusCode().value());
+                        attempt.put("error", respBody);
+                        failedAttempts.add(attempt);
+
+                        // If error is 132001 (Template missing in translation / language 404), break to try next language
+                        if (respBody.contains("132001") || httpEx.getStatusCode().value() == 404) {
+                            break;
+                        }
+                    } catch (Exception e) {
+                        Map<String, Object> attempt = new HashMap<>();
+                        attempt.put("lang", lang);
+                        attempt.put("error", e.getMessage());
+                        failedAttempts.add(attempt);
+                        break;
+                    }
                 }
             }
             debugInfo.put("success", false);
