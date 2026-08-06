@@ -285,8 +285,26 @@ public class WhatsAppNotificationService {
             if (dispatched) break;
             for (String apiVer : List.of("v20.0", "v25.0", "v18.0")) {
                 if (dispatched) break;
-                // Try first with body + button components, then fallback to body only
                 List<List<Map<String, Object>>> componentsOptions = List.of(
+                    // Option 1: Body + Button (trackingNum parameter)
+                    List.of(
+                        Map.of(
+                            "type", "body",
+                            "parameters", List.of(
+                                Map.of("type", "text", "text", customerName),
+                                Map.of("type", "text", "text", order.getOrderNumber())
+                            )
+                        ),
+                        Map.of(
+                            "type", "button",
+                            "sub_type", "url",
+                            "index", "0",
+                            "parameters", List.of(
+                                Map.of("type", "text", "text", trackingNum)
+                            )
+                        )
+                    ),
+                    // Option 2: Body + Button (full URL parameter)
                     List.of(
                         Map.of(
                             "type", "body",
@@ -304,6 +322,7 @@ public class WhatsAppNotificationService {
                             )
                         )
                     ),
+                    // Option 3: Body only
                     List.of(
                         Map.of(
                             "type", "body",

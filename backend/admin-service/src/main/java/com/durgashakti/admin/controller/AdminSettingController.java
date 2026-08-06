@@ -193,10 +193,96 @@ public class AdminSettingController {
             List<String> langCodes = List.of("en_US", "en", "en_GB", "hi", "hi_IN");
             List<Map<String, Object>> failedAttempts = new java.util.ArrayList<>();
 
-            for (String lang : langCodes) {
-                int[] paramCountsToTry = ("hello_world".equalsIgnoreCase(reqTemplate)) ? new int[]{0} : new int[]{2, 1, 0};
+            List<List<Map<String, Object>>> componentVariants = new java.util.ArrayList<>();
 
-                for (int paramCount : paramCountsToTry) {
+            if ("hello_world".equalsIgnoreCase(reqTemplate)) {
+                componentVariants.add(List.of());
+            } else {
+                // Variant 1: Body (2 params) + Button Index 0 (1 param: DSF-1001)
+                componentVariants.add(List.of(
+                    Map.of(
+                        "type", "body",
+                        "parameters", List.of(
+                            Map.of("type", "text", "text", "Valued Customer"),
+                            Map.of("type", "text", "text", "DSF-1001")
+                        )
+                    ),
+                    Map.of(
+                        "type", "button",
+                        "sub_type", "url",
+                        "index", "0",
+                        "parameters", List.of(
+                            Map.of("type", "text", "text", "DSF-1001")
+                        )
+                    )
+                ));
+
+                // Variant 2: Body (2 params) + Button Index 0 (1 param: Full URL)
+                componentVariants.add(List.of(
+                    Map.of(
+                        "type", "body",
+                        "parameters", List.of(
+                            Map.of("type", "text", "text", "Valued Customer"),
+                            Map.of("type", "text", "text", "DSF-1001")
+                        )
+                    ),
+                    Map.of(
+                        "type", "button",
+                        "sub_type", "url",
+                        "index", "0",
+                        "parameters", List.of(
+                            Map.of("type", "text", "text", "https://t.17track.net/en#nums=DSF-1001")
+                        )
+                    )
+                ));
+
+                // Variant 3: Body (2 params) without Button
+                componentVariants.add(List.of(
+                    Map.of(
+                        "type", "body",
+                        "parameters", List.of(
+                            Map.of("type", "text", "text", "Valued Customer"),
+                            Map.of("type", "text", "text", "DSF-1001")
+                        )
+                    )
+                ));
+
+                // Variant 4: Body (1 param) + Button Index 0 (1 param)
+                componentVariants.add(List.of(
+                    Map.of(
+                        "type", "body",
+                        "parameters", List.of(
+                            Map.of("type", "text", "text", "Valued Customer")
+                        )
+                    ),
+                    Map.of(
+                        "type", "button",
+                        "sub_type", "url",
+                        "index", "0",
+                        "parameters", List.of(
+                            Map.of("type", "text", "text", "DSF-1001")
+                        )
+                    )
+                ));
+
+                // Variant 5: Body (1 param) without Button
+                componentVariants.add(List.of(
+                    Map.of(
+                        "type", "body",
+                        "parameters", List.of(
+                            Map.of("type", "text", "text", "Valued Customer")
+                        )
+                    )
+                ));
+
+                // Variant 6: No components
+                componentVariants.add(List.of());
+            }
+
+            for (String lang : langCodes) {
+                for (int vIdx = 0; vIdx < componentVariants.size(); vIdx++) {
+                    List<Map<String, Object>> components = componentVariants.get(vIdx);
+
                     Map<String, Object> body = new HashMap<>();
                     body.put("messaging_product", "whatsapp");
                     body.put("to", cleanPhone);
@@ -205,26 +291,8 @@ public class AdminSettingController {
                     Map<String, Object> templateObj = new HashMap<>();
                     templateObj.put("name", reqTemplate);
                     templateObj.put("language", Map.of("code", lang));
-
-                    if (paramCount == 2) {
-                        templateObj.put("components", List.of(
-                            Map.of(
-                                "type", "body",
-                                "parameters", List.of(
-                                    Map.of("type", "text", "text", "Valued Customer"),
-                                    Map.of("type", "text", "text", "DSF-1001")
-                                )
-                            )
-                        ));
-                    } else if (paramCount == 1) {
-                        templateObj.put("components", List.of(
-                            Map.of(
-                                "type", "body",
-                                "parameters", List.of(
-                                    Map.of("type", "text", "text", "Valued Customer")
-                                )
-                            )
-                        ));
+                    if (!components.isEmpty()) {
+                        templateObj.put("components", components);
                     }
 
                     body.put("template", templateObj);
@@ -236,14 +304,14 @@ public class AdminSettingController {
                         debugInfo.put("metaResponse", metaResp.getBody());
                         debugInfo.put("success", true);
                         debugInfo.put("acceptedLanguage", lang);
-                        debugInfo.put("paramCountUsed", paramCount);
+                        debugInfo.put("variantUsed", vIdx + 1);
                         debugInfo.put("phone", cleanPhone);
                         return ResponseEntity.ok(debugInfo);
                     } catch (HttpStatusCodeException httpEx) {
                         String respBody = httpEx.getResponseBodyAsString();
                         Map<String, Object> attempt = new HashMap<>();
                         attempt.put("lang", lang);
-                        attempt.put("paramsCount", paramCount);
+                        attempt.put("variantIdx", vIdx + 1);
                         attempt.put("status", httpEx.getStatusCode().value());
                         attempt.put("error", respBody);
                         failedAttempts.add(attempt);
