@@ -96,7 +96,7 @@ export const api = {
   },
 };
 
-export const FALLBACK_FOIL_IMAGE = 'https://images.unsplash.com/photo-1615800001619-7c39021596ef?auto=format&fit=crop&w=800&q=80';
+export const FALLBACK_FOIL_IMAGE = '/durga-shakti-foil-new.jpg';
 
 export const formatImageUrl = (url) => {
   if (!url || url === 'null' || url === 'undefined' || String(url).trim() === '') {
