@@ -96,7 +96,7 @@ export const api = {
   },
 };
 
-export const FALLBACK_FOIL_IMAGE = '/durga-shakti-foil-new.jpg';
+export const FALLBACK_FOIL_IMAGE = '/foil-9m-box.jpg';
 
 export const formatImageUrl = (url) => {
   if (!url || url === 'null' || url === 'undefined' || String(url).trim() === '') {
@@ -114,26 +114,28 @@ export const formatImageUrl = (url) => {
 };
 
 export const getProductImage = (product) => {
-  if (!product) return FALLBACK_FOIL_IMAGE;
-
-  const rawUrl = product.image_url || product.url || '';
-  if (rawUrl && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) && !rawUrl.includes('unsplash.com')) {
-    return rawUrl;
-  }
+  if (!product) return '/foil-9m-box.jpg';
 
   const name = String(product.name || '').toLowerCase();
 
-  if (name.includes('10kg') || name.includes('bulk')) {
+  if (name.includes('10kg') || name.includes('10 kg') || name.includes('bulk')) {
     return '/foil-10kg-roll.jpg';
   }
-  if (name.includes('2kg') || name.includes('heavy duty') || name.includes('catering')) {
+  if (name.includes('2kg') || name.includes('2 kg') || name.includes('heavy duty') || name.includes('catering')) {
     return '/foil-2kg-box.jpg';
   }
-  if (name.includes('9m') || name.includes('kitchen') || name.includes('household')) {
+  if (name.includes('9m') || name.includes('kitchen') || name.includes('household') || name.includes('72m') || name.includes('18m')) {
     return '/foil-9m-box.jpg';
   }
 
-  return formatImageUrl(rawUrl);
+  const rawUrl = product.image_url || product.url || '';
+  if (rawUrl && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) && 
+      !rawUrl.includes('durga-shakti-foil-new.jpg') && 
+      !rawUrl.includes('product_display_poster')) {
+    return rawUrl;
+  }
+
+  return '/foil-9m-box.jpg';
 };
 
 export default api;

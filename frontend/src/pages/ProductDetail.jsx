@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import api, { formatImageUrl, FALLBACK_FOIL_IMAGE } from '../utils/api';
+import api, { formatImageUrl, getProductImage, FALLBACK_FOIL_IMAGE } from '../utils/api';
 import PageLoader from '../components/ui/PageLoader';
 import apiClient from '../services/core/apiClient';
 import { getProductPricing } from '../utils/productPricing';
@@ -193,7 +193,7 @@ const ProductDetail = () => {
   })();
   const mediaList = normalizedMediaUrls.length > 0
     ? normalizedMediaUrls
-    : [{ url: product.image_url, type: 'image' }];
+    : [{ url: getProductImage(product), type: 'image' }];
   const activeMedia = mediaList[activeMediaIndex] || mediaList[0];
   const productFeatures = Array.isArray(product.features)
     ? product.features.filter(Boolean)
