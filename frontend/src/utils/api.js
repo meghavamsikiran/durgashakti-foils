@@ -96,7 +96,7 @@ export const api = {
   },
 };
 
-export const FALLBACK_FOIL_IMAGE = '/foil-9m-box.jpg';
+export const FALLBACK_FOIL_IMAGE = '/foil-9m-ds.jpg';
 
 export const formatImageUrl = (url) => {
   if (!url || url === 'null' || url === 'undefined' || String(url).trim() === '') {
@@ -114,18 +114,24 @@ export const formatImageUrl = (url) => {
 };
 
 export const getProductImage = (product) => {
-  if (!product) return '/foil-9m-box.jpg';
+  if (!product) return '/foil-9m-ds.jpg';
 
   const name = String(product.name || '').toLowerCase();
 
   if (name.includes('10kg') || name.includes('10 kg') || name.includes('bulk')) {
-    return '/foil-10kg-roll.jpg';
+    return '/foil-10kg-ds.jpg';
   }
   if (name.includes('2kg') || name.includes('2 kg') || name.includes('heavy duty') || name.includes('catering')) {
-    return '/foil-2kg-box.jpg';
+    return '/foil-2kg-ds.jpg';
   }
-  if (name.includes('9m') || name.includes('kitchen') || name.includes('household') || name.includes('72m') || name.includes('18m')) {
-    return '/foil-9m-box.jpg';
+  if (name.includes('72m') || name.includes('72 m')) {
+    return '/foil-72m-ds.jpg';
+  }
+  if (name.includes('18m') || name.includes('18 m')) {
+    return '/foil-18m-ds.jpg';
+  }
+  if (name.includes('9m') || name.includes('kitchen') || name.includes('household')) {
+    return '/foil-9m-ds.jpg';
   }
 
   const rawUrl = product.image_url || product.url || '';
@@ -135,7 +141,7 @@ export const getProductImage = (product) => {
     return rawUrl;
   }
 
-  return '/foil-9m-box.jpg';
+  return '/foil-9m-ds.jpg';
 };
 
 export default api;
