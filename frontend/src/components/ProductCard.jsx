@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import api, { formatImageUrl, FALLBACK_FOIL_IMAGE } from '../utils/api';
+import api, { formatImageUrl, getProductImage, FALLBACK_FOIL_IMAGE } from '../utils/api';
 import { getProductPricing } from '../utils/productPricing';
 import { getBadgeClasses, getProductBadge } from '../utils/productBadges';
 import StarRating from './reviews/StarRating';
@@ -181,7 +181,7 @@ const ProductCard = ({ product }) => {
       >
         <div className="aspect-square overflow-hidden bg-slate-50 dark:bg-[#0c1310] relative">
           <img
-            src={formatImageUrl(product.image_url)}
+            src={getProductImage(product)}
             alt={product.name}
             onError={(e) => {
               e.currentTarget.onerror = null;

@@ -113,4 +113,27 @@ export const formatImageUrl = (url) => {
   return `${backendUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
+export const getProductImage = (product) => {
+  if (!product) return FALLBACK_FOIL_IMAGE;
+
+  const rawUrl = product.image_url || product.url || '';
+  if (rawUrl && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://'))) {
+    return rawUrl;
+  }
+
+  const name = String(product.name || '').toLowerCase();
+
+  if (name.includes('10kg') || name.includes('bulk')) {
+    return 'https://images.unsplash.com/photo-1615800001619-7c39021596ef?auto=format&fit=crop&w=800&q=80';
+  }
+  if (name.includes('2kg') || name.includes('heavy duty') || name.includes('catering')) {
+    return 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80';
+  }
+  if (name.includes('9m') || name.includes('kitchen') || name.includes('household')) {
+    return 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?auto=format&fit=crop&w=800&q=80';
+  }
+
+  return formatImageUrl(rawUrl);
+};
+
 export default api;
