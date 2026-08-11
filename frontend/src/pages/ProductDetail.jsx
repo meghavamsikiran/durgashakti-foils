@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import api, { formatImageUrl } from '../utils/api';
+import api, { formatImageUrl, FALLBACK_FOIL_IMAGE } from '../utils/api';
 import PageLoader from '../components/ui/PageLoader';
 import apiClient from '../services/core/apiClient';
 import { getProductPricing } from '../utils/productPricing';
@@ -246,6 +246,10 @@ const ProductDetail = () => {
                     <img
                       src={formatImageUrl(item.url)}
                       alt=""
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = FALLBACK_FOIL_IMAGE;
+                      }}
                       className="w-full h-full object-cover"
                     />
                   )}
@@ -279,6 +283,10 @@ const ProductDetail = () => {
                     <img
                       src={formatImageUrl(activeMedia.url)}
                       alt={product.name}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = FALLBACK_FOIL_IMAGE;
+                      }}
                       className="w-full h-full object-cover transition-transform duration-500 ease-out origin-center group-hover:scale-150"
                       data-testid="product-detail-image"
                     />

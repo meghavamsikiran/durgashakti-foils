@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import api, { formatImageUrl } from '../utils/api';
+import api, { formatImageUrl, FALLBACK_FOIL_IMAGE } from '../utils/api';
 import { getProductPricing } from '../utils/productPricing';
 import { getBadgeClasses, getProductBadge } from '../utils/productBadges';
 import StarRating from './reviews/StarRating';
@@ -175,14 +175,18 @@ const ProductCard = ({ product }) => {
       <motion.div
         whileHover={{ y: -4 }}
         transition={{ duration: 0.2 }}
-        className="group relative overflow-hidden bg-white border border-slate-200/80 rounded-2xl hover:shadow-md hover:border-slate-300 transition-all duration-300 cursor-pointer flex flex-col h-full"
+        className="group relative overflow-hidden bg-white dark:bg-[#070b09] border border-slate-200/80 dark:border-[#1f2e26] rounded-2xl hover:shadow-md hover:border-slate-300 dark:hover:border-[#26d968]/40 transition-all duration-300 cursor-pointer flex flex-col h-full"
         onClick={() => navigate(`/product/${product.id}`)}
         data-testid={`product-card-${product.id}`}
       >
-        <div className="aspect-square overflow-hidden bg-slate-50 relative">
+        <div className="aspect-square overflow-hidden bg-slate-50 dark:bg-[#0c1310] relative">
           <img
             src={formatImageUrl(product.image_url)}
             alt={product.name}
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = FALLBACK_FOIL_IMAGE;
+            }}
             className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-103"
             data-testid="product-image"
           />
@@ -190,10 +194,10 @@ const ProductCard = ({ product }) => {
           {/* Wishlist Button */}
           <button
             onClick={handleToggleWishlist}
-            className="absolute top-3 right-3 p-2 rounded-full bg-white border border-slate-200 transition-all duration-200 shadow-sm z-10 hover:scale-110 flex items-center justify-center"
+            className="absolute top-3 right-3 p-2 rounded-full bg-white/90 dark:bg-[#131B17]/90 border border-slate-200 dark:border-[#26322B] transition-all duration-200 shadow-sm z-10 hover:scale-110 flex items-center justify-center backdrop-blur-sm"
             data-testid="wishlist-toggle"
           >
-            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-rose-500 text-rose-500' : 'text-slate-700'}`} />
+            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-rose-500 text-rose-500' : 'text-slate-700 dark:text-slate-300'}`} />
           </button>
 
           {/* Active Tag */}
@@ -205,22 +209,22 @@ const ProductCard = ({ product }) => {
 
           {primaryCoupon && (
             <div
-              className="absolute bottom-3 left-3 right-3 z-10 flex items-center justify-between gap-2 rounded-xl border border-dashed border-emerald-500/40 bg-white/95 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-800 shadow-sm backdrop-blur-sm hover:bg-emerald-50/95 transition-all select-none"
+              className="absolute bottom-3 left-3 right-3 z-10 flex items-center justify-between gap-2 rounded-xl border border-dashed border-emerald-500/40 bg-white/95 dark:bg-[#0c1310]/95 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300 shadow-sm backdrop-blur-sm hover:bg-emerald-50/95 dark:hover:bg-[#131B17]/95 transition-all select-none"
               data-testid="product-coupon-badge"
             >
               <div className="flex items-center gap-1.5 min-w-0">
-                <Ticket className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span className="min-w-0 truncate">Coupon <span className="font-mono text-emerald-600 font-extrabold">{primaryCoupon.code}</span></span>
+                <Ticket className="w-3.5 h-3.5 text-emerald-600 dark:text-[#25D958] shrink-0" />
+                <span className="min-w-0 truncate">Coupon <span className="font-mono text-emerald-600 dark:text-[#25D958] font-extrabold">{primaryCoupon.code}</span></span>
               </div>
-              <span className="shrink-0 rounded bg-emerald-600 px-2 py-0.5 text-[9px] font-extrabold text-white shadow-sm tracking-wide">
+              <span className="shrink-0 rounded bg-emerald-600 dark:bg-[#25D958] px-2 py-0.5 text-[9px] font-extrabold text-white dark:text-black shadow-sm tracking-wide">
                 {formatCouponValue(primaryCoupon)}
               </span>
             </div>
           )}
 
           {isUnavailable && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-              <span className="bg-destructive text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg">Out of Stock</span>
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10 backdrop-blur-[1px]">
+              <span className="bg-destructive text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg shadow-md">Out of Stock</span>
             </div>
           )}
         </div>
@@ -229,18 +233,18 @@ const ProductCard = ({ product }) => {
           <div>
             <div className="mb-3 flex flex-wrap gap-2 items-center">
               {(product.size || product.thickness) && (
-                <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded">
+                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-[#131B17] border border-transparent dark:border-[#26322B] px-2.5 py-1 rounded">
                   {[product.size, product.thickness].filter(Boolean).join('  |  ')}
                 </span>
               )}
               {hasOffer && (
-                <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded">
+                <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-transparent dark:border-rose-900/40 px-2 py-1 rounded">
                   -{discountPercent}%
                 </span>
               )}
             </div>
             
-            <h3 className="font-bold text-sm md:text-base font-manrope text-slate-900 mb-1.5 line-clamp-2 hover:text-[#0F5C2E] transition-colors" data-testid="product-name">
+            <h3 className="font-bold text-sm md:text-base font-manrope text-slate-900 dark:text-white mb-1.5 line-clamp-2 hover:text-[#0F5C2E] dark:hover:text-[#26d968] transition-colors" data-testid="product-name">
               {product.name}
             </h3>
 
@@ -251,14 +255,14 @@ const ProductCard = ({ product }) => {
                     key={i} 
                     className={`w-3.5 h-3.5 ${i < Math.round(Number(product.review_count || 0) === 0 ? 0 : Number(product.rating_average || 0)) 
                       ? 'text-amber-400 fill-amber-400' 
-                      : 'text-slate-300'}`} 
+                      : 'text-slate-300 dark:text-slate-700'}`} 
                   />
                 ))}
               </div>
-              <span className="text-[11px] font-bold text-slate-400 font-mono">({product.review_count || 0})</span>
+              <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 font-mono">({product.review_count || 0})</span>
             </div>
             
-            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 font-inter mb-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 font-inter mb-4">
               {product.description}
             </p>
           </div>
@@ -268,15 +272,15 @@ const ProductCard = ({ product }) => {
               <div className="flex flex-col gap-0.5 min-w-0">
                 {hasOffer ? (
                   <div className="flex items-baseline gap-2">
-                    <span className="text-lg font-extrabold text-slate-900 font-manrope leading-none" data-testid="product-price">
+                    <span className="text-lg font-extrabold text-slate-900 dark:text-white font-manrope leading-none" data-testid="product-price">
                       ₹{displayPrice}
                     </span>
-                    <span className="text-[11px] text-slate-400 line-through font-semibold">
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 line-through font-semibold">
                       ₹{basePrice}
                     </span>
                   </div>
                 ) : (
-                  <span className="text-lg font-extrabold text-slate-900 font-manrope leading-none" data-testid="product-price">
+                  <span className="text-lg font-extrabold text-slate-900 dark:text-white font-manrope leading-none" data-testid="product-price">
                     ₹{displayPrice}
                   </span>
                 )}
@@ -286,16 +290,16 @@ const ProductCard = ({ product }) => {
               {isUnavailable ? (
                 <Button
                   onClick={(e) => { e.stopPropagation(); toast.success('🔔 We will email you once this item is back in stock!'); }}
-                  className="w-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 h-10 rounded-lg font-bold transition-all shadow-sm text-[10px] flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:hover:bg-[#19231F] text-slate-700 dark:text-slate-300 h-10 rounded-lg font-bold transition-all shadow-sm text-[10px] flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Bell className="w-3 h-3 text-slate-500" />
+                  <Bell className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                   NOTIFY ME
                 </Button>
               ) : qty > 0 ? (
-                <div className="flex items-center justify-between border border-slate-200 bg-white rounded-lg h-10 w-full px-3.5 shadow-sm hover:border-[#0F5C2E]/50 transition-all select-none">
+                <div className="flex items-center justify-between border border-slate-200 dark:border-[#26322B] bg-white dark:bg-[#131B17] rounded-lg h-10 w-full px-3.5 shadow-sm hover:border-[#0F5C2E]/50 dark:hover:border-[#26d968]/50 transition-all select-none">
                   <button
                     onClick={handleDecrement}
-                    className="h-full flex items-center justify-center text-slate-400 hover:text-rose-600 transition-colors focus:outline-none cursor-pointer"
+                    className="h-full flex items-center justify-center text-slate-400 dark:text-slate-400 hover:text-rose-600 transition-colors focus:outline-none cursor-pointer"
                     title={qty === 1 ? "Remove item" : "Decrease quantity"}
                     data-testid={`decrease-quantity-${product.id}`}
                   >
@@ -305,12 +309,12 @@ const ProductCard = ({ product }) => {
                       <Minus className="w-4 h-4 text-slate-400" />
                     )}
                   </button>
-                  <span className="font-bold text-slate-800 text-xs font-mono tracking-wider">
+                  <span className="font-bold text-slate-800 dark:text-slate-100 text-xs font-mono tracking-wider">
                     {qty} IN CART
                   </span>
                   <button
                     onClick={handleIncrement}
-                    className="h-full flex items-center justify-center text-slate-400 hover:text-[#0F5C2E] transition-colors focus:outline-none cursor-pointer"
+                    className="h-full flex items-center justify-center text-slate-400 hover:text-[#0F5C2E] dark:hover:text-[#26d968] transition-colors focus:outline-none cursor-pointer"
                     title="Increase quantity"
                     data-testid={`increase-quantity-${product.id}`}
                   >
@@ -320,7 +324,7 @@ const ProductCard = ({ product }) => {
               ) : (
                 <Button
                   onClick={handleAddToCart}
-                  className="w-full bg-[#0F5C2E] hover:bg-[#0c4a24] text-white h-10 rounded-lg font-bold transition-all flex items-center justify-center gap-2 shadow-sm text-xs cursor-pointer active:scale-95"
+                  className="w-full bg-[#0F5C2E] dark:bg-[#006e1b] hover:bg-[#0c4a24] dark:hover:bg-[#005a14] text-white h-10 rounded-lg font-bold transition-all flex items-center justify-center gap-2 shadow-sm text-xs cursor-pointer active:scale-95"
                   data-testid="add-to-cart-button"
                 >
                   <ShoppingCart className="w-3.5 h-3.5" />

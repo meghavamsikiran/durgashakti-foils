@@ -7,7 +7,7 @@ import { useCart } from '../contexts/CartContext';
 import { Button } from './ui/button';
 import settingsService from '../services/settings.service';
 import apiClient from '../services/core/apiClient';
-import api, { formatImageUrl } from '../utils/api';
+import api, { formatImageUrl, FALLBACK_FOIL_IMAGE } from '../utils/api';
 import { getProductPricing } from '../utils/productPricing';
 
 const Navbar = () => {
@@ -221,7 +221,7 @@ const Navbar = () => {
                       src={formatImageUrl(product.image_url)}
                       alt={product.name}
                       className="w-full h-full object-cover"
-                      onError={(e) => { e.target.style.display = 'none'; }}
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_FOIL_IMAGE; }}
                     />
                   </div>
                   <div className="flex-1 min-w-0">

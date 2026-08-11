@@ -866,10 +866,10 @@ const ProductReviews = ({ productId, summary }) => {
       )}
 
       {!loading && count === 0 && (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center max-w-lg mx-auto">
-          <Camera className="w-8 h-8 text-slate-350 mx-auto mb-3" />
-          <p className="font-bold text-slate-700 text-sm">No reviews yet</p>
-          <p className="text-xs text-slate-400 mt-1">Purchased customers can review this product from their My Orders section.</p>
+        <div className="rounded-2xl border border-dashed border-slate-200 dark:border-[#26322B] bg-slate-50/50 dark:bg-[#131B17]/60 p-10 text-center max-w-lg mx-auto shadow-sm backdrop-blur-sm">
+          <Camera className="w-8 h-8 text-slate-400 dark:text-slate-500 mx-auto mb-3" />
+          <p className="font-bold text-slate-800 dark:text-white text-sm">No reviews yet</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Purchased customers can review this product from their My Orders section.</p>
         </div>
       )}
 

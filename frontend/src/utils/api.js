@@ -96,8 +96,12 @@ export const api = {
   },
 };
 
+export const FALLBACK_FOIL_IMAGE = 'https://images.unsplash.com/photo-1615800001619-7c39021596ef?auto=format&fit=crop&w=800&q=80';
+
 export const formatImageUrl = (url) => {
-  if (!url) return '';
+  if (!url || url === 'null' || url === 'undefined' || String(url).trim() === '') {
+    return FALLBACK_FOIL_IMAGE;
+  }
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   
   const backendUrl = getBackendUrl();

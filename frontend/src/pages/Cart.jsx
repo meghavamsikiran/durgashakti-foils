@@ -5,7 +5,7 @@ import { Trash2, Plus, Minus, ShoppingBag, X, ChevronLeft, ChevronRight, Sparkle
 import { Button } from '../components/ui/button';
 import { useCart } from '../contexts/CartContext';
 import { toast } from 'sonner';
-import api, { formatImageUrl } from '../utils/api';
+import api, { formatImageUrl, FALLBACK_FOIL_IMAGE } from '../utils/api';
 import PageLoader from '../components/ui/PageLoader';
 import settingsService from '../services/settings.service';
 import apiClient from '../services/core/apiClient';
@@ -258,7 +258,7 @@ const Cart = () => {
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 e.currentTarget.onerror = null;
-                                e.currentTarget.src = '/placeholder.png';
+                                e.currentTarget.src = FALLBACK_FOIL_IMAGE;
                               }}
                             />
                           </Link>
