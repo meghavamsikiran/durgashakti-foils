@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, Clock, Check, Copy } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
-import { formatImageUrl } from '../../../utils/api';
+import { formatImageUrl, getProductImage, FALLBACK_FOIL_IMAGE } from '../../../utils/api';
 import { useProgress } from '../../../components/ui/ProgressToast';
 import paymentService from '../../../services/payment.service';
 import apiClient from '../../../services/core/apiClient';
@@ -339,7 +339,15 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
                   <h3 className="text-[10px] font-mono tracking-wider font-semibold text-muted-foreground ml-1 uppercase">Order Items</h3>
                   {order.items.map((item, idx) => (
                     <div key={idx} className="flex gap-4 p-4 rounded-xl border border-border-subtle bg-surface-container-low/40">
-                      <img src={formatImageUrl(item.image_url)} alt="" className="w-20 h-20 rounded-lg object-cover bg-surface" />
+                      <img 
+                        src={getProductImage({ name: item.product_name || item.name, image_url: item.image_url })} 
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = FALLBACK_FOIL_IMAGE;
+                        }}
+                        alt={item.product_name || ''} 
+                        className="w-20 h-20 rounded-lg object-cover bg-surface" 
+                      />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-black text-foreground truncate">{item.product_name}</h4>
                         <p className="text-[10px] font-mono text-muted-foreground uppercase mt-1">QTY: {item.quantity} × ₹{item.price}</p>

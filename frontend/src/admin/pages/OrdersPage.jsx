@@ -11,7 +11,7 @@ import {
   MapPin, Phone as PhoneIcon, ChevronDown, ChevronUp, Check, Copy
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { formatImageUrl } from '../../utils/api';
+import { formatImageUrl, getProductImage, FALLBACK_FOIL_IMAGE } from '../../utils/api';
 import PageLoader from '../../components/ui/PageLoader';
 import DateFilterPopover from '../../components/ui/DateFilterPopover';
 import { useAuth } from '../../contexts/AuthContext';
@@ -2025,12 +2025,13 @@ const OrdersPage = () => {
                         <tr key={idx} className="bg-white hover:bg-slate-100/50 dark:hover:bg-slate-800/30 transition-colors">
                           <td className="px-6 py-4 text-xs font-extrabold text-slate-900 flex items-center gap-3">
                             {item.image_url ? (
-                              <img
-                                src={formatImageUrl(item.image_url)}
-                                alt=""
-                                className="w-12 h-12 rounded-lg object-cover bg-slate-50 border border-slate-100 shrink-0 shadow-sm"
-                              />
-                            ) : (
+                               <img
+                                 src={getProductImage({ name: item.product_name || item.name, image_url: item.image_url })}
+                                 onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_FOIL_IMAGE; }}
+                                 alt=""
+                                 className="w-12 h-12 rounded-lg object-cover bg-slate-50 border border-slate-100 shrink-0 shadow-sm"
+                               />
+                             ) : (
                               <div className="w-12 h-12 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                                 <ShoppingBag className="w-5 h-5 text-primary" />
                               </div>
@@ -2128,13 +2129,13 @@ const OrdersPage = () => {
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3 flex-1 min-w-0">
                                 {item.image_url && (
-                                  <img 
-                                    src={formatImageUrl(item.image_url)} 
-                                    onError={(e) => { e.target.src = '/logo-durga.webp'; }}
-                                    alt="" 
-                                    className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" 
-                                  />
-                                )}
+                                   <img 
+                                     src={getProductImage({ name: item.product_name || item.name, image_url: item.image_url })} 
+                                     onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_FOIL_IMAGE; }}
+                                     alt="" 
+                                     className="w-10 h-10 rounded-lg object-cover border border-slate-100 shrink-0" 
+                                   />
+                                 )}
                                 <div className="min-w-0">
                                   <p className="text-xs font-black text-slate-900 truncate">{item.product_name}</p>
                                   <p className="text-[10px] text-slate-400 font-extrabold">Price: ₹{item.price} • Return Qty: {item.returned_quantity || 1}</p>

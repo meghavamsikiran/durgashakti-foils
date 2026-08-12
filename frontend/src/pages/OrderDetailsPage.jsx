@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star, Clock, Copy, ChevronDown } from 'lucide-react';
 import { Button } from './../components/ui/button';
-import { formatImageUrl } from './../utils/api';
+import { formatImageUrl, getProductImage, FALLBACK_FOIL_IMAGE } from './../utils/api';
 import { useProgress } from './../components/ui/ProgressToast';
 import paymentService from './../services/payment.service';
 import apiClient from './../services/core/apiClient';
@@ -1053,8 +1053,11 @@ const OrderDetailsPage = () => {
                           />
                           {item.image_url && (
                             <img 
-                              src={formatImageUrl(item.image_url)} 
-                              onError={(e) => { e.target.src = '/logo-durga.webp'; }}
+                              src={getProductImage({ name: item.product_name || item.name, image_url: item.image_url })} 
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = FALLBACK_FOIL_IMAGE;
+                              }}
                               alt="" 
                               className="w-10 h-10 rounded-lg object-cover bg-slate-50 dark:bg-[#26322B]/40 border border-slate-100 dark:border-[#26322B]" 
                             />
@@ -1666,8 +1669,11 @@ const OrderDetailsPage = () => {
                 {/* Product Detail Left Section */}
                 <div className="flex gap-5 flex-1 min-w-0">
                   <img 
-                    src={formatImageUrl(item?.image_url)} 
-                    onError={(e) => { e.target.src = '/logo-durga.webp'; }}
+                    src={getProductImage({ name: item?.product_name || item?.name, image_url: item?.image_url })} 
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = FALLBACK_FOIL_IMAGE;
+                    }}
                     alt={item?.product_name} 
                     className="w-24 h-24 rounded-xl object-cover bg-slate-50 dark:bg-[#26322B]/40 border border-slate-200 dark:border-[#26322B] shrink-0 shadow-sm dark:shadow-none"
                     loading="lazy"

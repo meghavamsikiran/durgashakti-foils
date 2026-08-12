@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import adminService from '../services/admin.service';
 import apiClient from '../../services/core/apiClient';
-import { formatImageUrl } from '../../utils/api';
+import { formatImageUrl, getProductImage, FALLBACK_FOIL_IMAGE } from '../../utils/api';
 import { 
   Boxes, TrendingDown, IndianRupee, BarChart3, 
   Search, RefreshCw, PlusCircle, MinusCircle, 
@@ -372,7 +372,12 @@ const InventoryPage = () => {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
                          {row.image_url ? (
-                           <img src={formatImageUrl(row.image_url)} alt="" className="w-full h-full object-cover" />
+                           <img 
+                             src={getProductImage(row)} 
+                             onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = FALLBACK_FOIL_IMAGE; }}
+                             alt="" 
+                             className="w-full h-full object-cover" 
+                           />
                          ) : (
                            <div className="w-full h-full flex items-center justify-center text-slate-300"><LayoutGrid className="w-5 h-5" /></div>
                          )}
