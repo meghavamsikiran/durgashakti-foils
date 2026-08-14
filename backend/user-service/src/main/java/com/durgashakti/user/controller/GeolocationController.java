@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -129,9 +130,108 @@ public class GeolocationController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * IP-based geolocation: extracts the caller's real IP from the request
+     * (respecting X-Forwarded-For from Render/Vercel proxy) and queries
+     * ip-api.com for real location data.
+     */
     @GetMapping("/ip-lookup")
-    public ResponseEntity<Map<String, Object>> ipLookup() {
-        // IP Lookup disabled to avoid incorrect remote locations (e.g. Portland, OR)
-        return ResponseEntity.ok(new HashMap<>());
+    public ResponseEntity<Map<String, Object>> ipLookup(HttpServletRequest request) {
+        Map<String, Object> result = new HashMap<>();
+
+        // Extract real client IP (Render/Vercel sets X-Forwarded-For)
+        String clientIp = request.getHeader("X-Forwarded-For");
+        if (clientIp != null && !clientIp.isEmpty()) {
+            // X-Forwarded-For can be comma-separated; first IP is the real client
+            clientIp = clientIp.split(",")[0].trim();
+        }
+        if (clientIp == null || clientIp.isEmpty() || "127.0.0.1".equals(clientIp) || "0:0:0:0:0:0:0:1".equals(clientIp)) {
+            clientIp = request.getRemoteAddr();
+        }
+
+        // Skip private/loopback IPs (local dev)
+        if (clientIp == null || clientIp.startsWith("127.") || clientIp.startsWith("10.") 
+            || clientIp.startsWith("192.168.") || clientIp.equals("0:0:0:0:0:0:0:1")) {
+            log.info("IP lookup skipped for private/loopback IP: {}", clientIp);
+            return ResponseEntity.ok(result);
+        }
+
+        log.info("IP lookup for client IP: {}", clientIp);
+
+        // 1. Primary: ip-api.com (free, no key needed, good India coverage)
+        try {
+            String url = String.format("http://ip-api.com/json/%s?fields=status,city,regionName,zip,lat,lon,query", clientIp);
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(5))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+
+            if (resp.statusCode() == 200) {
+                JsonNode root = objectMapper.readTree(resp.body());
+                if ("success".equals(root.path("status").asText(""))) {
+                    String city = root.path("city").asText("").trim();
+                    String state = root.path("regionName").asText("").trim();
+                    String pincode = root.path("zip").asText("").trim();
+                    double lat = root.path("lat").asDouble(0);
+                    double lon = root.path("lon").asDouble(0);
+
+                    if (!city.isEmpty() || !state.isEmpty()) {
+                        result.put("source", "ip-api.com");
+                        result.put("city", city);
+                        result.put("state", state);
+                        result.put("pincode", pincode);
+                        result.put("latitude", lat);
+                        result.put("longitude", lon);
+                        result.put("ip", clientIp);
+                        log.info("ip-api.com lookup success: city={}, state={}, pincode={}, ip={}", city, state, pincode, clientIp);
+                        return ResponseEntity.ok(result);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("ip-api.com lookup error: {}", e.getMessage());
+        }
+
+        // 2. Fallback: ipapi.co (free tier, 1000 req/day)
+        try {
+            String url = String.format("https://ipapi.co/%s/json/", clientIp);
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("User-Agent", "DurgaShaktiFoils/1.0")
+                    .timeout(Duration.ofSeconds(5))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+
+            if (resp.statusCode() == 200) {
+                JsonNode root = objectMapper.readTree(resp.body());
+                String city = root.path("city").asText("").trim();
+                String state = root.path("region").asText("").trim();
+                String pincode = root.path("postal").asText("").trim();
+                double lat = root.path("latitude").asDouble(0);
+                double lon = root.path("longitude").asDouble(0);
+
+                if (!city.isEmpty() || !state.isEmpty()) {
+                    result.put("source", "ipapi.co");
+                    result.put("city", city);
+                    result.put("state", state);
+                    result.put("pincode", pincode);
+                    result.put("latitude", lat);
+                    result.put("longitude", lon);
+                    result.put("ip", clientIp);
+                    log.info("ipapi.co lookup success: city={}, state={}, pincode={}, ip={}", city, state, pincode, clientIp);
+                    return ResponseEntity.ok(result);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("ipapi.co lookup error: {}", e.getMessage());
+        }
+
+        log.warn("All IP lookup providers failed for IP: {}", clientIp);
+        return ResponseEntity.ok(result);
     }
 }

@@ -14,6 +14,83 @@ export const useGeoLocationAddress = () => {
     });
   };
 
+  /**
+   * Reverse geocode lat/lon coordinates using multiple providers.
+   * Returns { pincode, state, city, address_line1, address_line2 } or null.
+   */
+  const reverseGeocode = async (latitude, longitude) => {
+    // A. Try backend reverse-geocode (proxies BigDataCloud + Nominatim)
+    try {
+      const res = await apiClient.get(
+        `/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`,
+        { silent: true }
+      );
+      const data = res.data || {};
+      if (data.city || data.state || data.locality || data.pincode) {
+        return {
+          pincode: data.pincode || '',
+          state: data.state || '',
+          city: data.city || '',
+          address_line1: (data.address_line1 && data.address_line1 !== data.locality) ? data.address_line1 : '',
+          address_line2: data.address_line2 || data.locality || '',
+        };
+      }
+    } catch (err) {
+      console.warn("Backend reverse-geocode failed:", err);
+    }
+
+    // B. Direct client-side Nominatim
+    try {
+      const osmRes = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`,
+        {
+          headers: {
+            'User-Agent': 'DurgaShaktiFoils/1.0 (contact@durgashakti.com)',
+            'Accept-Language': 'en',
+          },
+        }
+      );
+      if (osmRes.ok) {
+        const osmData = await osmRes.json();
+        const addr = osmData.address || {};
+        const pincode = addr.postcode || '';
+        const state = addr.state || '';
+        const city = addr.city || addr.town || addr.village || addr.municipality
+          || addr.district || addr.state_district || addr.county || '';
+        const locality = addr.suburb || addr.neighbourhood || addr.residential
+          || addr.subdistrict || addr.quarter || '';
+        const road = [addr.house_number, addr.building, addr.road].filter(Boolean).join(', ');
+
+        if (city || state || locality || pincode) {
+          return { pincode, state, city, address_line1: road, address_line2: locality };
+        }
+      }
+    } catch (err) {
+      console.warn("Client Nominatim failed:", err);
+    }
+
+    // C. Direct client-side BigDataCloud
+    try {
+      const bdcRes = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+      );
+      if (bdcRes.ok) {
+        const d = await bdcRes.json();
+        const city = d.city || d.locality || d.principalSubdivision || '';
+        const state = d.principalSubdivision || '';
+        const locality = d.locality || '';
+        const pincode = d.postcode || '';
+        if (city || state || locality) {
+          return { pincode, state, city, address_line1: '', address_line2: locality };
+        }
+      }
+    } catch (err) {
+      console.warn("Client BigDataCloud failed:", err);
+    }
+
+    return null;
+  };
+
   const detect = useCallback(async () => {
     if (!navigator.geolocation) {
       toast.error('Geolocation is not supported by your browser');
@@ -24,140 +101,125 @@ export const useGeoLocationAddress = () => {
 
     try {
       let position = null;
+      let gpsError = null;
 
-      // 1. Request real GPS coordinates directly from browser
+      // ──────────────────────────────────────────────
+      // STEP 1: Try browser GPS geolocation
+      // ──────────────────────────────────────────────
       try {
         position = await getPosition({
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
+          timeout: 15000,
+          maximumAge: 300000, // accept cached positions up to 5 min old
         });
       } catch (err1) {
-        console.warn("High accuracy geolocation failed/timed out, trying standard accuracy:", err1);
+        console.warn("High accuracy GPS failed:", err1.message);
         try {
           position = await getPosition({
             enableHighAccuracy: false,
-            timeout: 8000,
-            maximumAge: 60000,
+            timeout: 15000,
+            maximumAge: 600000, // accept cached positions up to 10 min old
           });
         } catch (err2) {
-          if (err2.code === 1) {
-            toast.error("Location permission denied. Please allow location access in your browser settings.");
-          } else if (err2.code === 2) {
-            toast.error("Location position unavailable. Please enter your address manually.");
-          } else if (err2.code === 3) {
-            toast.error("Location request timed out. Please enter your address manually.");
-          } else {
-            toast.error("Could not fetch location. Please enter address manually.");
-          }
-          return null;
+          console.warn("Standard accuracy GPS also failed:", err2.message);
+          gpsError = err2;
         }
       }
 
-      if (!position || !position.coords) {
-        toast.error("Unable to obtain GPS coordinates from browser.");
+      // If GPS succeeded, reverse-geocode the coordinates
+      if (position?.coords) {
+        const { latitude, longitude } = position.coords;
+        console.log(`GPS coordinates acquired: ${latitude}, ${longitude}`);
+
+        const result = await reverseGeocode(latitude, longitude);
+        if (result) {
+          const locationName = result.address_line2 || result.city || result.state || 'Current Location';
+          toast.success(`Location detected: ${locationName}`);
+          return result;
+        }
+        // If reverse geocoding failed but we have coords, inform user
+        toast.error("Got your GPS position but couldn't resolve address. Please fill manually.");
         return null;
       }
 
-      const { latitude, longitude } = position.coords;
-      console.log(`REAL GPS Coords acquired: Lat ${latitude}, Lon ${longitude}`);
-
-      // 2. Query backend reverse-geocoding service (which proxies BigDataCloud & OpenStreetMap Nominatim)
+      // ──────────────────────────────────────────────
+      // STEP 2: GPS failed — try IP-based geolocation
+      // ──────────────────────────────────────────────
+      console.log("GPS unavailable, attempting IP-based location...");
+      
       try {
-        const res = await apiClient.get(`/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`, { silent: true });
-        const data = res.data || {};
+        const ipRes = await apiClient.get('/geolocation/ip-lookup', { silent: true });
+        const ipData = ipRes.data || {};
 
-        if (data.city || data.state || data.locality || data.pincode) {
-          const pincode = data.pincode || '';
-          const state = data.state || '';
-          const city = data.city || '';
-          const locality = data.locality || '';
-          const address_line1 = data.address_line1 || '';
-          const address_line2 = data.address_line2 || locality;
+        if (ipData.city || ipData.state) {
+          // If the IP lookup returned lat/lon, try reverse geocoding for a more detailed address
+          if (ipData.latitude && ipData.longitude) {
+            const detailed = await reverseGeocode(ipData.latitude, ipData.longitude);
+            if (detailed) {
+              const locationName = detailed.address_line2 || detailed.city || detailed.state || 'Current Location';
+              toast.success(`Location detected via network: ${locationName}`);
+              return detailed;
+            }
+          }
 
-          const locationName = locality || city || state || 'Current Location';
-          toast.success(`Location detected: ${locationName}`);
-
+          // Otherwise use the IP lookup data directly
+          const locationName = ipData.city || ipData.state || 'Current Location';
+          toast.success(`Location detected via network: ${locationName}`);
           return {
-            pincode,
-            state,
-            city,
-            address_line1: address_line1 !== locality ? address_line1 : '',
-            address_line2: address_line2,
+            pincode: ipData.pincode || '',
+            state: ipData.state || '',
+            city: ipData.city || '',
+            address_line1: '',
+            address_line2: '',
           };
         }
-      } catch (backendErr) {
-        console.warn("Backend reverse-geocode failed, attempting client-side Nominatim:", backendErr);
+      } catch (ipErr) {
+        console.warn("Backend IP lookup failed:", ipErr);
       }
 
-      // 3. Direct client-side OpenStreetMap Nominatim fallback
+      // ──────────────────────────────────────────────
+      // STEP 3: Client-side IP geolocation fallback
+      // ──────────────────────────────────────────────
       try {
-        const osmRes = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`,
-          {
-            headers: {
-              'User-Agent': 'DurgaShaktiFoils/1.0 (contact@durgashakti.com)',
-              'Accept-Language': 'en',
-            },
-          }
-        );
+        const ipApiRes = await fetch('https://ipapi.co/json/', {
+          headers: { 'User-Agent': 'DurgaShaktiFoils/1.0' },
+        });
+        if (ipApiRes.ok) {
+          const d = await ipApiRes.json();
+          if (d.city || d.region) {
+            // If we got lat/lon from IP, try reverse geocoding for better address
+            if (d.latitude && d.longitude) {
+              const detailed = await reverseGeocode(d.latitude, d.longitude);
+              if (detailed) {
+                const locationName = detailed.address_line2 || detailed.city || detailed.state || 'Current Location';
+                toast.success(`Location detected via network: ${locationName}`);
+                return detailed;
+              }
+            }
 
-        if (osmRes.ok) {
-          const osmData = await osmRes.json();
-          const address = osmData.address || {};
-
-          const pincode = address.postcode || '';
-          const state = address.state || '';
-          let city = address.city || address.town || address.village || address.municipality || address.district || address.state_district || address.county || '';
-          let locality = address.suburb || address.neighbourhood || address.residential || address.subdistrict || address.quarter || address.commercial || address.industrial || '';
-          let road = [address.house_number, address.building, address.road].filter(Boolean).join(', ');
-
-          if (city || state || locality || pincode) {
-            const locationName = locality || city || state || 'Current Location';
-            toast.success(`Location detected: ${locationName}`);
-
+            const locationName = d.city || d.region || 'Current Location';
+            toast.success(`Location detected via network: ${locationName}`);
             return {
-              pincode,
-              state,
-              city,
-              address_line1: road,
-              address_line2: locality,
-            };
-          }
-        }
-      } catch (osmErr) {
-        console.warn("Client-side Nominatim reverse geocode failed:", osmErr);
-      }
-
-      // 4. Direct client-side BigDataCloud fallback
-      try {
-        const bdcRes = await fetch(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-        );
-        if (bdcRes.ok) {
-          const bdcData = await bdcRes.json();
-          const city = bdcData.city || bdcData.locality || bdcData.principalSubdivision || '';
-          const state = bdcData.principalSubdivision || '';
-          const locality = bdcData.locality || '';
-          const pincode = bdcData.postcode || '';
-
-          if (city || state || locality) {
-            const locationName = locality || city || state || 'Current Location';
-            toast.success(`Location detected: ${locationName}`);
-            return {
-              pincode,
-              state,
-              city,
+              pincode: d.postal || '',
+              state: d.region || '',
+              city: d.city || '',
               address_line1: '',
-              address_line2: locality,
+              address_line2: '',
             };
           }
         }
-      } catch (bdcErr) {
-        console.warn("Client-side BigDataCloud reverse geocode failed:", bdcErr);
+      } catch (err) {
+        console.warn("Client ipapi.co failed:", err);
       }
 
-      toast.error("Could not fetch address details for your GPS coordinates. Please fill manually.");
+      // ──────────────────────────────────────────────
+      // ALL METHODS FAILED
+      // ──────────────────────────────────────────────
+      if (gpsError?.code === 1) {
+        toast.error("Location permission denied. Please allow location access in browser settings, or enter address manually.");
+      } else {
+        toast.error("Could not detect your location. Please enter your address manually.");
+      }
       return null;
     } catch (err) {
       console.error('Location detection overall error:', err);
