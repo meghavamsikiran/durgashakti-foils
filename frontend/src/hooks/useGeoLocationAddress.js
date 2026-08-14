@@ -5,18 +5,12 @@ import apiClient from '../services/core/apiClient';
 export const useGeoLocationAddress = () => {
   const [loading, setLoading] = useState(false);
 
-  const tryGetPosition = (highAccuracy, timeoutMs) => {
+  const getPosition = (options) => {
     return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) return reject(new Error('Not supported'));
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve(pos),
-        (err) => reject(err),
-        {
-          enableHighAccuracy: highAccuracy,
-          timeout: timeoutMs,
-          maximumAge: 300000,
-        }
-      );
+      if (!navigator.geolocation) {
+        return reject(new Error('Geolocation is not supported by your browser'));
+      }
+      navigator.geolocation.getCurrentPosition(resolve, reject, options);
     });
   };
 
@@ -31,130 +25,144 @@ export const useGeoLocationAddress = () => {
     try {
       let position = null;
 
-      // 1. Try HTML5 Geolocation with high accuracy then standard
+      // 1. Request real GPS coordinates directly from browser
       try {
-        position = await tryGetPosition(true, 12000);
-      } catch (geoErr) {
-        console.warn("High accuracy Geolocation failed/timed out, trying standard accuracy:", geoErr);
+        position = await getPosition({
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        });
+      } catch (err1) {
+        console.warn("High accuracy geolocation failed/timed out, trying standard accuracy:", err1);
         try {
-          position = await tryGetPosition(false, 10000);
+          position = await getPosition({
+            enableHighAccuracy: false,
+            timeout: 8000,
+            maximumAge: 60000,
+          });
         } catch (err2) {
-          console.warn("Standard accuracy Geolocation failed:", err2);
+          if (err2.code === 1) {
+            toast.error("Location permission denied. Please allow location access in your browser settings.");
+          } else if (err2.code === 2) {
+            toast.error("Location position unavailable. Please enter your address manually.");
+          } else if (err2.code === 3) {
+            toast.error("Location request timed out. Please enter your address manually.");
+          } else {
+            toast.error("Could not fetch location. Please enter address manually.");
+          }
+          return null;
         }
       }
 
-      // 2. Reverse geocode if GPS coords obtained
-      if (position?.coords) {
-        let { latitude, longitude } = position.coords;
-        console.log("GPS Coordinates acquired:", latitude, longitude);
+      if (!position || !position.coords) {
+        toast.error("Unable to obtain GPS coordinates from browser.");
+        return null;
+      }
 
-        // Standard safety override for local dev testing / demo fallback: if coords look like default emulator/portland/invalid
-        if (!latitude || !longitude || (latitude > 45.5 && latitude < 45.6 && longitude < -122.6 && longitude > -122.7)) {
-          console.log("Distant/invalid coordinates detected. Simulating Madhapur, Hyderabad coordinates for Indian delivery context.");
-          latitude = 17.4483; // Madhapur, Hyderabad
-          longitude = 78.3741;
+      const { latitude, longitude } = position.coords;
+      console.log(`REAL GPS Coords acquired: Lat ${latitude}, Lon ${longitude}`);
+
+      // 2. Query backend reverse-geocoding service (which proxies BigDataCloud & OpenStreetMap Nominatim)
+      try {
+        const res = await apiClient.get(`/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`, { silent: true });
+        const data = res.data || {};
+
+        if (data.city || data.state || data.locality || data.pincode) {
+          const pincode = data.pincode || '';
+          const state = data.state || '';
+          const city = data.city || '';
+          const locality = data.locality || '';
+          const address_line1 = data.address_line1 || '';
+          const address_line2 = data.address_line2 || locality;
+
+          const locationName = locality || city || state || 'Current Location';
+          toast.success(`Location detected: ${locationName}`);
+
+          return {
+            pincode,
+            state,
+            city,
+            address_line1: address_line1 !== locality ? address_line1 : '',
+            address_line2: address_line2,
+          };
         }
+      } catch (backendErr) {
+        console.warn("Backend reverse-geocode failed, attempting client-side Nominatim:", backendErr);
+      }
 
-        // A. Try direct BigDataCloud geocoding client API
-        try {
-          const bdcRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
-          if (bdcRes.ok) {
-            const bdcData = await bdcRes.json();
-            const city = bdcData.city || bdcData.locality || bdcData.principalSubdivision || '';
-            const state = bdcData.principalSubdivision || '';
-            const locality = bdcData.locality || '';
-            const pincode = bdcData.postcode || '';
-
-            if (city || state) {
-              const locationName = locality || city || 'Current Location';
-              toast.success(`Location detected: ${locationName}`);
-              return {
-                pincode: pincode || '500081',
-                state: state.includes("Telangana") ? "Telangana" : state,
-                city: city || 'Hyderabad',
-                address_line1: '',
-                address_line2: locality || 'Madhapur',
-              };
-            }
-          }
-        } catch (bdcErr) {
-          console.warn("Direct BigDataCloud fetch failed:", bdcErr);
-        }
-
-        // B. Try OpenStreetMap Nominatim client-side directly
-        try {
-          const osmRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`, {
+      // 3. Direct client-side OpenStreetMap Nominatim fallback
+      try {
+        const osmRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`,
+          {
             headers: {
-              'User-Agent': 'DurgaShaktiFoils/1.0 (meghavamsikiran@gmail.com)',
-              'Accept-Language': 'en'
-            }
-          });
-          if (osmRes.ok) {
-            const osmData = await osmRes.json();
-            const address = osmData.address || {};
-            const pincode = address.postcode || '';
-            const state = address.state || '';
-            let city = address.city || address.town || address.municipality || address.district || address.state_district || '';
-            let locality = address.suburb || address.neighbourhood || address.residential || address.quarter || '';
-            let road = address.road || '';
-
-            if (city || state || locality) {
-              const locationName = locality || city || 'Current Location';
-              toast.success(`Location detected: ${locationName}`);
-              return {
-                pincode: pincode || '500081',
-                state: state || 'Telangana',
-                city: city || 'Hyderabad',
-                address_line1: road || '',
-                address_line2: locality || 'Madhapur',
-              };
-            }
+              'User-Agent': 'DurgaShaktiFoils/1.0 (contact@durgashakti.com)',
+              'Accept-Language': 'en',
+            },
           }
-        } catch (osmErr) {
-          console.warn("Direct OSM Nominatim fetch failed:", osmErr);
-        }
+        );
 
-        // C. Fallback: Query backend reverse-geocode service
-        try {
-          const res = await apiClient.get(`/geolocation/reverse-geocode?lat=${latitude}&lon=${longitude}`);
-          const data = res.data || {};
-          if (data.pincode || data.city || data.state) {
-            const { pincode, city, state, locality, address_line1, address_line2 } = data;
-            const locationName = locality || city || 'Current Location';
+        if (osmRes.ok) {
+          const osmData = await osmRes.json();
+          const address = osmData.address || {};
+
+          const pincode = address.postcode || '';
+          const state = address.state || '';
+          let city = address.city || address.town || address.village || address.municipality || address.district || address.state_district || address.county || '';
+          let locality = address.suburb || address.neighbourhood || address.residential || address.subdistrict || address.quarter || address.commercial || address.industrial || '';
+          let road = [address.house_number, address.building, address.road].filter(Boolean).join(', ');
+
+          if (city || state || locality || pincode) {
+            const locationName = locality || city || state || 'Current Location';
             toast.success(`Location detected: ${locationName}`);
+
             return {
-              pincode: pincode || '500081',
-              state: state || 'Telangana',
-              city: city || 'Hyderabad',
-              address_line1: address_line1 && address_line1 !== locality ? address_line1 : '',
-              address_line2: locality || address_line2 || 'Madhapur',
+              pincode,
+              state,
+              city,
+              address_line1: road,
+              address_line2: locality,
             };
           }
-        } catch (apiErr) {
-          console.warn("Backend reverse-geocode API failed:", apiErr);
         }
+      } catch (osmErr) {
+        console.warn("Client-side Nominatim reverse geocode failed:", osmErr);
       }
 
-      // Final dynamic hardcoded fallback for Hyderabad test env in case all lookups fail
-      toast.success("Location auto-filled for Madhapur, Hyderabad.");
-      return {
-        pincode: '500081',
-        state: 'Telangana',
-        city: 'Hyderabad',
-        address_line1: '',
-        address_line2: 'Madhapur',
-      };
+      // 4. Direct client-side BigDataCloud fallback
+      try {
+        const bdcRes = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+        );
+        if (bdcRes.ok) {
+          const bdcData = await bdcRes.json();
+          const city = bdcData.city || bdcData.locality || bdcData.principalSubdivision || '';
+          const state = bdcData.principalSubdivision || '';
+          const locality = bdcData.locality || '';
+          const pincode = bdcData.postcode || '';
+
+          if (city || state || locality) {
+            const locationName = locality || city || state || 'Current Location';
+            toast.success(`Location detected: ${locationName}`);
+            return {
+              pincode,
+              state,
+              city,
+              address_line1: '',
+              address_line2: locality,
+            };
+          }
+        }
+      } catch (bdcErr) {
+        console.warn("Client-side BigDataCloud reverse geocode failed:", bdcErr);
+      }
+
+      toast.error("Could not fetch address details for your GPS coordinates. Please fill manually.");
+      return null;
     } catch (err) {
       console.error('Location detection overall error:', err);
-      // Ensure it always yields Hyderabad defaults instead of blocking
-      toast.success("Location auto-filled for Madhapur, Hyderabad.");
-      return {
-        pincode: '500081',
-        state: 'Telangana',
-        city: 'Hyderabad',
-        address_line1: '',
-        address_line2: 'Madhapur',
-      };
+      toast.error("Location detection failed. Please enter your address manually.");
+      return null;
     } finally {
       setLoading(false);
     }
