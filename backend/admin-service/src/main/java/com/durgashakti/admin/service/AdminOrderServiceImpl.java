@@ -69,6 +69,23 @@ public class AdminOrderServiceImpl implements AdminOrderService {
      * Attempts an instant Razorpay refund. Returns true if refund was created successfully.
      * Falls back gracefully if keys are missing or Razorpay call fails.
      */
+    private boolean isWalletEnabled() {
+        try {
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT value FROM settings WHERE key = 'wallet_settings'");
+            if (!rows.isEmpty() && rows.get(0).get("value") != null) {
+                Object valObj = rows.get(0).get("value");
+                if (valObj instanceof String) {
+                    Map map = new com.fasterxml.jackson.databind.ObjectMapper().readValue((String) valObj, Map.class);
+                    return !Boolean.FALSE.equals(map.get("enabled"));
+                } else if (valObj instanceof Map) {
+                    Map map = (Map) valObj;
+                    return !Boolean.FALSE.equals(map.get("enabled"));
+                }
+            }
+        } catch (Exception ignored) {}
+        return true;
+    }
+
     private Map<String, Object> attemptRazorpayRefund(String razorpayPaymentId, double amountInRupees, String orderNumber) {
         if (razorpayPaymentId == null || razorpayPaymentId.isBlank()) {
             log.warn("Cannot process Razorpay refund: no razorpay_payment_id on order {}", orderNumber);
@@ -281,8 +298,9 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 double refundAmt = order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0;
                 
                 if ("wallet".equalsIgnoreCase(pMethod) || "dsf_wallet".equalsIgnoreCase(pMethod) || pStatus.contains("wallet")) {
-                    // Credit back to customer's wallet balance
-                    if (order.getUserId() != null && refundAmt > 0) {
+                    if (!isWalletEnabled()) {
+                        log.warn("[Wallet Refund Blocked] Cancelled order {}: DSF Wallet system is disabled", order.getOrderNumber());
+                    } else if (order.getUserId() != null && refundAmt > 0) {
                         try {
                             jdbcTemplate.update(
                                 "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +
@@ -574,7 +592,11 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                     remark = String.format("Refund of ₹%.2f completed manually by admin", refundAmount);
                     calc.put("refund_method", "manual");
                 } else if (isWalletOrder) {
-                    if (order.getUserId() != null && refundAmount > 0) {
+                    if (!isWalletEnabled()) {
+                        refundStatus = "REFUND_FAILED";
+                        remark = "Wallet refund failed: DSF Wallet system is currently disabled by store settings.";
+                        log.warn("[Return Wallet Refund Blocked] Order {}: DSF Wallet system is disabled", order.getOrderNumber());
+                    } else if (order.getUserId() != null && refundAmount > 0) {
                         try {
                             jdbcTemplate.update(
                                 "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +

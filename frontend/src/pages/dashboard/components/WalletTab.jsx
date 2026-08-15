@@ -14,6 +14,10 @@ const WalletTab = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
+  // Wallet System Toggle State
+  const [walletEnabled, setWalletEnabled] = useState(true);
+  const [disabledReason, setDisabledReason] = useState('');
+  
   // Topup modal state
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState('500');
@@ -36,9 +40,10 @@ const WalletTab = () => {
     try {
       setLoading(true);
       setError('');
-      const [walletRes, vouchersRes] = await Promise.all([
+      const [walletRes, vouchersRes, publicSettingsRes] = await Promise.all([
         apiClient.get('/user/wallet'),
-        apiClient.get('/user/wallet/vouchers').catch(() => ({ data: [] }))
+        apiClient.get('/user/wallet/vouchers').catch(() => ({ data: [] })),
+        apiClient.get('/settings/public', { silent: true }).catch(() => ({ data: {} }))
       ]);
       if (walletRes.data) {
         setBalance(walletRes.data.balance || 0);
@@ -46,6 +51,11 @@ const WalletTab = () => {
       }
       if (vouchersRes.data) {
         setVouchers(vouchersRes.data || []);
+      }
+      if (publicSettingsRes.data?.wallet_settings) {
+        const ws = publicSettingsRes.data.wallet_settings;
+        setWalletEnabled(ws.enabled !== false);
+        setDisabledReason(ws.disabled_reason || 'DSF Wallet system is currently disabled by store management.');
       }
     } catch (err) {
       console.error('Failed to load wallet data:', err);
@@ -251,8 +261,16 @@ const WalletTab = () => {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => { setShowTopUpModal(true); setTopUpMsg({ type: '', text: '' }); }}
-              className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-md active:scale-95 ${
+              onClick={() => {
+                if (!walletEnabled) {
+                  toast.error(disabledReason || 'DSF Wallet top-ups are currently disabled.');
+                  return;
+                }
+                setShowTopUpModal(true); 
+                setTopUpMsg({ type: '', text: '' }); 
+              }}
+              disabled={!walletEnabled}
+              className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
                 isDark 
                   ? 'bg-[#25D958] text-black hover:bg-[#25D958]/90' 
                   : 'bg-[#006e1b] text-white hover:bg-[#006e1b]/90'
@@ -264,6 +282,17 @@ const WalletTab = () => {
           </div>
         </div>
       </div>
+
+      {/* WALLET DISABLED NOTICE BANNER */}
+      {!walletEnabled && (
+        <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs font-medium flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+          <div>
+            <p className="font-bold text-amber-200 uppercase tracking-wider text-[11px]">DSF Wallet System Disabled</p>
+            <p className="text-slate-300 mt-0.5">{disabledReason} (Top-ups, voucher redemptions, and wallet refunds are temporarily paused).</p>
+          </div>
+        </div>
+      )}
 
       {/* ERROR STATE */}
       {error && (
@@ -289,8 +318,9 @@ const WalletTab = () => {
             type="text"
             placeholder="Enter Voucher Code (e.g. DSF-WAL-500)"
             value={voucherCode}
+            disabled={!walletEnabled}
             onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-            className={`flex-1 px-4 py-2.5 rounded-xl border text-xs font-mono font-bold uppercase focus:outline-none transition-all ${
+            className={`flex-1 px-4 py-2.5 rounded-xl border text-xs font-mono font-bold uppercase focus:outline-none transition-all disabled:opacity-50 ${
               isDark 
                 ? 'bg-white/5 border-white/10 text-white placeholder-slate-500 focus:border-[#25D958]/40' 
                 : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-[#006e1b]/40'
@@ -298,8 +328,8 @@ const WalletTab = () => {
           />
           <button
             type="submit"
-            disabled={voucherLoading || !voucherCode.trim()}
-            className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider disabled:opacity-50 transition-all ${
+            disabled={!walletEnabled || voucherLoading || !voucherCode.trim()}
+            className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
               isDark 
                 ? 'bg-white/10 hover:bg-white/20 text-white border border-white/10' 
                 : 'bg-slate-900 hover:bg-slate-800 text-white'

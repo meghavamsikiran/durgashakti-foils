@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../services/core/apiClient';
+import { toast } from 'react-hot-toast';
 import { 
   Wallet, PlusCircle, Ticket, User, Search, 
-  CheckCircle2, AlertCircle, Clock, ShieldAlert, ArrowDownLeft, ArrowUpRight, Copy
+  CheckCircle2, AlertCircle, Clock, ShieldAlert, ArrowDownLeft, ArrowUpRight, Copy, RefreshCw
 } from 'lucide-react';
 
 const MultiSelectDropdown = ({ options, selectedValues, onChange, placeholder, allowAll = false, allLabel = "All Customers" }) => {
@@ -118,19 +119,31 @@ const AdminWalletPage = () => {
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherMsg, setVoucherMsg] = useState({ type: '', text: '' });
 
+  // Wallet System Toggle State
+  const [walletEnabled, setWalletEnabled] = useState(true);
+  const [disabledReason, setDisabledReason] = useState('DSF Wallet system is currently disabled by store management.');
+  const [savingWalletSettings, setSavingWalletSettings] = useState(false);
+
   const loadData = async () => {
     try {
       setLoading(true);
-      const [customersRes, vouchersRes, txsRes] = await Promise.all([
+      const [customersRes, vouchersRes, txsRes, publicSettingsRes] = await Promise.all([
         apiClient.get('/admin/customers', { params: { limit: 500 } }),
         apiClient.get('/admin/wallet/vouchers').catch(() => ({ data: [] })),
-        apiClient.get('/admin/wallet/transactions').catch(() => ({ data: [] }))
+        apiClient.get('/admin/wallet/transactions').catch(() => ({ data: [] })),
+        apiClient.get('/settings/public', { silent: true }).catch(() => ({ data: {} }))
       ]);
 
       const custData = customersRes.data;
       setCustomers(custData?.items || custData?.customers || custData?.rows || (Array.isArray(custData) ? custData : []));
       setVouchers(vouchersRes.data || []);
       setTransactions(txsRes.data || []);
+
+      if (publicSettingsRes.data?.wallet_settings) {
+        const ws = publicSettingsRes.data.wallet_settings;
+        setWalletEnabled(ws.enabled !== false);
+        if (ws.disabled_reason) setDisabledReason(ws.disabled_reason);
+      }
     } catch (err) {
       console.error('Failed to load admin wallet data:', err);
     } finally {
@@ -141,6 +154,25 @@ const AdminWalletPage = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleToggleWalletSystem = async (targetState) => {
+    setSavingWalletSettings(true);
+    try {
+      await apiClient.post('/admin/settings', {
+        key: 'wallet_settings',
+        value: {
+          enabled: targetState,
+          disabled_reason: disabledReason.trim()
+        }
+      });
+      setWalletEnabled(targetState);
+      toast.success(`DSF Digital Wallet System has been ${targetState ? 'ENABLED' : 'DISABLED'} successfully!`);
+    } catch (err) {
+      toast.error('Failed to update wallet system status');
+    } finally {
+      setSavingWalletSettings(false);
+    }
+  };
 
   const handleDirectCredit = async (e) => {
     e.preventDefault();
@@ -249,9 +281,85 @@ const AdminWalletPage = () => {
             </h1>
           </div>
           <p className="text-slate-500 dark:text-slate-400 mt-1 text-xs font-medium">
-            Superadmin panel to assign wallet credits, issue customer vouchers, and audit transaction logs.
+            Superadmin panel to assign wallet credits, issue customer vouchers, control wallet status, and audit transaction logs.
           </p>
         </div>
+      </div>
+
+      {/* WALLET SYSTEM MASTER TOGGLE CONTROL */}
+      <div className={`p-6 rounded-3xl border transition-all ${
+        walletEnabled 
+          ? 'bg-emerald-500/5 border-emerald-500/20 dark:bg-emerald-500/10' 
+          : 'bg-amber-500/5 border-amber-500/20 dark:bg-amber-500/10'
+      }`}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className={`p-3 rounded-2xl shrink-0 ${walletEnabled ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                  DSF Digital Wallet System Control
+                </h2>
+                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                  walletEnabled 
+                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                    : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                }`}>
+                  {walletEnabled ? 'ACTIVE / ENABLED' : 'DISABLED / PAUSED'}
+                </span>
+              </div>
+              <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mt-1">
+                {walletEnabled 
+                  ? 'DSF Wallet is active. Customers can pay via wallet at checkout, top-up, redeem vouchers, and receive wallet refunds.'
+                  : 'DSF Wallet is disabled. Customers CANNOT select wallet at checkout, top-up, redeem vouchers, or return/cancel orders for wallet refunds.'
+                }
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => handleToggleWalletSystem(!walletEnabled)}
+              disabled={savingWalletSettings}
+              className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all shadow-md flex items-center gap-2 ${
+                walletEnabled 
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white' 
+                  : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+              }`}
+            >
+              {savingWalletSettings && <RefreshCw className="w-4 h-4 animate-spin" />}
+              {walletEnabled ? 'Disable Wallet System' : 'Enable Wallet System'}
+            </button>
+          </div>
+        </div>
+
+        {!walletEnabled && (
+          <div className="mt-4 pt-4 border-t border-amber-500/20 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+            <div className="md:col-span-2">
+              <label className="block text-[11px] font-black uppercase text-amber-700 dark:text-amber-300 mb-1">
+                Custom Disabled Notice for Customers:
+              </label>
+              <input
+                type="text"
+                value={disabledReason}
+                onChange={(e) => setDisabledReason(e.target.value)}
+                placeholder="Message shown to customers when wallet is disabled"
+                className="w-full px-4 py-2 text-xs rounded-xl bg-white dark:bg-black/40 border border-amber-500/30 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => handleToggleWalletSystem(false)}
+                disabled={savingWalletSettings}
+                className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs rounded-xl uppercase tracking-wider hover:opacity-90 transition-opacity"
+              >
+                Save Notice
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

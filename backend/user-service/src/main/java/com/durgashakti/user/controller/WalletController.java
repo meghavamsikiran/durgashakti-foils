@@ -10,6 +10,7 @@ import com.durgashakti.user.repository.UserProfileRepository;
 import com.razorpay.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -30,15 +31,46 @@ public class WalletController {
     private final WalletTransactionRepository walletTransactionRepository;
     private final WalletVoucherRepository walletVoucherRepository;
     private final UserProfileRepository userRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public WalletController(WalletRepository walletRepository,
                             WalletTransactionRepository walletTransactionRepository,
                             WalletVoucherRepository walletVoucherRepository,
-                            UserProfileRepository userRepository) {
+                            UserProfileRepository userRepository,
+                            JdbcTemplate jdbcTemplate) {
         this.walletRepository = walletRepository;
         this.walletTransactionRepository = walletTransactionRepository;
         this.walletVoucherRepository = walletVoucherRepository;
         this.userRepository = userRepository;
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    private Map<String, Object> checkWalletEnabled() {
+        try {
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT value FROM settings WHERE key = 'wallet_settings'");
+            if (!rows.isEmpty() && rows.get(0).get("value") != null) {
+                Object valObj = rows.get(0).get("value");
+                if (valObj instanceof String) {
+                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    Map<String, Object> map = mapper.readValue((String) valObj, Map.class);
+                    boolean enabled = !Boolean.FALSE.equals(map.get("enabled"));
+                    if (!enabled) {
+                        String reason = map.get("disabled_reason") != null ? String.valueOf(map.get("disabled_reason")) : "DSF Wallet system is currently disabled by store management.";
+                        return Map.of("enabled", false, "reason", reason);
+                    }
+                } else if (valObj instanceof Map) {
+                    Map<String, Object> map = (Map<String, Object>) valObj;
+                    boolean enabled = !Boolean.FALSE.equals(map.get("enabled"));
+                    if (!enabled) {
+                        String reason = map.get("disabled_reason") != null ? String.valueOf(map.get("disabled_reason")) : "DSF Wallet system is currently disabled by store management.";
+                        return Map.of("enabled", false, "reason", reason);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to check wallet_settings", e);
+        }
+        return Map.of("enabled", true);
     }
 
     // ── CUSTOMER WALLET ENDPOINTS ──
@@ -60,6 +92,11 @@ public class WalletController {
 
     @PostMapping("/user/wallet/create-topup-order")
     public ResponseEntity<Map<String, Object>> createTopUpOrder(@RequestBody Map<String, Object> body, Authentication authentication) {
+        Map<String, Object> walletStatus = checkWalletEnabled();
+        if (Boolean.FALSE.equals(walletStatus.get("enabled"))) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", walletStatus.get("reason")));
+        }
+
         double amountVal = Double.parseDouble(body.getOrDefault("amount", 0).toString());
         if (amountVal <= 0) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Invalid top-up amount"));
@@ -108,6 +145,11 @@ public class WalletController {
     @Transactional
     @PostMapping("/user/wallet/topup")
     public ResponseEntity<Map<String, Object>> topUpWallet(@RequestBody Map<String, Object> body, Authentication authentication) {
+        Map<String, Object> walletStatus = checkWalletEnabled();
+        if (Boolean.FALSE.equals(walletStatus.get("enabled"))) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", walletStatus.get("reason")));
+        }
+
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
 
         double amountVal = Double.parseDouble(body.getOrDefault("amount", 0).toString());
@@ -193,6 +235,11 @@ public class WalletController {
     @Transactional
     @PostMapping("/user/wallet/redeem-voucher")
     public ResponseEntity<Map<String, Object>> redeemVoucher(@RequestBody Map<String, String> body, Authentication authentication) {
+        Map<String, Object> walletStatus = checkWalletEnabled();
+        if (Boolean.FALSE.equals(walletStatus.get("enabled"))) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", walletStatus.get("reason")));
+        }
+
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
         String code = body.get("code");
 

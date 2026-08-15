@@ -27,6 +27,16 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
     fetchWallet();
   }, []);
 
+  const walletSettings = publicSettings?.wallet_settings || {};
+  const walletSystemEnabled = walletSettings.enabled !== false;
+  const walletDisabledReason = walletSettings.disabled_reason || 'DSF Digital Wallet is temporarily disabled by store management.';
+
+  useEffect(() => {
+    if (!walletSystemEnabled && paymentMethod === 'wallet') {
+      selectPaymentMethod('online');
+    }
+  }, [walletSystemEnabled, paymentMethod, selectPaymentMethod]);
+
   useEffect(() => {
     if (!codEnabled && paymentMethod === 'cod') {
       selectPaymentMethod('online');
@@ -42,7 +52,7 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
 
   const paymentMethods = [];
 
-  if (walletBalance > 0) {
+  if (walletBalance > 0 && walletSystemEnabled) {
     paymentMethods.push({
       id: 'wallet',
       name: `DSF Digital Wallet`,
@@ -99,6 +109,17 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
           Edit Address
         </Button>
       </div>
+
+      {/* WALLET DISABLED NOTICE BANNER */}
+      {!walletSystemEnabled && (
+        <div className="mb-6 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs font-medium flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+          <div>
+            <p className="font-bold text-amber-200 uppercase tracking-wider text-[11px]">DSF Digital Wallet Disabled</p>
+            <p className="text-slate-300 mt-0.5">{walletDisabledReason} (Wallet payment option is currently unavailable at checkout).</p>
+          </div>
+        </div>
+      )}
 
       {/* WALLET SPLIT-PAYMENT BREAKDOWN BANNER */}
       {paymentMethod === 'wallet' && walletBalance > 0 && (
