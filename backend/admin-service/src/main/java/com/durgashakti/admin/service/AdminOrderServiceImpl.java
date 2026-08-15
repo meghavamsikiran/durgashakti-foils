@@ -75,10 +75,13 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             if (!rows.isEmpty() && rows.get(0).get("value") != null) {
                 Object valObj = rows.get(0).get("value");
                 Map map = null;
-                if (valObj instanceof String) {
-                    map = new com.fasterxml.jackson.databind.ObjectMapper().readValue((String) valObj, Map.class);
-                } else if (valObj instanceof Map) {
+                if (valObj instanceof Map) {
                     map = (Map) valObj;
+                } else {
+                    String jsonStr = valObj.toString();
+                    if (jsonStr != null && !jsonStr.isBlank()) {
+                        map = new com.fasterxml.jackson.databind.ObjectMapper().readValue(jsonStr, Map.class);
+                    }
                 }
                 if (map != null) {
                     boolean systemEnabled = !Boolean.FALSE.equals(map.get("enabled"));

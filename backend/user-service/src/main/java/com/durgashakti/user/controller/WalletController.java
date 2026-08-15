@@ -50,16 +50,17 @@ public class WalletController {
             List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT value FROM settings WHERE key = 'wallet_settings'");
             if (!rows.isEmpty() && rows.get(0).get("value") != null) {
                 Object valObj = rows.get(0).get("value");
-                if (valObj instanceof String) {
-                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                    Map<String, Object> map = mapper.readValue((String) valObj, Map.class);
-                    boolean enabled = !Boolean.FALSE.equals(map.get("enabled"));
-                    if (!enabled) {
-                        String reason = map.get("disabled_reason") != null ? String.valueOf(map.get("disabled_reason")) : "DSF Wallet system is currently disabled by store management.";
-                        return Map.of("enabled", false, "reason", reason);
+                Map<String, Object> map = null;
+                if (valObj instanceof Map) {
+                    map = (Map<String, Object>) valObj;
+                } else {
+                    String jsonStr = valObj.toString();
+                    if (jsonStr != null && !jsonStr.isBlank()) {
+                        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                        map = mapper.readValue(jsonStr, Map.class);
                     }
-                } else if (valObj instanceof Map) {
-                    Map<String, Object> map = (Map<String, Object>) valObj;
+                }
+                if (map != null) {
                     boolean enabled = !Boolean.FALSE.equals(map.get("enabled"));
                     if (!enabled) {
                         String reason = map.get("disabled_reason") != null ? String.valueOf(map.get("disabled_reason")) : "DSF Wallet system is currently disabled by store management.";
