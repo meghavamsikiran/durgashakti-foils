@@ -119,10 +119,16 @@ const AdminWalletPage = () => {
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherMsg, setVoucherMsg] = useState({ type: '', text: '' });
 
-  // Wallet System & Returns Settings State
-  const [walletEnabled, setWalletEnabled] = useState(true);
+  // Wallet System & Returns Settings State - Hydrate synchronously from cache to prevent button flickering on load
+  const [walletEnabled, setWalletEnabled] = useState(() => {
+    const cached = apiClient.getCachedDataSync('/settings/public');
+    return cached?.data?.wallet_settings?.enabled !== false;
+  });
   const [disabledReason, setDisabledReason] = useState('DSF Wallet system is currently disabled by store management.');
-  const [returnsEnabled, setReturnsEnabled] = useState(true);
+  const [returnsEnabled, setReturnsEnabled] = useState(() => {
+    const cached = apiClient.getCachedDataSync('/settings/public');
+    return cached?.data?.wallet_settings?.returns_enabled !== false;
+  });
   const [returnsDisabledReason, setReturnsDisabledReason] = useState('Returns and refunds for DSF Wallet-paid orders are currently disabled by store management.');
   const [savingWalletSettings, setSavingWalletSettings] = useState(false);
   const [savingReturnSettings, setSavingReturnSettings] = useState(false);

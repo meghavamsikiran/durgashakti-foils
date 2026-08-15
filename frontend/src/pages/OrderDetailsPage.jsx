@@ -59,6 +59,32 @@ const OrderDetailsPage = () => {
   const [timeLeft, setTimeLeft] = useState(null);
   const [retryingPayment, setRetryingPayment] = useState(false);
 
+  const [publicSettings, setPublicSettings] = useState(() => {
+    const cached = apiClient.getCachedDataSync('/settings/public');
+    return cached?.data || {};
+  });
+
+  useEffect(() => {
+    const fetchPublicSettings = async () => {
+      try {
+        const res = await apiClient.cachedGet('/settings/public');
+        if (res.data) setPublicSettings(res.data);
+      } catch (err) {}
+    };
+    fetchPublicSettings();
+  }, []);
+
+  const pMethod = String(order?.payment_method || '').toLowerCase();
+  const pStatus = String(order?.payment_status || '').toLowerCase();
+  const isWalletOrder = pMethod === 'wallet' || pMethod === 'dsf_wallet' || pStatus.includes('wallet');
+  const isWalletRefundDisabled = isWalletOrder && publicSettings?.wallet_settings?.returns_enabled === false;
+
+  useEffect(() => {
+    if (isReturning && isWalletRefundDisabled && returnType === 'refund') {
+      setReturnType('exchange');
+    }
+  }, [isReturning, isWalletRefundDisabled, returnType]);
+
   // Item-level returns and self-shipping states
   const [selectedItemsForReturn, setSelectedItemsForReturn] = useState({});
   const [selfShipModal, setSelfShipModal] = useState(null);
@@ -154,21 +180,11 @@ const OrderDetailsPage = () => {
   };
 
   const fetchOrder = useCallback(async (silent = false) => {
-    // 1. Try to find the order in the cached order list first for instant load
-    let foundOrder = null;
-    const cachedList = apiClient.getCachedDataSync('/orders');
-    if (cachedList && cachedList.data) {
-      foundOrder = cachedList.data.find(o => String(o.id) === String(id));
-    }
-    // 2. If not found in list, check if there is a direct details cache
-    if (!foundOrder) {
-      const cachedDetail = apiClient.getCachedDataSync(`/orders/${id}`);
-      if (cachedDetail) {
-        foundOrder = cachedDetail.data;
-      }
-    }
+    // Check direct detail cache for instant smooth load without partial data flickering
+    const cachedDetail = apiClient.getCachedDataSync(`/orders/${id}`);
+    let foundOrder = cachedDetail?.data || null;
     
-    if (foundOrder) {
+    if (foundOrder && foundOrder.items) {
       setOrder(foundOrder);
       setLoading(false);
     } else if (!silent) {
@@ -1094,20 +1110,38 @@ const OrderDetailsPage = () => {
 
               <div className="space-y-3">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Return Option</label>
+                {isWalletRefundDisabled && (
+                  <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs font-medium flex items-center gap-2 mb-2">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>Notice: Refunds for DSF Wallet-paid orders are disabled by store policy. You can request a product exchange/replacement.</span>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <div 
-                    onClick={() => setReturnType('refund')}
-                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                      returnType === 'refund' 
-                        ? 'border-primary bg-primary/5 text-primary' 
-                        : 'border-slate-200 dark:border-[#26322B] hover:border-slate-300 text-slate-600 dark:text-slate-400 bg-white dark:bg-[#131B17]'
+                    onClick={() => {
+                      if (isWalletRefundDisabled) {
+                        toast.warning('Wallet refunds are currently disabled by store management. Product exchange is available.');
+                        setReturnType('exchange');
+                        return;
+                      }
+                      setReturnType('refund');
+                    }}
+                    className={`p-4 rounded-2xl border-2 transition-all ${
+                      isWalletRefundDisabled
+                        ? 'opacity-50 cursor-not-allowed border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5'
+                        : returnType === 'refund' 
+                        ? 'border-primary bg-primary/5 text-primary cursor-pointer' 
+                        : 'border-slate-200 dark:border-[#26322B] hover:border-slate-300 text-slate-600 dark:text-slate-400 bg-white dark:bg-[#131B17] cursor-pointer'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black uppercase tracking-wider">Refund</span>
-                      {returnType === 'refund' && <Check className="w-4 h-4 stroke-[3px]" />}
+                      {returnType === 'refund' && !isWalletRefundDisabled && <Check className="w-4 h-4 stroke-[3px]" />}
+                      {isWalletRefundDisabled && <span className="text-[9px] font-bold text-amber-400 uppercase">Disabled</span>}
                     </div>
-                    <p className="text-[10px] font-medium mt-1 text-slate-500 dark:text-slate-300 leading-snug">Original payment method (credited in 5-7 business days)</p>
+                    <p className="text-[10px] font-medium mt-1 text-slate-500 dark:text-slate-300 leading-snug">
+                      {isWalletRefundDisabled ? 'Disabled for wallet-paid orders as per store policy.' : 'Original payment method (credited in 5-7 business days)'}
+                    </p>
                   </div>
                   <div 
                     onClick={() => setReturnType('exchange')}
@@ -1882,7 +1916,11 @@ const OrderDetailsPage = () => {
                   
                   {String(order.order_status || '').toLowerCase() === 'delivered' && (!item.return_status || String(item.return_status).toLowerCase() === 'none' || String(item.return_status).toLowerCase() === 'null') && order.payment_method?.toLowerCase() !== 'cod' && (
                     <button 
-                      onClick={() => setIsReturning(item.product_id)}
+                      onClick={() => {
+                        setIsReturning(item.product_id);
+                        if (isWalletRefundDisabled) setReturnType('exchange');
+                        window.scrollTo({ top: 180, behavior: 'smooth' });
+                      }}
                       className="w-full bg-white dark:bg-[#131B17] hover:bg-slate-50 dark:bg-[#26322B]/40 border border-slate-300 hover:border-slate-400 font-bold text-slate-700 dark:text-slate-300 text-xs px-4 py-2.5 rounded-xl shadow-sm dark:shadow-none transition-all text-center uppercase tracking-widest text-[9px]"
                     >
                       Return items
