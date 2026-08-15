@@ -666,7 +666,7 @@ const TicketsTab = () => {
                       target="_blank" 
                       rel="noopener noreferrer" 
                       onClick={(e) => e.stopPropagation()}
-                      className="bg-slate-100 hover:bg-[#25D958] hover:text-[#0C1310] dark:bg-[#1E2722] dark:hover:bg-[#25D958] dark:hover:text-[#0C1310] dark:text-slate-355 text-slate-750 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm inline-block select-none font-sans"
+                      className="bg-slate-100 hover:bg-primary hover:text-primary-foreground dark:bg-white/5 dark:hover:bg-primary dark:hover:text-primary-foreground dark:text-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm inline-block select-none font-sans"
                     >
                       View Details
                     </a>

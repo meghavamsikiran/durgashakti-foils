@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -37,22 +38,25 @@ public class AiChatController {
   private final ContactOrderRepository contactRepository;
   private final ChatSessionRepository chatSessionRepository;
   private final OrderUserRepository orderUserRepository;
+  private final JdbcTemplate jdbcTemplate;
 
   private static final Pattern CODE_TRIVIA_PATTERN = Pattern.compile(
       "(?i)\\b(write\\s+a?\\s*code|write\\s+a?\\s*script|write\\s+a?\\s*program|python|javascript|react|html|css|java|c\\+\\+|sql|algorithm|function|code\\s+for|solve|recipe|who\\s+is|what\\s+is\\s+the\\s+capital|tell\\s+me\\s+a\\s+joke|essay|poem)\\b"
   );
   private static final Pattern DOMAIN_KEYWORDS = Pattern.compile(
-      "(?i)\\b(foil|foils|micron|microns|wrap|container|durgashakti|durga|shakti|order|delivery|shipping|price|buy|cost|bulk|discount|coupon|track|tracking|status|ticket|refund|payment|contact|support|phone|help|address|store|roll)\\b"
+      "(?i)\\b(foil|foils|micron|microns|wrap|container|durgashakti|durga|shakti|order|delivery|shipping|price|buy|cost|bulk|discount|coupon|track|tracking|status|ticket|refund|payment|contact|support|phone|help|address|store|roll|wallet|balance|funds)\\b"
   );
   private static final String GUARDRAIL_REFUSAL = "I can only assist with DurgaShakti Foils products, orders, and customer support. How may I help you with our foils today?";
 
   private static final String SYSTEM_PROMPT = """
       You are DurgaShakti AI, the official AI Customer Support Assistant for DurgaShakti Foils.
       Our brand specializes in premium food-grade aluminium foils (Standard 11 microns, Heavy Duty 18 microns, Super Heavy 25 microns, food containers, cling wraps, custom roll sizes 9m/18m/72m).
+      We also have a 'DSF Wallet' feature where customers receive refunds for cancelled orders or returned items. Wallet funds can be used seamlessly on future purchases.
 
       STRICT DOMAIN GUARDRAILS:
-      - You MUST ONLY answer questions directly related to DurgaShakti Foils: products, roll sizes, microns, pricing, custom sizing/bulk inquiries, orders & tracking, shipping/delivery, returns/refunds, and customer support.
-      - If the user asks ANY question unrelated to DurgaShakti Foils (such as writing code, programming, math, history, general knowledge, sports, advice, jokes, or general chat), YOU MUST STRICTLY REFUSE TO ANSWER.
+      - You MUST ONLY answer questions directly related to DurgaShakti Foils: products, roll sizes, microns, pricing, custom sizing/bulk inquiries, orders & tracking, shipping/delivery, returns/refunds, customer support, and the DSF Wallet (balance/funds).
+      - You may politely answer basic greetings (e.g. "Hi", "Hello") and questions about your name or identity.
+      - If the user asks ANY OTHER question unrelated to DurgaShakti Foils (such as writing code, programming, math, history, general knowledge, sports, advice, jokes, or general conversational chat), YOU MUST STRICTLY REFUSE TO ANSWER.
       - Return EXACTLY this refusal message for out-of-scope questions:
         "I can only assist with DurgaShakti Foils products, orders, and customer support. How may I help you with our foils today?"
 
@@ -64,6 +68,9 @@ public class AiChatController {
          Do not write any other text.
       4. If the user asks about a support ticket status or details (e.g. OD-TKT-XXXXXX), reply EXACTLY in this format:
          [LOOKUP_TICKET: <ticket-id>]
+         Do not write any other text.
+      5. If the user asks about their DSF Wallet balance, refunds, or wallet transaction history, reply EXACTLY in this format:
+         [LOOKUP_WALLET]
          Do not write any other text.
       """;
 
@@ -79,13 +86,15 @@ public class AiChatController {
       OrderServiceRepository orderRepository,
       ContactOrderRepository contactRepository,
       ChatSessionRepository chatSessionRepository,
-      OrderUserRepository orderUserRepository) {
+      OrderUserRepository orderUserRepository,
+      JdbcTemplate jdbcTemplate) {
     this.failoverService = failoverService;
     this.chatMessageRepository = chatMessageRepository;
     this.orderRepository = orderRepository;
     this.contactRepository = contactRepository;
     this.chatSessionRepository = chatSessionRepository;
     this.orderUserRepository = orderUserRepository;
+    this.jdbcTemplate = jdbcTemplate;
   }
 
   @GetMapping("/history")
@@ -257,6 +266,33 @@ public class AiChatController {
 
               aiResponse = failoverService.chat(RESOLVER_PROMPT, ticketContext);
           }
+      }
+      // Check if the AI requested a wallet lookup
+      else if (aiResponse != null && aiResponse.contains("[LOOKUP_WALLET]")) {
+          String walletContext;
+          if (authenticatedUserId != null) {
+              try {
+                  List<Map<String, Object>> wRes = jdbcTemplate.queryForList("SELECT balance FROM wallets WHERE user_id = ?", authenticatedUserId);
+                  double balance = wRes.isEmpty() ? 0.0 : ((Number) wRes.get(0).get("balance")).doubleValue();
+                  List<Map<String, Object>> txRes = jdbcTemplate.queryForList("SELECT amount, type, description, created_at FROM wallet_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 3", authenticatedUserId);
+                  StringBuilder txLog = new StringBuilder();
+                  if (txRes.isEmpty()) {
+                      txLog.append("No recent transactions.");
+                  } else {
+                      for (Map<String, Object> tx : txRes) {
+                          txLog.append(tx.get("type")).append(" of Rs ").append(tx.get("amount"))
+                               .append(" (").append(tx.get("description")).append(") on ").append(tx.get("created_at")).append("; ");
+                      }
+                  }
+                  walletContext = String.format("The user asked: %s\nSystem context: The user's current DSF Wallet balance is Rs %s. Recent transactions: %s", userMessageStr, balance, txLog.toString());
+              } catch (Exception ex) {
+                  log.error("Failed to lookup wallet for AI Chat", ex);
+                  walletContext = "The user asked: " + userMessageStr + "\nSystem context: We are currently experiencing an issue retrieving wallet information. Please inform the user politely to try again later.";
+              }
+          } else {
+              walletContext = "The user asked: " + userMessageStr + "\nSystem context: The user is not logged in. Please inform them that they must log in to their account to view their DSF Wallet balance and history.";
+          }
+          aiResponse = failoverService.chat(RESOLVER_PROMPT, walletContext);
       }
     } catch (Exception e) {
         log.error("AI Chat service failed. Error: {}", e.getMessage(), e);
