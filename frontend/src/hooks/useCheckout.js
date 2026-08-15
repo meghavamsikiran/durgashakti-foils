@@ -661,11 +661,31 @@ export const useCheckout = () => {
           description: `Order #${orderNumber} (Wallet + Online)`,
           order_id: rzpOrderId,
           handler: async function (paymentResponse) {
-            toast.success('Payment completed successfully!');
-            clearCart().catch(() => {});
-            navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber}&payment_method=wallet`);
-            setLoading(false);
-            orderInProgress.current = false;
+            try {
+              setLoading(true);
+              const verifyRes = await paymentService.verifyPayment({
+                order_id: orderId,
+                razorpay_order_id: paymentResponse.razorpay_order_id,
+                razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                razorpay_signature: paymentResponse.razorpay_signature,
+              });
+
+              if (verifyRes && verifyRes.success) {
+                toast.success('Payment completed successfully!');
+                clearCart().catch(() => {});
+                navigate(`/order-success?order_id=${orderId}&order_number=${orderNumber}&payment_method=wallet`);
+              } else {
+                toast.error('Payment verification failed.');
+                navigate(`/order/${orderId}`);
+              }
+            } catch (err) {
+              toast.info('Payment received! Confirming your order — this may take a moment.');
+              clearCart().catch(() => {});
+              navigate(`/order/${orderId}`);
+            } finally {
+              setLoading(false);
+              orderInProgress.current = false;
+            }
           },
           modal: {
             ondismiss: function () {

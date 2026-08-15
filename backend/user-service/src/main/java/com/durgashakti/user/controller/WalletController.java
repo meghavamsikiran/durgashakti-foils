@@ -7,6 +7,9 @@ import com.durgashakti.user.repository.WalletRepository;
 import com.durgashakti.user.repository.WalletTransactionRepository;
 import com.durgashakti.user.repository.WalletVoucherRepository;
 import com.durgashakti.user.repository.UserProfileRepository;
+import com.razorpay.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +22,8 @@ import java.util.*;
 @RestController
 @RequestMapping("/api")
 public class WalletController {
+
+    private static final Logger log = LoggerFactory.getLogger(WalletController.class);
 
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
@@ -40,67 +45,16 @@ public class WalletController {
     @GetMapping("/user/wallet")
     public ResponseEntity<Map<String, Object>> getWallet(Authentication authentication) {
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
-        
-        // Auto-cleanup any old mock PAY-RZP- test transactions created during initial testing
-        List<WalletTransaction> allTxs = walletTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        List<WalletTransaction> mockTxs = allTxs.stream()
-                .filter(tx -> tx.getReferenceId() != null && tx.getReferenceId().startsWith("PAY-RZP-"))
-                .toList();
-
-        if (!mockTxs.isEmpty()) {
-            walletTransactionRepository.deleteAll(mockTxs);
-            allTxs = walletTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        }
-
-        // Recalculate true balance from remaining valid transactions
-        BigDecimal calculatedBalance = BigDecimal.ZERO;
-        for (WalletTransaction tx : allTxs) {
-            if ("SUCCESS".equalsIgnoreCase(tx.getStatus())) {
-                if ("CREDIT".equalsIgnoreCase(tx.getType())) {
-                    calculatedBalance = calculatedBalance.add(tx.getAmount());
-                } else if ("DEBIT".equalsIgnoreCase(tx.getType())) {
-                    calculatedBalance = calculatedBalance.subtract(tx.getAmount());
-                }
-            }
-        }
 
         Wallet wallet = walletRepository.findByUserId(userId)
                 .orElseGet(() -> new Wallet(userId, BigDecimal.ZERO));
 
-        if (wallet.getBalance().compareTo(calculatedBalance) != 0) {
-            wallet.setBalance(calculatedBalance);
-            wallet.setUpdatedAt(OffsetDateTime.now());
-            walletRepository.save(wallet);
-        }
+        List<WalletTransaction> transactions = walletTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
 
         Map<String, Object> response = new HashMap<>();
         response.put("balance", wallet.getBalance());
-        response.put("transactions", allTxs);
+        response.put("transactions", transactions);
         return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/user/wallet/reset")
-    public ResponseEntity<Map<String, Object>> resetWallet(Authentication authentication) {
-        UUID userId = UUID.fromString((String) authentication.getPrincipal());
-        
-        Optional<Wallet> walletOpt = walletRepository.findByUserId(userId);
-        if (walletOpt.isPresent()) {
-            Wallet wallet = walletOpt.get();
-            wallet.setBalance(BigDecimal.ZERO);
-            wallet.setUpdatedAt(OffsetDateTime.now());
-            walletRepository.save(wallet);
-        }
-
-        List<WalletTransaction> userTxs = walletTransactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        if (!userTxs.isEmpty()) {
-            walletTransactionRepository.deleteAll(userTxs);
-        }
-
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "newBalance", BigDecimal.ZERO,
-                "message", "Wallet balance reset to ₹0.00 successfully"
-        ));
     }
 
     @PostMapping("/user/wallet/create-topup-order")
@@ -108,6 +62,10 @@ public class WalletController {
         double amountVal = Double.parseDouble(body.getOrDefault("amount", 0).toString());
         if (amountVal <= 0) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Invalid top-up amount"));
+        }
+
+        if (amountVal > 50000) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Maximum wallet top-up limit per transaction is ₹50,000"));
         }
 
         long amountInPaise = Math.round(amountVal * 100);
@@ -150,7 +108,7 @@ public class WalletController {
     @PostMapping("/user/wallet/topup")
     public ResponseEntity<Map<String, Object>> topUpWallet(@RequestBody Map<String, Object> body, Authentication authentication) {
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
-        
+
         double amountVal = Double.parseDouble(body.getOrDefault("amount", 0).toString());
         String razorpayPaymentId = (String) body.get("razorpay_payment_id");
         String razorpayOrderId = (String) body.get("razorpay_order_id");
@@ -160,12 +118,41 @@ public class WalletController {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Invalid top-up amount"));
         }
 
+        if (amountVal > 50000) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Top-up amount exceeds maximum threshold of ₹50,000"));
+        }
+
+        // Signature Verification
+        String razorpaySecret = System.getenv("RAZORPAY_KEY_SECRET");
+        boolean isLiveRazorpay = razorpaySecret != null && !razorpaySecret.isBlank() && !razorpaySecret.startsWith("fake");
+
+        if (isLiveRazorpay) {
+            if (razorpayPaymentId == null || razorpayOrderId == null || razorpaySignature == null) {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Missing Razorpay payment parameters for verification"));
+            }
+
+            try {
+                org.json.JSONObject attributes = new org.json.JSONObject();
+                attributes.put("razorpay_order_id", razorpayOrderId);
+                attributes.put("razorpay_payment_id", razorpayPaymentId);
+                attributes.put("razorpay_signature", razorpaySignature);
+
+                boolean isValidSignature = Utils.verifyPaymentSignature(attributes, razorpaySecret);
+                if (!isValidSignature) {
+                    log.warn("Wallet topup signature verification failed for user {} order {}", userId, razorpayOrderId);
+                    return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Invalid Razorpay payment signature"));
+                }
+            } catch (Exception e) {
+                log.error("Signature verification error for user {}: {}", userId, e.getMessage());
+                return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Payment signature verification failed"));
+            }
+        }
+
         BigDecimal amount = BigDecimal.valueOf(amountVal);
 
-        // Idempotency Check: Prevent duplicate crediting for the same Razorpay payment ID
+        // Idempotency Check using DB index (O(1) lookup)
         if (razorpayPaymentId != null && !razorpayPaymentId.isBlank()) {
-            boolean alreadyProcessed = walletTransactionRepository.findAll().stream()
-                    .anyMatch(tx -> razorpayPaymentId.equals(tx.getReferenceId()));
+            boolean alreadyProcessed = walletTransactionRepository.existsByReferenceId(razorpayPaymentId);
             if (alreadyProcessed) {
                 Wallet wallet = walletRepository.findByUserId(userId)
                         .orElseGet(() -> new Wallet(userId, BigDecimal.ZERO));
@@ -319,7 +306,7 @@ public class WalletController {
         String baseCode = (String) body.get("code");
         String title = (String) body.get("title");
         double amountVal = Double.parseDouble(body.getOrDefault("amount", 0).toString());
-        
+
         List<String> assignedUserIds = new ArrayList<>();
         if (body.containsKey("assignedUserIds") && body.get("assignedUserIds") instanceof List) {
             assignedUserIds = (List<String>) body.get("assignedUserIds");
@@ -333,7 +320,7 @@ public class WalletController {
         if (baseCode == null || baseCode.isBlank() || amountVal <= 0) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Code and positive amount are required"));
         }
-        
+
         baseCode = baseCode.trim().toUpperCase();
 
         UUID createdBy = null;
@@ -342,7 +329,7 @@ public class WalletController {
                 createdBy = UUID.fromString((String) authentication.getPrincipal());
             } catch (Exception ignored) {}
         }
-        
+
         List<WalletVoucher> createdVouchers = new ArrayList<>();
 
         if (assignedUserIds.isEmpty()) {
@@ -366,7 +353,7 @@ public class WalletController {
                 WalletVoucher voucher = new WalletVoucher();
                 // If more than 1 user, append a suffix to keep codes unique
                 String targetCode = assignedUserIds.size() > 1 ? baseCode + "-" + (i + 1) : baseCode;
-                
+
                 if (walletVoucherRepository.findByCodeIgnoreCase(targetCode).isPresent()) {
                     return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Voucher code '" + targetCode + "' already exists. Please use a unique code."));
                 }
@@ -376,11 +363,11 @@ public class WalletController {
                 voucher.setAmount(BigDecimal.valueOf(amountVal));
                 voucher.setCreatedAt(OffsetDateTime.now());
                 voucher.setCreatedBy(createdBy);
-                
+
                 UUID uid = UUID.fromString(userIdStr);
                 voucher.setAssignedUserId(uid);
                 userRepository.findById(uid).ifPresent(u -> voucher.setAssignedUserEmail(u.getEmail()));
-                
+
                 walletVoucherRepository.save(voucher);
                 createdVouchers.add(voucher);
             }

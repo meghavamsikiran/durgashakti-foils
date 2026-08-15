@@ -325,7 +325,7 @@ public class OrderServiceImpl implements OrderService {
         if ("wallet".equalsIgnoreCase(req.getPaymentMethod())) {
             // Deduct wallet balance
             BigDecimal totalAmountBD = BigDecimal.valueOf(total);
-            List<Map<String, Object>> walletRows = jdbcTemplate.queryForList("SELECT id, balance FROM wallets WHERE user_id = ?", userId);
+            List<Map<String, Object>> walletRows = jdbcTemplate.queryForList("SELECT id, balance FROM wallets WHERE user_id = ? FOR UPDATE", userId);
 
             BigDecimal currentBalance = BigDecimal.ZERO;
             if (!walletRows.isEmpty()) {
@@ -458,6 +458,32 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setOrderStatus("cancelled");
+
+        // Refund wallet balance if paid via wallet or partial wallet
+        String pMethod = (order.getPaymentMethod() != null ? order.getPaymentMethod() : "").toLowerCase();
+        String pStatus = (order.getPaymentStatus() != null ? order.getPaymentStatus() : "").toLowerCase();
+        if ("wallet".equals(pMethod) || "dsf_wallet".equals(pMethod) || pStatus.contains("wallet")) {
+            BigDecimal refundAmt = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+            if (refundAmt.compareTo(BigDecimal.ZERO) > 0) {
+                try {
+                    jdbcTemplate.update(
+                        "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +
+                        "VALUES (gen_random_uuid(), ?, ?, NOW(), NOW()) " +
+                        "ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance, updated_at = NOW()",
+                        order.getUserId(), refundAmt
+                    );
+                    jdbcTemplate.update(
+                        "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
+                        "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'ORDER_REFUND', ?, ?, 'SUCCESS', NOW())",
+                        order.getUserId(), refundAmt, order.getOrderNumber(), "Refund for customer cancelled order #" + order.getOrderNumber()
+                    );
+                    log.info("[Customer Order Cancel Wallet Refund] Refunded ₹{} to wallet for user {} on order {}", refundAmt, order.getUserId(), order.getOrderNumber());
+                } catch (Exception ex) {
+                    log.error("[Customer Order Cancel Wallet Refund Failed] Order {}: {}", order.getOrderNumber(), ex.getMessage());
+                }
+            }
+        }
+
         order.setPaymentStatus("refunded");
         order.setUpdatedAt(OffsetDateTime.now());
         return orderRepository.save(order);
