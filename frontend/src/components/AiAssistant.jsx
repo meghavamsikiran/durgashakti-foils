@@ -39,10 +39,27 @@ export default function AiAssistant() {
   const [userSessions, setUserSessions] = useState([]);
   const scrollRef = useRef(null);
   const loadingRef = useRef(loading);
+  const chatRef = useRef(null);
 
   useEffect(() => {
     loadingRef.current = loading;
   }, [loading]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (chatRef.current && !chatRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside, { passive: true });
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     const fetchHelpline = async () => {
@@ -127,12 +144,14 @@ export default function AiAssistant() {
         try {
           const res = await apiClient.get(`/chat/history?sessionId=${sessionId}`);
           if (res.data) {
-            const historyMsgs = res.data.messages || [];
-            if (historyMsgs.length > 0) {
-              setMessages(historyMsgs);
-            }
-            if (res.data.status) {
-              setSessionStatus(res.data.status);
+            if (!loadingRef.current) {
+              const historyMsgs = res.data.messages || [];
+              if (historyMsgs.length > 0) {
+                setMessages(historyMsgs);
+              }
+              if (res.data.status) {
+                setSessionStatus(res.data.status);
+              }
             }
           }
         } catch (err) {
@@ -285,7 +304,7 @@ export default function AiAssistant() {
   const currentCaseId = formatCaseId(sessionId);
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-6 z-[9999] font-sans">
+    <div className="fixed bottom-20 md:bottom-6 right-6 z-[9999] font-sans" ref={chatRef}>
       {/* Trigger Button */}
       {!isOpen && (
         <button
