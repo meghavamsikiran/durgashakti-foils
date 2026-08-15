@@ -111,15 +111,22 @@ const OrderDetailsPage = () => {
   }, [selfShipModal]);
 
   React.useEffect(() => {
-    if (isReturning && order?.items) {
+    if (isReturning && Array.isArray(order?.items)) {
       setSelectedItemsForReturn(prev => {
-        // If already initialized for this return panel session, preserve user's selections
-        if (Object.keys(prev).length > 0) return prev;
+        const eligibleItems = order.items.filter(item => !item.return_status || String(item.return_status).toLowerCase() === 'none' || String(item.return_status).toLowerCase() === 'null');
         
+        const currentKeys = Object.keys(prev);
+        if (currentKeys.length > 0 && currentKeys.some(k => prev[k]?.selected)) {
+          return prev;
+        }
+
         const initial = {};
-        order.items.forEach(item => {
-          const isPreselected = isReturning === true ? false : (isReturning === item.product_id);
-          initial[item.product_id] = { selected: isPreselected, quantity: 1 };
+        eligibleItems.forEach((item, index) => {
+          const productId = item.product_id || item.id;
+          const isPreselected = isReturning === true 
+            ? (eligibleItems.length === 1 || index === 0) 
+            : (String(isReturning) === String(productId));
+          initial[productId] = { selected: isPreselected, quantity: 1 };
         });
         return initial;
       });
@@ -1051,10 +1058,11 @@ const OrderDetailsPage = () => {
               <div className="space-y-3">
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300">Select Items to Return</label>
                 <div className="space-y-2.5 max-h-[250px] overflow-y-auto pr-1">
-                  {order.items.filter(item => !item.return_status || String(item.return_status).toLowerCase() === 'none' || String(item.return_status).toLowerCase() === 'null').map((item) => {
-                    const returnInfo = selectedItemsForReturn[item.product_id] || { selected: false, quantity: 1 };
+                  {(order?.items || []).filter(item => !item.return_status || String(item.return_status).toLowerCase() === 'none' || String(item.return_status).toLowerCase() === 'null').map((item) => {
+                    const productId = item.product_id || item.id;
+                    const returnInfo = (selectedItemsForReturn && selectedItemsForReturn[productId]) || { selected: false, quantity: 1 };
                     return (
-                      <div key={item.product_id} className="flex items-center justify-between p-3 border border-slate-100 dark:border-[#26322B] rounded-xl hover:bg-slate-50 dark:bg-[#26322B]/40 transition-colors">
+                      <div key={productId} className="flex items-center justify-between p-3 border border-slate-100 dark:border-[#26322B] rounded-xl hover:bg-slate-50 dark:bg-[#26322B]/40 transition-colors">
                         <div className="flex items-center gap-3">
                           <input
                             type="checkbox"
@@ -1062,7 +1070,7 @@ const OrderDetailsPage = () => {
                             onChange={(e) => {
                               setSelectedItemsForReturn(prev => ({
                                 ...prev,
-                                [item.product_id]: { ...returnInfo, selected: e.target.checked }
+                                [productId]: { ...returnInfo, selected: e.target.checked }
                               }));
                             }}
                             className="w-4 h-4 text-primary rounded border-slate-350 focus:ring-primary/20"
@@ -1091,7 +1099,7 @@ const OrderDetailsPage = () => {
                               onChange={(e) => {
                                 setSelectedItemsForReturn(prev => ({
                                   ...prev,
-                                  [item.product_id]: { ...returnInfo, quantity: parseInt(e.target.value) }
+                                  [productId]: { ...returnInfo, quantity: parseInt(e.target.value) }
                                 }));
                               }}
                                                             className="px-2 py-1 rounded-lg border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] text-slate-800 dark:text-white focus:outline-none"
