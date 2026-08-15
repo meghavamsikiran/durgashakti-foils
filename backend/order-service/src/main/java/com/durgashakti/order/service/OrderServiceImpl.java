@@ -94,6 +94,24 @@ public class OrderServiceImpl implements OrderService {
         return Map.of("enabled", true);
     }
 
+    private Map<String, Object> checkWalletReturnsEnabled() {
+        try {
+            Optional<Setting> walletSettingsOpt = settingRepository.findById("wallet_settings");
+            if (walletSettingsOpt.isPresent() && walletSettingsOpt.get().getValue() != null) {
+                Map<String, Object> val = walletSettingsOpt.get().getValue();
+                boolean systemEnabled = !Boolean.FALSE.equals(val.get("enabled"));
+                boolean returnsEnabled = !Boolean.FALSE.equals(val.get("returns_enabled"));
+                if (!systemEnabled || !returnsEnabled) {
+                    String reason = val.get("returns_disabled_reason") != null ? String.valueOf(val.get("returns_disabled_reason")) : "Returns and refunds for DSF Wallet-paid orders are currently disabled by store management.";
+                    return Map.of("enabled", false, "reason", reason);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to check wallet_settings", e);
+        }
+        return Map.of("enabled", true);
+    }
+
     @PostConstruct
     public void migrateOrderPrefixes() {
         try {
@@ -483,9 +501,9 @@ public class OrderServiceImpl implements OrderService {
         String pMethod = (order.getPaymentMethod() != null ? order.getPaymentMethod() : "").toLowerCase();
         String pStatus = (order.getPaymentStatus() != null ? order.getPaymentStatus() : "").toLowerCase();
         if ("wallet".equals(pMethod) || "dsf_wallet".equals(pMethod) || pStatus.contains("wallet")) {
-            Map<String, Object> wStatus = checkWalletEnabled();
+            Map<String, Object> wStatus = checkWalletReturnsEnabled();
             if (Boolean.FALSE.equals(wStatus.get("enabled"))) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Refunds to DSF Wallet are currently disabled by store management.");
+                throw new ApiException(HttpStatus.BAD_REQUEST, String.valueOf(wStatus.get("reason")));
             }
             BigDecimal refundAmt = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
             if (refundAmt.compareTo(BigDecimal.ZERO) > 0) {
@@ -1015,9 +1033,9 @@ public class OrderServiceImpl implements OrderService {
         String pMethodStr = (order.getPaymentMethod() != null ? order.getPaymentMethod() : "").toLowerCase();
         String pStatusStr = (order.getPaymentStatus() != null ? order.getPaymentStatus() : "").toLowerCase();
         if ("wallet".equals(pMethodStr) || "dsf_wallet".equals(pMethodStr) || pStatusStr.contains("wallet")) {
-            Map<String, Object> wStatus = checkWalletEnabled();
+            Map<String, Object> wStatus = checkWalletReturnsEnabled();
             if (Boolean.FALSE.equals(wStatus.get("enabled"))) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Returns and refunds for orders placed via DSF Wallet are currently disabled by store management.");
+                throw new ApiException(HttpStatus.BAD_REQUEST, String.valueOf(wStatus.get("reason")));
             }
         }
 

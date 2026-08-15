@@ -166,7 +166,12 @@ public class CatalogServiceImpl implements CatalogService {
         if (walletSettings.isPresent() && walletSettings.get().getValue() != null) {
             response.put("wallet_settings", walletSettings.get().getValue());
         } else {
-            response.put("wallet_settings", Map.of("enabled", true, "disabled_reason", "DSF Wallet system is currently disabled by store management."));
+            response.put("wallet_settings", Map.of(
+                "enabled", true, 
+                "returns_enabled", true,
+                "disabled_reason", "DSF Wallet system is currently disabled by store management.",
+                "returns_disabled_reason", "Returns and refunds for DSF Wallet-paid orders are currently disabled by store management."
+            ));
         }
         
         return response;

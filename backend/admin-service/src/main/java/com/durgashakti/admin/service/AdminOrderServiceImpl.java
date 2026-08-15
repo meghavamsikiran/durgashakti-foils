@@ -69,17 +69,21 @@ public class AdminOrderServiceImpl implements AdminOrderService {
      * Attempts an instant Razorpay refund. Returns true if refund was created successfully.
      * Falls back gracefully if keys are missing or Razorpay call fails.
      */
-    private boolean isWalletEnabled() {
+    private boolean isWalletReturnsEnabled() {
         try {
             List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT value FROM settings WHERE key = 'wallet_settings'");
             if (!rows.isEmpty() && rows.get(0).get("value") != null) {
                 Object valObj = rows.get(0).get("value");
+                Map map = null;
                 if (valObj instanceof String) {
-                    Map map = new com.fasterxml.jackson.databind.ObjectMapper().readValue((String) valObj, Map.class);
-                    return !Boolean.FALSE.equals(map.get("enabled"));
+                    map = new com.fasterxml.jackson.databind.ObjectMapper().readValue((String) valObj, Map.class);
                 } else if (valObj instanceof Map) {
-                    Map map = (Map) valObj;
-                    return !Boolean.FALSE.equals(map.get("enabled"));
+                    map = (Map) valObj;
+                }
+                if (map != null) {
+                    boolean systemEnabled = !Boolean.FALSE.equals(map.get("enabled"));
+                    boolean returnsEnabled = !Boolean.FALSE.equals(map.get("returns_enabled"));
+                    return systemEnabled && returnsEnabled;
                 }
             }
         } catch (Exception ignored) {}
@@ -298,8 +302,8 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 double refundAmt = order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0;
                 
                 if ("wallet".equalsIgnoreCase(pMethod) || "dsf_wallet".equalsIgnoreCase(pMethod) || pStatus.contains("wallet")) {
-                    if (!isWalletEnabled()) {
-                        log.warn("[Wallet Refund Blocked] Cancelled order {}: DSF Wallet system is disabled", order.getOrderNumber());
+                    if (!isWalletReturnsEnabled()) {
+                        log.warn("[Wallet Refund Blocked] Cancelled order {}: DSF Wallet returns and refunds are disabled", order.getOrderNumber());
                     } else if (order.getUserId() != null && refundAmt > 0) {
                         try {
                             jdbcTemplate.update(
@@ -592,9 +596,9 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                     remark = String.format("Refund of ₹%.2f completed manually by admin", refundAmount);
                     calc.put("refund_method", "manual");
                 } else if (isWalletOrder) {
-                    if (!isWalletEnabled()) {
+                    if (!isWalletReturnsEnabled()) {
                         refundStatus = "REFUND_FAILED";
-                        remark = "Wallet refund failed: DSF Wallet system is currently disabled by store settings.";
+                        remark = "Wallet refund failed: DSF Wallet returns and refunds are currently disabled by store settings.";
                         log.warn("[Return Wallet Refund Blocked] Order {}: DSF Wallet system is disabled", order.getOrderNumber());
                     } else if (order.getUserId() != null && refundAmount > 0) {
                         try {

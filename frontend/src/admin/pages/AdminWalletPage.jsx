@@ -119,10 +119,26 @@ const AdminWalletPage = () => {
   const [voucherLoading, setVoucherLoading] = useState(false);
   const [voucherMsg, setVoucherMsg] = useState({ type: '', text: '' });
 
-  // Wallet System Toggle State
+  // Wallet System & Returns Settings State
   const [walletEnabled, setWalletEnabled] = useState(true);
   const [disabledReason, setDisabledReason] = useState('DSF Wallet system is currently disabled by store management.');
+  const [returnsEnabled, setReturnsEnabled] = useState(true);
+  const [returnsDisabledReason, setReturnsDisabledReason] = useState('Returns and refunds for DSF Wallet-paid orders are currently disabled by store management.');
   const [savingWalletSettings, setSavingWalletSettings] = useState(false);
+  const [savingReturnSettings, setSavingReturnSettings] = useState(false);
+
+  const isVoucherRedeemed = (v) => {
+    if (!v) return false;
+    return Boolean(
+      v.isRedeemed || 
+      v.is_redeemed || 
+      v.redeemed || 
+      v.redeemedAt || 
+      v.redeemed_at || 
+      v.redeemedByUserId || 
+      v.redeemed_by_user_id
+    );
+  };
 
   const loadData = async () => {
     try {
@@ -143,6 +159,8 @@ const AdminWalletPage = () => {
         const ws = publicSettingsRes.data.wallet_settings;
         setWalletEnabled(ws.enabled !== false);
         if (ws.disabled_reason) setDisabledReason(ws.disabled_reason);
+        setReturnsEnabled(ws.returns_enabled !== false);
+        if (ws.returns_disabled_reason) setReturnsDisabledReason(ws.returns_disabled_reason);
       }
     } catch (err) {
       console.error('Failed to load admin wallet data:', err);
@@ -155,22 +173,44 @@ const AdminWalletPage = () => {
     loadData();
   }, []);
 
+  const handleSaveSettings = async (updates) => {
+    const newSettings = {
+      enabled: walletEnabled,
+      disabled_reason: disabledReason.trim(),
+      returns_enabled: returnsEnabled,
+      returns_disabled_reason: returnsDisabledReason.trim(),
+      ...updates
+    };
+    await apiClient.post('/admin/settings', {
+      key: 'wallet_settings',
+      value: newSettings
+    });
+    return newSettings;
+  };
+
   const handleToggleWalletSystem = async (targetState) => {
     setSavingWalletSettings(true);
     try {
-      await apiClient.post('/admin/settings', {
-        key: 'wallet_settings',
-        value: {
-          enabled: targetState,
-          disabled_reason: disabledReason.trim()
-        }
-      });
+      await handleSaveSettings({ enabled: targetState });
       setWalletEnabled(targetState);
       toast.success(`DSF Digital Wallet System has been ${targetState ? 'ENABLED' : 'DISABLED'} successfully!`);
     } catch (err) {
       toast.error('Failed to update wallet system status');
     } finally {
       setSavingWalletSettings(false);
+    }
+  };
+
+  const handleToggleWalletReturns = async (targetState) => {
+    setSavingReturnSettings(true);
+    try {
+      await handleSaveSettings({ returns_enabled: targetState });
+      setReturnsEnabled(targetState);
+      toast.success(`Wallet Order Returns & Refunds have been ${targetState ? 'ALLOWED' : 'DISABLED / BLOCKED'} successfully!`);
+    } catch (err) {
+      toast.error('Failed to update wallet return policy status');
+    } finally {
+      setSavingReturnSettings(false);
     }
   };
 
@@ -286,80 +326,115 @@ const AdminWalletPage = () => {
         </div>
       </div>
 
-      {/* WALLET SYSTEM MASTER TOGGLE CONTROL */}
-      <div className={`p-6 rounded-3xl border transition-all ${
-        walletEnabled 
-          ? 'bg-emerald-500/5 border-emerald-500/20 dark:bg-emerald-500/10' 
-          : 'bg-amber-500/5 border-amber-500/20 dark:bg-amber-500/10'
-      }`}>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className={`p-3 rounded-2xl shrink-0 ${walletEnabled ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
-              <ShieldAlert className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                  DSF Digital Wallet System Control
-                </h2>
-                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
-                  walletEnabled 
-                    ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
-                    : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                }`}>
-                  {walletEnabled ? 'ACTIVE / ENABLED' : 'DISABLED / PAUSED'}
-                </span>
+      {/* WALLET SYSTEM CONTROLS (2 SEPARATE TOGGLE BUTTONS) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* 1. MASTER WALLET SYSTEM TOGGLE */}
+        <div className={`p-6 rounded-3xl border transition-all ${
+          walletEnabled 
+            ? 'bg-emerald-500/5 border-emerald-500/20 dark:bg-emerald-500/10' 
+            : 'bg-amber-500/5 border-amber-500/20 dark:bg-amber-500/10'
+        }`}>
+          <div className="flex flex-col justify-between h-full space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className={`p-3 rounded-2xl shrink-0 ${walletEnabled ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                      DSF Digital Wallet System
+                    </h2>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      walletEnabled 
+                        ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                        : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                    }`}>
+                      {walletEnabled ? 'ACTIVE' : 'DISABLED'}
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mt-1">
+                    {walletEnabled 
+                      ? 'Customers can pay via wallet at checkout, top-up, and redeem vouchers.'
+                      : 'Checkout wallet payments, top-ups, and voucher redemptions are paused.'
+                    }
+                  </p>
+                </div>
               </div>
-              <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mt-1">
-                {walletEnabled 
-                  ? 'DSF Wallet is active. Customers can pay via wallet at checkout, top-up, redeem vouchers, and receive wallet refunds.'
-                  : 'DSF Wallet is disabled. Customers CANNOT select wallet at checkout, top-up, redeem vouchers, or return/cancel orders for wallet refunds.'
-                }
-              </p>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              onClick={() => handleToggleWalletSystem(!walletEnabled)}
-              disabled={savingWalletSettings}
-              className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all shadow-md flex items-center gap-2 ${
-                walletEnabled 
-                  ? 'bg-amber-500 hover:bg-amber-600 text-white' 
-                  : 'bg-emerald-500 hover:bg-emerald-600 text-white'
-              }`}
-            >
-              {savingWalletSettings && <RefreshCw className="w-4 h-4 animate-spin" />}
-              {walletEnabled ? 'Disable Wallet System' : 'Enable Wallet System'}
-            </button>
-          </div>
-        </div>
-
-        {!walletEnabled && (
-          <div className="mt-4 pt-4 border-t border-amber-500/20 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <div className="md:col-span-2">
-              <label className="block text-[11px] font-black uppercase text-amber-700 dark:text-amber-300 mb-1">
-                Custom Disabled Notice for Customers:
-              </label>
-              <input
-                type="text"
-                value={disabledReason}
-                onChange={(e) => setDisabledReason(e.target.value)}
-                placeholder="Message shown to customers when wallet is disabled"
-                className="w-full px-4 py-2 text-xs rounded-xl bg-white dark:bg-black/40 border border-amber-500/30 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-            <div className="flex items-end">
+            <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex items-center justify-between gap-3">
+              <span className="text-[11px] font-bold text-slate-500">Master System Toggle:</span>
               <button
-                onClick={() => handleToggleWalletSystem(false)}
+                onClick={() => handleToggleWalletSystem(!walletEnabled)}
                 disabled={savingWalletSettings}
-                className="px-4 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs rounded-xl uppercase tracking-wider hover:opacity-90 transition-opacity"
+                className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-sm flex items-center gap-2 ${
+                  walletEnabled 
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white' 
+                    : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                }`}
               >
-                Save Notice
+                {savingWalletSettings && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                {walletEnabled ? 'Disable Wallet System' : 'Enable Wallet System'}
               </button>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* 2. DEDICATED WALLET RETURN & REFUND POLICY TOGGLE */}
+        <div className={`p-6 rounded-3xl border transition-all ${
+          returnsEnabled 
+            ? 'bg-emerald-500/5 border-emerald-500/20 dark:bg-emerald-500/10' 
+            : 'bg-rose-500/5 border-rose-500/20 dark:bg-rose-500/10'
+        }`}>
+          <div className="flex flex-col justify-between h-full space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className={`p-3 rounded-2xl shrink-0 ${returnsEnabled ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                      Wallet Order Returns & Refunds
+                    </h2>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      returnsEnabled 
+                        ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                        : 'bg-rose-500/20 text-rose-600 dark:text-rose-400'
+                    }`}>
+                      {returnsEnabled ? 'RETURNS ALLOWED' : 'RETURNS BLOCKED'}
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-300 mt-1">
+                    {returnsEnabled 
+                      ? 'Customers can request returns and cancellations for wallet-paid orders.'
+                      : 'Returns, cancellations & wallet refunds are BLOCKED for all wallet-paid orders.'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex items-center justify-between gap-3">
+              <span className="text-[11px] font-bold text-slate-500">Return Policy Toggle:</span>
+              <button
+                onClick={() => handleToggleWalletReturns(!returnsEnabled)}
+                disabled={savingReturnSettings}
+                className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-sm flex items-center gap-2 ${
+                  returnsEnabled 
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white' 
+                    : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                }`}
+              >
+                {savingReturnSettings && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                {returnsEnabled ? 'Disallow Wallet Returns' : 'Allow Wallet Returns'}
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -516,9 +591,9 @@ const AdminWalletPage = () => {
                     </button>
                   </div>
                   <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase ${
-                    v.isRedeemed ? 'bg-slate-800 text-slate-400' : 'bg-emerald-500/20 text-emerald-400'
+                    isVoucherRedeemed(v) ? 'bg-slate-800 text-slate-400' : 'bg-emerald-500/20 text-emerald-400'
                   }`}>
-                    {v.isRedeemed ? 'Redeemed' : 'Active'}
+                    {isVoucherRedeemed(v) ? 'Redeemed' : 'Active'}
                   </span>
                 </div>
                 <p className="text-lg font-black text-slate-900 dark:text-white">{formatCurrency(v.amount)}</p>
