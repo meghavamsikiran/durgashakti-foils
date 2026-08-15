@@ -499,6 +499,7 @@ const AdminOrderDetailsPage = () => {
       setMessageModal(null);
       setAdminMessage('');
       const response = await adminService.updateOrderStatus(orderId, { status: newStatus, admin_message: message, ...extraData });
+      apiClient.invalidateCache('/admin/orders');
       const serverOrder = response?.data?.order;
       if (serverOrder) {
         setOrder(serverOrder);
@@ -507,7 +508,7 @@ const AdminOrderDetailsPage = () => {
         toast.warning(response.data.warning, { duration: 8000 });
       }
       toast.success(`Order status updated to ${statusLabel(newStatus)}`, { id: toastId });
-      setTimeout(() => fetchOrderDetails(true), 800);
+      setTimeout(() => fetchOrderDetails(true), 500);
     } catch (err) {
       const detail = err?.data?.detail || err?.response?.data?.detail || err?.message;
       if (err.status === 400 && String(detail).includes('Razorpay account has insufficient balance')) {

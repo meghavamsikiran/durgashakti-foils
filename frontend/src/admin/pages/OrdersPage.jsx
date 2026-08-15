@@ -505,21 +505,31 @@ const OrdersPage = () => {
         localStorage.removeItem(`admin_order_detail_${orderId}`);
       } catch (e) {}
       const response = await adminService.updateOrderStatus(orderId, { status: newStatus, admin_message: message, ...extraData });
+      apiClient.invalidateCache('/admin/orders');
       const serverOrder = response?.data?.order || (response?.data?.id ? response.data : null);
+      const targetStatus = newStatus.toUpperCase();
+      const targetOrderStatus = newStatus.toLowerCase();
       if (serverOrder) {
         const normalizedOrder = {
           ...serverOrder,
-          status: (serverOrder.order_status || serverOrder.status || '').toUpperCase(),
-          order_status: (serverOrder.order_status || serverOrder.status || '').toLowerCase()
+          status: (serverOrder.order_status || serverOrder.status || targetStatus).toUpperCase(),
+          order_status: (serverOrder.order_status || serverOrder.status || targetOrderStatus).toLowerCase()
         };
         setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
         setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
+      } else {
+        const fallbackOrder = patchOrderStatus(rows.find(r => r.id === orderId), newStatus, extraData);
+        setRows(prev => prev.map(order => order.id === orderId ? fallbackOrder : order));
+        setSelectedOrderForModal(prev => prev?.id === orderId ? fallbackOrder : prev);
       }
       if (response?.data?.warning) {
         toast.warning(response.data.warning, { duration: 8000 });
       }
       toast.success(`Order status updated to ${statusLabel(newStatus)}`, { id: toastId });
-      setTimeout(() => loadSilent(page), 1000);
+      setTimeout(() => {
+        apiClient.invalidateCache('/admin/orders');
+        loadSilent(page);
+      }, 500);
     } catch (err) {
       setRows(previousRows);
       setSelectedOrderForModal(previousModalOrder);
