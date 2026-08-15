@@ -1034,7 +1034,7 @@ public class OrderServiceImpl implements OrderService {
         String pStatusStr = (order.getPaymentStatus() != null ? order.getPaymentStatus() : "").toLowerCase();
         if ("wallet".equals(pMethodStr) || "dsf_wallet".equals(pMethodStr) || pStatusStr.contains("wallet")) {
             String rType = returnType != null ? returnType.trim().toLowerCase() : "refund";
-            if (!"replacement".equalsIgnoreCase(rType)) {
+            if (!"replacement".equalsIgnoreCase(rType) && !"exchange".equalsIgnoreCase(rType)) {
                 Map<String, Object> wStatus = checkWalletReturnsEnabled();
                 if (Boolean.FALSE.equals(wStatus.get("enabled"))) {
                     throw new ApiException(HttpStatus.BAD_REQUEST, String.valueOf(wStatus.get("reason")));
