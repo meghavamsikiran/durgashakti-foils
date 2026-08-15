@@ -16,26 +16,29 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.*;
 
 @RestController
 @RequestMapping("/api/geolocation")
 public class GeolocationController {
 
     private static final Logger log = LoggerFactory.getLogger(GeolocationController.class);
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(5))
+            .build();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ExecutorService executor = Executors.newCachedThreadPool();
 
     @GetMapping("/reverse-geocode")
     public ResponseEntity<Map<String, Object>> reverseGeocode(
             @RequestParam("lat") double lat,
             @RequestParam("lon") double lon) {
-        
+
         log.info("Reverse geocoding request for lat={}, lon={}", lat, lon);
         Map<String, Object> result = new HashMap<>();
 
-        // 1. Primary Provider for High-Precision India Geocoding: BigDataCloud
+        // 1. BigDataCloud
         try {
             String bdcUrl = String.format("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=%f&longitude=%f&localityLanguage=en", lat, lon);
             HttpRequest bdcReq = HttpRequest.newBuilder()
@@ -50,7 +53,7 @@ public class GeolocationController {
                 JsonNode root = objectMapper.readTree(bdcResp.body());
                 String city = root.path("city").asText("").trim();
                 if (city.isEmpty()) city = root.path("locality").asText("").trim();
-                
+
                 String state = root.path("principalSubdivision").asText("").trim();
                 String locality = root.path("locality").asText("").trim();
                 String pincode = root.path("postcode").asText("").trim();
@@ -71,10 +74,10 @@ public class GeolocationController {
             log.warn("BigDataCloud geocoding error: {}", e.getMessage());
         }
 
-        // 2. Secondary Provider: Nominatim OpenStreetMap
+        // 2. Nominatim OpenStreetMap
         try {
             String url = String.format("https://nominatim.openstreetmap.org/reverse?lat=%f&lon=%f&format=json&accept-language=en", lat, lon);
-            
+
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("User-Agent", "DurgaShaktiFoils/1.0 (meghavamsikiran@gmail.com)")
@@ -131,107 +134,236 @@ public class GeolocationController {
     }
 
     /**
-     * IP-based geolocation: extracts the caller's real IP from the request
-     * (respecting X-Forwarded-For from Render/Vercel proxy) and queries
-     * ip-api.com for real location data.
+     * IP-based geolocation: queries MULTIPLE free IP geo providers in PARALLEL
+     * and returns ALL results so the frontend can cross-reference and pick the best.
      */
     @GetMapping("/ip-lookup")
     public ResponseEntity<Map<String, Object>> ipLookup(HttpServletRequest request) {
         Map<String, Object> result = new HashMap<>();
 
-        // Extract real client IP (Render/Vercel sets X-Forwarded-For)
-        String clientIp = request.getHeader("X-Forwarded-For");
-        if (clientIp != null && !clientIp.isEmpty()) {
-            // X-Forwarded-For can be comma-separated; first IP is the real client
-            clientIp = clientIp.split(",")[0].trim();
-        }
-        if (clientIp == null || clientIp.isEmpty() || "127.0.0.1".equals(clientIp) || "0:0:0:0:0:0:0:1".equals(clientIp)) {
-            clientIp = request.getRemoteAddr();
-        }
+        String clientIp = extractClientIp(request);
 
-        // Skip private/loopback IPs (local dev)
-        if (clientIp == null || clientIp.startsWith("127.") || clientIp.startsWith("10.") 
-            || clientIp.startsWith("192.168.") || clientIp.equals("0:0:0:0:0:0:0:1")) {
+        if (clientIp == null || isPrivateIp(clientIp)) {
             log.info("IP lookup skipped for private/loopback IP: {}", clientIp);
             return ResponseEntity.ok(result);
         }
 
         log.info("IP lookup for client IP: {}", clientIp);
+        result.put("ip", clientIp);
 
-        // 1. Primary: ip-api.com (free, no key needed, good India coverage)
+        // Query all providers in parallel
+        List<Future<Map<String, Object>>> futures = new ArrayList<>();
+        futures.add(executor.submit(() -> queryIpApi(clientIp)));
+        futures.add(executor.submit(() -> queryIpApiCo(clientIp)));
+        futures.add(executor.submit(() -> queryIpInfoIo(clientIp)));
+        futures.add(executor.submit(() -> queryIpWhois(clientIp)));
+
+        List<Map<String, Object>> providerResults = new ArrayList<>();
+        for (Future<Map<String, Object>> f : futures) {
+            try {
+                Map<String, Object> r = f.get(6, TimeUnit.SECONDS);
+                if (r != null && !r.isEmpty()) {
+                    providerResults.add(r);
+                }
+            } catch (Exception e) {
+                // Provider timed out or failed, skip
+            }
+        }
+
+        result.put("providers", providerResults);
+        result.put("count", providerResults.size());
+
+        // Pick the best result by consensus voting on city
+        if (!providerResults.isEmpty()) {
+            Map<String, Integer> cityVotes = new HashMap<>();
+            for (Map<String, Object> pr : providerResults) {
+                String city = (String) pr.getOrDefault("city", "");
+                if (!city.isEmpty()) {
+                    cityVotes.merge(city, 1, Integer::sum);
+                }
+            }
+
+            // Find city with most votes
+            String bestCity = "";
+            int maxVotes = 0;
+            for (Map.Entry<String, Integer> e : cityVotes.entrySet()) {
+                if (e.getValue() > maxVotes) {
+                    maxVotes = e.getValue();
+                    bestCity = e.getKey();
+                }
+            }
+
+            // Use the provider result that has the winning city
+            if (!bestCity.isEmpty()) {
+                for (Map<String, Object> pr : providerResults) {
+                    if (bestCity.equals(pr.get("city"))) {
+                        result.put("city", pr.get("city"));
+                        result.put("state", pr.get("state"));
+                        result.put("pincode", pr.getOrDefault("pincode", ""));
+                        result.put("latitude", pr.getOrDefault("latitude", 0.0));
+                        result.put("longitude", pr.getOrDefault("longitude", 0.0));
+                        result.put("source", pr.get("source") + " (consensus: " + maxVotes + "/" + providerResults.size() + ")");
+                        break;
+                    }
+                }
+            } else if (!providerResults.isEmpty()) {
+                // No city consensus, use first result
+                Map<String, Object> first = providerResults.get(0);
+                result.put("city", first.getOrDefault("city", ""));
+                result.put("state", first.getOrDefault("state", ""));
+                result.put("pincode", first.getOrDefault("pincode", ""));
+                result.put("latitude", first.getOrDefault("latitude", 0.0));
+                result.put("longitude", first.getOrDefault("longitude", 0.0));
+                result.put("source", first.get("source"));
+            }
+
+            log.info("IP lookup consensus result: city={}, state={}, votes={}/{}", 
+                    result.get("city"), result.get("state"), maxVotes, providerResults.size());
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    // ─── Provider query methods ───────────────────────────────────────
+
+    private Map<String, Object> queryIpApi(String ip) {
         try {
-            String url = String.format("http://ip-api.com/json/%s?fields=status,city,regionName,zip,lat,lon,query", clientIp);
-            HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(5))
-                    .GET()
-                    .build();
-
-            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            String url = String.format("http://ip-api.com/json/%s?fields=status,city,regionName,zip,lat,lon", ip);
+            HttpResponse<String> resp = httpClient.send(
+                    HttpRequest.newBuilder().uri(URI.create(url)).timeout(Duration.ofSeconds(5)).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
 
             if (resp.statusCode() == 200) {
                 JsonNode root = objectMapper.readTree(resp.body());
                 if ("success".equals(root.path("status").asText(""))) {
-                    String city = root.path("city").asText("").trim();
-                    String state = root.path("regionName").asText("").trim();
-                    String pincode = root.path("zip").asText("").trim();
-                    double lat = root.path("lat").asDouble(0);
-                    double lon = root.path("lon").asDouble(0);
-
-                    if (!city.isEmpty() || !state.isEmpty()) {
-                        result.put("source", "ip-api.com");
-                        result.put("city", city);
-                        result.put("state", state);
-                        result.put("pincode", pincode);
-                        result.put("latitude", lat);
-                        result.put("longitude", lon);
-                        result.put("ip", clientIp);
-                        log.info("ip-api.com lookup success: city={}, state={}, pincode={}, ip={}", city, state, pincode, clientIp);
-                        return ResponseEntity.ok(result);
-                    }
+                    Map<String, Object> r = new HashMap<>();
+                    r.put("source", "ip-api.com");
+                    r.put("city", root.path("city").asText("").trim());
+                    r.put("state", root.path("regionName").asText("").trim());
+                    r.put("pincode", root.path("zip").asText("").trim());
+                    r.put("latitude", root.path("lat").asDouble(0));
+                    r.put("longitude", root.path("lon").asDouble(0));
+                    return r;
                 }
             }
         } catch (Exception e) {
-            log.warn("ip-api.com lookup error: {}", e.getMessage());
+            log.warn("ip-api.com error: {}", e.getMessage());
         }
+        return null;
+    }
 
-        // 2. Fallback: ipapi.co (free tier, 1000 req/day)
+    private Map<String, Object> queryIpApiCo(String ip) {
         try {
-            String url = String.format("https://ipapi.co/%s/json/", clientIp);
-            HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("User-Agent", "DurgaShaktiFoils/1.0")
-                    .timeout(Duration.ofSeconds(5))
-                    .GET()
-                    .build();
+            String url = String.format("https://ipapi.co/%s/json/", ip);
+            HttpResponse<String> resp = httpClient.send(
+                    HttpRequest.newBuilder().uri(URI.create(url))
+                            .header("User-Agent", "DurgaShaktiFoils/1.0")
+                            .timeout(Duration.ofSeconds(5)).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
 
-            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() == 200) {
+                JsonNode root = objectMapper.readTree(resp.body());
+                if (!root.has("error")) {
+                    Map<String, Object> r = new HashMap<>();
+                    r.put("source", "ipapi.co");
+                    r.put("city", root.path("city").asText("").trim());
+                    r.put("state", root.path("region").asText("").trim());
+                    r.put("pincode", root.path("postal").asText("").trim());
+                    r.put("latitude", root.path("latitude").asDouble(0));
+                    r.put("longitude", root.path("longitude").asDouble(0));
+                    return r;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("ipapi.co error: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private Map<String, Object> queryIpInfoIo(String ip) {
+        try {
+            String url = String.format("https://ipinfo.io/%s/json", ip);
+            HttpResponse<String> resp = httpClient.send(
+                    HttpRequest.newBuilder().uri(URI.create(url))
+                            .header("User-Agent", "DurgaShaktiFoils/1.0")
+                            .timeout(Duration.ofSeconds(5)).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
 
             if (resp.statusCode() == 200) {
                 JsonNode root = objectMapper.readTree(resp.body());
                 String city = root.path("city").asText("").trim();
                 String state = root.path("region").asText("").trim();
                 String pincode = root.path("postal").asText("").trim();
-                double lat = root.path("latitude").asDouble(0);
-                double lon = root.path("longitude").asDouble(0);
+                String loc = root.path("loc").asText("").trim(); // "lat,lon"
+
+                double lat = 0, lon = 0;
+                if (!loc.isEmpty() && loc.contains(",")) {
+                    String[] parts = loc.split(",");
+                    lat = Double.parseDouble(parts[0].trim());
+                    lon = Double.parseDouble(parts[1].trim());
+                }
 
                 if (!city.isEmpty() || !state.isEmpty()) {
-                    result.put("source", "ipapi.co");
-                    result.put("city", city);
-                    result.put("state", state);
-                    result.put("pincode", pincode);
-                    result.put("latitude", lat);
-                    result.put("longitude", lon);
-                    result.put("ip", clientIp);
-                    log.info("ipapi.co lookup success: city={}, state={}, pincode={}, ip={}", city, state, pincode, clientIp);
-                    return ResponseEntity.ok(result);
+                    Map<String, Object> r = new HashMap<>();
+                    r.put("source", "ipinfo.io");
+                    r.put("city", city);
+                    r.put("state", state);
+                    r.put("pincode", pincode);
+                    r.put("latitude", lat);
+                    r.put("longitude", lon);
+                    return r;
                 }
             }
         } catch (Exception e) {
-            log.warn("ipapi.co lookup error: {}", e.getMessage());
+            log.warn("ipinfo.io error: {}", e.getMessage());
         }
+        return null;
+    }
 
-        log.warn("All IP lookup providers failed for IP: {}", clientIp);
-        return ResponseEntity.ok(result);
+    private Map<String, Object> queryIpWhois(String ip) {
+        try {
+            String url = String.format("https://ipwho.is/%s", ip);
+            HttpResponse<String> resp = httpClient.send(
+                    HttpRequest.newBuilder().uri(URI.create(url))
+                            .header("User-Agent", "DurgaShaktiFoils/1.0")
+                            .timeout(Duration.ofSeconds(5)).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
+
+            if (resp.statusCode() == 200) {
+                JsonNode root = objectMapper.readTree(resp.body());
+                if (root.path("success").asBoolean(false)) {
+                    Map<String, Object> r = new HashMap<>();
+                    r.put("source", "ipwho.is");
+                    r.put("city", root.path("city").asText("").trim());
+                    r.put("state", root.path("region").asText("").trim());
+                    r.put("pincode", root.path("postal").asText("").trim());
+                    r.put("latitude", root.path("latitude").asDouble(0));
+                    r.put("longitude", root.path("longitude").asDouble(0));
+                    return r;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("ipwho.is error: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────
+
+    private String extractClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip != null && !ip.isEmpty()) {
+            ip = ip.split(",")[0].trim();
+        }
+        if (ip == null || ip.isEmpty() || "127.0.0.1".equals(ip) || "0:0:0:0:0:0:0:1".equals(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        return ip;
+    }
+
+    private boolean isPrivateIp(String ip) {
+        return ip == null || ip.startsWith("127.") || ip.startsWith("10.")
+                || ip.startsWith("192.168.") || ip.startsWith("172.16.")
+                || ip.equals("0:0:0:0:0:0:0:1");
     }
 }
