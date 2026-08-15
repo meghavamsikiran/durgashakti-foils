@@ -184,6 +184,8 @@ public class OrderServiceImpl implements OrderService {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Product " + product.getName() + " is out of stock or has insufficient quantity.");
             }
 
+            int currentUnitsSold = product.getUnitsSold() != null ? product.getUnitsSold() : 0;
+            product.setUnitsSold(currentUnitsSold + requestedQty);
             product.setStockQuantity(product.getStockQuantity() - requestedQty);
             productRepository.save(product);
 
@@ -198,6 +200,10 @@ public class OrderServiceImpl implements OrderService {
             enrichedItem.put("product_name", product.getName());
             enrichedItem.put("price", price);
             enrichedItem.put("image_url", product.getImageUrl());
+            double itemCgst = Math.round((price * requestedQty) * 0.09 * 100.0) / 100.0;
+            double itemSgst = Math.round((price * requestedQty) * 0.09 * 100.0) / 100.0;
+            enrichedItem.put("cgst", itemCgst);
+            enrichedItem.put("sgst", itemSgst);
             verifiedItems.add(enrichedItem);
         }
 
@@ -505,7 +511,22 @@ public class OrderServiceImpl implements OrderService {
             if (Boolean.FALSE.equals(wStatus.get("enabled"))) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, String.valueOf(wStatus.get("reason")));
             }
-            BigDecimal refundAmt = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+            BigDecimal refundAmt = BigDecimal.ZERO;
+            try {
+                List<Map<String, Object>> txRows = jdbcTemplate.queryForList(
+                    "SELECT amount FROM wallet_transactions WHERE reference_id = ? AND type = 'DEBIT' AND status = 'SUCCESS'", order.getOrderNumber()
+                );
+                if (!txRows.isEmpty() && txRows.get(0).get("amount") != null) {
+                    refundAmt = new BigDecimal(txRows.get(0).get("amount").toString());
+                } else if ("wallet".equals(pMethod) || "dsf_wallet".equals(pMethod)) {
+                    refundAmt = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+                }
+            } catch (Exception ex) {
+                log.error("Failed to fetch wallet deduction amount for order {}: {}", order.getOrderNumber(), ex.getMessage());
+                if ("wallet".equals(pMethod) || "dsf_wallet".equals(pMethod)) {
+                    refundAmt = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+                }
+            }
             if (refundAmt.compareTo(BigDecimal.ZERO) > 0) {
                 try {
                     jdbcTemplate.update(
@@ -551,7 +572,30 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        order.setPaymentStatus("refunded");
+        BigDecimal refundAmtFromTotal = BigDecimal.ZERO;
+        if ("wallet".equals(pMethod) || "dsf_wallet".equals(pMethod) || pStatus.contains("wallet")) {
+            try {
+                List<Map<String, Object>> txRows = jdbcTemplate.queryForList(
+                    "SELECT amount FROM wallet_transactions WHERE reference_id = ? AND type = 'DEBIT' AND status = 'SUCCESS'", order.getOrderNumber()
+                );
+                if (!txRows.isEmpty() && txRows.get(0).get("amount") != null) {
+                    refundAmtFromTotal = new BigDecimal(txRows.get(0).get("amount").toString());
+                } else if ("wallet".equals(pMethod) || "dsf_wallet".equals(pMethod)) {
+                    refundAmtFromTotal = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+                }
+            } catch (Exception ex) {
+                if ("wallet".equals(pMethod) || "dsf_wallet".equals(pMethod)) {
+                    refundAmtFromTotal = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+                }
+            }
+        }
+        
+        if (order.getTotalAmount() != null && order.getTotalAmount().compareTo(refundAmtFromTotal) > 0 && order.getRazorpayOrderId() != null) {
+            order.setPaymentStatus("refund_pending");
+        } else {
+            order.setPaymentStatus("refunded");
+        }
+        
         order.setUpdatedAt(OffsetDateTime.now());
         return orderRepository.save(order);
     }

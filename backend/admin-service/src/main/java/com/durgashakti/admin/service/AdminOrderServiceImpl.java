@@ -302,33 +302,52 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             String pMethod = (order.getPaymentMethod() != null ? order.getPaymentMethod() : "").toLowerCase();
 
             if (pStatus.contains("paid") || pStatus.contains("completed") || "wallet".equalsIgnoreCase(pMethod) || "dsf_wallet".equalsIgnoreCase(pMethod)) {
-                double refundAmt = order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0;
+                double totalAmt = order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0;
+                double walletRefundAmt = 0.0;
                 
                 if ("wallet".equalsIgnoreCase(pMethod) || "dsf_wallet".equalsIgnoreCase(pMethod) || pStatus.contains("wallet")) {
+                    try {
+                        List<Map<String, Object>> txRows = jdbcTemplate.queryForList(
+                            "SELECT amount FROM wallet_transactions WHERE reference_id = ? AND type = 'DEBIT' AND status = 'SUCCESS'", order.getOrderNumber()
+                        );
+                        if (!txRows.isEmpty() && txRows.get(0).get("amount") != null) {
+                            walletRefundAmt = Double.parseDouble(txRows.get(0).get("amount").toString());
+                        } else if ("wallet".equalsIgnoreCase(pMethod) || "dsf_wallet".equalsIgnoreCase(pMethod)) {
+                            walletRefundAmt = totalAmt;
+                        }
+                    } catch (Exception ex) {
+                        if ("wallet".equalsIgnoreCase(pMethod) || "dsf_wallet".equalsIgnoreCase(pMethod)) {
+                            walletRefundAmt = totalAmt;
+                        }
+                    }
+                    
                     if (!isWalletReturnsEnabled()) {
                         log.warn("[Wallet Refund Blocked] Cancelled order {}: DSF Wallet returns and refunds are disabled", order.getOrderNumber());
-                    } else if (order.getUserId() != null && refundAmt > 0) {
+                    } else if (order.getUserId() != null && walletRefundAmt > 0) {
                         try {
                             jdbcTemplate.update(
                                 "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +
                                 "VALUES (gen_random_uuid(), ?, ?, NOW(), NOW()) " +
                                 "ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance, updated_at = NOW()",
-                                order.getUserId(), refundAmt
+                                order.getUserId(), walletRefundAmt
                             );
                             jdbcTemplate.update(
                                 "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
                                 "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'ORDER_REFUND', ?, ?, 'SUCCESS', NOW())",
-                                order.getUserId(), java.math.BigDecimal.valueOf(refundAmt), order.getOrderNumber(), "Refund for cancelled order #" + order.getOrderNumber()
+                                order.getUserId(), java.math.BigDecimal.valueOf(walletRefundAmt), order.getOrderNumber(), "Refund for cancelled order #" + order.getOrderNumber()
                             );
                             order.setPaymentStatus("refunded");
-                            log.info("[Wallet Refund] Successfully refunded ₹{} to wallet for user {} on cancelled order {}", refundAmt, order.getUserId(), order.getOrderNumber());
+                            log.info("[Wallet Refund] Successfully refunded ₹{} to wallet for user {} on cancelled order {}", walletRefundAmt, order.getUserId(), order.getOrderNumber());
                         } catch (Exception ex) {
                             log.error("[Wallet Refund Failed] Error refunding wallet for order {}: {}", order.getOrderNumber(), ex.getMessage());
                         }
                     }
-                } else if (order.getRazorpayPaymentId() != null && !order.getRazorpayPaymentId().isBlank()) {
+                }
+                
+                double razorpayRefundAmt = totalAmt - walletRefundAmt;
+                if (razorpayRefundAmt > 0 && order.getRazorpayPaymentId() != null && !order.getRazorpayPaymentId().isBlank()) {
                     // Razorpay refund
-                    Map<String, Object> rzpRes = attemptRazorpayRefund(order.getRazorpayPaymentId(), refundAmt, order.getOrderNumber());
+                    Map<String, Object> rzpRes = attemptRazorpayRefund(order.getRazorpayPaymentId(), razorpayRefundAmt, order.getOrderNumber());
                     if (Boolean.TRUE.equals(rzpRes.get("success"))) {
                         String rzpStatus = (String) rzpRes.get("status");
                         if ("processed".equalsIgnoreCase(rzpStatus)) {
@@ -337,7 +356,10 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                             order.setPaymentStatus("refund_pending");
                         }
                     }
+                } else if (walletRefundAmt > 0 && razorpayRefundAmt <= 0) {
+                    order.setPaymentStatus("refunded");
                 }
+                
                 log.info("Cancelled paid order {} -- final payment status: {}", order.getOrderNumber(), order.getPaymentStatus());
             }
 
@@ -575,6 +597,13 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                         if (qty <= 0) qty = 1;
                         double cgst = toDouble(item.get("cgst"));
                         double sgst = toDouble(item.get("sgst"));
+                        
+                        if (cgst == 0.0 && sgst == 0.0) {
+                            double taxable = itemPrice * qty;
+                            cgst = Math.round(taxable * 0.09 * 100.0) / 100.0;
+                            sgst = Math.round(taxable * 0.09 * 100.0) / 100.0;
+                        }
+                        
                         itemRefund = Math.round(((itemPrice * qty) + cgst + sgst) * 100.0) / 100.0;
                     }
                     @SuppressWarnings("unchecked")
