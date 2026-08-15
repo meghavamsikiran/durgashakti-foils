@@ -5,7 +5,7 @@ import { Button } from '../../../components/ui/button';
 import { calculateCheckoutPricing, normalizeShippingSettings } from '../../../utils/checkoutPricing';
 import apiClient from '../../../services/core/apiClient';
 
-const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codEnabled = true, shippingSettings, subtotal = 0, onBack }) => {
+const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codEnabled = true, shippingSettings, publicSettings: propPublicSettings, subtotal = 0, onBack }) => {
   const selectPaymentMethod = onSetPaymentMethod || setPaymentMethod;
   const config = normalizeShippingSettings(shippingSettings);
   const minCod = config.minimumCodAmount;
@@ -17,6 +17,12 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
     return cached?.data?.balance || 0;
   });
 
+  const [publicSettings, setPublicSettings] = React.useState(() => {
+    if (propPublicSettings) return propPublicSettings;
+    const cached = apiClient.getCachedDataSync('/settings/public');
+    return cached?.data || {};
+  });
+
   useEffect(() => {
     const fetchWallet = async () => {
       try {
@@ -26,6 +32,20 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
     };
     fetchWallet();
   }, []);
+
+  useEffect(() => {
+    if (propPublicSettings) {
+      setPublicSettings(propPublicSettings);
+      return;
+    }
+    const fetchPublicSettings = async () => {
+      try {
+        const res = await apiClient.get('/settings/public');
+        if (res.data) setPublicSettings(res.data);
+      } catch (err) {}
+    };
+    fetchPublicSettings();
+  }, [propPublicSettings]);
 
   const walletSettings = publicSettings?.wallet_settings || {};
   const walletSystemEnabled = walletSettings.enabled !== false;
