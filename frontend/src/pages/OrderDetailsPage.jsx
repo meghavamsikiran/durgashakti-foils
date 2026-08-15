@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star, Clock, Copy, ChevronDown } from 'lucide-react';
+import { Package, Truck, CreditCard, ExternalLink, Calendar, MapPin, Phone, Upload, Info, Wallet, ArrowLeft, X, Check, ArrowRight, Star, Clock, Copy, ChevronDown, AlertCircle } from 'lucide-react';
 import { Button } from './../components/ui/button';
 import { formatImageUrl, getProductImage, FALLBACK_FOIL_IMAGE } from './../utils/api';
 import { useProgress } from './../components/ui/ProgressToast';
@@ -1104,7 +1104,7 @@ const OrderDetailsPage = () => {
                               }}
                                                             className="px-2 py-1 rounded-lg border border-slate-200 dark:border-[#26322B] text-xs font-bold bg-white dark:bg-[#131B17] text-slate-800 dark:text-white focus:outline-none"
                             >
-                              {[...Array(item.quantity)].map((_, i) => (
+                              {Array.from({ length: Math.max(1, parseInt(item.quantity, 10) || 1) }).map((_, i) => (
                                 <option key={i+1} value={i+1}>{i+1}</option>
                               ))}
                             </select>
