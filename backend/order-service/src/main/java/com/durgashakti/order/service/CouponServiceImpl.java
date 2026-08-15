@@ -102,7 +102,8 @@ public class CouponServiceImpl implements CouponService {
         if (singleUsePerAccount) {
             boolean hasUsedCoupon = false;
             for (Order order : userOrders) {
-                if (!"cancelled".equalsIgnoreCase(order.getOrderStatus()) && order.getCouponCodes() != null && !order.getCouponCodes().isEmpty()) {
+                String st = order.getOrderStatus() != null ? order.getOrderStatus().toLowerCase() : "";
+                if (!List.of("cancelled", "failed", "expired").contains(st) && order.getCouponCodes() != null && !order.getCouponCodes().isEmpty()) {
                     hasUsedCoupon = true;
                     break;
                 }
@@ -181,7 +182,8 @@ public class CouponServiceImpl implements CouponService {
             // Customer usage limit
             long usageCount = 0;
             for (Order order : userOrders) {
-                if (!"cancelled".equalsIgnoreCase(order.getOrderStatus()) && order.getCouponCodes() != null) {
+                String st = order.getOrderStatus() != null ? order.getOrderStatus().toLowerCase() : "";
+                if (!List.of("cancelled", "failed", "expired").contains(st) && order.getCouponCodes() != null) {
                     if (order.getCouponCodes().stream().anyMatch(c -> c.trim().equalsIgnoreCase(codeUpper))) {
                         usageCount++;
                     }

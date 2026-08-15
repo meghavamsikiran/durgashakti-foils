@@ -10,6 +10,7 @@ import com.durgashakti.user.repository.UserProfileRepository;
 import com.razorpay.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
@@ -253,6 +254,7 @@ public class WalletController {
 
     // ── SUPERADMIN WALLET & VOUCHER ENDPOINTS ──
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Transactional
     @PostMapping("/admin/wallet/credit")
     public ResponseEntity<Map<String, Object>> adminDirectCredit(@RequestBody Map<String, Object> body, Authentication authentication) {
@@ -300,6 +302,7 @@ public class WalletController {
         ));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Transactional
     @PostMapping("/admin/wallet/vouchers")
     public ResponseEntity<Map<String, Object>> createVoucher(@RequestBody Map<String, Object> body, Authentication authentication) {
@@ -376,6 +379,7 @@ public class WalletController {
         return ResponseEntity.ok(Map.of("success", true, "vouchers", createdVouchers, "message", "Generated " + createdVouchers.size() + " voucher(s)"));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/admin/wallet/vouchers")
     public ResponseEntity<List<WalletVoucher>> getAllVouchers() {
         List<WalletVoucher> list = walletVoucherRepository.findAllByOrderByCreatedAtDesc();
@@ -387,6 +391,7 @@ public class WalletController {
         return ResponseEntity.ok(list);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @GetMapping("/admin/wallet/transactions")
     public ResponseEntity<List<WalletTransaction>> getAllWalletTransactions() {
         return ResponseEntity.ok(walletTransactionRepository.findAllByOrderByCreatedAtDesc());

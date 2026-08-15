@@ -484,6 +484,31 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
+        // Revert Coupon usage
+        List<String> couponCodes = order.getCouponCodes();
+        if (couponCodes != null && !couponCodes.isEmpty()) {
+            for (String code : couponCodes) {
+                try {
+                    Optional<Coupon> copOpt = couponRepository.findByCodeIgnoreCase(code.trim());
+                    if (copOpt.isPresent()) {
+                        Coupon cop = copOpt.get();
+                        if (cop.getTotalUses() != null && cop.getTotalUses() > 0) {
+                            cop.setTotalUses(cop.getTotalUses() - 1);
+                            couponRepository.save(cop);
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.error("Failed to revert coupon total_uses for code {}: {}", code, ex.getMessage());
+                }
+            }
+            try {
+                couponUsageRepository.deleteByOrderId(order.getId());
+                log.info("Reverted coupon usage records for cancelled order {}", order.getOrderNumber());
+            } catch (Exception ex) {
+                log.error("Failed to delete coupon usage records for order {}: {}", order.getOrderNumber(), ex.getMessage());
+            }
+        }
+
         order.setPaymentStatus("refunded");
         order.setUpdatedAt(OffsetDateTime.now());
         return orderRepository.save(order);

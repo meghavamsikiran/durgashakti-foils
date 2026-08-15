@@ -316,6 +316,24 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 log.info("Cancelled paid order {} -- final payment status: {}", order.getOrderNumber(), order.getPaymentStatus());
             }
 
+            // Revert coupon usage when order is cancelled
+            List<String> couponCodes = order.getCouponCodes();
+            if (couponCodes != null && !couponCodes.isEmpty()) {
+                for (String code : couponCodes) {
+                    try {
+                        jdbcTemplate.update("UPDATE coupons SET total_uses = GREATEST(0, total_uses - 1) WHERE LOWER(code) = LOWER(?)", code.trim());
+                    } catch (Exception ex) {
+                        log.error("Failed to revert coupon total_uses for code {}: {}", code, ex.getMessage());
+                    }
+                }
+                try {
+                    jdbcTemplate.update("DELETE FROM coupon_usages WHERE order_id = ?", order.getId());
+                    log.info("Reverted coupon usage records for admin cancelled order {}", order.getOrderNumber());
+                } catch (Exception ex) {
+                    log.error("Failed to delete coupon usage records for order {}: {}", order.getOrderNumber(), ex.getMessage());
+                }
+            }
+
             sendOrderEmail(order, "Order Cancelled: " + order.getOrderNumber(), 
                 "Your order " + order.getOrderNumber() + " has been cancelled. If this was a mistake, please contact support.");
         } else if ("return_approved".equals(statusLower)) {

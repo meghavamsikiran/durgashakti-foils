@@ -1,19 +1,24 @@
 package com.durgashakti.order.scheduler;
 
+import com.durgashakti.common.entity.Coupon;
 import com.durgashakti.common.entity.Order;
-import com.durgashakti.common.entity.Product;
-import com.durgashakti.order.repository.OrderServiceRepository;
+import com.durgashakti.order.repository.CouponUsageRepository;
+import com.durgashakti.order.repository.OrderCouponRepository;
 import com.durgashakti.order.repository.OrderProductRepository;
+import com.durgashakti.order.repository.OrderServiceRepository;
 import com.durgashakti.order.service.PaymentService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -23,14 +28,23 @@ public class PaymentTimeoutScheduler {
 
     private final OrderServiceRepository orderRepository;
     private final OrderProductRepository productRepository;
+    private final OrderCouponRepository couponRepository;
+    private final CouponUsageRepository couponUsageRepository;
     private final PaymentService paymentService;
+    private final JdbcTemplate jdbcTemplate;
 
     public PaymentTimeoutScheduler(OrderServiceRepository orderRepository, 
                                    OrderProductRepository productRepository,
-                                   PaymentService paymentService) {
+                                   OrderCouponRepository couponRepository,
+                                   CouponUsageRepository couponUsageRepository,
+                                   PaymentService paymentService,
+                                   JdbcTemplate jdbcTemplate) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.couponRepository = couponRepository;
+        this.couponUsageRepository = couponUsageRepository;
         this.paymentService = paymentService;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Scheduled(fixedDelay = 60000)
@@ -76,7 +90,7 @@ public class PaymentTimeoutScheduler {
             order.setAdminMessage("Payment session expired (15-minute timeout).");
             order.setUpdatedAt(OffsetDateTime.now());
 
-            // Restore product stock
+            // 1. Restore product stock
             List<Map<String, Object>> items = order.getItems();
             if (items != null) {
                 for (Map<String, Object> item : items) {
@@ -90,6 +104,56 @@ public class PaymentTimeoutScheduler {
                             log.info("Restored stock of product {} by quantity {} due to timeout of order {}", productId, qty, order.getOrderNumber());
                         });
                     }
+                }
+            }
+
+            // 2. Refund wallet balance if partial or full wallet payment was deducted during order creation
+            String pMethod = (order.getPaymentMethod() != null ? order.getPaymentMethod() : "").toLowerCase();
+            String pStatus = (order.getPaymentStatus() != null ? order.getPaymentStatus() : "").toLowerCase();
+            if ("wallet".equals(pMethod) || "dsf_wallet".equals(pMethod) || pStatus.contains("wallet")) {
+                BigDecimal refundAmt = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+                if (refundAmt.compareTo(BigDecimal.ZERO) > 0 && order.getUserId() != null) {
+                    try {
+                        jdbcTemplate.update(
+                            "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +
+                            "VALUES (gen_random_uuid(), ?, ?, NOW(), NOW()) " +
+                            "ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance, updated_at = NOW()",
+                            order.getUserId(), refundAmt
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
+                            "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'ORDER_REFUND', ?, ?, 'SUCCESS', NOW())",
+                            order.getUserId(), refundAmt, order.getOrderNumber(), "Refund for expired payment session order #" + order.getOrderNumber()
+                        );
+                        log.info("[Payment Timeout Wallet Refund] Refunded ₹{} to wallet for user {} on expired order {}", refundAmt, order.getUserId(), order.getOrderNumber());
+                    } catch (Exception ex) {
+                        log.error("[Payment Timeout Wallet Refund Failed] Order {}: {}", order.getOrderNumber(), ex.getMessage());
+                    }
+                }
+            }
+
+            // 3. Revert Coupon usage
+            List<String> couponCodes = order.getCouponCodes();
+            if (couponCodes != null && !couponCodes.isEmpty()) {
+                for (String code : couponCodes) {
+                    try {
+                        Optional<Coupon> copOpt = couponRepository.findByCodeIgnoreCase(code.trim());
+                        if (copOpt.isPresent()) {
+                            Coupon cop = copOpt.get();
+                            if (cop.getTotalUses() != null && cop.getTotalUses() > 0) {
+                                cop.setTotalUses(cop.getTotalUses() - 1);
+                                couponRepository.save(cop);
+                            }
+                        }
+                    } catch (Exception ex) {
+                        log.error("Failed to revert coupon total_uses for code {}: {}", code, ex.getMessage());
+                    }
+                }
+                try {
+                    couponUsageRepository.deleteByOrderId(order.getId());
+                    log.info("Reverted coupon usage records for expired order {}", order.getOrderNumber());
+                } catch (Exception ex) {
+                    log.error("Failed to delete coupon usage records for order {}: {}", order.getOrderNumber(), ex.getMessage());
                 }
             }
 

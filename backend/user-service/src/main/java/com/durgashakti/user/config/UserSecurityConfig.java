@@ -32,8 +32,11 @@ import java.util.List;
 
 import org.springframework.context.annotation.Profile;
 
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @Profile("!combined")
 public class UserSecurityConfig {
 
@@ -55,10 +58,10 @@ public class UserSecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Health check
                 .requestMatchers("/actuator/**").permitAll()
-                // All user, address, and admin endpoints require authentication
+                // All user and address endpoints require authentication
                 .requestMatchers("/api/user/**").authenticated()
                 .requestMatchers("/api/addresses/**").authenticated()
-                .requestMatchers("/api/admin/**").authenticated()
+                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .anyRequest().permitAll()
             )
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
