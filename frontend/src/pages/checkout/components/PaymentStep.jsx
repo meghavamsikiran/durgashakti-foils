@@ -61,7 +61,7 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
       description: (isFullWalletPayment
         ? `Pay 100% using wallet balance (₹${walletDeducted.toFixed(2)} deducted, ₹0.00 pending).`
         : `Deducts ₹${walletDeducted.toFixed(2)} from wallet. Pay remaining ₹${remainingPayable.toFixed(2)} online/COD.`
-      ) + (!walletReturnsEnabled ? ' (Note: Orders paid via DSF Wallet are non-returnable & non-refundable).' : '')
+      ) + (!walletReturnsEnabled ? ' (Note: Wallet refunds are disabled; product replacements remain allowed).' : '')
     });
   }
 
@@ -154,7 +154,7 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
           {!walletReturnsEnabled && (
             <div className="mt-2 pt-2 border-t border-amber-500/30 text-[11px] font-bold text-amber-300 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>Notice: Orders paid via DSF Digital Wallet cannot be returned or refunded as per store policy.</span>
+              <span>Notice: Refunds & cancellations are disabled for DSF Wallet orders, but product replacements remain allowed.</span>
             </div>
           )}
         </motion.div>
@@ -196,7 +196,7 @@ const PaymentStep = ({ paymentMethod, setPaymentMethod, onSetPaymentMethod, codE
                   )}
                   {method.id === 'wallet' && !walletReturnsEnabled && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 font-sans text-[10px] uppercase tracking-wider text-amber-300 font-bold">
-                      <AlertCircle className="w-3 h-3 text-amber-400 shrink-0" /> Non-Returnable & Non-Refundable Order
+                      <AlertCircle className="w-3 h-3 text-amber-400 shrink-0" /> Non-Refundable (Replacements Allowed)
                     </span>
                   )}
                 </div>
