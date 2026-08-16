@@ -17,8 +17,14 @@ export const getProductPricing = (product = {}) => {
   let discountPercent = 0;
   if (hasOffer && basePrice > 0) {
     const calculated = ((basePrice - discountPrice) / basePrice) * 100;
-    // Round to nearest integer. If it results in 0 but hasOffer is true, show 1% min, or cap at 99%.
-    discountPercent = Math.max(1, Math.min(99, Math.round(calculated)));
+    // FIX BUG-28: Only show a badge if the discount is at least 5% so we don't
+    // display a misleading '1% OFF' label for negligible price differences.
+    // Round to the nearest integer, capped at 99% max.
+    if (calculated >= 5) {
+      discountPercent = Math.min(99, Math.round(calculated));
+    } else {
+      discountPercent = 0;
+    }
   }
 
   return {

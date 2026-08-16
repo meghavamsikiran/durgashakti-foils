@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import orderService from '../services/order.service';
 import apiClient from '../services/core/apiClient';
 import { toast } from 'sonner';
@@ -14,6 +14,11 @@ export const useOrders = () => {
   const [orders, setOrders] = useState(initialOrders);
   const [loading, setLoading] = useState(!initialOrders.length);
   const [error, setError] = useState(null);
+  const intervalRef = useRef(null);
+  // FIX BUG-07: Keep a ref to latest orders so the polling interval can read
+  // it without needing `orders` in its dependency array (which caused a new
+  // interval to be created on every state update).
+  const ordersRef = useRef(initialOrders);
 
   const fetchOrders = useCallback(async () => {
     const hasCached = !!apiClient.getCachedDataSync('/orders');
@@ -24,6 +29,7 @@ export const useOrders = () => {
       setError(null);
       const data = await orderService.getOrders(undefined, { silent: true, timeout: 90000 });
       setOrders(data || []);
+      ordersRef.current = data || [];
     } catch (err) {
       // Only show error if we have no data to fall back on.
       // If cached orders are already visible, keep them and fail silently.
@@ -43,13 +49,23 @@ export const useOrders = () => {
       const response = await apiClient.get('/orders', { silent: true, timeout: 90000 });
       setError(null);
       setOrders(response.data || []);
+      ordersRef.current = response.data || [];
     } catch (err) {
       // Ignore background fetch errors to prevent user distraction
     }
   }, []);
 
   const cancelOrder = async (orderId) => {
-    if (!window.confirm('Cancel this order?')) return;
+    const confirmed = await new Promise((resolve) => {
+      toast('Cancel this order?', {
+        action: { label: 'Confirm', onClick: () => resolve(true) },
+        cancel: { label: 'Cancel', onClick: () => resolve(false) },
+        onDismiss: () => resolve(false),
+      });
+    });
+
+    if (!confirmed) return;
+
     try {
       await orderService.cancelOrder(orderId);
       toast.success('Order cancelled');
@@ -75,19 +91,23 @@ export const useOrders = () => {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Periodic silent polling in the background for real-time responsiveness
-  // Polls every 4 seconds if there is a pending refund, otherwise every 10 seconds.
+  // FIX BUG-07: `orders` removed from deps — reads latest value via ordersRef
+  // to avoid creating a new interval on every state update (infinite loop).
   useEffect(() => {
-    const hasPendingRefund = Array.isArray(orders) && orders.some(
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    const hasPendingRefund = ordersRef.current.some(
       (order) => String(order.payment_status || '').toLowerCase() === 'refund_pending'
     );
     const interval = hasPendingRefund ? 4000 : 10000;
 
-    const timer = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       fetchOrdersSilent();
     }, interval);
-    return () => clearInterval(timer);
-  }, [fetchOrdersSilent, orders]);
+
+    return () => clearInterval(intervalRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchOrdersSilent]);
 
   return { orders, loading, error, fetchOrders, cancelOrder, returnOrder };
 };

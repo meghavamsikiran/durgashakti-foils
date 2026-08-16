@@ -72,8 +72,10 @@ const Login = () => {
       return;
     }
 
-    if (identifier.includes('@') && !identifier.toLowerCase().endsWith('@gmail.com')) {
-      toast.error('Only @gmail.com email addresses are permitted on this platform.');
+    // FIX BUG-04: @gmail.com restriction applies to registration only.
+    // Admins/staff may use corporate email addresses to log in.
+    if (!isLogin && identifier.includes('@') && !identifier.toLowerCase().endsWith('@gmail.com')) {
+      toast.error('Only @gmail.com email addresses are permitted for new accounts.');
       setLoading(false);
       return;
     }
@@ -83,12 +85,14 @@ const Login = () => {
         const res = await login(identifier, password);
         toast.success('Login successful!');
         window.dispatchEvent(new CustomEvent('triggerLoginLoader', { detail: { duration: 3000 } }));
-        const role = res.user?.role;
+        // FIX BUG-03: Normalise role to uppercase before comparison to handle
+        // any casing the backend may return ('admin', 'ADMIN', 'Admin', etc.).
+        const role = (res.user?.role || '').toUpperCase();
         
         setTimeout(() => {
           if (role === 'SUPER_ADMIN') {
             navigate('/superadmin/dashboard');
-          } else if (role === 'admin') {
+          } else if (role === 'ADMIN') {
             navigate('/admin/dashboard');
           } else {
             navigate('/shop');
@@ -150,12 +154,13 @@ const Login = () => {
               const res = await loginWithGoogle(tokenResponse.access_token, isLogin ? 'login' : 'signup');
               toast.success('Successfully authenticated with Google!');
               window.dispatchEvent(new CustomEvent('triggerLoginLoader', { detail: { duration: 3000 } }));
-              const role = res.user?.role;
+              // FIX BUG-03: Normalise role to uppercase for consistent comparison.
+              const role = (res.user?.role || '').toUpperCase();
               
               setTimeout(() => {
                 if (role === 'SUPER_ADMIN') {
                   navigate('/superadmin/dashboard');
-                } else if (role === 'admin') {
+                } else if (role === 'ADMIN') {
                   navigate('/admin/dashboard');
                 } else {
                   navigate('/shop');

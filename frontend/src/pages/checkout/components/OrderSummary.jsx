@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Loader2, LockKeyhole } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { useCart } from '../../../contexts/CartContext';
 import { calculateCheckoutPricing } from '../../../utils/checkoutPricing';
 import { getProductPricing } from '../../../utils/productPricing';
-import apiClient from '../../../services/core/apiClient';
 
 const OrderSummary = ({ 
   products, 
@@ -24,21 +23,9 @@ const OrderSummary = ({
   shippingAddress
 }) => {
   const { cart } = useCart();
-  const [walletBalance, setWalletBalance] = useState(0);
-
-  useEffect(() => {
-    let isMounted = true;
-    const fetchWallet = async () => {
-      try {
-        const res = await apiClient.get('/user/wallet');
-        if (isMounted && res.data) {
-          setWalletBalance(res.data.balance || 0);
-        }
-      } catch (err) {}
-    };
-    fetchWallet();
-    return () => { isMounted = false; };
-  }, []);
+  // FIX BUG-29: Removed dead wallet balance fetch — the walletBalance state was
+  // fetched and set but never rendered or used in any JSX, wasting an API call
+  // on every checkout page mount.
 
   const { 
     shipping, 

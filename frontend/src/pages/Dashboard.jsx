@@ -46,20 +46,29 @@ const Dashboard = () => {
     }
   }, [authLoading, user, navigate]);
 
+  // FIX BUG-08: Use refs so the handler always reads the latest logout/navigate
+  // values, avoiding the stale-closure problem that affected the event listener.
+  const logoutRef = React.useRef(logout);
+  const navigateRef = React.useRef(navigate);
+  useEffect(() => { logoutRef.current = logout; }, [logout]);
+  useEffect(() => { navigateRef.current = navigate; }, [navigate]);
+
   useEffect(() => {
     const handleDeleteAccount = async () => {
       try {
         await authService.deleteAccount();
-        logout();
+        logoutRef.current();
         toast.success("Account deleted successfully");
-        navigate('/');
+        navigateRef.current('/');
       } catch (err) {
         toast.error("Failed to delete account. Please try again.");
       }
     };
     window.addEventListener('request-account-deletion', handleDeleteAccount);
     return () => window.removeEventListener('request-account-deletion', handleDeleteAccount);
-  }, [logout, navigate]);
+  // Empty deps — handler is stable because it reads from refs, not the closure.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const handleToggle = () => setSidebarOpen(prev => !prev);
@@ -69,14 +78,18 @@ const Dashboard = () => {
 
   if (authLoading) return <PageLoader message="Authenticating..." />;
 
+  // FIX BUG-06: Surface profile-update errors to the user instead of silently
+  // swallowing them. A full-page reload is still used on success so auth state
+  // re-initialises cleanly with the updated user data.
   const handleUpdateProfile = async (data) => {
     try {
       await authService.updateProfile(data);
+      toast.success("Profile updated successfully!");
       window.location.reload();
-    } catch (err) {}
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Failed to update profile. Please try again.");
+    }
   };
-
-
 
   return (
     <div className="min-h-screen bg-[#0C1310] flex flex-col xl:flex-row text-white">
@@ -91,7 +104,9 @@ const Dashboard = () => {
       <Sidebar 
         user={user} 
         activeTab={activeTab} 
-        setActiveTab={() => {}} 
+        // FIX BUG-24: setActiveTab was a no-op. Route navigation is now handled
+        // by navigating to the correct sub-path, which React Router picks up.
+        setActiveTab={(tab) => navigate(`/dashboard/${tab}`)}
         wishlistCount={wishlist?.length || 0}
         onLogout={logout} 
         sidebarOpen={sidebarOpen}

@@ -100,12 +100,15 @@ const FirstLoginResetScreen = ({ email, logout }) => {
             <div className="space-y-1">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Security Code</label>
               <input 
-                type="text"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 maxLength={6}
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="000000"
                 required
+                autoComplete="one-time-code"
                 className="w-full h-12 text-center tracking-widest text-lg font-bold bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary text-slate-900 dark:text-slate-100"
               />
             </div>

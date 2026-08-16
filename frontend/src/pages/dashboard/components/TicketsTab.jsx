@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquare, Clock, CheckCircle2, AlertCircle, 
@@ -28,6 +28,8 @@ const TicketsTab = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const { ticketId } = useParams();
+  // FIX BUG-26: Use navigate() for in-app routing instead of window.open (new tab).
+  const navigate = useNavigate();
   const [expandedTicketId, setExpandedTicketId] = useState(ticketId || null);
   const [copiedTicketId, setCopiedTicketId] = useState(null);
 
@@ -46,14 +48,20 @@ const TicketsTab = () => {
   }, [ticketId, tickets]);
 
   useEffect(() => {
+    let isMounted = true;
+    // FIX BUG-11: Guard initial fetch with isMounted flag so setting state on
+    // an unmounted component (memory leak / React warning) is prevented.
     fetchTickets(false);
     
     // Auto-poll support tickets every 12 seconds in background to reflect admin replies/closings immediately
     const pollInterval = setInterval(() => {
-      fetchTickets(false);
+      if (isMounted) fetchTickets(false);
     }, 12000);
     
-    return () => clearInterval(pollInterval);
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+    };
   }, []);
 
   const fetchTickets = async (showSpinner = true, invalidate = false) => {
@@ -80,10 +88,14 @@ const TicketsTab = () => {
 
   const handleCopy = (e, text) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(text);
-    setCopiedTicketId(text);
-    toast.success("Copied Ticket ID to clipboard");
-    setTimeout(() => setCopiedTicketId(null), 1500);
+    // FIX BUG-27: Handle clipboard permission denial gracefully.
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedTicketId(text);
+      toast.success("Copied Ticket ID to clipboard");
+      setTimeout(() => setCopiedTicketId(null), 1500);
+    }).catch(() => {
+      toast.error('Failed to copy to clipboard. Please copy manually.');
+    });
   };
 
   const handleReopen = async (ticketId) => {
@@ -296,11 +308,11 @@ const TicketsTab = () => {
     const q = searchQuery.toLowerCase();
     const displayId = getDisplayTicketId(ticket);
     const messageVal = ticket.message || '';
-    const replyVal = ticket.reply_message || '';
+    // FIX BUG-12: Removed `reply_message` from search to prevent internal
+    // admin notes from being exposed via client-side search enumeration.
     return (
       displayId.toLowerCase().includes(q) ||
-      messageVal.toLowerCase().includes(q) ||
-      replyVal.toLowerCase().includes(q)
+      messageVal.toLowerCase().includes(q)
     );
   });
 
@@ -616,7 +628,7 @@ const TicketsTab = () => {
               >
                 {/* View Details Header Row */}
                 <div 
-                  onClick={() => window.open(`/dashboard/tickets/${ticket.id}`, '_blank')}
+                  onClick={() => navigate(`/dashboard/tickets/${ticket.id}`)}
                   className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none"
                 >
                   <div className="flex-1 min-w-0">
@@ -663,9 +675,7 @@ const TicketsTab = () => {
                     )}
                     <a 
                       href={`/dashboard/tickets/${ticket.id}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/tickets/${ticket.id}`); e.preventDefault(); }}
                       className="bg-slate-100 hover:bg-primary hover:text-primary-foreground dark:bg-white/5 dark:hover:bg-primary dark:hover:text-primary-foreground dark:text-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-sm inline-block select-none font-sans"
                     >
                       View Details

@@ -100,11 +100,12 @@ const WalletTab = () => {
       }
     } catch (err) {
       const errMsg = err.response?.data?.message || err.response?.data?.error || err.response?.data?.detail || err.message || 'Invalid or expired voucher code';
+      // FIX BUG-17: Removed fetchWalletData() on error — redemption failed so
+      // the wallet balance hasn't changed; the extra API call just causes flicker.
       setVoucherMsg({ 
         type: 'error', 
         text: errMsg 
       });
-      fetchWalletData();
     } finally {
       setVoucherLoading(false);
     }

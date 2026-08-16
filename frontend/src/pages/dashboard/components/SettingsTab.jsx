@@ -16,6 +16,11 @@ const SettingsTab = ({ user, onUpdateProfile }) => {
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
+    // FIX BUG-30: Validate full_name before submitting.
+    if (!profileForm.full_name?.trim()) {
+      toast.error('Full name is required');
+      return;
+    }
     const cleanPhone = profileForm.phone ? profileForm.phone.replace(/\D/g, '') : '';
     if (!cleanPhone) {
       toast.error("Phone number is required");
@@ -91,9 +96,21 @@ const SettingsTab = ({ user, onUpdateProfile }) => {
           </div>
           <Button 
             onClick={() => {
-              if(window.confirm('Are you absolutely sure you want to permanently delete your account? This action cannot be undone.')) {
-                window.dispatchEvent(new CustomEvent('request-account-deletion'));
-              }
+              // FIX BUG-05: Replace browser-native window.confirm with a
+              // sonner toast action so the design stays consistent and mobile
+              // browsers that block confirm() are handled correctly.
+              toast.warning('Delete your account permanently?', {
+                description: 'This action cannot be undone. All your data will be permanently removed.',
+                action: {
+                  label: 'Yes, Delete',
+                  onClick: () => window.dispatchEvent(new CustomEvent('request-account-deletion')),
+                },
+                cancel: {
+                  label: 'Cancel',
+                  onClick: () => {},
+                },
+                duration: 8000,
+              });
             }}
             className="h-12 rounded-lg px-6 gap-2 font-bold uppercase tracking-widest bg-rose-600 hover:bg-rose-700 text-white shadow-sm"
           >

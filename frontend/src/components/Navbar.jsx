@@ -37,7 +37,9 @@ const Navbar = () => {
   const searchRef = React.useRef(null);
   const mobileSearchRef = React.useRef(null);
   const debounceRef = React.useRef(null);
-  const isDashboard = location.pathname === '/dashboard';
+  // FIX BUG-18: Use startsWith so /dashboard/orders, /dashboard/wallet etc.
+  // are all correctly identified as dashboard pages, not just /dashboard exactly.
+  const isDashboard = location.pathname.startsWith('/dashboard');
 
   // Sync search query from URL params
   React.useEffect(() => {

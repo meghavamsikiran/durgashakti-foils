@@ -81,9 +81,13 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
   }, []);
 
   const handleCopy = (text) => {
-    navigator.clipboard.writeText(text);
-    setCopiedOrderId(text);
-    setTimeout(() => setCopiedOrderId(null), 1500);
+    // FIX BUG-27: Handle clipboard permission denial gracefully.
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedOrderId(text);
+      setTimeout(() => setCopiedOrderId(null), 1500);
+    }).catch(() => {
+      toast.error('Failed to copy to clipboard. Please copy manually.');
+    });
   };
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -94,6 +98,10 @@ const OrdersTab = ({ orders, loading, error, onRetry, onCancelOrder }) => {
   const [endDate, setEndDate] = useState('');
   const [quickFilter, setQuickFilter] = useState('all');
   const ORDERS_PER_PAGE = 5;
+
+  // FIX BUG-22: Reset to page 1 whenever any filter or search changes so we
+  // never show an empty page when the result count drops below the current offset.
+  React.useEffect(() => { setOrdersPage(1); }, [searchQuery, statusFilter, timeframeFilter, courierFilter, quickFilter, startDate, endDate]);
   const statusOptions = [
     { value: 'all', label: 'All Statuses' },
     { value: 'pending', label: 'Placed' },

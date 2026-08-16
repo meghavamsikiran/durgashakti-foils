@@ -60,7 +60,11 @@ const OrderDetailsModal = ({ order, isOpen, onClose, onReturnOrder }) => {
       const active = calculateTimeLeft();
       if (!active) {
         clearInterval(timer);
-        window.location.reload();
+        // FIX BUG-14: Previously did a full window.location.reload() which
+        // destroyed React state and closed the modal without explanation.
+        // Now we close the modal gracefully and let the parent component
+        // handle a silent refetch via its own polling.
+        onClose();
       }
     }, 1000);
 

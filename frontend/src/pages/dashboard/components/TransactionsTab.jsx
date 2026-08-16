@@ -58,9 +58,13 @@ const CustomSelect = ({ value, onChange, options }) => {
 
 const TransactionsTab = ({ orders, loading, error }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  // FIX BUG-27: Handle clipboard permission denial gracefully.
   const handleCopy = (text, type) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${type} copied to clipboard!`);
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success(`${type} copied to clipboard!`);
+    }).catch(() => {
+      toast.error('Failed to copy to clipboard. Please copy manually.');
+    });
   };
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -70,6 +74,10 @@ const TransactionsTab = ({ orders, loading, error }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const PAGE_SIZE = 10;
+
+  // FIX BUG-21: Reset to page 1 whenever any filter changes so we never show
+  // an empty page when the filtered result count is smaller than the offset.
+  React.useEffect(() => { setCurrentPage(1); }, [searchQuery, methodFilter, statusFilter, timeframeFilter, startDate, endDate]);
 
   if (loading && (!orders || orders.length === 0)) {
     return (

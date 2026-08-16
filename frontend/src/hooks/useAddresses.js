@@ -31,7 +31,9 @@ export const useAddresses = () => {
     try {
       const newAddr = await addressService.addAddress(addressData);
       toast.success('Address saved successfully');
-      setAddresses(prev => [newAddr, ...prev.filter(a => !newAddr.isDefault || !a.isDefault)]);
+      // FIX BUG-10: API returns `is_default` (snake_case), not `isDefault` (camelCase).
+      // Use the correct key so the optimistic update properly clears the old default.
+      setAddresses(prev => [newAddr, ...prev.filter(a => !newAddr.is_default || !a.is_default)]);
       fetchAddresses();
       return true;
     } catch (err) {
@@ -44,7 +46,8 @@ export const useAddresses = () => {
     try {
       const updatedAddr = await addressService.updateAddress(id, addressData);
       toast.success('Address updated successfully');
-      setAddresses(prev => prev.map(a => a.id === id ? updatedAddr : (updatedAddr.isDefault ? { ...a, isDefault: false } : a)));
+      // FIX BUG-10: Use `is_default` (snake_case) consistently with the API response.
+      setAddresses(prev => prev.map(a => a.id === id ? updatedAddr : (updatedAddr.is_default ? { ...a, is_default: false } : a)));
       fetchAddresses();
       return true;
     } catch (err) {

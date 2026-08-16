@@ -20,6 +20,16 @@ const ProductReviewPage = () => {
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
   const [publicName, setPublicName] = useState(user?.full_name || '');
+
+  // FIX BUG-23: useState initializer only runs once. If user is null on mount
+  // (auth still loading), publicName stays '' forever. This effect sets it once
+  // the user data is available and the field hasn't been manually edited yet.
+  React.useEffect(() => {
+    if (user?.full_name && !publicName) {
+      setPublicName(user.full_name);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.full_name]);
   const [files, setFiles] = useState([]);
   const [existingMedia, setExistingMedia] = useState([]);
   const [filePreviews, setFilePreviews] = useState([]);
@@ -60,7 +70,13 @@ const ProductReviewPage = () => {
   const product = eligibility?.product;
 
   const handleFiles = (event) => {
-    const selected = Array.from(event.target.files || []).slice(0, 6);
+    const allSelected = Array.from(event.target.files || []);
+    // FIX BUG-15: Warn the user when more than 6 files are selected so they
+    // know files beyond the limit are being dropped silently.
+    if (allSelected.length > 6) {
+      toast.warning(`Only 6 files are allowed. The first 6 will be used; ${allSelected.length - 6} file(s) were ignored.`);
+    }
+    const selected = allSelected.slice(0, 6);
     for (const file of selected) {
       const isVideo = file.type.startsWith('video/');
       const isImage = file.type.startsWith('image/');

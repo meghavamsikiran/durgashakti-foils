@@ -73,10 +73,12 @@ const AdminOrderDetailsPage = () => {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   
-  // Try loading cached order details from localStorage first
+  // FIX BUG-20: Use sessionStorage instead of localStorage so cached order
+  // detail blobs are automatically cleared when the tab closes, preventing
+  // indefinite accumulation that could exhaust the 5 MB storage quota.
   const [order, setOrder] = useState(() => {
     try {
-      const cached = localStorage.getItem(`admin_order_detail_${orderId}`);
+      const cached = sessionStorage.getItem(`admin_order_detail_${orderId}`);
       return cached ? JSON.parse(cached) : null;
     } catch (e) {
       return null;
@@ -111,7 +113,8 @@ const AdminOrderDetailsPage = () => {
       const response = await adminService.getOrderDetails(orderId);
       setOrder(response.data);
       try {
-        localStorage.setItem(`admin_order_detail_${orderId}`, JSON.stringify(response.data));
+        // FIX BUG-20: Write to sessionStorage (auto-cleared on tab close).
+        sessionStorage.setItem(`admin_order_detail_${orderId}`, JSON.stringify(response.data));
       } catch (e) {}
     } catch (err) {
       toast.error(err.message || 'Failed to fetch order details');

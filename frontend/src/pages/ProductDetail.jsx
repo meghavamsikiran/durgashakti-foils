@@ -47,6 +47,15 @@ const ProductDetail = () => {
 
   const onTouchMove = (e) => {
     setTouchEnd(e.targetTouches[0].clientX);
+    // FIX BUG-35: Suppress vertical page scroll when the user is swiping
+    // horizontally across the image gallery so the gesture works reliably.
+    if (touchStart !== null) {
+      const deltaX = Math.abs(touchStart - e.targetTouches[0].clientX);
+      const deltaY = Math.abs((e.targetTouches[0].clientY || 0));
+      if (deltaX > deltaY) {
+        e.preventDefault();
+      }
+    }
   };
 
   const onTouchEnd = (e) => {
@@ -142,10 +151,14 @@ const ProductDetail = () => {
     }
   }, [id]);
 
+  // FIX BUG-13: Previously both fetchProduct and fetchProductSilent were fired
+  // simultaneously on mount, creating a race condition where whichever resolved
+  // last would 'win' — potentially overwriting a fresh response with stale cache.
+  // Now we run only fetchProduct on mount; background refreshes are handled by
+  // fetchProductSilent called independently after the initial load.
   useEffect(() => {
     fetchProduct();
-    fetchProductSilent();
-  }, [fetchProduct, fetchProductSilent]);
+  }, [fetchProduct]);
 
 
 

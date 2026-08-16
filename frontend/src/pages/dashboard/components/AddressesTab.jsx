@@ -197,6 +197,10 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
   const pageItems = (addresses || []).slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const handleNewAddressClick = () => {
+    // FIX BUG-09: Reset the form and clear editingAddressId so stale data from
+    // a previously edited address does not pre-populate the new address form.
+    setAddressForm({ label: 'Home', full_name: '', phone: '', alternate_phone: '', address_line1: '', address_line2: '', city: '', state: '', pincode: '', is_default: false });
+    setEditingAddressId(null);
     setShowAddressForm(true);
     const params = new URLSearchParams(window.location.search);
     params.set('action', 'new');
@@ -365,8 +369,9 @@ const AddressesTab = ({ addresses, loading, onAddAddress, onUpdateAddress, onDel
               </p>
               <div className="mt-4 flex items-center gap-3 pt-4 border-t border-[#26322B]/60">
                 <div className="flex items-center gap-2 text-slate-450 font-mono text-xs">
-                  {addr.phone}
-                  {addr.alternate_phone && <span className="text-slate-600">/ {addr.alternate_phone}</span>}
+                  {/* FIX BUG-25: Format phone with +91 prefix for readability */}
+                  {addr.phone ? `+91 ${addr.phone.slice(0, 5)} ${addr.phone.slice(5)}` : ''}
+                  {addr.alternate_phone && <span className="text-slate-600">/ +91 {addr.alternate_phone.slice(0, 5)} {addr.alternate_phone.slice(5)}</span>}
                 </div>
               </div>
               <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
