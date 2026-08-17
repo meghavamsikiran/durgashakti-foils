@@ -37,6 +37,45 @@ const OrderSummary = ({
     freeShippingApplied 
   } = calculateCheckoutPricing(total, shippingSettings, paymentMethod, appliedCoupons, shippingAddress);
 
+  if (loading || !products || Object.keys(products).length === 0 || !cart.items || cart.items.length === 0) {
+    return (
+      <div className="relative overflow-hidden bg-[#131B17] rounded-2xl p-6 md:p-8 border border-[#26322B] text-white animate-pulse">
+        <h3 className="text-xl font-bold text-white mb-6 tracking-wide">Order Summary</h3>
+        <div className="space-y-4 mb-8">
+          <div className="flex justify-between items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-[#26322B]" />
+              <div className="h-4 w-32 bg-[#26322B] rounded" />
+            </div>
+            <div className="h-4 w-12 bg-[#26322B] rounded" />
+          </div>
+        </div>
+        <div className="space-y-3 pt-6 border-t border-[#26322B]">
+          <div className="flex justify-between">
+            <div className="h-3 w-16 bg-[#26322B] rounded" />
+            <div className="h-3 w-16 bg-[#26322B] rounded" />
+          </div>
+          <div className="flex justify-between">
+            <div className="h-3 w-24 bg-[#26322B] rounded" />
+            <div className="h-3 w-12 bg-[#26322B] rounded" />
+          </div>
+          <div className="flex justify-between">
+            <div className="h-3 w-16 bg-[#26322B] rounded" />
+            <div className="h-3 w-12 bg-[#26322B] rounded" />
+          </div>
+          <div className="flex justify-between">
+            <div className="h-3 w-16 bg-[#26322B] rounded" />
+            <div className="h-3 w-12 bg-[#26322B] rounded" />
+          </div>
+          <div className="pt-4 border-t border-[#26322B] flex justify-between items-end">
+            <div className="h-5 w-24 bg-[#26322B] rounded" />
+            <div className="h-8 w-20 bg-[#26322B] rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative overflow-hidden bg-[#131B17] rounded-2xl p-6 md:p-8 border border-[#26322B] text-white">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#26322B] to-transparent" />
