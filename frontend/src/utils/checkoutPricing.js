@@ -82,20 +82,17 @@ export const calculateCheckoutPricing = (subtotal, settings = {}, paymentMethod 
     }
   }
 
-  // FIX BUG-02: Check free-shipping eligibility against the pre-discount `subtotal`
+  // BUG-02 FIX: Check free-shipping eligibility against the pre-discount `subtotal`
   // so that applying a coupon doesn't inadvertently lose free shipping.
   const isFreeShipping = freeShippingApplied || (config.enableFreeShipping && subtotal >= config.freeShippingThreshold);
   const shipping = config.enableShipping && !isFreeShipping ? baseShippingCharge : 0;
   const codCharge = paymentMethod === 'cod' ? config.codCharge : 0;
 
-  // FIX BUG-01: Product prices in this store are tax-inclusive (standard Indian D2C).
-  // GST is EXTRACTED from the taxable amount for display purposes only.
-  // Grand total = taxableAmount + shipping + codCharge (no extra tax added on top).
-  // CGST = SGST = 9% of the pre-tax base embedded in the price (base = price / 1.18).
-  const taxBase = Number((taxableAmount / 1.18).toFixed(2));
-  const cgst = Math.round(taxBase * 0.09 * 100) / 100;
+  // Prices in this store are TAX-EXCLUSIVE. GST is added on top of the product price.
+  // CGST = SGST = 9% of taxable amount. Grand total includes both GST components.
+  const cgst = Math.round(taxableAmount * 0.09 * 100) / 100;
   const sgst = cgst;
-  const grandTotal = Number((taxableAmount + shipping + codCharge).toFixed(2));
+  const grandTotal = Number((taxableAmount + shipping + cgst + sgst + codCharge).toFixed(2));
 
   return { config, shipping, codCharge, cgst, sgst, grandTotal, discountAmount, freeShippingApplied };
 };
