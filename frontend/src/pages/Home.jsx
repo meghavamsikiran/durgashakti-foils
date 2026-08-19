@@ -176,6 +176,18 @@ const Home = () => {
         vid.style.opacity = '1';
       });
 
+      function setupFallback() {
+        const startPlayOnTouch = () => {
+          try { vid.play(); } catch (e) {}
+          window.removeEventListener('touchstart', startPlayOnTouch);
+          window.removeEventListener('click', startPlayOnTouch);
+          window.removeEventListener('scroll', startPlayOnTouch);
+        };
+        window.addEventListener('touchstart', startPlayOnTouch, { once: true });
+        window.addEventListener('click', startPlayOnTouch, { once: true });
+        window.addEventListener('scroll', startPlayOnTouch, { once: true });
+      }
+
       const tryPlay = () => {
         try {
           const promise = vid.play();
@@ -187,18 +199,6 @@ const Home = () => {
         } catch (error) {
           setupFallback();
         }
-      };
-
-      const setupFallback = () => {
-        const startPlayOnTouch = () => {
-          try { vid.play(); } catch (e) {}
-          window.removeEventListener('touchstart', startPlayOnTouch);
-          window.removeEventListener('click', startPlayOnTouch);
-          window.removeEventListener('scroll', startPlayOnTouch);
-        };
-        window.addEventListener('touchstart', startPlayOnTouch, { once: true });
-        window.addEventListener('click', startPlayOnTouch, { once: true });
-        window.addEventListener('scroll', startPlayOnTouch, { once: true });
       };
 
       if (vid.readyState >= 2) {
