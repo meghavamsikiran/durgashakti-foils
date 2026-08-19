@@ -22,7 +22,8 @@ import {
   HeartPulse,
   Landmark,
   Factory,
-  Store
+  Store,
+  CheckCircle2
 } from 'lucide-react';
 
 const metrics = [
@@ -281,11 +282,12 @@ const Home = () => {
               alt="Authentic Durga Shakti HOT WRAP 72M Box"
               className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700 relative z-0"
             />
-            <div className="absolute bottom-6 left-6 z-20">
-               <div className="px-4 py-1.5 rounded-full bg-brand-green/90 dark:bg-brand-green/20 border border-brand-green/40 backdrop-blur-md text-white dark:text-brand-green text-xs font-bold shadow-lg">
-                 Genuine Product Shot
-               </div>
-            </div>
+              <div className="absolute bottom-8 left-8 z-20 flex items-center gap-4" data-force-dark="true">
+                <div className="px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-brand-green" />
+                  Genuine Product Shot
+                </div>
+              </div>
           </motion.div>
 
           <motion.div 
