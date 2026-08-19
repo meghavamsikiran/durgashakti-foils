@@ -162,9 +162,11 @@ const Home = () => {
   }, []);
 
   const videoRef = useRef(null);
+  const posterRef = useRef(null);
 
   useEffect(() => {
     const vid = videoRef.current;
+    const poster = posterRef.current;
     if (!vid) return;
 
     vid.defaultMuted = true;
@@ -172,8 +174,8 @@ const Home = () => {
     vid.setAttribute('playsinline', '');
     vid.setAttribute('webkit-playsinline', '');
 
-    // Show video smoothly once it actually starts playing
-    const onPlay = () => { vid.style.opacity = '1'; };
+    // When video starts playing, fade OUT the cover image to reveal the video underneath
+    const onPlay = () => { if (poster) poster.style.opacity = '0'; };
     vid.addEventListener('playing', onPlay);
 
     const tryPlay = () => {
@@ -255,12 +257,7 @@ const Home = () => {
       {/* Cinematic Video Hero Section - Always Dark for Contrast */}
       <section ref={heroRef} data-force-dark="true" className="hero-section-dark relative w-full h-[100svh] overflow-hidden flex items-center justify-center border-b border-slate-200 dark:border-white/5 bg-[#090d0b]">
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="absolute inset-0 w-full h-full z-0 bg-[#090d0b]">
-          {/* Background Poster Image behind video to avoid Safari native poster controls */}
-          <img 
-            src="/hot-wrap-kitchen-cool.jpg" 
-            alt="Hero fallback background" 
-            className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
-          />
+          {/* Video plays behind at z-0, always full opacity */}
           <video
             ref={videoRef}
             autoPlay
@@ -270,11 +267,18 @@ const Home = () => {
             preload="auto"
             disablePictureInPicture
             disableRemotePlayback
-            className="relative z-10 w-full h-full object-cover pointer-events-none"
-            style={{ opacity: 0, transition: 'opacity 1s ease-in-out' }}
+            className="absolute inset-0 z-0 w-full h-full object-cover pointer-events-none"
           >
             <source src="/cinematic-hero.mp4" type="video/mp4" />
           </video>
+          {/* Cover image sits ON TOP at z-10, hides video + Safari controls until playing */}
+          <img 
+            ref={posterRef}
+            src="/hot-wrap-kitchen-cool.jpg" 
+            alt="Hero fallback background" 
+            className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none"
+            style={{ transition: 'opacity 1s ease-in-out' }}
+          />
           {/* Advanced Glassmorphic Dark Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#090d0b] via-[#090d0b]/70 to-[#090d0b]/40 backdrop-blur-[2px] z-20"></div>
         </motion.div>
