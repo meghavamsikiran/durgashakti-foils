@@ -210,8 +210,8 @@ const Home = () => {
               100% FOOD GRADE CERTIFIED
             </motion.div>
             
-            <motion.h1 variants={fadeInUp} className="font-display mt-6 text-5xl md:text-6xl lg:text-7xl xl:text-[5.5rem] font-black leading-[1.05] tracking-tight drop-shadow-2xl text-white">
-              <span className="block">Wrap it Right,</span>
+            <motion.h1 variants={fadeInUp} className="font-display mt-6 text-5xl md:text-6xl lg:text-7xl xl:text-[5.5rem] font-black leading-[1.05] tracking-tight drop-shadow-2xl">
+              <span className="block text-white">Wrap it Right,</span>
               <span className="block text-brand-yellow">Keep it Hot,</span>
               <span className="block text-brand-green">Keep it Fresh!</span>
             </motion.h1>
@@ -235,20 +235,6 @@ const Home = () => {
               </button>
             </motion.div>
 
-            {/* Feature Badges - Forced Dark Theme for contrast */}
-            <motion.div variants={staggerContainer} className="mt-16 flex flex-wrap gap-8 bg-black/40 p-6 rounded-3xl border border-white/10 backdrop-blur-xl max-w-3xl shadow-2xl">
-              {features.map((f, i) => (
-                <motion.div variants={fadeInUp} key={i} className="flex flex-col items-start gap-3">
-                  <div className={`w-12 h-12 rounded-2xl border border-white/10 bg-white/10 flex items-center justify-center shadow-inner ${f.color}`}>
-                    <f.icon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-black leading-tight text-white drop-shadow-md">{f.title}</div>
-                    <div className="text-xs text-slate-300 font-semibold mt-0.5">{f.sub}</div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
           </motion.div>
         </div>
       </section>
