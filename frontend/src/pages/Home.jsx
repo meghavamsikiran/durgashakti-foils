@@ -212,8 +212,8 @@ const Home = () => {
             
             <motion.h1 variants={fadeInUp} className="font-display mt-6 text-5xl md:text-6xl lg:text-7xl xl:text-[5.5rem] font-black leading-[1.05] tracking-tight drop-shadow-2xl">
               <span className="block text-white">Wrap it Right,</span>
-              <span className="block text-brand-yellow">Keep it Hot,</span>
-              <span className="block text-brand-green">Keep it Fresh!</span>
+              <span className="block text-brand-yellow hero-text-amber">Keep it Hot,</span>
+              <span className="block text-brand-green hero-text-emerald">Keep it Fresh!</span>
             </motion.h1>
 
             <motion.p variants={fadeInUp} className="mt-8 text-slate-200 text-base md:text-lg leading-relaxed text-left max-w-2xl font-medium drop-shadow-lg">
