@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import reviewService from '../services/review.service';
 import { motion, useScroll, useTransform } from 'framer-motion';
@@ -161,44 +161,50 @@ const Home = () => {
       });
   }, []);
 
-  const videoWrapperRef = useRef(null);
+  const videoRef = useRef(null);
 
-  useEffect(() => {
-    const wrapper = videoWrapperRef.current;
-    if (wrapper) {
-      const vid = wrapper.querySelector('video');
-      if (vid) {
-        vid.playbackRate = 0.75;
-        vid.defaultMuted = true;
-        vid.muted = true;
-        
-        vid.addEventListener('play', () => {
-          vid.style.opacity = '1';
-        });
+  useLayoutEffect(() => {
+    const vid = videoRef.current;
+    if (vid) {
+      vid.playbackRate = 0.75;
+      vid.defaultMuted = true;
+      vid.muted = true;
+      vid.setAttribute('playsinline', 'true');
+      vid.setAttribute('webkit-playsinline', 'true');
+      
+      vid.addEventListener('play', () => {
+        vid.style.opacity = '1';
+      });
 
-        const tryPlay = () => {
+      const tryPlay = () => {
+        try {
           const promise = vid.play();
           if (promise !== undefined) {
             promise.catch(() => {
-              // Safari Low Power Mode fallback: play on first user interaction
-              const startPlayOnTouch = () => {
-                vid.play();
-                window.removeEventListener('touchstart', startPlayOnTouch);
-                window.removeEventListener('click', startPlayOnTouch);
-                window.removeEventListener('scroll', startPlayOnTouch);
-              };
-              window.addEventListener('touchstart', startPlayOnTouch, { once: true });
-              window.addEventListener('click', startPlayOnTouch, { once: true });
-              window.addEventListener('scroll', startPlayOnTouch, { once: true });
+              setupFallback();
             });
           }
-        };
-
-        if (vid.readyState >= 2) {
-          tryPlay();
-        } else {
-          vid.addEventListener('loadeddata', tryPlay, { once: true });
+        } catch (error) {
+          setupFallback();
         }
+      };
+
+      const setupFallback = () => {
+        const startPlayOnTouch = () => {
+          try { vid.play(); } catch (e) {}
+          window.removeEventListener('touchstart', startPlayOnTouch);
+          window.removeEventListener('click', startPlayOnTouch);
+          window.removeEventListener('scroll', startPlayOnTouch);
+        };
+        window.addEventListener('touchstart', startPlayOnTouch, { once: true });
+        window.addEventListener('click', startPlayOnTouch, { once: true });
+        window.addEventListener('scroll', startPlayOnTouch, { once: true });
+      };
+
+      if (vid.readyState >= 2) {
+        tryPlay();
+      } else {
+        vid.addEventListener('loadeddata', tryPlay, { once: true });
       }
     }
   }, []);
@@ -225,28 +231,20 @@ const Home = () => {
             alt="Hero fallback background" 
             className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
           />
-          <div 
-            ref={videoWrapperRef}
-            className="relative z-10 w-full h-full pointer-events-none"
-            dangerouslySetInnerHTML={{
-              __html: `
-                <video
-                  autoplay
-                  loop
-                  muted
-                  playsinline
-                  webkit-playsinline
-                  preload="auto"
-                  disablepictureinpicture
-                  disableremoteplayback
-                  controlslist="nodownload nofullscreen noremoteplayback"
-                  style="width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1s ease-in-out;"
-                >
-                  <source src="/cinematic-hero.mp4" type="video/mp4" />
-                </video>
-              `
-            }}
-          />
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            disablePictureInPicture
+            disableRemotePlayback
+            className="relative z-10 w-full h-full object-cover pointer-events-none"
+            style={{ opacity: 0, transition: 'opacity 1s ease-in-out' }}
+          >
+            <source src="/cinematic-hero.mp4" type="video/mp4" />
+          </video>
           {/* Advanced Glassmorphic Dark Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#090d0b] via-[#090d0b]/70 to-[#090d0b]/40 backdrop-blur-[2px] z-20"></div>
         </motion.div>
