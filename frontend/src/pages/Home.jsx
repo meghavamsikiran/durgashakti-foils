@@ -134,6 +134,7 @@ const staggerContainer = {
 const Home = () => {
   const navigate = useNavigate();
   const heroRef = useRef(null);
+  const videoRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end start"]
@@ -160,6 +161,12 @@ const Home = () => {
       });
   }, []);
 
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 0.75;
+    }
+  }, []);
+
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-[#090d0b] text-slate-900 dark:text-white font-inter selection:bg-brand-green/30 overflow-hidden transition-colors duration-300" data-testid="home-page">
       <style>{`
@@ -177,6 +184,7 @@ const Home = () => {
       <section ref={heroRef} className="relative w-full h-[100svh] overflow-hidden flex items-center justify-center border-b border-slate-200 dark:border-white/5 bg-[#090d0b]">
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="absolute inset-0 w-full h-full z-0">
           <video
+            ref={videoRef}
             autoPlay
             loop
             muted
