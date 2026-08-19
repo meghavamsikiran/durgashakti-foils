@@ -181,7 +181,7 @@ const Home = () => {
       `}</style>
 
       {/* Cinematic Video Hero Section - Always Dark for Contrast */}
-      <section ref={heroRef} className="relative w-full h-[100svh] overflow-hidden flex items-center justify-center border-b border-slate-200 dark:border-white/5 bg-[#090d0b]">
+      <section ref={heroRef} data-force-dark="true" className="hero-section-dark relative w-full h-[100svh] overflow-hidden flex items-center justify-center border-b border-slate-200 dark:border-white/5 bg-[#090d0b]">
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="absolute inset-0 w-full h-full z-0">
           <video
             ref={videoRef}
