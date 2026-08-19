@@ -28,6 +28,14 @@ class ErrorBoundary extends React.Component {
   }
 
   handleGlobalError = (event) => {
+    // Ignore Safari video autoplay errors – they are expected and handled gracefully
+    const msg = event?.message || event?.error?.message || '';
+    const name = event?.error?.name || '';
+    if (name === 'AbortError' || name === 'NotAllowedError' || 
+        msg.includes('play()') || msg.includes('media') || 
+        msg.includes('user didn\'t interact') || msg.includes('not allowed')) {
+      return;
+    }
     this.setState({
       hasError: true,
       error: event.error || new Error(event.message || 'Unexpected application error'),
@@ -36,6 +44,16 @@ class ErrorBoundary extends React.Component {
   };
 
   handleUnhandledRejection = (event) => {
+    // Ignore Safari video autoplay rejections – they are expected and handled gracefully
+    const reason = event.reason;
+    const name = reason?.name || '';
+    const msg = reason?.message || String(reason || '');
+    if (name === 'AbortError' || name === 'NotAllowedError' || 
+        msg.includes('play()') || msg.includes('media') || 
+        msg.includes('user didn\'t interact') || msg.includes('not allowed')) {
+      event.preventDefault();
+      return;
+    }
     this.setState({
       hasError: true,
       error: event.reason instanceof Error ? event.reason : new Error(String(event.reason || 'Unhandled async error')),
