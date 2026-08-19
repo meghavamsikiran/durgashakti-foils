@@ -163,8 +163,35 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = 0.75;
+    const vid = videoRef.current;
+    if (vid) {
+      vid.playbackRate = 0.75;
+      vid.defaultMuted = true;
+      vid.muted = true;
+      vid.setAttribute('playsinline', 'true');
+      vid.setAttribute('webkit-playsinline', 'true');
+      
+      const tryPlay = () => {
+        const promise = vid.play();
+        if (promise !== undefined) {
+          promise.catch(() => {
+            // Safari Low Power Mode fallback: play on first user interaction
+            const startPlayOnTouch = () => {
+              vid.play();
+              window.removeEventListener('touchstart', startPlayOnTouch);
+              window.removeEventListener('click', startPlayOnTouch);
+            };
+            window.addEventListener('touchstart', startPlayOnTouch, { once: true });
+            window.addEventListener('click', startPlayOnTouch, { once: true });
+          });
+        }
+      };
+
+      if (vid.readyState >= 2) {
+        tryPlay();
+      } else {
+        vid.addEventListener('loadeddata', tryPlay, { once: true });
+      }
     }
   }, []);
 
@@ -184,20 +211,29 @@ const Home = () => {
       {/* Cinematic Video Hero Section - Always Dark for Contrast */}
       <section ref={heroRef} data-force-dark="true" className="hero-section-dark relative w-full h-[100svh] overflow-hidden flex items-center justify-center border-b border-slate-200 dark:border-white/5 bg-[#090d0b]">
         <motion.div style={{ y: heroY, opacity: heroOpacity }} className="absolute inset-0 w-full h-full z-0">
+          {/* Background Poster Image behind video to avoid Safari native poster controls */}
+          <img 
+            src="/hot-wrap-kitchen-cool.jpg" 
+            alt="Hero fallback background" 
+            className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+          />
           <video
             ref={videoRef}
             autoPlay
             loop
             muted
             playsInline
+            webkit-playsinline="true"
             preload="auto"
-            poster="/hot-wrap-kitchen-cool.jpg"
-            className="w-full h-full object-cover"
+            disablePictureInPicture
+            disableRemotePlayback
+            controlsList="nodownload nofullscreen noremoteplayback"
+            className="relative z-10 w-full h-full object-cover pointer-events-none"
           >
             <source src="/cinematic-hero.mp4" type="video/mp4" />
           </video>
           {/* Advanced Glassmorphic Dark Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#090d0b] via-[#090d0b]/70 to-[#090d0b]/40 backdrop-blur-[2px]"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#090d0b] via-[#090d0b]/70 to-[#090d0b]/40 backdrop-blur-[2px] z-20"></div>
         </motion.div>
 
         {/* Hero Content - Forced White text for Video contrast */}
