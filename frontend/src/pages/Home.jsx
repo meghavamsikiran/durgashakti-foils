@@ -190,6 +190,8 @@ const Home = () => {
             loop
             muted
             playsInline
+            preload="auto"
+            poster="/hot-wrap-kitchen-cool.jpg"
             className="w-full h-full object-cover"
           >
             <source src="/cinematic-hero.mp4" type="video/mp4" />
