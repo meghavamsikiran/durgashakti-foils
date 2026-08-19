@@ -172,6 +172,10 @@ const Home = () => {
         vid.defaultMuted = true;
         vid.muted = true;
         
+        vid.addEventListener('play', () => {
+          vid.style.opacity = '1';
+        });
+
         const tryPlay = () => {
           const promise = vid.play();
           if (promise !== undefined) {
@@ -181,9 +185,11 @@ const Home = () => {
                 vid.play();
                 window.removeEventListener('touchstart', startPlayOnTouch);
                 window.removeEventListener('click', startPlayOnTouch);
+                window.removeEventListener('scroll', startPlayOnTouch);
               };
               window.addEventListener('touchstart', startPlayOnTouch, { once: true });
               window.addEventListener('click', startPlayOnTouch, { once: true });
+              window.addEventListener('scroll', startPlayOnTouch, { once: true });
             });
           }
         };
@@ -212,7 +218,7 @@ const Home = () => {
 
       {/* Cinematic Video Hero Section - Always Dark for Contrast */}
       <section ref={heroRef} data-force-dark="true" className="hero-section-dark relative w-full h-[100svh] overflow-hidden flex items-center justify-center border-b border-slate-200 dark:border-white/5 bg-[#090d0b]">
-        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="absolute inset-0 w-full h-full z-0">
+        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="absolute inset-0 w-full h-full z-0 bg-[#090d0b]">
           {/* Background Poster Image behind video to avoid Safari native poster controls */}
           <img 
             src="/hot-wrap-kitchen-cool.jpg" 
@@ -234,7 +240,7 @@ const Home = () => {
                   disablepictureinpicture
                   disableremoteplayback
                   controlslist="nodownload nofullscreen noremoteplayback"
-                  style="width: 100%; height: 100%; object-fit: cover;"
+                  style="width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1s ease-in-out;"
                 >
                   <source src="/cinematic-hero.mp4" type="video/mp4" />
                 </video>
