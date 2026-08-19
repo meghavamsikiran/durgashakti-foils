@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import reviewService from '../services/review.service';
 import { motion, useScroll, useTransform } from 'framer-motion';
@@ -163,50 +163,80 @@ const Home = () => {
 
   const videoRef = useRef(null);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const vid = videoRef.current;
-    if (vid) {
-      vid.playbackRate = 0.75;
-      vid.defaultMuted = true;
-      vid.muted = true;
-      vid.setAttribute('playsinline', 'true');
-      vid.setAttribute('webkit-playsinline', 'true');
-      
-      vid.addEventListener('play', () => {
-        vid.style.opacity = '1';
-      });
+    if (!vid) return;
 
-      function setupFallback() {
-        const startPlayOnTouch = () => {
-          try { vid.play(); } catch (e) {}
-          window.removeEventListener('touchstart', startPlayOnTouch);
-          window.removeEventListener('click', startPlayOnTouch);
-          window.removeEventListener('scroll', startPlayOnTouch);
-        };
-        window.addEventListener('touchstart', startPlayOnTouch, { once: true });
-        window.addEventListener('click', startPlayOnTouch, { once: true });
-        window.addEventListener('scroll', startPlayOnTouch, { once: true });
-      }
+    vid.defaultMuted = true;
+    vid.muted = true;
+    vid.setAttribute('playsinline', '');
+    vid.setAttribute('webkit-playsinline', '');
 
-      const tryPlay = () => {
-        try {
-          const promise = vid.play();
-          if (promise !== undefined) {
-            promise.catch(() => {
-              setupFallback();
-            });
-          }
-        } catch (error) {
-          setupFallback();
-        }
-      };
+    // Show video smoothly once it actually starts playing
+    const onPlay = () => { vid.style.opacity = '1'; };
+    vid.addEventListener('playing', onPlay);
 
-      if (vid.readyState >= 2) {
+    const tryPlay = () => {
+      if (!vid.paused) return; // already playing
+      vid.muted = true; // Safari requires this every time
+      try {
+        const p = vid.play();
+        if (p && p.catch) p.catch(() => {}); // silently ignore
+      } catch (e) {} // silently ignore
+    };
+
+    // Try on various readiness events
+    vid.addEventListener('canplay', tryPlay);
+    vid.addEventListener('canplaythrough', tryPlay);
+    vid.addEventListener('loadeddata', tryPlay);
+
+    // Safari re-evaluates autoplay when visibility changes — this is why
+    // switching apps and coming back works. Hook into it explicitly.
+    const onVisChange = () => {
+      if (document.visibilityState === 'visible') {
         tryPlay();
-      } else {
-        vid.addEventListener('loadeddata', tryPlay, { once: true });
       }
+    };
+    document.addEventListener('visibilitychange', onVisChange);
+
+    // Retry every 500ms for the first 5 seconds as a safety net
+    let retryCount = 0;
+    const retryInterval = setInterval(() => {
+      retryCount++;
+      tryPlay();
+      if (!vid.paused || retryCount >= 10) {
+        clearInterval(retryInterval);
+      }
+    }, 500);
+
+    // Also try on any user interaction
+    const onInteract = () => {
+      tryPlay();
+      if (vid.playbackRate !== 0.75) vid.playbackRate = 0.75;
+    };
+    window.addEventListener('touchstart', onInteract, { once: true });
+    window.addEventListener('click', onInteract, { once: true });
+    window.addEventListener('scroll', onInteract, { once: true });
+
+    // Initial attempt
+    if (vid.readyState >= 2) {
+      tryPlay();
     }
+
+    // Set playback rate once playing
+    vid.addEventListener('playing', () => { vid.playbackRate = 0.75; }, { once: true });
+
+    return () => {
+      clearInterval(retryInterval);
+      document.removeEventListener('visibilitychange', onVisChange);
+      vid.removeEventListener('playing', onPlay);
+      vid.removeEventListener('canplay', tryPlay);
+      vid.removeEventListener('canplaythrough', tryPlay);
+      vid.removeEventListener('loadeddata', tryPlay);
+      window.removeEventListener('touchstart', onInteract);
+      window.removeEventListener('click', onInteract);
+      window.removeEventListener('scroll', onInteract);
+    };
   }, []);
 
   return (
