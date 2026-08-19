@@ -223,7 +223,7 @@ const Home = () => {
             ref={videoWrapperRef}
             className="relative z-10 w-full h-full pointer-events-none"
             dangerouslySetInnerHTML={{
-              __html: \`
+              __html: `
                 <video
                   autoplay
                   loop
@@ -238,7 +238,7 @@ const Home = () => {
                 >
                   <source src="/cinematic-hero.mp4" type="video/mp4" />
                 </video>
-              \`
+              `
             }}
           />
           {/* Advanced Glassmorphic Dark Overlay */}
