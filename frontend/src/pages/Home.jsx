@@ -174,8 +174,17 @@ const Home = () => {
     vid.setAttribute('playsinline', '');
     vid.setAttribute('webkit-playsinline', '');
 
-    // When video starts playing, fade OUT the cover image to reveal the video underneath
-    const onPlay = () => { if (poster) poster.style.opacity = '0'; };
+    // When video starts playing, wait 2s for Safari to auto-hide its native 
+    // controls, then instantly remove the cover image (no fade = no peek-through)
+    let posterTimeout;
+    const onPlay = () => { 
+      posterTimeout = setTimeout(() => {
+        if (poster) {
+          poster.style.transition = 'opacity 0.5s ease-out';
+          poster.style.opacity = '0';
+        }
+      }, 2000);
+    };
     vid.addEventListener('playing', onPlay);
 
     const tryPlay = () => {
@@ -230,6 +239,7 @@ const Home = () => {
 
     return () => {
       clearInterval(retryInterval);
+      clearTimeout(posterTimeout);
       document.removeEventListener('visibilitychange', onVisChange);
       vid.removeEventListener('playing', onPlay);
       vid.removeEventListener('canplay', tryPlay);
