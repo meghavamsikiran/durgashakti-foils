@@ -23,6 +23,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import OrderPolicies from './pages/OrderPolicies';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import LandingPage from './pages/LandingPage';
 import TermsOfService from './pages/TermsOfService';
 
 // Lazy loaded (authenticated routes)
@@ -103,6 +104,7 @@ function AppRoutes() {
   }, [themeMode]);
 
   const isAdminPath = location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin');
+  const isLandingPath = location.pathname === '/landing';
   const isProtectedRoute = location.pathname.startsWith('/dashboard') || 
                            location.pathname.startsWith('/checkout') || 
                            location.pathname.startsWith('/order') || 
@@ -114,16 +116,17 @@ function AppRoutes() {
   return (
     <CartProvider>
       <ProgressProvider>
-      <div className={`App ${themeClass} pb-16 md:pb-0`}>
+      <div className={`App ${themeClass} ${isLandingPath ? '' : 'pb-16 md:pb-0'}`}>
         <ScrollToTop />
         <RouteTransitionLoader />
-        {!isAdminPath && <Navbar />}
-        {!isAdminPath && <PopupBanner />}
+        {!isAdminPath && !isLandingPath && <Navbar />}
+        {!isAdminPath && !isLandingPath && <PopupBanner />}
 
         <Suspense fallback={<SuspenseTrigger />}>
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Home />} />
+            <Route path="/landing" element={<LandingPage />} />
             <Route path="/shop" element={<Shop />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/login" element={<Login />} />
@@ -251,8 +254,8 @@ function AppRoutes() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
-        {!isAdminPath && !(isProtectedRoute && authLoading) && <Footer />}
-        {!isAdminPath && <AiAssistant />}
+        {!isAdminPath && !isLandingPath && !(isProtectedRoute && authLoading) && <Footer />}
+        {!isAdminPath && !isLandingPath && <AiAssistant />}
         <Toaster position="top-center" closeButton visibleToasts={1} />
       </div>
       </ProgressProvider>

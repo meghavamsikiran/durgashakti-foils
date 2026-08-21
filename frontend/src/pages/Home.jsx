@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import reviewService from '../services/review.service';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import './landing/styles/landing-v2.css';
+import FoilRollCanvasReact from './landing/components/FoilRollCanvasReact';
 import {
   ArrowRight,
   Leaf,
@@ -135,6 +137,25 @@ const staggerContainer = {
 const Home = () => {
   const navigate = useNavigate();
   const heroRef = useRef(null);
+  const [activeVariant, setActiveVariant] = useState(1);
+  const [isFoilPulled, setIsFoilPulled] = useState(false);
+  const [is360Active, setIs360Active] = useState(false);
+
+  useEffect(() => {
+    const handleFoilPullState = (e) => {
+      setIsFoilPulled(e.detail.isPulled);
+    };
+    const handle360ModeToggle = (e) => {
+      setIs360Active(e.detail.active);
+    };
+    window.addEventListener('foil-pull-state', handleFoilPullState);
+    window.addEventListener('360-mode-toggle', handle360ModeToggle);
+    return () => {
+      window.removeEventListener('foil-pull-state', handleFoilPullState);
+      window.removeEventListener('360-mode-toggle', handle360ModeToggle);
+    };
+  }, []);
+
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end start"]
@@ -264,74 +285,90 @@ const Home = () => {
         .font-display { font-family: 'Playfair Display', serif; }
       `}</style>
 
-      {/* Cinematic Video Hero Section - Always Dark for Contrast */}
-      <section ref={heroRef} data-force-dark="true" className="hero-section-dark relative w-full h-[100svh] overflow-hidden flex items-center justify-center border-b border-slate-200 dark:border-white/5 bg-[#090d0b]">
-        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="absolute inset-0 w-full h-full z-0 bg-[#090d0b]">
-          {/* Video plays behind at z-0, always full opacity */}
-          <video
-            ref={videoRef}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            disablePictureInPicture
-            disableRemotePlayback
-            className="absolute inset-0 z-0 w-full h-full object-cover pointer-events-none"
-          >
-            <source src="/cinematic-hero.mp4" type="video/mp4" />
-          </video>
-          {/* Cover image sits ON TOP at z-10, hides video + Safari controls until playing */}
-          <img 
-            ref={posterRef}
-            src="/hot-wrap-kitchen-cool.jpg" 
-            alt="Hero fallback background" 
-            className="absolute inset-0 w-full h-full object-cover z-10 pointer-events-none"
-            style={{ transition: 'opacity 1s ease-in-out' }}
-          />
-          {/* Advanced Glassmorphic Dark Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#090d0b] via-[#090d0b]/70 to-[#090d0b]/40 backdrop-blur-[2px] z-20"></div>
+      {/* Cinematic Interactive 3D Foil Hero Section */}
+      <section ref={heroRef} data-force-dark="true" className="landing-page-v2 hero-section-dark relative w-full h-[100svh] overflow-hidden flex items-center justify-center border-b border-slate-200 dark:border-white/5 bg-[#0a0a0e]">
+        <motion.div style={{ opacity: heroOpacity }} className="absolute inset-0 w-full h-full z-0 bg-[#0a0a0e]">
+          {/* Background Lighting */}
+          <div className="studio-bg"></div>
+          <div className="warm-glow-left"></div>
+          <div className="cool-glow-right"></div>
+          
+          {/* Three.js Interactive 3D Canvas */}
+          <FoilRollCanvasReact activeVariant={activeVariant} />
         </motion.div>
 
-        {/* Hero Content - Forced White text for Video contrast */}
-        <div className="relative z-10 w-full max-w-full px-6 md:px-10 lg:px-16 xl:px-24 2xl:px-32">
-          <motion.div 
-            className="w-full lg:max-w-[850px] xl:max-w-[1000px] mt-16"
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-green/30 bg-brand-green/10 text-brand-green text-[11px] font-bold tracking-wide backdrop-blur-md shadow-2xl">
-               <ShieldCheck className="w-3.5 h-3.5" />
-              100% FOOD GRADE CERTIFIED
-            </motion.div>
+        {/* Hero Content Grid — fully transparent to pointer events in 360° mode so canvas gets all clicks */}
+        <div className={`hero-grid relative z-10 w-full h-full ${is360Active ? 'pointer-events-none' : ''}`}>
+          {/* Left Column */}
+          <div className="hero-left">
+            <div className={`transition-opacity duration-500 ${isFoilPulled || is360Active ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+              <div className="hero-tagline pointer-events-auto">DurgaShakti Foils • HOT WRAP</div>
+              <h1 className="display-title pointer-events-auto">
+                Wrap
+                <span className="highlight">Freshness</span>
+              </h1>
+              <p className="hero-copy pointer-events-auto">
+                Food-grade aluminium foil designed to keep your food hot, fresh and protected.
+              </p>
+            </div>
             
-            <motion.h1 variants={fadeInUp} className="font-display mt-6 text-5xl md:text-6xl lg:text-7xl xl:text-[5.5rem] font-black leading-[1.05] tracking-tight drop-shadow-2xl">
-              <span className="block text-white">Wrap it Right,</span>
-              <span className="block text-brand-yellow hero-text-amber">Keep it Hot,</span>
-              <span className="block text-brand-green hero-text-emerald">Keep it Fresh!</span>
-            </motion.h1>
-
-            <motion.p variants={fadeInUp} className="mt-8 text-slate-200 text-base md:text-lg leading-relaxed text-left max-w-2xl font-medium drop-shadow-lg">
-              Experience the strength of premium food-grade aluminium foil engineered for commercial resilience and unmatched household hygiene. 
-            </motion.p>
-
-            <motion.div variants={fadeInUp} className="mt-10 flex flex-wrap items-center gap-6">
-              <button
-                onClick={() => navigate('/shop')}
-                className="group relative inline-flex items-center gap-3 bg-brand-green text-black font-extrabold px-8 py-4 rounded-full hover:bg-brand-green/90 transition-all transform hover:-translate-y-1 shadow-[0_10px_40px_rgba(56,210,90,0.4)] overflow-hidden"
-              >
-                <span className="relative z-10 flex items-center gap-3">
-                  Shop Now
-                  <span className="w-7 h-7 rounded-full border border-black/20 flex items-center justify-center group-hover:translate-x-1 transition-transform bg-white/20">
-                    <ArrowRight className="w-4 h-4" />
-                  </span>
-                </span>
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out z-0"></div>
+            <div className={`flex items-center gap-4 mt-6 relative z-30 ${is360Active ? 'pointer-events-none' : 'pointer-events-auto'}`}>
+              <button onClick={() => navigate('/shop')} className={`btn-cta cursor-pointer transition-opacity duration-500 ${isFoilPulled || is360Active ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <span>Explore HOT WRAP</span>
+                <div className="icon-circle">➔</div>
               </button>
-            </motion.div>
+            </div>
 
-          </motion.div>
+            <div className="flex items-center gap-4 mt-4 relative z-30">
+              <div className={`quality-badge transition-opacity duration-500 ${isFoilPulled || is360Active ? 'opacity-0 pointer-events-none' : 'pointer-events-auto opacity-100'}`} style={{ marginTop: 0 }}>
+                <div className="badge-icon">✓</div>
+                <div className="badge-text">FOOD GRADE • PREMIUM ALUMINIUM FOIL</div>
+              </div>
+              
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.__toggle360Mode) window.__toggle360Mode();
+                }}
+                title="360° Free Rotation Mode"
+                style={{ pointerEvents: 'auto' }}
+                className={`p-3.5 rounded-full border transition-all duration-300 shadow-xl cursor-pointer flex items-center justify-center ${ 
+                  is360Active 
+                    ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_25px_rgba(37,217,88,0.8)] scale-110' 
+                    : 'bg-slate-900/80 dark:bg-black/60 border-brand-green/40 text-white hover:border-brand-green hover:bg-brand-green/10'
+                }`}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={is360Active ? "#090d0b" : "#25d958"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                  <path d="M21 3v5h-5" />
+                  <text x="11.5" y="15.5" fill={is360Active ? "#090d0b" : "#ffffff"} stroke="none" fontSize="8" fontWeight="900" textAnchor="middle" fontFamily="sans-serif">360°</text>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Center Column */}
+          <div></div>
+
+          {/* Right Column - Vertical Auto-Scrolling Gallery (Fades out when pulling foil OR in 360 mode) */}
+          <div className={`hero-right transition-opacity duration-500 ${isFoilPulled || is360Active ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} style={{ height: '100%' }}>
+            <div className="scrolling-gallery-wrapper">
+              <div className="scrolling-gallery-mask">
+                <div className="scrolling-gallery-track">
+                  {[...Array(2)].map((_, groupIndex) => (
+                    <React.Fragment key={groupIndex}>
+                      <div className="gallery-item"><img src="/images/gallery/gallery-1.jpg" alt="DurgaShakti Foils Product 1" /></div>
+                      <div className="gallery-item"><img src="/images/gallery/gallery-2.jpg" alt="DurgaShakti Foils Product 2" /></div>
+                      <div className="gallery-item"><img src="/images/gallery/gallery-3.jpg" alt="DurgaShakti Foils Product 3" /></div>
+                      <div className="gallery-item"><img src="/images/gallery/gallery-4.jpg" alt="DurgaShakti Foils Product 4" /></div>
+                      <div className="gallery-item"><img src="/images/gallery/gallery-5.jpg" alt="DurgaShakti Foils Product 5" /></div>
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
