@@ -9,8 +9,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let renderer, reqId, observer;
-
     // Three.js Scene Setup
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
