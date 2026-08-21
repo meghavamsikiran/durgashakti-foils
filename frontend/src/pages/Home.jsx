@@ -319,7 +319,7 @@ const Home = () => {
               </button>
             </div>
 
-            <div className="flex items-center gap-4 mt-4 relative z-30">
+            <div className="flex items-center gap-4 mt-1 relative z-30">
               <div className={`quality-badge transition-opacity duration-500 ${isFoilPulled || is360Active ? 'opacity-0 pointer-events-none' : 'pointer-events-auto opacity-100'}`} style={{ marginTop: 0 }}>
                 <div className="badge-icon">✓</div>
                 <div className="badge-text">FOOD GRADE • PREMIUM ALUMINIUM FOIL</div>
@@ -333,7 +333,7 @@ const Home = () => {
                 }}
                 title="360° Free Rotation Mode"
                 style={{ pointerEvents: 'auto' }}
-                className={`p-3.5 rounded-full border transition-all duration-300 shadow-xl cursor-pointer flex items-center justify-center ${ 
+                className={`p-3.5 rounded-full border transition-all duration-300 shadow-xl cursor-pointer flex items-center justify-center ${isFoilPulled ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${ 
                   is360Active 
                     ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_25px_rgba(37,217,88,0.8)] scale-110' 
                     : 'bg-slate-900/80 dark:bg-black/60 border-brand-green/40 text-white hover:border-brand-green hover:bg-brand-green/10'
