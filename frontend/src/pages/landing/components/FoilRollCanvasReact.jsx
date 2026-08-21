@@ -53,21 +53,39 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     const foilRollGroup = new THREE.Group();
     const textureLoader = new THREE.TextureLoader();
 
-    // High-Res Seamless Brushed Silver Texture Map
-    const silverBrushedTexture = textureLoader.load('/pure_foil_texture_seamless.jpg');
-    silverBrushedTexture.wrapS = THREE.RepeatWrapping;
-    silverBrushedTexture.wrapT = THREE.RepeatWrapping;
-    silverBrushedTexture.repeat.set(3, 2); // Increased tiling for finer grain
-
-    // True Photorealistic Brushed Aluminum Material
+    // True Photorealistic Brushed Aluminum Material (Starts as solid silver, texture mapped on load)
     const aluminiumMaterial = new THREE.MeshStandardMaterial({
-      map: silverBrushedTexture,
-      bumpMap: silverBrushedTexture,
       bumpScale: 0.015,       // Stronger bump for brushed feel
       color: 0x99a0a8,        // Medium grey base - metal gets its brightness from reflections!
       metalness: 0.9,         // High metalness - it IS metal
       roughness: 0.35,        // Moderate roughness - spreads the specular highlights beautifully
       side: THREE.DoubleSide
+    });
+
+    const sheetTexture = new THREE.Texture();
+    sheetTexture.wrapS = THREE.RepeatWrapping;
+    sheetTexture.wrapT = THREE.RepeatWrapping;
+    sheetTexture.repeat.set(3, 2);
+    
+    const sheetMaterial = aluminiumMaterial.clone();
+
+    // High-Res Seamless Brushed Silver Texture Map
+    textureLoader.load('/pure_foil_texture_seamless.jpg', (tex) => {
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 2); // Increased tiling for finer grain
+
+      // Update main roll material
+      aluminiumMaterial.map = tex;
+      aluminiumMaterial.bumpMap = tex;
+      aluminiumMaterial.needsUpdate = true;
+
+      // Update unrolled sheet material independently
+      sheetTexture.image = tex.image;
+      sheetTexture.needsUpdate = true;
+      sheetMaterial.map = sheetTexture;
+      sheetMaterial.bumpMap = sheetTexture;
+      sheetMaterial.needsUpdate = true;
     });
 
     const createCardboardCoreTexture = () => {
@@ -236,14 +254,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       sheetPos.setZ(j, z);
     }
     sheetGeo.computeVertexNormals();
-
-    // Create an independent material and texture instance for the sheet
-    // so we can dynamically scale the texture tiling when it is pulled, preventing stretching.
-    const sheetTexture = silverBrushedTexture.clone();
-    sheetTexture.needsUpdate = true;
-    const sheetMaterial = aluminiumMaterial.clone();
-    sheetMaterial.map = sheetTexture;
-    sheetMaterial.bumpMap = sheetTexture;
 
     const sheetMesh = new THREE.Mesh(sheetGeo, sheetMaterial);
     
