@@ -9,6 +9,8 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    let renderer, reqId, observer;
+
     // Three.js Scene Setup
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -491,8 +493,8 @@ export default function FoilRollCanvasReact({ activeVariant }) {
 
     return () => {
       delete window.__toggle360Mode;
-      cancelAnimationFrame(reqId);
-      if (canvasEl) {
+      if (reqId) cancelAnimationFrame(reqId);
+      if (canvasEl && observer) {
         observer.unobserve(canvasEl);
         canvasEl.removeEventListener('pointerdown', handlePointerDown);
       }
@@ -501,7 +503,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
       window.removeEventListener('resize', handleResize);
-      renderer.dispose();
+      if (renderer) renderer.dispose();
     };
   }, []);
 
@@ -556,7 +558,8 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           40% { transform: translateY(10px); }
           60% { transform: translateY(5px); }
         }
-      `}</style>
+      `}
+      </style>
     </div>
   );
 }

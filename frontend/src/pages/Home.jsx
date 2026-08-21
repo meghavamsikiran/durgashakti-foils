@@ -358,11 +358,11 @@ const Home = () => {
                 <div className="scrolling-gallery-track">
                   {[...Array(2)].map((_, groupIndex) => (
                     <React.Fragment key={groupIndex}>
-                      <div className="gallery-item"><img src="/images/gallery/gallery-1.jpg" alt="DurgaShakti Foils Product 1" /></div>
-                      <div className="gallery-item"><img src="/images/gallery/gallery-2.jpg" alt="DurgaShakti Foils Product 2" /></div>
-                      <div className="gallery-item"><img src="/images/gallery/gallery-3.jpg" alt="DurgaShakti Foils Product 3" /></div>
-                      <div className="gallery-item"><img src="/images/gallery/gallery-4.jpg" alt="DurgaShakti Foils Product 4" /></div>
-                      <div className="gallery-item"><img src="/images/gallery/gallery-5.jpg" alt="DurgaShakti Foils Product 5" /></div>
+                      <div className="gallery-item"><img src="/images/gallery/gallery-1.jpg" alt="DurgaShakti Foils Product 1" loading="lazy" onError={(e) => { e.target.parentElement.style.display = 'none'; }} /></div>
+                      <div className="gallery-item"><img src="/images/gallery/gallery-2.jpg" alt="DurgaShakti Foils Product 2" loading="lazy" onError={(e) => { e.target.parentElement.style.display = 'none'; }} /></div>
+                      <div className="gallery-item"><img src="/images/gallery/gallery-3.jpg" alt="DurgaShakti Foils Product 3" loading="lazy" onError={(e) => { e.target.parentElement.style.display = 'none'; }} /></div>
+                      <div className="gallery-item"><img src="/images/gallery/gallery-4.jpg" alt="DurgaShakti Foils Product 4" loading="lazy" onError={(e) => { e.target.parentElement.style.display = 'none'; }} /></div>
+                      <div className="gallery-item"><img src="/images/gallery/gallery-5.jpg" alt="DurgaShakti Foils Product 5" loading="lazy" onError={(e) => { e.target.parentElement.style.display = 'none'; }} /></div>
                     </React.Fragment>
                   ))}
                 </div>
