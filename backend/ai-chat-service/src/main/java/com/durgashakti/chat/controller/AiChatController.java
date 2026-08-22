@@ -12,12 +12,18 @@ import com.durgashakti.order.repository.ContactOrderRepository;
 import com.durgashakti.order.repository.OrderServiceRepository;
 import com.durgashakti.order.repository.OrderUserRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -31,6 +37,9 @@ import org.slf4j.LoggerFactory;
 @RequestMapping("/api/chat")
 public class AiChatController {
   private static final Logger log = LoggerFactory.getLogger(AiChatController.class);
+
+  @Value("${jwt.secret:local_dev_only_ds_foils_jwt_secret_change_me}")
+  private String jwtSecret;
 
   private final GeminiFailoverService failoverService;
   private final ChatMessageRepository chatMessageRepository;
@@ -97,12 +106,56 @@ public class AiChatController {
     this.jdbcTemplate = jdbcTemplate;
   }
 
+  private String generateGuestToken(String sessionId) {
+    if (sessionId == null || sessionId.isBlank()) return "";
+    try {
+      Mac hmac = Mac.getInstance("HmacSHA256");
+      SecretKeySpec keySpec = new SecretKeySpec(jwtSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+      hmac.init(keySpec);
+      byte[] hash = hmac.doFinal(("guest_session:" + sessionId).getBytes(StandardCharsets.UTF_8));
+      StringBuilder hexString = new StringBuilder();
+      for (byte b : hash) {
+        String hex = Integer.toHexString(0xff & b);
+        if (hex.length() == 1) hexString.append('0');
+        hexString.append(hex);
+      }
+      return hexString.toString();
+    } catch (Exception e) {
+      log.error("Failed to generate guest token for session {}", sessionId, e);
+      return "";
+    }
+  }
+
+  private boolean isValidGuestToken(String sessionId, String providedToken) {
+    if (sessionId == null || sessionId.isBlank() || providedToken == null || providedToken.isBlank()) {
+      return false;
+    }
+    String expected = generateGuestToken(sessionId);
+    return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), providedToken.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private boolean isAuthorizedForSession(String sessionId, Authentication authentication, String guestToken) {
+    if (authentication != null && authentication.getPrincipal() != null) {
+      return true; // Logged in users are authorized
+    }
+    return isValidGuestToken(sessionId, guestToken);
+  }
+
   @GetMapping("/history")
-  public ResponseEntity<Map<String, Object>> getHistory(
+  public ResponseEntity<?> getHistory(
       @RequestParam(name = "sessionId", required = false) String sessionId,
+      @RequestParam(name = "guestToken", required = false) String guestTokenParam,
+      @RequestHeader(name = "X-Guest-Token", required = false) String guestTokenHeader,
       Authentication authentication) {
       
       String activeSessionId = (sessionId == null || sessionId.isBlank()) ? "anonymous_session" : sessionId;
+      String guestToken = (guestTokenHeader != null && !guestTokenHeader.isBlank()) ? guestTokenHeader : guestTokenParam;
+
+      if (!isAuthorizedForSession(activeSessionId, authentication, guestToken)) {
+          return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                  .body(Map.of("error", "Access denied: Invalid or missing guest session token."));
+      }
+
       List<ChatMessage> chatLogs = chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(activeSessionId);
       
       if (authentication != null && authentication.getPrincipal() != null) {
@@ -128,19 +181,26 @@ public class AiChatController {
           "text", chatLog.getText()
       )).collect(Collectors.toList());
 
+      String validGuestToken = generateGuestToken(activeSessionId);
+
       return ResponseEntity.ok(Map.of(
           "status", status,
-          "messages", messagesList
+          "messages", messagesList,
+          "guestToken", validGuestToken
       ));
   }
 
   @PostMapping
-  public ResponseEntity<Map<String, String>> chat(
+  public ResponseEntity<?> chat(
       @RequestBody Map<String, String> request,
+      @RequestHeader(name = "X-Guest-Token", required = false) String guestTokenHeader,
       Authentication authentication) {
       
     String userMessageStr = request.get("message");
     String sessionId = request.get("sessionId");
+    String guestTokenReq = request.get("guestToken");
+    String guestToken = (guestTokenHeader != null && !guestTokenHeader.isBlank()) ? guestTokenHeader : guestTokenReq;
+
     if (sessionId == null || sessionId.isBlank()) {
         sessionId = "anonymous_session";
     }
@@ -152,6 +212,16 @@ public class AiChatController {
         } catch (Exception ignored) {}
     }
 
+    // Verify guest token if user is unauthenticated and session already exists
+    if (authenticatedUserId == null && chatSessionRepository.existsById(sessionId)) {
+        if (!isValidGuestToken(sessionId, guestToken)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Access denied: Invalid or missing guest session token."));
+        }
+    }
+
+    String validGuestToken = generateGuestToken(sessionId);
+
     // Ensure session tracking exists
     if (!chatSessionRepository.existsById(sessionId)) {
         ChatSession chatSession = new ChatSession(sessionId, authenticatedUserId);
@@ -161,7 +231,7 @@ public class AiChatController {
     // Check if session has been escalated
     ChatSession currentSession = chatSessionRepository.findById(sessionId).orElse(null);
     if (currentSession != null && "escalated".equalsIgnoreCase(currentSession.getStatus())) {
-        return ResponseEntity.ok(Map.of("response", "Live agent connecting... For immediate helpline, call +91 98765 43210."));
+        return ResponseEntity.ok(Map.of("response", "Live agent connecting... For immediate helpline, call +91 98765 43210.", "guestToken", validGuestToken));
     }
 
     // Save User message to history first
@@ -172,7 +242,7 @@ public class AiChatController {
     if (userMessageStr != null && CODE_TRIVIA_PATTERN.matcher(userMessageStr).find() && !DOMAIN_KEYWORDS.matcher(userMessageStr).find()) {
         ChatMessage botLog = new ChatMessage(authenticatedUserId, sessionId, "bot", GUARDRAIL_REFUSAL);
         chatMessageRepository.save(botLog);
-        return ResponseEntity.ok(Map.of("response", GUARDRAIL_REFUSAL));
+        return ResponseEntity.ok(Map.of("response", GUARDRAIL_REFUSAL, "guestToken", validGuestToken));
     }
 
     // Resolve user's name
@@ -303,7 +373,7 @@ public class AiChatController {
     ChatMessage botLog = new ChatMessage(authenticatedUserId, sessionId, "bot", aiResponse);
     chatMessageRepository.save(botLog);
 
-    return ResponseEntity.ok(Map.of("response", aiResponse));
+    return ResponseEntity.ok(Map.of("response", aiResponse, "guestToken", validGuestToken));
   }
 
   @GetMapping("/user/sessions")
@@ -335,10 +405,21 @@ public class AiChatController {
   }
 
   @PostMapping("/session/close")
-  public ResponseEntity<Map<String, String>> closeSession(@RequestBody Map<String, String> request) {
+  public ResponseEntity<?> closeSession(
+      @RequestBody Map<String, String> request,
+      @RequestHeader(name = "X-Guest-Token", required = false) String guestTokenHeader,
+      Authentication authentication) {
       String sessionId = request.get("sessionId");
+      String guestTokenReq = request.get("guestToken");
+      String guestToken = (guestTokenHeader != null && !guestTokenHeader.isBlank()) ? guestTokenHeader : guestTokenReq;
+
       if (sessionId == null || sessionId.isBlank()) {
           return ResponseEntity.badRequest().body(Map.of("error", "sessionId is required"));
+      }
+
+      if (!isAuthorizedForSession(sessionId, authentication, guestToken)) {
+          return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                  .body(Map.of("error", "Access denied: Invalid or missing guest session token."));
       }
 
       ChatSession session = chatSessionRepository.findById(sessionId).orElse(null);
@@ -350,10 +431,21 @@ public class AiChatController {
   }
 
   @PostMapping("/session/reopen")
-  public ResponseEntity<Map<String, String>> reopenSession(@RequestBody Map<String, String> request) {
+  public ResponseEntity<?> reopenSession(
+      @RequestBody Map<String, String> request,
+      @RequestHeader(name = "X-Guest-Token", required = false) String guestTokenHeader,
+      Authentication authentication) {
       String sessionId = request.get("sessionId");
+      String guestTokenReq = request.get("guestToken");
+      String guestToken = (guestTokenHeader != null && !guestTokenHeader.isBlank()) ? guestTokenHeader : guestTokenReq;
+
       if (sessionId == null || sessionId.isBlank()) {
           return ResponseEntity.badRequest().body(Map.of("error", "sessionId is required"));
+      }
+
+      if (!isAuthorizedForSession(sessionId, authentication, guestToken)) {
+          return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                  .body(Map.of("error", "Access denied: Invalid or missing guest session token."));
       }
 
       ChatSession session = chatSessionRepository.findById(sessionId).orElse(null);
@@ -365,9 +457,23 @@ public class AiChatController {
   }
 
   @PostMapping("/session/feedback")
-  public ResponseEntity<Map<String, String>> submitFeedback(@RequestBody Map<String, Object> request) {
+  public ResponseEntity<?> submitFeedback(
+      @RequestBody Map<String, Object> request,
+      @RequestHeader(name = "X-Guest-Token", required = false) String guestTokenHeader,
+      Authentication authentication) {
       String sessionId = String.valueOf(request.get("sessionId"));
+      String guestTokenReq = request.get("guestToken") != null ? String.valueOf(request.get("guestToken")) : null;
+      String guestToken = (guestTokenHeader != null && !guestTokenHeader.isBlank()) ? guestTokenHeader : guestTokenReq;
       Boolean satisfied = (Boolean) request.get("satisfied");
+
+      if (sessionId == null || sessionId.isBlank() || "null".equals(sessionId)) {
+          return ResponseEntity.badRequest().body(Map.of("error", "sessionId is required"));
+      }
+
+      if (!isAuthorizedForSession(sessionId, authentication, guestToken)) {
+          return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                  .body(Map.of("error", "Access denied: Invalid or missing guest session token."));
+      }
 
       ChatSession session = chatSessionRepository.findById(sessionId).orElse(null);
       String systemMsg;
@@ -393,8 +499,23 @@ public class AiChatController {
   }
 
   @PostMapping("/session/escalate")
-  public ResponseEntity<Map<String, String>> escalateSession(@RequestBody Map<String, String> request) {
+  public ResponseEntity<?> escalateSession(
+      @RequestBody Map<String, String> request,
+      @RequestHeader(name = "X-Guest-Token", required = false) String guestTokenHeader,
+      Authentication authentication) {
       String sessionId = request.get("sessionId");
+      String guestTokenReq = request.get("guestToken");
+      String guestToken = (guestTokenHeader != null && !guestTokenHeader.isBlank()) ? guestTokenHeader : guestTokenReq;
+
+      if (sessionId == null || sessionId.isBlank()) {
+          return ResponseEntity.badRequest().body(Map.of("error", "sessionId is required"));
+      }
+
+      if (!isAuthorizedForSession(sessionId, authentication, guestToken)) {
+          return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                  .body(Map.of("error", "Access denied: Invalid or missing guest session token."));
+      }
+
       ChatSession session = chatSessionRepository.findById(sessionId).orElse(null);
       String systemMsg = "I understand your frustration. Connecting you to a live support agent... Please wait while we fetch help. You can also call us directly at +91 98765 43210 for immediate live support.";
       

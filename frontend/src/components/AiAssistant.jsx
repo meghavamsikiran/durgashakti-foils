@@ -9,6 +9,39 @@ function formatCaseId(rawSessionId) {
   return `AI-CASE-${clean.substring(0, 6)}`;
 }
 
+function generateSecureSessionId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return 'session-' + crypto.randomUUID().replace(/-/g, '');
+  }
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint8Array(16);
+    crypto.getRandomValues(array);
+    return 'session-' + Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+  }
+  return 'session-' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+}
+
+function getGuestTokenForSession(sessId) {
+  if (!sessId) return '';
+  try {
+    const mapStr = localStorage.getItem('ai_guest_tokens_map');
+    const map = mapStr ? JSON.parse(mapStr) : {};
+    return map[sessId] || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function saveGuestTokenForSession(sessId, token) {
+  if (!sessId || !token) return;
+  try {
+    const mapStr = localStorage.getItem('ai_guest_tokens_map');
+    const map = mapStr ? JSON.parse(mapStr) : {};
+    map[sessId] = token;
+    localStorage.setItem('ai_guest_tokens_map', JSON.stringify(map));
+  } catch (e) {}
+}
+
 export default function AiAssistant() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -16,7 +49,7 @@ export default function AiAssistant() {
   const [sessionId, setSessionId] = useState(() => {
     let id = localStorage.getItem('ai_session_id');
     if (!id) {
-      id = 'session-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      id = generateSecureSessionId();
       localStorage.setItem('ai_session_id', id);
     }
     return id;
@@ -142,8 +175,14 @@ export default function AiAssistant() {
       const fetchHistory = async (showLoadingState = true) => {
         if (showLoadingState) setLoadingHistory(true);
         try {
-          const res = await apiClient.get(`/chat/history?sessionId=${sessionId}`);
+          const guestToken = getGuestTokenForSession(sessionId);
+          const res = await apiClient.get(`/chat/history?sessionId=${sessionId}`, {
+            headers: guestToken ? { 'X-Guest-Token': guestToken } : {}
+          });
           if (res.data) {
+            if (res.data.guestToken) {
+              saveGuestTokenForSession(sessionId, res.data.guestToken);
+            }
             if (!loadingRef.current) {
               const historyMsgs = res.data.messages || [];
               if (historyMsgs.length > 0) {
@@ -189,10 +228,16 @@ export default function AiAssistant() {
     setLoading(true);
 
     try {
+      const guestToken = getGuestTokenForSession(sessionId);
       const res = await apiClient.post('/chat', { 
         message: userText,
         sessionId: sessionId 
+      }, {
+        headers: guestToken ? { 'X-Guest-Token': guestToken } : {}
       });
+      if (res.data?.guestToken) {
+        saveGuestTokenForSession(sessionId, res.data.guestToken);
+      }
       setMessages((prev) => [...prev, { sender: 'bot', text: res.data.response }]);
     } catch (err) {
       setMessages((prev) => [
@@ -206,7 +251,10 @@ export default function AiAssistant() {
 
   const handleEndChat = async () => {
     try {
-      await apiClient.post('/chat/session/close', { sessionId });
+      const guestToken = getGuestTokenForSession(sessionId);
+      await apiClient.post('/chat/session/close', { sessionId }, {
+        headers: guestToken ? { 'X-Guest-Token': guestToken } : {}
+      });
     } catch (err) {
       console.error("Failed to close session:", err);
     } finally {
@@ -220,7 +268,10 @@ export default function AiAssistant() {
 
   const handleReopenChatSession = async (targetSessionId = sessionId) => {
     try {
-      await apiClient.post('/chat/session/reopen', { sessionId: targetSessionId });
+      const guestToken = getGuestTokenForSession(targetSessionId);
+      await apiClient.post('/chat/session/reopen', { sessionId: targetSessionId }, {
+        headers: guestToken ? { 'X-Guest-Token': guestToken } : {}
+      });
     } catch (err) {
       console.error("Failed to reopen session:", err);
     } finally {
@@ -238,9 +289,12 @@ export default function AiAssistant() {
     setShowSurvey(false);
     setLoading(true);
     try {
+      const guestToken = getGuestTokenForSession(sessionId);
       const res = await apiClient.post('/chat/session/feedback', { 
         sessionId, 
         satisfied 
+      }, {
+        headers: guestToken ? { 'X-Guest-Token': guestToken } : {}
       });
       
       setMessages((prev) => [...prev, { sender: 'bot', text: res.data.response }]);
@@ -261,7 +315,10 @@ export default function AiAssistant() {
     setShowEscalationConfirm(false);
     setLoading(true);
     try {
-      const res = await apiClient.post('/chat/session/escalate', { sessionId });
+      const guestToken = getGuestTokenForSession(sessionId);
+      const res = await apiClient.post('/chat/session/escalate', { sessionId }, {
+        headers: guestToken ? { 'X-Guest-Token': guestToken } : {}
+      });
       setMessages((prev) => [...prev, { sender: 'bot', text: res.data.response }]);
       setSessionStatus('escalated');
     } catch (err) {
@@ -272,7 +329,7 @@ export default function AiAssistant() {
   };
 
   const handleStartNewChat = () => {
-    const newId = 'session-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const newId = generateSecureSessionId();
     localStorage.setItem('ai_session_id', newId);
     setSessionId(newId);
     setSessionStatus('active');
