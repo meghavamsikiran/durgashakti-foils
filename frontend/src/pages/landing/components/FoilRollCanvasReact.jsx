@@ -53,38 +53,15 @@ export default function FoilRollCanvasReact({ activeVariant }) {
 
     // True Photorealistic Brushed Aluminum Material (Starts as solid silver, texture mapped on load)
     const aluminiumMaterial = new THREE.MeshStandardMaterial({
-      bumpScale: 0.015,       // Stronger bump for brushed feel
       color: 0x99a0a8,        // Medium grey base - metal gets its brightness from reflections!
       metalness: 0.9,         // High metalness - it IS metal
       roughness: 0.35,        // Moderate roughness - spreads the specular highlights beautifully
       side: THREE.DoubleSide
     });
 
-    const sheetTexture = new THREE.Texture();
-    sheetTexture.wrapS = THREE.RepeatWrapping;
-    sheetTexture.wrapT = THREE.RepeatWrapping;
-    sheetTexture.repeat.set(3, 2);
-    
-    const sheetMaterial = aluminiumMaterial.clone();
-
-    // High-Res Seamless Brushed Silver Texture Map
-    textureLoader.load('/pure_foil_texture_seamless.jpg', (tex) => {
-      tex.wrapS = THREE.RepeatWrapping;
-      tex.wrapT = THREE.RepeatWrapping;
-      tex.repeat.set(3, 2); // Increased tiling for finer grain
-
-      // Update main roll material
-      aluminiumMaterial.map = tex;
-      aluminiumMaterial.bumpMap = tex;
-      aluminiumMaterial.needsUpdate = true;
-
-      // Update unrolled sheet material independently
-      sheetTexture.image = tex.image;
-      sheetTexture.needsUpdate = true;
-      sheetMaterial.map = sheetTexture;
-      sheetMaterial.bumpMap = sheetTexture;
-      sheetMaterial.needsUpdate = true;
-    });
+    // Use pure procedural metallic reflections for both the cylinder and the sheet.
+    // This guarantees a flawless, invisible seam where the sheet unrolls from the cylinder.
+    // The sheet will get its realism entirely from its 3D physical waves catching the specular lights.
 
     const createCardboardCoreTexture = () => {
       const cv = document.createElement('canvas');
@@ -222,51 +199,93 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     rollCylinderGroup.add(darkCore);
 
     // Invisible Cylinder Hit Enclosure (Guarantees 100% hit detection on top, sides, and rings)
-    const cylinderHitGeo = new THREE.CylinderGeometry(1.1, 1.1, 4.4, 32);
-    const cylinderHitMat = new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide });
+    const cylinderHitGeo = new THREE.CylinderGeometry(1.2, 1.2, 4.6, 32);
+    const cylinderHitMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
     const cylinderHitMesh = new THREE.Mesh(cylinderHitGeo, cylinderHitMat);
     cylinderHitMesh.rotation.z = Math.PI / 2;
     rollCylinderGroup.add(cylinderHitMesh);
 
-    // 5. UNROLLED 3D FOIL SHEET EXTENSION (Seamlessly connected)
-    const baseSheetLength = 2.25;
+    // 5. UNROLLED 3D FOIL SHEET EXTENSION (Mathematically continuous parametric surface)
+    const baseSheetLength = 3.6;
     const sheetGeo = new THREE.PlaneGeometry(4.2, baseSheetLength, 64, 64);
-    
-    // Shift geometry so its origin (pivot point) is exactly at the top edge
     sheetGeo.translate(0, -baseSheetLength / 2, 0);
 
-    // Apply realistic crumpled foil waves and an elegant swoop
-    const sheetPos = sheetGeo.attributes.position;
-    for (let j = 0; j < sheetPos.count; j++) {
-      const x = sheetPos.getX(j);
-      const y = sheetPos.getY(j);
-      
-      const intensity = Math.pow(Math.abs(y) / baseSheetLength, 1.5); 
-      
-      const wave1 = Math.sin(x * 5.0 + y * 2.5) * 0.04;
-      const wave2 = Math.cos(x * 9.0 - y * 4.0) * 0.02;
-      const z = (wave1 + wave2) * intensity;
-      
-      // Foil exits perfectly straight and natural. The deep diagonal flow comes purely from the cylinder's 3D rotation.
-      sheetPos.setX(j, x);
-      sheetPos.setZ(j, z);
-    }
-    sheetGeo.computeVertexNormals();
+    const R_sheet = 0.951;  // Fits flush on cylinder radius 0.95
+    const theta_0 = -2.9;   // Starts wrapped deep at the BACK of the cylinder (100% hidden from view)
+    const v_detach = 1.0;   // Wraps all the way around the bottom curve to the front
 
-    const sheetMesh = new THREE.Mesh(sheetGeo, sheetMaterial);
-    
-    // Position exactly at the bottom-front tangent of the cylinder
-    sheetMesh.position.set(0, -0.94, 0.05); 
-    sheetMesh.rotation.set(-1.25, 0, 0);
+    const theta_d = theta_0 + (v_detach / R_sheet);
+    const y_d = R_sheet * Math.sin(theta_d);
+    const z_d = R_sheet * Math.cos(theta_d);
+    const Ty = Math.cos(theta_d);
+    const Tz = -Math.sin(theta_d);
+    const Ny = Math.sin(theta_d);
+    const Nz = Math.cos(theta_d);
+
+    let lastRenderedPull = -1;
+
+    // Store pristine original V coordinates once so dynamic updates never corrupt vertex sampling
+    const origVArray = new Float32Array(sheetGeo.attributes.position.count);
+    const initPos = sheetGeo.attributes.position;
+    for (let k = 0; k < initPos.count; k++) {
+      origVArray[k] = -initPos.getY(k);
+    }
+
+    const updateSheetGeometry = (pullLength) => {
+      const pos = sheetGeo.attributes.position;
+      const unrolledTotal = (baseSheetLength - v_detach) + pullLength;
+
+      for (let j = 0; j < pos.count; j++) {
+        const x = pos.getX(j);
+        const v = origVArray[j]; // Read pristine, uncorrupted V coordinate!
+
+        let currY, currZ;
+
+        if (v <= v_detach) {
+          // Wrapped flush on the bottom curve of the cylinder (100% PERMANENTLY LOCKED)
+          const theta = theta_0 + (v / R_sheet);
+          currY = R_sheet * Math.sin(theta);
+          currZ = R_sheet * Math.cos(theta);
+        } else {
+          // Unrolling tail extends outwards according to pullLength
+          const progressInOriginal = (v - v_detach) / (baseSheetLength - v_detach);
+          const s = progressInOriginal * unrolledTotal;
+
+          const unrollY = y_d + s * Ty;
+          const unrollZ = z_d + s * Tz;
+
+          const intensity = Math.pow(progressInOriginal, 1.5);
+          const wave1 = Math.sin(x * 5.0 + s * 2.5) * 0.04;
+          const wave2 = Math.cos(x * 9.0 - s * 4.0) * 0.02;
+          const wave = (wave1 + wave2) * intensity;
+
+          currY = unrollY + wave * Ny;
+          currZ = unrollZ + wave * Nz;
+        }
+
+        pos.setX(j, x);
+        pos.setY(j, currY);
+        pos.setZ(j, currZ);
+      }
+
+      pos.needsUpdate = true;
+      sheetGeo.computeVertexNormals();
+    };
+
+    updateSheetGeometry(0);
+
+    const sheetMesh = new THREE.Mesh(sheetGeo, aluminiumMaterial);
+    sheetMesh.position.set(0, 0, 0);
+    sheetMesh.rotation.set(0, 0, 0);
     
     foilRollGroup.add(sheetMesh);
 
     // 6. INVISIBLE HITBOX FOR EASIER INTERACTION
-    // This sits exactly where the sheet is, but is much larger so hovering near the text always triggers it.
-    const hitGeo = new THREE.PlaneGeometry(8, 8);
-    const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+    // Sits right where the sheet and Pull Me text are, guaranteeing 100% reliable drag triggering everywhere
+    const hitGeo = new THREE.PlaneGeometry(10, 10);
+    const hitMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
     const hitMesh = new THREE.Mesh(hitGeo, hitMat);
-    hitMesh.position.set(0, -3, 0);
+    hitMesh.position.set(0, -2, 0);
     foilRollGroup.add(hitMesh);
 
     // Initial Global Orientation (Corrected 3/4 perspective)
@@ -303,18 +322,17 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     };
 
     const handlePointerDown = (e) => {
-      // Don't intercept clicks on the 360° toggle button itself — let it toggle normally
-      if (e.target && e.target.closest && e.target.closest('[title="360° Free Rotation Mode"]')) {
+      // Don't intercept clicks on interactive buttons, links, or form controls
+      if (e.target && e.target.closest && e.target.closest('button, a, input, select, textarea, [role="button"], [title="360° Free Rotation Mode"]')) {
         return;
       }
-      
-      if (e.cancelable) e.preventDefault();
       
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
       // In 360° mode: ANY click ANYWHERE on screen starts free rotation immediately
       if (is360Mode) {
+        if (e.cancelable) e.preventDefault();
         isDragging = true;
         dragStartClientY = clientY;
         dragStartClientX = clientX;
@@ -325,12 +343,8 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         return;
       }
 
-      // Normal mode: only start drag if clicking directly on the canvas and hitting the 3D model
-      if (e.target !== canvasRef.current) return;
-      
-      if (e.pointerId !== undefined && canvasRef.current.setPointerCapture) {
-        try { canvasRef.current.setPointerCapture(e.pointerId); } catch (err) {}
-      }
+      // Normal mode: raycast from camera to hit 3D model even if clicking over transparent text overlay containers
+      if (!canvasRef.current) return;
       
       const rect = canvasRef.current.getBoundingClientRect();
       mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
@@ -340,10 +354,14 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       const intersects = raycaster.intersectObjects(foilRollGroup.children, true);
       
       if (intersects.length > 0) {
+        if (e.cancelable) e.preventDefault();
         isDragging = true;
         dragStartClientY = clientY;
         dragStartClientX = clientX;
         document.body.style.cursor = 'grabbing';
+        if (e.pointerId !== undefined && canvasRef.current.setPointerCapture) {
+          try { canvasRef.current.setPointerCapture(e.pointerId); } catch (err) {}
+        }
       }
     };
 
@@ -511,16 +529,17 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           window.dispatchEvent(new CustomEvent('foil-pull-state', { detail: { isPulled: pullState } }));
         }
 
-        // Apply interactive foil pull length (scale sheet)
-        const scaleY = (baseSheetLength + currentFoilPull) / baseSheetLength;
-        sheetMesh.scale.y = scaleY;
+        // Dynamically extend unrolled sheet tail while keeping top edge 100% locked to cylinder
+        if (Math.abs(currentFoilPull - lastRenderedPull) > 0.001) {
+          lastRenderedPull = currentFoilPull;
+          updateSheetGeometry(currentFoilPull);
+        }
         
         // Prevent texture stretching by dynamically increasing texture tiling based on scale
-        sheetTexture.repeat.set(3, 2 * scaleY);
         
         // Spin the cylinder roll dynamically based on pulled distance (circumference ratio)
         // Cylinder radius is 0.95. Unroll rotation = distance / radius
-        rollCylinderGroup.rotation.x = currentFoilPull / 0.95;
+        rollCylinderGroup.rotation.x = -currentFoilPull / 0.95;
       }
 
       renderer.render(scene, camera);

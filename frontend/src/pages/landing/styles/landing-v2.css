@@ -274,8 +274,8 @@
 
 .landing-page-v2 .pull-me-hint {
   position: absolute;
-  bottom: 32%;
-  left: 58%;
+  bottom: 35%;
+  left: 64%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
@@ -292,7 +292,7 @@
 @media (max-width: 1024px) {
   .landing-page-v2 .pull-me-hint {
     bottom: 28%;
-    left: 54%;
+    left: 64%;
   }
 }
 
@@ -389,8 +389,8 @@
     margin-top: auto;
   }
   .landing-page-v2 .pull-me-hint {
-    bottom: 20%;
-    left: 50%;
+    bottom: 28%;
+    left: 64%;
   }
   .landing-page-v2 .hero-right {
     display: none !important; /* Hide scrolling gallery on tablets and mobile to prioritize 3D foil */
@@ -426,8 +426,8 @@
     padding-bottom: 20px;
   }
   .landing-page-v2 .pull-me-hint {
-    bottom: 38%;
-    left: 55%;
+    bottom: 34%;
+    left: 65%;
   }
   .landing-page-v2 .btn-cta {
     padding: 12px 24px;
