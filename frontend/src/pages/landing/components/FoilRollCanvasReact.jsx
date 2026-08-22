@@ -846,7 +846,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         foilRollGroup.rotation.y = 0.65 + manualYRotation;
         foilRollGroup.rotation.z = 0.35;
         
-        const bounce = window.innerWidth < 768 ? 0 : Math.sin(Date.now() * 0.0016) * 0.09;
+        const bounce = Math.sin(Date.now() * 0.0016) * 0.09;
         foilRollGroup.position.x = baseFoilX;
         foilRollGroup.position.y = baseFoilY + bounce;
 
