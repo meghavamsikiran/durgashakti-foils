@@ -619,8 +619,11 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       const intersects = raycaster.intersectObjects(scene.children, true);
       const isClickedOverlay = overlayRef.current && overlayRef.current.contains(e.target);
       
-      // Allow drag if user clicks 3D model, overlay, or anywhere in right half of screen
-      if (intersects.length > 0 || isClickedOverlay || clientX > window.innerWidth * 0.35) {
+      // Allow drag if user touches/clicks 3D model, overlay, or anywhere in interaction zone
+      const isMobileOrTablet = window.innerWidth < 1024;
+      const isScreenTarget = isMobileOrTablet ? clientY > window.innerHeight * 0.25 : clientX > window.innerWidth * 0.35;
+
+      if (intersects.length > 0 || isClickedOverlay || isScreenTarget) {
         if (e.cancelable) e.preventDefault();
         isDragging = true;
         setIsDraggingState(true);
@@ -667,7 +670,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         return;
       }
       
-      // Calculate drag deltas with diagonal movement pull tolerance (±30° tolerance around pull axis)
+      // Calculate drag deltas with responsive scale factor for mobile/tablet screen sizes
       const deltaX = clientX - dragStartClientX;
       const deltaY = clientY - dragStartClientY;
       
@@ -675,10 +678,10 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         manualYRotation += deltaX * 0.01;
         manualXRotation += deltaY * 0.01;
       } else {
-        // Directional drag along unrolling axis (downward Y + rightward X)
-        // Strictly use directional deltas so dragging feels smooth, precise, and never sky-rockets
+        // Compensate for 3D model scale factor on mobile (0.5x) and tablet (0.6x)
+        const deviceScaleFactor = window.innerWidth < 768 ? 2.0 : (window.innerWidth < 1024 ? 1.6 : 1.0);
         const directionalDelta = (deltaY * 0.7 + deltaX * 0.7);
-        const effectivePullDelta = directionalDelta * 0.005;
+        const effectivePullDelta = directionalDelta * 0.005 * deviceScaleFactor;
         
         targetFoilPull += effectivePullDelta;
         if (targetFoilPull > maxPull) targetFoilPull = maxPull;
