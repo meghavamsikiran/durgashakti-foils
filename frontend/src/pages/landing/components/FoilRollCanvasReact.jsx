@@ -4,6 +4,9 @@ import * as THREE from 'three';
 export default function FoilRollCanvasReact({ activeVariant }) {
   const canvasRef = useRef(null);
   const overlayRef = useRef(null);
+  const [hasInteracted, setHasInteracted] = React.useState(false);
+  const [isHovered, setIsHovered] = React.useState(false);
+  const [isDraggingState, setIsDraggingState] = React.useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -575,8 +578,10 @@ export default function FoilRollCanvasReact({ activeVariant }) {
 
     window.__toggle360Mode = () => {
       is360Mode = !is360Mode;
+      targetFoilPull = 0;
+      currentFoilPull = 0;
       lastRenderedPull = -1;
-      updateSheetGeometry(currentFoilPull, 0);
+      updateSheetGeometry(0, 0);
       window.dispatchEvent(new CustomEvent('360-mode-toggle', { detail: { active: is360Mode } }));
     };
 
@@ -593,6 +598,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       if (is360Mode) {
         if (e.cancelable) e.preventDefault();
         isDragging = true;
+        setIsDraggingState(true);
         dragStartClientY = clientY;
         dragStartClientX = clientX;
         document.body.style.cursor = 'grabbing';
@@ -602,7 +608,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         return;
       }
 
-      // Normal mode: raycast from camera to hit 3D model even if clicking over transparent text overlay containers
+      // Normal mode: raycast from camera or check click on overlay edge handle
       if (!canvasRef.current) return;
       
       const rect = canvasRef.current.getBoundingClientRect();
@@ -611,10 +617,13 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(foilRollGroup.children, true);
+      const isClickedOverlay = overlayRef.current && overlayRef.current.contains(e.target);
       
-      if (intersects.length > 0) {
+      if (intersects.length > 0 || isClickedOverlay) {
         if (e.cancelable) e.preventDefault();
         isDragging = true;
+        setIsDraggingState(true);
+        setHasInteracted(true);
         dragStartClientY = clientY;
         dragStartClientX = clientX;
         document.body.style.cursor = 'grabbing';
@@ -638,33 +647,35 @@ export default function FoilRollCanvasReact({ activeVariant }) {
 
       if (!isDragging) {
         if (is360Mode) {
-          // In 360° mode: always show grab cursor everywhere
           if (document.body.style.cursor !== 'grab') document.body.style.cursor = 'grab';
-        } else if (e.target === canvasRef.current) {
-          // Normal mode: only show grab when hovering over the 3D model
+          setIsHovered(true);
+        } else {
           raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
-          if (raycaster.intersectObjects(foilRollGroup.children, true).length > 0) {
+          const isOverMesh = raycaster.intersectObjects(foilRollGroup.children, true).length > 0;
+          const isOverOverlay = overlayRef.current && overlayRef.current.contains(e.target);
+          if (isOverMesh || isOverOverlay) {
             if (document.body.style.cursor !== 'grab') document.body.style.cursor = 'grab';
+            setIsHovered(true);
           } else {
             if (document.body.style.cursor !== 'default') document.body.style.cursor = 'default';
+            setIsHovered(false);
           }
-        } else {
-           if (document.body.style.cursor === 'grab') document.body.style.cursor = 'default';
         }
         return;
       }
       
-      // Calculate drag deltas
+      // Calculate drag deltas with diagonal movement pull tolerance (±30° tolerance around pull axis)
       const deltaX = clientX - dragStartClientX;
       const deltaY = clientY - dragStartClientY;
       
       if (is360Mode) {
-        // FREELY ROTATE 360 IN ANY DIRECTION ONLY WHEN BUTTON IS CLICKED!
         manualYRotation += deltaX * 0.01;
         manualXRotation += deltaY * 0.01;
       } else {
-        // Normal vertical unroll mode
-        targetFoilPull += deltaY * 0.015;
+        // Project pull direction along 3D sheet vector (downwards + rightwards diagonal tolerance)
+        // Combine vertical Y movement with horizontal X movement for seamless diagonal drag
+        const effectivePullDelta = (deltaY * 0.8 + deltaX * 0.6) * 0.015;
+        targetFoilPull += effectivePullDelta;
         if (targetFoilPull > maxPull) targetFoilPull = maxPull;
         if (targetFoilPull < 0) targetFoilPull = 0;
       }
@@ -679,13 +690,16 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       }
       if (isDragging) {
         isDragging = false;
-        targetFoilPull = 0; // Automatically retract when released
+        setIsDraggingState(false);
+        targetFoilPull = 0; // Automatically retract smoothly when released
         document.body.style.cursor = 'default';
         
-        // Check if still hovering to reset cursor appropriately
         raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
         if (raycaster.intersectObjects([sheetMesh, hitMesh]).length > 0) {
           document.body.style.cursor = 'grab';
+          setIsHovered(true);
+        } else {
+          setIsHovered(false);
         }
       }
     };
@@ -752,18 +766,81 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     const animate = () => {
       reqId = requestAnimationFrame(animate);
 
-      // Do zero WebGL rendering or DOM mutations when hero is scrolled out of viewport
-      if (!isVisible) return;
-
-      // Smooth unroll interpolation
-      currentFoilPull += (targetFoilPull - currentFoilPull) * 0.15;
-
-
       if (foilRollGroup) {
         // Smoothly glide back to original default angle when customer releases mouse/touch
         if (!isDragging) {
           manualYRotation += (0 - manualYRotation) * 0.08;
           manualXRotation += (0 - manualXRotation) * 0.08;
+        }
+
+        // Drive hand tutorial gesture AND 3D foil unrolling directly from the exact same WebGL animation frame
+        if (!hasInteracted && !isDragging && !is360Mode) {
+          const cycleMs = 2600;
+          const now = performance.now() % cycleMs;
+          const cycle = now / cycleMs;
+
+          let targetPull = 0;
+          let handScale = 1;
+          let handRotate = 0;
+          let handOpacity = 1;
+
+          if (cycle < 0.15) {
+            // Smooth fade-in at top start position
+            targetPull = 0;
+            handScale = 1;
+            handRotate = 0;
+            handOpacity = cycle / 0.15;
+          } else if (cycle >= 0.15 && cycle < 0.30) {
+            // Press / Grab phase (hand clamps down onto foil edge)
+            const grabProg = (cycle - 0.15) / 0.15;
+            targetPull = 0;
+            handScale = 1.0 - grabProg * 0.15; // 1.0 -> 0.85
+            handRotate = -grabProg * 10;        // 0 -> -10deg
+            handOpacity = 1.0;
+          } else if (cycle >= 0.30 && cycle <= 0.75) {
+            // Pull phase (foil extends in 100% lockstep with hand)
+            const pullProg = (cycle - 0.30) / 0.45;
+            targetPull = pullProg * 0.4;
+            handScale = 0.85;
+            handRotate = -10;
+            handOpacity = 1.0;
+          } else if (cycle > 0.75 && cycle <= 0.88) {
+            // Release phase
+            const releaseProg = (cycle - 0.75) / 0.13;
+            targetPull = 0.4;
+            handScale = 0.85 + releaseProg * 0.15;
+            handRotate = -10 + releaseProg * 10;
+            handOpacity = 1.0;
+          } else {
+            // Fade-out at loop end before resetting
+            const fadeProg = (cycle - 0.88) / 0.12;
+            targetPull = (1.0 - fadeProg) * 0.4;
+            handScale = 1;
+            handRotate = 0;
+            handOpacity = 1.0 - fadeProg;
+          }
+
+          currentFoilPull = targetPull;
+
+          if (overlayRef.current) {
+            const handEl = overlayRef.current.querySelector('.tutorial-hand-cursor');
+            if (handEl) {
+              handEl.style.transform = `scale(${handScale}) rotate(${handRotate}deg)`;
+              handEl.style.opacity = `${handOpacity}`;
+            }
+          }
+        } else if (!hasInteracted && !is360Mode) {
+          // Reset hand opacity to 1 when returning from 360 mode
+          if (overlayRef.current) {
+            const handEl = overlayRef.current.querySelector('.tutorial-hand-cursor');
+            if (handEl) {
+              handEl.style.opacity = '1';
+              handEl.style.transform = 'scale(1) rotate(0deg)';
+            }
+          }
+        } else {
+          // Smooth unroll interpolation for manual user dragging
+          currentFoilPull += (targetFoilPull - currentFoilPull) * 0.15;
         }
 
         // EXACT FIXED ANGLE + MANUAL 360 ROTATION (AUTOSNAPS BACK ON RELEASE)
@@ -775,10 +852,9 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         foilRollGroup.position.x = baseFoilX;
         foilRollGroup.position.y = baseFoilY + bounce;
 
-        // Dynamically track PULL ME hint directly to the 3D surface of the unrolled foil sheet as it moves
+        // Dynamically track drag handle & tutorial hand directly to the surface of the unrolled foil sheet as it moves
         if (overlayRef.current && canvasRef.current) {
-          const isUnrolledOr360 = isDragging || currentFoilPull > 0.1 || is360Mode;
-          if (isUnrolledOr360) {
+          if (is360Mode) {
             overlayRef.current.style.opacity = '0';
             overlayRef.current.style.pointerEvents = 'none';
           } else {
@@ -789,7 +865,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
             const unrolledTail = (baseSheetLength - v_detach) + currentFoilPull;
             const midTail = unrolledTail * 0.45;
 
-            // Responsive 3D tracking offsets tuned for each device scale
+            // Responsive 3D tracking offsets (Desktop: 1.35, -0.15 | Tablet: 1.15, -0.05 | Mobile: 0.95, 0.10)
             const isMobile = window.innerWidth < 768;
             const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
 
@@ -818,8 +894,8 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           }
         }
 
-        // Dispatch custom event so right gallery fades out ONLY when pulling
-        const pullState = isDragging || currentFoilPull > 0.2;
+        // Dispatch custom event so right gallery & text fade out ONLY when customer manually drags/pulls
+        const pullState = isDragging;
         if (window.__lastFoilPullState !== pullState) {
           window.__lastFoilPullState = pullState;
           window.dispatchEvent(new CustomEvent('foil-pull-state', { detail: { isPulled: pullState } }));
@@ -882,24 +958,81 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       />
 
 
-      
-      <div 
+        <div 
         ref={overlayRef}
         className="pull-me-hint"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          transform: 'translate(-50%, -100%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          zIndex: 20,
+          pointerEvents: 'auto',
+          cursor: 'grab',
+          userSelect: 'none',
+          transition: 'opacity 0.2s ease'
+        }}
       >
-        <span style={{ fontSize: '12px', fontWeight: '800', letterSpacing: '1.5px', marginBottom: '6px' }}>
-          Pull Me
-        </span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#25d958" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))' }}>
-          <line x1="12" y1="4" x2="12" y2="20"></line>
-          <polyline points="19 13 12 20 5 13"></polyline>
-        </svg>
+        {/* Animated Hand Tutorial - Pristine macOS System Open Hand */}
+        {!hasInteracted && (
+          <div className="tutorial-hand-cursor" style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            pointerEvents: 'none',
+            animation: 'handTutorialSequence 2.6s infinite linear',
+            filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.75))'
+          }}>
+            {/* Direct Micro-Instruction Pill */}
+            <div style={{
+              background: 'rgba(15, 23, 42, 0.90)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.25)',
+              borderRadius: '20px',
+              padding: '3px 12px',
+              color: '#34d399',
+              fontSize: '10px',
+              fontWeight: '800',
+              letterSpacing: '1px',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
+              marginBottom: '2px'
+            }}>
+              DRAG ME
+            </div>
+
+            {/* Clean macOS Hand Cursor Icon with Pristine Finger Tops */}
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path 
+                d="M9 1.75C9.69 1.75 10.25 2.31 10.25 3V10.25H11V4C11 3.31 11.56 2.75 12.25 2.75C12.94 2.75 13.5 3.31 13.5 4V10.25H14.25V5.25C14.25 4.56 14.81 4 15.5 4C16.19 4 16.75 4.56 16.75 5.25V10.25H17.5V6.75C17.5 6.06 18.06 5.5 18.75 5.5C19.44 5.5 20 6.06 20 6.75V13C20 17.14 16.64 20.5 12.5 20.5C9.25 20.5 6.45 18.4 5.5 15.3L3.4 8.6C3.15 7.8 3.75 7 4.6 7C5.15 7 5.65 7.35 5.85 7.9L7.5 13V3C7.5 2.31 8.06 1.75 8.75 1.75H9Z" 
+                fill="#FFFFFF" 
+                stroke="#0F172A" 
+                strokeWidth="1.5" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        )}
       </div>
+
       <style>{`
         @keyframes foilBounce {
           0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
           40% { transform: translateY(10px); }
           60% { transform: translateY(5px); }
+        }
+
+        .tutorial-hand-cursor {
+          will-change: transform, opacity;
         }
       `}
       </style>

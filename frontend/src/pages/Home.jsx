@@ -325,7 +325,7 @@ const Home = () => {
                     e.stopPropagation();
                     if (window.__toggle360Mode) window.__toggle360Mode();
                   }}
-                  title="360° Free Rotation Mode"
+                  title={is360Active ? "Exit 360° View" : "360° Free Rotation Mode"}
                   style={{ pointerEvents: 'auto' }}
                   className={`self-start md:self-auto px-5 py-3 rounded-full border transition-all duration-300 shadow-xl cursor-pointer flex items-center justify-center gap-2.5 order-1 md:order-2 ${isFoilPulled ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${ 
                     is360Active 
@@ -333,12 +333,21 @@ const Home = () => {
                       : 'bg-slate-900/80 dark:bg-black/60 border-brand-green/40 text-white hover:border-brand-green hover:bg-brand-green/10'
                   }`}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={is360Active ? "#090d0b" : "#25d958"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m21 16-9 5-9-5V8l9-5 9 5z" />
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                    <line x1="12" y1="22.08" x2="12" y2="12" />
-                  </svg>
-                  <span className="text-xs font-bold tracking-widest uppercase mt-0.5">3D View</span>
+                  {is360Active ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#090d0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="19" y1="12" x2="5" y2="12"></line>
+                      <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#25d958" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m21 16-9 5-9-5V8l9-5 9 5z" />
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                      <line x1="12" y1="22.08" x2="12" y2="12" />
+                    </svg>
+                  )}
+                  <span className="text-xs font-bold tracking-widest uppercase mt-0.5">
+                    {is360Active ? "GO BACK" : "3D View"}
+                  </span>
                 </button>
               </div>
 
