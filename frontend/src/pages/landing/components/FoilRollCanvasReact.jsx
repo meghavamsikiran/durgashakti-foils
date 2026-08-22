@@ -674,8 +674,11 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         manualXRotation += deltaY * 0.01;
       } else {
         // Project pull direction along 3D sheet vector with high drag sensitivity
-        const pullAmount = Math.max(deltaY * 0.9 + deltaX * 0.7, deltaY);
-        const effectivePullDelta = pullAmount * 0.035;
+        const pullDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        // Determine if pulling generally downwards/rightwards or upwards/leftwards
+        const directionFactor = (deltaY > 0 || deltaX > 0) ? 1 : -1;
+        const effectivePullDelta = directionFactor * pullDistance * 0.025;
+        
         targetFoilPull += effectivePullDelta;
         if (targetFoilPull > maxPull) targetFoilPull = maxPull;
         if (targetFoilPull < 0) targetFoilPull = 0;
@@ -829,18 +832,9 @@ export default function FoilRollCanvasReact({ activeVariant }) {
               handEl.style.opacity = `${handOpacity}`;
             }
           }
-        } else if (!hasInteracted && !is360Mode) {
-          // Reset hand opacity to 1 when returning from 360 mode
-          if (overlayRef.current) {
-            const handEl = overlayRef.current.querySelector('.tutorial-hand-cursor');
-            if (handEl) {
-              handEl.style.opacity = '1';
-              handEl.style.transform = 'scale(1) rotate(0deg)';
-            }
-          }
         } else {
           // Smooth unroll interpolation for manual user dragging
-          currentFoilPull += (targetFoilPull - currentFoilPull) * 0.15;
+          currentFoilPull += (targetFoilPull - currentFoilPull) * 0.2;
         }
 
         // EXACT FIXED ANGLE + MANUAL 360 ROTATION (AUTOSNAPS BACK ON RELEASE)
