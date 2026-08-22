@@ -777,7 +777,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         }
 
         // Drive hand tutorial gesture AND 3D foil unrolling directly from the exact same WebGL animation frame
-        if (!hasInteracted && !isDragging && !is360Mode) {
+        if (!isDragging && !is360Mode) {
           const cycleMs = 2600;
           const now = performance.now() % cycleMs;
           const cycle = now / cycleMs;
@@ -971,51 +971,49 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         }}
       >
         {/* Animated Hand Tutorial - Pristine macOS System Open Hand */}
-        {!hasInteracted && (
-          <div className="tutorial-hand-cursor" style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            pointerEvents: 'none',
-            animation: 'handTutorialSequence 2.6s infinite linear',
-            filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.75))'
+        <div className="tutorial-hand-cursor" style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '4px',
+          pointerEvents: 'none',
+          animation: 'handTutorialSequence 2.6s infinite linear',
+          filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.75))'
+        }}>
+          {/* Direct Micro-Instruction Pill */}
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.90)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.25)',
+            borderRadius: '20px',
+            padding: '3px 12px',
+            color: '#34d399',
+            fontSize: '10px',
+            fontWeight: '800',
+            letterSpacing: '1px',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
+            marginBottom: '2px'
           }}>
-            {/* Direct Micro-Instruction Pill */}
-            <div style={{
-              background: 'rgba(15, 23, 42, 0.90)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.25)',
-              borderRadius: '20px',
-              padding: '3px 12px',
-              color: '#34d399',
-              fontSize: '10px',
-              fontWeight: '800',
-              letterSpacing: '1px',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
-              marginBottom: '2px'
-            }}>
-              DRAG ME
-            </div>
-
-            {/* Clean macOS Hand Cursor Icon with Pristine Finger Tops */}
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path 
-                d="M9 1.75C9.69 1.75 10.25 2.31 10.25 3V10.25H11V4C11 3.31 11.56 2.75 12.25 2.75C12.94 2.75 13.5 3.31 13.5 4V10.25H14.25V5.25C14.25 4.56 14.81 4 15.5 4C16.19 4 16.75 4.56 16.75 5.25V10.25H17.5V6.75C17.5 6.06 18.06 5.5 18.75 5.5C19.44 5.5 20 6.06 20 6.75V13C20 17.14 16.64 20.5 12.5 20.5C9.25 20.5 6.45 18.4 5.5 15.3L3.4 8.6C3.15 7.8 3.75 7 4.6 7C5.15 7 5.65 7.35 5.85 7.9L7.5 13V3C7.5 2.31 8.06 1.75 8.75 1.75H9Z" 
-                fill="#FFFFFF" 
-                stroke="#0F172A" 
-                strokeWidth="1.5" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
+            DRAG ME
           </div>
-        )}
+
+          {/* Clean macOS Hand Cursor Icon with Pristine Finger Tops */}
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path 
+              d="M9 1.75C9.69 1.75 10.25 2.31 10.25 3V10.25H11V4C11 3.31 11.56 2.75 12.25 2.75C12.94 2.75 13.5 3.31 13.5 4V10.25H14.25V5.25C14.25 4.56 14.81 4 15.5 4C16.19 4 16.75 4.56 16.75 5.25V10.25H17.5V6.75C17.5 6.06 18.06 5.5 18.75 5.5C19.44 5.5 20 6.06 20 6.75V13C20 17.14 16.64 20.5 12.5 20.5C9.25 20.5 6.45 18.4 5.5 15.3L3.4 8.6C3.15 7.8 3.75 7 4.6 7C5.15 7 5.65 7.35 5.85 7.9L7.5 13V3C7.5 2.31 8.06 1.75 8.75 1.75H9Z" 
+              fill="#FFFFFF" 
+              stroke="#0F172A" 
+              strokeWidth="1.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
       </div>
 
       <style>{`
