@@ -318,57 +318,35 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       const cx = 512, cy = 512;
       const rInner = 200, rOuter = 260;
 
-      // Raw unbleached kraft paper tan base (#856D52)
-      c.fillStyle = '#856D52';
+      // Authentic unbleached kraft paper tan base (#987856)
+      c.fillStyle = '#987856';
       c.fillRect(0, 0, 1024, 1024);
 
-      // Organic paper fiber background noise
-      for (let i = 0; i < 10000; i++) {
-        const x = Math.random() * 1024;
-        const y = Math.random() * 1024;
-        c.fillStyle = Math.random() > 0.5 ? 'rgba(215, 195, 170, 0.25)' : 'rgba(40, 28, 16, 0.30)';
-        c.fillRect(x, y, 1.5 + Math.random() * 2.5, 1.5 + Math.random() * 2.5);
-      }
-
-      // 8,000 Fine recycled paper pulp fiber specks localized in the ring area
-      for (let i = 0; i < 8000; i++) {
+      // Fine organic paper pulp specks
+      for (let i = 0; i < 6000; i++) {
         const angle = Math.random() * Math.PI * 2;
         const r = rInner + Math.random() * (rOuter - rInner);
         const x = cx + Math.cos(angle) * r;
         const y = cy + Math.sin(angle) * r;
-        c.fillStyle = Math.random() > 0.52 ? 'rgba(225, 205, 180, 0.55)' : 'rgba(35, 24, 14, 0.55)';
-        c.fillRect(x, y, 1.2 + Math.random() * 3.0, 1.2 + Math.random() * 3.0);
+        c.fillStyle = Math.random() > 0.5 ? 'rgba(205, 180, 150, 0.35)' : 'rgba(45, 30, 18, 0.50)';
+        c.fillRect(x, y, 1.2 + Math.random() * 2.5, 1.2 + Math.random() * 2.5);
       }
 
-      // 80 Compressed spiral paper ply rings (shows paper winding construction on cut edge)
-      const numPlies = 80;
+      // 48 Compressed spiral paper ply rings (shows paper winding construction on cut edge)
+      const numPlies = 48;
       for (let i = 0; i < numPlies; i++) {
         const r = rInner + (i / numPlies) * (rOuter - rInner);
         
         c.beginPath();
         c.arc(cx, cy, r, 0, Math.PI * 2);
-        c.strokeStyle = 'rgba(30, 20, 10, 0.45)';
+        c.strokeStyle = 'rgba(35, 22, 12, 0.40)';
         c.lineWidth = 1.2;
         c.stroke();
 
         c.beginPath();
         c.arc(cx, cy, r + 0.6, 0, Math.PI * 2);
-        c.strokeStyle = 'rgba(235, 215, 190, 0.40)';
+        c.strokeStyle = 'rgba(215, 190, 160, 0.30)';
         c.lineWidth = 1.0;
-        c.stroke();
-      }
-
-      // 120 Fine radial paper cut fibers & raw edge marks
-      for (let i = 0; i < 120; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const r1 = rInner - 8 + Math.random() * 12;
-        const r2 = rOuter + 8 - Math.random() * 12;
-        
-        c.beginPath();
-        c.moveTo(cx + Math.cos(angle) * r1, cy + Math.sin(angle) * r1);
-        c.lineTo(cx + Math.cos(angle) * r2, cy + Math.sin(angle) * r2);
-        c.strokeStyle = Math.random() > 0.5 ? 'rgba(35, 24, 14, 0.40)' : 'rgba(230, 210, 185, 0.35)';
-        c.lineWidth = 1.2 + Math.random() * 1.5;
         c.stroke();
       }
 
@@ -384,14 +362,14 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       cv.height = 1024;
       const c = cv.getContext('2d');
       
-      c.fillStyle = '#856D52';
+      c.fillStyle = '#987856';
       c.fillRect(0, 0, 1024, 1024);
 
-      for (let i = 0; i < 8000; i++) {
+      for (let i = 0; i < 6000; i++) {
         const x = Math.random() * 1024;
         const y = Math.random() * 1024;
-        c.fillStyle = Math.random() > 0.5 ? 'rgba(220, 200, 175, 0.35)' : 'rgba(40, 28, 16, 0.40)';
-        c.fillRect(x, y, 2 + Math.random() * 4, 1.5 + Math.random() * 3);
+        c.fillStyle = Math.random() > 0.5 ? 'rgba(205, 180, 150, 0.30)' : 'rgba(45, 30, 18, 0.40)';
+        c.fillRect(x, y, 2 + Math.random() * 3, 1.5 + Math.random() * 2.5);
       }
 
       // 45-degree diagonal spiral paper winding overlap folds
@@ -399,14 +377,14 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         c.beginPath();
         c.moveTo(i, 0);
         c.lineTo(i + 1024, 1024);
-        c.strokeStyle = 'rgba(35, 24, 14, 0.45)';
+        c.strokeStyle = 'rgba(35, 22, 12, 0.40)';
         c.lineWidth = 5;
         c.stroke();
 
         c.beginPath();
         c.moveTo(i + 6, 0);
         c.lineTo(i + 1030, 1024);
-        c.strokeStyle = 'rgba(230, 210, 185, 0.40)';
+        c.strokeStyle = 'rgba(215, 190, 160, 0.35)';
         c.lineWidth = 3;
         c.stroke();
       }
@@ -418,21 +396,21 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       return tex;
     };
 
-    // 3. Texture for Interior Tube Tunnel Wall (Darker raw kraft paper #4A3B2C with deep inner shadow)
+    // 3. Texture for Interior Tube Tunnel Wall (Darker raw kraft paper #5C4630 with deep inner shadow)
     const createCardboardInteriorTexture = () => {
       const cv = document.createElement('canvas');
       cv.width = 1024;
       cv.height = 1024;
       const c = cv.getContext('2d');
       
-      c.fillStyle = '#4A3B2C';
+      c.fillStyle = '#5C4630';
       c.fillRect(0, 0, 1024, 1024);
 
-      for (let i = 0; i < 8000; i++) {
+      for (let i = 0; i < 6000; i++) {
         const x = Math.random() * 1024;
         const y = Math.random() * 1024;
-        c.fillStyle = Math.random() > 0.5 ? 'rgba(140, 115, 90, 0.25)' : 'rgba(25, 18, 10, 0.40)';
-        c.fillRect(x, y, 2 + Math.random() * 4, 1.5 + Math.random() * 3);
+        c.fillStyle = Math.random() > 0.5 ? 'rgba(140, 115, 90, 0.20)' : 'rgba(25, 18, 10, 0.35)';
+        c.fillRect(x, y, 2 + Math.random() * 3, 1.5 + Math.random() * 2.5);
       }
 
       // Interior spiral paper seam
@@ -440,8 +418,8 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         c.beginPath();
         c.moveTo(i, 0);
         c.lineTo(i + 1024, 1024);
-        c.strokeStyle = 'rgba(20, 14, 8, 0.50)';
-        c.lineWidth = 7;
+        c.strokeStyle = 'rgba(20, 14, 8, 0.45)';
+        c.lineWidth = 6;
         c.stroke();
       }
 
@@ -455,31 +433,31 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     const cardboardEndLipTexture = createCardboardEndLipTexture();
     const cardboardRimTexture = createCardboardRimTexture();
 
-    // Cardboard Core Materials: NON-METALLIC (metalness = 0), 100% matte roughness ~0.98, color = 0xFFFFFF (ensures zero texture tint-flattening!)
+    // Cardboard Core Materials: NON-METALLIC (metalness = 0), matte roughness ~0.92, authentic desaturated kraft tan/brown 0x987856
     const interiorCardboardMat = new THREE.MeshStandardMaterial({
-      color: 0xFFFFFF,
+      color: 0x5C4630,
       map: createCardboardInteriorTexture(),
-      roughness: 0.98,
+      roughness: 0.95,
       metalness: 0.0,
       side: THREE.DoubleSide
     });
 
     const cardboardRingMat = new THREE.MeshStandardMaterial({
-      color: 0xFFFFFF,
+      color: 0x987856,
       map: cardboardEndLipTexture,
       bumpMap: cardboardEndLipTexture,
-      bumpScale: 0.22,        // Crisp physical micro-paper fiber bump depth
-      roughness: 0.98,
+      bumpScale: 0.10,
+      roughness: 0.92,
       metalness: 0.0,
       side: THREE.DoubleSide
     });
 
     const cardboardRimMat = new THREE.MeshStandardMaterial({
-      color: 0xFFFFFF,
+      color: 0x987856,
       map: cardboardRimTexture,
       bumpMap: cardboardRimTexture,
-      bumpScale: 0.22,
-      roughness: 0.98,
+      bumpScale: 0.10,
+      roughness: 0.92,
       metalness: 0.0,
       side: THREE.DoubleSide
     });
