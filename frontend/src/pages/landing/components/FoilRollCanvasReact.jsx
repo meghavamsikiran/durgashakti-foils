@@ -625,6 +625,8 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         isDragging = true;
         setIsDraggingState(true);
         setHasInteracted(true);
+        // Start manual pull from current smooth position to prevent any jump
+        targetFoilPull = currentFoilPull;
         dragStartClientY = clientY;
         dragStartClientX = clientX;
         document.body.style.cursor = 'grabbing';
@@ -673,11 +675,10 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         manualYRotation += deltaX * 0.01;
         manualXRotation += deltaY * 0.01;
       } else {
-        // Project pull direction along 3D sheet vector with smooth, controlled drag sensitivity
-        const pullDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        // Determine if pulling generally downwards/rightwards or upwards/leftwards
-        const directionFactor = (deltaY > 0 || deltaX > 0) ? 1 : -1;
-        const effectivePullDelta = directionFactor * pullDistance * 0.008;
+        // Directional drag along unrolling axis (downward Y + rightward X)
+        // Strictly use directional deltas so dragging feels smooth, precise, and never sky-rockets
+        const directionalDelta = (deltaY * 0.7 + deltaX * 0.7);
+        const effectivePullDelta = directionalDelta * 0.005;
         
         targetFoilPull += effectivePullDelta;
         if (targetFoilPull > maxPull) targetFoilPull = maxPull;
