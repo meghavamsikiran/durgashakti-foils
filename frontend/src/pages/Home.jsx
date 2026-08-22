@@ -574,8 +574,8 @@ const Home = () => {
             <motion.div variants={fadeInUp} className="flex flex-col items-center w-full">
               <div className="w-full rounded-3xl overflow-hidden shadow-2xl dark:shadow-[0_20px_50px_rgba(56,210,90,0.15)] transition-transform duration-500 hover:scale-[1.02] border border-slate-200 dark:border-brand-green/30">
                 <img
-                  src="/hot-wrap-kitchen-cool.jpg"
-                  alt="Durga Shakti HOT WRAP Foil test"
+                  src="/durga-shakti-foil-new.jpg"
+                  alt="Durga Shakti Foil heat lock test"
                   className="w-full h-auto block object-cover"
                 />
               </div>
