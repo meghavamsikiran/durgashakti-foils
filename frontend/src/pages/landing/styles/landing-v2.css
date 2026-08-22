@@ -274,7 +274,7 @@
 
 .landing-page-v2 .pull-me-hint {
   position: absolute;
-  bottom: 35%;
+  bottom: 36%;
   left: 64%;
   transform: translateX(-50%);
   display: flex;
@@ -291,7 +291,7 @@
 
 @media (max-width: 1024px) {
   .landing-page-v2 .pull-me-hint {
-    bottom: 28%;
+    bottom: 34%;
     left: 64%;
   }
 }
@@ -389,7 +389,7 @@
     margin-top: auto;
   }
   .landing-page-v2 .pull-me-hint {
-    bottom: 28%;
+    bottom: 34%;
     left: 64%;
   }
   .landing-page-v2 .hero-right {
@@ -426,8 +426,8 @@
     padding-bottom: 20px;
   }
   .landing-page-v2 .pull-me-hint {
-    bottom: 34%;
-    left: 65%;
+    bottom: 38%;
+    left: 66%;
   }
   .landing-page-v2 .btn-cta {
     padding: 12px 24px;

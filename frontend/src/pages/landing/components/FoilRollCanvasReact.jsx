@@ -18,44 +18,143 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.15;
 
-    // No complex environment map - we will rely entirely on strong specular lighting
-    // to create the metallic reflections, which is more reliable for cylinders.
-    scene.environment = null;
+    // High-contrast chrome studio environment with deep charcoal metallic shadows under cylinder
+    const createStudioEnvironment = () => {
+      const pmremGenerator = new THREE.PMREMGenerator(renderer);
+      pmremGenerator.compileEquirectangularShader();
 
-    // 1. Very Low Ambient Light - prevents the metal from looking flat and washed out
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+      const envScene = new THREE.Scene();
+      
+      const envCanvas = document.createElement('canvas');
+      envCanvas.width = 1024;
+      envCanvas.height = 1024;
+      const ctx = envCanvas.getContext('2d');
+
+      // Deep dark charcoal metallic background
+      ctx.fillStyle = '#020406';
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // Top softbox light (brilliant specular silver white)
+      const g1 = ctx.createLinearGradient(0, 0, 0, 360);
+      g1.addColorStop(0.0, '#FFFFFF');
+      g1.addColorStop(0.4, '#CBD5E1');
+      g1.addColorStop(1.0, '#1E293B');
+      ctx.fillStyle = g1;
+      ctx.fillRect(0, 0, 1024, 360);
+
+      // Sharp central chrome reflection band (pure white highlight bordered by deep charcoal)
+      const g2 = ctx.createLinearGradient(0, 420, 0, 680);
+      g2.addColorStop(0.0, '#020406');
+      g2.addColorStop(0.15, '#334155');
+      g2.addColorStop(0.5, '#FFFFFF');
+      g2.addColorStop(0.85, '#334155');
+      g2.addColorStop(1.0, '#020406');
+      ctx.fillStyle = g2;
+      ctx.fillRect(0, 420, 1024, 260);
+
+      // Deep shadow curve under roll (creates realistic dark metallic shading under cylinder)
+      const g3 = ctx.createLinearGradient(0, 750, 0, 1024);
+      g3.addColorStop(0.0, '#020406');
+      g3.addColorStop(0.4, '#64748B');
+      g3.addColorStop(0.8, '#0F172A');
+      g3.addColorStop(1.0, '#020406');
+      ctx.fillStyle = g3;
+      ctx.fillRect(0, 750, 1024, 274);
+
+      const sphereGeo = new THREE.SphereGeometry(50, 32, 32);
+      const sphereMat = new THREE.MeshBasicMaterial({
+        map: new THREE.CanvasTexture(envCanvas),
+        side: THREE.BackSide
+      });
+      envScene.add(new THREE.Mesh(sphereGeo, sphereMat));
+
+      const envMap = pmremGenerator.fromScene(envScene).texture;
+      pmremGenerator.dispose();
+      return envMap;
+    };
+
+    const studioEnvMap = createStudioEnvironment();
+    scene.environment = studioEnvMap;
+
+    // Create high-resolution crinkled foil texture (horizontal wrap lines + dense polygonal crinkle facets)
+    const createFoilBumpTexture = () => {
+      const cv = document.createElement('canvas');
+      cv.width = 1024;
+      cv.height = 1024;
+      const c = cv.getContext('2d');
+      c.fillStyle = '#808080';
+      c.fillRect(0, 0, 1024, 1024);
+
+      // 1. Horizontal wrapped foil crease lines (running along roll length)
+      c.lineWidth = 2.0;
+      for (let y = 0; y < 1024; y += 12) {
+        c.beginPath();
+        c.moveTo(0, y + (Math.random() - 0.5) * 4);
+        c.lineTo(1024, y + (Math.random() - 0.5) * 4);
+        c.strokeStyle = Math.random() > 0.4 ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)';
+        c.stroke();
+      }
+
+      // 2. Dense crinkled foil facets (triangular & polygonal crease noise)
+      for (let i = 0; i < 600; i++) {
+        const x1 = Math.random() * 1024;
+        const y1 = Math.random() * 1024;
+        const radius = 20 + Math.random() * 80;
+        
+        c.beginPath();
+        c.moveTo(x1, y1);
+        c.lineTo(x1 + (Math.random() - 0.5) * radius, y1 + (Math.random() - 0.5) * radius);
+        c.lineTo(x1 + (Math.random() - 0.5) * radius, y1 + (Math.random() - 0.5) * radius);
+        c.closePath();
+        
+        c.strokeStyle = Math.random() > 0.5 ? 'rgba(255, 255, 255, 0.75)' : 'rgba(0, 0, 0, 0.75)';
+        c.lineWidth = 1.2 + Math.random() * 2.5;
+        c.stroke();
+      }
+
+      const tex = new THREE.CanvasTexture(cv);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 3);
+      return tex;
+    };
+
+    const foilBumpTexture = createFoilBumpTexture();
+
+    // 1. Ambient Light - low fill so shadowed undersides develop rich dark metallic depth
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.22);
     scene.add(ambientLight);
 
-    // 2. Strong Key Light - creates the primary sharp silver highlight
-    const keyLight = new THREE.DirectionalLight(0xffffff, 5.0);
-    keyLight.position.set(5, 10, 10);
+    // 2. Key Light - top overhead specular
+    const keyLight = new THREE.DirectionalLight(0xffffff, 5.2);
+    keyLight.position.set(4, 14, 8);
     scene.add(keyLight);
 
-    // 3. Fill Light - slightly blueish to simulate studio reflection
-    const fillLight = new THREE.DirectionalLight(0xe2e8f0, 3.0);
-    fillLight.position.set(-8, 2, 5);
+    // 3. Fill Light - cool silver fill
+    const fillLight = new THREE.DirectionalLight(0xe2e8f0, 2.2);
+    fillLight.position.set(-6, 3, 5);
     scene.add(fillLight);
 
-    // 4. Sharp Rim Light - critical for cylinders to pop from the dark background
-    const rimLight1 = new THREE.DirectionalLight(0xffffff, 4.0);
-    rimLight1.position.set(-5, 10, -10);
+    // 4. Rim Light
+    const rimLight1 = new THREE.DirectionalLight(0xffffff, 3.8);
+    rimLight1.position.set(-5, 8, -8);
     scene.add(rimLight1);
-    
-    const rimLight2 = new THREE.DirectionalLight(0xffffff, 3.5);
-    rimLight2.position.set(5, -5, -10);
-    scene.add(rimLight2);
 
     // Group Setup
     const foilRollGroup = new THREE.Group();
     const textureLoader = new THREE.TextureLoader();
 
-    // True Photorealistic Brushed Aluminum Material (Starts as solid silver, texture mapped on load)
+    // Photorealistic Deep High-Contrast Aluminum Foil Material
     const aluminiumMaterial = new THREE.MeshStandardMaterial({
-      color: 0x99a0a8,        // Medium grey base - metal gets its brightness from reflections!
-      metalness: 0.9,         // High metalness - it IS metal
-      roughness: 0.35,        // Moderate roughness - spreads the specular highlights beautifully
+      color: 0x717C8D,        // Rich gunmetal steel-silver (creates deep realistic metallic shadows)
+      metalness: 0.98,        // 98% metallic chrome character
+      roughness: 0.11,        // Razor-sharp specular highlights & deep contrast
+      bumpMap: foilBumpTexture,
+      bumpScale: 0.07,        // Deep foil wrinkles & crinkled facets
+      envMap: studioEnvMap,
+      envMapIntensity: 2.5,
       side: THREE.DoubleSide
     });
 
@@ -63,47 +162,212 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     // This guarantees a flawless, invisible seam where the sheet unrolls from the cylinder.
     // The sheet will get its realism entirely from its 3D physical waves catching the specular lights.
 
-    const createCardboardCoreTexture = () => {
+    // 1. Texture for the End-Lip Cardboard Tube Wall Ring (Rough-cut grayish-tan recycled cardboard pulp with deep cut notches)
+    const createCardboardEndLipTexture = () => {
       const cv = document.createElement('canvas');
-      cv.width = 512;
-      cv.height = 512;
+      cv.width = 1024;
+      cv.height = 1024;
       const c = cv.getContext('2d');
-      c.fillStyle = '#7A5836';
-      c.fillRect(0, 0, 512, 512);
-      c.strokeStyle = '#543B22';
-      c.lineWidth = 8;
-      for (let i = -512; i < 1024; i += 44) {
+      
+      const cx = 512, cy = 512;
+      const rInner = 200, rOuter = 260;
+
+      // Darker warm grayish-brown recycled cardboard base matching reference photo
+      c.fillStyle = '#98846E';
+      c.fillRect(0, 0, 1024, 1024);
+
+      // Fine recycled paper pulp fiber specks
+      for (let i = 0; i < 6000; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const r = rInner + Math.random() * (rOuter - rInner);
+        const x = cx + Math.cos(angle) * r;
+        const y = cy + Math.sin(angle) * r;
+        c.fillStyle = Math.random() > 0.5 ? 'rgba(215, 195, 170, 0.5)' : 'rgba(50, 32, 18, 0.55)';
+        c.fillRect(x, y, 1.5 + Math.random() * 3.5, 1.5 + Math.random() * 3.5);
+      }
+
+      // 48 High-contrast rough-cut cardboard edge notches and radial paper fold crease lines
+      for (let i = 0; i < 48; i++) {
+        const angle = (i / 48) * Math.PI * 2 + (Math.random() - 0.5) * 0.1;
+        const r1 = rInner - 12 + Math.random() * 15;
+        const r2 = rOuter + 12 - Math.random() * 15;
+        
+        // Deep shadow notch cut
         c.beginPath();
-        c.moveTo(i, 0);
-        c.lineTo(i + 512, 512);
+        c.moveTo(cx + Math.cos(angle) * r1, cy + Math.sin(angle) * r1);
+        c.lineTo(cx + Math.cos(angle) * r2, cy + Math.sin(angle) * r2);
+        c.strokeStyle = 'rgba(20, 10, 5, 0.9)';
+        c.lineWidth = 4.0 + Math.random() * 4.0;
+        c.stroke();
+
+        // Bright paper fold edge highlight stroke
+        c.beginPath();
+        c.moveTo(cx + Math.cos(angle + 0.02) * r1, cy + Math.sin(angle + 0.02) * r1);
+        c.lineTo(cx + Math.cos(angle + 0.02) * r2, cy + Math.sin(angle + 0.02) * r2);
+        c.strokeStyle = 'rgba(255, 235, 210, 0.8)';
+        c.lineWidth = 3.0;
         c.stroke();
       }
-      return new THREE.CanvasTexture(cv);
+
+      // Compressed cardboard layer winding rings
+      for (let r = rInner + 10; r <= rOuter - 10; r += 12) {
+        c.beginPath();
+        c.arc(cx, cy, r + (Math.random() - 0.5) * 3, 0, Math.PI * 2);
+        c.strokeStyle = 'rgba(30, 18, 8, 0.6)';
+        c.lineWidth = 3.5;
+        c.stroke();
+      }
+
+      // Outer paper wrap border
+      c.beginPath();
+      c.arc(cx, cy, rOuter, 0, Math.PI * 2);
+      c.strokeStyle = '#584028';
+      c.lineWidth = 7;
+      c.stroke();
+
+      const tex = new THREE.CanvasTexture(cv);
+      tex.anisotropy = 16;
+      return tex;
     };
 
-    const coreMaterial = new THREE.MeshStandardMaterial({
-      map: createCardboardCoreTexture(),
-      roughness: 0.85,
-      metalness: 0.05
+    // 2. Texture for the Outer Protruding Cardboard Rim Cylinder (Heavy 3D spiral paper overlap folds & ply seams)
+    const createCardboardRimTexture = () => {
+      const cv = document.createElement('canvas');
+      cv.width = 1024;
+      cv.height = 1024;
+      const c = cv.getContext('2d');
+      
+      // Warm grayish-brown kraft cardboard base
+      c.fillStyle = '#98846E';
+      c.fillRect(0, 0, 1024, 1024);
+
+      // Fine paper pulp fiber specks
+      for (let i = 0; i < 6000; i++) {
+        const x = Math.random() * 1024;
+        const y = Math.random() * 1024;
+        c.fillStyle = Math.random() > 0.5 ? 'rgba(225, 205, 180, 0.5)' : 'rgba(45, 28, 14, 0.55)';
+        c.fillRect(x, y, 2 + Math.random() * 4, 1.5 + Math.random() * 3);
+      }
+
+      // 28 High-contrast 45-degree diagonal spiral paper winding overlap folds (folded paper layers on outer rim!)
+      for (let i = -1024; i < 2048; i += 110) {
+        // Deep dark paper overlap shadow seam
+        c.beginPath();
+        c.moveTo(i, 0);
+        c.lineTo(i + 1024, 1024);
+        c.strokeStyle = 'rgba(20, 10, 5, 0.92)';
+        c.lineWidth = 10;
+        c.stroke();
+
+        // Bright paper fold edge highlight ridge
+        c.beginPath();
+        c.moveTo(i + 8, 0);
+        c.lineTo(i + 1032, 1024);
+        c.strokeStyle = 'rgba(255, 235, 210, 0.85)';
+        c.lineWidth = 6;
+        c.stroke();
+      }
+
+      const tex = new THREE.CanvasTexture(cv);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(4, 1);
+      return tex;
+    };
+
+    // 3. Texture for the Interior Tube Tunnel Wall (Dark warm recycled cardboard paper inside the tube)
+    const createCardboardInteriorTexture = () => {
+      const cv = document.createElement('canvas');
+      cv.width = 1024;
+      cv.height = 1024;
+      const c = cv.getContext('2d');
+      
+      // Dark warm recycled cardboard brown base matching reference photo
+      c.fillStyle = '#6E553F';
+      c.fillRect(0, 0, 1024, 1024);
+
+      // High-density paper fiber pulp noise
+      for (let i = 0; i < 6000; i++) {
+        const x = Math.random() * 1024;
+        const y = Math.random() * 1024;
+        c.fillStyle = Math.random() > 0.5 ? 'rgba(175, 150, 120, 0.35)' : 'rgba(45, 28, 15, 0.4)';
+        c.fillRect(x, y, 2 + Math.random() * 4, 1.5 + Math.random() * 3);
+      }
+
+      const tex = new THREE.CanvasTexture(cv);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(1, 1);
+      return tex;
+    };
+
+    const cardboardEndLipTexture = createCardboardEndLipTexture();
+    const cardboardRimTexture = createCardboardRimTexture();
+
+    const interiorCardboardMat = new THREE.MeshStandardMaterial({
+      color: 0x6E553F,
+      map: createCardboardInteriorTexture(),
+      roughness: 0.95,
+      metalness: 0.01,
+      side: THREE.DoubleSide
+    });
+
+    const cardboardRingMat = new THREE.MeshStandardMaterial({
+      color: 0x98846E,
+      map: cardboardEndLipTexture,
+      bumpMap: cardboardEndLipTexture,
+      bumpScale: 0.22,         // Deep 3D cut-notches & paper fold creases on end lip!
+      roughness: 0.88,
+      metalness: 0.01,
+      side: THREE.DoubleSide
+    });
+
+    const cardboardRimMat = new THREE.MeshStandardMaterial({
+      color: 0x98846E,
+      map: cardboardRimTexture,
+      bumpMap: cardboardRimTexture,
+      bumpScale: 0.28,         // Heavy 3D paper ply winding folds & overlap seams on outer rim!
+      roughness: 0.90,
+      metalness: 0.01,
+      side: THREE.DoubleSide
     });
 
     // Sub-group for spinning components (the roll cylinder, core, and rings)
     const rollCylinderGroup = new THREE.Group();
     foilRollGroup.add(rollCylinderGroup);
 
-    // 1. FULL 3D CYLINDER FOIL ROLL MESH
+    // 1. FULL 3D CYLINDER FOIL ROLL MESH (Length 4.2)
     const outerGeo = new THREE.CylinderGeometry(0.95, 0.95, 4.2, 64, 1, true);
     const outerFoilMesh = new THREE.Mesh(outerGeo, aluminiumMaterial);
     outerFoilMesh.rotation.z = Math.PI / 2;
     rollCylinderGroup.add(outerFoilMesh);
 
-    // 2. FULL 3D CARDBOARD CORE TUBE MESH
-    const innerGeo = new THREE.CylinderGeometry(0.55, 0.55, 4.24, 32);
-    const innerCoreMesh = new THREE.Mesh(innerGeo, coreMaterial);
-    innerCoreMesh.rotation.z = Math.PI / 2;
-    rollCylinderGroup.add(innerCoreMesh);
+    // 2. PROTRUDING 3D CARDBOARD CORE TUBE (Length 4.36 - Sticks out 0.08 on each end!)
+    const coreTunnelGeo = new THREE.CylinderGeometry(0.40, 0.40, 4.36, 64, 1, true);
+    const coreTunnelMesh = new THREE.Mesh(coreTunnelGeo, interiorCardboardMat);
+    coreTunnelMesh.rotation.z = Math.PI / 2;
+    rollCylinderGroup.add(coreTunnelMesh);
 
-    // Helper: Create photorealistic moiré-free concentric wound foil layer texture
+    // Outer cardboard tube wall rim cylinder (the 0.08 lip sticking out past foil with heavy paper winding folds!)
+    const cardboardRimGeo = new THREE.CylinderGeometry(0.52, 0.52, 4.36, 64, 1, true);
+    const cardboardRimMesh = new THREE.Mesh(cardboardRimGeo, cardboardRimMat);   // CRITICAL FIX: Pass cardboardRimMat!
+    cardboardRimMesh.rotation.z = Math.PI / 2;
+    rollCylinderGroup.add(cardboardRimMesh);
+
+    // Cardboard core end rings (front face of the protruding tube wall: 0.40 to 0.52)
+    const cardboardRingGeo = new THREE.RingGeometry(0.40, 0.52, 64);
+    
+    const leftCardboardRing = new THREE.Mesh(cardboardRingGeo, cardboardRingMat);
+    leftCardboardRing.position.x = -2.181;
+    leftCardboardRing.rotation.y = Math.PI / 2;
+    rollCylinderGroup.add(leftCardboardRing);
+
+    const rightCardboardRing = new THREE.Mesh(cardboardRingGeo, cardboardRingMat);
+    rightCardboardRing.position.x = 2.181;
+    rightCardboardRing.rotation.y = Math.PI / 2;
+    rollCylinderGroup.add(rightCardboardRing);
+
+    // Helper: Create photorealistic concentric wound silver foil layer edge texture matching reference photo
     const createFoilEdgeTexture = () => {
       const canvas = document.createElement('canvas');
       canvas.width = 1024;
@@ -111,52 +375,38 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       const ctx = canvas.getContext('2d');
 
       const cx = 512, cy = 512;
-      const rInner = 280;
+      const rInner = 266;
       const rOuter = 490;
 
-      // Gleaming silver metallic base
+      // Authentic cool steel-silver metallic base (NO WHITE BLOWOUT)
       const baseGrad = ctx.createRadialGradient(cx, cy, rInner, cx, cy, rOuter);
-      baseGrad.addColorStop(0, '#FFFFFF');
-      baseGrad.addColorStop(0.3, '#E2E8F0');
-      baseGrad.addColorStop(0.6, '#FFFFFF');
-      baseGrad.addColorStop(0.85, '#CBD5E1');
-      baseGrad.addColorStop(1, '#FFFFFF');
+      baseGrad.addColorStop(0.0, '#717C8D');
+      baseGrad.addColorStop(0.3, '#9EA8B6');
+      baseGrad.addColorStop(0.65, '#4A5568');
+      baseGrad.addColorStop(1.0, '#2D3748');
 
       ctx.fillStyle = baseGrad;
       ctx.fillRect(0, 0, 1024, 1024);
 
-      // Draw 22 clean, wide, high-contrast concentric foil grooves (NO MOIRE ARTIFACTS)
-      const rings = 22;
+      // Draw 60 sharp concentric wound foil layer rings (alternating specular silver & dark grooves)
+      const rings = 60;
       for (let i = 0; i < rings; i++) {
         const r = rInner + (i / rings) * (rOuter - rInner);
         
-        // Dark metallic groove
+        // Dark metallic foil layer shadow line
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(30, 41, 59, 0.7)';
-        ctx.lineWidth = 4.5;
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.lineWidth = 3.0;
         ctx.stroke();
 
-        // 3D Specular highlight stroke right next to it
+        // Crisp specular metallic reflection line
         ctx.beginPath();
-        ctx.arc(cx, cy, r + 2.5, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
-        ctx.lineWidth = 3.5;
+        ctx.arc(cx, cy, r + 1.5, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+        ctx.lineWidth = 2.0;
         ctx.stroke();
       }
-
-      // Add radial metallic reflection sheen matching the reference photo
-      const sheenGrad = ctx.createRadialGradient(cx, cy, rInner, cx, cy, rOuter);
-      sheenGrad.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
-      sheenGrad.addColorStop(0.4, 'rgba(255, 255, 255, 0.1)');
-      sheenGrad.addColorStop(0.7, 'rgba(255, 255, 255, 0.7)');
-      sheenGrad.addColorStop(1, 'rgba(255, 255, 255, 0.4)');
-
-      ctx.fillStyle = sheenGrad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, rOuter, 0, Math.PI * 2);
-      ctx.arc(cx, cy, rInner, 0, Math.PI * 2, true);
-      ctx.fill();
 
       const tex = new THREE.CanvasTexture(canvas);
       tex.anisotropy = 16;
@@ -166,18 +416,17 @@ export default function FoilRollCanvasReact({ activeVariant }) {
 
     const foilEdgeTexture = createFoilEdgeTexture();
 
-    // 3. ROLLED FOIL EDGE RINGS (BRIGHT GLEAMING SILVER CONCENTRIC LAYERS)
-    const ringGeo = new THREE.RingGeometry(0.55, 0.95, 128);
+    // 3. ROLLED FOIL EDGE RINGS (HIGH-CONTRAST METALLIC CONCENTRIC FOIL LAYERS)
+    const ringGeo = new THREE.RingGeometry(0.52, 0.95, 128);
     const ringMat = new THREE.MeshStandardMaterial({
-      color: 0xFFFFFF,
+      color: 0x717C8D,        // Cool steel-silver (matches roll body)
       map: foilEdgeTexture,
       bumpMap: foilEdgeTexture,
-      bumpScale: 0.04,
-      metalness: 0.9,
-      roughness: 0.15,
-      emissive: 0x333344,
-      emissiveMap: foilEdgeTexture,
-      emissiveIntensity: 0.3,
+      bumpScale: 0.05,
+      metalness: 0.96,        // 96% metallic character
+      roughness: 0.18,        // Crisp specular roll-off
+      envMap: studioEnvMap,
+      envMapIntensity: 2.2,
       side: THREE.DoubleSide
     });
 
@@ -191,12 +440,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     rightRing.rotation.y = Math.PI / 2;
     rollCylinderGroup.add(rightRing);
 
-    // 4. DARK CORE INTERIOR CAP & INVISIBLE 3D HIT ENCLOSURE
-    const darkCoreGeo = new THREE.CylinderGeometry(0.48, 0.48, 4.26, 32);
-    const darkCoreMat = new THREE.MeshBasicMaterial({ color: 0x0a0a0e });
-    const darkCore = new THREE.Mesh(darkCoreGeo, darkCoreMat);
-    darkCore.rotation.z = Math.PI / 2;
-    rollCylinderGroup.add(darkCore);
+    // 4. INVISIBLE 3D HIT ENCLOSURE (Guarantees 100% hit detection on top, sides, and rings)
 
     // Invisible Cylinder Hit Enclosure (Guarantees 100% hit detection on top, sides, and rings)
     const cylinderHitGeo = new THREE.CylinderGeometry(1.2, 1.2, 4.6, 32);
@@ -231,7 +475,10 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       origVArray[k] = -initPos.getY(k);
     }
 
-    const updateSheetGeometry = (pullLength) => {
+    let is360Mode = false;
+    let isDragging = false;
+
+    const updateSheetGeometry = (pullLength, time = 0) => {
       const pos = sheetGeo.attributes.position;
       const unrolledTotal = (baseSheetLength - v_detach) + pullLength;
 
@@ -242,7 +489,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         let currY, currZ;
 
         if (v <= v_detach) {
-          // Wrapped flush on the bottom curve of the cylinder (100% PERMANENTLY LOCKED)
+          // Wrapped flush on the bottom curve of the cylinder (100% PERMANENT LOCKED)
           const theta = theta_0 + (v / R_sheet);
           currY = R_sheet * Math.sin(theta);
           currZ = R_sheet * Math.cos(theta);
@@ -255,12 +502,24 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           const unrollZ = z_d + s * Tz;
 
           const intensity = Math.pow(progressInOriginal, 1.5);
-          const wave1 = Math.sin(x * 5.0 + s * 2.5) * 0.04;
-          const wave2 = Math.cos(x * 9.0 - s * 4.0) * 0.02;
+          const wave1 = Math.sin(x * 5.0 + s * 2.5 + time * 2.0) * 0.04;
+          const wave2 = Math.cos(x * 9.0 - s * 4.0 - time * 1.5) * 0.02;
           const wave = (wave1 + wave2) * intensity;
 
           currY = unrollY + wave * Ny;
           currZ = unrollZ + wave * Nz;
+
+          // GRAVITY PHYSICS APPLICATION:
+          // Earth's gravity sag and pendulum sway apply strictly in 3D View mode or while dragging,
+          // preserving 100% exact original position in default resting state
+          if (is360Mode || isDragging) {
+            const gravityWeight = Math.pow(progressInOriginal, 1.8) * 0.55;
+            const gravitySway = Math.sin(time * 2.2 + progressInOriginal * 3.0) * 0.03 * progressInOriginal;
+            
+            // Downward gravity pull
+            currY -= gravityWeight * 0.85;
+            currZ -= gravityWeight * 0.35 + gravitySway;
+          }
         }
 
         pos.setX(j, x);
@@ -272,7 +531,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       sheetGeo.computeVertexNormals();
     };
 
-    updateSheetGeometry(0);
+    updateSheetGeometry(0, 0);
 
     const sheetMesh = new THREE.Mesh(sheetGeo, aluminiumMaterial);
     sheetMesh.position.set(0, 0, 0);
@@ -299,7 +558,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     // Interaction State
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
-    let isDragging = false;
     let dragStartClientY = 0;
     let targetFoilPull = 0;
     let currentFoilPull = 0;
@@ -309,7 +567,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     let targetRotationX = 0, targetRotationY = 0;
     let manualYRotation = 0;
     let manualXRotation = 0;
-    let is360Mode = false;
     let dragStartClientX = 0;
     
     // Base positions for the animation loop to use
@@ -318,6 +575,8 @@ export default function FoilRollCanvasReact({ activeVariant }) {
 
     window.__toggle360Mode = () => {
       is360Mode = !is360Mode;
+      lastRenderedPull = -1;
+      updateSheetGeometry(currentFoilPull, 0);
       window.dispatchEvent(new CustomEvent('360-mode-toggle', { detail: { active: is360Mode } }));
     };
 
@@ -516,10 +775,47 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         foilRollGroup.position.x = baseFoilX;
         foilRollGroup.position.y = baseFoilY + bounce;
 
-        // Hide PULL TO UNROLL text completely while dragging, unrolled, or when 360° mode is active
-        if (overlayRef.current) {
+        // Dynamically track PULL ME hint directly to the 3D surface of the unrolled foil sheet as it moves
+        if (overlayRef.current && canvasRef.current) {
           const isUnrolledOr360 = isDragging || currentFoilPull > 0.1 || is360Mode;
-          overlayRef.current.style.opacity = isUnrolledOr360 ? '0' : '1';
+          if (isUnrolledOr360) {
+            overlayRef.current.style.opacity = '0';
+            overlayRef.current.style.pointerEvents = 'none';
+          } else {
+            overlayRef.current.style.opacity = '1';
+            overlayRef.current.style.pointerEvents = 'auto';
+
+            // Calculate 3D midpoint position along the moving unrolled sheet
+            const unrolledTail = (baseSheetLength - v_detach) + currentFoilPull;
+            const midTail = unrolledTail * 0.45;
+
+            // Responsive 3D tracking offsets tuned for each device scale
+            const isMobile = window.innerWidth < 768;
+            const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+
+            const trackX = isMobile ? 0.95 : (isTablet ? 1.15 : 1.35);
+            const trackYOffset = isMobile ? 0.10 : (isTablet ? -0.05 : -0.15);
+            const trackZOffset = isMobile ? 0.05 : 0.1;
+
+            const trackVec = new THREE.Vector3(
+              trackX,
+              y_d + midTail * Ty + trackYOffset,
+              z_d + midTail * Tz + trackZOffset
+            );
+
+            // Transform 3D local coordinate to world space, then project to 2D screen pixels
+            trackVec.applyMatrix4(foilRollGroup.matrixWorld);
+            trackVec.project(camera);
+
+            const canvasRect = canvasRef.current.getBoundingClientRect();
+            const screenX = (trackVec.x * 0.5 + 0.5) * canvasRect.width;
+            const screenY = (-trackVec.y * 0.5 + 0.5) * canvasRect.height;
+
+            overlayRef.current.style.left = `${screenX}px`;
+            overlayRef.current.style.top = `${screenY}px`;
+            overlayRef.current.style.bottom = 'auto';
+            overlayRef.current.style.transform = 'translate(-50%, -100%)';
+          }
         }
 
         // Dispatch custom event so right gallery fades out ONLY when pulling
@@ -529,10 +825,16 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           window.dispatchEvent(new CustomEvent('foil-pull-state', { detail: { isPulled: pullState } }));
         }
 
-        // Dynamically extend unrolled sheet tail while keeping top edge 100% locked to cylinder
-        if (Math.abs(currentFoilPull - lastRenderedPull) > 0.001) {
+        // Dynamically re-render unrolled sheet tail & gravitational physics waves in 3D View mode
+        const timeSec = Date.now() * 0.001;
+        if (window.__last360ModeState !== is360Mode) {
+          window.__last360ModeState = is360Mode;
+          lastRenderedPull = -1;
+        }
+
+        if (Math.abs(currentFoilPull - lastRenderedPull) > 0.001 || is360Mode || isDragging) {
           lastRenderedPull = currentFoilPull;
-          updateSheetGeometry(currentFoilPull);
+          updateSheetGeometry(currentFoilPull, is360Mode || isDragging ? timeSec : 0);
         }
         
         // Prevent texture stretching by dynamically increasing texture tiling based on scale
