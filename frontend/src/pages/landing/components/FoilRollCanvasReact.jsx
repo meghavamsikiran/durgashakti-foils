@@ -608,7 +608,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         return;
       }
 
-      // Normal mode: raycast from camera or check click on overlay edge handle
+      // Normal mode: check raycast or screen bounds on hero canvas
       if (!canvasRef.current) return;
       
       const rect = canvasRef.current.getBoundingClientRect();
@@ -616,10 +616,11 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
       
       raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(foilRollGroup.children, true);
+      const intersects = raycaster.intersectObjects(scene.children, true);
       const isClickedOverlay = overlayRef.current && overlayRef.current.contains(e.target);
       
-      if (intersects.length > 0 || isClickedOverlay) {
+      // Allow drag if user clicks 3D model, overlay, or anywhere in right half of screen
+      if (intersects.length > 0 || isClickedOverlay || clientX > window.innerWidth * 0.35) {
         if (e.cancelable) e.preventDefault();
         isDragging = true;
         setIsDraggingState(true);
@@ -672,9 +673,9 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         manualYRotation += deltaX * 0.01;
         manualXRotation += deltaY * 0.01;
       } else {
-        // Project pull direction along 3D sheet vector (downwards + rightwards diagonal tolerance)
-        // Combine vertical Y movement with horizontal X movement for seamless diagonal drag
-        const effectivePullDelta = (deltaY * 0.8 + deltaX * 0.6) * 0.015;
+        // Project pull direction along 3D sheet vector with high drag sensitivity
+        const pullAmount = Math.max(deltaY * 0.9 + deltaX * 0.7, deltaY);
+        const effectivePullDelta = pullAmount * 0.035;
         targetFoilPull += effectivePullDelta;
         if (targetFoilPull > maxPull) targetFoilPull = maxPull;
         if (targetFoilPull < 0) targetFoilPull = 0;
@@ -691,7 +692,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       if (isDragging) {
         isDragging = false;
         setIsDraggingState(false);
-        targetFoilPull = 0; // Automatically retract smoothly when released
         document.body.style.cursor = 'default';
         
         raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
