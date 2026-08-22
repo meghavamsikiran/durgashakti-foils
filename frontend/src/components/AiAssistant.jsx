@@ -360,6 +360,10 @@ export default function AiAssistant() {
 
   const currentCaseId = formatCaseId(sessionId);
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="fixed bottom-20 md:bottom-6 right-6 z-[9999] font-sans" ref={chatRef}>
       {/* Trigger Button */}
