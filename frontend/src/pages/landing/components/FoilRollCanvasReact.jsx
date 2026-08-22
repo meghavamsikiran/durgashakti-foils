@@ -292,6 +292,10 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     let manualXRotation = 0;
     let is360Mode = false;
     let dragStartClientX = 0;
+    
+    // Base positions for the animation loop to use
+    let baseFoilX = -0.4;
+    let baseFoilY = 0.6;
 
     window.__toggle360Mode = () => {
       is360Mode = !is360Mode;
@@ -410,10 +414,38 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     };
 
     const handleResize = () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      camera.aspect = width / height;
+      
+      // Responsive scaling and positioning
+      if (width < 768) {
+        // Mobile: Scaled down, centered visually, and pushed slightly below the text
+        foilRollGroup.scale.set(0.5, 0.5, 0.5);
+        baseFoilX = 0;
+        baseFoilY = 0;
+      } else if (width < 1024) {
+        // Tablet: Medium scale, slightly right
+        foilRollGroup.scale.set(0.6, 0.6, 0.6);
+        baseFoilX = 0;
+        baseFoilY = -0.4;
+      } else {
+        // Desktop: Full scale, default position
+        foilRollGroup.scale.set(1, 1, 1);
+        baseFoilX = -0.4;
+        baseFoilY = 0.6;
+      }
+      
+      // We set the position directly here once, but animate() will overwrite it using baseFoilX/Y on the next frame.
+      foilRollGroup.position.set(baseFoilX, baseFoilY, 0);
+      
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setSize(width, height);
     };
+
+    // Initialize responsive layout
+    handleResize();
 
     const canvasEl = canvasRef.current;
     if (canvasEl) {
@@ -449,10 +481,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       // Smooth unroll interpolation
       currentFoilPull += (targetFoilPull - currentFoilPull) * 0.15;
 
-      // Fade out 'Pull Me' indicator when interacted with
-      if (overlayRef.current) {
-        overlayRef.current.style.opacity = currentFoilPull > 0.1 ? '0' : '1';
-      }
 
       if (foilRollGroup) {
         // Smoothly glide back to original default angle when customer releases mouse/touch
@@ -466,8 +494,9 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         foilRollGroup.rotation.y = 0.65 + manualYRotation;
         foilRollGroup.rotation.z = 0.35;
         
-        foilRollGroup.position.x = -0.4;
-        foilRollGroup.position.y = 0.6 + Math.sin(Date.now() * 0.0016) * 0.09;
+        const bounce = window.innerWidth < 768 ? 0 : Math.sin(Date.now() * 0.0016) * 0.09;
+        foilRollGroup.position.x = baseFoilX;
+        foilRollGroup.position.y = baseFoilY + bounce;
 
         // Hide PULL TO UNROLL text completely while dragging, unrolled, or when 360° mode is active
         if (overlayRef.current) {
@@ -535,22 +564,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       
       <div 
         ref={overlayRef}
-        style={{
-          position: 'absolute',
-          bottom: '32%',
-          left: '58%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          pointerEvents: 'none',
-          animation: 'foilBounce 2s infinite',
-          color: '#ffffff',
-          textShadow: '0 2px 10px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 1)',
-          fontFamily: 'sans-serif',
-          transition: 'opacity 0.2s ease',
-          zIndex: 30
-        }}
+        className="pull-me-hint"
       >
         <span style={{ fontSize: '12px', fontWeight: '800', letterSpacing: '1.5px', marginBottom: '6px' }}>
           Pull Me

@@ -301,7 +301,7 @@ const Home = () => {
         <div className={`hero-grid relative z-10 w-full h-full ${is360Active ? 'pointer-events-none' : ''}`}>
           {/* Left Column */}
           <div className="hero-left">
-            <div className={`transition-opacity duration-500 ${isFoilPulled || is360Active ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            <div className={`transition-opacity duration-500 flex flex-col ${isFoilPulled || is360Active ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
               <div className="hero-tagline pointer-events-auto">DurgaShakti Foils • HOT WRAP</div>
               <h1 className="display-title pointer-events-auto">
                 Wrap
@@ -312,39 +312,41 @@ const Home = () => {
               </p>
             </div>
             
-            <div className={`flex items-center gap-4 mt-6 relative z-30 ${is360Active ? 'pointer-events-none' : 'pointer-events-auto'}`}>
-              <button onClick={() => navigate('/shop')} className={`btn-cta cursor-pointer transition-opacity duration-500 ${isFoilPulled || is360Active ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-                <span>Explore HOT WRAP</span>
-                <div className="icon-circle">➔</div>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-4 mt-1 relative z-30">
-              <div className={`quality-badge transition-opacity duration-500 ${isFoilPulled || is360Active ? 'opacity-0 pointer-events-none' : 'pointer-events-auto opacity-100'}`} style={{ marginTop: 0 }}>
-                <div className="badge-icon">✓</div>
-                <div className="badge-text">FOOD GRADE • PREMIUM ALUMINIUM FOIL</div>
+            <div className="hero-actions flex flex-col gap-4 mt-6 md:mt-6">
+              <div className={`flex flex-col md:flex-row items-stretch md:items-center gap-4 relative z-30 ${is360Active ? 'pointer-events-none' : 'pointer-events-auto'}`}>
+                <button onClick={() => navigate('/shop')} className={`btn-cta self-start md:self-auto cursor-pointer transition-opacity duration-500 order-2 md:order-1 ${isFoilPulled || is360Active ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                  <span>Explore HOT WRAP</span>
+                  <div className="icon-circle">➔</div>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.__toggle360Mode) window.__toggle360Mode();
+                  }}
+                  title="360° Free Rotation Mode"
+                  style={{ pointerEvents: 'auto' }}
+                  className={`self-start md:self-auto p-3.5 rounded-full border transition-all duration-300 shadow-xl cursor-pointer flex items-center justify-center order-1 md:order-2 ${isFoilPulled ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${ 
+                    is360Active 
+                      ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_25px_rgba(37,217,88,0.8)] scale-110' 
+                      : 'bg-slate-900/80 dark:bg-black/60 border-brand-green/40 text-white hover:border-brand-green hover:bg-brand-green/10'
+                  }`}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={is360Active ? "#090d0b" : "#25d958"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                    <text x="11.5" y="15.5" fill={is360Active ? "#090d0b" : "#ffffff"} stroke="none" fontSize="8" fontWeight="900" textAnchor="middle" fontFamily="sans-serif">360°</text>
+                  </svg>
+                </button>
               </div>
-              
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.__toggle360Mode) window.__toggle360Mode();
-                }}
-                title="360° Free Rotation Mode"
-                style={{ pointerEvents: 'auto' }}
-                className={`p-3.5 rounded-full border transition-all duration-300 shadow-xl cursor-pointer flex items-center justify-center ${isFoilPulled ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${ 
-                  is360Active 
-                    ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_25px_rgba(37,217,88,0.8)] scale-110' 
-                    : 'bg-slate-900/80 dark:bg-black/60 border-brand-green/40 text-white hover:border-brand-green hover:bg-brand-green/10'
-                }`}
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={is360Active ? "#090d0b" : "#25d958"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                  <path d="M21 3v5h-5" />
-                  <text x="11.5" y="15.5" fill={is360Active ? "#090d0b" : "#ffffff"} stroke="none" fontSize="8" fontWeight="900" textAnchor="middle" fontFamily="sans-serif">360°</text>
-                </svg>
-              </button>
+
+              <div className="flex flex-wrap items-center gap-3 relative z-30">
+                <div className={`quality-badge transition-opacity duration-500 ${isFoilPulled || is360Active ? 'opacity-0 pointer-events-none' : 'pointer-events-auto opacity-100'}`} style={{ marginTop: 0 }}>
+                  <div className="badge-icon">✓</div>
+                  <div className="badge-text">FOOD GRADE • PREMIUM ALUMINIUM FOIL</div>
+                </div>
+              </div>
             </div>
           </div>
 
