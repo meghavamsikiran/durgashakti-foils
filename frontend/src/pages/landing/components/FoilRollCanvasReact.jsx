@@ -673,11 +673,11 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         manualYRotation += deltaX * 0.01;
         manualXRotation += deltaY * 0.01;
       } else {
-        // Project pull direction along 3D sheet vector with high drag sensitivity
+        // Project pull direction along 3D sheet vector with smooth, controlled drag sensitivity
         const pullDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         // Determine if pulling generally downwards/rightwards or upwards/leftwards
         const directionFactor = (deltaY > 0 || deltaX > 0) ? 1 : -1;
-        const effectivePullDelta = directionFactor * pullDistance * 0.025;
+        const effectivePullDelta = directionFactor * pullDistance * 0.008;
         
         targetFoilPull += effectivePullDelta;
         if (targetFoilPull > maxPull) targetFoilPull = maxPull;
@@ -833,8 +833,8 @@ export default function FoilRollCanvasReact({ activeVariant }) {
             }
           }
         } else {
-          // Smooth unroll interpolation for manual user dragging
-          currentFoilPull += (targetFoilPull - currentFoilPull) * 0.2;
+          // Smooth unroll interpolation for manual user dragging (Smooth, weighted pull speed)
+          currentFoilPull += (targetFoilPull - currentFoilPull) * 0.08;
         }
 
         // EXACT FIXED ANGLE + MANUAL 360 ROTATION (AUTOSNAPS BACK ON RELEASE)
