@@ -982,7 +982,10 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           gap: '4px',
           pointerEvents: 'none',
           animation: 'handTutorialSequence 2.6s infinite linear',
-          filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.75))'
+          filter: 'drop-shadow(0 6px 12px rgba(0,0,0,0.75))',
+          opacity: isDraggingState ? 0 : 1,
+          visibility: isDraggingState ? 'hidden' : 'visible',
+          transition: 'opacity 0.15s ease'
         }}>
           {/* Direct Micro-Instruction Pill */}
           <div style={{
