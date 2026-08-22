@@ -319,7 +319,7 @@ const Home = () => {
                   <div className="icon-circle">➔</div>
                 </button>
                 
-                <button
+                  <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -327,17 +327,18 @@ const Home = () => {
                   }}
                   title="360° Free Rotation Mode"
                   style={{ pointerEvents: 'auto' }}
-                  className={`self-start md:self-auto p-3.5 rounded-full border transition-all duration-300 shadow-xl cursor-pointer flex items-center justify-center order-1 md:order-2 ${isFoilPulled ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${ 
+                  className={`self-start md:self-auto px-5 py-3 rounded-full border transition-all duration-300 shadow-xl cursor-pointer flex items-center justify-center gap-2.5 order-1 md:order-2 ${isFoilPulled ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${ 
                     is360Active 
-                      ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_25px_rgba(37,217,88,0.8)] scale-110' 
+                      ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_25px_rgba(37,217,88,0.8)] scale-105' 
                       : 'bg-slate-900/80 dark:bg-black/60 border-brand-green/40 text-white hover:border-brand-green hover:bg-brand-green/10'
                   }`}
                 >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={is360Active ? "#090d0b" : "#25d958"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-                    <path d="M21 3v5h-5" />
-                    <text x="11.5" y="15.5" fill={is360Active ? "#090d0b" : "#ffffff"} stroke="none" fontSize="8" fontWeight="900" textAnchor="middle" fontFamily="sans-serif">360°</text>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={is360Active ? "#090d0b" : "#25d958"} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m21 16-9 5-9-5V8l9-5 9 5z" />
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                    <line x1="12" y1="22.08" x2="12" y2="12" />
                   </svg>
+                  <span className="text-xs font-bold tracking-widest uppercase mt-0.5">3D View</span>
                 </button>
               </div>
 
