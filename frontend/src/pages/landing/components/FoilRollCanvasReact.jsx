@@ -832,6 +832,15 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
+      const set3DCursor = (cursorStyle) => {
+        if (canvasRef.current) {
+          canvasRef.current.style.cursor = cursorStyle;
+        }
+        if (document.body.style.cursor) {
+          document.body.style.cursor = '';
+        }
+      };
+
       // In 360° mode: ANY click ANYWHERE on screen starts free rotation immediately
       if (is360Mode) {
         if (e.cancelable) e.preventDefault();
@@ -839,7 +848,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         setIsDraggingState(true);
         dragStartClientY = clientY;
         dragStartClientX = clientX;
-        document.body.style.cursor = 'grabbing';
+        set3DCursor('grabbing');
         if (e.pointerId !== undefined && canvasRef.current.setPointerCapture) {
           try { canvasRef.current.setPointerCapture(e.pointerId); } catch (err) {}
         }
@@ -870,7 +879,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         targetFoilPull = currentFoilPull;
         dragStartClientY = clientY;
         dragStartClientX = clientX;
-        document.body.style.cursor = 'grabbing';
+        set3DCursor('grabbing');
         if (e.pointerId !== undefined && canvasRef.current.setPointerCapture) {
           try { canvasRef.current.setPointerCapture(e.pointerId); } catch (err) {}
         }
@@ -891,17 +900,17 @@ export default function FoilRollCanvasReact({ activeVariant }) {
 
       if (!isDragging) {
         if (is360Mode) {
-          if (document.body.style.cursor !== 'grab') document.body.style.cursor = 'grab';
+          set3DCursor('grab');
           setIsHovered(true);
         } else {
           raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
           const isOverMesh = raycaster.intersectObjects(foilRollGroup.children, true).length > 0;
           const isOverOverlay = overlayRef.current && overlayRef.current.contains(e.target);
           if (isOverMesh || isOverOverlay) {
-            if (document.body.style.cursor !== 'grab') document.body.style.cursor = 'grab';
+            set3DCursor('grab');
             setIsHovered(true);
           } else {
-            if (document.body.style.cursor !== 'default') document.body.style.cursor = 'default';
+            set3DCursor('');
             setIsHovered(false);
           }
         }
@@ -937,11 +946,11 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       if (isDragging) {
         isDragging = false;
         setIsDraggingState(false);
-        document.body.style.cursor = 'default';
+        set3DCursor('');
         
         raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
         if (raycaster.intersectObjects([sheetMesh, hitMesh]).length > 0) {
-          document.body.style.cursor = 'grab';
+          set3DCursor('grab');
           setIsHovered(true);
         } else {
           setIsHovered(false);
@@ -1174,6 +1183,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     animate();
 
     return () => {
+      document.body.style.cursor = '';
       delete window.__toggle360Mode;
       if (reqId) cancelAnimationFrame(reqId);
       if (canvasEl && observer) {
