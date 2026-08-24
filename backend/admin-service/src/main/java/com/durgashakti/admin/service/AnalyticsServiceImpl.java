@@ -349,7 +349,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
         Map<String, Map<String, Object>> catStats = new HashMap<>();
         for (Product p : allProducts) {
-            String catName = p.getCategoryName() != null ? p.getCategoryName() : "General";
+            String catName = p.getCategory() != null && !p.getCategory().trim().isEmpty() ? p.getCategory().trim() : "General";
             Map<String, Object> stat = catStats.computeIfAbsent(catName, k -> {
                 Map<String, Object> m = new HashMap<>();
                 m.put("category", k);
@@ -363,30 +363,31 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             double pPrice = p.getDiscountPrice() != null ? p.getDiscountPrice().doubleValue() : (p.getPrice() != null ? p.getPrice().doubleValue() : 0.0);
             int pStock = p.getStockQuantity() != null ? p.getStockQuantity() : 0;
             int pSold = p.getUnitsSold() != null ? p.getUnitsSold() : 0;
+
             stat.put("product_count", (int) stat.get("product_count") + 1);
-                        String name = String.valueOf(item.get("product_name") != null ? item.get("product_name") : item.getOrDefault("name", ""));
-                        for (Product pr : allProducts) {
-                            if (pr.getName() != null && pr.getName().equalsIgnoreCase(name)) {
-                                cat = pr.getCategory() != null ? pr.getCategory().trim() : "Uncategorized";
-                                break;
-                            }
-                        }
-                    }
+            stat.put("units_sold", (int) stat.get("units_sold") + pSold);
+            stat.put("stock_quantity", (int) stat.get("stock_quantity") + pStock);
+            stat.put("stock_value", (double) stat.get("stock_value") + (pStock * pPrice));
+        }
 
-                    if (!catStats.containsKey(cat)) {
-                        Map<String, Object> stat = new HashMap<>();
-                        stat.put("category", cat);
-                        stat.put("product_count", 0);
-                        stat.put("stock_quantity", 0);
-                        stat.put("stock_value", 0.0);
-                        stat.put("units_sold", 0);
-                        stat.put("revenue", 0.0);
-                        catStats.put(cat, stat);
+        // Calculate revenue per category from filtered orders
+        for (Order o : filteredOrders) {
+            String oStatus = o.getOrderStatus() != null ? o.getOrderStatus().toLowerCase() : "";
+            String pStatus = o.getPaymentStatus() != null ? o.getPaymentStatus().toLowerCase() : "";
+            if (REVENUE_ORDER_STATUSES.contains(oStatus) && REVENUE_PAYMENT_STATUSES.contains(pStatus) && o.getItems() != null) {
+                for (Map<String, Object> item : o.getItems()) {
+                    String catName = String.valueOf(item.getOrDefault("category_name", item.getOrDefault("category", "General")));
+                    double lineTotal = toDouble(item.get("subtotal"));
+                    if (lineTotal <= 0) {
+                        double price = toDouble(item.get("unit_price"));
+                        if (price <= 0) price = toDouble(item.get("price"));
+                        int qty = toInt(item.get("quantity"));
+                        lineTotal = price * qty;
                     }
-
-                    Map<String, Object> stat = catStats.get(cat);
-                    stat.put("units_sold", (int) stat.get("units_sold") + qty);
-                    stat.put("revenue", (double) stat.get("revenue") + (qty * price));
+                    if (catStats.containsKey(catName)) {
+                        Map<String, Object> stat = catStats.get(catName);
+                        stat.put("revenue", (double) stat.get("revenue") + lineTotal);
+                    }
                 }
             }
         }
@@ -399,6 +400,16 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
         List<Map<String, Object>> categoryAnalytics = new ArrayList<>(catStats.values());
 
+        // Dedicated DSF Wallet Analytics summary map
+        Map<String, Object> walletAnalytics = new HashMap<>();
+        walletAnalytics.put("total_liability", Math.round(totalWalletLiability * 100.0) / 100.0);
+        walletAnalytics.put("active_users_count", activeWalletUsersCount);
+        walletAnalytics.put("total_spent_on_orders", Math.round(totalWalletSpent * 100.0) / 100.0);
+        walletAnalytics.put("total_refunds_credited", Math.round(totalWalletRefundsCredited * 100.0) / 100.0);
+        walletAnalytics.put("total_topups_credited", Math.round(totalWalletTopupsCredited * 100.0) / 100.0);
+        walletAnalytics.put("wallet_order_count", walletPaymentsCount);
+        walletAnalytics.put("wallet_order_amount", Math.round(walletPaymentsAmount * 100.0) / 100.0);
+
         // Return final summary structure
         Map<String, Object> summary = new HashMap<>();
         summary.put("metrics", metrics);
@@ -407,6 +418,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         summary.put("inventory", inventory);
         summary.put("revenue_trend", revenueTrend);
         summary.put("category_analytics", categoryAnalytics);
+        summary.put("wallet_analytics", walletAnalytics);
 
         return summary;
     }
@@ -418,24 +430,13 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             if (clean.length() == 10) { // YYYY-MM-DD format
                 return java.time.LocalDate.parse(clean).atStartOfDay(java.time.ZoneOffset.UTC).toOffsetDateTime();
             }
-            return OffsetDateTime.parse(clean);
-        } catch (Exception e) {
-            try {
-                String clean = isoStr.trim();
-                if (clean.endsWith("Z")) {
-                    clean = clean.substring(0, clean.length() - 1);
-                }
-                if (clean.contains(" ")) {
-                    clean = clean.replace(" ", "T");
-                }
-                if (clean.length() == 19) { // YYYY-MM-DDTHH:mm:ss format
-                    clean = clean + "Z";
-                }
-                return OffsetDateTime.parse(clean);
-            } catch (Exception ex) {
-                log.error("Failed to parse date-time string: {}", isoStr, ex);
-                return null;
+            if (clean.length() == 19) { // YYYY-MM-DDTHH:mm:ss format
+                clean = clean + "Z";
             }
+            return OffsetDateTime.parse(clean);
+        } catch (Exception ex) {
+            log.error("Failed to parse date-time string: {}", isoStr, ex);
+            return null;
         }
     }
 
@@ -446,6 +447,16 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             return Double.parseDouble(val.toString());
         } catch (NumberFormatException e) {
             return 0.0;
+        }
+    }
+
+    private long toLong(Object val) {
+        if (val == null) return 0L;
+        if (val instanceof Number) return ((Number) val).longValue();
+        try {
+            return Long.parseLong(val.toString());
+        } catch (NumberFormatException e) {
+            return 0L;
         }
     }
 
