@@ -2,6 +2,7 @@ package com.durgashakti.admin.service;
 
 import com.durgashakti.common.entity.*;
 import com.durgashakti.admin.repository.*;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final AdminProductRepository productRepository;
     private final AdminUserRepository userRepository;
     private final AuditLogRepository auditLogRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     private static final List<String> REVENUE_ORDER_STATUSES = List.of(
             "processing", "placed", "confirmed", "packaging", "shipped", "in_transit",
@@ -39,11 +41,13 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     public AnalyticsServiceImpl(AdminOrderRepository orderRepository,
                                 AdminProductRepository productRepository,
                                 AdminUserRepository userRepository,
-                                AuditLogRepository auditLogRepository) {
+                                AuditLogRepository auditLogRepository,
+                                JdbcTemplate jdbcTemplate) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.auditLogRepository = auditLogRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
@@ -55,19 +59,11 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     public Map<String, Object> getDashboardSummary(String timeframe, String startDateStr, String endDateStr) {
         log.info("Calculating dashboard metrics for timeframe: {}, start: {}, end: {}", timeframe, startDateStr, endDateStr);
 
-        // Load all entities for in-memory analytics computation
         List<Order> allOrders = orderRepository.findAll();
         List<Product> allProducts = productRepository.findAll();
         List<User> allUsers = userRepository.findAll();
         log.info("Loaded {} orders, {} products, {} users", allOrders.size(), allProducts.size(), allUsers.size());
         
-        // Debug: log first order's payment_status and order_status if available
-        if (!allOrders.isEmpty()) {
-            Order firstOrder = allOrders.get(0);
-            log.info("Sample order: status={}, paymentStatus={}, totalAmount={}", 
-                firstOrder.getOrderStatus(), firstOrder.getPaymentStatus(), firstOrder.getTotalAmount());
-        }
-
         java.time.ZoneId istZone = java.time.ZoneId.of("Asia/Kolkata");
         OffsetDateTime now = OffsetDateTime.now(istZone);
         OffsetDateTime startDate = parseDateTime(startDateStr);
@@ -88,13 +84,9 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             }
         }
 
-        // Filter orders by time window
         final OffsetDateTime startVal = startDate;
         final OffsetDateTime endVal = endDate;
         final OffsetDateTime filterVal = dateFilter;
-
-        log.info("Filtering analytics orders. timeframe={}, startDate={}, endDate={}, dateFilter={}, total orders database={}", 
-                timeframe, startDate, endDate, dateFilter, allOrders.size());
 
         List<Order> filteredOrders = allOrders.stream()
                 .filter(o -> {
@@ -106,9 +98,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 })
                 .collect(Collectors.toList());
 
-        log.info("Filtered orders count: {}", filteredOrders.size());
-
-        // Basic Counts
         long totalOrders = filteredOrders.size();
         OffsetDateTime todayStart = now.truncatedTo(ChronoUnit.DAYS);
         long ordersToday = filteredOrders.stream()
@@ -131,6 +120,11 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         long pendingPaymentsCount = 0;
         long failedPaymentsCount = 0;
         long codPaymentsCount = 0;
+        long walletPaymentsCount = 0;
+        long onlinePaymentsCount = 0;
+        double walletPaymentsAmount = 0.0;
+        double onlinePaymentsAmount = 0.0;
+        double codPaymentsAmount = 0.0;
         long refundPaymentsCount = 0;
         double pendingPaymentAmount = 0.0;
 
@@ -147,43 +141,30 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
             statusCounts.put(oStatus, statusCounts.getOrDefault(oStatus, 0) + 1);
 
-            // Revenue calculation
             if (REVENUE_ORDER_STATUSES.contains(oStatus) && REVENUE_PAYMENT_STATUSES.contains(pStatus)) {
                 totalRevenue += amt;
             }
 
-            // Delivery time calculation
             if (("delivered".equals(oStatus) || "return_expired".equals(oStatus)) && o.getShippedAt() != null && o.getDeliveredAt() != null) {
                 double hours = ChronoUnit.MINUTES.between(o.getShippedAt(), o.getDeliveredAt()) / 60.0;
                 totalDeliveryDurationHours += hours;
                 deliveryDurationCount++;
             }
 
-            // Order Status Aggregates
             if ("delivered".equals(oStatus) || "return_expired".equals(oStatus)) {
                 totalDelivered++;
                 rangeDelivered++;
                 if (o.getDeliveredAt() != null) {
-                    if (o.getDeliveredAt().isAfter(todayStart)) {
-                        todayDelivered++;
-                    }
-                } else if (o.getCreatedAt().isAfter(todayStart)) {
-                    todayDelivered++;
-                }
+                    if (o.getDeliveredAt().isAfter(todayStart)) todayDelivered++;
+                } else if (o.getCreatedAt().isAfter(todayStart)) todayDelivered++;
             } else if (List.of("placed", "confirmed", "processing", "packaging", "pending_payment").contains(oStatus)) {
                 rangePending++;
-                if (o.getCreatedAt().isAfter(todayStart)) {
-                    todayPending++;
-                }
+                if (o.getCreatedAt().isAfter(todayStart)) todayPending++;
             } else if (List.of("shipped", "in_transit", "out_for_delivery").contains(oStatus)) {
                 rangeShipped++;
                 if (o.getShippedAt() != null) {
-                    if (o.getShippedAt().isAfter(todayStart)) {
-                        todayShipped++;
-                    }
-                } else if (o.getCreatedAt().isAfter(todayStart)) {
-                    todayShipped++;
-                }
+                    if (o.getShippedAt().isAfter(todayStart)) todayShipped++;
+                } else if (o.getCreatedAt().isAfter(todayStart)) todayShipped++;
             } else if (List.of("returned", "return_approved", "return_requested", "refunded").contains(oStatus)) {
                 totalReturned++;
             } else if ("cancelled".equals(oStatus)) {
@@ -191,11 +172,20 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 rangeCancelled++;
             }
 
-            // Payment aggregation
-            if ("paid".equals(pStatus) || "completed".equals(pStatus)) {
+            boolean isWalletMethod = "wallet".equalsIgnoreCase(pMethod) || "dsf_wallet".equalsIgnoreCase(pMethod) || pStatus.contains("wallet");
+            boolean isCodMethod = "cash on delivery".equalsIgnoreCase(pMethod) || "cod".equalsIgnoreCase(pMethod) || "cash on delivery".equalsIgnoreCase(pStatus);
+
+            if (isWalletMethod) {
+                walletPaymentsCount++;
+                walletPaymentsAmount += amt;
                 paidPaymentsCount++;
-            } else if ("cash on delivery".equals(pStatus)) {
+            } else if ("paid".equals(pStatus) || "completed".equals(pStatus)) {
+                onlinePaymentsCount++;
+                onlinePaymentsAmount += amt;
+                paidPaymentsCount++;
+            } else if (isCodMethod) {
                 codPaymentsCount++;
+                codPaymentsAmount += amt;
             } else if (List.of("pending", "pending_payment", "overdue").contains(pStatus)) {
                 pendingPaymentsCount++;
                 pendingPaymentAmount += amt;
@@ -206,80 +196,77 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             }
         }
 
-        double avgDeliveryTimeHours = deliveryDurationCount > 0 ?
-                Math.round((totalDeliveryDurationHours / deliveryDurationCount) * 10.0) / 10.0 : 0.0;
-
+        double avgDeliveryTimeHours = deliveryDurationCount > 0 ? Math.round((totalDeliveryDurationHours / deliveryDurationCount) * 10.0) / 10.0 : 0.0;
         long totalPaymentEvents = paidPaymentsCount + pendingPaymentsCount + failedPaymentsCount;
-        double paymentSuccessRate = totalPaymentEvents > 0 ?
-                Math.round((paidPaymentsCount * 100.0 / totalPaymentEvents) * 10.0) / 10.0 : 100.0;
+        double paymentSuccessRate = totalPaymentEvents > 0 ? Math.round((paidPaymentsCount * 100.0 / totalPaymentEvents) * 10.0) / 10.0 : 100.0;
 
-        // Product Metrics
+        double totalWalletLiability = 0.0;
+        long activeWalletUsersCount = 0;
+        double totalWalletSpent = 0.0;
+        double totalWalletRefundsCredited = 0.0;
+        double totalWalletTopupsCredited = 0.0;
+
+        try {
+            List<Map<String, Object>> lRes = jdbcTemplate.queryForList("SELECT COALESCE(SUM(balance), 0) as total_balance, COUNT(CASE WHEN balance > 0 THEN 1 END) as active_users FROM wallets");
+            if (!lRes.isEmpty()) {
+                totalWalletLiability = toDouble(lRes.get(0).get("total_balance"));
+                activeWalletUsersCount = toLong(lRes.get(0).get("active_users"));
+            }
+
+            List<Map<String, Object>> txRes = jdbcTemplate.queryForList(
+                "SELECT " +
+                "COALESCE(SUM(CASE WHEN type = 'DEBIT' AND status = 'SUCCESS' THEN amount ELSE 0 END), 0) as total_spent, " +
+                "COALESCE(SUM(CASE WHEN type = 'CREDIT' AND status = 'SUCCESS' AND source IN ('ORDER_REFUND', 'CANCELLED_ORDER', 'RETURN_REFUND') THEN amount ELSE 0 END), 0) as total_refunds, " +
+                "COALESCE(SUM(CASE WHEN type = 'CREDIT' AND status = 'SUCCESS' AND source IN ('TOPUP', 'ADMIN_CREDIT', 'VOUCHER') THEN amount ELSE 0 END), 0) as total_topups " +
+                "FROM wallet_transactions"
+            );
+            if (!txRes.isEmpty()) {
+                totalWalletSpent = toDouble(txRes.get(0).get("total_spent"));
+                totalWalletRefundsCredited = toDouble(txRes.get(0).get("total_refunds"));
+                totalWalletTopupsCredited = toDouble(txRes.get(0).get("total_topups"));
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to query database wallet analytics: {}", ex.getMessage());
+        }
+
         long totalProducts = allProducts.size();
         double totalInventoryValue = 0.0;
         long totalUnitsSold = 0;
         long outOfStockCount = 0;
         long lowStockCount = 0;
         long inStockCount = 0;
-
         Product topPerformerProd = null;
         double topPerformerRevenue = -1.0;
         Product fastestMoverProd = null;
 
         for (Product p : allProducts) {
-            double priceVal = p.getDiscountPrice() != null ? p.getDiscountPrice().doubleValue() :
-                    (p.getPrice() != null ? p.getPrice().doubleValue() : 0.0);
+            double priceVal = p.getDiscountPrice() != null ? p.getDiscountPrice().doubleValue() : (p.getPrice() != null ? p.getPrice().doubleValue() : 0.0);
             int stock = p.getStockQuantity() != null ? p.getStockQuantity() : 0;
             int sold = p.getUnitsSold() != null ? p.getUnitsSold() : 0;
             int threshold = p.getLowStockThreshold() != null ? p.getLowStockThreshold() : 20;
-
             totalInventoryValue += stock * priceVal;
             totalUnitsSold += sold;
-
-            if (stock <= 0) {
-                outOfStockCount++;
-            } else {
+            if (stock <= 0) outOfStockCount++;
+            else {
                 inStockCount++;
-                if (stock <= threshold) {
-                    lowStockCount++;
-                }
+                if (stock <= threshold) lowStockCount++;
             }
-
             double revenueVal = sold * priceVal;
             if (revenueVal > topPerformerRevenue) {
                 topPerformerRevenue = revenueVal;
                 topPerformerProd = p;
             }
-
-            if (fastestMoverProd == null || sold > (fastestMoverProd.getUnitsSold() != null ? fastestMoverProd.getUnitsSold() : 0)) {
-                fastestMoverProd = p;
-            }
+            if (fastestMoverProd == null || sold > (fastestMoverProd.getUnitsSold() != null ? fastestMoverProd.getUnitsSold() : 0)) fastestMoverProd = p;
         }
 
-        double stockHealth = totalProducts > 0 ?
-                Math.round((inStockCount * 100.0 / totalProducts) * 10.0) / 10.0 : 100.0;
-
-        Map<String, Object> topPerformer = null;
-        if (topPerformerProd != null) {
-            topPerformer = new HashMap<>();
-            topPerformer.put("name", topPerformerProd.getName());
-            topPerformer.put("revenue", Math.round(topPerformerRevenue * 100.0) / 100.0);
-        }
-
-        Map<String, Object> fastestMover = null;
-        if (fastestMoverProd != null) {
-            fastestMover = new HashMap<>();
-            fastestMover.put("name", fastestMoverProd.getName());
-            fastestMover.put("units_sold", fastestMoverProd.getUnitsSold() != null ? fastestMoverProd.getUnitsSold() : 0);
-        }
-
+        double stockHealth = totalProducts > 0 ? Math.round((inStockCount * 100.0 / totalProducts) * 10.0) / 10.0 : 100.0;
+        Map<String, Object> topPerformer = topPerformerProd != null ? Map.of("name", topPerformerProd.getName(), "revenue", Math.round(topPerformerRevenue * 100.0) / 100.0) : null;
+        Map<String, Object> fastestMover = fastestMoverProd != null ? Map.of("name", fastestMoverProd.getName(), "units_sold", fastestMoverProd.getUnitsSold() != null ? fastestMoverProd.getUnitsSold() : 0) : null;
         double salesVelocity = Math.round((totalUnitsSold / 30.0) * 100.0) / 100.0;
         long totalCustomers = allUsers.stream().filter(u -> "customer".equalsIgnoreCase(u.getRole())).count();
-
-        // Audit Logs using direct DB counts to avoid fetching all logs into memory
         long securityEventsCount = auditLogRepository.countByActionIn(List.of("ADMIN_CREATED", "ADMIN_PASSWORD_RESET"));
         long destructiveActionsCount = auditLogRepository.countByActionContainingIgnoreCase("DELETE");
 
-        // Populate metrics map
         Map<String, Object> metrics = new HashMap<>();
         metrics.put("total_orders", totalOrders);
         metrics.put("orders_today", ordersToday);
@@ -309,13 +296,21 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         metrics.put("pending_payments_count", pendingPaymentsCount);
         metrics.put("failed_payments_count", failedPaymentsCount);
         metrics.put("cod_payments_count", codPaymentsCount);
+        metrics.put("wallet_payments_count", walletPaymentsCount);
+        metrics.put("wallet_payments_amount", Math.round(walletPaymentsAmount * 100.0) / 100.0);
+        metrics.put("online_payments_count", onlinePaymentsCount);
+        metrics.put("online_payments_amount", Math.round(onlinePaymentsAmount * 100.0) / 100.0);
         metrics.put("refund_payments_count", refundPaymentsCount);
         metrics.put("pending_payment_amount", Math.round(pendingPaymentAmount * 100.0) / 100.0);
         metrics.put("payment_success_rate", paymentSuccessRate);
         metrics.put("security_events_count", securityEventsCount);
         metrics.put("destructive_actions_count", destructiveActionsCount);
+        metrics.put("total_wallet_liability", Math.round(totalWalletLiability * 100.0) / 100.0);
+        metrics.put("active_wallet_users", activeWalletUsersCount);
+        metrics.put("total_wallet_spent", Math.round(totalWalletSpent * 100.0) / 100.0);
+        metrics.put("total_wallet_refunds_credited", Math.round(totalWalletRefundsCredited * 100.0) / 100.0);
+        metrics.put("total_wallet_topups_credited", Math.round(totalWalletTopupsCredited * 100.0) / 100.0);
 
-        // Best Sellers (paid orders only)
         Map<String, Integer> bestSellersCounts = new HashMap<>();
         for (Order o : filteredOrders) {
             String pStatus = o.getPaymentStatus() != null ? o.getPaymentStatus().toLowerCase() : "";
@@ -327,113 +322,48 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 }
             }
         }
+        List<Map<String, Object>> bestProducts = bestSellersCounts.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed()).limit(10).map(e -> Map.<String, Object>of("name", e.getKey(), "quantity", e.getValue())).collect(Collectors.toList());
 
-        List<Map<String, Object>> bestProducts = bestSellersCounts.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .limit(10)
-                .map(e -> Map.<String, Object>of("name", e.getKey(), "quantity", e.getValue()))
-                .collect(Collectors.toList());
+        List<Map<String, Object>> inventory = allProducts.stream().sorted(Comparator.comparingInt(p -> p.getStockQuantity() != null ? p.getStockQuantity() : 0)).limit(50).map(p -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", p.getId().toString());
+            map.put("name", p.getName());
+            map.put("sku", p.getBatchNo() != null ? p.getBatchNo() : (p.getVariantSku() != null ? p.getVariantSku() : "—"));
+            map.put("stock_left", p.getStockQuantity() != null ? p.getStockQuantity() : 0);
+            map.put("units_sold", p.getUnitsSold() != null ? p.getUnitsSold() : 0);
+            return map;
+        }).collect(Collectors.toList());
 
-        // Inventory Stock levels (ascending stock order, limit 50)
-        List<Map<String, Object>> inventory = allProducts.stream()
-                .sorted(Comparator.comparingInt(p -> p.getStockQuantity() != null ? p.getStockQuantity() : 0))
-                .limit(50)
-                .map(p -> {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("id", p.getId().toString());
-                    map.put("name", p.getName());
-                    map.put("sku", p.getBatchNo() != null ? p.getBatchNo() : (p.getVariantSku() != null ? p.getVariantSku() : "—"));
-                    map.put("stock_left", p.getStockQuantity() != null ? p.getStockQuantity() : 0);
-                    map.put("units_sold", p.getUnitsSold() != null ? p.getUnitsSold() : 0);
-                    return map;
-                })
-                .collect(Collectors.toList());
-
-        // Sort orders chronologically (ascending) for trend chart
-        List<Order> chronologicalOrders = filteredOrders.stream()
-                .filter(o -> o.getCreatedAt() != null)
-                .sorted(Comparator.comparing(Order::getCreatedAt))
-                .collect(Collectors.toList());
-
-        // Revenue Trend Chart grouping
-        Map<String, Double> trendMap = new LinkedHashMap<>();
-        long daysDiff = 30; // default All Time range
-        if (startVal != null && endVal != null) {
-            daysDiff = ChronoUnit.DAYS.between(startVal, endVal);
-        }
-
-        DateTimeFormatter formatter;
-        if (daysDiff <= 1 || "Today".equalsIgnoreCase(timeframe)) {
-            formatter = DateTimeFormatter.ofPattern("HH:00");
-        } else if (daysDiff <= 60 || "Last 7 Days".equalsIgnoreCase(timeframe) || "This Month".equalsIgnoreCase(timeframe)) {
-            formatter = DateTimeFormatter.ofPattern("MMM dd");
-        } else {
-            formatter = DateTimeFormatter.ofPattern("MMM yyyy");
-        }
-
-        for (Order o : chronologicalOrders) {
+        Map<String, Double> trendMap = new TreeMap<>();
+        DateTimeFormatter trendFmt = DateTimeFormatter.ofPattern("MMM dd");
+        for (Order o : filteredOrders) {
             String oStatus = o.getOrderStatus() != null ? o.getOrderStatus().toLowerCase() : "";
             String pStatus = o.getPaymentStatus() != null ? o.getPaymentStatus().toLowerCase() : "";
-            if (REVENUE_ORDER_STATUSES.contains(oStatus) && REVENUE_PAYMENT_STATUSES.contains(pStatus)) {
-                String key = o.getCreatedAt().format(formatter);
+            if (REVENUE_ORDER_STATUSES.contains(oStatus) && REVENUE_PAYMENT_STATUSES.contains(pStatus) && o.getCreatedAt() != null) {
+                String dateKey = o.getCreatedAt().format(trendFmt);
                 double amt = o.getTotalAmount() != null ? o.getTotalAmount().doubleValue() : 0.0;
-                trendMap.put(key, trendMap.getOrDefault(key, 0.0) + amt);
+                trendMap.put(dateKey, trendMap.getOrDefault(dateKey, 0.0) + amt);
             }
         }
+        List<Map<String, Object>> revenueTrend = trendMap.entrySet().stream().map(e -> Map.<String, Object>of("name", e.getKey(), "value", Math.round(e.getValue() * 100.0) / 100.0)).collect(Collectors.toList());
 
-        List<Map<String, Object>> revenueTrend = trendMap.entrySet().stream()
-                .map(e -> Map.<String, Object>of(
-                        "name", e.getKey(),
-                        "value", Math.round(e.getValue() * 100.0) / 100.0
-                ))
-                .collect(Collectors.toList());
-
-        // Category Analytics
         Map<String, Map<String, Object>> catStats = new HashMap<>();
-        Map<String, String> prodCategoryMap = new HashMap<>();
-        Map<String, Double> prodPriceMap = new HashMap<>();
-
         for (Product p : allProducts) {
-            String cat = p.getCategory() != null && !p.getCategory().trim().isEmpty() ? p.getCategory().trim() : "Uncategorized";
-            String pid = p.getId().toString();
-            prodCategoryMap.put(pid, cat);
-            
-            double pPrice = p.getDiscountPrice() != null ? p.getDiscountPrice().doubleValue() :
-                    (p.getPrice() != null ? p.getPrice().doubleValue() : 0.0);
-            prodPriceMap.put(pid, pPrice);
-
-            int stock = p.getStockQuantity() != null ? p.getStockQuantity() : 0;
-
-            if (!catStats.containsKey(cat)) {
-                Map<String, Object> stat = new HashMap<>();
-                stat.put("category", cat);
-                stat.put("product_count", 0);
-                stat.put("stock_quantity", 0);
-                stat.put("stock_value", 0.0);
-                stat.put("units_sold", 0);
-                stat.put("revenue", 0.0);
-                catStats.put(cat, stat);
-            }
-
-            Map<String, Object> stat = catStats.get(cat);
+            String catName = p.getCategoryName() != null ? p.getCategoryName() : "General";
+            Map<String, Object> stat = catStats.computeIfAbsent(catName, k -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("category", k);
+                m.put("revenue", 0.0);
+                m.put("product_count", 0);
+                m.put("units_sold", 0);
+                m.put("stock_quantity", 0);
+                m.put("stock_value", 0.0);
+                return m;
+            });
+            double pPrice = p.getDiscountPrice() != null ? p.getDiscountPrice().doubleValue() : (p.getPrice() != null ? p.getPrice().doubleValue() : 0.0);
+            int pStock = p.getStockQuantity() != null ? p.getStockQuantity() : 0;
+            int pSold = p.getUnitsSold() != null ? p.getUnitsSold() : 0;
             stat.put("product_count", (int) stat.get("product_count") + 1);
-            stat.put("stock_quantity", (int) stat.get("stock_quantity") + stock);
-            stat.put("stock_value", (double) stat.get("stock_value") + (stock * pPrice));
-        }
-
-        for (Order o : filteredOrders) {
-            String pStatus = o.getPaymentStatus() != null ? o.getPaymentStatus().toLowerCase() : "";
-            if (REVENUE_PAYMENT_STATUSES.contains(pStatus) && o.getItems() != null) {
-                for (Map<String, Object> item : o.getItems()) {
-                    String pid = String.valueOf(item.get("product_id"));
-                    int qty = toInt(item.get("quantity"));
-                    double price = toDouble(item.get("price"));
-                    
-                    String cat = "Uncategorized";
-                    if (prodCategoryMap.containsKey(pid)) {
-                        cat = prodCategoryMap.get(pid);
-                    } else {
-                        // Fallback matching by product name if UUID is different
                         String name = String.valueOf(item.get("product_name") != null ? item.get("product_name") : item.getOrDefault("name", ""));
                         for (Product pr : allProducts) {
                             if (pr.getName() != null && pr.getName().equalsIgnoreCase(name)) {

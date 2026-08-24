@@ -9,7 +9,7 @@ import {
 import { 
   TrendingUp, Package, Users, ShoppingBag, IndianRupee, 
   Download, Calendar, Search, Activity, Zap, Trophy,
-  AlertTriangle, CheckCircle, Percent, Clock, CreditCard
+  AlertTriangle, CheckCircle, Percent, Clock, CreditCard, Wallet
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { toast } from 'sonner';
@@ -18,17 +18,17 @@ import { useProgress } from '../../components/ui/ProgressToast';
 import { downloadXlsx } from '../../utils/xlsxExport';
 
 const COLORS = [
-  '#006e1b', // Brand Green
+  '#006e1b', // Brand Green (DSF Wallet)
+  '#3b82f6', // Blue (Razorpay Online)
+  '#f59e0b', // Amber (COD)
+  '#ef4444', // Red (Failed)
   '#10b981', // Emerald
-  '#3b82f6', // Blue
-  '#f59e0b', // Amber
-  '#ef4444', // Red
   '#8b5cf6', // Violet
   '#ec4899', // Pink
 ];
 
 const AnalyticsPage = () => {
-  const [summary, setSummary] = useState({ metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
+  const [summary, setSummary] = useState({ metrics: {}, order_status_counts: {}, best_products: [], inventory: [], wallet_analytics: {} });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,7 +49,7 @@ const AnalyticsPage = () => {
     
     try {
       const response = await adminService.getDashboardMetrics(timeframe, params);
-      setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
+      setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [], wallet_analytics: {} });
     } catch (error) {
       toast.error("Failed to load dashboard metrics");
     } finally {
@@ -67,7 +67,7 @@ const AnalyticsPage = () => {
     }
     try {
       const response = await apiClient.get('/admin/analytics/summary', { params: { timeframe, ...params }, silent: true });
-      setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [] });
+      setSummary(response.data || { metrics: {}, order_status_counts: {}, best_products: [], inventory: [], wallet_analytics: {} });
     } catch (error) {
       // Ignore background errors
     }
@@ -95,45 +95,37 @@ const AnalyticsPage = () => {
   }
 
   const metrics = summary.metrics || {};
+  const walletAnalytics = summary.wallet_analytics || {};
   
   const normalizedStatusCounts = {};
   Object.entries(summary.order_status_counts || {}).forEach(([key, val]) => {
-    let normalizedKey = key.toLowerCase()
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, c => c.toUpperCase());
-    normalizedStatusCounts[normalizedKey] = (normalizedStatusCounts[normalizedKey] || 0) + val;
+    const normKey = key.toLowerCase();
+    normalizedStatusCounts[normKey] = (normalizedStatusCounts[normKey] || 0) + val;
   });
-  const statusData = Object.entries(normalizedStatusCounts).map(([name, value]) => ({ name, value }));
-  const totalOrdersCount = statusData.reduce((acc, curr) => acc + curr.value, 0);
+
+  const totalOrdersCount = Object.values(normalizedStatusCounts).reduce((acc, curr) => acc + curr, 0);
+
+  const statusData = Object.entries(normalizedStatusCounts).map(([name, value]) => ({
+    name: name.replace(/_/g, ' ').toUpperCase(),
+    value
+  }));
+
+  const trendData = (summary.revenue_trend || []).map(item => ({
+    name: item.name,
+    value: Number(item.value || 0)
+  }));
+
+  const categoryAnalytics = summary.category_analytics || [];
   
-  const trendData = summary.revenue_trend || [];
+  const filteredCategoryAnalytics = categoryAnalytics.filter(c => 
+    !searchQuery || (c.category || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const productData = (summary.best_products || [])
-    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .slice(0, topLimit)
-    .map(p => ({ name: p.name, value: p.quantity }));
-
-  const inventoryData = (summary.inventory || [])
-    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .slice(0, topLimit)
-    .map(p => ({ name: p.name, value: p.stock_left }));
-  
-  const filteredInventory = (summary.inventory || [])
-    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .slice(0, topLimit);
-
-  const categoryAnalytics = (summary.category_analytics || [])
-    .filter(c => (c.category || '').toLowerCase().includes(searchQuery.toLowerCase()))
-    .sort((a, b) => (b.revenue || 0) - (a.revenue || 0));
-
-  const categoryChartData = categoryAnalytics
-    .slice(0, topLimit)
-    .map(c => ({
-      name: c.category || 'Uncategorized',
-      revenue: Number(c.revenue || 0),
-      stockValue: Number(c.stock_value || 0),
-      unitsSold: Number(c.units_sold || 0),
-    }));
+  const categoryChartData = filteredCategoryAnalytics.map(c => ({
+    name: c.category || 'Uncategorized',
+    revenue: Number(c.revenue || 0),
+    stockValue: Number(c.stock_value || 0),
+  }));
 
   const categoryTotals = categoryAnalytics.reduce((acc, c) => ({
     revenue: acc.revenue + Number(c.revenue || 0),
@@ -141,11 +133,14 @@ const AnalyticsPage = () => {
     unitsSold: acc.unitsSold + Number(c.units_sold || 0),
   }), { revenue: 0, stockValue: 0, unitsSold: 0 });
 
-  // Payment method data calculations
+  // Payment method data calculations featuring DSF Wallet
+  const rawOnlineCount = metrics.online_payments_count || Math.max(0, (metrics.paid_payments_count || 0) - (metrics.cod_payments_count || 0) - (metrics.wallet_payments_count || 0));
+
   const paymentBreakdownData = [
-    { name: 'Razorpay / Prepaid', value: (metrics.paid_payments_count || 0) - (metrics.cod_payments_count || 0) },
-    { name: 'Cash On Delivery', value: metrics.cod_payments_count || 0 },
-    { name: 'Failed / Overdue', value: metrics.failed_payments_count || 0 },
+    { name: 'DSF Wallet', value: metrics.wallet_payments_count || walletAnalytics.wallet_order_count || 0, color: '#006e1b' },
+    { name: 'Razorpay / Online', value: rawOnlineCount, color: '#3b82f6' },
+    { name: 'Cash On Delivery', value: metrics.cod_payments_count || 0, color: '#f59e0b' },
+    { name: 'Failed / Overdue', value: metrics.failed_payments_count || 0, color: '#ef4444' },
   ].filter(d => d.value > 0);
 
   const handleExport = () => {
@@ -177,7 +172,12 @@ const AnalyticsPage = () => {
       rows.push(["Out Of Stock Products", Number(metrics.out_of_stock_count || 0)]);
       rows.push(["Low Stock Products", Number(metrics.low_stock_count || 0)]);
       rows.push(["Average Delivery Time", `${metrics.avg_delivery_time_hours || 0} hrs`]);
-      rows.push(["Prepaid (Online) Orders", Number((metrics.paid_payments_count || 0) - (metrics.cod_payments_count || 0))]);
+      rows.push(["DSF Wallet Orders Count", Number(metrics.wallet_payments_count || 0)]);
+      rows.push(["DSF Wallet Revenue (INR)", Number(metrics.wallet_payments_amount || 0)]);
+      rows.push(["Total Customer Wallet Liability Float (INR)", Number(metrics.total_wallet_liability || walletAnalytics.total_liability || 0)]);
+      rows.push(["Active Wallet Customers Count", Number(metrics.active_wallet_users || walletAnalytics.active_users_count || 0)]);
+      rows.push(["Refunds Credited to Wallet (INR)", Number(metrics.total_wallet_refunds_credited || walletAnalytics.total_refunds_credited || 0)]);
+      rows.push(["Prepaid (Online) Orders", Number(rawOnlineCount)]);
       rows.push(["Cash On Delivery (COD) Orders", Number(metrics.cod_payments_count || 0)]);
       rows.push(["Average Order Value (AOV)", metrics.total_orders > 0 ? Math.round(metrics.total_revenue / metrics.total_orders) : 0]);
       rows.push([]);
@@ -208,77 +208,68 @@ const AnalyticsPage = () => {
       const bestProducts = summary.best_products || [];
       if (bestProducts.length > 0) {
         bestProducts.forEach(p => {
-          rows.push([p.name, Number(p.quantity || 0)]);
+          rows.push([p.name || 'Product', Number(p.quantity || 0)]);
         });
       } else {
-        rows.push(["No top seller logs"]);
+        rows.push(["No top seller data available"]);
       }
       rows.push([]);
 
-      // Detailed Warehouse Inventory
-      updateProgress(progressId, { progress: 80, message: 'Structuring inventory levels...' });
-      rows.push(["DETAILED WAREHOUSE INVENTORY LIST"]);
-      rows.push(["Product Name", "SKU / Batch", "Stock Left", "Units Sold", "Status"]);
-      const inventoryList = summary.inventory || [];
-      if (inventoryList.length > 0) {
-        inventoryList.forEach(p => {
-          rows.push([
-            p.name,
-            p.sku || 'N/A',
-            Number(p.stock_left || 0),
-            Number(p.units_sold || 0),
-            p.stock_left <= 0 ? 'Depleted' : p.stock_left <= 20 ? 'Low Stock' : 'Healthy'
-          ]);
+      // Inventory Stock Level
+      rows.push(["INVENTORY WAREHOUSE MONITOR"]);
+      rows.push(["Product Name", "SKU / Batch", "Remaining Stock", "Units Sold"]);
+      const inventory = summary.inventory || [];
+      if (inventory.length > 0) {
+        inventory.forEach(inv => {
+          rows.push([inv.name || 'Product', inv.sku || 'N/A', Number(inv.stock_left || 0), Number(inv.units_sold || 0)]);
         });
       } else {
-        rows.push(["No inventory registers"]);
+        rows.push(["No inventory data available"]);
       }
 
-      updateProgress(progressId, { progress: 95, message: 'Downloading report...' });
-
+      updateProgress(progressId, { progress: 85, message: 'Generating Excel file...' });
       downloadXlsx({
         filename: `Durgashakti_Business_Report_${new Date().toISOString().split('T')[0]}.xlsx`,
         sheetName: 'Business Analytics',
         rows: rows
       });
-      
-      finishProgress(progressId, { message: 'Business report downloaded successfully!' });
+
+      finishProgress(progressId, {
+        label: `Durgashakti_Business_Report_${new Date().toISOString().split('T')[0]}.xlsx`,
+        type: 'export',
+        fileType: 'spreadsheet',
+        message: 'Business analytics report downloaded successfully!',
+      });
     } catch (err) {
-      finishProgress(progressId, { message: 'Failed to compile and download report', isError: true });
+      toast.error('Failed to export business report Excel');
     }
   };
 
-  const renderEmptyState = (title) => (
-    <div className="h-64 flex flex-col items-center justify-center bg-slate-50/30 rounded-2xl border border-dashed border-slate-200 p-6 text-center">
-      <div className="p-3 bg-slate-100 rounded-full text-slate-400 mb-3">
-        <Search className="w-6 h-6 text-slate-400" />
-      </div>
-      <p className="text-sm font-bold text-slate-700">No {title} Data</p>
-      <p className="text-xs text-slate-400 mt-1 max-w-[220px]">There is no record matching the selected filters for this timeframe.</p>
-    </div>
+  const inventoryData = (summary.inventory || []).slice(0, 10).map(p => ({
+    name: p.name,
+    value: Number(p.stock_left || 0)
+  }));
+
+  const productData = (summary.best_products || []).slice(0, 10).map(p => ({
+    name: p.name,
+    value: Number(p.quantity || 0)
+  }));
+
+  const filteredInventory = (summary.inventory || []).filter(p => 
+    !searchQuery || (p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || (p.sku || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Custom tooltips with styled readability overlays
-  const CustomChartTooltip = ({ active, payload, label, prefix = '₹', suffix = '' }) => {
+  const CustomChartTooltip = ({ active, payload, label, prefix = '', suffix = '' }) => {
     if (active && payload && payload.length) {
       return (
-        <div 
-          className="bg-slate-900 text-white p-4 rounded-xl border border-slate-700 shadow-2xl text-xs space-y-1.5 min-w-[170px]"
-          style={{ backgroundColor: '#0f172a', border: '1px solid #334155', color: '#f8fafc', zIndex: 9999 }}
-        >
-          <p className="font-bold border-b border-slate-800 pb-1 mb-1" style={{ color: '#cbd5e1' }}>{label}</p>
-          {payload.map((item, idx) => (
-            <div key={idx} className="flex justify-between items-center gap-4">
-              <span className="flex items-center gap-1.5" style={{ color: '#94a3b8' }}>
-                <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: item.color || item.fill }} />
-                {item.name === 'revenue' ? 'Revenue' : item.name === 'stockValue' ? 'Stock Value' : item.name === 'value' ? 'Quantity' : item.name}
-              </span>
-              <span className="font-extrabold" style={{ color: '#ffffff' }}>
-                {item.name === 'unitsSold' || item.name === 'value' ? '' : prefix}
-                {Number(item.value).toLocaleString('en-IN')}
-                {suffix}
-              </span>
-            </div>
+        <div className="bg-slate-900 text-white text-xs px-3.5 py-2.5 rounded-xl shadow-xl border border-slate-800 backdrop-blur-md">
+          <p className="font-mono text-[10px] text-slate-400 font-bold mb-1 uppercase tracking-wider">{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} className="font-extrabold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color || entry.fill || '#10b981' }} />
+              <span className="capitalize">{entry.name}:</span> 
+              <span className="text-emerald-400 font-black">{prefix}{Number(entry.value).toLocaleString('en-IN')}{suffix}</span>
+            </p>
           ))}
         </div>
       );
@@ -286,17 +277,20 @@ const AnalyticsPage = () => {
     return null;
   };
 
-  return (
-    <div className="space-y-8 max-w-[1600px] mx-auto pb-12 relative">
-      {/* Visual background loader line when background updates are fetching */}
-      {refreshing && (
-        <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-500 animate-pulse z-[9999]" />
-      )}
+  const renderEmptyState = (title) => (
+    <div className="flex flex-col items-center justify-center h-48 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-6 text-center">
+      <AlertTriangle className="w-8 h-8 text-slate-300 mb-2" />
+      <p className="text-xs font-bold text-slate-500">No {title} Data Available</p>
+      <p className="text-[10px] text-slate-400 mt-1">Try selecting a broader timeframe filter.</p>
+    </div>
+  );
 
-      {/* Top Banner and Navigation */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+  return (
+    <div className="space-y-8 pb-12 max-w-[1600px] mx-auto">
+      {/* Header Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 flex items-center gap-3">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
             <div className="p-2.5 bg-gradient-to-tr from-emerald-600 to-green-500 rounded-2xl shadow-md text-white">
               <TrendingUp className="w-6 h-6" />
             </div>
@@ -328,132 +322,88 @@ const AnalyticsPage = () => {
         </div>
       </div>
 
-      {/* Interactive Filters Bar */}
-      <div className="bg-slate-50/80 p-3 rounded-3xl flex flex-wrap items-center gap-3 border border-slate-100 shadow-sm backdrop-blur-sm">
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-2xl shadow-sm border border-slate-150">
-          <Calendar className="w-4 h-4 text-emerald-600" />
-          <span className="text-xs font-semibold text-slate-500 mr-1">Timeframe:</span>
-          <select 
-            value={timeframe} 
-            onChange={(e) => setTimeframe(e.target.value)} 
-            className="text-sm font-bold text-slate-800 outline-none bg-transparent cursor-pointer pr-4 border-0 p-0 focus:ring-0"
-          >
-            <option>All Time</option>
-            <option>Today</option>
-            <option>Last 7 Days</option>
-            <option>This Month</option>
-            <option>Fiscal Year</option>
-            <option>Date Range</option>
-          </select>
-        </div>
- 
-        {timeframe === 'Date Range' && (
-          <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-2xl shadow-sm border border-slate-150 animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">Start</span>
-              <input 
-                type="date" 
-                value={customStart} 
-                onChange={(e) => setCustomStart(e.target.value)} 
-                className="text-xs font-bold text-slate-700 outline-none border-0 p-0 focus:ring-0 cursor-pointer"
-              />
+      {/* DSF WALLET EXECUTIVE SYSTEM INTELLIGENCE */}
+      <div className="bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-900 p-8 rounded-3xl text-white shadow-xl relative overflow-hidden space-y-6 border border-emerald-800/40">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-800/50 pb-6 relative z-10">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="p-2.5 bg-emerald-500/20 rounded-2xl border border-emerald-500/30 text-emerald-400">
+                <Wallet className="w-6 h-6" />
+              </span>
+              <h2 className="text-xl font-black text-white tracking-tight">DSF Wallet System Analytics</h2>
+              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                Revenue Growth Driver
+              </span>
             </div>
-            <div className="w-px h-4 bg-slate-200" />
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">End</span>
-              <input 
-                type="date" 
-                value={customEnd} 
-                onChange={(e) => setCustomEnd(e.target.value)} 
-                className="text-xs font-bold text-slate-700 outline-none border-0 p-0 focus:ring-0 cursor-pointer"
-              />
-            </div>
+            <p className="text-xs text-slate-300 font-medium mt-1.5">
+              Tracks customer float liability, order payment redemptions, retained ecosystem refunds, and active wallet balances.
+            </p>
           </div>
-        )}
 
-        <div className="ml-auto text-xs font-bold text-slate-400 px-3">
-          Showing data for <span className="text-emerald-700 font-extrabold">{timeframe}</span>
-        </div>
-      </div>
-
-      {/* Executive KPI Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Revenue */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:border-slate-200/80 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Revenue</p>
-              <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-                ₹{Number(metrics.total_revenue || 0).toLocaleString('en-IN')}
-              </h3>
-              <p className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-                <Percent className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Success Rate: {metrics.payment_success_rate || 100}%</span>
-              </p>
-            </div>
-            <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600">
-              <IndianRupee className="w-6 h-6" />
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="px-5 py-2.5 bg-emerald-950/70 rounded-2xl border border-emerald-700/50 text-right backdrop-blur-md">
+              <p className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Active Wallet Customers</p>
+              <p className="text-xl font-black text-white">{metrics.active_wallet_users || walletAnalytics.active_users_count || 0} Account Holders</p>
             </div>
           </div>
         </div>
 
-        {/* Orders Overview */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:border-slate-200/80 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Orders Summary</p>
-              <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-                {metrics.total_orders || 0}
-              </h3>
-              <p className="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
-                <Activity className="w-3.5 h-3.5 text-blue-600" />
-                <span>Today: {metrics.orders_today || 0} placed</span>
-              </p>
-            </div>
-            <div className="p-3 bg-blue-50 rounded-2xl text-blue-600">
-              <ShoppingBag className="w-6 h-6" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 relative z-10">
+          {/* Card 1: Wallet Revenue */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-emerald-500/40 transition-all duration-300">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Wallet Orders Volume</p>
+                <h4 className="text-2xl font-black text-white mt-1">₹{Number(metrics.wallet_payments_amount || walletAnalytics.wallet_order_amount || 0).toLocaleString('en-IN')}</h4>
+                <p className="text-[10px] font-bold text-slate-400 mt-1">{metrics.wallet_payments_count || walletAnalytics.wallet_order_count || 0} Orders Paid via Wallet</p>
+              </div>
+              <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-400">
+                <CreditCard className="w-5 h-5" />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Inventory Valuation & Health */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:border-slate-200/80 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Stock Health</p>
-              <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-                {metrics.stock_health || 100}%
-              </h3>
-              <p className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                <span>{metrics.out_of_stock_count || 0} Depleted | {metrics.low_stock_count || 0} Low</span>
-              </p>
-            </div>
-            <div className="p-3 bg-amber-50 rounded-2xl text-amber-600">
-              <Package className="w-6 h-6" />
+          {/* Card 2: Float Liability */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-amber-500/40 transition-all duration-300">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-amber-400">Outstanding Wallet Float</p>
+                <h4 className="text-2xl font-black text-white mt-1">₹{Number(metrics.total_wallet_liability || walletAnalytics.total_liability || 0).toLocaleString('en-IN')}</h4>
+                <p className="text-[10px] font-bold text-slate-400 mt-1">Unspent Customer Deposits</p>
+              </div>
+              <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-400">
+                <IndianRupee className="w-5 h-5" />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Avg Delivery Time */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-md hover:border-slate-200/80 transition-all duration-300">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex justify-between items-start">
-            <div className="space-y-2">
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Avg Delivery Time</p>
-              <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-                {metrics.avg_delivery_time_hours || 0} hrs
-              </h3>
-              <p className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-violet-600" />
-                <span>Range stats active</span>
-              </p>
+          {/* Card 3: Retained Ecosystem Refunds */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-blue-500/40 transition-all duration-300">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-blue-400">Retained Store Refunds</p>
+                <h4 className="text-2xl font-black text-white mt-1">₹{Number(metrics.total_wallet_refunds_credited || walletAnalytics.total_refunds_credited || 0).toLocaleString('en-IN')}</h4>
+                <p className="text-[10px] font-bold text-slate-400 mt-1">Credited to Customer Wallets</p>
+              </div>
+              <div className="p-2.5 bg-blue-500/20 rounded-xl text-blue-400">
+                <CheckCircle className="w-5 h-5" />
+              </div>
             </div>
-            <div className="p-3 bg-violet-50 rounded-2xl text-violet-600">
-              <Users className="w-6 h-6" />
+          </div>
+
+          {/* Card 4: Promotional Top-ups */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-purple-500/40 transition-all duration-300">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-purple-400">Promos & Admin Credits</p>
+                <h4 className="text-2xl font-black text-white mt-1">₹{Number(metrics.total_wallet_topups_credited || walletAnalytics.total_topups_credited || 0).toLocaleString('en-IN')}</h4>
+                <p className="text-[10px] font-bold text-slate-400 mt-1">Vouchers & Top-up Credits</p>
+              </div>
+              <div className="p-2.5 bg-purple-500/20 rounded-xl text-purple-400">
+                <Zap className="w-5 h-5" />
+              </div>
             </div>
           </div>
         </div>

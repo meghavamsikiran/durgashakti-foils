@@ -5,7 +5,7 @@ import apiClient from '../../services/core/apiClient';
 import { 
   LayoutDashboard, ShoppingBag, Zap, Package, 
   Users, IndianRupee, TrendingUp, Calendar,
-  ArrowUpRight, Target, Activity, Trophy, Clock, CheckCircle2, ShieldAlert
+  ArrowUpRight, Target, Activity, Trophy, Clock, CheckCircle2, ShieldAlert, Wallet, CreditCard
 } from 'lucide-react';
 import PageLoader from '../../components/ui/PageLoader';
 import DateFilterPopover from '../../components/ui/DateFilterPopover';
@@ -198,6 +198,22 @@ const AdminDashboard = () => {
                 <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Velocity</span>
                   <span className="text-lg font-black text-slate-900 block mt-0.5">{metrics.sales_velocity || 0} <span className="text-[10px] font-bold text-slate-400">U/D</span></span>
+                </div>
+              </div>
+
+              {/* DSF Wallet Revenue & Float Card */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="border border-emerald-100 rounded-2xl p-4 bg-emerald-50/40">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1">
+                    <Wallet className="w-3 h-3 text-emerald-600" /> Wallet Revenue
+                  </span>
+                  <span className="text-lg font-black text-slate-900 block mt-0.5">{formatCurrency(metrics.wallet_payments_amount || 0)}</span>
+                  <span className="text-[9px] font-extrabold text-emerald-700">{metrics.wallet_payments_count || 0} wallet orders</span>
+                </div>
+                <div className="border border-amber-100 rounded-2xl p-4 bg-amber-50/40">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 block">Wallet Float</span>
+                  <span className="text-lg font-black text-slate-900 block mt-0.5">{formatCurrency(metrics.total_wallet_liability || 0)}</span>
+                  <span className="text-[9px] font-extrabold text-amber-700">{metrics.active_wallet_users || 0} active users</span>
                 </div>
               </div>
             </div>
