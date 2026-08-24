@@ -823,6 +823,15 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       window.dispatchEvent(new CustomEvent('360-mode-toggle', { detail: { active: is360Mode } }));
     };
 
+    const set3DCursor = (cursorStyle) => {
+      if (canvasRef.current) {
+        canvasRef.current.style.cursor = cursorStyle;
+      }
+      if (document.body.style.cursor) {
+        document.body.style.cursor = '';
+      }
+    };
+
     const handlePointerDown = (e) => {
       // Don't intercept clicks on interactive buttons, links, or form controls
       if (e.target && e.target.closest && e.target.closest('button, a, input, select, textarea, [role="button"], [title="360° Free Rotation Mode"]')) {
@@ -831,15 +840,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-      const set3DCursor = (cursorStyle) => {
-        if (canvasRef.current) {
-          canvasRef.current.style.cursor = cursorStyle;
-        }
-        if (document.body.style.cursor) {
-          document.body.style.cursor = '';
-        }
-      };
 
       // In 360° mode: ANY click ANYWHERE on screen starts free rotation immediately
       if (is360Mode) {
