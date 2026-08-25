@@ -1020,6 +1020,9 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     const animate = () => {
       reqId = requestAnimationFrame(animate);
 
+      // FLICKER PREVENTION: Pause WebGL renders when section is scrolled out of viewport
+      if (!isVisible) return;
+
       if (foilRollGroup) {
         // Smoothly glide back to original default angle when customer releases mouse/touch
         if (!isDragging) {
@@ -1208,10 +1211,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           height: '100%', 
           display: 'block', 
           pointerEvents: 'auto', 
-          touchAction: 'none',
-          transform: 'translateZ(0)',
-          willChange: 'transform',
-          backfaceVisibility: 'hidden' 
+          touchAction: 'none'
         }} 
       />
 
