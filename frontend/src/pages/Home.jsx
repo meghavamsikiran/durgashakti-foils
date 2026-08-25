@@ -327,10 +327,10 @@ const Home = () => {
                   }}
                   title={is360Active ? "Exit 360° View" : "360° Free Rotation Mode"}
                   style={{ pointerEvents: 'auto' }}
-                  className={`self-start md:self-auto px-5 py-3 rounded-full border transition-all duration-300 shadow-xl cursor-pointer flex items-center justify-center gap-2.5 order-1 md:order-2 ${isFoilPulled ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${ 
+                  className={`self-start md:self-auto px-5 py-3 rounded-full border-2 transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2.5 order-1 md:order-2 ${isFoilPulled ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${ 
                     is360Active 
-                      ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_25px_rgba(37,217,88,0.8)] scale-105' 
-                      : 'bg-slate-900/80 dark:bg-black/60 border-brand-green/40 text-white hover:border-brand-green hover:bg-brand-green/10'
+                      ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_25px_rgba(37,217,88,0.8)] scale-105 font-black' 
+                      : 'bg-white border-brand-green text-slate-900 hover:bg-brand-green/10 dark:bg-black/60 dark:border-brand-green/40 dark:text-white dark:hover:bg-brand-green/10 font-black'
                   }`}
                 >
                   {is360Active ? (
