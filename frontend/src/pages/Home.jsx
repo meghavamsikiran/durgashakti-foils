@@ -286,8 +286,8 @@ const Home = () => {
       `}</style>
 
       {/* Cinematic Interactive 3D Foil Hero Section */}
-      <section ref={heroRef} data-force-dark="true" className="landing-page-v2 hero-section-dark relative w-full h-[100svh] overflow-hidden flex items-center justify-center border-b border-slate-200 dark:border-white/5 bg-[#0a0a0e]">
-        <motion.div style={{ opacity: heroOpacity }} className="absolute inset-0 w-full h-full z-0 bg-[#0a0a0e]">
+      <section ref={heroRef} className="landing-page-v2 relative w-full h-[100svh] overflow-hidden flex items-center justify-center border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#0a0a0e]">
+        <motion.div style={{ opacity: heroOpacity }} className="absolute inset-0 w-full h-full z-0 bg-slate-50 dark:bg-[#0a0a0e]">
           {/* Background Lighting */}
           <div className="studio-bg"></div>
           <div className="warm-glow-left"></div>

@@ -443,3 +443,78 @@
     flex-direction: column;
   }
 }
+
+/* Light Theme Adaptations for Hero Section & Foil Background */
+html:not(.dark) .landing-page-v2,
+.light-theme .landing-page-v2,
+.public-theme.light-theme .landing-page-v2 {
+  --landing-bg: #F8FAFC;
+  --landing-card-bg: rgba(255, 255, 255, 0.85);
+  --landing-text: #0F172A;
+  --landing-text-muted: #475569;
+  background-color: #F8FAFC;
+  color: #0F172A;
+}
+
+html:not(.dark) .landing-page-v2 .studio-bg,
+.light-theme .landing-page-v2 .studio-bg,
+.public-theme.light-theme .landing-page-v2 .studio-bg {
+  background: 
+    radial-gradient(circle at 50% 45%, rgba(37, 217, 88, 0.12) 0%, rgba(248, 250, 252, 0.95) 55%, #F8FAFC 85%),
+    linear-gradient(180deg, rgba(37, 217, 88, 0.06) 0%, transparent 60%);
+}
+
+html:not(.dark) .landing-page-v2 .warm-glow-left,
+.light-theme .landing-page-v2 .warm-glow-left,
+.public-theme.light-theme .landing-page-v2 .warm-glow-left {
+  background: radial-gradient(circle, rgba(251, 188, 4, 0.12) 0%, transparent 70%);
+}
+
+html:not(.dark) .landing-page-v2 .cool-glow-right,
+.light-theme .landing-page-v2 .cool-glow-right,
+.public-theme.light-theme .landing-page-v2 .cool-glow-right {
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 70%);
+}
+
+html:not(.dark) .landing-page-v2 .display-title,
+.light-theme .landing-page-v2 .display-title,
+.public-theme.light-theme .landing-page-v2 .display-title {
+  color: #0F172A;
+}
+
+html:not(.dark) .landing-page-v2 .display-title .highlight,
+.light-theme .landing-page-v2 .display-title .highlight,
+.public-theme.light-theme .landing-page-v2 .display-title .highlight {
+  background: linear-gradient(135deg, #0F172A 0%, #15803D 50%, #006e1b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html:not(.dark) .landing-page-v2 .hero-copy,
+.light-theme .landing-page-v2 .hero-copy,
+.public-theme.light-theme .landing-page-v2 .hero-copy {
+  color: #475569;
+}
+
+html:not(.dark) .landing-page-v2 .quality-badge,
+.light-theme .landing-page-v2 .quality-badge,
+.public-theme.light-theme .landing-page-v2 .quality-badge {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: #0F172A;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+html:not(.dark) .landing-page-v2 .badge-text,
+.light-theme .landing-page-v2 .badge-text,
+.public-theme.light-theme .landing-page-v2 .badge-text {
+  color: #334155;
+}
+
+html:not(.dark) .landing-page-v2 .hero-tagline,
+.light-theme .landing-page-v2 .hero-tagline,
+.public-theme.light-theme .landing-page-v2 .hero-tagline {
+  background: rgba(37, 217, 88, 0.12);
+  border: 1px solid rgba(37, 217, 88, 0.35);
+  color: #15803D;
+}
