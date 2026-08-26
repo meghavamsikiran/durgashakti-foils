@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -79,8 +80,10 @@ public class AdminSettingController {
                 }
             }
 
-            // 1. Update the target setting
+            // 1. Update the target setting & calculate field diffs
             Optional<Setting> settingOpt = settingRepository.findById(key);
+            Map<String, Object> oldVal = settingOpt.isPresent() && settingOpt.get().getValue() != null ? new HashMap<>(settingOpt.get().getValue()) : new HashMap<>();
+
             Setting targetSetting;
             if (settingOpt.isPresent()) {
                 targetSetting = settingOpt.get();
@@ -129,7 +132,26 @@ public class AdminSettingController {
                 settingRepository.save(shipSetting);
             }
 
-            auditLogService.logAction("SETTING_SAVED", "setting", key, val != null ? val : Map.of());
+            List<Map<String, Object>> diffs = new ArrayList<>();
+            if (val != null) {
+                for (Map.Entry<String, Object> entry : val.entrySet()) {
+                    String fKey = entry.getKey();
+                    Object newValItem = entry.getValue();
+                    Object oldValItem = oldVal.get(fKey);
+                    if (!Objects.equals(oldValItem, newValItem)) {
+                        Map<String, Object> d = new HashMap<>();
+                        d.put("field", fKey);
+                        d.put("old_value", oldValItem != null ? oldValItem : "—");
+                        d.put("new_value", newValItem != null ? newValItem : "—");
+                        diffs.add(d);
+                    }
+                }
+            }
+
+            Map<String, Object> auditPayload = new HashMap<>(val != null ? val : Map.of());
+            auditPayload.put("field_diffs", diffs);
+            auditPayload.put("setting_key", key);
+            auditLogService.logAction("SETTING_UPDATED", "setting", key, auditPayload);
             return ResponseEntity.ok(Map.of("message", "Setting saved"));
         } catch (Exception e) {
             log.error("Failed to save setting", e);

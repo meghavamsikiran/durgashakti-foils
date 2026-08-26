@@ -224,6 +224,7 @@ const AuditLogsPage = () => {
             <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
               <tr>
                 <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Action</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Performed By</th>
                 <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Target</th>
                 <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">ID</th>
                 <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Time</th>
@@ -239,6 +240,7 @@ const AuditLogsPage = () => {
                 const actorName = row.actor_name || metadata.actor_name || 'System Process';
                 const actorRole = row.actor_role_label || metadata.actor_role_label || row.actor_role || metadata.actor_role || 'SYSTEM';
                 const actorEmail = row.actor_email || metadata.actor_email;
+                const fieldDiffs = metadata.field_diffs || metadata.changes || [];
                 
                 return (
                   <React.Fragment key={row.id}>
@@ -247,6 +249,17 @@ const AuditLogsPage = () => {
                         <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${info.color}`}>
                           <ActionIcon className="w-3 h-3" />
                           {row.action}
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5 text-emerald-600" />
+                          {actorName}
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
+                          <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                            {actorRole.replaceAll('_', ' ')}
+                          </span>
                         </div>
                       </td>
                       <td className="px-8 py-6">
@@ -274,7 +287,7 @@ const AuditLogsPage = () => {
                     </tr>
                     {isExpanded && (
                       <tr className="bg-slate-50/70 border-b border-slate-200/80 animate-in fade-in duration-200">
-                        <td colSpan="5" className="px-8 py-6">
+                        <td colSpan="6" className="px-8 py-6">
                            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
                               {/* Security Event Header Summary */}
                               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -304,6 +317,33 @@ const AuditLogsPage = () => {
                                     </div>
                                  </div>
                               </div>
+
+                              {/* Field-Level Security Diffs Box */}
+                              {fieldDiffs && fieldDiffs.length > 0 && (
+                                 <div className="bg-emerald-50/50 border border-emerald-200/80 rounded-2xl p-5 space-y-3">
+                                    <div className="text-xs font-black text-emerald-950 uppercase tracking-wider flex items-center gap-2">
+                                       <ShieldAlert className="w-4 h-4 text-emerald-700" />
+                                       Field-Level Audit Diffs (Exact Modifications Tracked)
+                                    </div>
+                                    <div className="bg-white rounded-xl border border-emerald-100 overflow-hidden divide-y divide-emerald-100">
+                                       {fieldDiffs.map((diff, idx) => (
+                                          <div key={idx} className="p-3.5 grid grid-cols-1 md:grid-cols-3 gap-3 items-center text-xs">
+                                             <div className="font-black text-slate-800 uppercase text-[10px] tracking-wider">
+                                                {formatKey(diff.field || diff.name || `Field #${idx + 1}`)}
+                                             </div>
+                                             <div className="bg-rose-50 text-rose-800 border border-rose-200/80 p-2 rounded-lg font-mono text-[11px] break-all">
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-rose-600 block mb-0.5">Previous Value:</span>
+                                                {String(diff.old_value !== undefined ? diff.old_value : '—')}
+                                             </div>
+                                             <div className="bg-emerald-50 text-emerald-900 border border-emerald-200/80 p-2 rounded-lg font-mono text-[11px] break-all">
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-700 block mb-0.5">New Value:</span>
+                                                {String(diff.new_value !== undefined ? diff.new_value : '—')}
+                                             </div>
+                                          </div>
+                                       ))}
+                                    </div>
+                                 </div>
+                              )}
 
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                  {/* Column 1: Action Details & Changes Payload */}

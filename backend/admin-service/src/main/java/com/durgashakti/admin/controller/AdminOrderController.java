@@ -393,8 +393,11 @@ public class AdminOrderController {
 
         List<AuditLog> allLogs = auditLogRepository.findAll();
         List<User> allUsers = userRepository.findByRoleIn(List.of("admin", "SUPER_ADMIN", "customer"));
-        Map<String, User> userMap = allUsers.stream()
-                .collect(Collectors.toMap(u -> u.getId().toString(), u -> u, (a, b) -> a));
+        Map<String, User> userMap = new HashMap<>();
+        for (User u : allUsers) {
+            if (u.getId() != null) userMap.put(u.getId().toString(), u);
+            if (u.getEmail() != null) userMap.put(u.getEmail().toLowerCase().trim(), u);
+        }
 
         List<AuditLog> filtered = allLogs.stream()
                 .filter(log -> {
@@ -438,24 +441,32 @@ public class AdminOrderController {
             item.put("created_at", logEntry.getCreatedAt() != null ? logEntry.getCreatedAt().toString() : null);
 
             String actorId = logEntry.getActorId();
-            User user = (actorId != null) ? userMap.get(actorId) : null;
+            User user = (actorId != null) ? userMap.get(actorId.toLowerCase().trim()) : null;
+            if (user == null && logEntry.getMetadata() != null && logEntry.getMetadata().get("actor_email") != null) {
+                user = userMap.get(String.valueOf(logEntry.getMetadata().get("actor_email")).toLowerCase().trim());
+            }
+
             String name = "System Process";
             String role = "SYSTEM";
             String roleLabel = "SYSTEM";
+            String email = "";
 
             if (user != null) {
-                name = user.getFullName() != null ? user.getFullName() : (user.getEmail() != null ? user.getEmail() : "Unknown");
+                name = user.getFullName() != null && !user.getFullName().isBlank() ? user.getFullName() : user.getEmail();
+                email = user.getEmail() != null ? user.getEmail() : "";
                 role = user.getRole();
                 roleLabel = getRoleLabelForAudit(user);
             } else if (logEntry.getMetadata() != null) {
                 Map<String, Object> meta = logEntry.getMetadata();
                 if (meta.get("actor_name") != null) name = String.valueOf(meta.get("actor_name"));
+                if (meta.get("actor_email") != null) email = String.valueOf(meta.get("actor_email"));
                 if (meta.get("actor_role") != null) role = String.valueOf(meta.get("actor_role"));
                 if (meta.get("actor_role_label") != null) roleLabel = String.valueOf(meta.get("actor_role_label"));
+                else if (role != null) roleLabel = role.replace("_", " ").toUpperCase();
             }
 
             item.put("actor_name", name);
-            item.put("actor_email", user != null ? user.getEmail() : "");
+            item.put("actor_email", email);
             item.put("actor_role", role);
             item.put("actor_role_label", roleLabel);
             item.put("updated_by_name_role", name + " (" + roleLabel + ")");
