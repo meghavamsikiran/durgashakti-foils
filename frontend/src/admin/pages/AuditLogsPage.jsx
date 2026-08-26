@@ -280,7 +280,7 @@ const AuditLogsPage = () => {
                               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
                                  <div className="flex items-center gap-3">
                                     <div className={`p-3 rounded-xl ${info.color}`}>
-                                       <Icon className="w-5 h-5" />
+                                       <ActionIcon className="w-5 h-5" />
                                     </div>
                                     <div>
                                        <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
