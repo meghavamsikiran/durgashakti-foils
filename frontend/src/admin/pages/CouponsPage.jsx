@@ -1835,8 +1835,8 @@ const CouponsPage = () => {
                               onClick={() => handleToggleCouponActive(coupon)}
                               disabled={false}
                               title={isExpired ? 'Expired coupon. Activating will automatically extend it by 7 days.' : undefined}
-                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none border ${
-                                isActuallyActive ? 'bg-emerald-500 border-emerald-400' : 'bg-[#1e2923] border-[#37493f]'
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none border cursor-pointer ${
+                                isActuallyActive ? 'bg-emerald-600 border-emerald-500 dark:bg-emerald-500 dark:border-emerald-400' : 'bg-slate-200 border-slate-300 dark:bg-[#1e2923] dark:border-[#37493f]'
                               }`}
                             >
                               <span

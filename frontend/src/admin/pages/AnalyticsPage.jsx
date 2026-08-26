@@ -323,85 +323,85 @@ const AnalyticsPage = () => {
       </div>
 
       {/* DSF WALLET EXECUTIVE SYSTEM INTELLIGENCE */}
-      <div className="bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-900 p-8 rounded-3xl text-white shadow-xl relative overflow-hidden space-y-6 border border-emerald-800/40">
+      <div className="bg-white border border-slate-200/80 dark:bg-gradient-to-br dark:from-emerald-950 dark:via-slate-900 dark:to-emerald-900 p-8 rounded-3xl text-slate-900 dark:text-white shadow-sm dark:shadow-xl relative overflow-hidden space-y-6 dark:border-emerald-800/40">
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-emerald-800/50 pb-6 relative z-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-emerald-800/50 pb-6 relative z-10">
           <div>
             <div className="flex items-center gap-3">
-              <span className="p-2.5 bg-emerald-500/20 rounded-2xl border border-emerald-500/30 text-emerald-400">
+              <span className="p-2.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/20 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 dark:text-emerald-400">
                 <Wallet className="w-6 h-6" />
               </span>
-              <h2 className="text-xl font-black text-white tracking-tight">DSF Wallet System Analytics</h2>
-              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">DSF Wallet System Analytics</h2>
+              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-400/20 dark:text-emerald-300 dark:border-emerald-400/30">
                 Revenue Growth Driver
               </span>
             </div>
-            <p className="text-xs text-slate-300 font-medium mt-1.5">
+            <p className="text-xs text-slate-500 dark:text-slate-300 font-medium mt-1.5">
               Tracks customer float liability, order payment redemptions, retained ecosystem refunds, and active wallet balances.
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <div className="px-5 py-2.5 bg-emerald-950/70 rounded-2xl border border-emerald-700/50 text-right backdrop-blur-md">
-              <p className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Active Wallet Customers</p>
-              <p className="text-xl font-black text-white">{metrics.active_wallet_users || walletAnalytics.active_users_count || 0} Account Holders</p>
+            <div className="px-5 py-2.5 bg-emerald-50/80 dark:bg-emerald-950/70 rounded-2xl border border-emerald-200/80 dark:border-emerald-700/50 text-right backdrop-blur-md">
+              <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Active Wallet Customers</p>
+              <p className="text-xl font-black text-slate-900 dark:text-white">{metrics.active_wallet_users || walletAnalytics.active_users_count || 0} Account Holders</p>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 relative z-10">
           {/* Card 1: Wallet Revenue */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-emerald-500/40 transition-all duration-300">
+          <div className="bg-slate-50/80 border border-slate-200/80 dark:bg-white/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-emerald-500/40 transition-all duration-300">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Wallet Orders Volume</p>
-                <h4 className="text-2xl font-black text-white mt-1">₹{Number(metrics.wallet_payments_amount || walletAnalytics.wallet_order_amount || 0).toLocaleString('en-IN')}</h4>
-                <p className="text-[10px] font-bold text-slate-400 mt-1">{metrics.wallet_payments_count || walletAnalytics.wallet_order_count || 0} Orders Paid via Wallet</p>
+                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Wallet Orders Volume</p>
+                <h4 className="text-2xl font-black text-slate-900 dark:text-white mt-1">₹{Number(metrics.wallet_payments_amount || walletAnalytics.wallet_order_amount || 0).toLocaleString('en-IN')}</h4>
+                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">{metrics.wallet_payments_count || walletAnalytics.wallet_order_count || 0} Orders Paid via Wallet</p>
               </div>
-              <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-400">
+              <div className="p-2.5 bg-emerald-100/70 text-emerald-700 dark:bg-emerald-500/20 rounded-xl dark:text-emerald-400">
                 <CreditCard className="w-5 h-5" />
               </div>
             </div>
           </div>
 
           {/* Card 2: Float Liability */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-amber-500/40 transition-all duration-300">
+          <div className="bg-slate-50/80 border border-slate-200/80 dark:bg-white/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-amber-500/40 transition-all duration-300">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-amber-400">Outstanding Wallet Float</p>
-                <h4 className="text-2xl font-black text-white mt-1">₹{Number(metrics.total_wallet_liability || walletAnalytics.total_liability || 0).toLocaleString('en-IN')}</h4>
-                <p className="text-[10px] font-bold text-slate-400 mt-1">Unspent Customer Deposits</p>
+                <p className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400">Outstanding Wallet Float</p>
+                <h4 className="text-2xl font-black text-slate-900 dark:text-white mt-1">₹{Number(metrics.total_wallet_liability || walletAnalytics.total_liability || 0).toLocaleString('en-IN')}</h4>
+                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">Unspent Customer Deposits</p>
               </div>
-              <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-400">
+              <div className="p-2.5 bg-amber-100/70 text-amber-700 dark:bg-amber-500/20 rounded-xl dark:text-amber-400">
                 <IndianRupee className="w-5 h-5" />
               </div>
             </div>
           </div>
 
           {/* Card 3: Retained Ecosystem Refunds */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-blue-500/40 transition-all duration-300">
+          <div className="bg-slate-50/80 border border-slate-200/80 dark:bg-white/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-blue-500/40 transition-all duration-300">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-blue-400">Retained Store Refunds</p>
-                <h4 className="text-2xl font-black text-white mt-1">₹{Number(metrics.total_wallet_refunds_credited || walletAnalytics.total_refunds_credited || 0).toLocaleString('en-IN')}</h4>
-                <p className="text-[10px] font-bold text-slate-400 mt-1">Credited to Customer Wallets</p>
+                <p className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400">Retained Store Refunds</p>
+                <h4 className="text-2xl font-black text-slate-900 dark:text-white mt-1">₹{Number(metrics.total_wallet_refunds_credited || walletAnalytics.total_refunds_credited || 0).toLocaleString('en-IN')}</h4>
+                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">Credited to Customer Wallets</p>
               </div>
-              <div className="p-2.5 bg-blue-500/20 rounded-xl text-blue-400">
+              <div className="p-2.5 bg-blue-100/70 text-blue-700 dark:bg-blue-500/20 rounded-xl dark:text-blue-400">
                 <CheckCircle className="w-5 h-5" />
               </div>
             </div>
           </div>
 
           {/* Card 4: Promotional Top-ups */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-purple-500/40 transition-all duration-300">
+          <div className="bg-slate-50/80 border border-slate-200/80 dark:bg-white/5 dark:border-white/10 rounded-2xl p-5 backdrop-blur-sm hover:border-purple-500/40 transition-all duration-300">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-purple-400">Promos & Admin Credits</p>
-                <h4 className="text-2xl font-black text-white mt-1">₹{Number(metrics.total_wallet_topups_credited || walletAnalytics.total_topups_credited || 0).toLocaleString('en-IN')}</h4>
-                <p className="text-[10px] font-bold text-slate-400 mt-1">Vouchers & Top-up Credits</p>
+                <p className="text-[10px] font-black uppercase tracking-wider text-purple-700 dark:text-purple-400">Promos & Admin Credits</p>
+                <h4 className="text-2xl font-black text-slate-900 dark:text-white mt-1">₹{Number(metrics.total_wallet_topups_credited || walletAnalytics.total_topups_credited || 0).toLocaleString('en-IN')}</h4>
+                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">Vouchers & Top-up Credits</p>
               </div>
-              <div className="p-2.5 bg-purple-500/20 rounded-xl text-purple-400">
+              <div className="p-2.5 bg-purple-100/70 text-purple-700 dark:bg-purple-500/20 rounded-xl dark:text-purple-400">
                 <Zap className="w-5 h-5" />
               </div>
             </div>

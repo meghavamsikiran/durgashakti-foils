@@ -15,6 +15,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -141,8 +142,8 @@ public class AdminSettingController {
     public ResponseEntity<?> testWhatsApp(@RequestBody Map<String, Object> req) {
         try {
             String toPhone = req.containsKey("to") ? String.valueOf(req.get("to")) : null;
-            String reqTemplate = req.containsKey("templateName") ? String.valueOf(req.get("templateName")).trim() : "3p_direct_integration_test_template";
-            if (reqTemplate.isBlank()) reqTemplate = "3p_direct_integration_test_template";
+            String reqTemplate = req.containsKey("templateName") ? String.valueOf(req.get("templateName")).trim() : "hello_world";
+            if (reqTemplate.isBlank()) reqTemplate = "hello_world";
             if (toPhone == null || toPhone.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "'to' phone number is required"));
             }
@@ -190,148 +191,106 @@ public class AdminSettingController {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(apiToken);
 
-            List<String> langCodes = List.of("en_US", "en", "en_GB", "hi", "hi_IN");
-            List<Map<String, Object>> failedAttempts = new java.util.ArrayList<>();
-
-            List<List<Map<String, Object>>> componentVariants = new java.util.ArrayList<>();
-
-            if ("hello_world".equalsIgnoreCase(reqTemplate)) {
-                componentVariants.add(List.of());
-            } else {
-                // Variant 1: Body (2 params) + Button Index 0 (1 param: DSF-1001)
-                componentVariants.add(List.of(
-                    Map.of(
-                        "type", "body",
-                        "parameters", List.of(
-                            Map.of("type", "text", "text", "Valued Customer"),
-                            Map.of("type", "text", "text", "DSF-1001")
-                        )
-                    ),
-                    Map.of(
-                        "type", "button",
-                        "sub_type", "url",
-                        "index", "0",
-                        "parameters", List.of(
-                            Map.of("type", "text", "text", "DSF-1001")
-                        )
-                    )
-                ));
-
-                // Variant 2: Body (2 params) + Button Index 0 (1 param: Full URL)
-                componentVariants.add(List.of(
-                    Map.of(
-                        "type", "body",
-                        "parameters", List.of(
-                            Map.of("type", "text", "text", "Valued Customer"),
-                            Map.of("type", "text", "text", "DSF-1001")
-                        )
-                    ),
-                    Map.of(
-                        "type", "button",
-                        "sub_type", "url",
-                        "index", "0",
-                        "parameters", List.of(
-                            Map.of("type", "text", "text", "https://t.17track.net/en#nums=DSF-1001")
-                        )
-                    )
-                ));
-
-                // Variant 3: Body (2 params) without Button
-                componentVariants.add(List.of(
-                    Map.of(
-                        "type", "body",
-                        "parameters", List.of(
-                            Map.of("type", "text", "text", "Valued Customer"),
-                            Map.of("type", "text", "text", "DSF-1001")
-                        )
-                    )
-                ));
-
-                // Variant 4: Body (1 param) + Button Index 0 (1 param)
-                componentVariants.add(List.of(
-                    Map.of(
-                        "type", "body",
-                        "parameters", List.of(
-                            Map.of("type", "text", "text", "Valued Customer")
-                        )
-                    ),
-                    Map.of(
-                        "type", "button",
-                        "sub_type", "url",
-                        "index", "0",
-                        "parameters", List.of(
-                            Map.of("type", "text", "text", "DSF-1001")
-                        )
-                    )
-                ));
-
-                // Variant 5: Body (1 param) without Button
-                componentVariants.add(List.of(
-                    Map.of(
-                        "type", "body",
-                        "parameters", List.of(
-                            Map.of("type", "text", "text", "Valued Customer")
-                        )
-                    )
-                ));
-
-                // Variant 6: No components
-                componentVariants.add(List.of());
+            // List of candidate templates: requested template first, then fallback to hello_world
+            List<String> templatesToTry = new ArrayList<>();
+            templatesToTry.add(reqTemplate);
+            if (!"hello_world".equalsIgnoreCase(reqTemplate)) {
+                templatesToTry.add("hello_world");
             }
 
-            for (String lang : langCodes) {
-                for (int vIdx = 0; vIdx < componentVariants.size(); vIdx++) {
-                    List<Map<String, Object>> components = componentVariants.get(vIdx);
+            List<String> langCodes = List.of("en_US", "en", "en_GB", "hi", "hi_IN");
+            List<Map<String, Object>> failedAttempts = new ArrayList<>();
 
-                    Map<String, Object> body = new HashMap<>();
-                    body.put("messaging_product", "whatsapp");
-                    body.put("to", cleanPhone);
-                    body.put("type", "template");
+            for (String tName : templatesToTry) {
+                List<List<Map<String, Object>>> componentVariants = new ArrayList<>();
 
-                    Map<String, Object> templateObj = new HashMap<>();
-                    templateObj.put("name", reqTemplate);
-                    templateObj.put("language", Map.of("code", lang));
-                    if (!components.isEmpty()) {
-                        templateObj.put("components", components);
-                    }
+                if ("hello_world".equalsIgnoreCase(tName)) {
+                    componentVariants.add(List.of());
+                } else {
+                    // Variant 1: Body (2 params) + Button Index 0 (1 param)
+                    componentVariants.add(List.of(
+                        Map.of("type", "body", "parameters", List.of(
+                            Map.of("type", "text", "text", "Valued Customer"),
+                            Map.of("type", "text", "text", "DSF-1001")
+                        )),
+                        Map.of("type", "button", "sub_type", "url", "index", "0", "parameters", List.of(
+                            Map.of("type", "text", "text", "DSF-1001")
+                        ))
+                    ));
 
-                    body.put("template", templateObj);
+                    // Variant 2: Body (2 params) without Button
+                    componentVariants.add(List.of(
+                        Map.of("type", "body", "parameters", List.of(
+                            Map.of("type", "text", "text", "Valued Customer"),
+                            Map.of("type", "text", "text", "DSF-1001")
+                        ))
+                    ));
 
-                    HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-                    try {
-                        ResponseEntity<String> metaResp = restTemplate.postForEntity(url, entity, String.class);
-                        debugInfo.put("metaStatus", metaResp.getStatusCode().value());
-                        debugInfo.put("metaResponse", metaResp.getBody());
-                        debugInfo.put("success", true);
-                        debugInfo.put("acceptedLanguage", lang);
-                        debugInfo.put("variantUsed", vIdx + 1);
-                        debugInfo.put("phone", cleanPhone);
-                        return ResponseEntity.ok(debugInfo);
-                    } catch (HttpStatusCodeException httpEx) {
-                        String respBody = httpEx.getResponseBodyAsString();
-                        Map<String, Object> attempt = new HashMap<>();
-                        attempt.put("lang", lang);
-                        attempt.put("variantIdx", vIdx + 1);
-                        attempt.put("status", httpEx.getStatusCode().value());
-                        attempt.put("error", respBody);
-                        failedAttempts.add(attempt);
+                    // Variant 3: No components
+                    componentVariants.add(List.of());
+                }
 
-                        // If error is 132001 (Template missing in translation / language 404), break to try next language
-                        if (respBody.contains("132001") || httpEx.getStatusCode().value() == 404) {
+                for (String lang : langCodes) {
+                    for (int vIdx = 0; vIdx < componentVariants.size(); vIdx++) {
+                        List<Map<String, Object>> components = componentVariants.get(vIdx);
+
+                        Map<String, Object> body = new HashMap<>();
+                        body.put("messaging_product", "whatsapp");
+                        body.put("to", cleanPhone);
+                        body.put("type", "template");
+
+                        Map<String, Object> templateObj = new HashMap<>();
+                        templateObj.put("name", tName);
+                        templateObj.put("language", Map.of("code", lang));
+                        if (!components.isEmpty()) {
+                            templateObj.put("components", components);
+                        }
+
+                        body.put("template", templateObj);
+
+                        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+                        try {
+                            ResponseEntity<String> metaResp = restTemplate.postForEntity(url, entity, String.class);
+                            debugInfo.put("metaStatus", metaResp.getStatusCode().value());
+                            debugInfo.put("metaResponse", metaResp.getBody());
+                            debugInfo.put("success", true);
+                            debugInfo.put("templateUsed", tName);
+                            debugInfo.put("acceptedLanguage", lang);
+                            debugInfo.put("variantUsed", vIdx + 1);
+                            debugInfo.put("phone", cleanPhone);
+                            if (!tName.equalsIgnoreCase(reqTemplate)) {
+                                debugInfo.put("note", "Template '" + reqTemplate + "' was not found in Meta Manager. Fallback template 'hello_world' succeeded!");
+                            }
+                            return ResponseEntity.ok(debugInfo);
+                        } catch (HttpStatusCodeException httpEx) {
+                            String respBody = httpEx.getResponseBodyAsString();
+                            Map<String, Object> attempt = new HashMap<>();
+                            attempt.put("templateTested", tName);
+                            attempt.put("lang", lang);
+                            attempt.put("variantIdx", vIdx + 1);
+                            attempt.put("status", httpEx.getStatusCode().value());
+                            attempt.put("error", respBody);
+                            failedAttempts.add(attempt);
+
+                            if (respBody.contains("132001") || httpEx.getStatusCode().value() == 404) {
+                                break;
+                            }
+                        } catch (Exception e) {
+                            Map<String, Object> attempt = new HashMap<>();
+                            attempt.put("templateTested", tName);
+                            attempt.put("lang", lang);
+                            attempt.put("error", e.getMessage());
+                            failedAttempts.add(attempt);
                             break;
                         }
-                    } catch (Exception e) {
-                        Map<String, Object> attempt = new HashMap<>();
-                        attempt.put("lang", lang);
-                        attempt.put("error", e.getMessage());
-                        failedAttempts.add(attempt);
-                        break;
                     }
                 }
             }
+
             debugInfo.put("success", false);
             debugInfo.put("failedAttempts", failedAttempts);
-            return ResponseEntity.status(200).body(debugInfo);
+            debugInfo.put("hint", "Template '" + reqTemplate + "' does not exist in Meta WhatsApp Manager. Please use 'hello_world' for testing or create & approve '" + reqTemplate + "' under Meta WhatsApp Manager -> Message Templates.");
+            return ResponseEntity.ok(debugInfo);
         } catch (Exception e) {
             log.error("WhatsApp test failed", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

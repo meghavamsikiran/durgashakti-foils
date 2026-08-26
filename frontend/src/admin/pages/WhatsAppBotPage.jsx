@@ -15,7 +15,7 @@ const WhatsAppBotPage = () => {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testPhone, setTestPhone] = useState('');
-  const [testTemplate, setTestTemplate] = useState('3p_direct_integration_test_template');
+  const [testTemplate, setTestTemplate] = useState('hello_world');
   const [testResult, setTestResult] = useState(null);
 
   const [whatsappBotEnabled, setWhatsappBotEnabled] = useState(true);
@@ -303,21 +303,40 @@ const WhatsAppBotPage = () => {
             </p>
 
             <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="Template Name (e.g. 3p_direct_integration_test_template)"
-                value={testTemplate}
-                onChange={e => setTestTemplate(e.target.value)}
-                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none"
-              />
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">WhatsApp Message Template</label>
+                <input
+                  type="text"
+                  placeholder="Template Name (e.g. hello_world, order_update)"
+                  value={testTemplate}
+                  onChange={e => setTestTemplate(e.target.value)}
+                  className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none"
+                />
+                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                  <span className="text-[10px] font-bold text-slate-400">Presets:</span>
+                  {['hello_world', 'order_update', 'customer_feedback'].map(tmpl => (
+                    <button
+                      key={tmpl}
+                      type="button"
+                      onClick={() => setTestTemplate(tmpl)}
+                      className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold transition-all cursor-pointer ${testTemplate === tmpl ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300'}`}
+                    >
+                      {tmpl}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-              <input
-                type="text"
-                placeholder="Customer phone (e.g. 918341465933)"
-                value={testPhone}
-                onChange={e => setTestPhone(e.target.value)}
-                className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none"
-              />
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1.5">Recipient Phone Number</label>
+                <input
+                  type="text"
+                  placeholder="Customer phone (e.g. 918341465933)"
+                  value={testPhone}
+                  onChange={e => setTestPhone(e.target.value)}
+                  className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-xs font-mono font-bold focus:outline-none"
+                />
+              </div>
 
               <button
                 type="button"

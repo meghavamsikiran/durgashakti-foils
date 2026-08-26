@@ -710,7 +710,7 @@ const InquiriesPage = () => {
                             navigate(isSuper ? `/superadmin/cases/${item.id}` : `/admin/cases/${item.id}`);
                             setSelectedInquiry(item);
                           }}
-                          className="px-3.5 py-1.5 rounded-lg border border-[#26322B] bg-[#121f19] text-emerald-400 hover:bg-[#1b2c24] hover:border-emerald-500/40 font-bold transition-all text-[11px]"
+                          className="px-3.5 py-1.5 rounded-lg border border-emerald-200 dark:border-[#26322B] bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-[#121f19] dark:text-emerald-400 dark:hover:bg-[#1b2c24] dark:hover:border-emerald-500/40 font-extrabold transition-all text-[11px] shadow-sm"
                         >
                           View & Reply
                         </button>
