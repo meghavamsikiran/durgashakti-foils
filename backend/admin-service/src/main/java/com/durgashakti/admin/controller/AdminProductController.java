@@ -15,9 +15,12 @@ import java.util.stream.Collectors;
 public class AdminProductController {
 
     private final AdminProductService adminProductService;
+    private final com.durgashakti.admin.service.AuditLogService auditLogService;
 
-    public AdminProductController(AdminProductService adminProductService) {
+    public AdminProductController(AdminProductService adminProductService,
+                                 com.durgashakti.admin.service.AuditLogService auditLogService) {
         this.adminProductService = adminProductService;
+        this.auditLogService = auditLogService;
     }
 
     @GetMapping("/products")
@@ -91,26 +94,43 @@ public class AdminProductController {
     @PostMapping("/products")
     @PreAuthorize("hasAuthority('edit_products')")
     public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-        return ResponseEntity.ok(adminProductService.createProduct(product));
+        Product created = adminProductService.createProduct(product);
+        auditLogService.logAction("PRODUCT_CREATED", "product", created.getId() != null ? created.getId().toString() : "N/A",
+                Map.of("name", created.getName() != null ? created.getName() : "N/A",
+                       "price", created.getPrice() != null ? created.getPrice() : 0,
+                       "category", created.getCategory() != null ? created.getCategory() : "N/A",
+                       "stock_quantity", created.getStockQuantity() != null ? created.getStockQuantity() : 0));
+        return ResponseEntity.ok(created);
     }
 
     @PutMapping("/products/{id}")
     @PreAuthorize("hasAuthority('edit_products')")
     public ResponseEntity<Product> updateProduct(@PathVariable("id") UUID id, @RequestBody Product product) {
-        return ResponseEntity.ok(adminProductService.updateProduct(id, product));
+        Product updated = adminProductService.updateProduct(id, product);
+        auditLogService.logAction("PRODUCT_UPDATED", "product", id.toString(),
+                Map.of("name", updated.getName() != null ? updated.getName() : "N/A",
+                       "price", updated.getPrice() != null ? updated.getPrice() : 0,
+                       "category", updated.getCategory() != null ? updated.getCategory() : "N/A",
+                       "stock_quantity", updated.getStockQuantity() != null ? updated.getStockQuantity() : 0));
+        return ResponseEntity.ok(updated);
     }
 
     @PutMapping("/products/{id}/status")
     @PreAuthorize("hasAuthority('edit_products')")
     public ResponseEntity<Product> updateProductStatus(@PathVariable("id") UUID id, @RequestBody Map<String, Object> payload) {
         Boolean isActive = (Boolean) payload.get("is_active");
-        return ResponseEntity.ok(adminProductService.updateProductStatus(id, isActive));
+        Product updated = adminProductService.updateProductStatus(id, isActive);
+        auditLogService.logAction("PRODUCT_STATUS_TOGGLED", "product", id.toString(),
+                Map.of("is_active", Boolean.TRUE.equals(isActive), "name", updated.getName() != null ? updated.getName() : "N/A"));
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/products/{id}")
     @PreAuthorize("hasAuthority('edit_products')")
     public ResponseEntity<Void> deleteProduct(@PathVariable("id") UUID id) {
         adminProductService.deleteProduct(id);
+        auditLogService.logAction("PRODUCT_DELETED", "product", id.toString(),
+                Map.of("message", "Product deleted by admin"));
         return ResponseEntity.noContent().build();
     }
 }

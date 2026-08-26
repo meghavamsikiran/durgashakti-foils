@@ -31,17 +31,20 @@ public class AdminCouponController {
     private final AdminUserRepository userRepository;
     private final AdminOrderRepository orderRepository;
     private final AdminCouponRepository couponRepository;
+    private final com.durgashakti.admin.service.AuditLogService auditLogService;
 
     public AdminCouponController(AdminCouponService adminCouponService,
                                  AdminSettingRepository settingRepository,
                                  AdminUserRepository userRepository,
                                  AdminOrderRepository orderRepository,
-                                 AdminCouponRepository couponRepository) {
+                                 AdminCouponRepository couponRepository,
+                                 com.durgashakti.admin.service.AuditLogService auditLogService) {
         this.adminCouponService = adminCouponService;
         this.settingRepository = settingRepository;
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
         this.couponRepository = couponRepository;
+        this.auditLogService = auditLogService;
     }
 
     @GetMapping("/coupons")
@@ -53,19 +56,31 @@ public class AdminCouponController {
     @PostMapping("/coupons")
     @PreAuthorize("hasAuthority('manage_coupons')")
     public ResponseEntity<Coupon> create(@RequestBody Coupon coupon) {
-        return ResponseEntity.ok(adminCouponService.create(coupon));
+        Coupon created = adminCouponService.create(coupon);
+        auditLogService.logAction("COUPON_CREATED", "voucher", created.getCode() != null ? created.getCode() : created.getId().toString(),
+                Map.of("code", created.getCode() != null ? created.getCode() : "N/A",
+                       "discount_type", created.getDiscountType() != null ? created.getDiscountType() : "N/A",
+                       "discount_value", created.getDiscountValue() != null ? created.getDiscountValue() : 0));
+        return ResponseEntity.ok(created);
     }
 
     @PutMapping("/coupons/{id}")
     @PreAuthorize("hasAuthority('manage_coupons')")
     public ResponseEntity<Coupon> update(@PathVariable("id") UUID id, @RequestBody Coupon coupon) {
-        return ResponseEntity.ok(adminCouponService.update(id, coupon));
+        Coupon updated = adminCouponService.update(id, coupon);
+        auditLogService.logAction("COUPON_UPDATED", "voucher", updated.getCode() != null ? updated.getCode() : id.toString(),
+                Map.of("code", updated.getCode() != null ? updated.getCode() : "N/A",
+                       "is_active", Boolean.TRUE.equals(updated.getIsActive()),
+                       "discount_value", updated.getDiscountValue() != null ? updated.getDiscountValue() : 0));
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/coupons/{id}")
     @PreAuthorize("hasAuthority('manage_coupons')")
     public ResponseEntity<Void> delete(@PathVariable("id") UUID id) {
         adminCouponService.delete(id);
+        auditLogService.logAction("COUPON_DELETED", "voucher", id.toString(),
+                Map.of("message", "Coupon deleted by admin"));
         return ResponseEntity.noContent().build();
     }
 
@@ -96,6 +111,7 @@ public class AdminCouponController {
         s.setValue(req);
         s.setUpdatedAt(OffsetDateTime.now());
         settingRepository.save(s);
+        auditLogService.logAction("COUPON_SETTINGS_UPDATED", "setting", "coupon_settings", req);
         return ResponseEntity.ok(Map.of("message", "Coupon settings updated successfully"));
     }
 

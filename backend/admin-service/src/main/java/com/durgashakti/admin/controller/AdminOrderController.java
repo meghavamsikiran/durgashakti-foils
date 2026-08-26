@@ -398,19 +398,13 @@ public class AdminOrderController {
 
         List<AuditLog> filtered = allLogs.stream()
                 .filter(log -> {
-                    String actorId = log.getActorId();
-                    if (actorId != null && !actorId.trim().isEmpty()) {
-                        User actor = userMap.get(actorId);
-                        if (actor != null && "customer".equalsIgnoreCase(actor.getRole())) {
-                            return false;
-                        }
-                    }
                     if (search != null && !search.trim().isEmpty()) {
                         String term = search.toLowerCase().trim();
                         boolean matchAction = log.getAction() != null && log.getAction().toLowerCase().contains(term);
                         boolean matchActor = log.getActorId() != null && log.getActorId().toLowerCase().contains(term);
                         boolean matchTarget = log.getTargetId() != null && log.getTargetId().toLowerCase().contains(term);
-                        if (!matchAction && !matchActor && !matchTarget) {
+                        boolean matchType = log.getTargetType() != null && log.getTargetType().toLowerCase().contains(term);
+                        if (!matchAction && !matchActor && !matchTarget && !matchType) {
                             return false;
                         }
                     }

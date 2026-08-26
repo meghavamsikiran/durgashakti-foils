@@ -21,11 +21,14 @@ public class SuperAdminController {
     private final AdminUserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final EmailClient emailClient;
+    private final com.durgashakti.admin.service.AuditLogService auditLogService;
 
-    public SuperAdminController(AdminUserRepository userRepository, EmailClient emailClient) {
+    public SuperAdminController(AdminUserRepository userRepository, EmailClient emailClient,
+                                com.durgashakti.admin.service.AuditLogService auditLogService) {
         this.userRepository = userRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
         this.emailClient = emailClient;
+        this.auditLogService = auditLogService;
     }
 
     @GetMapping("/admins")
@@ -111,6 +114,8 @@ public class SuperAdminController {
             // Log silently or ignore if email fails
         }
 
+        auditLogService.logAction("ADMIN_CREATED", "user", u.getId().toString(),
+                Map.of("email", u.getEmail(), "role", u.getRole(), "full_name", u.getFullName()));
         return ResponseEntity.ok(prepareAdminUser(u));
     }
 
@@ -127,6 +132,8 @@ public class SuperAdminController {
             u.setStatus(isActive ? "active" : "inactive");
             userRepository.save(u);
         }
+        auditLogService.logAction("ADMIN_STATUS_TOGGLED", "user", userId.toString(),
+                Map.of("is_active", Boolean.TRUE.equals(isActive), "email", u.getEmail()));
         return ResponseEntity.ok(prepareAdminUser(u));
     }
 
@@ -156,6 +163,8 @@ public class SuperAdminController {
         u.setPermissions(permissionsDict);
 
         userRepository.save(u);
+        auditLogService.logAction("ADMIN_UPDATED", "user", userId.toString(),
+                Map.of("email", u.getEmail(), "role_template", roleTemplate != null ? roleTemplate : "N/A"));
         return ResponseEntity.ok(prepareAdminUser(u));
     }
 
@@ -169,6 +178,8 @@ public class SuperAdminController {
         u.setIsActive(false);
         u.setStatus("deleted");
         userRepository.save(u);
+        auditLogService.logAction("ADMIN_DELETED", "user", userId.toString(),
+                Map.of("email", u.getEmail()));
         return ResponseEntity.noContent().build();
     }
 
@@ -185,6 +196,8 @@ public class SuperAdminController {
         }
         u.setPassword(passwordEncoder.encode(password));
         userRepository.save(u);
+        auditLogService.logAction("ADMIN_PASSWORD_RESET", "user", userId.toString(),
+                Map.of("email", u.getEmail(), "message", "Admin password reset by superadmin"));
         
         try {
             String htmlBody = "<html>\n" +

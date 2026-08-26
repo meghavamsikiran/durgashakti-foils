@@ -24,15 +24,18 @@ public class AdminUserController {
     private final AdminUserRepository userRepository;
     private final AdminOrderRepository orderRepository;
     private final AdminSettingRepository settingRepository;
+    private final com.durgashakti.admin.service.AuditLogService auditLogService;
 
     public AdminUserController(AdminUserService adminUserService,
                                AdminUserRepository userRepository,
                                AdminOrderRepository orderRepository,
-                               AdminSettingRepository settingRepository) {
+                               AdminSettingRepository settingRepository,
+                               com.durgashakti.admin.service.AuditLogService auditLogService) {
         this.adminUserService = adminUserService;
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
         this.settingRepository = settingRepository;
+        this.auditLogService = auditLogService;
     }
 
     @GetMapping({"/users", "/customers"})
@@ -183,13 +186,19 @@ public class AdminUserController {
     @PutMapping("/users/{id}")
     @PreAuthorize("hasAuthority('view_customers')")
     public ResponseEntity<User> updateUser(@PathVariable("id") UUID id, @RequestBody User user) {
-        return ResponseEntity.ok(adminUserService.updateUser(id, user));
+        User updated = adminUserService.updateUser(id, user);
+        auditLogService.logAction("USER_UPDATED", "user", id.toString(),
+                Map.of("email", updated.getEmail() != null ? updated.getEmail() : "N/A",
+                       "role", updated.getRole() != null ? updated.getRole() : "N/A"));
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasAuthority('view_customers')")
     public ResponseEntity<Void> deleteUser(@PathVariable("id") UUID id) {
         adminUserService.deleteUser(id);
+        auditLogService.logAction("USER_DELETED", "user", id.toString(),
+                Map.of("message", "User account deleted by admin"));
         return ResponseEntity.noContent().build();
     }
 

@@ -28,9 +28,12 @@ public class AdminSettingController {
 
     private static final Logger log = LoggerFactory.getLogger(AdminSettingController.class);
     private final AdminSettingRepository settingRepository;
+    private final com.durgashakti.admin.service.AuditLogService auditLogService;
 
-    public AdminSettingController(AdminSettingRepository settingRepository) {
+    public AdminSettingController(AdminSettingRepository settingRepository,
+                                  com.durgashakti.admin.service.AuditLogService auditLogService) {
         this.settingRepository = settingRepository;
+        this.auditLogService = auditLogService;
     }
 
     @GetMapping("/settings")
@@ -126,6 +129,7 @@ public class AdminSettingController {
                 settingRepository.save(shipSetting);
             }
 
+            auditLogService.logAction("SETTING_SAVED", "setting", key, val != null ? val : Map.of());
             return ResponseEntity.ok(Map.of("message", "Setting saved"));
         } catch (Exception e) {
             log.error("Failed to save setting", e);
