@@ -4,6 +4,7 @@ import com.durgashakti.common.entity.Order;
 import com.durgashakti.common.entity.AuditLog;
 import com.durgashakti.common.entity.User;
 import com.durgashakti.admin.service.AdminOrderService;
+import com.durgashakti.admin.repository.AdminOrderRepository;
 import com.durgashakti.admin.service.GstService;
 import com.durgashakti.admin.repository.AuditLogRepository;
 import com.durgashakti.admin.repository.AdminUserRepository;
@@ -29,15 +30,18 @@ public class AdminOrderController {
     private static final Logger log = LoggerFactory.getLogger(AdminOrderController.class);
 
     private final AdminOrderService adminOrderService;
+    private final AdminOrderRepository orderRepository;
     private final GstService gstService;
     private final AuditLogRepository auditLogRepository;
     private final AdminUserRepository userRepository;
 
     public AdminOrderController(AdminOrderService adminOrderService,
+                                AdminOrderRepository orderRepository,
                                 GstService gstService,
                                 AuditLogRepository auditLogRepository,
                                 AdminUserRepository userRepository) {
         this.adminOrderService = adminOrderService;
+        this.orderRepository = orderRepository;
         this.gstService = gstService;
         this.auditLogRepository = auditLogRepository;
         this.userRepository = userRepository;
@@ -203,12 +207,40 @@ public class AdminOrderController {
             @PathVariable("productId") String productId,
             @RequestParam(value = "restock", defaultValue = "true") boolean restock,
             @RequestParam(value = "manual_amount", required = false) Double manualAmount,
+            @RequestParam(value = "payment_id", required = false) String paymentId,
             @RequestParam(value = "is_manual", defaultValue = "false") boolean isManual) {
         try {
+            if (paymentId != null && !paymentId.isBlank()) {
+                try {
+                    orderRepository.findById(orderId).ifPresent(o -> {
+                        o.setRazorpayPaymentId(paymentId.trim());
+                        orderRepository.save(o);
+                    });
+                } catch (Exception ignored) {}
+            }
             Order order = adminOrderService.processItemRefund(orderId, productId, restock, manualAmount, isManual);
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Refund processed successfully");
             response.put("order", order);
+
+            if (order != null && order.getItems() != null) {
+                for (Map<String, Object> item : order.getItems()) {
+                    if (productId.equalsIgnoreCase(String.valueOf(item.get("product_id")))) {
+                        String rStatus = (String) item.get("return_status");
+                        if ("REFUND_FAILED".equalsIgnoreCase(rStatus)) {
+                            @SuppressWarnings("unchecked")
+                            List<Map<String, Object>> timeline = (List<Map<String, Object>>) item.get("audit_timeline");
+                            if (timeline != null && !timeline.isEmpty()) {
+                                String lastNote = (String) timeline.get(timeline.size() - 1).get("note");
+                                if (lastNote != null && !lastNote.isBlank()) {
+                                    response.put("warning", lastNote);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
             return ResponseEntity.ok(response);
         } catch (com.durgashakti.common.exception.ApiException e) {
             log.warn("[Process Item Refund ApiException] Order ID: {}, Product ID: {}: {}", orderId, productId, e.getMessage());

@@ -169,6 +169,36 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                         }
                     }
                 }
+
+                if (razorpayPaymentId == null || razorpayPaymentId.isBlank()) {
+                    JSONObject searchParams = new JSONObject();
+                    searchParams.put("count", 25);
+                    List<Payment> recentPayments = client.payments.fetchAll(searchParams);
+                    if (recentPayments != null) {
+                        String custEmail = extractEmailFromOrder(order);
+                        for (Payment p : recentPayments) {
+                            String pStatus = String.valueOf(p.get("status"));
+                            if ("captured".equalsIgnoreCase(pStatus) || "authorized".equalsIgnoreCase(pStatus)) {
+                                Object notesObj = p.get("notes");
+                                String pEmail = p.get("email") != null ? String.valueOf(p.get("email")).toLowerCase() : "";
+                                boolean orderMatch = false;
+                                if (notesObj instanceof Map) {
+                                    Object on = ((Map<?, ?>) notesObj).get("order_number");
+                                    if (on != null && orderNumber.equalsIgnoreCase(String.valueOf(on))) {
+                                        orderMatch = true;
+                                    }
+                                }
+                                if (orderMatch || (custEmail != null && !custEmail.isBlank() && custEmail.equalsIgnoreCase(pEmail))) {
+                                    razorpayPaymentId = p.get("id");
+                                    order.setRazorpayPaymentId(razorpayPaymentId);
+                                    try { orderRepository.save(order); } catch (Exception ignored) {}
+                                    log.info("[attemptRazorpayRefund] Auto-matched payment {} for order {}", razorpayPaymentId, orderNumber);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
             } catch (Exception ex) {
                 log.warn("Failed to auto-fetch payment for order {}: {}", orderNumber, ex.getMessage());
             }
