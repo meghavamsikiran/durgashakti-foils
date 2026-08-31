@@ -416,7 +416,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 double totalAmt = order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0;
                 double walletRefundAmt = 0.0;
                 
-                if ("wallet".equalsIgnoreCase(pMethod) || "dsf_wallet".equalsIgnoreCase(pMethod) || pStatus.contains("wallet")) {
+                if ("wallet".equalsIgnoreCase(pMethod) || "dsf_wallet".equalsIgnoreCase(pMethod)) {
                     try {
                         List<Map<String, Object>> txRows = jdbcTemplate.queryForList(
                             "SELECT amount FROM wallet_transactions WHERE reference_id = ? AND type = 'DEBIT' AND status = 'SUCCESS'", order.getOrderNumber()
@@ -689,8 +689,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> calcRaw = (Map<String, Object>) item.get("refund_calculations");
                 String pMethod = (order.getPaymentMethod() != null ? order.getPaymentMethod() : "").toLowerCase();
-                String pStatus = (order.getPaymentStatus() != null ? order.getPaymentStatus() : "").toLowerCase();
-                boolean isWalletOrder = "wallet".equals(pMethod) || "dsf_wallet".equals(pMethod) || pStatus.contains("wallet");
+                boolean isWalletOrder = "wallet".equals(pMethod) || "dsf_wallet".equals(pMethod);
                 boolean isWalletCreditMistake = "REFUND_COMPLETED".equalsIgnoreCase(currentStatus) && 
                                                 !isWalletOrder && 
                                                 calcRaw != null && "wallet".equals(calcRaw.get("refund_method"));
@@ -926,8 +925,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 Map<String, Object> retryCalc = (Map<String, Object>) item.getOrDefault("refund_calculations", new HashMap<>());
                 double retryAmount = toDouble(retryCalc.get("refundable_amount"));
                 String pMethod = (order.getPaymentMethod() != null ? order.getPaymentMethod() : "").toLowerCase();
-                String pStatus = (order.getPaymentStatus() != null ? order.getPaymentStatus() : "").toLowerCase();
-                boolean isWalletOrder = "wallet".equals(pMethod) || "dsf_wallet".equals(pMethod) || pStatus.contains("wallet");
+                boolean isWalletOrder = "wallet".equals(pMethod) || "dsf_wallet".equals(pMethod);
 
                 if (isWalletOrder) {
                     if (!isWalletReturnsEnabled()) {
