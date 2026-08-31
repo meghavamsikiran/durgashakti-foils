@@ -167,6 +167,24 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
         String razorpayPaymentId = order.getRazorpayPaymentId();
 
+        if (razorpayPaymentId == null || razorpayPaymentId.isBlank()) {
+            if (order.getItems() != null) {
+                for (Map<String, Object> item : order.getItems()) {
+                    if (item.get("refund_calculations") instanceof Map) {
+                        Map<?, ?> calcMap = (Map<?, ?>) item.get("refund_calculations");
+                        Object pIdObj = calcMap.get("payment_id");
+                        if (pIdObj != null && pIdObj.toString().trim().startsWith("pay_")) {
+                            razorpayPaymentId = pIdObj.toString().trim();
+                            order.setRazorpayPaymentId(razorpayPaymentId);
+                            try { orderRepository.save(order); } catch (Exception ignored) {}
+                            log.info("[attemptRazorpayRefund] Found payment ID {} from refund_calculations on order {}", razorpayPaymentId, orderNumber);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         if ((razorpayPaymentId == null || razorpayPaymentId.isBlank()) && orderNumber != null && orderNumber.contains("43219837")) {
             razorpayPaymentId = "pay_TWMGtJGVtx5923";
             order.setRazorpayPaymentId(razorpayPaymentId);
@@ -280,7 +298,11 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             return res;
         } catch (Exception e) {
             String msg = e.getMessage() != null ? e.getMessage() : "";
-            if (msg.toLowerCase().contains("already") && (msg.toLowerCase().contains("refund") || msg.toLowerCase().contains("processed"))) {
+            String lowerMsg = msg.toLowerCase();
+            if ((lowerMsg.contains("already") && (lowerMsg.contains("refund") || lowerMsg.contains("processed"))) ||
+                lowerMsg.contains("fully refunded") ||
+                lowerMsg.contains("already refunded") ||
+                lowerMsg.contains("amount_refunded")) {
                 log.info("Razorpay payment {} was already refunded on gateway. Marking refund as completed for order {}.", razorpayPaymentId, orderNumber);
                 Map<String, Object> res = new HashMap<>();
                 res.put("success", true);
@@ -1043,6 +1065,33 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         return order;
     }
 
+    @Override
+    public Order retryRefundForOrder(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Order not found"));
+
+        List<Map<String, Object>> items = order.getItems();
+        if (items != null) {
+            for (Map<String, Object> item : items) {
+                String currentStatus = (String) item.get("return_status");
+                if (currentStatus != null && (
+                        "REFUND_FAILED".equalsIgnoreCase(currentStatus) ||
+                        "REFUND_INITIATED".equalsIgnoreCase(currentStatus) ||
+                        "REFUND_PENDING".equalsIgnoreCase(currentStatus) ||
+                        "RETURN_APPROVED".equalsIgnoreCase(currentStatus) ||
+                        "RETURN_RECEIVED".equalsIgnoreCase(currentStatus))) {
+                    String productId = String.valueOf(item.get("product_id"));
+                    try {
+                        retryRefund(orderId, productId);
+                    } catch (Exception ex) {
+                        log.warn("[retryRefundForOrder] Failed to retry item {} on order {}: {}", productId, orderId, ex.getMessage());
+                    }
+                }
+            }
+        }
+        return orderRepository.findById(orderId).orElse(order);
+    }
+
     // ── Admin Ship Exchange Item ───────────────────────────────────────────
     @Override
     public Order shipExchangeItem(UUID orderId, String productId, String courier,
@@ -1146,6 +1195,8 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             entry.put("status", status != null ? status : "");
             entry.put("timestamp", OffsetDateTime.now().toString());
             entry.put("remarks", remarks != null ? remarks : "");
+            entry.put("remark", remarks != null ? remarks : "");
+            entry.put("note", remarks != null ? remarks : "");
             timeline.add(entry);
             item.put("audit_timeline", timeline);
         } catch (Exception ex) {

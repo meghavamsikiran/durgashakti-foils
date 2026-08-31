@@ -96,7 +96,11 @@ const adminService = {
   },
   retryRefund: (orderId) => {
     invalidateCache('/admin/orders');
-    return apiClient.put(`/admin/orders/${orderId}/refund-retry`, {}, { silent: true, timeout: 120000 });
+    return apiClient.post(`/admin/orders/${orderId}/refund-retry`, {}, { silent: true, timeout: 120000 });
+  },
+  retryItemRefund: (orderId, productId) => {
+    invalidateCache('/admin/orders');
+    return apiClient.post(`/admin/orders/${orderId}/items/${productId}/retry-refund`, {}, { silent: true, timeout: 120000 });
   },
   bulkShipOrders: (payload) => {
     invalidateCache('/admin/orders');

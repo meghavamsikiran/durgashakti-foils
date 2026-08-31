@@ -16,6 +16,7 @@ public interface AdminOrderService {
     Order receiveReturnedItem(UUID orderId, String productId);
     Order processItemRefund(UUID orderId, String productId, boolean restock, Double manualAmount, boolean isManual);
     Order retryRefund(UUID orderId, String productId);
+    Order retryRefundForOrder(UUID orderId);
     Order shipExchangeItem(UUID orderId, String productId, String courier, String trackingNumber, String expectedDeliveryDate, String notes);
     Order completeExchangeItem(UUID orderId, String productId);
 }

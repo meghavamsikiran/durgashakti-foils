@@ -237,7 +237,10 @@ public class AdminOrderController {
                             }
                             if (timeline != null && !timeline.isEmpty()) {
                                 Map<String, Object> lastEntry = timeline.get(timeline.size() - 1);
-                                String lastNote = (String) lastEntry.getOrDefault("note", lastEntry.get("remark"));
+                                Object noteObj = lastEntry.get("note");
+                                if (noteObj == null) noteObj = lastEntry.get("remark");
+                                if (noteObj == null) noteObj = lastEntry.get("remarks");
+                                String lastNote = noteObj != null ? String.valueOf(noteObj) : null;
                                 if (lastNote != null && !lastNote.isBlank()) {
                                     response.put("warning", lastNote);
                                 }
@@ -258,7 +261,7 @@ public class AdminOrderController {
         }
     }
 
-    // ── Retry Refund for a Failed Refund ──
+    // ── Retry Refund for a Failed Refund (Item Level) ──
     @PostMapping("/orders/{orderId}/items/{productId}/retry-refund")
     @PreAuthorize("hasAuthority('view_orders')")
     public ResponseEntity<Map<String, Object>> retryRefund(
@@ -267,6 +270,18 @@ public class AdminOrderController {
         Order order = adminOrderService.retryRefund(orderId, productId);
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Refund retry processed successfully");
+        response.put("order", order);
+        return ResponseEntity.ok(response);
+    }
+
+    // ── Retry Refund for an Entire Order (Order Level) ──
+    @RequestMapping(value = "/orders/{orderId}/refund-retry", method = {RequestMethod.POST, RequestMethod.PUT})
+    @PreAuthorize("hasAuthority('view_orders')")
+    public ResponseEntity<Map<String, Object>> retryOrderRefund(
+            @PathVariable("orderId") UUID orderId) {
+        Order order = adminOrderService.retryRefundForOrder(orderId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Order refund retry processed");
         response.put("order", order);
         return ResponseEntity.ok(response);
     }

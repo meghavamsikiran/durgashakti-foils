@@ -701,8 +701,20 @@ const OrdersPage = () => {
         setRows(prev => prev.map(order => order.id === orderId ? normalizedOrder : order));
         setSelectedOrderForModal(prev => prev?.id === orderId ? normalizedOrder : prev);
       }
+      const refundedItem = serverOrder?.items?.find(i => String(i.product_id) === String(productId));
+      const itemStatus = refundedItem?.return_status;
+      const auditList = refundedItem?.audit_timeline || refundedItem?.auditTimeline;
+      const lastAudit = Array.isArray(auditList) ? auditList[auditList.length - 1] : null;
+      const failReason = response?.data?.warning || lastAudit?.remarks || lastAudit?.remark || lastAudit?.note || 'Refund processing failed. Please try manual refund.';
+
       if (response?.data?.warning) {
-        toast.warning(response.data.warning, { duration: 8000, id: toastId });
+        toast.warning(response.data.warning, { duration: 9000, id: toastId });
+      } else if (itemStatus === 'REFUND_FAILED') {
+        toast.error(failReason, { duration: 9000, id: toastId });
+      } else if (itemStatus === 'REFUND_COMPLETED') {
+        toast.success('Refund processed successfully', { id: toastId });
+      } else if (itemStatus === 'REFUND_PENDING') {
+        toast.info('Refund initiated (pending bank processing)', { id: toastId });
       } else {
         toast.success('Refund processed successfully', { id: toastId });
       }
@@ -2663,7 +2675,7 @@ const OrdersPage = () => {
                 <button
                   onClick={() => handleConfirmManualRefundItem(true)}
                   className="flex-1 h-12 rounded-xl text-xs font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer shadow-md shadow-emerald-glow flex items-center justify-center gap-1.5"
-                  disabled={!upiVpaInput || !refundAmountInput}
+                  disabled={!refundAmountInput || parseFloat(refundAmountInput) <= 0}
                 >
                   Confirm Refund Paid
                 </button>
