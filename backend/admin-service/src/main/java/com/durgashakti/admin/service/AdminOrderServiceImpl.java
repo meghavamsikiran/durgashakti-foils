@@ -254,9 +254,29 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         long amountInPaise = Math.round(amountInRupees * 100.0);
         try {
             RazorpayClient client = new RazorpayClient(activeKeyId, activeKeySecret);
+
+            // Fetch payment status to verify capture state before refunding
+            try {
+                Payment p = client.payments.fetch(razorpayPaymentId);
+                if (p != null) {
+                    String pStatus = String.valueOf(p.get("status"));
+                    if ("authorized".equalsIgnoreCase(pStatus)) {
+                        log.info("Payment {} is authorized but uncaptured. Auto-capturing before refund for order {}", razorpayPaymentId, orderNumber);
+                        JSONObject capObj = new JSONObject();
+                        Object amtObj = p.get("amount");
+                        capObj.put("amount", amtObj != null ? Long.parseLong(amtObj.toString()) : amountInPaise);
+                        capObj.put("currency", "INR");
+                        client.payments.capture(razorpayPaymentId, capObj);
+                    }
+                }
+            } catch (Exception fetchEx) {
+                log.warn("Payment pre-capture check warning for {}: {}", razorpayPaymentId, fetchEx.getMessage());
+            }
+
             JSONObject refundRequest = new JSONObject();
             refundRequest.put("amount", amountInPaise);
             refundRequest.put("notes", new JSONObject().put("order_number", orderNumber));
+            refundRequest.put("speed", "normal");
             
             Refund refund;
             try {
@@ -264,7 +284,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 instantReq.put("speed", "optimum");
                 refund = client.payments.refund(razorpayPaymentId, instantReq);
             } catch (Exception speedEx) {
-                log.warn("Optimum speed refund failed for payment {} order {}: {}. Falling back to standard speed.", 
+                log.warn("Optimum speed refund failed for payment {} order {}: {}. Falling back to standard speed (normal).", 
                          razorpayPaymentId, orderNumber, speedEx.getMessage());
                 refund = client.payments.refund(razorpayPaymentId, refundRequest);
             }
