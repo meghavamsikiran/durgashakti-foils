@@ -576,8 +576,11 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 foundItem = true;
                 String currentStatus = (String) item.get("return_status");
                 if (currentStatus == null ||
-                        (!"RETURN_RECEIVED".equalsIgnoreCase(currentStatus) && !"RETURN_APPROVED".equalsIgnoreCase(currentStatus)
-                                && !"SELF_SHIPPED".equalsIgnoreCase(currentStatus))) {
+                        (!"RETURN_RECEIVED".equalsIgnoreCase(currentStatus) &&
+                         !"RETURN_APPROVED".equalsIgnoreCase(currentStatus) &&
+                         !"SELF_SHIPPED".equalsIgnoreCase(currentStatus) &&
+                         !"REFUND_FAILED".equalsIgnoreCase(currentStatus) &&
+                         !"REFUND_PENDING".equalsIgnoreCase(currentStatus))) {
                     throw new ApiException(HttpStatus.BAD_REQUEST,
                             "Item is not in an appropriate status for refund (current: " + currentStatus + ")");
                 }
