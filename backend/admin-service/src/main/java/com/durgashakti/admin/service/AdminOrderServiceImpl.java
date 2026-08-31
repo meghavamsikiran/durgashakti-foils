@@ -681,8 +681,33 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                             remark = String.format("Razorpay refund of ₹%.2f initiated (Pending bank processing). Reference ID: %s", refundAmount, refundId);
                         }
                     } else {
-                        refundStatus = "REFUND_FAILED";
-                        remark = String.format("Razorpay refund of ₹%.2f FAILED: %s", refundAmount, rzpRes.getOrDefault("remark", "Unknown error"));
+                        // Fallback to DSF Wallet refund if Razorpay gateway refund fails and user has an account
+                        if (order.getUserId() != null && isWalletReturnsEnabled() && refundAmount > 0) {
+                            try {
+                                jdbcTemplate.update(
+                                    "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +
+                                    "VALUES (gen_random_uuid(), ?, ?, NOW(), NOW()) " +
+                                    "ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance, updated_at = NOW()",
+                                    order.getUserId(), refundAmount
+                                );
+                                jdbcTemplate.update(
+                                    "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
+                                    "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'RETURN_REFUND', ?, ?, 'SUCCESS', NOW())",
+                                    order.getUserId(), java.math.BigDecimal.valueOf(refundAmount), order.getOrderNumber(), "Return refund for order #" + order.getOrderNumber()
+                                );
+                                refundStatus = "REFUND_COMPLETED";
+                                remark = String.format("Gateway refund unavailable (%s). Refund of ₹%.2f credited to customer DSF Wallet successfully.", rzpRes.getOrDefault("remark", "Gateway error"), refundAmount);
+                                calc.put("refund_method", "wallet");
+                                order.setPaymentStatus("refunded");
+                                log.info("[Refund Gateway Fallback] Credited ₹{} to DSF Wallet for user {} on order {}", refundAmount, order.getUserId(), order.getOrderNumber());
+                            } catch (Exception walletEx) {
+                                refundStatus = "REFUND_FAILED";
+                                remark = String.format("Razorpay refund FAILED (%s) and Wallet fallback failed: %s", rzpRes.getOrDefault("remark", "Unknown error"), walletEx.getMessage());
+                            }
+                        } else {
+                            refundStatus = "REFUND_FAILED";
+                            remark = String.format("Razorpay refund of ₹%.2f FAILED: %s", refundAmount, rzpRes.getOrDefault("remark", "Unknown error"));
+                        }
                     }
                 }
 

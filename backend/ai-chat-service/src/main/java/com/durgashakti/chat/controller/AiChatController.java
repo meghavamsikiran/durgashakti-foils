@@ -136,7 +136,10 @@ public class AiChatController {
 
   private boolean isAuthorizedForSession(String sessionId, Authentication authentication, String guestToken) {
     if (authentication != null && authentication.getPrincipal() != null) {
-      return true; // Logged in users are authorized
+      return true; // Logged in users & admins are authorized
+    }
+    if (sessionId != null && !chatSessionRepository.existsById(sessionId)) {
+      return true; // Brand new sessions are authorized
     }
     return isValidGuestToken(sessionId, guestToken);
   }
@@ -176,10 +179,12 @@ public class AiChatController {
           status = session.getStatus();
       }
 
-      List<Map<String, String>> messagesList = chatLogs.stream().map(chatLog -> Map.of(
-          "sender", chatLog.getSender(),
-          "text", chatLog.getText()
-      )).collect(Collectors.toList());
+      List<Map<String, String>> messagesList = chatLogs.stream().map(chatLog -> {
+          Map<String, String> m = new java.util.HashMap<>();
+          m.put("sender", chatLog.getSender() != null ? chatLog.getSender() : "bot");
+          m.put("text", chatLog.getText() != null ? chatLog.getText() : "");
+          return m;
+      }).collect(Collectors.toList());
 
       String validGuestToken = generateGuestToken(activeSessionId);
 

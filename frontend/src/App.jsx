@@ -120,7 +120,7 @@ function AppRoutes() {
         <ScrollToTop />
         <RouteTransitionLoader />
         {!isAdminPath && !isLandingPath && <Navbar />}
-        {!isAdminPath && !isLandingPath && <PopupBanner />}
+        {!isAdminPath && <PopupBanner />}
 
         <Suspense fallback={<SuspenseTrigger />}>
           <Routes>

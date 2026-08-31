@@ -137,10 +137,45 @@ public class GeminiFailoverService {
             if (result != null) return result;
         }
 
-        // All providers exhausted
+        // All providers exhausted — return intelligent rule-based fallback response
         String errorSummary = String.join(" | ", errors);
-        log.error("FATAL: All AI providers exhausted. Errors: {}", errorSummary);
-        throw new RuntimeException("All AI providers exhausted. " + errorSummary);
+        log.warn("AI providers unavailable ({}) — returning rule-based fallback response.", errorSummary);
+        return generateRuleBasedResponse(userMessage);
+    }
+
+    private String generateRuleBasedResponse(String userMessage) {
+        if (userMessage == null) return "Hello! How can I assist you with DurgaShakti Foils today?";
+        String msgLower = userMessage.toLowerCase();
+
+        if (msgLower.matches(".*\\b(od-[0-9]{8}-[0-9]+|track|order status|where is my order|check order)\\b.*")) {
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("OD-\\d{8}-\\d+").matcher(userMessage.toUpperCase());
+            if (matcher.find()) {
+                return "[LOOKUP_ORDER: " + matcher.group(0) + "]";
+            }
+            return "To check your order status, please provide your Order Number (e.g. OD-20260831-04770367). You can also view details in your Order Dashboard.";
+        }
+
+        if (msgLower.matches(".*\\b(od-tkt-[a-z0-9]+|ticket|case|inquiry)\\b.*")) {
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("OD-TKT-[A-Z0-9]+").matcher(userMessage.toUpperCase());
+            if (matcher.find()) {
+                return "[LOOKUP_TICKET: " + matcher.group(0) + "]";
+            }
+            return "Please provide your Ticket ID (e.g. OD-TKT-123456) to check the status of your support inquiry.";
+        }
+
+        if (msgLower.contains("wallet") || msgLower.contains("balance") || msgLower.contains("dsf wallet") || msgLower.contains("refund")) {
+            return "[LOOKUP_WALLET]";
+        }
+
+        if (msgLower.contains("micron") || msgLower.contains("foil") || msgLower.contains("thick") || msgLower.contains("roll")) {
+            return "DurgaShakti Foils offers premium food-grade aluminium foils in 11 Micron (Standard), 18 Micron (Heavy Duty), and 25 Micron (Super Heavy Duty) options across 9m, 18m, and 72m roll lengths. How can I help you choose?";
+        }
+
+        if (msgLower.contains("hi") || msgLower.contains("hello") || msgLower.contains("hey")) {
+            return "Hello! Welcome to DurgaShakti Foils. How can I assist you with our products, orders, or DSF Wallet today?";
+        }
+
+        return "Thank you for reaching out to DurgaShakti Foils! How can I assist you with our food wrapping products, orders, or refunds today?";
     }
 
     // ─── Gemini (native REST API) ───────────────────────────────────────
