@@ -639,13 +639,9 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                         remark = String.format("Wallet refund of ₹%.2f failed. Check server logs for details.", refundAmount);
                     }
                 } else {
-                    // Always try DSF Wallet credit for return refunds
-                    String fallbackStatus = creditWalletFallback(order, refundAmount, calc);
-                    if ("REFUND_COMPLETED".equals(fallbackStatus)) {
-                        refundStatus = "REFUND_COMPLETED";
-                        remark = String.format("Refund of ₹%.2f credited to customer DSF Wallet successfully.", refundAmount);
-                    } else if (isRazorpayConfigured()) {
-                        // Wallet failed, try Razorpay gateway as secondary
+                    // Online paid order: try live Razorpay gateway refund first to original payment method
+                    boolean hasRazorpayPayment = order.getRazorpayPaymentId() != null && !order.getRazorpayPaymentId().isBlank();
+                    if (isRazorpayConfigured() && hasRazorpayPayment) {
                         Map<String, Object> rzpRes = attemptRazorpayRefund(order.getRazorpayPaymentId(), refundAmount, order.getOrderNumber());
                         if (Boolean.TRUE.equals(rzpRes.get("success"))) {
                             String rzpStatus = (String) rzpRes.get("status");
@@ -656,18 +652,32 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                             if (rrn != null) calc.put("rrn", rrn);
                             if ("processed".equalsIgnoreCase(rzpStatus)) {
                                 refundStatus = "REFUND_COMPLETED";
-                                remark = String.format("Razorpay refund of ₹%.2f processed successfully. RRN/ARN: %s", refundAmount, rrn != null ? rrn : "Pending");
+                                remark = String.format("Razorpay refund of ₹%.2f processed successfully to original payment method. RRN/ARN: %s", refundAmount, rrn != null ? rrn : "Pending");
                             } else {
                                 refundStatus = "REFUND_PENDING";
-                                remark = String.format("Razorpay refund of ₹%.2f initiated (Pending bank processing). Reference ID: %s", refundAmount, refundId);
+                                remark = String.format("Razorpay refund of ₹%.2f initiated to original payment method (Pending bank processing). Reference ID: %s", refundAmount, refundId);
                             }
                         } else {
-                            refundStatus = "REFUND_FAILED";
-                            remark = String.format("Refund of ₹%.2f FAILED: Wallet and gateway both unavailable. %s", refundAmount, rzpRes.getOrDefault("remark", "Unknown error"));
+                            log.warn("[Razorpay Refund Failed] Order {}: {}. Falling back to DSF Wallet credit.", order.getOrderNumber(), rzpRes.get("remark"));
+                            String fallbackStatus = creditWalletFallback(order, refundAmount, calc);
+                            if ("REFUND_COMPLETED".equals(fallbackStatus)) {
+                                refundStatus = "REFUND_COMPLETED";
+                                remark = String.format("Razorpay gateway refund failed (%s). Refund of ₹%.2f credited to customer DSF Wallet successfully.", rzpRes.getOrDefault("remark", "Gateway error"), refundAmount);
+                            } else {
+                                refundStatus = "REFUND_FAILED";
+                                remark = String.format("Refund of ₹%.2f FAILED: Razorpay gateway error (%s) and DSF Wallet fallback failed.", refundAmount, rzpRes.getOrDefault("remark", "Unknown error"));
+                            }
                         }
                     } else {
-                        refundStatus = "REFUND_FAILED";
-                        remark = String.format("Refund of ₹%.2f FAILED: Wallet credit failed and Razorpay gateway is not configured.", refundAmount);
+                        // Gateway keys unconfigured or no Razorpay payment ID — credit DSF Wallet
+                        String fallbackStatus = creditWalletFallback(order, refundAmount, calc);
+                        if ("REFUND_COMPLETED".equals(fallbackStatus)) {
+                            refundStatus = "REFUND_COMPLETED";
+                            remark = String.format("Refund of ₹%.2f credited to customer DSF Wallet successfully.", refundAmount);
+                        } else {
+                            refundStatus = "REFUND_FAILED";
+                            remark = String.format("Refund of ₹%.2f FAILED: Wallet credit failed and Razorpay gateway is not configured.", refundAmount);
+                        }
                     }
                 }
 
@@ -808,42 +818,57 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 Map<String, Object> retryCalc = (Map<String, Object>) item.getOrDefault("refund_calculations", new HashMap<>());
                 double retryAmount = toDouble(retryCalc.get("refundable_amount"));
 
-                // Always try DSF Wallet credit first for return refund retries
-                String fallbackStatus = creditWalletFallback(order, retryAmount, retryCalc);
-                item.put("refund_calculations", retryCalc);
-                if ("REFUND_COMPLETED".equals(fallbackStatus)) {
-                    item.put("return_status", "REFUND_COMPLETED");
-                    addAuditTimeline(item, "REFUND_COMPLETED",
-                            String.format("Refund of ₹%.2f credited to customer DSF Wallet successfully.", retryAmount));
-                } else if (isRazorpayConfigured()) {
-                    // Wallet failed, try Razorpay gateway as secondary
-                    Map<String, Object> rzpRes = attemptRazorpayRefund(
-                            order.getRazorpayPaymentId(), retryAmount, order.getOrderNumber());
+                boolean hasRazorpayPayment = order.getRazorpayPaymentId() != null && !order.getRazorpayPaymentId().isBlank();
+                String pMethod = (order.getPaymentMethod() != null ? order.getPaymentMethod() : "").toLowerCase();
+                boolean isWalletOrder = "wallet".equals(pMethod) || "dsf_wallet".equals(pMethod);
+
+                if (isRazorpayConfigured() && hasRazorpayPayment && !isWalletOrder) {
+                    // Try Razorpay gateway refund first to original payment method
+                    Map<String, Object> rzpRes = attemptRazorpayRefund(order.getRazorpayPaymentId(), retryAmount, order.getOrderNumber());
                     if (Boolean.TRUE.equals(rzpRes.get("success"))) {
                         String rzpStatus = (String) rzpRes.get("status");
                         String refundId = (String) rzpRes.get("refund_id");
                         String rrn = (String) rzpRes.get("rrn");
                         retryCalc.put("refund_id", refundId);
+                        retryCalc.put("refund_method", "razorpay");
                         if (rrn != null) retryCalc.put("rrn", rrn);
                         item.put("refund_calculations", retryCalc);
                         if ("processed".equalsIgnoreCase(rzpStatus)) {
                             item.put("return_status", "REFUND_COMPLETED");
                             addAuditTimeline(item, "REFUND_COMPLETED",
-                                    String.format("Razorpay refund of ₹%.2f retried successfully. RRN/ARN: %s", retryAmount, rrn != null ? rrn : "Pending"));
+                                    String.format("Razorpay refund of ₹%.2f retried successfully to original payment method. RRN/ARN: %s", retryAmount, rrn != null ? rrn : "Pending"));
                         } else {
                             item.put("return_status", "REFUND_PENDING");
                             addAuditTimeline(item, "REFUND_PENDING",
-                                    String.format("Razorpay refund of ₹%.2f retried (Pending bank processing). Reference ID: %s", retryAmount, refundId));
+                                    String.format("Razorpay refund of ₹%.2f retried to original payment method (Pending bank processing). Reference ID: %s", retryAmount, refundId));
                         }
+                    } else {
+                        log.warn("[Razorpay Refund Retry Failed] Order {}: {}. Falling back to DSF Wallet credit.", order.getOrderNumber(), rzpRes.get("remark"));
+                        String fallbackStatus = creditWalletFallback(order, retryAmount, retryCalc);
+                        item.put("refund_calculations", retryCalc);
+                        if ("REFUND_COMPLETED".equals(fallbackStatus)) {
+                            item.put("return_status", "REFUND_COMPLETED");
+                            addAuditTimeline(item, "REFUND_COMPLETED",
+                                    String.format("Razorpay gateway retry failed (%s). Refund of ₹%.2f credited to customer DSF Wallet successfully.", rzpRes.getOrDefault("remark", "Gateway error"), retryAmount));
+                        } else {
+                            item.put("return_status", "REFUND_FAILED");
+                            addAuditTimeline(item, "REFUND_FAILED",
+                                    String.format("Refund retry of ₹%.2f FAILED: Razorpay gateway error (%s) and DSF Wallet fallback failed.", retryAmount, rzpRes.getOrDefault("remark", "Unknown error")));
+                        }
+                    }
+                } else {
+                    // Gateway unconfigured or Wallet/COD order — credit DSF Wallet
+                    String fallbackStatus = creditWalletFallback(order, retryAmount, retryCalc);
+                    item.put("refund_calculations", retryCalc);
+                    if ("REFUND_COMPLETED".equals(fallbackStatus)) {
+                        item.put("return_status", "REFUND_COMPLETED");
+                        addAuditTimeline(item, "REFUND_COMPLETED",
+                                String.format("Refund of ₹%.2f credited to customer DSF Wallet successfully.", retryAmount));
                     } else {
                         item.put("return_status", "REFUND_FAILED");
                         addAuditTimeline(item, "REFUND_FAILED",
-                                String.format("Refund retry of ₹%.2f FAILED: Wallet and gateway both unavailable.", retryAmount));
+                                String.format("Refund retry of ₹%.2f FAILED: DSF Wallet credit failed.", retryAmount));
                     }
-                } else {
-                    item.put("return_status", "REFUND_FAILED");
-                    addAuditTimeline(item, "REFUND_FAILED",
-                            String.format("Refund retry of ₹%.2f FAILED: Wallet credit failed and Razorpay gateway is not configured.", retryAmount));
                 }
             }
         }
