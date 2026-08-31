@@ -2373,12 +2373,12 @@ const OrdersPage = () => {
               {/* Return Tracking Timeline */}
               {selectedOrderForModal.items?.some(i => i.return_status) && (() => {
                 const returnedItems = (selectedOrderForModal.items || []).filter(i => i.return_status);
-                const hasApproved = returnedItems.some(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
-                const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
-                const hasReceived = returnedItems.some(i => ['RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
+                const hasApproved = returnedItems.some(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_FAILED', 'REFUND_COMPLETED'].includes(i.return_status));
+                const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_FAILED', 'REFUND_COMPLETED'].includes(i.return_status));
+                const hasReceived = returnedItems.some(i => ['RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_FAILED', 'REFUND_COMPLETED'].includes(i.return_status));
                 const hasRefunded = returnedItems.some(i => ['REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status)) || selectedOrderForModal.payment_status === 'refunded' || selectedOrderForModal.order_status === 'refunded';
                 const isRejected = (returnedItems.length > 0 && returnedItems.every(i => i.return_status === 'RETURN_REJECTED')) || selectedOrderForModal.order_status === 'return_rejected';
-                const isRefundFailed = selectedOrderForModal.payment_status === 'refund_failed';
+                const isRefundFailed = selectedOrderForModal.payment_status === 'refund_failed' || returnedItems.some(i => i.return_status === 'REFUND_FAILED');
 
                 let returnSteps = [];
                 let progressWidth = '0%';

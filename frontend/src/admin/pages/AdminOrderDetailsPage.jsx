@@ -1318,12 +1318,12 @@ const AdminOrderDetailsPage = () => {
           {/* Return Tracking Timeline */}
           {order.items?.some(i => i.return_status) && (() => {
             const returnedItems = (order.items || []).filter(i => i.return_status);
-            const hasApproved = returnedItems.some(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
-            const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
-            const hasReceived = returnedItems.some(i => ['RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status));
+            const hasApproved = returnedItems.some(i => ['RETURN_APPROVED', 'SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_FAILED', 'REFUND_COMPLETED'].includes(i.return_status));
+            const hasSelfShipped = returnedItems.some(i => ['SELF_SHIPPED', 'RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_FAILED', 'REFUND_COMPLETED'].includes(i.return_status));
+            const hasReceived = returnedItems.some(i => ['RETURN_RECEIVED', 'REFUND_INITIATED', 'REFUND_FAILED', 'REFUND_COMPLETED'].includes(i.return_status));
             const hasRefunded = returnedItems.some(i => ['REFUND_INITIATED', 'REFUND_COMPLETED'].includes(i.return_status)) || order.payment_status === 'refunded' || order.order_status === 'refunded';
             const isRejected = (returnedItems.length > 0 && returnedItems.every(i => i.return_status === 'RETURN_REJECTED')) || order.order_status === 'return_rejected';
-            const isRefundFailed = order.payment_status === 'refund_failed';
+            const isRefundFailed = order.payment_status === 'refund_failed' || returnedItems.some(i => i.return_status === 'REFUND_FAILED');
 
             let returnSteps = [];
             let progressWidth = '0%';
