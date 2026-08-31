@@ -145,32 +145,46 @@ public class GeminiFailoverService {
 
     private String generateRuleBasedResponse(String userMessage) {
         if (userMessage == null) return "Hello! How can I assist you with DurgaShakti Foils today?";
+        
+        // 1. If this is a resolver system context prompt, extract and return clean factual prose
+        if (userMessage.contains("System context:")) {
+            String contextPart = userMessage.substring(userMessage.indexOf("System context:") + 15).trim();
+            return contextPart;
+        }
+
         String msgLower = userMessage.toLowerCase();
 
-        if (msgLower.matches(".*\\b(od-[0-9]{8}-[0-9]+|track|order status|where is my order|check order)\\b.*")) {
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("OD-\\d{8}-\\d+").matcher(userMessage.toUpperCase());
-            if (matcher.find()) {
-                return "[LOOKUP_ORDER: " + matcher.group(0) + "]";
+        // 2. Check for explicit Order / Ticket ID (e.g. OD-20260831-04770367, OD-TKT-123456)
+        java.util.regex.Matcher orderIdMatcher = java.util.regex.Pattern.compile("(?i)OD-[A-Z0-9-]+").matcher(userMessage);
+        if (orderIdMatcher.find()) {
+            String foundNum = orderIdMatcher.group(0).toUpperCase();
+            if (foundNum.startsWith("OD-TKT-")) {
+                return "[LOOKUP_TICKET: " + foundNum + "]";
             }
+            return "[LOOKUP_ORDER: " + foundNum + "]";
+        }
+
+        // 3. General order / tracking inquiries without explicit ID
+        if (msgLower.contains("track") || msgLower.contains("order status") || msgLower.contains("where is my order") || msgLower.contains("check order")) {
             return "To check your order status, please provide your Order Number (e.g. OD-20260831-04770367). You can also view details in your Order Dashboard.";
         }
 
-        if (msgLower.matches(".*\\b(od-tkt-[a-z0-9]+|ticket|case|inquiry)\\b.*")) {
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("OD-TKT-[A-Z0-9]+").matcher(userMessage.toUpperCase());
-            if (matcher.find()) {
-                return "[LOOKUP_TICKET: " + matcher.group(0) + "]";
-            }
+        // 4. Ticket / support inquiry without explicit ID
+        if (msgLower.contains("ticket") || msgLower.contains("support case") || msgLower.contains("inquiry status")) {
             return "Please provide your Ticket ID (e.g. OD-TKT-123456) to check the status of your support inquiry.";
         }
 
-        if (msgLower.contains("wallet") || msgLower.contains("balance") || msgLower.contains("dsf wallet") || msgLower.contains("refund")) {
+        // 5. DSF Wallet inquiry
+        if (msgLower.contains("wallet") || msgLower.contains("dsf wallet") || (msgLower.contains("refund") && (msgLower.contains("balance") || msgLower.contains("money") || msgLower.contains("funds")))) {
             return "[LOOKUP_WALLET]";
         }
 
+        // 6. Product specs inquiries
         if (msgLower.contains("micron") || msgLower.contains("foil") || msgLower.contains("thick") || msgLower.contains("roll")) {
             return "DurgaShakti Foils offers premium food-grade aluminium foils in 11 Micron (Standard), 18 Micron (Heavy Duty), and 25 Micron (Super Heavy Duty) options across 9m, 18m, and 72m roll lengths. How can I help you choose?";
         }
 
+        // 7. General greeting or fallback
         if (msgLower.contains("hi") || msgLower.contains("hello") || msgLower.contains("hey")) {
             return "Hello! Welcome to DurgaShakti Foils. How can I assist you with our products, orders, or DSF Wallet today?";
         }

@@ -313,7 +313,22 @@ public class AiChatController {
                   orderContext = "The user asked: " + userMessageStr + "\nSystem context: Order " + orderNum + " was not found in our database. Please inform the user politely.";
               }
 
-              aiResponse = failoverService.chat(RESOLVER_PROMPT, orderContext);
+              try {
+                  aiResponse = failoverService.chat(RESOLVER_PROMPT, orderContext);
+              } catch (Exception ex) {
+                  aiResponse = null;
+              }
+
+              // Fallback formatting if AI returns tag or fails
+              if (aiResponse == null || aiResponse.contains("[LOOKUP_")) {
+                  if (order != null) {
+                      aiResponse = String.format("Order #%s status is currently %s. Total amount: ₹%.2f (Payment status: %s).",
+                              order.getOrderNumber(), (order.getOrderStatus() != null ? order.getOrderStatus().toUpperCase() : "PROCESSING"),
+                              order.getTotalAmount(), (order.getPaymentStatus() != null ? order.getPaymentStatus() : "paid"));
+                  } else {
+                      aiResponse = String.format("Order #%s was not found in our system. Please double-check your order number.", orderNum);
+                  }
+              }
           }
       }
       // Check if the AI requested a support ticket lookup
@@ -339,27 +354,43 @@ public class AiChatController {
                   ticketContext = "The user asked: " + userMessageStr + "\nSystem context: Support ticket " + ticketId + " was not found. Please inform the user politely.";
               }
 
-              aiResponse = failoverService.chat(RESOLVER_PROMPT, ticketContext);
+              try {
+                  aiResponse = failoverService.chat(RESOLVER_PROMPT, ticketContext);
+              } catch (Exception ex) {
+                  aiResponse = null;
+              }
+
+              // Fallback formatting if AI returns tag or fails
+              if (aiResponse == null || aiResponse.contains("[LOOKUP_")) {
+                  if (ticket != null) {
+                      aiResponse = String.format("Support Ticket #%s status is currently %s. %s",
+                              ticketId, ticket.getStatus(),
+                              (ticket.getReplyMessage() != null ? "Admin reply: " + ticket.getReplyMessage() : "Our support team is reviewing your ticket and will update you shortly."));
+                  } else {
+                      aiResponse = String.format("Support Ticket #%s was not found.", ticketId);
+                  }
+              }
           }
       }
       // Check if the AI requested a wallet lookup
       else if (aiResponse != null && aiResponse.contains("[LOOKUP_WALLET]")) {
           String walletContext;
+          double balance = 0.0;
+          StringBuilder txLog = new StringBuilder();
           if (authenticatedUserId != null) {
               try {
                   List<Map<String, Object>> wRes = jdbcTemplate.queryForList("SELECT balance FROM wallets WHERE user_id = ?", authenticatedUserId);
-                  double balance = wRes.isEmpty() ? 0.0 : ((Number) wRes.get(0).get("balance")).doubleValue();
+                  balance = wRes.isEmpty() ? 0.0 : ((Number) wRes.get(0).get("balance")).doubleValue();
                   List<Map<String, Object>> txRes = jdbcTemplate.queryForList("SELECT amount, type, description, created_at FROM wallet_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 3", authenticatedUserId);
-                  StringBuilder txLog = new StringBuilder();
                   if (txRes.isEmpty()) {
                       txLog.append("No recent transactions.");
                   } else {
                       for (Map<String, Object> tx : txRes) {
                           txLog.append(tx.get("type")).append(" of Rs ").append(tx.get("amount"))
-                               .append(" (").append(tx.get("description")).append(") on ").append(tx.get("created_at")).append("; ");
+                               .append(" (").append(tx.get("description")).append("); ");
                       }
                   }
-                  walletContext = String.format("The user asked: %s\nSystem context: The user's current DSF Wallet balance is Rs %s. Recent transactions: %s", userMessageStr, balance, txLog.toString());
+                  walletContext = String.format("The user asked: %s\nSystem context: The user's current DSF Wallet balance is Rs %.2f. Recent transactions: %s", userMessageStr, balance, txLog.toString());
               } catch (Exception ex) {
                   log.error("Failed to lookup wallet for AI Chat", ex);
                   walletContext = "The user asked: " + userMessageStr + "\nSystem context: We are currently experiencing an issue retrieving wallet information. Please inform the user politely to try again later.";
@@ -367,11 +398,34 @@ public class AiChatController {
           } else {
               walletContext = "The user asked: " + userMessageStr + "\nSystem context: The user is not logged in. Please inform them that they must log in to their account to view their DSF Wallet balance and history.";
           }
-          aiResponse = failoverService.chat(RESOLVER_PROMPT, walletContext);
+
+          try {
+              aiResponse = failoverService.chat(RESOLVER_PROMPT, walletContext);
+          } catch (Exception ex) {
+              aiResponse = null;
+          }
+
+          // Fallback formatting if AI returns tag or fails
+          if (aiResponse == null || aiResponse.contains("[LOOKUP_")) {
+              if (authenticatedUserId != null) {
+                  aiResponse = String.format("Your current DSF Wallet balance is ₹%.2f. %s", balance,
+                          (txLog.length() > 0 ? "Recent transactions: " + txLog.toString() : "Wallet funds are credited automatically for order returns/cancellations."));
+              } else {
+                  aiResponse = "Please log in to your account to view your DSF Wallet balance and transaction history.";
+              }
+          }
       }
     } catch (Exception e) {
         log.error("AI Chat service failed. Error: {}", e.getMessage(), e);
-        aiResponse = "I'm sorry, our AI assistant is currently experiencing an issue. Please try again in a moment or contact our support team for help.";
+        aiResponse = "Hello! Welcome to DurgaShakti Foils. How can I assist you with our food packaging products, orders, or refunds today?";
+    }
+
+    // Safety check: Strip any lingering internal [LOOKUP_...] tags
+    if (aiResponse != null && aiResponse.contains("[LOOKUP_")) {
+        aiResponse = aiResponse.replaceAll("\\[LOOKUP_[^\\]]+\\]", "").trim();
+        if (aiResponse.isBlank()) {
+            aiResponse = "Hello! How can I assist you with DurgaShakti Foils today?";
+        }
     }
 
     // Save Bot message to history
