@@ -1266,33 +1266,18 @@ const AdminOrderDetailsPage = () => {
                            )}
 
                            {['REFUND_INITIATED', 'REFUND_FAILED', 'REFUND_COMPLETED'].includes(item.return_status) && (
-                             <div className="flex flex-wrap gap-2">
-                               <button
-                                 onClick={() => {
-                                   if (window.confirm("Are you sure you want to retry/process the automatic Razorpay refund for this item?")) {
-                                     handleItemProcessRefund(order.id, item.product_id, true);
-                                   }
-                                 }}
-                                 disabled={pendingActionIds.has(`${item.product_id}-refund`)}
-                                 className="bg-sky-600 hover:bg-sky-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-sky-glow disabled:opacity-50"
-                               >
-                                 {pendingActionIds.has(`${item.product_id}-refund`) ? 'Refunding...' : item.return_status === 'REFUND_COMPLETED' ? 'Re-Process Bank Refund' : 'Retry Auto Refund'}
-                               </button>
-                               {item.return_status !== 'REFUND_COMPLETED' && (
-                                 <button
-                                   onClick={() => {
-                                     if (window.confirm("Force mark this refund as completed?")) {
-                                       handleItemProcessRefund(order.id, item.product_id, true, null, true);
-                                     }
-                                   }}
-                                   disabled={pendingActionIds.has(`${item.product_id}-refund`)}
-                                   className="bg-amber-600 hover:bg-amber-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-amber-glow disabled:opacity-50"
-                                 >
-                                   Force Complete
-                                 </button>
-                               )}
-                              </div>
-                            )}
+                             <button
+                               onClick={() => {
+                                 if (window.confirm("Are you sure you want to retry/process the automatic Razorpay refund for this item?")) {
+                                   handleItemProcessRefund(order.id, item.product_id, true);
+                                 }
+                               }}
+                               disabled={pendingActionIds.has(`${item.product_id}-refund`)}
+                               className="bg-sky-600 hover:bg-sky-700 text-white font-black uppercase tracking-widest text-[8px] px-3.5 py-2 rounded-lg transition-all shadow-md shadow-sky-glow disabled:opacity-50"
+                             >
+                               {pendingActionIds.has(`${item.product_id}-refund`) ? 'Refunding...' : item.return_status === 'REFUND_COMPLETED' ? 'Re-Process Bank Refund' : 'Retry Auto Refund'}
+                             </button>
+                           )}
 
                            {item.return_status === 'EXCHANGE_RECEIVED' && (
                              <button

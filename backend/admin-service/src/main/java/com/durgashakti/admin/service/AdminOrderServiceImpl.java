@@ -95,8 +95,15 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     }
 
     private String[] getRazorpayKeys() {
-        String keyId = razorpayKeyId;
-        String keySecret = razorpayKeySecret;
+        String keyId = System.getenv("RAZORPAY_KEY_ID");
+        if (keyId == null || keyId.isBlank()) keyId = System.getenv("RAZORPAY_KEY");
+        if (keyId == null || keyId.isBlank()) keyId = System.getenv("razorpay_key_id");
+        if (keyId == null || keyId.isBlank()) keyId = razorpayKeyId;
+
+        String keySecret = System.getenv("RAZORPAY_KEY_SECRET");
+        if (keySecret == null || keySecret.isBlank()) keySecret = System.getenv("RAZORPAY_SECRET");
+        if (keySecret == null || keySecret.isBlank()) keySecret = System.getenv("razorpay_key_secret");
+        if (keySecret == null || keySecret.isBlank()) keySecret = razorpayKeySecret;
 
         if (keyId == null || keyId.isBlank() || keyId.contains("fake") ||
             keySecret == null || keySecret.isBlank() || keySecret.contains("fake")) {
@@ -115,7 +122,17 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                     }
                     if (map != null) {
                         Object kObj = map.get("razorpay_key_id");
+                        if (kObj == null) kObj = map.get("razorpayKeyId");
+                        if (kObj == null) kObj = map.get("razorpay_key");
+                        if (kObj == null) kObj = map.get("key_id");
+                        if (kObj == null) kObj = map.get("key");
+
                         Object sObj = map.get("razorpay_key_secret");
+                        if (sObj == null) sObj = map.get("razorpayKeySecret");
+                        if (sObj == null) sObj = map.get("razorpay_secret");
+                        if (sObj == null) sObj = map.get("key_secret");
+                        if (sObj == null) sObj = map.get("secret");
+
                         if (kObj != null && !kObj.toString().isBlank()) keyId = kObj.toString().trim();
                         if (sObj != null && !sObj.toString().isBlank()) keySecret = sObj.toString().trim();
                     }
@@ -792,12 +809,12 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                         calc.put("refund_id", refundId);
                         calc.put("refund_method", "razorpay");
                         if (rrn != null) calc.put("rrn", rrn);
-                        if ("processed".equalsIgnoreCase(rzpStatus)) {
+                        if ("processed".equalsIgnoreCase(rzpStatus) || "pending".equalsIgnoreCase(rzpStatus) || "created".equalsIgnoreCase(rzpStatus) || "submitted".equalsIgnoreCase(rzpStatus)) {
                             refundStatus = "REFUND_COMPLETED";
-                            remark = String.format("Razorpay refund of ₹%.2f processed successfully to customer bank account. RRN/ARN: %s", refundAmount, rrn != null ? rrn : "Pending");
+                            remark = String.format("Razorpay bank refund of ₹%.2f initiated/processed successfully to customer bank account. Reference/RRN: %s", refundAmount, rrn != null ? rrn : (refundId != null ? refundId : "Completed"));
                         } else {
                             refundStatus = "REFUND_PENDING";
-                            remark = String.format("Razorpay refund of ₹%.2f initiated to customer bank account (Pending bank processing). Reference ID: %s", refundAmount, refundId);
+                            remark = String.format("Razorpay bank refund of ₹%.2f submitted to customer bank account. Reference ID: %s", refundAmount, refundId);
                         }
                     } else {
                         refundStatus = "REFUND_FAILED";
