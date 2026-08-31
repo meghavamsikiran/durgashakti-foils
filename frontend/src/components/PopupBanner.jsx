@@ -338,19 +338,23 @@ const PopupBanner = () => {
     : "grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 w-full";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur animate-fade-in font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in font-sans">
       <style>{`
-        #durgashakti-popup-banner,
-        #durgashakti-popup-banner * {
-          -webkit-text-fill-color: initial;
+        #durgashakti-popup-banner .popup-title-glow {
+          color: #fde047 !important;
+          text-shadow: 0 2px 16px rgba(253, 224, 71, 0.45), 0 2px 4px rgba(0, 0, 0, 0.9);
         }
-        #durgashakti-popup-banner .popup-banner-text-white { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
-        #durgashakti-popup-banner .popup-banner-text-gold { color: #fcd34d !important; -webkit-text-fill-color: #fcd34d !important; }
-        #durgashakti-popup-banner .popup-banner-text-gold-light { color: #fbe5a2 !important; -webkit-text-fill-color: #fbe5a2 !important; }
-        #durgashakti-popup-banner .popup-banner-text-emerald { color: #6ee7b7 !important; -webkit-text-fill-color: #6ee7b7 !important; }
-        #durgashakti-popup-banner h2 { -webkit-text-fill-color: transparent !important; }
+        #durgashakti-popup-banner .popup-text-contrast {
+          color: #ffffff !important;
+          text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+        }
+        #durgashakti-popup-banner .popup-code-pill {
+          background-color: #020617 !important;
+          color: #fde047 !important;
+          border-color: #facc15 !important;
+        }
       `}</style>
-      <div id="durgashakti-popup-banner" className={`relative w-full max-w-2xl bg-gradient-to-br ${background_gradient} rounded-3xl border-4 ${border_color} p-6 sm:p-8 md:p-10 text-white shadow-2xl overflow-hidden shadow-black/40`}>
+      <div id="durgashakti-popup-banner" className={`relative w-full max-w-2xl bg-gradient-to-br ${background_gradient} rounded-3xl border-4 ${border_color} p-6 sm:p-8 md:p-10 text-white shadow-2xl overflow-hidden shadow-black/80`}>
         
         {/* Animated Background Overlay elements depending on theme context */}
         {animation_style === 'snow' && (
@@ -365,10 +369,10 @@ const PopupBanner = () => {
 
         {animation_style === 'sparkle' && (
           <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
-            <div className="absolute text-amber-300/30 top-10 left-12 animate-sparkle-shine">✨</div>
-            <div className="absolute text-yellow-300/40 top-20 right-20 animate-sparkle-shine" style={{ animationDelay: '0.5s' }}>⭐</div>
-            <div className="absolute text-amber-400/20 bottom-16 left-1/3 animate-sparkle-shine" style={{ animationDelay: '0.8s' }}>✨</div>
-            <div className="absolute text-yellow-400/30 bottom-10 right-1/4 animate-sparkle-shine" style={{ animationDelay: '0.3s' }}>⭐</div>
+            <div className="absolute text-amber-300/40 top-10 left-12 animate-sparkle-shine">✨</div>
+            <div className="absolute text-yellow-300/50 top-20 right-20 animate-sparkle-shine" style={{ animationDelay: '0.5s' }}>⭐</div>
+            <div className="absolute text-amber-400/30 bottom-16 left-1/3 animate-sparkle-shine" style={{ animationDelay: '0.8s' }}>✨</div>
+            <div className="absolute text-yellow-400/40 bottom-10 right-1/4 animate-sparkle-shine" style={{ animationDelay: '0.3s' }}>⭐</div>
           </div>
         )}
 
@@ -381,39 +385,19 @@ const PopupBanner = () => {
           </div>
         )}
 
-        {animation_style === 'tricolor' && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden select-none flex items-center justify-center opacity-5">
-            <svg className="w-96 h-96 text-white animate-spin-slow" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="1" />
-              <circle cx="50" cy="50" r="8" fill="none" stroke="currentColor" strokeWidth="1" />
-              {[...Array(24)].map((_, i) => (
-                <line
-                  key={i}
-                  x1="50"
-                  y1="50"
-                  x2={50 + 45 * Math.cos((i * 15 * Math.PI) / 180)}
-                  y2={50 + 45 * Math.sin((i * 15 * Math.PI) / 180)}
-                  stroke="currentColor"
-                  strokeWidth="0.5"
-                />
-              ))}
-            </svg>
-          </div>
-        )}
-
-        {/* Dynamic Abstract Art Accents matching Image2 */}
-        <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-full blur-3xl opacity-20 -translate-x-12 -translate-y-12"></div>
-        <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-500/10 to-purple-600/10 rounded-full blur-3xl opacity-20 translate-x-12 translate-y-12"></div>
+        {/* Dynamic Abstract Art Accents */}
+        <div className="absolute top-0 left-0 w-40 h-40 bg-gradient-to-br from-yellow-400/30 to-amber-500/30 rounded-full blur-3xl opacity-30 -translate-x-12 -translate-y-12"></div>
+        <div className="absolute bottom-0 right-0 w-40 h-40 bg-gradient-to-br from-purple-500/20 to-pink-600/20 rounded-full blur-3xl opacity-30 translate-x-12 translate-y-12"></div>
         
         {/* Swirl lines/decorations */}
-        <div className="absolute -top-10 -right-10 w-40 h-40 border-8 border-dashed border-white/5 rounded-full pointer-events-none"></div>
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 border-8 border-double border-white/5 rounded-full pointer-events-none"></div>
+        <div className="absolute -top-10 -right-10 w-44 h-44 border-8 border-dashed border-amber-300/10 rounded-full pointer-events-none"></div>
+        <div className="absolute -bottom-10 -left-10 w-44 h-44 border-8 border-double border-amber-300/10 rounded-full pointer-events-none"></div>
         
         {/* Close Button */}
         <button 
           onClick={handleClose}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full text-white/80 hover:text-white transition-all border border-white/10"
-          style={{ background: 'rgba(0, 0, 0, 0.2)' }}
+          className="absolute top-4 right-4 z-10 p-2.5 rounded-full text-white/90 hover:text-white transition-all bg-black/40 hover:bg-black/60 border border-white/20 shadow-lg"
+          title="Close Popup"
         >
           <X className="w-5 h-5" />
         </button>
@@ -421,16 +405,16 @@ const PopupBanner = () => {
         {/* Banner Content */}
         <div className="text-center relative z-10 space-y-5">
           <div className="flex justify-center">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 border border-white/20 text-white rounded-full text-xs font-bold uppercase tracking-wider" style={{ background: 'rgba(0, 0, 0, 0.2)' }}>
+            <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-amber-400 text-slate-950 border border-yellow-200 rounded-full text-xs font-black uppercase tracking-wider shadow-md">
               {emoji_pattern.split('')[0] || '✨'} {activeTheme ? `${theme.theme_context} Special` : 'Limited Offer'}
             </span>
           </div>
 
-          <h2 className={`text-4xl md:text-5xl font-black tracking-tight uppercase select-none animate-pulse bg-gradient-to-r ${text_gradient}`} style={{ color: 'transparent', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight uppercase select-none popup-title-glow leading-tight">
             {theme.title}
           </h2>
           
-          <p className="text-sm popup-banner-text-white max-w-lg mx-auto font-bold leading-relaxed">
+          <p className="text-sm sm:text-base popup-text-contrast max-w-lg mx-auto font-semibold leading-relaxed">
             {theme.subtitle}
           </p>
 
@@ -451,10 +435,8 @@ const PopupBanner = () => {
               return (
                 <div 
                   key={coupon.id || coupon.code}
-                  className="rounded-2xl p-5 border border-amber-400/40 hover:border-amber-400/60 transition-all flex flex-col items-center justify-center text-center gap-3 w-full min-h-[145px] relative overflow-hidden group shadow-lg"
+                  className="rounded-2xl p-5 border-2 border-amber-400/80 hover:border-amber-300 transition-all flex flex-col items-center justify-center text-center gap-3.5 w-full min-h-[155px] relative overflow-hidden group shadow-2xl bg-slate-950/90 backdrop-blur-md"
                   style={{ 
-                    background: 'rgba(0, 0, 0, 0.75)', 
-                    backdropFilter: 'blur(8px)',
                     WebkitMaskImage: 'radial-gradient(circle at 0% 50%, transparent 12px, black 12.5px), radial-gradient(circle at 100% 50%, transparent 12px, black 12.5px)',
                     maskImage: 'radial-gradient(circle at 0% 50%, transparent 12px, black 12.5px), radial-gradient(circle at 100% 50%, transparent 12px, black 12.5px)',
                     WebkitMaskComposite: 'destination-in',
@@ -462,43 +444,39 @@ const PopupBanner = () => {
                   }}
                 >
                   {/* Background Watermark Ticket Icon */}
-                  <div className="absolute -bottom-2 -right-2 opacity-[0.12] pointer-events-none z-0">
+                  <div className="absolute -bottom-2 -right-2 opacity-15 pointer-events-none z-0">
                     <Ticket className="w-20 h-20 text-amber-300" />
                   </div>
 
-                  <div className="space-y-1.5 w-full relative z-10">
-                    <p className="text-xs font-black uppercase tracking-widest flex items-center justify-center gap-1.5 popup-banner-text-gold">
-                      <Ticket className="w-3.5 h-3.5 popup-banner-text-gold" />
+                  <div className="space-y-2 w-full relative z-10">
+                    <p className="text-xs font-black uppercase tracking-widest flex items-center justify-center gap-1.5 text-amber-300">
+                      <Ticket className="w-4 h-4 text-amber-300" />
                       {discVal}
                     </p>
                     
-                    <div className="relative flex items-center justify-center w-full px-10">
-                      <span 
-                        className="font-mono text-xl font-black tracking-wider px-5 py-1.5 rounded-xl border border-amber-400/50 shadow-inner select-all popup-banner-text-gold"
-                        style={{ backgroundColor: '#0a0a0a' }}
-                      >
+                    <div className="relative flex items-center justify-center w-full px-8">
+                      <span className="font-mono text-xl sm:text-2xl font-black tracking-wider px-5 py-2 rounded-xl border-2 border-amber-400/80 shadow-inner select-all popup-code-pill">
                         {coupon.code}
                       </span>
                       <button
                         onClick={() => handleCopy(coupon.code)}
-                        className="absolute right-0 p-2 rounded-lg border border-amber-400/30 transition-all active:scale-95 popup-banner-text-gold"
-                        style={{ backgroundColor: '#1a1a1a' }}
+                        className="absolute right-0 p-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold border border-yellow-200 transition-all active:scale-95 shadow-md"
                         title="Copy Code"
                       >
                         {copiedCode === coupon.code ? (
-                          <Check className="w-4 h-4 text-emerald-400" />
+                          <Check className="w-4 h-4 text-slate-950 stroke-[3]" />
                         ) : (
-                          <Copy className="w-4 h-4" />
+                          <Copy className="w-4 h-4 text-slate-950 stroke-[2.5]" />
                         )}
                       </button>
                     </div>
                   </div>
 
-                  <div className="w-full flex flex-col justify-center items-center relative z-10 pt-1 border-t border-dashed border-white/15">
+                  <div className="w-full flex flex-col justify-center items-center relative z-10 pt-2 border-t border-dashed border-white/20">
                     {hasExpiry ? (
                       <>
-                        <p className="text-[9px] uppercase font-bold tracking-wider popup-banner-text-gold-light">Offer Expires</p>
-                        <p className="text-xs font-black font-mono mt-0.5 popup-banner-text-gold">
+                        <p className="text-[10px] uppercase font-bold tracking-wider text-amber-200">Offer Expires</p>
+                        <p className="text-xs font-extrabold font-mono mt-0.5 text-white">
                           {new Date(coupon.expiry_date).toLocaleDateString('en-IN', {
                             day: '2-digit',
                             month: 'short',
@@ -509,7 +487,7 @@ const PopupBanner = () => {
                         </p>
                       </>
                     ) : (
-                      <span className="inline-flex px-2.5 py-0.5 bg-emerald-500/20 border border-emerald-500/30 rounded text-[9px] font-bold uppercase tracking-wider popup-banner-text-emerald">
+                      <span className="inline-flex px-3 py-0.5 bg-emerald-500/20 border border-emerald-400/40 rounded text-[10px] font-bold uppercase tracking-wider text-emerald-300">
                         Infinite Validity
                       </span>
                     )}

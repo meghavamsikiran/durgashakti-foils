@@ -308,9 +308,11 @@ public class AiChatController {
 
               String orderContext;
               if (order != null) {
+                  String displayStatus = formatOrderStatusLabel(order.getOrderStatus(), order.getPaymentStatus());
+                  String dateStr = order.getCreatedAt() != null ? order.getCreatedAt().toString().substring(0, 10) : "";
                   orderContext = String.format(
-                      "The user asked: %s\nSystem context: Order %s was placed on %s. The current status is %s. The total price is Rs %s. The payment status is %s.",
-                      userMessageStr, order.getOrderNumber(), order.getCreatedAt(), order.getOrderStatus(), order.getTotalAmount(), order.getPaymentStatus()
+                      "The user asked: %s\nSystem context: Order %s was placed on %s. The current status is %s. The total price is Rs %.2f.",
+                      userMessageStr, order.getOrderNumber(), dateStr, displayStatus, order.getTotalAmount()
                   );
               } else {
                   orderContext = "The user asked: " + userMessageStr + "\nSystem context: Order " + orderNum + " was not found in our database. Please inform the user politely.";
@@ -325,9 +327,9 @@ public class AiChatController {
               // Fallback formatting if AI returns tag or fails
               if (aiResponse == null || aiResponse.contains("[LOOKUP_")) {
                   if (order != null) {
-                      aiResponse = String.format("Order #%s status is currently %s. Total amount: ₹%.2f (Payment status: %s).",
-                              order.getOrderNumber(), (order.getOrderStatus() != null ? order.getOrderStatus().toUpperCase() : "PROCESSING"),
-                              order.getTotalAmount(), (order.getPaymentStatus() != null ? order.getPaymentStatus() : "paid"));
+                      String displayStatus = formatOrderStatusLabel(order.getOrderStatus(), order.getPaymentStatus());
+                      aiResponse = String.format("Order #%s status is currently %s. Total price: ₹%.2f.",
+                              order.getOrderNumber(), displayStatus, order.getTotalAmount());
                   } else {
                       aiResponse = String.format("Order #%s was not found in our system. Please double-check your order number.", orderNum);
                   }
@@ -620,5 +622,24 @@ public class AiChatController {
       chatSessionRepository.save(session);
 
       return ResponseEntity.ok(Map.of("status", "sent"));
+  }
+
+  private String formatOrderStatusLabel(String orderStatus, String paymentStatus) {
+      if ("refunded".equalsIgnoreCase(paymentStatus)) return "Refund Credited";
+      if ("refund_pending".equalsIgnoreCase(paymentStatus) || "refund_initiated".equalsIgnoreCase(paymentStatus)) return "Refund Initiated";
+      if ("refund_failed".equalsIgnoreCase(paymentStatus)) return "Refund Processing (DSF Wallet Credited)";
+      
+      if (orderStatus == null) return "Processing";
+      switch (orderStatus.toLowerCase()) {
+          case "return_approved": return "Refund Initiated";
+          case "return_initiated": return "Return Initiated";
+          case "return_received": return "Return Received";
+          case "return_completed": return "Return Completed & Refunded";
+          case "delivered": return "Delivered";
+          case "shipped": return "Shipped";
+          case "processing": return "Processing";
+          case "cancelled": return "Cancelled";
+          default: return orderStatus.replace("_", " ").toUpperCase();
+      }
   }
 }
