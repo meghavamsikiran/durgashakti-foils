@@ -230,8 +230,14 @@ public class AdminOrderController {
                         if ("REFUND_FAILED".equalsIgnoreCase(rStatus)) {
                             @SuppressWarnings("unchecked")
                             List<Map<String, Object>> timeline = (List<Map<String, Object>>) item.get("audit_timeline");
+                            if (timeline == null) {
+                                @SuppressWarnings("unchecked")
+                                List<Map<String, Object>> t2 = (List<Map<String, Object>>) item.get("auditTimeline");
+                                timeline = t2;
+                            }
                             if (timeline != null && !timeline.isEmpty()) {
-                                String lastNote = (String) timeline.get(timeline.size() - 1).get("note");
+                                Map<String, Object> lastEntry = timeline.get(timeline.size() - 1);
+                                String lastNote = (String) lastEntry.getOrDefault("note", lastEntry.get("remark"));
                                 if (lastNote != null && !lastNote.isBlank()) {
                                     response.put("warning", lastNote);
                                 }

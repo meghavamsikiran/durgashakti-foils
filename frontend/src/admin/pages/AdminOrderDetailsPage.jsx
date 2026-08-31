@@ -282,15 +282,20 @@ const AdminOrderDetailsPage = () => {
       // Check actual refund status from the returned order
       const refundedItem = serverOrder?.items?.find(i => String(i.product_id) === String(productId));
       const itemStatus = refundedItem?.return_status;
+      const auditList = refundedItem?.audit_timeline || refundedItem?.auditTimeline;
+      const lastAudit = Array.isArray(auditList) ? auditList[auditList.length - 1] : null;
+      const failReason = response?.data?.warning || lastAudit?.note || lastAudit?.remark || 'Refund processing failed. Please try manual refund.';
+
       if (response?.data?.warning) {
-        toast.warning(response.data.warning, { duration: 8000, id: toastId });
+        toast.warning(response.data.warning, { duration: 9000, id: toastId });
       } else if (itemStatus === 'REFUND_COMPLETED') {
-        toast.success('Refund credited to customer wallet successfully', { id: toastId, duration: 5000 });
+        const method = refundedItem?.refund_calculations?.refund_method;
+        const msg = method === 'razorpay' ? 'Razorpay bank refund processed successfully!' : 'Refund credited to customer wallet successfully';
+        toast.success(msg, { id: toastId, duration: 5000 });
       } else if (itemStatus === 'REFUND_PENDING') {
         toast.success('Refund initiated (pending bank processing)', { id: toastId, duration: 5000 });
       } else if (itemStatus === 'REFUND_FAILED') {
-        const lastAudit = refundedItem?.audit_timeline?.slice(-1)[0];
-        toast.error(lastAudit?.note || 'Refund processing failed. Please try manual refund.', { id: toastId, duration: 9000 });
+        toast.error(failReason, { id: toastId, duration: 9000 });
       } else {
         toast.success('Refund processed successfully', { id: toastId });
       }
