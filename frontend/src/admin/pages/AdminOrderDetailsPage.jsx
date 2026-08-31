@@ -279,8 +279,17 @@ const AdminOrderDetailsPage = () => {
       if (serverOrder) {
         setOrder(serverOrder);
       }
+      // Check actual refund status from the returned order
+      const refundedItem = serverOrder?.items?.find(i => String(i.product_id) === String(productId));
+      const itemStatus = refundedItem?.return_status;
       if (response?.data?.warning) {
         toast.warning(response.data.warning, { duration: 8000, id: toastId });
+      } else if (itemStatus === 'REFUND_COMPLETED') {
+        toast.success('Refund credited to customer wallet successfully', { id: toastId, duration: 5000 });
+      } else if (itemStatus === 'REFUND_PENDING') {
+        toast.success('Refund initiated (pending bank processing)', { id: toastId, duration: 5000 });
+      } else if (itemStatus === 'REFUND_FAILED') {
+        toast.error('Refund processing failed. Please try manual refund.', { id: toastId, duration: 8000 });
       } else {
         toast.success('Refund processed successfully', { id: toastId });
       }
