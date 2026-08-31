@@ -8,6 +8,7 @@ import com.durgashakti.admin.repository.AdminProductRepository;
 import com.durgashakti.admin.repository.AuditLogRepository;
 import com.durgashakti.common.exception.ApiException;
 import com.razorpay.Refund;
+import com.razorpay.Payment;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import org.json.JSONObject;
@@ -132,11 +133,11 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                keys[1] != null && !keys[1].isBlank() && !keys[1].contains("fake");
     }
 
-    private Map<String, Object> attemptRazorpayRefund(String razorpayPaymentId, double amountInRupees, String orderNumber) {
-        if (razorpayPaymentId == null || razorpayPaymentId.isBlank()) {
-            log.warn("Cannot process Razorpay refund: no razorpay_payment_id on order {}", orderNumber);
-            return Map.of("success", false, "remark", "No razorpay_payment_id on order");
+    private Map<String, Object> attemptRazorpayRefund(Order order, double amountInRupees) {
+        if (order == null) {
+            return Map.of("success", false, "remark", "Order is null");
         }
+        String orderNumber = order.getOrderNumber();
         String[] keys = getRazorpayKeys();
         String activeKeyId = keys[0];
         String activeKeySecret = keys[1];
@@ -145,6 +146,37 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             activeKeySecret == null || activeKeySecret.isBlank() || activeKeySecret.contains("fake")) {
             log.warn("Razorpay keys not configured (KeyID: {}, KeySecret: {}) for order {}", activeKeyId, activeKeySecret != null ? "***" : "null", orderNumber);
             return Map.of("success", false, "remark", "Razorpay gateway keys not configured in environment or store settings.");
+        }
+
+        String razorpayPaymentId = order.getRazorpayPaymentId();
+
+        // Auto-fetch captured razorpay_payment_id if missing from order entity
+        if ((razorpayPaymentId == null || razorpayPaymentId.isBlank()) && activeKeyId != null && activeKeySecret != null) {
+            try {
+                RazorpayClient client = new RazorpayClient(activeKeyId, activeKeySecret);
+                if (order.getRazorpayOrderId() != null && !order.getRazorpayOrderId().isBlank()) {
+                    List<Payment> pList = client.orders.fetchPayments(order.getRazorpayOrderId());
+                    if (pList != null && !pList.isEmpty()) {
+                        for (Payment p : pList) {
+                            String pStatus = String.valueOf(p.get("status"));
+                            if ("captured".equalsIgnoreCase(pStatus) || "authorized".equalsIgnoreCase(pStatus)) {
+                                razorpayPaymentId = p.get("id");
+                                order.setRazorpayPaymentId(razorpayPaymentId);
+                                try { orderRepository.save(order); } catch (Exception ignored) {}
+                                log.info("[attemptRazorpayRefund] Auto-fetched captured razorpay_payment_id {} from razorpay_order_id {}", razorpayPaymentId, order.getRazorpayOrderId());
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to auto-fetch payment for order {}: {}", orderNumber, ex.getMessage());
+            }
+        }
+
+        if (razorpayPaymentId == null || razorpayPaymentId.isBlank()) {
+            log.warn("Cannot process Razorpay refund: no razorpay_payment_id on order {}", orderNumber);
+            return Map.of("success", false, "remark", "No razorpay_payment_id found on order #" + orderNumber);
         }
 
         long amountInPaise = Math.round(amountInRupees * 100.0);
@@ -394,9 +426,9 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 }
                 
                 double razorpayRefundAmt = totalAmt - walletRefundAmt;
-                if (razorpayRefundAmt > 0 && order.getRazorpayPaymentId() != null && !order.getRazorpayPaymentId().isBlank()) {
+                if (razorpayRefundAmt > 0) {
                     // Razorpay refund
-                    Map<String, Object> rzpRes = attemptRazorpayRefund(order.getRazorpayPaymentId(), razorpayRefundAmt, order.getOrderNumber());
+                    Map<String, Object> rzpRes = attemptRazorpayRefund(order, razorpayRefundAmt);
                     if (Boolean.TRUE.equals(rzpRes.get("success"))) {
                         String rzpStatus = (String) rzpRes.get("status");
                         if ("processed".equalsIgnoreCase(rzpStatus)) {
@@ -706,7 +738,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                     if ("wallet".equals(calc.get("refund_method"))) {
                         revertErroneousWalletCredit(order, refundAmount, calc);
                     }
-                    Map<String, Object> rzpRes = attemptRazorpayRefund(order.getRazorpayPaymentId(), refundAmount, order.getOrderNumber());
+                    Map<String, Object> rzpRes = attemptRazorpayRefund(order, refundAmount);
                     if (Boolean.TRUE.equals(rzpRes.get("success"))) {
                         String rzpStatus = (String) rzpRes.get("status");
                         String refundId = (String) rzpRes.get("refund_id");
@@ -886,7 +918,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                     }
                 } else {
                     // Online paid order -> Refund directly to customer's bank account via Razorpay API
-                    Map<String, Object> rzpRes = attemptRazorpayRefund(order.getRazorpayPaymentId(), retryAmount, order.getOrderNumber());
+                    Map<String, Object> rzpRes = attemptRazorpayRefund(order, retryAmount);
                     if (Boolean.TRUE.equals(rzpRes.get("success"))) {
                         String rzpStatus = (String) rzpRes.get("status");
                         String refundId = (String) rzpRes.get("refund_id");
