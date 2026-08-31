@@ -7,7 +7,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.UUID;
 
+import java.util.Optional;
+
 @Repository
 public interface AdminUserRepository extends JpaRepository<User, UUID> {
     List<User> findByRoleIn(List<String> roles);
+    Optional<User> findByEmail(String email);
 }

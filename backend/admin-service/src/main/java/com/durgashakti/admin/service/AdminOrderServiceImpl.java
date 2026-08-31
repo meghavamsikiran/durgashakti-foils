@@ -684,29 +684,11 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                             remark = String.format("Razorpay refund of ₹%.2f initiated (Pending bank processing). Reference ID: %s", refundAmount, refundId);
                         }
                     } else {
-                        // Fallback to DSF Wallet refund if Razorpay gateway refund fails and user has an account
-                        if (order.getUserId() != null && isWalletReturnsEnabled() && refundAmount > 0) {
-                            try {
-                                jdbcTemplate.update(
-                                    "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +
-                                    "VALUES (gen_random_uuid(), ?, ?, NOW(), NOW()) " +
-                                    "ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance, updated_at = NOW()",
-                                    order.getUserId(), refundAmount
-                                );
-                                jdbcTemplate.update(
-                                    "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
-                                    "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'RETURN_REFUND', ?, ?, 'SUCCESS', NOW())",
-                                    order.getUserId(), java.math.BigDecimal.valueOf(refundAmount), order.getOrderNumber(), "Return refund for order #" + order.getOrderNumber()
-                                );
-                                refundStatus = "REFUND_COMPLETED";
-                                remark = String.format("Gateway refund unavailable (%s). Refund of ₹%.2f credited to customer DSF Wallet successfully.", rzpRes.getOrDefault("remark", "Gateway error"), refundAmount);
-                                calc.put("refund_method", "wallet");
-                                order.setPaymentStatus("refunded");
-                                log.info("[Refund Gateway Fallback] Credited ₹{} to DSF Wallet for user {} on order {}", refundAmount, order.getUserId(), order.getOrderNumber());
-                            } catch (Exception walletEx) {
-                                refundStatus = "REFUND_FAILED";
-                                remark = String.format("Razorpay refund FAILED (%s) and Wallet fallback failed: %s", rzpRes.getOrDefault("remark", "Unknown error"), walletEx.getMessage());
-                            }
+                        // Fallback to DSF Wallet refund if Razorpay gateway refund fails
+                        String fallbackStatus = creditWalletFallback(order, refundAmount, calc);
+                        if ("REFUND_COMPLETED".equals(fallbackStatus)) {
+                            refundStatus = "REFUND_COMPLETED";
+                            remark = String.format("Gateway refund unavailable. Refund of ₹%.2f credited to customer DSF Wallet successfully.", refundAmount);
                         } else {
                             refundStatus = "REFUND_FAILED";
                             remark = String.format("Razorpay refund of ₹%.2f FAILED: %s", refundAmount, rzpRes.getOrDefault("remark", "Unknown error"));
@@ -875,9 +857,17 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                                 String.format("Razorpay refund of ₹%.2f retried (Pending bank processing). Reference ID: %s", retryAmount, refundId));
                     }
                 } else {
-                    item.put("return_status", "REFUND_FAILED");
-                    addAuditTimeline(item, "REFUND_FAILED",
-                            String.format("Razorpay refund retry of ₹%.2f FAILED: %s", retryAmount, rzpRes.getOrDefault("remark", "Unknown error")));
+                    String fallbackStatus = creditWalletFallback(order, retryAmount, retryCalc);
+                    item.put("refund_calculations", retryCalc);
+                    if ("REFUND_COMPLETED".equals(fallbackStatus)) {
+                        item.put("return_status", "REFUND_COMPLETED");
+                        addAuditTimeline(item, "REFUND_COMPLETED",
+                                String.format("Gateway refund unavailable. Refund of ₹%.2f credited to customer DSF Wallet successfully.", retryAmount));
+                    } else {
+                        item.put("return_status", "REFUND_FAILED");
+                        addAuditTimeline(item, "REFUND_FAILED",
+                                String.format("Razorpay refund retry of ₹%.2f FAILED: %s", retryAmount, rzpRes.getOrDefault("remark", "Unknown error")));
+                    }
                 }
             }
         }
@@ -1055,23 +1045,44 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     }
 
     private void sendOrderEmail(Order order, String subject, String body) {
-        if (order.getUserId() != null) {
-            if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        sendOrderEmailAsync(order, subject, body);
-                    }
-                });
-            } else {
-                sendOrderEmailAsync(order, subject, body);
-            }
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    sendOrderEmailAsync(order, subject, body);
+                }
+            });
+        } else {
+            sendOrderEmailAsync(order, subject, body);
         }
     }
 
     private void sendOrderEmailAsync(Order order, String subject, String body) {
         java.util.concurrent.CompletableFuture.runAsync(() -> {
-            userRepository.findById(order.getUserId()).ifPresent(user -> {
+            User targetUser = null;
+            if (order.getUserId() != null) {
+                targetUser = userRepository.findById(order.getUserId()).orElse(null);
+            }
+            if (targetUser == null) {
+                String email = extractEmailFromOrder(order);
+                if (email != null && !email.isBlank()) {
+                    targetUser = userRepository.findByEmail(email).orElse(null);
+                    if (targetUser == null) {
+                        targetUser = new User();
+                        targetUser.setEmail(email);
+                        String name = "Customer";
+                        if (order.getShippingAddress() != null && order.getShippingAddress().get("full_name") != null) {
+                            name = String.valueOf(order.getShippingAddress().get("full_name"));
+                        } else if (order.getCustomerName() != null) {
+                            name = order.getCustomerName();
+                        }
+                        targetUser.setFullName(name);
+                    }
+                }
+            }
+
+            if (targetUser != null && targetUser.getEmail() != null && !targetUser.getEmail().isBlank()) {
+                final User user = targetUser;
                 try {
                         // Build premium HTML items table
                         StringBuilder itemsHtml = new StringBuilder();
@@ -1206,8 +1217,8 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                     } catch (Exception e) {
                         log.error("Failed to send email for order {} to {}", order.getOrderNumber(), user.getEmail(), e);
                     }
-                });
-            });
+            }
+        });
     }
 
     private String getEmailBreakoutHtml(Order order) {
@@ -1312,5 +1323,61 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                        : remarksBlock);
         }
         sendOrderEmail(order, subject, body);
+    }
+
+    private String extractEmailFromOrder(Order order) {
+        if (order.getShippingAddress() != null) {
+            Object emailObj = order.getShippingAddress().get("email");
+            if (emailObj != null && !emailObj.toString().isBlank()) {
+                return emailObj.toString().trim();
+            }
+        }
+        return null;
+    }
+
+    private String creditWalletFallback(Order order, double refundAmount, Map<String, Object> calc) {
+        UUID targetUserId = order.getUserId();
+        String targetEmail = extractEmailFromOrder(order);
+
+        if (targetUserId == null && targetEmail != null) {
+            try {
+                List<Map<String, Object>> uRows = jdbcTemplate.queryForList("SELECT id FROM users WHERE LOWER(email) = LOWER(?)", targetEmail.toLowerCase());
+                if (!uRows.isEmpty()) {
+                    Object idObj = uRows.get(0).get("id");
+                    if (idObj instanceof UUID) {
+                        targetUserId = (UUID) idObj;
+                    } else if (idObj != null) {
+                        targetUserId = UUID.fromString(idObj.toString());
+                    }
+                }
+            } catch (Exception ex) {
+                log.error("Failed to lookup user by email {} for order {}", targetEmail, order.getOrderNumber(), ex);
+            }
+        }
+
+        if (targetUserId != null && refundAmount > 0 && isWalletReturnsEnabled()) {
+            try {
+                jdbcTemplate.update(
+                    "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +
+                    "VALUES (gen_random_uuid(), ?, ?, NOW(), NOW()) " +
+                    "ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance, updated_at = NOW()",
+                    targetUserId, refundAmount
+                );
+                jdbcTemplate.update(
+                    "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
+                    "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'RETURN_REFUND', ?, ?, 'SUCCESS', NOW())",
+                    targetUserId, java.math.BigDecimal.valueOf(refundAmount), order.getOrderNumber(), "Return refund for order #" + order.getOrderNumber()
+                );
+                if (calc != null) {
+                    calc.put("refund_method", "wallet");
+                }
+                order.setPaymentStatus("refunded");
+                log.info("[Refund Gateway Fallback] Credited ₹{} to DSF Wallet for user {} on order {}", refundAmount, targetUserId, order.getOrderNumber());
+                return "REFUND_COMPLETED";
+            } catch (Exception walletEx) {
+                log.error("[Refund Fallback Error] Failed to credit wallet for user {} on order {}: {}", targetUserId, order.getOrderNumber(), walletEx.getMessage());
+            }
+        }
+        return "REFUND_FAILED";
     }
 }
