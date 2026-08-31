@@ -103,6 +103,7 @@ const PopupBanner = () => {
   // Load public settings to fetch promoted coupons and custom themes
   useEffect(() => {
     let active = true;
+    const retryRef = settingsRetryRef;
 
     const fetchPromotedCoupons = async (attempt = 0) => {
       try {
@@ -165,8 +166,9 @@ const PopupBanner = () => {
 
     return () => {
       active = false;
-      if (settingsRetryRef.current) clearTimeout(settingsRetryRef.current);
+      if (retryRef.current) clearTimeout(retryRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, user]);
 
   // Clean up timers ONLY on actual component unmount (not on path/dependency changes)
