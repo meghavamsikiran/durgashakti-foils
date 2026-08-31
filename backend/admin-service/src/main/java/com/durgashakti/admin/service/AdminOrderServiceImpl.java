@@ -573,18 +573,27 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             if (productId.equalsIgnoreCase(itemProdId)) {
                 foundItem = true;
                 String currentStatus = (String) item.get("return_status");
+                @SuppressWarnings("unchecked")
+                Map<String, Object> calcRaw = (Map<String, Object>) item.get("refund_calculations");
+                String pMethod = (order.getPaymentMethod() != null ? order.getPaymentMethod() : "").toLowerCase();
+                String pStatus = (order.getPaymentStatus() != null ? order.getPaymentStatus() : "").toLowerCase();
+                boolean isWalletOrder = "wallet".equals(pMethod) || "dsf_wallet".equals(pMethod) || pStatus.contains("wallet");
+                boolean isWalletCreditMistake = "REFUND_COMPLETED".equalsIgnoreCase(currentStatus) && 
+                                                !isWalletOrder && 
+                                                calcRaw != null && "wallet".equals(calcRaw.get("refund_method"));
+
                 if (currentStatus == null ||
                         (!"RETURN_RECEIVED".equalsIgnoreCase(currentStatus) &&
                          !"RETURN_APPROVED".equalsIgnoreCase(currentStatus) &&
                          !"SELF_SHIPPED".equalsIgnoreCase(currentStatus) &&
                          !"REFUND_FAILED".equalsIgnoreCase(currentStatus) &&
-                         !"REFUND_PENDING".equalsIgnoreCase(currentStatus))) {
+                         !"REFUND_PENDING".equalsIgnoreCase(currentStatus) &&
+                         !isWalletCreditMistake)) {
                     throw new ApiException(HttpStatus.BAD_REQUEST,
                             "Item is not in an appropriate status for refund (current: " + currentStatus + ")");
                 }
 
                 @SuppressWarnings("unchecked")
-                Map<String, Object> calcRaw = (Map<String, Object>) item.get("refund_calculations");
                 Map<String, Object> calc = calcRaw != null ? new HashMap<>(calcRaw) : new HashMap<>();
 
                 if (manualAmount != null) {
@@ -620,10 +629,6 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 String refundStatus;
                 String remark;
 
-                String pMethod = (order.getPaymentMethod() != null ? order.getPaymentMethod() : "").toLowerCase();
-                String pStatus = (order.getPaymentStatus() != null ? order.getPaymentStatus() : "").toLowerCase();
-                boolean isWalletOrder = "wallet".equals(pMethod) || "dsf_wallet".equals(pMethod) || pStatus.contains("wallet");
-
                 if (isManual) {
                     refundStatus = "REFUND_COMPLETED";
                     remark = String.format("Refund of ₹%.2f completed manually by admin", refundAmount);
@@ -646,6 +651,10 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                     }
                 } else {
                     // Online paid order (Razorpay / UPI / Card / Netbanking) -> Refund directly to customer's bank account
+                    // If it was previously credited to wallet by mistake, revert that wallet credit first
+                    if ("wallet".equals(calc.get("refund_method"))) {
+                        revertErroneousWalletCredit(order, refundAmount, calc);
+                    }
                     Map<String, Object> rzpRes = attemptRazorpayRefund(order.getRazorpayPaymentId(), refundAmount, order.getOrderNumber());
                     if (Boolean.TRUE.equals(rzpRes.get("success"))) {
                         String rzpStatus = (String) rzpRes.get("status");
@@ -1421,6 +1430,50 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                       targetUserId, order.getOrderNumber(), walletEx.getMessage(), walletEx);
             return "REFUND_FAILED";
         }
+    }
+
+    private void revertErroneousWalletCredit(Order order, double amount, Map<String, Object> calc) {
+        if (order == null || amount <= 0 || calc == null) return;
+        if (!"wallet".equals(calc.get("refund_method"))) return;
+
+        UUID targetUserId = order.getUserId();
+        if (targetUserId == null) {
+            String email = extractEmailFromOrder(order);
+            if (email != null) {
+                try {
+                    userRepository.findByEmail(email.toLowerCase()).ifPresent(u -> {
+                        jdbcTemplate.update(
+                            "UPDATE wallets SET balance = GREATEST(0, balance - ?), updated_at = NOW() WHERE user_id = ?",
+                            java.math.BigDecimal.valueOf(amount), u.getId()
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
+                            "VALUES (gen_random_uuid(), ?, ?, 'DEBIT', 'REFUND_REVERT', ?, ?, 'SUCCESS', NOW())",
+                            u.getId(), java.math.BigDecimal.valueOf(amount), order.getOrderNumber(), "Reverted erroneous wallet credit to initiate bank refund for order #" + order.getOrderNumber()
+                        );
+                        log.info("[revertErroneousWalletCredit] Debited ₹{} from wallet for user {} on order {}", amount, u.getId(), order.getOrderNumber());
+                    });
+                } catch (Exception ex) {
+                    log.error("Failed to revert wallet credit for email {}", email, ex);
+                }
+            }
+        } else {
+            try {
+                jdbcTemplate.update(
+                    "UPDATE wallets SET balance = GREATEST(0, balance - ?), updated_at = NOW() WHERE user_id = ?",
+                    java.math.BigDecimal.valueOf(amount), targetUserId
+                );
+                jdbcTemplate.update(
+                    "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
+                    "VALUES (gen_random_uuid(), ?, ?, 'DEBIT', 'REFUND_REVERT', ?, ?, 'SUCCESS', NOW())",
+                    targetUserId, java.math.BigDecimal.valueOf(amount), order.getOrderNumber(), "Reverted erroneous wallet credit to initiate bank refund for order #" + order.getOrderNumber()
+                );
+                log.info("[revertErroneousWalletCredit] Debited ₹{} from wallet for user {} on order {}", amount, targetUserId, order.getOrderNumber());
+            } catch (Exception ex) {
+                log.error("Failed to revert wallet credit for userId {}", targetUserId, ex);
+            }
+        }
+        calc.remove("refund_method");
     }
 }
 
