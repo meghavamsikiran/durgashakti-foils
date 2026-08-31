@@ -93,8 +93,43 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         return true;
     }
 
+    private String[] getRazorpayKeys() {
+        String keyId = razorpayKeyId;
+        String keySecret = razorpayKeySecret;
+
+        if (keyId == null || keyId.isBlank() || keyId.contains("fake") ||
+            keySecret == null || keySecret.isBlank() || keySecret.contains("fake")) {
+            try {
+                List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT value FROM settings WHERE key = 'payment_settings'");
+                if (!rows.isEmpty() && rows.get(0).get("value") != null) {
+                    Object valObj = rows.get(0).get("value");
+                    Map<?, ?> map = null;
+                    if (valObj instanceof Map) {
+                        map = (Map<?, ?>) valObj;
+                    } else {
+                        String jsonStr = valObj.toString();
+                        if (jsonStr != null && !jsonStr.isBlank()) {
+                            map = new com.fasterxml.jackson.databind.ObjectMapper().readValue(jsonStr, Map.class);
+                        }
+                    }
+                    if (map != null) {
+                        Object kObj = map.get("razorpay_key_id");
+                        Object sObj = map.get("razorpay_key_secret");
+                        if (kObj != null && !kObj.toString().isBlank()) keyId = kObj.toString().trim();
+                        if (sObj != null && !sObj.toString().isBlank()) keySecret = sObj.toString().trim();
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to read razorpay keys from settings table: {}", ex.getMessage());
+            }
+        }
+        return new String[]{keyId, keySecret};
+    }
+
     private boolean isRazorpayConfigured() {
-        return razorpayKeyId != null && !razorpayKeyId.isBlank() && !razorpayKeyId.contains("fake");
+        String[] keys = getRazorpayKeys();
+        return keys[0] != null && !keys[0].isBlank() && !keys[0].contains("fake") &&
+               keys[1] != null && !keys[1].isBlank() && !keys[1].contains("fake");
     }
 
     private Map<String, Object> attemptRazorpayRefund(String razorpayPaymentId, double amountInRupees, String orderNumber) {
@@ -102,13 +137,19 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             log.warn("Cannot process Razorpay refund: no razorpay_payment_id on order {}", orderNumber);
             return Map.of("success", false, "remark", "No razorpay_payment_id on order");
         }
-        if (!isRazorpayConfigured()) {
-            log.info("Razorpay keys not configured – skipping live refund for order {}", orderNumber);
-            return Map.of("success", false, "remark", "Razorpay gateway keys not configured");
+        String[] keys = getRazorpayKeys();
+        String activeKeyId = keys[0];
+        String activeKeySecret = keys[1];
+
+        if (activeKeyId == null || activeKeyId.isBlank() || activeKeyId.contains("fake") ||
+            activeKeySecret == null || activeKeySecret.isBlank() || activeKeySecret.contains("fake")) {
+            log.warn("Razorpay keys not configured (KeyID: {}, KeySecret: {}) for order {}", activeKeyId, activeKeySecret != null ? "***" : "null", orderNumber);
+            return Map.of("success", false, "remark", "Razorpay gateway keys not configured in environment or store settings.");
         }
+
         long amountInPaise = Math.round(amountInRupees * 100.0);
         try {
-            RazorpayClient client = new RazorpayClient(razorpayKeyId, razorpayKeySecret);
+            RazorpayClient client = new RazorpayClient(activeKeyId, activeKeySecret);
             JSONObject refundRequest = new JSONObject();
             refundRequest.put("amount", amountInPaise);
             refundRequest.put("speed", "optimum");

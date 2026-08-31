@@ -289,7 +289,8 @@ const AdminOrderDetailsPage = () => {
       } else if (itemStatus === 'REFUND_PENDING') {
         toast.success('Refund initiated (pending bank processing)', { id: toastId, duration: 5000 });
       } else if (itemStatus === 'REFUND_FAILED') {
-        toast.error('Refund processing failed. Please try manual refund.', { id: toastId, duration: 8000 });
+        const lastAudit = refundedItem?.audit_timeline?.slice(-1)[0];
+        toast.error(lastAudit?.note || 'Refund processing failed. Please try manual refund.', { id: toastId, duration: 9000 });
       } else {
         toast.success('Refund processed successfully', { id: toastId });
       }
