@@ -629,37 +629,14 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                     remark = String.format("Refund of ₹%.2f completed manually by admin", refundAmount);
                     calc.put("refund_method", "manual");
                 } else if (isWalletOrder) {
-                    if (!isWalletReturnsEnabled()) {
-                        refundStatus = "REFUND_FAILED";
-                        remark = "Wallet refund failed: DSF Wallet returns and refunds are currently disabled by store settings.";
-                        log.warn("[Return Wallet Refund Blocked] Order {}: DSF Wallet system is disabled", order.getOrderNumber());
-                    } else if (order.getUserId() != null && refundAmount > 0) {
-                        try {
-                            jdbcTemplate.update(
-                                "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +
-                                "VALUES (gen_random_uuid(), ?, ?, NOW(), NOW()) " +
-                                "ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance, updated_at = NOW()",
-                                order.getUserId(), refundAmount
-                            );
-                            jdbcTemplate.update(
-                                "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
-                                "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'RETURN_REFUND', ?, ?, 'SUCCESS', NOW())",
-                                order.getUserId(), java.math.BigDecimal.valueOf(refundAmount), order.getOrderNumber(), "Return refund for order #" + order.getOrderNumber()
-                            );
-                            refundStatus = "REFUND_COMPLETED";
-                            remark = String.format("DSF Wallet refund of ₹%.2f credited to customer wallet successfully", refundAmount);
-                            calc.put("refund_method", "wallet");
-                            order.setPaymentStatus("refunded");
-                            log.info("[Return Wallet Refund] Credited ₹{} to wallet for user {} on order {}", refundAmount, order.getUserId(), order.getOrderNumber());
-                        } catch (Exception ex) {
-                            refundStatus = "REFUND_FAILED";
-                            remark = "Wallet refund failed: " + ex.getMessage();
-                            log.error("[Return Wallet Refund Failed] Order {}: {}", order.getOrderNumber(), ex.getMessage());
-                        }
-                    } else {
+                    // Wallet-paid order: credit back to wallet
+                    String walletResult = creditWalletFallback(order, refundAmount, calc);
+                    if ("REFUND_COMPLETED".equals(walletResult)) {
                         refundStatus = "REFUND_COMPLETED";
-                        remark = "Wallet refund completed (₹0.00)";
-                        calc.put("refund_method", "wallet");
+                        remark = String.format("DSF Wallet refund of ₹%.2f credited to customer wallet successfully", refundAmount);
+                    } else {
+                        refundStatus = "REFUND_FAILED";
+                        remark = String.format("Wallet refund of ₹%.2f failed. Check server logs for details.", refundAmount);
                     }
                 } else {
                     // Always try DSF Wallet credit for return refunds
@@ -1325,58 +1302,120 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     }
 
     private String extractEmailFromOrder(Order order) {
+        if (order == null) return null;
+        if (order.getUserId() != null) {
+            try {
+                Optional<User> uOpt = userRepository.findById(order.getUserId());
+                if (uOpt.isPresent() && uOpt.get().getEmail() != null && !uOpt.get().getEmail().isBlank()) {
+                    return uOpt.get().getEmail().trim();
+                }
+            } catch (Exception ignored) {}
+        }
         if (order.getShippingAddress() != null) {
-            Object emailObj = order.getShippingAddress().get("email");
-            if (emailObj != null && !emailObj.toString().isBlank()) {
-                return emailObj.toString().trim();
+            Map<String, Object> addr = order.getShippingAddress();
+            for (String key : List.of("email", "customer_email", "user_email", "contact_email")) {
+                Object emailObj = addr.get(key);
+                if (emailObj != null && !emailObj.toString().isBlank()) {
+                    return emailObj.toString().trim();
+                }
             }
         }
         return null;
     }
 
     private String creditWalletFallback(Order order, double refundAmount, Map<String, Object> calc) {
+        if (order == null) return "REFUND_FAILED";
+
+        log.info("[creditWalletFallback] Order #{}: initiating wallet refund of ₹{}", order.getOrderNumber(), refundAmount);
+
         UUID targetUserId = order.getUserId();
         String targetEmail = extractEmailFromOrder(order);
 
-        if (targetUserId == null && targetEmail != null) {
+        // 1. Verify if targetUserId actually exists in users table
+        if (targetUserId != null) {
             try {
-                List<Map<String, Object>> uRows = jdbcTemplate.queryForList("SELECT id FROM users WHERE LOWER(email) = LOWER(?)", targetEmail.toLowerCase());
-                if (!uRows.isEmpty()) {
-                    Object idObj = uRows.get(0).get("id");
-                    if (idObj instanceof UUID) {
-                        targetUserId = (UUID) idObj;
-                    } else if (idObj != null) {
-                        targetUserId = UUID.fromString(idObj.toString());
-                    }
+                boolean userExists = userRepository.existsById(targetUserId);
+                if (!userExists) {
+                    log.warn("[creditWalletFallback] Order #{} has userId {} which does NOT exist in users table. Falling back to email lookup.", 
+                             order.getOrderNumber(), targetUserId);
+                    targetUserId = null;
                 }
             } catch (Exception ex) {
-                log.error("Failed to lookup user by email {} for order {}", targetEmail, order.getOrderNumber(), ex);
+                log.error("[creditWalletFallback] Error checking userId existence for order #{}: {}", order.getOrderNumber(), ex.getMessage());
             }
         }
 
-        if (targetUserId != null && refundAmount > 0 && isWalletReturnsEnabled()) {
+        // 2. If targetUserId is null/invalid, search by email or auto-create guest user
+        if (targetUserId == null && targetEmail != null && !targetEmail.isBlank()) {
             try {
-                jdbcTemplate.update(
-                    "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +
-                    "VALUES (gen_random_uuid(), ?, ?, NOW(), NOW()) " +
-                    "ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance, updated_at = NOW()",
-                    targetUserId, refundAmount
-                );
-                jdbcTemplate.update(
-                    "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
-                    "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'RETURN_REFUND', ?, ?, 'SUCCESS', NOW())",
-                    targetUserId, java.math.BigDecimal.valueOf(refundAmount), order.getOrderNumber(), "Return refund for order #" + order.getOrderNumber()
-                );
-                if (calc != null) {
-                    calc.put("refund_method", "wallet");
+                Optional<User> uOpt = userRepository.findByEmail(targetEmail.trim().toLowerCase());
+                if (uOpt.isPresent()) {
+                    targetUserId = uOpt.get().getId();
+                    log.info("[creditWalletFallback] Resolved userId {} from email {} for order #{}", targetUserId, targetEmail, order.getOrderNumber());
+                } else {
+                    // Auto-create user for guest customer so refund can be safely stored
+                    User guestUser = new User();
+                    guestUser.setEmail(targetEmail.trim().toLowerCase());
+                    guestUser.setPassword(UUID.randomUUID().toString());
+                    String name = "Customer";
+                    if (order.getShippingAddress() != null && order.getShippingAddress().get("full_name") != null) {
+                        name = String.valueOf(order.getShippingAddress().get("full_name"));
+                    } else if (order.getCustomerName() != null && !order.getCustomerName().isBlank()) {
+                        name = order.getCustomerName();
+                    }
+                    guestUser.setFullName(name);
+                    guestUser.setRole("customer");
+                    guestUser.setStatus("active");
+                    guestUser.setIsActive(true);
+                    guestUser = userRepository.save(guestUser);
+                    targetUserId = guestUser.getId();
+                    log.info("[creditWalletFallback] Auto-created user account {} ({}) for refund on order #{}", 
+                             targetUserId, targetEmail, order.getOrderNumber());
                 }
-                order.setPaymentStatus("refunded");
-                log.info("[Refund Gateway Fallback] Credited ₹{} to DSF Wallet for user {} on order {}", refundAmount, targetUserId, order.getOrderNumber());
-                return "REFUND_COMPLETED";
-            } catch (Exception walletEx) {
-                log.error("[Refund Fallback Error] Failed to credit wallet for user {} on order {}: {}", targetUserId, order.getOrderNumber(), walletEx.getMessage());
+            } catch (Exception ex) {
+                log.error("[creditWalletFallback] Error in email resolution / user creation for order #{}: {}", order.getOrderNumber(), ex.getMessage(), ex);
             }
         }
-        return "REFUND_FAILED";
+
+        if (targetUserId == null) {
+            log.error("[creditWalletFallback] FAILED: Could not resolve or create userId for order #{}. Target email: {}", 
+                      order.getOrderNumber(), targetEmail);
+            return "REFUND_FAILED";
+        }
+
+        if (refundAmount <= 0) {
+            log.error("[creditWalletFallback] FAILED: refundAmount is {} for order #{}", refundAmount, order.getOrderNumber());
+            return "REFUND_FAILED";
+        }
+
+        java.math.BigDecimal refundBD = java.math.BigDecimal.valueOf(refundAmount).setScale(2, java.math.RoundingMode.HALF_UP);
+
+        try {
+            jdbcTemplate.update(
+                "INSERT INTO wallets (id, user_id, balance, created_at, updated_at) " +
+                "VALUES (gen_random_uuid(), ?, ?, NOW(), NOW()) " +
+                "ON CONFLICT (user_id) DO UPDATE SET balance = wallets.balance + EXCLUDED.balance, updated_at = NOW()",
+                targetUserId, refundBD
+            );
+            jdbcTemplate.update(
+                "INSERT INTO wallet_transactions (id, user_id, amount, type, source, reference_id, description, status, created_at) " +
+                "VALUES (gen_random_uuid(), ?, ?, 'CREDIT', 'RETURN_REFUND', ?, ?, 'SUCCESS', NOW())",
+                targetUserId, refundBD, order.getOrderNumber(), "Return refund for order #" + order.getOrderNumber()
+            );
+
+            if (calc != null) {
+                calc.put("refund_method", "wallet");
+            }
+            order.setUserId(targetUserId);
+            order.setPaymentStatus("refunded");
+            log.info("[creditWalletFallback] SUCCESS: Credited ₹{} to DSF Wallet for user {} on order #{}", 
+                     refundBD, targetUserId, order.getOrderNumber());
+            return "REFUND_COMPLETED";
+        } catch (Exception walletEx) {
+            log.error("[creditWalletFallback] EXCEPTION: Failed to credit wallet for user {} on order #{}: {}", 
+                      targetUserId, order.getOrderNumber(), walletEx.getMessage(), walletEx);
+            return "REFUND_FAILED";
+        }
     }
 }
+
