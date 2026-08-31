@@ -1257,18 +1257,28 @@ const CouponsPage = () => {
 
     setSavingBanners(true);
     try {
-      const currentCodes = (bannerForm.coupon_codes || []).filter(code => bannerSelectableCouponCodes.has(code));
+      const currentCodes = (bannerForm.coupon_codes || []).filter(Boolean);
       // Find full coupon objects for selected codes
-      const linkedCoupons = bannerSelectableCoupons
-        .filter(c => currentCodes.includes(c.code))
-        .map(c => ({
-          id: c.id,
-          code: c.code,
-          discount_type: c.discount_type,
-          discount_value: Number(c.discount_value),
-          expiry_date: c.expiry_date,
-          is_active: c.is_active
-        }));
+      const linkedCoupons = currentCodes.map(code => {
+        const found = coupons.find(c => c.code === code);
+        if (found) {
+          return {
+            id: found.id,
+            code: found.code,
+            discount_type: found.discount_type,
+            discount_value: Number(found.discount_value),
+            expiry_date: found.expiry_date,
+            is_active: found.is_active !== false
+          };
+        }
+        return {
+          code,
+          discount_type: 'special',
+          discount_value: 0,
+          expiry_date: null,
+          is_active: true
+        };
+      });
 
       const currentFormId = bannerForm.id || `banner-${Date.now()}`;
       

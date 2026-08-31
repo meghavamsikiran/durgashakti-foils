@@ -120,26 +120,39 @@ const PopupBanner = () => {
         if (activeThemeForPage) {
           selectedCoupons = (activeThemeForPage.linked_coupons?.length
             ? activeThemeForPage.linked_coupons
-            : getFallbackCoupons(activeThemeForPage));
+            : []);
+
+          if (!selectedCoupons.length && activeThemeForPage.coupon_codes?.length) {
+            selectedCoupons = getFallbackCoupons(activeThemeForPage);
+          }
+
+          if (!selectedCoupons.length) {
+            selectedCoupons = [{
+              code: activeThemeForPage.theme_context || 'FESTIVE',
+              discount_type: 'special',
+              discount_value: null,
+              expiry_date: null,
+              is_active: true
+            }];
+          }
         } else if (!activeTheme) {
-          // Preserve the older promoted-coupon popup behavior when no custom template is active.
           selectedCoupons = data.popup_banner?.promoted_coupons || [];
         }
 
         // Filter valid unexpired coupons
         const now = Date.now();
-        const validCoupons = selectedCoupons.filter((coupon) => {
+        let validCoupons = selectedCoupons.filter((coupon) => {
           if (coupon.is_active === false) return false;
           if (!coupon.expiry_date) return true;
           return new Date(coupon.expiry_date).getTime() > now;
         });
 
+        if (activeThemeForPage && validCoupons.length === 0 && selectedCoupons.length > 0) {
+          validCoupons = [selectedCoupons[0]];
+        }
+
         setCoupons(validCoupons);
         setActiveTheme(activeThemeForPage || null);
-
-        if (validCoupons.length === 0 && attempt < 5 && (activeThemeForPage || !activeTheme)) {
-          settingsRetryRef.current = setTimeout(() => fetchPromotedCoupons(attempt + 1), 12000);
-        }
       } catch (err) {
         console.error("Failed to load promoted coupons for popup:", err);
         if (!active) return;

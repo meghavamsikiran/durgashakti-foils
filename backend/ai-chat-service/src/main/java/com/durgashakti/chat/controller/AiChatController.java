@@ -160,6 +160,10 @@ public class AiChatController {
       }
 
       List<ChatMessage> chatLogs = chatMessageRepository.findBySessionIdOrderByCreatedAtAsc(activeSessionId);
+      ChatSession session = chatSessionRepository.findById(activeSessionId).orElse(null);
+      if (chatLogs.isEmpty() && session != null && session.getUserId() != null) {
+          chatLogs = chatMessageRepository.findByUserIdOrderByCreatedAtAsc(session.getUserId());
+      }
       
       if (authentication != null && authentication.getPrincipal() != null) {
           try {
@@ -174,7 +178,6 @@ public class AiChatController {
       }
 
       String status = "active";
-      ChatSession session = chatSessionRepository.findById(activeSessionId).orElse(null);
       if (session != null) {
           status = session.getStatus();
       }

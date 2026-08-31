@@ -837,6 +837,12 @@ const InquiriesPage = () => {
                     <div className="flex items-center justify-center h-full">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
+                  ) : chatMessages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full space-y-2 text-slate-450 dark:text-slate-500">
+                      <Bot className="h-8 w-8 opacity-40 text-primary" />
+                      <p className="text-xs font-semibold">No messages in this chat session yet.</p>
+                      <p className="text-[10px] text-slate-400">Type a reply below to initiate live support conversation with the customer.</p>
+                    </div>
                   ) : (
                     chatMessages.map((msg, idx) => (
                       <div
