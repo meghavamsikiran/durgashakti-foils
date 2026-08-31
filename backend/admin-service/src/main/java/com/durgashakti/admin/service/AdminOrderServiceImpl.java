@@ -152,9 +152,19 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             RazorpayClient client = new RazorpayClient(activeKeyId, activeKeySecret);
             JSONObject refundRequest = new JSONObject();
             refundRequest.put("amount", amountInPaise);
-            refundRequest.put("speed", "optimum");
             refundRequest.put("notes", new JSONObject().put("order_number", orderNumber));
-            Refund refund = client.payments.refund(razorpayPaymentId, refundRequest);
+            
+            Refund refund;
+            try {
+                JSONObject instantReq = new JSONObject(refundRequest.toString());
+                instantReq.put("speed", "optimum");
+                refund = client.payments.refund(razorpayPaymentId, instantReq);
+            } catch (Exception speedEx) {
+                log.warn("Optimum speed refund failed for payment {} order {}: {}. Falling back to standard speed.", 
+                         razorpayPaymentId, orderNumber, speedEx.getMessage());
+                refund = client.payments.refund(razorpayPaymentId, refundRequest);
+            }
+
             String refundId = refund.get("id");
             String status = refund.get("status");
             
@@ -182,9 +192,9 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             res.put("status", status);
             if (rrn != null) res.put("rrn", rrn);
             return res;
-        } catch (RazorpayException e) {
-            log.error("Razorpay refund FAILED for payment {} order {}: {}", razorpayPaymentId, orderNumber, e.getMessage());
-            return Map.of("success", false, "remark", e.getMessage());
+        } catch (Exception e) {
+            log.error("Razorpay refund FAILED for payment {} order {}: {}", razorpayPaymentId, orderNumber, e.getMessage(), e);
+            return Map.of("success", false, "remark", "Razorpay Gateway Error: " + e.getMessage());
         }
     }
 
