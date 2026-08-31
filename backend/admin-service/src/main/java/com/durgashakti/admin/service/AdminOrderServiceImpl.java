@@ -262,8 +262,18 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             if (rrn != null) res.put("rrn", rrn);
             return res;
         } catch (Exception e) {
-            log.error("Razorpay refund FAILED for payment {} order {}: {}", razorpayPaymentId, orderNumber, e.getMessage(), e);
-            return Map.of("success", false, "remark", "Razorpay Gateway Error: " + e.getMessage());
+            String msg = e.getMessage() != null ? e.getMessage() : "";
+            if (msg.toLowerCase().contains("already") && (msg.toLowerCase().contains("refund") || msg.toLowerCase().contains("processed"))) {
+                log.info("Razorpay payment {} was already refunded on gateway. Marking refund as completed for order {}.", razorpayPaymentId, orderNumber);
+                Map<String, Object> res = new HashMap<>();
+                res.put("success", true);
+                res.put("refund_id", "already_refunded");
+                res.put("status", "processed");
+                res.put("rrn", "Already Refunded on Razorpay");
+                return res;
+            }
+            log.error("Razorpay refund FAILED for payment {} order {}: {}", razorpayPaymentId, orderNumber, msg, e);
+            return Map.of("success", false, "remark", "Razorpay Gateway Error: " + msg);
         }
     }
 
