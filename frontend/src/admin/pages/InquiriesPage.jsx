@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X, Filter, Image as ImageIcon, Copy, Check, Search, Paperclip, Play, AlertOctagon, Send, Power, Loader2 } from 'lucide-react';
+import { Mail, MessageSquare, Clock, Phone, Calendar, User, FileText, CheckCircle2, Circle, AlertCircle, X, Filter, Image as ImageIcon, Copy, Check, Search, Paperclip, Play, AlertOctagon, Send, Power, Loader2, Bot } from 'lucide-react';
 import AdminTable from '../components/AdminTable';
 import apiClient from '../../services/core/apiClient';
 import { Button } from '../../components/ui/button';
