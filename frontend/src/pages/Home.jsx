@@ -412,8 +412,8 @@ const Home = () => {
             </div>
 
             {/* Right Side Vertical Angle Preset Buttons - Fits cleanly on mobile, tablet & desktop */}
-            <div className="fixed right-2.5 sm:right-4 lg:right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col items-end gap-1.5 sm:gap-2 md:gap-2.5 pointer-events-auto transition-all duration-500">
-              <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-brand-green text-right pr-1 mb-0.5">
+            <div className="fixed right-2 sm:right-4 lg:right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col items-end gap-1.5 sm:gap-2 md:gap-2.5 pointer-events-auto transition-all duration-500">
+              <div className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-brand-green text-right pr-0.5 mb-0.5">
                 Angles
               </div>
               <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-2.5">
@@ -428,14 +428,23 @@ const Home = () => {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (window.__set360PresetAngle) {
-                        window.__set360PresetAngle(preset.angle);
+                      if (activePresetAngle === preset.angle) {
+                        // Clicked same active button again -> TOGGLE OFF & RESUME AUTO-ROTATION!
+                        if (window.__set360PresetAngle) {
+                          window.__set360PresetAngle(null);
+                        }
+                        setActivePresetAngle(null);
+                      } else {
+                        // Clicked new angle -> HOLD FIXED ANGLE!
+                        if (window.__set360PresetAngle) {
+                          window.__set360PresetAngle(preset.angle);
+                        }
                         setActivePresetAngle(preset.angle);
                       }
                     }}
-                    className={`px-2.5 sm:px-3.5 md:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-xl md:rounded-2xl border text-[10px] sm:text-xs font-black tracking-wider transition-all duration-300 flex items-center justify-between gap-2 md:gap-3 shadow-lg cursor-pointer whitespace-nowrap ${
+                    className={`px-2 py-1 sm:px-3.5 md:px-4 sm:py-2 md:py-2.5 rounded-lg sm:rounded-xl md:rounded-2xl border text-[10px] sm:text-xs font-black tracking-wider transition-all duration-300 flex items-center justify-between gap-1.5 sm:gap-2.5 md:gap-3 shadow-md md:shadow-lg cursor-pointer whitespace-nowrap ${
                       activePresetAngle === preset.angle
-                        ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_20px_rgba(37,217,88,0.7)] scale-105'
+                        ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_15px_rgba(37,217,88,0.7)] scale-105'
                         : 'bg-slate-950/90 backdrop-blur-md border-white/20 text-white hover:border-brand-green/60 hover:bg-brand-green/20'
                     }`}
                   >

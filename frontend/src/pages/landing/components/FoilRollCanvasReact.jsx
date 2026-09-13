@@ -878,9 +878,15 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     };
 
     window.__set360PresetAngle = (degY, degX = 0) => {
-      targetPresetY = (degY * Math.PI) / 180;
-      targetPresetX = (degX * Math.PI) / 180;
-      isPresetActive = true;
+      if (degY === null || degY === undefined) {
+        isPresetActive = false;
+        targetPresetY = null;
+        targetPresetX = null;
+      } else {
+        targetPresetY = (degY * Math.PI) / 180;
+        targetPresetX = (degX * Math.PI) / 180;
+        isPresetActive = true;
+      }
       velocityY = 0;
       velocityX = 0;
     };
