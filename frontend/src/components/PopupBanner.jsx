@@ -121,35 +121,25 @@ const PopupBanner = () => {
         if (activeThemeForPage) {
           selectedCoupons = (activeThemeForPage.linked_coupons?.length
             ? activeThemeForPage.linked_coupons
-            : []);
-
-          if (!selectedCoupons.length && activeThemeForPage.coupon_codes?.length) {
-            selectedCoupons = getFallbackCoupons(activeThemeForPage);
-          }
-
-          if (!selectedCoupons.length) {
-            selectedCoupons = [{
-              code: activeThemeForPage.theme_context || 'FESTIVE',
-              discount_type: 'special',
-              discount_value: null,
-              expiry_date: null,
-              is_active: true
-            }];
-          }
-        } else if (!activeTheme) {
+            : (activeThemeForPage.coupon_codes?.length ? getFallbackCoupons(activeThemeForPage) : []));
+        } else {
           selectedCoupons = data.popup_banner?.promoted_coupons || [];
         }
 
-        // Filter valid unexpired coupons
+        // Filter strictly for active, unexpired coupons
         const now = Date.now();
-        let validCoupons = selectedCoupons.filter((coupon) => {
+        const validCoupons = selectedCoupons.filter((coupon) => {
+          if (!coupon || !coupon.code) return false;
           if (coupon.is_active === false) return false;
-          if (!coupon.expiry_date) return true;
-          return new Date(coupon.expiry_date).getTime() > now;
+          if (coupon.expiry_date && new Date(coupon.expiry_date).getTime() <= now) return false;
+          return true;
         });
 
-        if (activeThemeForPage && validCoupons.length === 0 && selectedCoupons.length > 0) {
-          validCoupons = [selectedCoupons[0]];
+        if (validCoupons.length === 0) {
+          setCoupons([]);
+          setActiveTheme(null);
+          setShow(false);
+          return;
         }
 
         setCoupons(validCoupons);
@@ -159,6 +149,7 @@ const PopupBanner = () => {
         if (!active) return;
         setCoupons([]);
         setActiveTheme(null);
+        setShow(false);
       }
     };
 
