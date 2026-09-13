@@ -102,9 +102,12 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       ctx.fillStyle = floorGrad;
       ctx.fillRect(0, 800, 1024, 224);
 
+      const envTex = new THREE.CanvasTexture(envCanvas);
+      if ('colorSpace' in envTex) envTex.colorSpace = THREE.SRGBColorSpace;
+
       const sphereGeo = new THREE.SphereGeometry(50, 32, 32);
       const sphereMat = new THREE.MeshBasicMaterial({
-        map: new THREE.CanvasTexture(envCanvas),
+        map: envTex,
         side: THREE.BackSide
       });
       envScene.add(new THREE.Mesh(sphereGeo, sphereMat));
@@ -303,13 +306,13 @@ export default function FoilRollCanvasReact({ activeVariant }) {
 
     // Single Source-of-Truth Photorealistic Real Aluminium Foil Material for Cylinder Roll
     const aluminiumMaterialRoll = new THREE.MeshPhysicalMaterial({
-      color: 0xD0D4D8,        // Light silvery-grey matching real aluminium foil (#D0D4D8)
-      metalness: 1.0,         // 100% metallic PBR
-      roughness: 0.25,        // Semi-matte brushed aluminium (not polished chrome)
+      color: 0xE0E4E8,        // Bright, pure neutral silver matching real aluminium foil (#E0E4E8)
+      metalness: 0.95,        // 95% metallic PBR for cross-browser iOS Safari & WebKit consistency
+      roughness: 0.24,        // Semi-matte brushed aluminium
       roughnessMap: foilRoughnessTextureRoll,
       normalMap: foilNormalTextureRoll,
       normalScale: new THREE.Vector2(0.12, 0.12), // Subtle micro-normal for surface detail
-      envMapIntensity: 1.4,   // Reduced for softer, more natural reflections
+      envMapIntensity: 1.5,   // Bright studio reflection intensity
       clearcoat: 0.15,        // Subtle clear protective sheen like real foil's shiny side
       clearcoatRoughness: 0.4,// Softened clearcoat for natural look
       side: THREE.DoubleSide
@@ -317,13 +320,13 @@ export default function FoilRollCanvasReact({ activeVariant }) {
 
     // Unrolled sheet material: slightly more matte ("dull side" of real aluminium foil exposed when unrolled)
     const aluminiumMaterialSheet = new THREE.MeshPhysicalMaterial({
-      color: 0xCDD1D5,        // Marginally warmer grey for the matte/dull foil side
-      metalness: 1.0,
-      roughness: 0.30,        // Slightly more matte than the roll surface (real foil dull side)
+      color: 0xDCDFE3,        // Marginally warmer matte silver for dull unrolled sheet side
+      metalness: 0.95,        // 95% metallic PBR for cross-browser iOS Safari & WebKit consistency
+      roughness: 0.28,        // Slightly more matte than the roll surface (real foil dull side)
       roughnessMap: foilRoughnessTextureSheet,
       normalMap: foilNormalTextureSheet,
       normalScale: new THREE.Vector2(0.18, 0.18), // Slightly more surface detail on loose sheet
-      envMapIntensity: 1.3,
+      envMapIntensity: 1.4,
       clearcoat: 0.08,        // Less clearcoat on dull side
       clearcoatRoughness: 0.6,
       side: THREE.DoubleSide
@@ -578,6 +581,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       }
 
       const tex = new THREE.CanvasTexture(cv);
+      if ('colorSpace' in tex) tex.colorSpace = THREE.SRGBColorSpace;
       tex.anisotropy = 16;
       tex.needsUpdate = true;
       return tex;
