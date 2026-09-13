@@ -7,6 +7,9 @@ export default function FoilRollCanvasReact({ activeVariant }) {
   const [hasInteracted, setHasInteracted] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
   const [isDraggingState, setIsDraggingState] = React.useState(false);
+  const [is360ModeState, setIs360ModeState] = React.useState(false);
+  const [show360Tutorial, setShow360Tutorial] = React.useState(false);
+  const tutorial360TimerRef = React.useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -24,7 +27,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       renderer.outputColorSpace = THREE.SRGBColorSpace;
     }
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 1.25;
 
     // Photographic studio reflection environment with vertical, horizontal, and angled rectangular softboxes against dark charcoal (#06080A)
     const createStudioEnvironment = () => {
@@ -38,43 +41,43 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       envCanvas.height = 1024;
       const ctx = envCanvas.getContext('2d');
 
-      // Deep dark neutral charcoal environment background (#06080A)
-      ctx.fillStyle = '#06080A';
+      // Medium-dark charcoal environment background (#2A2E32) — brighter to prevent dark reflections on metal
+      ctx.fillStyle = '#2A2E32';
       ctx.fillRect(0, 0, 1024, 1024);
 
-      // 1. Large Top Main Overhead Softbox (Brilliant pure white specular source)
+      // 1. Large Top Main Overhead Softbox (Softer diffused white for realistic aluminium reflections)
       const topGrad = ctx.createLinearGradient(0, 40, 0, 320);
       topGrad.addColorStop(0.0, '#FFFFFF');
-      topGrad.addColorStop(0.35, '#E4E7EA');
-      topGrad.addColorStop(0.75, '#686D72');
-      topGrad.addColorStop(1.0, '#101316');
+      topGrad.addColorStop(0.35, '#E8EAEC');
+      topGrad.addColorStop(0.75, '#8A8F94');
+      topGrad.addColorStop(1.0, '#3A3E42');
       ctx.fillStyle = topGrad;
       ctx.fillRect(160, 40, 704, 280);
 
-      // 2. High-Contrast Vertical Key Softbox Rectangles (Creates vertical specular reflection bars across roll & sheet)
+      // 2. Softer Vertical Key Softbox Rectangles (Gentler contrast for natural aluminium reflections)
       const vGrad1 = ctx.createLinearGradient(120, 0, 280, 0);
-      vGrad1.addColorStop(0.0, '#06080A');
-      vGrad1.addColorStop(0.2, '#1A1D20');
-      vGrad1.addColorStop(0.5, '#FFFFFF');
-      vGrad1.addColorStop(0.8, '#1A1D20');
-      vGrad1.addColorStop(1.0, '#06080A');
+      vGrad1.addColorStop(0.0, '#2A2E32');
+      vGrad1.addColorStop(0.2, '#4A4E52');
+      vGrad1.addColorStop(0.5, '#F0F2F4');
+      vGrad1.addColorStop(0.8, '#4A4E52');
+      vGrad1.addColorStop(1.0, '#2A2E32');
       ctx.fillStyle = vGrad1;
       ctx.fillRect(120, 360, 160, 420);
 
       const vGrad2 = ctx.createLinearGradient(740, 0, 900, 0);
-      vGrad2.addColorStop(0.0, '#06080A');
-      vGrad2.addColorStop(0.2, '#1A1D20');
-      vGrad2.addColorStop(0.5, '#FFFFFF');
-      vGrad2.addColorStop(0.8, '#1A1D20');
-      vGrad2.addColorStop(1.0, '#06080A');
+      vGrad2.addColorStop(0.0, '#2A2E32');
+      vGrad2.addColorStop(0.2, '#4A4E52');
+      vGrad2.addColorStop(0.5, '#F0F2F4');
+      vGrad2.addColorStop(0.8, '#4A4E52');
+      vGrad2.addColorStop(1.0, '#2A2E32');
       ctx.fillStyle = vGrad2;
       ctx.fillRect(740, 360, 160, 420);
 
       // 3. Central Specular Highlight Spot
       const cGrad = ctx.createRadialGradient(512, 512, 10, 512, 512, 220);
-      cGrad.addColorStop(0.0, '#FFFFFF');
-      cGrad.addColorStop(0.4, '#C8CCCF');
-      cGrad.addColorStop(1.0, 'rgba(6, 8, 10, 0)');
+      cGrad.addColorStop(0.0, '#F8F9FA');
+      cGrad.addColorStop(0.4, '#D0D4D8');
+      cGrad.addColorStop(1.0, 'rgba(42, 46, 50, 0)');
       ctx.fillStyle = cGrad;
       ctx.fillRect(300, 380, 424, 260);
 
@@ -83,19 +86,19 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       ctx.translate(250, 200);
       ctx.rotate(-Math.PI / 6);
       const rotGrad = ctx.createLinearGradient(0, 0, 300, 0);
-      rotGrad.addColorStop(0.0, 'rgba(6, 8, 10, 0)');
-      rotGrad.addColorStop(0.5, '#FFFFFF');
-      rotGrad.addColorStop(1.0, 'rgba(6, 8, 10, 0)');
+      rotGrad.addColorStop(0.0, 'rgba(42, 46, 50, 0)');
+      rotGrad.addColorStop(0.5, '#F0F2F4');
+      rotGrad.addColorStop(1.0, 'rgba(42, 46, 50, 0)');
       ctx.fillStyle = rotGrad;
       ctx.fillRect(0, 0, 320, 90);
       ctx.restore();
 
-      // 5. Studio Floor Soft Silver-Gray Reflection Bounce
+      // 5. Studio Floor Soft Silver-Gray Reflection Bounce (Brighter for more fill)
       const floorGrad = ctx.createLinearGradient(0, 800, 0, 1024);
-      floorGrad.addColorStop(0.0, '#3a3e42');
-      floorGrad.addColorStop(0.5, '#686d72');
-      floorGrad.addColorStop(0.85, '#42464a');
-      floorGrad.addColorStop(1.0, '#303336');
+      floorGrad.addColorStop(0.0, '#5A5E62');
+      floorGrad.addColorStop(0.5, '#7A7E82');
+      floorGrad.addColorStop(0.85, '#5A5E62');
+      floorGrad.addColorStop(1.0, '#484C50');
       ctx.fillStyle = floorGrad;
       ctx.fillRect(0, 800, 1024, 224);
 
@@ -114,17 +117,17 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     const studioEnvMap = createStudioEnvironment();
     scene.environment = studioEnvMap;
 
-    // 1. Ambient Light - soft silver ambient fill (0.42) to prevent pitch-black environment shadows
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.42);
+    // 1. Ambient Light - brighter ambient fill (0.55) for realistic aluminium appearance
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
     scene.add(ambientLight);
 
-    // 2. Key Light - overhead studio softbox light
-    const keyLight = new THREE.DirectionalLight(0xffffff, 4.6);
+    // 2. Key Light - overhead studio softbox light (reduced for softer specular)
+    const keyLight = new THREE.DirectionalLight(0xffffff, 3.8);
     keyLight.position.set(4, 14, 8);
     scene.add(keyLight);
 
-    // 3. Fill Light - neutral silver fill
-    const fillLight = new THREE.DirectionalLight(0xf0f2f2, 1.4);
+    // 3. Fill Light - neutral silver fill (increased for even illumination)
+    const fillLight = new THREE.DirectionalLight(0xf0f2f2, 2.0);
     fillLight.position.set(-6, 3, 5);
     scene.add(fillLight);
 
@@ -137,6 +140,11 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     const sheetFillLight = new THREE.DirectionalLight(0xe2e6ea, 1.8);
     sheetFillLight.position.set(0, 4, 12);
     scene.add(sheetFillLight);
+
+    // 6. Animated Sweep Light — slowly orbits to create dynamic light-catching reflections (like real foil under moving light)
+    const sweepLight = new THREE.PointLight(0xF0F4F8, 2.5, 20, 1.5);
+    sweepLight.position.set(3, 5, 6);
+    scene.add(sweepLight);
 
     // GENERATE EXTREMELY SUBTLE MICRO-NORMAL MAP FOR LOOSE FOIL SHEET (MOSTLY SMOOTH FROM A DISTANCE, SUBTLE REFLECTION DISTORTION ONLY)
     const createFoilNormalTextureSheet = () => {
@@ -177,7 +185,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       const imgData = c.createImageData(W, H);
       const data = imgData.data;
 
-      const normalStrength = 1.5;
+      const normalStrength = 2.0;
 
       for (let y = 0; y < H; y++) {
         const yPrev = (y - 1 + H) % H;
@@ -245,8 +253,8 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       cv.height = 1024;
       const c = cv.getContext('2d');
 
-      // Smooth reflective base roughness ~0.14 (#242424)
-      c.fillStyle = '#242424';
+      // Semi-matte base roughness ~0.28 for realistic aluminium sheet diffusion
+      c.fillStyle = '#484848';
       c.fillRect(0, 0, 1024, 1024);
 
       for (let i = 0; i < 30; i++) {
@@ -254,8 +262,8 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         const y = Math.random() * 1024;
         const r = 100 + Math.random() * 250;
         const g = c.createRadialGradient(x, y, 0, x, y, r);
-        g.addColorStop(0, '#181818');
-        g.addColorStop(1, 'rgba(36, 36, 36, 0)');
+        g.addColorStop(0, '#3C3C3C');
+        g.addColorStop(1, 'rgba(72, 72, 72, 0)');
         c.fillStyle = g;
         c.beginPath();
         c.arc(x, y, r, 0, Math.PI * 2);
@@ -275,7 +283,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       cv.width = 1024;
       cv.height = 1024;
       const c = cv.getContext('2d');
-      c.fillStyle = '#141414'; // ~0.08 roughness
+      c.fillStyle = '#404040'; // ~0.25 roughness for realistic aluminium roll
       c.fillRect(0, 0, 1024, 1024);
 
       const tex = new THREE.CanvasTexture(cv);
@@ -293,20 +301,33 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     // Group Setup
     const foilRollGroup = new THREE.Group();
 
-    // Single Source-of-Truth Photorealistic Real Aluminium Foil Material (Shared 100% identically between Cylinder Roll and Unrolled Sheet)
+    // Single Source-of-Truth Photorealistic Real Aluminium Foil Material for Cylinder Roll
     const aluminiumMaterialRoll = new THREE.MeshPhysicalMaterial({
-      color: 0xA4A8AC,        // Neutral medium silver (#A4A8AC)
+      color: 0xD0D4D8,        // Light silvery-grey matching real aluminium foil (#D0D4D8)
       metalness: 1.0,         // 100% metallic PBR
-      roughness: 0.08,        // Mirror smooth specular response
+      roughness: 0.25,        // Semi-matte brushed aluminium (not polished chrome)
       roughnessMap: foilRoughnessTextureRoll,
       normalMap: foilNormalTextureRoll,
-      normalScale: new THREE.Vector2(0.08, 0.08), // Extremely subtle micro-normal
-      envMapIntensity: 2.0,
+      normalScale: new THREE.Vector2(0.12, 0.12), // Subtle micro-normal for surface detail
+      envMapIntensity: 1.4,   // Reduced for softer, more natural reflections
+      clearcoat: 0.15,        // Subtle clear protective sheen like real foil's shiny side
+      clearcoatRoughness: 0.4,// Softened clearcoat for natural look
       side: THREE.DoubleSide
     });
 
-    // Unrolled sheet uses the exact same physically based aluminium material as the cylinder roll
-    const aluminiumMaterialSheet = aluminiumMaterialRoll;
+    // Unrolled sheet material: slightly more matte ("dull side" of real aluminium foil exposed when unrolled)
+    const aluminiumMaterialSheet = new THREE.MeshPhysicalMaterial({
+      color: 0xCDD1D5,        // Marginally warmer grey for the matte/dull foil side
+      metalness: 1.0,
+      roughness: 0.30,        // Slightly more matte than the roll surface (real foil dull side)
+      roughnessMap: foilRoughnessTextureSheet,
+      normalMap: foilNormalTextureSheet,
+      normalScale: new THREE.Vector2(0.18, 0.18), // Slightly more surface detail on loose sheet
+      envMapIntensity: 1.3,
+      clearcoat: 0.08,        // Less clearcoat on dull side
+      clearcoatRoughness: 0.6,
+      side: THREE.DoubleSide
+    });
 
     // 1. Texture for End-Lip Cardboard Tube Wall Ring (Raw unbleached kraft paper pulp, 80 compressed paper plies & raw cut fibers)
     const createCardboardEndLipTexture = () => {
@@ -508,16 +529,16 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       const rOuter = 1020; // Outer roll boundary (matches 0.95 ratio)
 
       // 1. Base background
-      c.fillStyle = '#A4A8AC';
+      c.fillStyle = '#C8CCD0';
       c.fillRect(0, 0, W, H);
 
       // 2. Base metallic silver radial tone gradient matching reference image (#E0E4E8 -> #8E9296 -> #FFFFFF)
       const baseGrad = c.createRadialGradient(cx, cy, rInner, cx, cy, rOuter);
-      baseGrad.addColorStop(0.00, '#E0E4E8');
-      baseGrad.addColorStop(0.25, '#B8BCBF');
-      baseGrad.addColorStop(0.50, '#8E9296');
-      baseGrad.addColorStop(0.85, '#CCD0D4');
-      baseGrad.addColorStop(1.00, '#FFFFFF');
+      baseGrad.addColorStop(0.00, '#E8EAEC');
+      baseGrad.addColorStop(0.25, '#C8CCD0');
+      baseGrad.addColorStop(0.50, '#A8ACB0');
+      baseGrad.addColorStop(0.85, '#D8DCE0');
+      baseGrad.addColorStop(1.00, '#F0F2F4');
 
       c.fillStyle = baseGrad;
       c.beginPath();
@@ -580,14 +601,14 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     ringUv.needsUpdate = true;
 
     const ringMat = new THREE.MeshStandardMaterial({
-      color: 0xB0B4B8,        // Neutral silver (matches reference image)
+      color: 0xC8CCD0,        // Light silver matching realistic aluminium foil
       map: foilEdgeTexture,
       bumpMap: foilEdgeTexture,
       bumpScale: 0.18,        // High physical micro-groove depth between 550 foil layers
       metalness: 1.0,         // 100% metallic PBR
-      roughness: 0.08,        // Mirror-sharp specular reflection
+      roughness: 0.20,        // Semi-matte for realistic edge appearance
       envMap: studioEnvMap,
-      envMapIntensity: 2.2,
+      envMapIntensity: 1.5,   // Reduced for softer reflections
       side: THREE.DoubleSide
     });
 
@@ -805,10 +826,15 @@ export default function FoilRollCanvasReact({ activeVariant }) {
     const maxPull = 12.0;
 
     let mouseX = 0, mouseY = 0;
-    let targetRotationX = 0, targetRotationY = 0;
     let manualYRotation = 0;
     let manualXRotation = 0;
     let dragStartClientX = 0;
+    let velocityY = 0;
+    let velocityX = 0;
+    let isAutoSpinning = false;
+    let targetPresetY = null;
+    let targetPresetX = null;
+    let isPresetActive = false;
     
     // Base positions for the animation loop to use
     let baseFoilX = -0.4;
@@ -820,7 +846,43 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       currentFoilPull = 0;
       lastRenderedPull = -1;
       updateSheetGeometry(0, 0);
+      setIs360ModeState(is360Mode);
+
+      if (is360Mode) {
+        manualYRotation = 0;
+        manualXRotation = 0;
+        targetPresetY = null;
+        targetPresetX = null;
+        isPresetActive = false;
+        velocityY = 0;
+        velocityX = 0;
+        setShow360Tutorial(false);
+
+        handleResize();
+
+        if (tutorial360TimerRef.current) clearTimeout(tutorial360TimerRef.current);
+      } else {
+        setShow360Tutorial(false);
+        manualYRotation = 0;
+        manualXRotation = 0;
+        targetPresetY = null;
+        targetPresetX = null;
+        isPresetActive = false;
+        velocityY = 0;
+        velocityX = 0;
+
+        handleResize();
+        if (tutorial360TimerRef.current) clearTimeout(tutorial360TimerRef.current);
+      }
       window.dispatchEvent(new CustomEvent('360-mode-toggle', { detail: { active: is360Mode } }));
+    };
+
+    window.__set360PresetAngle = (degY, degX = 0) => {
+      targetPresetY = (degY * Math.PI) / 180;
+      targetPresetX = (degX * Math.PI) / 180;
+      isPresetActive = true;
+      velocityY = 0;
+      velocityX = 0;
     };
 
     const set3DCursor = (cursorStyle) => {
@@ -846,6 +908,8 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         if (e.cancelable) e.preventDefault();
         isDragging = true;
         setIsDraggingState(true);
+        setShow360Tutorial(false);
+        if (tutorial360TimerRef.current) clearTimeout(tutorial360TimerRef.current);
         dragStartClientY = clientY;
         dragStartClientX = clientX;
         set3DCursor('grabbing');
@@ -922,8 +986,12 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       const deltaY = clientY - dragStartClientY;
       
       if (is360Mode) {
-        manualYRotation += deltaX * 0.01;
-        manualXRotation += deltaY * 0.01;
+        const deltaRotY = deltaX * 0.008;
+        const deltaRotX = deltaY * 0.008;
+        manualYRotation += deltaRotY;
+        manualXRotation += deltaRotX;
+        velocityY = deltaRotY * 0.4;
+        velocityX = deltaRotX * 0.4;
       } else {
         // Compensate for 3D model scale factor on mobile (0.5x) and tablet (0.6x)
         const deviceScaleFactor = window.innerWidth < 768 ? 2.0 : (window.innerWidth < 1024 ? 1.6 : 1.0);
@@ -965,24 +1033,30 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       camera.aspect = width / height;
       
       // Responsive scaling and positioning
-      if (width < 768) {
-        // Mobile: Scaled down, centered visually, and pushed slightly below the text
-        foilRollGroup.scale.set(0.5, 0.5, 0.5);
+      if (is360Mode) {
+        // 360° Studio Mode: Perfectly centered at full premium scale
+        const isMobile = width < 768;
+        const isTablet = width >= 768 && width < 1024;
+        const scale360 = isMobile ? 0.55 : (isTablet ? 0.75 : 0.90);
+        foilRollGroup.scale.set(scale360, scale360, scale360);
         baseFoilX = 0;
-        baseFoilY = 0;
-      } else if (width < 1024) {
-        // Tablet: Medium scale, slightly right
-        foilRollGroup.scale.set(0.6, 0.6, 0.6);
-        baseFoilX = 0;
-        baseFoilY = -0.4;
+        baseFoilY = 0.05;
       } else {
-        // Desktop: Full scale, default position
-        foilRollGroup.scale.set(1, 1, 1);
-        baseFoilX = -0.4;
-        baseFoilY = 0.6;
+        if (width < 768) {
+          foilRollGroup.scale.set(0.5, 0.5, 0.5);
+          baseFoilX = 0;
+          baseFoilY = 0;
+        } else if (width < 1024) {
+          foilRollGroup.scale.set(0.6, 0.6, 0.6);
+          baseFoilX = 0;
+          baseFoilY = -0.4;
+        } else {
+          foilRollGroup.scale.set(1, 1, 1);
+          baseFoilX = -0.4;
+          baseFoilY = 0.6;
+        }
       }
       
-      // We set the position directly here once, but animate() will overwrite it using baseFoilX/Y on the next frame.
       foilRollGroup.position.set(baseFoilX, baseFoilY, 0);
       
       camera.updateProjectionMatrix();
@@ -1024,10 +1098,60 @@ export default function FoilRollCanvasReact({ activeVariant }) {
       if (!isVisible) return;
 
       if (foilRollGroup) {
-        // Smoothly glide back to original default angle when customer releases mouse/touch
-        if (!isDragging) {
-          manualYRotation += (0 - manualYRotation) * 0.08;
-          manualXRotation += (0 - manualXRotation) * 0.08;
+        if (is360Mode) {
+          if (isDragging) {
+            targetPresetY = null;
+            targetPresetX = null;
+            isPresetActive = false;
+          } else if (targetPresetY !== null) {
+            manualYRotation += (targetPresetY - manualYRotation) * 0.14;
+            manualXRotation += (targetPresetX - manualXRotation) * 0.14;
+            if (Math.abs(manualYRotation - targetPresetY) < 0.001 && Math.abs(manualXRotation - targetPresetX) < 0.001) {
+              manualYRotation = targetPresetY;
+              manualXRotation = targetPresetX;
+              targetPresetY = null;
+              targetPresetX = null;
+            }
+          } else if (isPresetActive) {
+            // STOP ROTATION: Hold fixed preset angle until user drags again
+            manualXRotation = Math.max(-0.4, Math.min(0.4, manualXRotation));
+          } else {
+            // Smooth inertia physics decay from drag flings
+            manualYRotation += velocityY;
+            manualXRotation += velocityX;
+            velocityY *= 0.90;
+            velocityX *= 0.90;
+
+            // Seamless continuous autorotation once fling velocity settles
+            if (Math.abs(velocityY) < 0.002) {
+              manualYRotation += 0.005; // Smooth ~0.3 deg/frame auto-spin
+            }
+
+            // Gently maintain tilt within comfortable view angle range
+            manualXRotation = Math.max(-0.4, Math.min(0.4, manualXRotation));
+          }
+
+          foilRollGroup.rotation.x = -0.25 + manualXRotation;
+          foilRollGroup.rotation.y = 0.65 + manualYRotation;
+          foilRollGroup.rotation.z = 0.35;
+
+          const bounce = Math.sin(Date.now() * 0.0016) * 0.09;
+          foilRollGroup.position.x = baseFoilX;
+          foilRollGroup.position.y = baseFoilY + bounce;
+        } else {
+          // Normal mode: smoothly glide back to default presentation angle
+          if (!isDragging) {
+            manualYRotation += (0 - manualYRotation) * 0.08;
+            manualXRotation += (0 - manualXRotation) * 0.08;
+          }
+
+          foilRollGroup.rotation.x = -0.25 + manualXRotation;
+          foilRollGroup.rotation.y = 0.65 + manualYRotation;
+          foilRollGroup.rotation.z = 0.35;
+
+          const bounce = Math.sin(Date.now() * 0.0016) * 0.09;
+          foilRollGroup.position.x = baseFoilX;
+          foilRollGroup.position.y = baseFoilY + bounce;
         }
 
         // Drive hand tutorial gesture AND 3D foil unrolling directly from the exact same WebGL animation frame
@@ -1044,7 +1168,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           let handTransY = 0;
 
           if (cycle < 0.12) {
-            // Fade in at resting top position
             targetPull = 0;
             handScale = 1;
             handRotate = 0;
@@ -1052,7 +1175,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
             handTransX = 0;
             handTransY = 0;
           } else if (cycle >= 0.12 && cycle < 0.25) {
-            // Press / Clamp down phase
             const grabProg = (cycle - 0.12) / 0.13;
             targetPull = 0;
             handScale = 1.0 - grabProg * 0.15;
@@ -1061,16 +1183,14 @@ export default function FoilRollCanvasReact({ activeVariant }) {
             handTransX = 0;
             handTransY = 0;
           } else if (cycle >= 0.25 && cycle <= 0.70) {
-            // Pull phase (Hand moves downward-right in 100% lockstep with 3D foil unrolling)
             const pullProg = (cycle - 0.25) / 0.45;
             targetPull = pullProg * 0.45;
             handScale = 0.85;
             handRotate = -12;
             handOpacity = 1.0;
-            handTransX = pullProg * 40; // 40px rightward translation
-            handTransY = pullProg * 50; // 50px downward translation
+            handTransX = pullProg * 40;
+            handTransY = pullProg * 50;
           } else if (cycle > 0.70 && cycle <= 0.84) {
-            // Release phase (hand unclamps and lets go)
             const releaseProg = (cycle - 0.70) / 0.14;
             targetPull = 0.45 * (1.0 - releaseProg * 0.6);
             handScale = 0.85 + releaseProg * 0.15;
@@ -1079,7 +1199,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
             handTransX = 40 * (1.0 - releaseProg * 0.4);
             handTransY = 50 * (1.0 - releaseProg * 0.4);
           } else {
-            // Return & Fade out phase
             const returnProg = (cycle - 0.84) / 0.16;
             targetPull = 0.18 * (1.0 - returnProg);
             handScale = 1.0;
@@ -1098,19 +1217,9 @@ export default function FoilRollCanvasReact({ activeVariant }) {
               handEl.style.opacity = `${handOpacity}`;
             }
           }
-        } else {
-          // Smooth unroll interpolation for manual user dragging (Smooth, weighted pull speed)
+        } else if (!is360Mode) {
           currentFoilPull += (targetFoilPull - currentFoilPull) * 0.08;
         }
-
-        // EXACT FIXED ANGLE + MANUAL 360 ROTATION (AUTOSNAPS BACK ON RELEASE)
-        foilRollGroup.rotation.x = -0.25 + manualXRotation;
-        foilRollGroup.rotation.y = 0.65 + manualYRotation;
-        foilRollGroup.rotation.z = 0.35;
-        
-        const bounce = Math.sin(Date.now() * 0.0016) * 0.09;
-        foilRollGroup.position.x = baseFoilX;
-        foilRollGroup.position.y = baseFoilY + bounce;
 
         // Dynamically track drag handle & tutorial hand directly to the surface of the unrolled foil sheet as it moves
         if (overlayRef.current && canvasRef.current) {
@@ -1121,11 +1230,9 @@ export default function FoilRollCanvasReact({ activeVariant }) {
             overlayRef.current.style.opacity = '1';
             overlayRef.current.style.pointerEvents = 'auto';
 
-            // Calculate 3D midpoint position along the moving unrolled sheet
-            const unrolledTail = ((baseSheetLength - v_detach) * (is360Mode ? 1.0 : 0.78)) + currentFoilPull;
+            const unrolledTail = ((baseSheetLength - v_detach) * 0.78) + currentFoilPull;
             const midTail = unrolledTail * 0.45;
 
-            // Positioned lower on the unrolled foil sheet surface (Desktop: Y -0.65 | Tablet: Y -0.55 | Mobile: Y -0.45)
             const isMobile = window.innerWidth < 768;
             const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
 
@@ -1139,7 +1246,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
               z_d + midTail * Tz + trackZOffset
             );
 
-            // Transform 3D local coordinate to world space, then project to 2D screen pixels
             trackVec.applyMatrix4(foilRollGroup.matrixWorld);
             trackVec.project(camera);
 
@@ -1154,14 +1260,12 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           }
         }
 
-        // Dispatch custom event so right gallery & text fade out ONLY when customer manually drags/pulls
         const pullState = isDragging;
         if (window.__lastFoilPullState !== pullState) {
           window.__lastFoilPullState = pullState;
           window.dispatchEvent(new CustomEvent('foil-pull-state', { detail: { isPulled: pullState } }));
         }
 
-        // Dynamically re-render unrolled sheet tail & gravitational physics waves in 3D View mode
         const timeSec = Date.now() * 0.001;
         if (window.__last360ModeState !== is360Mode) {
           window.__last360ModeState = is360Mode;
@@ -1173,12 +1277,13 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           updateSheetGeometry(currentFoilPull, timeSec);
         }
         
-        // Prevent texture stretching by dynamically increasing texture tiling based on scale
-        
-        // Spin the cylinder roll dynamically based on pulled distance (circumference ratio)
-        // Cylinder radius is 0.95. Unroll rotation = distance / radius
         rollCylinderGroup.rotation.x = -currentFoilPull / 0.95;
       }
+
+      const sweepTime = Date.now() * 0.0004;
+      sweepLight.position.x = Math.sin(sweepTime) * 6;
+      sweepLight.position.z = Math.cos(sweepTime) * 5 + 4;
+      sweepLight.position.y = 4 + Math.sin(sweepTime * 0.7) * 2;
 
       renderer.render(scene, camera);
     };
@@ -1215,8 +1320,7 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         }} 
       />
 
-
-        <div 
+      <div 
         ref={overlayRef}
         className="pull-me-hint"
         style={{
@@ -1234,7 +1338,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           transition: 'opacity 0.2s ease'
         }}
       >
-        {/* Animated Hand Tutorial - Pristine macOS System Open Hand */}
         <div className="tutorial-hand-cursor" style={{
           position: 'absolute',
           left: '50%',
@@ -1250,7 +1353,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           visibility: isDraggingState ? 'hidden' : 'visible',
           transition: 'opacity 0.15s ease'
         }}>
-          {/* Direct Micro-Instruction Pill */}
           <div style={{
             background: 'rgba(15, 23, 42, 0.90)',
             backdropFilter: 'blur(10px)',
@@ -1268,7 +1370,6 @@ export default function FoilRollCanvasReact({ activeVariant }) {
             DRAG ME
           </div>
 
-          {/* Clean macOS Hand Cursor Icon with Pristine Finger Tops */}
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path 
               d="M9 1.75C9.69 1.75 10.25 2.31 10.25 3V10.25H11V4C11 3.31 11.56 2.75 12.25 2.75C12.94 2.75 13.5 3.31 13.5 4V10.25H14.25V5.25C14.25 4.56 14.81 4 15.5 4C16.19 4 16.75 4.56 16.75 5.25V10.25H17.5V6.75C17.5 6.06 18.06 5.5 18.75 5.5C19.44 5.5 20 6.06 20 6.75V13C20 17.14 16.64 20.5 12.5 20.5C9.25 20.5 6.45 18.4 5.5 15.3L3.4 8.6C3.15 7.8 3.75 7 4.6 7C5.15 7 5.65 7.35 5.85 7.9L7.5 13V3C7.5 2.31 8.06 1.75 8.75 1.75H9Z" 
@@ -1282,11 +1383,23 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         </div>
       </div>
 
+
+
       <style>{`
         @keyframes foilBounce {
           0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
           40% { transform: translateY(10px); }
           60% { transform: translateY(5px); }
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulseGlow {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.2); }
         }
 
         .tutorial-hand-cursor {

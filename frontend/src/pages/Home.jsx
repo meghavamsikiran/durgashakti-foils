@@ -140,6 +140,7 @@ const Home = () => {
   const [activeVariant, setActiveVariant] = useState(1);
   const [isFoilPulled, setIsFoilPulled] = useState(false);
   const [is360Active, setIs360Active] = useState(false);
+  const [activePresetAngle, setActivePresetAngle] = useState(null);
 
   useEffect(() => {
     const handleFoilPullState = (e) => {
@@ -147,10 +148,18 @@ const Home = () => {
     };
     const handle360ModeToggle = (e) => {
       setIs360Active(e.detail.active);
+      setActivePresetAngle(null);
+      if (e.detail.active) {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
     };
     window.addEventListener('foil-pull-state', handleFoilPullState);
     window.addEventListener('360-mode-toggle', handle360ModeToggle);
     return () => {
+      document.body.style.overflow = '';
       window.removeEventListener('foil-pull-state', handleFoilPullState);
       window.removeEventListener('360-mode-toggle', handle360ModeToggle);
     };
@@ -286,8 +295,10 @@ const Home = () => {
       `}</style>
 
       {/* Cinematic Interactive 3D Foil Hero Section */}
-      <section ref={heroRef} className="landing-page-v2 relative w-full h-[100svh] overflow-hidden flex items-center justify-center border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#0a0a0e]">
-        <motion.div style={{ opacity: heroOpacity, willChange: 'opacity' }} className="absolute inset-0 w-full h-full z-0 bg-slate-50 dark:bg-[#0a0a0e]">
+      <section ref={heroRef} className={`landing-page-v2 w-full transition-all duration-300 overflow-hidden flex items-center justify-center border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#0a0a0e] ${
+        is360Active ? 'fixed inset-0 z-40 h-screen bg-[#070d0a]' : 'relative h-[100svh]'
+      }`}>
+        <motion.div style={{ opacity: is360Active ? 1 : heroOpacity, willChange: 'opacity' }} className="absolute inset-0 w-full h-full z-0 bg-slate-50 dark:bg-[#0a0a0e]">
           {/* Background Lighting */}
           <div className="studio-bg"></div>
           <div className="warm-glow-left"></div>
@@ -329,7 +340,7 @@ const Home = () => {
                   style={{ pointerEvents: 'auto' }}
                   className={`self-start md:self-auto px-5 py-3 rounded-full border-2 transition-all duration-300 shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2.5 order-1 md:order-2 ${isFoilPulled ? 'opacity-0 pointer-events-none' : 'opacity-100'} ${ 
                     is360Active 
-                      ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_25px_rgba(37,217,88,0.8)] scale-105 font-black' 
+                      ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_25px_rgba(37,217,88,0.8)] scale-105 font-black z-50' 
                       : 'bg-white border-brand-green text-slate-900 hover:bg-brand-green/10 dark:bg-black/60 dark:border-brand-green/40 dark:text-white dark:hover:bg-brand-green/10 font-black'
                   }`}
                 >
@@ -382,6 +393,60 @@ const Home = () => {
             </div>
           </div>
         </div>
+
+        {/* 360° Studio Mode UI Overlays */}
+        {is360Active && (
+          <>
+            {/* Center Guidance Overlay - Positioned cleanly below top navbar on mobile */}
+            <div className="fixed top-[104px] md:top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-500 w-full max-w-max px-3">
+              <div className="px-3.5 sm:px-5 py-2 md:py-2.5 rounded-full bg-slate-950/90 backdrop-blur-xl border border-brand-green/50 text-white text-[10px] sm:text-xs md:text-sm font-black shadow-[0_10px_30px_rgba(0,0,0,0.9)] flex items-center justify-center gap-2 whitespace-nowrap">
+                <span className="relative flex h-2 w-2 md:h-2.5 md:w-2.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-green opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 md:h-2.5 md:w-2.5 bg-brand-green"></span>
+                </span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#25d958" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <path d="M5 9l-3 3 3 3M19 9l3 3-3 3M9 5l3-3 3 3M9 19l3 3 3-3"/>
+                </svg>
+                <span className="tracking-wide text-slate-100 font-extrabold">Drag anywhere on screen to rotate 3D</span>
+              </div>
+            </div>
+
+            {/* Right Side Vertical Angle Preset Buttons - Fits cleanly on mobile, tablet & desktop */}
+            <div className="fixed right-2.5 sm:right-4 lg:right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col items-end gap-1.5 sm:gap-2 md:gap-2.5 pointer-events-auto transition-all duration-500">
+              <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-brand-green text-right pr-1 mb-0.5">
+                Angles
+              </div>
+              <div className="flex flex-col gap-1.5 sm:gap-2 md:gap-2.5">
+                {[
+                  { label: '0° Front', angle: 0 },
+                  { label: '80° Angle', angle: 80 },
+                  { label: '180° Back', angle: 180 },
+                  { label: '270° Core', angle: 270 }
+                ].map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.__set360PresetAngle) {
+                        window.__set360PresetAngle(preset.angle);
+                        setActivePresetAngle(preset.angle);
+                      }
+                    }}
+                    className={`px-2.5 sm:px-3.5 md:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-xl md:rounded-2xl border text-[10px] sm:text-xs font-black tracking-wider transition-all duration-300 flex items-center justify-between gap-2 md:gap-3 shadow-lg cursor-pointer whitespace-nowrap ${
+                      activePresetAngle === preset.angle
+                        ? 'bg-brand-green text-slate-950 border-brand-green shadow-[0_0_20px_rgba(37,217,88,0.7)] scale-105'
+                        : 'bg-slate-950/90 backdrop-blur-md border-white/20 text-white hover:border-brand-green/60 hover:bg-brand-green/20'
+                    }`}
+                  >
+                    <span>{preset.label}</span>
+                    <span className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${activePresetAngle === preset.angle ? 'bg-slate-950' : 'bg-brand-green'}`}></span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </section>
 
       {/* Stats Strip with Scroll Reveal */}
@@ -390,7 +455,7 @@ const Home = () => {
         whileInView="visible"
         viewport={{ once: true, margin: "-100px" }}
         variants={fadeInUp}
-        className="relative z-20 max-w-7xl mx-auto px-6 -mt-16 pb-16"
+        className={`relative z-20 max-w-7xl mx-auto px-6 -mt-16 pb-16 transition-all duration-300 ${is360Active ? 'opacity-0 pointer-events-none hidden' : 'opacity-100'}`}
       >
         <div className="rounded-3xl bg-white/95 dark:bg-[#0c1816]/90 backdrop-blur-2xl border border-slate-200 dark:border-brand-green/20 shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] px-8 py-8 grid grid-cols-2 md:grid-cols-5 gap-8 transition-colors">
           {metrics.map((s, i) => (
