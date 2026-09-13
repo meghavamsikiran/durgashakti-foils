@@ -1231,11 +1231,9 @@ export default function FoilRollCanvasReact({ activeVariant }) {
         if (overlayRef.current && canvasRef.current) {
           if (is360Mode) {
             overlayRef.current.style.opacity = '0';
+            overlayRef.current.style.visibility = 'hidden';
             overlayRef.current.style.pointerEvents = 'none';
           } else {
-            overlayRef.current.style.opacity = '1';
-            overlayRef.current.style.pointerEvents = 'auto';
-
             const unrolledTail = ((baseSheetLength - v_detach) * 0.78) + currentFoilPull;
             const midTail = unrolledTail * 0.45;
 
@@ -1259,10 +1257,16 @@ export default function FoilRollCanvasReact({ activeVariant }) {
             const screenX = (trackVec.x * 0.5 + 0.5) * canvasRect.width;
             const screenY = (-trackVec.y * 0.5 + 0.5) * canvasRect.height;
 
-            overlayRef.current.style.left = `${screenX}px`;
-            overlayRef.current.style.top = `${screenY}px`;
-            overlayRef.current.style.bottom = 'auto';
-            overlayRef.current.style.transform = 'translate(-50%, -100%)';
+            // Only position and reveal overlay once valid canvas coordinates are calculated
+            if (canvasRect.width > 0 && canvasRect.height > 0 && !isNaN(screenX) && !isNaN(screenY)) {
+              overlayRef.current.style.left = `${screenX}px`;
+              overlayRef.current.style.top = `${screenY}px`;
+              overlayRef.current.style.bottom = 'auto';
+              overlayRef.current.style.transform = 'translate(-50%, -100%)';
+              overlayRef.current.style.opacity = isDragging ? '0' : '1';
+              overlayRef.current.style.visibility = isDragging ? 'hidden' : 'visible';
+              overlayRef.current.style.pointerEvents = isDragging ? 'none' : 'auto';
+            }
           }
         }
 
@@ -1333,15 +1337,17 @@ export default function FoilRollCanvasReact({ activeVariant }) {
           position: 'absolute',
           top: 0,
           left: 0,
+          opacity: 0,
+          visibility: 'hidden',
+          pointerEvents: 'none',
           transform: 'translate(-50%, -100%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           zIndex: 20,
-          pointerEvents: 'auto',
           cursor: 'grab',
           userSelect: 'none',
-          transition: 'opacity 0.2s ease'
+          transition: 'opacity 0.2s ease, visibility 0.2s ease'
         }}
       >
         <div className="tutorial-hand-cursor" style={{
