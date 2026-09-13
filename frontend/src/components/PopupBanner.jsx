@@ -338,23 +338,113 @@ const PopupBanner = () => {
     : "grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 w-full";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in font-sans" data-force-dark="true">
       <style>{`
+        #durgashakti-popup-banner,
+        #durgashakti-popup-banner * {
+          box-sizing: border-box;
+        }
+        .light-theme #durgashakti-popup-banner,
+        #durgashakti-popup-banner {
+          color: #ffffff !important;
+        }
+        .light-theme #durgashakti-popup-banner .popup-title-glow,
         #durgashakti-popup-banner .popup-title-glow {
           color: #fde047 !important;
-          text-shadow: 0 2px 16px rgba(253, 224, 71, 0.45), 0 2px 4px rgba(0, 0, 0, 0.9);
+          text-shadow: 0 2px 16px rgba(253, 224, 71, 0.45), 0 2px 4px rgba(0, 0, 0, 0.9) !important;
         }
-        #durgashakti-popup-banner .popup-text-contrast {
+        .light-theme #durgashakti-popup-banner .popup-text-contrast,
+        .light-theme #durgashakti-popup-banner p.popup-text-contrast,
+        #durgashakti-popup-banner .popup-text-contrast,
+        #durgashakti-popup-banner p.popup-text-contrast {
           color: #ffffff !important;
-          text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+          text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8) !important;
         }
-        #durgashakti-popup-banner .popup-code-pill {
+        .light-theme #durgashakti-popup-banner .popup-ticket-card,
+        #durgashakti-popup-banner .popup-ticket-card {
+          background-color: rgba(2, 6, 23, 0.92) !important;
+          border-color: rgba(251, 191, 36, 0.8) !important;
+        }
+        .light-theme #durgashakti-popup-banner .popup-code-pill,
+        .light-theme #durgashakti-popup-banner span.popup-code-pill,
+        #durgashakti-popup-banner .popup-code-pill,
+        #durgashakti-popup-banner span.popup-code-pill {
           background-color: #020617 !important;
           color: #fde047 !important;
           border-color: #facc15 !important;
         }
+        .light-theme #durgashakti-popup-banner p.popup-amber-text,
+        .light-theme #durgashakti-popup-banner span.popup-amber-text,
+        .light-theme #durgashakti-popup-banner .popup-amber-text,
+        .light-theme #durgashakti-popup-banner .popup-amber-text *,
+        #durgashakti-popup-banner p.popup-amber-text,
+        #durgashakti-popup-banner span.popup-amber-text,
+        #durgashakti-popup-banner .popup-amber-text,
+        #durgashakti-popup-banner .popup-amber-text * {
+          color: #fcd34d !important;
+        }
+        .light-theme #durgashakti-popup-banner p.popup-amber-subtext,
+        .light-theme #durgashakti-popup-banner span.popup-amber-subtext,
+        .light-theme #durgashakti-popup-banner .popup-amber-subtext,
+        #durgashakti-popup-banner p.popup-amber-subtext,
+        #durgashakti-popup-banner span.popup-amber-subtext,
+        #durgashakti-popup-banner .popup-amber-subtext {
+          color: #fde68a !important;
+        }
+        .light-theme #durgashakti-popup-banner .popup-emerald-text,
+        .light-theme #durgashakti-popup-banner span.popup-emerald-text,
+        #durgashakti-popup-banner .popup-emerald-text,
+        #durgashakti-popup-banner span.popup-emerald-text {
+          color: #6ee7b7 !important;
+          background-color: rgba(16, 185, 129, 0.2) !important;
+          border-color: rgba(52, 211, 153, 0.4) !important;
+        }
+        .light-theme #durgashakti-popup-banner button.popup-close-btn,
+        .light-theme #durgashakti-popup-banner .popup-close-btn,
+        #durgashakti-popup-banner button.popup-close-btn,
+        #durgashakti-popup-banner .popup-close-btn {
+          background-color: rgba(15, 23, 42, 0.85) !important;
+          border: 1px solid rgba(255, 255, 255, 0.25) !important;
+          color: #ffffff !important;
+        }
+        .light-theme #durgashakti-popup-banner button.popup-close-btn svg,
+        .light-theme #durgashakti-popup-banner .popup-close-btn svg,
+        #durgashakti-popup-banner button.popup-close-btn svg,
+        #durgashakti-popup-banner .popup-close-btn svg {
+          color: #ffffff !important;
+          stroke: #ffffff !important;
+        }
+        .light-theme #durgashakti-popup-banner button.popup-close-btn:hover,
+        .light-theme #durgashakti-popup-banner .popup-close-btn:hover,
+        #durgashakti-popup-banner button.popup-close-btn:hover,
+        #durgashakti-popup-banner .popup-close-btn:hover {
+          background-color: rgba(15, 23, 42, 1) !important;
+          color: #fde047 !important;
+        }
+        .light-theme #durgashakti-popup-banner button.popup-close-btn:hover svg,
+        .light-theme #durgashakti-popup-banner .popup-close-btn:hover svg,
+        #durgashakti-popup-banner button.popup-close-btn:hover svg,
+        #durgashakti-popup-banner .popup-close-btn:hover svg {
+          color: #fde047 !important;
+          stroke: #fde047 !important;
+        }
+        .light-theme #durgashakti-popup-banner button.popup-copy-btn,
+        .light-theme #durgashakti-popup-banner .popup-copy-btn,
+        #durgashakti-popup-banner button.popup-copy-btn,
+        #durgashakti-popup-banner .popup-copy-btn {
+          background-color: #facc15 !important;
+          color: #020617 !important;
+          border-color: #fde047 !important;
+        }
+        .light-theme #durgashakti-popup-banner button.popup-copy-btn svg,
+        .light-theme #durgashakti-popup-banner .popup-copy-btn svg,
+        #durgashakti-popup-banner button.popup-copy-btn svg,
+        #durgashakti-popup-banner .popup-copy-btn svg {
+          color: #020617 !important;
+          stroke: #020617 !important;
+        }
       `}</style>
-      <div id="durgashakti-popup-banner" className={`relative w-full max-w-2xl bg-gradient-to-br ${background_gradient} rounded-3xl border-4 ${border_color} p-6 sm:p-8 md:p-10 text-white shadow-2xl overflow-hidden shadow-black/80`}>
+      <div id="durgashakti-popup-banner" data-force-dark="true" className={`relative w-full max-w-2xl bg-gradient-to-br ${background_gradient} rounded-3xl border-4 ${border_color} p-6 sm:p-8 md:p-10 text-white shadow-2xl overflow-hidden shadow-black/80`}>
         
         {/* Animated Background Overlay elements depending on theme context */}
         {animation_style === 'snow' && (
@@ -396,10 +486,10 @@ const PopupBanner = () => {
         {/* Close Button */}
         <button 
           onClick={handleClose}
-          className="absolute top-4 right-4 z-10 p-2.5 rounded-full text-white/90 hover:text-white transition-all bg-black/40 hover:bg-black/60 border border-white/20 shadow-lg"
+          className="absolute top-4 right-4 z-20 p-2.5 rounded-full transition-all popup-close-btn shadow-lg cursor-pointer flex items-center justify-center"
           title="Close Popup"
         >
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5 text-white" />
         </button>
 
         {/* Banner Content */}
@@ -435,7 +525,7 @@ const PopupBanner = () => {
               return (
                 <div 
                   key={coupon.id || coupon.code}
-                  className="rounded-2xl p-5 border-2 border-amber-400/80 hover:border-amber-300 transition-all flex flex-col items-center justify-center text-center gap-3.5 w-full min-h-[155px] relative overflow-hidden group shadow-2xl bg-slate-950/90 backdrop-blur-md"
+                  className="rounded-2xl p-5 border-2 border-amber-400/80 hover:border-amber-300 transition-all flex flex-col items-center justify-center text-center gap-3.5 w-full min-h-[155px] relative overflow-hidden group shadow-2xl bg-slate-950/90 backdrop-blur-md popup-ticket-card"
                   style={{ 
                     WebkitMaskImage: 'radial-gradient(circle at 0% 50%, transparent 12px, black 12.5px), radial-gradient(circle at 100% 50%, transparent 12px, black 12.5px)',
                     maskImage: 'radial-gradient(circle at 0% 50%, transparent 12px, black 12.5px), radial-gradient(circle at 100% 50%, transparent 12px, black 12.5px)',
@@ -449,7 +539,7 @@ const PopupBanner = () => {
                   </div>
 
                   <div className="space-y-2 w-full relative z-10">
-                    <p className="text-xs font-black uppercase tracking-widest flex items-center justify-center gap-1.5 text-amber-300">
+                    <p className="text-xs font-black uppercase tracking-widest flex items-center justify-center gap-1.5 popup-amber-text">
                       <Ticket className="w-4 h-4 text-amber-300" />
                       {discVal}
                     </p>
@@ -460,7 +550,7 @@ const PopupBanner = () => {
                       </span>
                       <button
                         onClick={() => handleCopy(coupon.code)}
-                        className="absolute right-0 p-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold border border-yellow-200 transition-all active:scale-95 shadow-md"
+                        className="absolute right-0 p-2.5 rounded-xl text-slate-950 font-bold border transition-all active:scale-95 shadow-md popup-copy-btn"
                         title="Copy Code"
                       >
                         {copiedCode === coupon.code ? (
@@ -475,8 +565,8 @@ const PopupBanner = () => {
                   <div className="w-full flex flex-col justify-center items-center relative z-10 pt-2 border-t border-dashed border-white/20">
                     {hasExpiry ? (
                       <>
-                        <p className="text-[10px] uppercase font-bold tracking-wider text-amber-200">Offer Expires</p>
-                        <p className="text-xs font-extrabold font-mono mt-0.5 text-white">
+                        <p className="text-[10px] uppercase font-bold tracking-wider popup-amber-subtext">Offer Expires</p>
+                        <p className="text-xs font-extrabold font-mono mt-0.5 popup-text-contrast">
                           {new Date(coupon.expiry_date).toLocaleDateString('en-IN', {
                             day: '2-digit',
                             month: 'short',
@@ -487,7 +577,7 @@ const PopupBanner = () => {
                         </p>
                       </>
                     ) : (
-                      <span className="inline-flex px-3 py-0.5 bg-emerald-500/20 border border-emerald-400/40 rounded text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                      <span className="inline-flex px-3 py-0.5 bg-emerald-500/20 border border-emerald-400/40 rounded text-[10px] font-bold uppercase tracking-wider popup-emerald-text">
                         Infinite Validity
                       </span>
                     )}

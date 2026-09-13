@@ -2216,12 +2216,12 @@ html.light-theme body,
   color: inherit !important;
 }
 
-/* Text elements inside force-dark scope */
-.light-theme [data-force-dark] p,
-.light-theme [data-force-dark] span,
+/* Text elements inside force-dark scope (excluding elements with custom popup classes) */
+.light-theme [data-force-dark] p:not([class*="popup-"]):not([class*="text-amber"]):not([class*="text-yellow"]):not([class*="text-emerald"]),
+.light-theme [data-force-dark] span:not([class*="popup-"]):not([class*="text-amber"]):not([class*="text-yellow"]):not([class*="text-emerald"]),
 .light-theme [data-force-dark] label,
 .light-theme [data-force-dark] a,
-.light-theme [data-force-dark] button {
+.light-theme [data-force-dark] button:not([class*="popup-"]) {
   color: inherit !important;
 }
 
@@ -2239,8 +2239,10 @@ html.light-theme body,
 
 /* Coupon card text visibility inside popup banner */
 .light-theme [data-force-dark] .text-yellow-300 { color: rgb(253 224 71) !important; }
+.light-theme [data-force-dark] .text-amber-300 { color: rgb(252 211 77) !important; }
+.light-theme [data-force-dark] .text-amber-400 { color: rgb(251 191 36) !important; }
 .light-theme [data-force-dark] .text-xs.font-bold.uppercase { color: rgb(253 224 71) !important; }
-.light-theme [data-force-dark] .font-mono.text-xl { color: #ffffff !important; }
+.light-theme [data-force-dark] .font-mono.text-xl { color: #fde047 !important; }
 .light-theme [data-force-dark] .text-\[9px\] { color: rgba(255, 255, 255, 0.5) !important; }
 .light-theme [data-force-dark] .text-yellow-200 { color: rgb(254 240 138) !important; }
 
