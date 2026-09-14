@@ -115,10 +115,10 @@ const AuditLogsPage = () => {
   };
 
   const actionInfo = (action) => {
-    if (action?.includes('DELETE')) return { color: 'text-rose-600 bg-rose-50', icon: AlertTriangle };
-    if (action?.includes('CREATE') || action?.includes('SEED')) return { color: 'text-emerald-600 bg-emerald-50', icon: CheckCircle2 };
-    if (action?.includes('UPDATE') || action?.includes('RESET')) return { color: 'text-primary bg-primary/10', icon: RefreshCw };
-    return { color: 'text-slate-600 bg-slate-50', icon: Activity };
+    if (action?.includes('DELETE')) return { color: 'text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-950/40', icon: AlertTriangle };
+    if (action?.includes('CREATE') || action?.includes('SEED')) return { color: 'text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40', icon: CheckCircle2 };
+    if (action?.includes('UPDATE') || action?.includes('RESET')) return { color: 'text-primary bg-primary/10 dark:text-primary dark:bg-primary/20', icon: RefreshCw };
+    return { color: 'text-slate-600 bg-slate-50 dark:text-slate-400 dark:bg-[#19231f]', icon: Activity };
   };
 
   useEffect(() => {
@@ -143,31 +143,31 @@ const AuditLogsPage = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-160px)] w-full">
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mb-3"></div>
-        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Loading system logs...</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Loading system logs...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2.5 border-b border-slate-200">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2.5 border-b border-slate-200 dark:border-[#19231f]">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
             System Logs
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5 font-medium">A record of all changes made in the system.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">A record of all changes made in the system.</p>
         </div>
         
         <div className="flex items-center gap-3">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400" />
             <input 
               type="text"
               placeholder="Search Logs..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80"
+              className="pl-10 pr-4 py-2.5 bg-white dark:bg-[#131b17] border border-slate-200 dark:border-[#19231f] rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 outline-none w-64 transition-all focus:w-80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
           </div>
           <Button variant="outline" type="button" className="rounded-xl ml-3" onClick={handleExport}>
@@ -179,59 +179,59 @@ const AuditLogsPage = () => {
 
       {hasPermission('view_analytics') && metrics && (
         <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+          <div className="bg-white dark:bg-[#131b17] py-2 px-3 rounded-xl border border-slate-200 dark:border-[#19231f] shadow-sm flex items-center gap-2.5">
             <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">
               <Activity className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Total Logs</div>
-              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.totalEvents}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Logs</div>
+              <div className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-none mt-0.5">{stats.totalEvents}</div>
             </div>
           </div>
-          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
+          <div className="bg-white dark:bg-[#131b17] py-2 px-3 rounded-xl border border-slate-200 dark:border-[#19231f] shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg flex items-center justify-center shrink-0">
               <Fingerprint className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Login Events</div>
-              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.securityEvents}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Login Events</div>
+              <div className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-none mt-0.5">{stats.securityEvents}</div>
             </div>
           </div>
-          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center shrink-0">
+          <div className="bg-white dark:bg-[#131b17] py-2 px-3 rounded-xl border border-slate-200 dark:border-[#19231f] shadow-sm flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-lg flex items-center justify-center shrink-0">
               <AlertTriangle className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Changes</div>
-              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.destructive}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Changes</div>
+              <div className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-none mt-0.5">{stats.destructive}</div>
             </div>
           </div>
-          <div className="bg-white py-2 px-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2.5">
+          <div className="bg-white dark:bg-[#131b17] py-2 px-3 rounded-xl border border-slate-200 dark:border-[#19231f] shadow-sm flex items-center gap-2.5">
             <div className="w-8 h-8 bg-secondary-container text-secondary rounded-lg flex items-center justify-center shrink-0">
               <Clock className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Recent Logs</div>
-              <div className="text-base font-extrabold text-slate-900 leading-none mt-0.5">{stats.recentRate}</div>
+              <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Recent Logs</div>
+              <div className="text-base font-extrabold text-slate-900 dark:text-slate-100 leading-none mt-0.5">{stats.recentRate}</div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#131b17] rounded-3xl border border-slate-200 dark:border-[#19231f] shadow-sm overflow-hidden">
         <div className={`overflow-x-auto overflow-y-auto ${(hasPermission('view_analytics') && metrics) ? 'admin-table-container-audit-logs' : 'admin-table-container-standard'}`}>
           <table className="min-w-[1000px] lg:min-w-full">
-            <thead className="sticky top-0 bg-slate-50 z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)]">
+            <thead className="sticky top-0 bg-slate-50 dark:bg-[#0c1310] z-10 shadow-[0_1px_0_0_rgba(226,232,240,1)] dark:shadow-[0_1px_0_0_rgba(25,35,31,1)]">
               <tr>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Action</th>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Performed By</th>
-                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 uppercase tracking-wider">Target</th>
-                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">ID</th>
-                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Time</th>
-                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 uppercase tracking-wider">Details</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Action</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Performed By</th>
+                <th className="px-8 py-5 text-left text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Target</th>
+                <th className="px-8 py-5 text-center text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">ID</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Time</th>
+                <th className="px-8 py-5 text-right text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Details</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-50 dark:divide-[#19231f]">
               {filtered.map((row) => {
                 const info = actionInfo(row.action);
                 const ActionIcon = info.icon;
@@ -244,7 +244,7 @@ const AuditLogsPage = () => {
                 
                 return (
                   <React.Fragment key={row.id}>
-                    <tr className={`hover:bg-slate-50/50 transition-colors group ${isExpanded ? 'bg-primary/5' : ''}`}>
+                    <tr className={`hover:bg-slate-50/50 dark:hover:bg-[#19231f]/50 transition-colors group ${isExpanded ? 'bg-primary/5 dark:bg-primary/10' : ''}`}>
                       <td className="px-8 py-6">
                         <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${info.color}`}>
                           <ActionIcon className="w-3 h-3" />
@@ -252,26 +252,26 @@ const AuditLogsPage = () => {
                         </div>
                       </td>
                       <td className="px-8 py-6">
-                        <div className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-emerald-600" />
+                        <div className="text-xs font-black text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                           {actorName}
                         </div>
-                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">
-                          <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                          <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#19231f] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#26322b]">
                             {actorRole.replaceAll('_', ' ')}
                           </span>
                         </div>
                       </td>
                       <td className="px-8 py-6">
-                        <div className="text-xs font-bold text-slate-700 capitalize">{row.target_type}</div>
+                        <div className="text-xs font-bold text-slate-700 dark:text-slate-300 capitalize">{row.target_type}</div>
                       </td>
                       <td className="px-8 py-6 text-center">
-                        <div className="text-[10px] font-mono text-slate-500 font-bold uppercase tracking-widest">
+                        <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">
                           {row.target_id?.substring(0, 10)}...
                         </div>
                       </td>
                       <td className="px-8 py-6 text-right">
-                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-end gap-1.5">
+                        <div className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center justify-end gap-1.5">
                           <Clock className="w-3 h-3" />
                           {formatDate(row.created_at)}
                         </div>
@@ -279,40 +279,40 @@ const AuditLogsPage = () => {
                       <td className="px-8 py-6 text-right">
                         <button 
                           onClick={() => setExpandedRow(isExpanded ? null : row.id)}
-                          className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-primary hover:bg-white transition-all shadow-sm"
+                          className="p-2 rounded-xl border border-slate-200 dark:border-[#19231f] text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary hover:bg-white dark:hover:bg-[#19231f] transition-all shadow-sm"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
                     {isExpanded && (
-                      <tr className="bg-slate-50/70 border-b border-slate-200/80 animate-in fade-in duration-200">
+                      <tr className="bg-slate-50/70 dark:bg-[#0c1310] border-b border-slate-200/80 dark:border-[#19231f] animate-in fade-in duration-200">
                         <td colSpan="6" className="px-8 py-6">
-                           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
+                           <div className="bg-white dark:bg-[#131b17] rounded-2xl border border-slate-200 dark:border-[#19231f] p-6 shadow-sm space-y-6">
                               {/* Security Event Header Summary */}
-                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-[#19231f]">
                                  <div className="flex items-center gap-3">
                                     <div className={`p-3 rounded-xl ${info.color}`}>
                                        <ActionIcon className="w-5 h-5" />
                                     </div>
                                     <div>
-                                       <h4 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                                       <h4 className="text-sm font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
                                           {row.action}
-                                          <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                                          <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-slate-100 dark:bg-[#19231f] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#26322b]">
                                              {row.target_type || 'System Event'}
                                           </span>
                                        </h4>
-                                       <p className="text-xs text-slate-500 font-medium mt-0.5">
-                                          Audit Log Entry ID: <code className="font-mono text-[11px] text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">{row.id}</code>
+                                       <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                                          Audit Log Entry ID: <code className="font-mono text-[11px] text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-[#19231f] px-1.5 py-0.5 rounded">{row.id}</code>
                                        </p>
                                     </div>
                                  </div>
                                  <div className="text-right">
-                                    <div className="text-xs font-bold text-slate-800 flex items-center justify-end gap-1.5">
+                                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-end gap-1.5">
                                        <Clock className="w-3.5 h-3.5 text-slate-400" />
                                        {formatDate(row.created_at)}
                                     </div>
-                                    <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                    <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">
                                        Exact Server Timestamp: {row.created_at ? new Date(row.created_at).toISOString() : 'N/A'}
                                     </div>
                                  </div>
@@ -320,23 +320,23 @@ const AuditLogsPage = () => {
 
                               {/* Field-Level Security Diffs Box */}
                               {fieldDiffs && fieldDiffs.length > 0 && (
-                                 <div className="bg-emerald-50/50 border border-emerald-200/80 rounded-2xl p-5 space-y-3">
-                                    <div className="text-xs font-black text-emerald-950 uppercase tracking-wider flex items-center gap-2">
-                                       <ShieldAlert className="w-4 h-4 text-emerald-700" />
+                                 <div className="bg-emerald-50/50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/40 rounded-2xl p-5 space-y-3">
+                                    <div className="text-xs font-black text-emerald-950 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-2">
+                                       <ShieldAlert className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                                        Field-Level Audit Diffs (Exact Modifications Tracked)
                                     </div>
-                                    <div className="bg-white rounded-xl border border-emerald-100 overflow-hidden divide-y divide-emerald-100">
+                                    <div className="bg-white dark:bg-[#050807] rounded-xl border border-emerald-100 dark:border-emerald-900/50 overflow-hidden divide-y divide-emerald-100 dark:divide-emerald-900/40">
                                        {fieldDiffs.map((diff, idx) => (
                                           <div key={idx} className="p-3.5 grid grid-cols-1 md:grid-cols-3 gap-3 items-center text-xs">
-                                             <div className="font-black text-slate-800 uppercase text-[10px] tracking-wider">
+                                             <div className="font-black text-slate-800 dark:text-slate-200 uppercase text-[10px] tracking-wider">
                                                 {formatKey(diff.field || diff.name || `Field #${idx + 1}`)}
                                              </div>
-                                             <div className="bg-rose-50 text-rose-800 border border-rose-200/80 p-2 rounded-lg font-mono text-[11px] break-all">
-                                                <span className="text-[9px] font-black uppercase tracking-widest text-rose-600 block mb-0.5">Previous Value:</span>
+                                             <div className="bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 border border-rose-200/80 dark:border-rose-900/60 p-2 rounded-lg font-mono text-[11px] break-all">
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-rose-600 dark:text-rose-400 block mb-0.5">Previous Value:</span>
                                                 {String(diff.old_value !== undefined ? diff.old_value : '—')}
                                              </div>
-                                             <div className="bg-emerald-50 text-emerald-900 border border-emerald-200/80 p-2 rounded-lg font-mono text-[11px] break-all">
-                                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-700 block mb-0.5">New Value:</span>
+                                             <div className="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-900 dark:text-emerald-200 border border-emerald-200/80 dark:border-emerald-900/60 p-2 rounded-lg font-mono text-[11px] break-all">
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400 block mb-0.5">New Value:</span>
                                                 {String(diff.new_value !== undefined ? diff.new_value : '—')}
                                              </div>
                                           </div>
@@ -348,24 +348,24 @@ const AuditLogsPage = () => {
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                  {/* Column 1: Action Details & Changes Payload */}
                                  <div className="space-y-3">
-                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                       <HardDrive className="w-4 h-4 text-emerald-600" />
+                                    <h4 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                       <HardDrive className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                                        System Action & Metadata Payload
                                     </h4>
-                                    <div className="bg-slate-50/80 rounded-xl border border-slate-200 overflow-hidden">
+                                    <div className="bg-slate-50/80 dark:bg-[#0c1310] rounded-xl border border-slate-200 dark:border-[#19231f] overflow-hidden">
                                        {row.metadata && Object.keys(row.metadata).length > 0 ? (
-                                         <table className="min-w-full divide-y divide-slate-100">
+                                         <table className="min-w-full divide-y divide-slate-100 dark:divide-[#19231f]">
                                             <tbody>
                                                {Object.entries(row.metadata).map(([k, v]) => (
-                                                 <tr key={k} className="hover:bg-slate-100/50 transition-colors">
-                                                    <td className="px-4 py-2.5 text-[10px] font-black text-slate-600 uppercase tracking-widest bg-slate-100/70 w-1/3 border-r border-slate-200/80">{formatKey(k)}</td>
-                                                    <td className="px-4 py-2.5 text-xs text-slate-800 font-semibold break-all">
+                                                 <tr key={k} className="hover:bg-slate-100/50 dark:hover:bg-[#131b17] transition-colors">
+                                                    <td className="px-4 py-2.5 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest bg-slate-100/70 dark:bg-[#131b17] w-1/3 border-r border-slate-200/80 dark:border-[#19231f]">{formatKey(k)}</td>
+                                                    <td className="px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 font-semibold break-all">
                                                        {typeof v === 'object' && v !== null ? (
-                                                         <pre className="text-[11px] font-mono bg-white p-2 rounded border border-slate-200 text-slate-700 overflow-x-auto">
+                                                         <pre className="text-[11px] font-mono bg-white dark:bg-[#050807] p-2 rounded border border-slate-200 dark:border-[#19231f] text-slate-700 dark:text-slate-300 overflow-x-auto">
                                                            {JSON.stringify(v, null, 2)}
                                                          </pre>
                                                        ) : typeof v === 'boolean' ? (
-                                                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${v ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                                                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${v ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' : 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300'}`}>
                                                            {v ? 'ENABLED / TRUE' : 'DISABLED / FALSE'}
                                                          </span>
                                                        ) : String(v)}
@@ -375,7 +375,7 @@ const AuditLogsPage = () => {
                                             </tbody>
                                          </table>
                                        ) : (
-                                         <div className="p-6 text-center text-xs text-slate-500 font-medium italic">
+                                         <div className="p-6 text-center text-xs text-slate-500 dark:text-slate-400 font-medium italic">
                                             No additional metadata payload recorded for this action.
                                          </div>
                                        )}
@@ -384,23 +384,23 @@ const AuditLogsPage = () => {
 
                                  {/* Column 2: User Audit & Target Context */}
                                  <div className="space-y-3">
-                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                       <User className="w-4 h-4 text-emerald-600" />
+                                    <h4 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                       <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                                        User Audit & Target Context
                                     </h4>
-                                    <div className="bg-slate-50/80 rounded-xl border border-slate-200 p-5 space-y-4">
+                                    <div className="bg-slate-50/80 dark:bg-[#0c1310] rounded-xl border border-slate-200 dark:border-[#19231f] p-5 space-y-4">
                                        <div className="grid grid-cols-2 gap-4">
                                           <div>
-                                             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Performed By User</div>
-                                             <div className="text-xs font-black text-slate-900 flex items-center gap-2 bg-white p-2.5 rounded-lg border border-slate-200">
-                                                <User className="w-3.5 h-3.5 text-emerald-600" />
+                                             <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Performed By User</div>
+                                             <div className="text-xs font-black text-slate-900 dark:text-slate-100 flex items-center gap-2 bg-white dark:bg-[#131b17] p-2.5 rounded-lg border border-slate-200 dark:border-[#19231f]">
+                                                <User className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                                                 {actorName}
                                              </div>
                                           </div>
                                           <div>
-                                             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">User Role</div>
-                                             <div className="text-xs font-black text-slate-900 bg-white p-2.5 rounded-lg border border-slate-200">
-                                                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                             <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">User Role</div>
+                                             <div className="text-xs font-black text-slate-900 dark:text-slate-100 bg-white dark:bg-[#131b17] p-2.5 rounded-lg border border-slate-200 dark:border-[#19231f]">
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
                                                    {actorRole.replaceAll('_', ' ')}
                                                 </span>
                                              </div>
@@ -409,28 +409,28 @@ const AuditLogsPage = () => {
 
                                        <div className="grid grid-cols-2 gap-4">
                                           <div>
-                                             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">User Email</div>
-                                             <div className="text-xs font-bold text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200 truncate">
+                                             <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">User Email</div>
+                                             <div className="text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#131b17] p-2.5 rounded-lg border border-slate-200 dark:border-[#19231f] truncate">
                                                 {actorEmail || 'System Automated Task'}
                                              </div>
                                           </div>
                                           <div>
-                                             <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Actor User ID</div>
-                                             <div className="text-xs font-mono font-bold text-slate-700 bg-white p-2.5 rounded-lg border border-slate-200 truncate">
+                                             <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Actor User ID</div>
+                                             <div className="text-xs font-mono font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#131b17] p-2.5 rounded-lg border border-slate-200 dark:border-[#19231f] truncate">
                                                 {row.actor_id || 'SYSTEM_PROCESS'}
                                              </div>
                                           </div>
                                        </div>
 
                                        <div>
-                                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Entity ID ({row.target_type || 'Object'})</div>
-                                          <div className="text-xs font-mono font-bold text-slate-800 bg-white p-2.5 rounded-lg border border-slate-200 flex items-center justify-between">
+                                          <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Target Entity ID ({row.target_type || 'Object'})</div>
+                                          <div className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-[#131b17] p-2.5 rounded-lg border border-slate-200 dark:border-[#19231f] flex items-center justify-between">
                                              <span className="truncate">{row.target_id || 'N/A'}</span>
                                              {row.target_id && (
                                                 <button 
                                                   type="button" 
                                                   onClick={() => { navigator.clipboard.writeText(row.target_id); toast.success('Target ID copied to clipboard'); }}
-                                                  className="text-[10px] font-bold text-emerald-700 hover:text-emerald-800 cursor-pointer ml-2 shrink-0"
+                                                  className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 cursor-pointer ml-2 shrink-0"
                                                 >
                                                   Copy
                                                 </button>
