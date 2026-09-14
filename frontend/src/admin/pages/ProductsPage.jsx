@@ -792,29 +792,58 @@ const ProductsPage = () => {
 
                 {(form.media_urls || []).length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-4">
-                    {(form.media_urls || []).map((item, idx) => (
-                      <div key={idx} className="aspect-square relative rounded-xl overflow-hidden border border-slate-200 dark:border-[#26322B] bg-slate-50 dark:bg-[#050807] group hover:border-primary transition-colors shadow-sm">
-                        {item.type === 'video' ? (
-                          <div className="w-full h-full flex flex-col items-center justify-center p-1 bg-slate-900 text-white relative">
-                            <video src={`${formatImageUrl(item.url)}#t=0.001`} className="w-full h-full object-cover opacity-60" muted playsInline preload="metadata" />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="text-[8px] bg-primary text-white font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm flex items-center gap-0.5">
-                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span>
-                                Video
-                              </span>
+                    {(form.media_urls || []).map((item, idx) => {
+                      const isPrimary = form.image_url && (form.image_url === item.url || form.image_url === formatImageUrl(item.url));
+                      return (
+                        <div key={idx} className={`aspect-square relative rounded-xl overflow-hidden border transition-all group shadow-sm ${
+                          isPrimary ? 'border-primary ring-2 ring-primary/40 bg-primary/10' : 'border-slate-200 dark:border-[#26322B] bg-slate-50 dark:bg-[#050807] hover:border-primary'
+                        }`}>
+                          {item.type === 'video' ? (
+                            <div className="w-full h-full flex flex-col items-center justify-center p-1 bg-slate-900 text-white relative">
+                              <video src={`${formatImageUrl(item.url)}#t=0.001`} className="w-full h-full object-cover opacity-60" muted playsInline preload="metadata" />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-[8px] bg-primary text-white font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm flex items-center gap-0.5">
+                                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span>
+                                  Video
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <img src={formatImageUrl(item.url)} alt="" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                        )}
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeMediaItem(idx); }}
-                          className="absolute top-1 right-1 p-1 bg-rose-500 hover:bg-rose-600 text-white rounded-full transition-colors shadow shadow-rose-200 z-10"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
+                          ) : (
+                            <img src={formatImageUrl(item.url)} alt="" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                          )}
+                          
+                          {/* Remove item button */}
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeMediaItem(idx); }}
+                            className="absolute top-1 right-1 p-1 bg-rose-500 hover:bg-rose-600 text-white rounded-full transition-colors shadow shadow-rose-200 z-10"
+                            title="Remove asset"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+
+                          {/* Set Primary Button */}
+                          {item.type !== 'video' && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const targetUrl = item.url.startsWith('http') ? item.url : formatImageUrl(item.url);
+                                setForm(prev => ({ ...prev, image_url: targetUrl }));
+                                toast.success('Set as primary image!');
+                              }}
+                              className={`absolute bottom-1 left-1 right-1 py-1 px-1.5 rounded text-[8px] font-black uppercase tracking-wider transition-all z-10 ${
+                                isPrimary 
+                                  ? 'bg-primary text-white shadow-sm' 
+                                  : 'bg-black/70 hover:bg-primary text-white backdrop-blur-sm opacity-90 group-hover:opacity-100'
+                              }`}
+                            >
+                              {isPrimary ? 'PRIMARY IMAGE' : 'SET PRIMARY'}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

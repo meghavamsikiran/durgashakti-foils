@@ -114,8 +114,18 @@ export const formatImageUrl = (url) => {
 };
 
 export const getProductImage = (product) => {
-  if (!product) return '/hot-wrap-kitchen-cool.jpg';
+  if (!product) return FALLBACK_FOIL_IMAGE;
 
+  // 1. If product has a custom or uploaded image_url, ALWAYS prioritize it!
+  const rawUrl = typeof product === 'string'
+    ? product
+    : (product.image_url || product.url || product.primary_image || '');
+
+  if (rawUrl && String(rawUrl).trim() !== '' && rawUrl !== 'null' && rawUrl !== 'undefined') {
+    return formatImageUrl(rawUrl);
+  }
+
+  // 2. Only if image_url is missing/empty, fall back to default photos based on product name
   const name = String(product.name || '').toLowerCase();
 
   if (name.includes('10kg') || name.includes('10 kg') || name.includes('bulk')) {
@@ -134,14 +144,7 @@ export const getProductImage = (product) => {
     return '/hot-wrap-kitchen-cool.jpg';
   }
 
-  const rawUrl = product.image_url || product.url || '';
-  if (rawUrl && (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) && 
-      !rawUrl.includes('durga-shakti-foil-new.jpg') && 
-      !rawUrl.includes('product_display_poster')) {
-    return rawUrl;
-  }
-
-  return '/hot-wrap-kitchen-cool.jpg';
+  return FALLBACK_FOIL_IMAGE;
 };
 
 export default api;
