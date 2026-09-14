@@ -39,7 +39,8 @@ const AdminProfilePage = () => {
       await refreshUser();
       toast.success('Profile picture updated successfully.', { id: toastId });
     } catch (err) {
-      toast.error(err.message || 'Failed to upload image', { id: toastId });
+      const message = err.response?.data?.detail || err.message || 'Failed to upload image';
+      toast.error(message, { id: toastId });
     }
   };
 
@@ -50,7 +51,8 @@ const AdminProfilePage = () => {
       await refreshUser();
       toast.success('Profile picture removed.', { id: toastId });
     } catch (err) {
-      toast.error(err.message || 'Failed to remove image', { id: toastId });
+      const message = err.response?.data?.detail || err.message || 'Failed to remove image';
+      toast.error(message, { id: toastId });
     }
   };
 

@@ -15,6 +15,9 @@ public class UpdateProfileRequest {
 
     private String phone;
 
+    @JsonProperty("profile_pic")
+    private String profilePic;
+
     public String getEmail() {
         return email;
     }
@@ -37,5 +40,13 @@ public class UpdateProfileRequest {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getProfilePic() {
+        return profilePic;
+    }
+
+    public void setProfilePic(String profilePic) {
+        this.profilePic = profilePic;
     }
 }

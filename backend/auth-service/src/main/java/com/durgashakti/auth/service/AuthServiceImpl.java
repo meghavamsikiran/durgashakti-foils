@@ -253,6 +253,16 @@ public class AuthServiceImpl implements AuthService {
             }
             user.setEmail(newEmail);
         }
+
+        if (req.getProfilePic() != null) {
+            Map<String, Object> perms = user.getPermissions() != null ? new HashMap<>(user.getPermissions()) : new HashMap<>();
+            if (req.getProfilePic().trim().isEmpty()) {
+                perms.remove("profile_pic");
+            } else {
+                perms.put("profile_pic", req.getProfilePic().trim());
+            }
+            user.setPermissions(perms);
+        }
         User updated = userRepository.save(user);
         return serializeUser(updated);
     }
