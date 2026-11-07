@@ -1843,12 +1843,14 @@ const CouponsPage = () => {
                               onClick={() => handleToggleCouponActive(coupon)}
                               disabled={false}
                               title={isExpired ? 'Expired coupon. Activating will automatically extend it by 7 days.' : undefined}
-                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none border cursor-pointer ${
-                                isActuallyActive ? 'bg-emerald-600 border-emerald-500 dark:bg-emerald-500 dark:border-emerald-400' : 'bg-slate-200 border-slate-300 dark:bg-[#1e2923] dark:border-[#37493f]'
+                              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-all duration-300 focus:outline-none border cursor-pointer ${
+                                isActuallyActive 
+                                  ? 'bg-[#25d958] border-[#25d958] dark:bg-[#25d958] dark:border-[#25d958] shadow-[0_0_12px_rgba(37,217,88,0.4)]' 
+                                  : 'bg-slate-300 border-slate-300 dark:bg-slate-800 dark:border-slate-700'
                               }`}
                             >
                               <span
-                                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform ${
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-100 shadow-md transition-transform duration-300 ${
                                   isActuallyActive ? 'translate-x-6' : 'translate-x-1'
                                 }`}
                               />

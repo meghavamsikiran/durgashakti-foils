@@ -670,52 +670,52 @@ const AnalyticsPage = () => {
         </div>
 
         {/* Sales Velocity Meter (2/3 width) */}
-        <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-white dark:bg-[#0c1310] p-8 rounded-3xl border border-slate-100 dark:border-white/10 shadow-sm flex flex-col justify-between">
           <div>
-            <h2 className="text-xl font-bold text-slate-950 mb-1 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-slate-950 dark:text-white mb-1 flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
               Sales Velocity & Business Pace
             </h2>
-            <p className="text-xs text-slate-500 mb-6 font-medium">Daily average sales and replenishment indexes</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 font-medium">Daily average sales and replenishment indexes</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center flex-1 my-2">
-            <div className="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100/50 space-y-2">
+            <div className="bg-emerald-50/50 dark:bg-emerald-950/40 p-5 rounded-2xl border border-emerald-100/50 dark:border-emerald-800/40 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider">AOV (Average Order)</span>
-                <Percent className="w-4 h-4 text-emerald-600" />
+                <span className="text-[10px] font-black text-emerald-800 dark:text-emerald-400 uppercase tracking-wider">AOV (Average Order)</span>
+                <Percent className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <h4 className="text-2xl font-black text-slate-900">
+              <h4 className="text-2xl font-black text-slate-900 dark:text-white">
                 ₹{metrics.total_orders > 0 ? Math.round(metrics.total_revenue / metrics.total_orders).toLocaleString('en-IN') : 0}
               </h4>
-              <p className="text-[10px] font-bold text-slate-400">Total average spent per invoice</p>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400">Total average spent per invoice</p>
             </div>
 
-            <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100/50 space-y-2">
+            <div className="bg-blue-50/50 dark:bg-blue-950/40 p-5 rounded-2xl border border-blue-100/50 dark:border-blue-800/40 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black text-blue-800 uppercase tracking-wider">Daily Velocity</span>
-                <Zap className="w-4 h-4 text-blue-600" />
+                <span className="text-[10px] font-black text-blue-800 dark:text-blue-400 uppercase tracking-wider">Daily Velocity</span>
+                <Zap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               </div>
-              <h4 className="text-2xl font-black text-slate-900">
+              <h4 className="text-2xl font-black text-slate-900 dark:text-white">
                 {metrics.sales_velocity || 0} Units/D
               </h4>
-              <p className="text-[10px] font-bold text-slate-400">Total units sold daily</p>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400">Total units sold daily</p>
             </div>
 
-            <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100/50 space-y-2">
+            <div className="bg-indigo-50/50 dark:bg-indigo-950/40 p-5 rounded-2xl border border-indigo-100/50 dark:border-indigo-800/40 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-black text-indigo-800 uppercase tracking-wider">Total Units Dispatched</span>
-                <Trophy className="w-4 h-4 text-indigo-600" />
+                <span className="text-[10px] font-black text-indigo-800 dark:text-indigo-400 uppercase tracking-wider">Total Units Dispatched</span>
+                <Trophy className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h4 className="text-2xl font-black text-slate-900">
+              <h4 className="text-2xl font-black text-slate-900 dark:text-white">
                 {metrics.total_units_sold || 0} Units
               </h4>
-              <p className="text-[10px] font-bold text-slate-400">Total product units sold all-time</p>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400">Total product units sold all-time</p>
             </div>
           </div>
 
-          <div className="text-xs text-slate-500 font-semibold pt-4 border-t border-slate-50">
-            * Stock Value locked: <span className="font-extrabold text-slate-800">₹{Number(metrics.total_inventory_value || 0).toLocaleString('en-IN')}</span>. Top Performer Product: <span className="font-extrabold text-emerald-700">{metrics.top_performer?.name || 'N/A'}</span>
+          <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold pt-4 border-t border-slate-50 dark:border-white/10">
+            * Stock Value locked: <span className="font-extrabold text-slate-800 dark:text-white">₹{Number(metrics.total_inventory_value || 0).toLocaleString('en-IN')}</span>. Top Performer Product: <span className="font-extrabold text-emerald-700 dark:text-emerald-400">{metrics.top_performer?.name || 'N/A'}</span>
           </div>
         </div>
       </div>

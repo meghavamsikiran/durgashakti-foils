@@ -30,4 +30,4 @@ COPY uploads/ uploads/
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-Xmx320m", "-Xms128m", "-XX:+UseSerialGC", "-XX:MaxMetaspaceSize=128m", "-jar", "app.jar"]

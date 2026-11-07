@@ -187,7 +187,7 @@ const CategoriesPage = () => {
                 <button
                   type="button"
                   onClick={() => setGlobalDiscountEnabled(!globalDiscountEnabled)}
-                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${globalDiscountEnabled ? 'bg-primary' : 'bg-slate-300'}`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-all duration-300 ${globalDiscountEnabled ? 'bg-[#25d958] dark:bg-[#25d958] shadow-[0_0_12px_rgba(37,217,88,0.4)]' : 'bg-slate-300 dark:bg-slate-800 border dark:border-slate-700'}`}
                 >
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${globalDiscountEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                 </button>

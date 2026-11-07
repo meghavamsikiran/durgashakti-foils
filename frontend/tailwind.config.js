@@ -21,6 +21,12 @@ module.exports = {
         serif: ['Georgia', 'serif'],
       },
   		colors: {
+  			brand: {
+  				green: '#25d958',
+  				yellow: '#f4ca25',
+  				amber: '#f59e0b',
+  				red: '#ef4444',
+  			},
   			background: 'var(--background)',
   			foreground: 'var(--foreground)',
   			card: {
